@@ -10,6 +10,7 @@ type Fiche = {
   reference: string | null;
   resume: string | null;
   contenu: string | null;
+  fichier_url: string | null;
   created_at: string;
 };
 
@@ -30,6 +31,7 @@ export default function FicheTechniquePage() {
   const [categorie, setCategorie] = useState("toutes");
   const [modalOuvert, setModalOuvert] = useState(false);
   const [fiche, setFiche] = useState<Fiche | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
     titre: "",
@@ -38,6 +40,7 @@ export default function FicheTechniquePage() {
     resume: "",
     contenu: "",
   });
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   async function fetchFiches() {
     setLoading(true);
@@ -57,18 +60,45 @@ export default function FicheTechniquePage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.titre.trim()) return;
+
+    let fichier_url: string | null = null;
+
+    if (pdfFile) {
+      setUploading(true);
+      const path = `${Date.now()}-${pdfFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("fiches-pdf")
+        .upload(path, pdfFile);
+
+      if (uploadError) {
+        console.error(uploadError);
+        setUploading(false);
+        return;
+      }
+
+      const { data: publicUrl } = supabase.storage
+        .from("fiches-pdf")
+        .getPublicUrl(path);
+      fichier_url = publicUrl.publicUrl;
+      setUploading(false);
+    }
+
     const { error } = await supabase.from("fiches_techniques").insert({
       titre: form.titre,
       categorie: form.categorie,
       reference: form.reference || null,
       resume: form.resume || null,
       contenu: form.contenu || null,
+      fichier_url,
     });
+
     if (error) {
       console.error(error);
       return;
     }
+
     setForm({ titre: "", categorie: "pose", reference: "", resume: "", contenu: "" });
+    setPdfFile(null);
     setModalOuvert(false);
     fetchFiches();
   }
@@ -145,6 +175,9 @@ export default function FicheTechniquePage() {
             {f.resume && (
               <p className="mt-2 text-sm text-slate-400">{f.resume}</p>
             )}
+            {f.fichier_url && (
+              <p className="mt-2 text-xs font-medium text-sky-400">📄 PDF joint</p>
+            )}
           </button>
         ))}
       </div>
@@ -155,7 +188,7 @@ export default function FicheTechniquePage() {
           onClick={() => setFiche(null)}
         >
           <div
-            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-800 p-6"
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-800 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
@@ -175,6 +208,7 @@ export default function FicheTechniquePage() {
                 ✕
               </button>
             </div>
+
             {fiche.resume && (
               <p className="mt-3 text-sm text-slate-300">{fiche.resume}</p>
             )}
@@ -182,6 +216,24 @@ export default function FicheTechniquePage() {
               <p className="mt-3 whitespace-pre-wrap text-sm text-slate-400">
                 {fiche.contenu}
               </p>
+            )}
+
+            {fiche.fichier_url && (
+              <div className="mt-4 space-y-2">
+                <a
+                  href={fiche.fichier_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+                >
+                  Ouvrir le PDF dans un nouvel onglet
+                </a>
+                <iframe
+                  src={fiche.fichier_url}
+                  className="h-96 w-full rounded-lg border border-slate-700"
+                  title={fiche.titre}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -239,9 +291,21 @@ export default function FicheTechniquePage() {
               value={form.contenu}
               onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
               placeholder="Contenu détaillé"
-              rows={5}
+              rows={4}
               className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             />
+
+            <div>
+              <label className="text-xs uppercase tracking-wide text-slate-500">
+                Joindre un PDF (optionnel)
+              </label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              />
+            </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -253,9 +317,10 @@ export default function FicheTechniquePage() {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+                disabled={uploading}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
               >
-                Enregistrer
+                {uploading ? "Envoi du PDF…" : "Enregistrer"}
               </button>
             </div>
           </form>
