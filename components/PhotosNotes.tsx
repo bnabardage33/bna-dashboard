@@ -28,6 +28,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const [notes, setNotes] = useState<NotesTerrain>({
     code_acces: "",
@@ -36,6 +37,8 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
     notes_terrain: "",
   });
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "ok" | "erreur">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   async function fetchPhotos() {
     setLoading(true);
@@ -94,12 +97,42 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
     fetchPhotos();
   }
 
+  async function supprimerPhoto(photo: Photo) {
+    if (!confirm("Supprimer cette photo ?")) return;
+    setDeleting(photo.id);
+
+    const cheminStorage = photo.url.split("/photos/")[1];
+    if (cheminStorage) {
+      await supabase.storage.from("photos").remove([cheminStorage]);
+    }
+
+    const { error } = await supabase.from("photos").delete().eq("id", photo.id);
+    setDeleting(null);
+
+    if (error) {
+      alert("Erreur suppression : " + error.message);
+      return;
+    }
+    fetchPhotos();
+  }
+
   async function enregistrerNotes(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setSaveStatus("idle");
+
     const { error } = await supabase.from("chantiers").update(notes).eq("id", chantierId);
+
     setSaving(false);
-    if (error) alert("Erreur : " + error.message);
+    if (error) {
+      setSaveStatus("erreur");
+      setSaveMessage(error.message);
+    } else {
+      setSaveStatus("ok");
+      setSaveMessage("Notes enregistrées.");
+    }
+
+    setTimeout(() => setSaveStatus("idle"), 3000);
   }
 
   return (
@@ -144,13 +177,23 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   {photosColonne.map((p) => (
-                    <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={p.url}
-                        alt={col.label}
-                        className="h-20 w-full rounded-lg object-cover"
-                      />
-                    </a>
+                    <div key={p.id} className="group relative">
+                      <a href={p.url} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={p.url}
+                          alt={col.label}
+                          className="h-20 w-full rounded-lg object-cover"
+                        />
+                      </a>
+                      <button
+                        onClick={() => supprimerPhoto(p)}
+                        disabled={deleting === p.id}
+                        className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-xs text-white hover:bg-red-600"
+                        title="Supprimer"
+                      >
+                        {deleting === p.id ? "…" : "✕"}
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -208,13 +251,21 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
-        >
-          {saving ? "Enregistrement…" : "Enregistrer"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+          >
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </button>
+          {saveStatus === "ok" && (
+            <span className="text-sm font-medium text-emerald-400">✓ {saveMessage}</span>
+          )}
+          {saveStatus === "erreur" && (
+            <span className="text-sm font-medium text-red-400">✕ {saveMessage}</span>
+          )}
+        </div>
       </form>
     </div>
   );
