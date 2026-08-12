@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import ChantiersMeteoCards from "@/components/ChantiersMeteoCards";
+import ChantiersMeteoCards from "@/components/ChantiersMeteoCards";
 
 const COULEURS = {
   vert: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
@@ -83,6 +84,13 @@ export default function MeteoPage() {
           </button>
 
           <div className="pt-4">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+          Chantiers actifs
+        </h2>
+        <ChantiersMeteoCards />
+      </div>
+
+      <div className="pt-4">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
           Chantiers actifs
         </h2>
