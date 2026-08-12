@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, calculerZone } from "@/components/ZoneCard";
 import PhotosNotes from "@/components/PhotosNotes";
+import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES } from "@/lib/meteoAlerte";
 
 type Chantier = {
   id: string;
@@ -15,6 +16,8 @@ type Chantier = {
   date_fin: string | null;
   statut: string;
   checklist: Record<string, boolean>;
+  materiau_structurel: Materiau;
+  moyen_acces: Acces;
   clients: { nom: string; adresse_chantier: string | null } | null;
 };
 
@@ -68,6 +71,21 @@ export default function ChantierDetailPage() {
       .update({ checklist: newChecklist })
       .eq("id", id);
     if (!error) setChantier({ ...chantier, checklist: newChecklist });
+  }
+
+  async function changerMateriau(materiau_structurel: Materiau) {
+    if (!chantier) return;
+    const { error } = await supabase
+      .from("chantiers")
+      .update({ materiau_structurel })
+      .eq("id", id);
+    if (!error) setChantier({ ...chantier, materiau_structurel });
+  }
+
+  async function changerAcces(moyen_acces: Acces) {
+    if (!chantier) return;
+    const { error } = await supabase.from("chantiers").update({ moyen_acces }).eq("id", id);
+    if (!error) setChantier({ ...chantier, moyen_acces });
   }
 
   async function ajouterZone() {
@@ -184,6 +202,45 @@ export default function ChantierDetailPage() {
             </select>
           </div>
 
+          <div className="grid gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs uppercase tracking-wide text-slate-500">
+                Matériau structurel
+              </label>
+              <select
+                value={chantier.materiau_structurel}
+                onChange={(e) => changerMateriau(e.target.value as Materiau)}
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              >
+                {Object.entries(LABELS_MATERIAU).map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wide text-slate-500">
+                Moyen d&apos;accès
+              </label>
+              <select
+                value={chantier.moyen_acces}
+                onChange={(e) => changerAcces(e.target.value as Acces)}
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              >
+                {Object.entries(LABELS_ACCES).map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-slate-500 sm:col-span-2">
+              Utilisés pour calculer l&apos;alerte météo/sécurité dans l&apos;onglet Météo &amp;
+              Alertes.
+            </p>
+          </div>
+
           <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-500">Checklist</p>
             <div className="mt-2 space-y-2">
@@ -237,8 +294,8 @@ export default function ChantierDetailPage() {
       {tab === "Documents" && (
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
           <p className="text-sm text-slate-400">
-            Devis et factures liés à ce chantier — à connecter une fois le module Devis & Factures
-            repris.
+            Devis et factures liés à ce chantier — à connecter une fois le module Devis &
+            Factures repris.
           </p>
         </div>
       )}
