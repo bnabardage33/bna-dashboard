@@ -1,0 +1,272 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import ZoneCard, { Zone, calculerZone } from "@/components/ZoneCard";
+
+type Chantier = {
+  id: string;
+  nom: string | null;
+  client_id: string;
+  date_debut: string | null;
+  date_fin: string | null;
+  statut: string;
+  checklist: Record<string, boolean>;
+  clients: { nom: string; adresse_chantier: string | null } | null;
+};
+
+const TABS = ["Général", "Métrés & Technique", "Photos & Notes", "Documents"] as const;
+
+export default function ChantierDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+
+  const [chantier, setChantier] = useState<Chantier | null>(null);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Général");
+
+  const fetchChantier = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("chantiers")
+      .select("*, clients(nom, adresse_chantier)")
+      .eq("id", id)
+      .single();
+    if (error) console.error(error);
+    else setChantier(data as Chantier);
+  }, [id]);
+
+  const fetchZones = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("chantier_zones")
+      .select("*")
+      .eq("chantier_id", id)
+      .order("created_at", { ascending: true });
+    if (error) console.error(error);
+    else setZones((data as Zone[]).map((z) => ({ ...z, ouvertures: z.ouvertures || [] })));
+  }, [id]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchChantier(), fetchZones()]).finally(() => setLoading(false));
+  }, [fetchChantier, fetchZones]);
+
+  async function changerStatut(statut: string) {
+    if (!chantier) return;
+    const { error } = await supabase.from("chantiers").update({ statut }).eq("id", id);
+    if (!error) setChantier({ ...chantier, statut });
+  }
+
+  async function toggleTache(tache: string) {
+    if (!chantier) return;
+    const newChecklist = { ...chantier.checklist, [tache]: !chantier.checklist[tache] };
+    const { error } = await supabase
+      .from("chantiers")
+      .update({ checklist: newChecklist })
+      .eq("id", id);
+    if (!error) setChantier({ ...chantier, checklist: newChecklist });
+  }
+
+  async function ajouterZone() {
+    const { data, error } = await supabase
+      .from("chantier_zones")
+      .insert({
+        chantier_id: id,
+        type: "facade",
+        nom: `Zone ${zones.length + 1}`,
+        largeur: 0,
+        hauteur_mur: 0,
+        materiau: "lames",
+        ouvertures: [],
+      })
+      .select()
+      .single();
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setZones((z) => [...z, { ...(data as Zone), ouvertures: [] }]);
+  }
+
+  async function updateZone(zone: Zone) {
+    setZones((zs) => zs.map((z) => (z.id === zone.id ? zone : z)));
+    const { error } = await supabase
+      .from("chantier_zones")
+      .update({
+        type: zone.type,
+        nom: zone.nom,
+        largeur: zone.largeur,
+        hauteur_mur: zone.hauteur_mur,
+        hauteur_faite: zone.hauteur_faite,
+        materiau: zone.materiau,
+        ouvertures: zone.ouvertures,
+      })
+      .eq("id", zone.id);
+    if (error) console.error(error);
+  }
+
+  async function supprimerZone(zoneId: string) {
+    const { error } = await supabase.from("chantier_zones").delete().eq("id", zoneId);
+    if (!error) setZones((zs) => zs.filter((z) => z.id !== zoneId));
+  }
+
+  const totaux = zones.reduce(
+    (acc, z) => {
+      const c = calculerZone(z);
+      return {
+        bruteFacade: acc.bruteFacade + c.bruteFacade,
+        brutePignon: acc.brutePignon + c.brutePignon,
+        ouvertures: acc.ouvertures + c.totalOuvertures,
+        nette: acc.nette + c.surfaceNette,
+        aCommander: acc.aCommander + c.surfaceACommander,
+      };
+    },
+    { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0 }
+  );
+
+  if (loading) return <p className="text-sm text-slate-400">Chargement…</p>;
+  if (!chantier) return <p className="text-sm text-red-400">Chantier introuvable.</p>;
+
+  return (
+    <div className="space-y-4">
+      <Link href="/terrain/chantier" className="text-sm text-slate-400 hover:text-white">
+        ← Chantiers
+      </Link>
+
+      <div>
+        <h1 className="text-xl font-semibold text-white">
+          {chantier.nom || chantier.clients?.nom || "Chantier"}
+        </h1>
+        <p className="text-sm text-slate-400">
+          {chantier.clients?.nom} · {chantier.date_debut || "?"} → {chantier.date_fin || "?"}
+        </p>
+      </div>
+
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-700">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`whitespace-nowrap px-3 py-2 text-sm font-medium ${
+              tab === t
+                ? "border-b-2 border-red-500 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === "Général" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Client</p>
+            <p className="text-white">{chantier.clients?.nom}</p>
+            {chantier.clients?.adresse_chantier && (
+              <p className="text-sm text-slate-400">{chantier.clients.adresse_chantier}</p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Statut</p>
+            <select
+              value={chantier.statut}
+              onChange={(e) => changerStatut(e.target.value)}
+              className="mt-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            >
+              <option value="prevu">Prévu</option>
+              <option value="en_cours">En cours</option>
+              <option value="termine">Terminé</option>
+            </select>
+          </div>
+
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Checklist</p>
+            <div className="mt-2 space-y-2">
+              {["tasseaux", "pare_pluie", "pose", "finition"].map((tache) => (
+                <label key={tache} className="flex items-center gap-2 text-sm text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={!!chantier.checklist?.[tache]}
+                    onChange={() => toggleTache(tache)}
+                  />
+                  {tache.replace("_", " ")}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "Métrés & Technique" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:grid-cols-5">
+            <Resume label="Brut façades" value={totaux.bruteFacade} />
+            <Resume label="Brut pignons" value={totaux.brutePignon} />
+            <Resume label="Ouvertures" value={totaux.ouvertures} />
+            <Resume label="Total net" value={totaux.nette} />
+            <Resume label="À commander" value={totaux.aCommander} highlight />
+          </div>
+
+          <div className="space-y-4">
+            {zones.map((zone) => (
+              <ZoneCard
+                key={zone.id}
+                zone={zone}
+                onChange={updateZone}
+                onDelete={supprimerZone}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={ajouterZone}
+            className="w-full rounded-xl border border-dashed border-slate-600 py-3 text-sm font-medium text-slate-400 hover:border-red-600/40 hover:text-red-400"
+          >
+            + Ajouter une zone
+          </button>
+        </div>
+      )}
+
+      {tab === "Photos & Notes" && (
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
+          <p className="text-sm text-slate-400">
+            Photos avant/pendant/après et bloc-notes terrain — à raccrocher au module Photos
+            existant.
+          </p>
+        </div>
+      )}
+
+      {tab === "Documents" && (
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
+          <p className="text-sm text-slate-400">
+            Devis et factures liés à ce chantier — à connecter une fois le module Devis & Factures
+            repris.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Resume({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className={`text-lg font-semibold ${highlight ? "text-red-400" : "text-white"}`}>
+        {value.toFixed(1)} m²
+      </p>
+    </div>
+  );
+}

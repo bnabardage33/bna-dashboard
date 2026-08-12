@@ -1,254 +1,165 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
-type Client = {
-  id: string
-  nom: string
-  adresse_chantier: string | null
-}
+type Client = { id: string; nom: string };
 
 type Chantier = {
-  id: string
-  client_id: string
-  date_debut: string | null
-  date_fin: string | null
-  statut: string
-  checklist: {
-    tasseaux?: boolean
-    pare_pluie?: boolean
-    pose?: boolean
-    finition?: boolean
-  }
-  clients: { nom: string; adresse_chantier: string | null } | null
-}
+  id: string;
+  nom: string | null;
+  client_id: string;
+  date_debut: string | null;
+  date_fin: string | null;
+  statut: string;
+  clients: { nom: string } | null;
+};
 
 export default function ChantiersPage() {
-  const [chantiers, setChantiers] = useState<Chantier[]>([])
-  const [clients, setClients] = useState<Client[]>([])
-  const [loading, setLoading] = useState(true)
-  const [clientId, setClientId] = useState('')
-  const [dateDebut, setDateDebut] = useState('')
-  const [dateFin, setDateFin] = useState('')
-  const [meteoMsg, setMeteoMsg] = useState<{ [key: string]: string }>({})
+  const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [nom, setNom] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [dateDebut, setDateDebut] = useState("");
+  const [dateFin, setDateFin] = useState("");
 
   async function fetchClients() {
-    const { data } = await supabase.from('clients').select('id, nom, adresse_chantier').order('nom')
-    if (data) setClients(data as Client[])
+    const { data } = await supabase.from("clients").select("id, nom").order("nom");
+    if (data) setClients(data as Client[]);
   }
 
   async function fetchChantiers() {
-    setLoading(true)
+    setLoading(true);
     const { data, error } = await supabase
-      .from('chantiers')
-      .select('*, clients(nom, adresse_chantier)')
-      .order('created_at', { ascending: false })
-
-    if (error) console.error(error)
-    else setChantiers(data as Chantier[])
-    setLoading(false)
+      .from("chantiers")
+      .select("*, clients(nom)")
+      .order("created_at", { ascending: false });
+    if (error) console.error(error);
+    else setChantiers(data as Chantier[]);
+    setLoading(false);
   }
 
   useEffect(() => {
-    fetchClients()
-    fetchChantiers()
-  }, [])
+    fetchClients();
+    fetchChantiers();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!clientId) return
+    e.preventDefault();
+    if (!clientId) return;
 
-    const { error } = await supabase.from('chantiers').insert({
+    const { error } = await supabase.from("chantiers").insert({
+      nom: nom || null,
       client_id: clientId,
       date_debut: dateDebut || null,
       date_fin: dateFin || null,
-      statut: 'prevu',
+      statut: "prevu",
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
-    })
+    });
 
     if (error) {
-      alert('Erreur : ' + error.message)
-      return
+      alert("Erreur : " + error.message);
+      return;
     }
 
-    setClientId('')
-    setDateDebut('')
-    setDateFin('')
-    fetchChantiers()
-  }
-
-  async function toggleTache(chantier: Chantier, tache: string) {
-    const newChecklist = { ...chantier.checklist, [tache]: !chantier.checklist[tache as keyof typeof chantier.checklist] }
-    const { error } = await supabase
-      .from('chantiers')
-      .update({ checklist: newChecklist })
-      .eq('id', chantier.id)
-
-    if (!error) fetchChantiers()
-  }
-
-  async function changerStatut(chantier: Chantier, statut: string) {
-    const { error } = await supabase.from('chantiers').update({ statut }).eq('id', chantier.id)
-    if (!error) fetchChantiers()
-  }
-
-  async function verifierMeteo(chantier: Chantier) {
-    const adresse = chantier.clients?.adresse_chantier
-    if (!adresse) {
-      setMeteoMsg((m) => ({ ...m, [chantier.id]: "Pas d'adresse renseignée pour ce client." }))
-      return
-    }
-
-    const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
-
-    try {
-      const geoRes = await fetch(
-        `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(adresse)}&limit=1`
-      )
-      const geoData = await geoRes.json()
-
-      if (!geoData.features || geoData.features.length === 0) {
-        setMeteoMsg((m) => ({ ...m, [chantier.id]: "Adresse introuvable (vérifie qu'elle inclut la ville)." }))
-        return
-      }
-
-      const [lon, lat] = geoData.features[0].geometry.coordinates
-      const villeTrouvee = geoData.features[0].properties.city
-
-      const forecastRes = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=fr`
-      )
-      const forecastData = await forecastRes.json()
-
-      if (!forecastData.list) {
-        setMeteoMsg((m) => ({ ...m, [chantier.id]: 'Erreur météo : ' + (forecastData.message || 'clé API pas encore active ?') }))
-        return
-      }
-
-      const targetTime = Date.now() + 6 * 24 * 60 * 60 * 1000
-      let closest = forecastData.list[0]
-      let closestDiff = Infinity
-      for (const entry of forecastData.list) {
-        const diff = Math.abs(entry.dt * 1000 - targetTime)
-        if (diff < closestDiff) {
-          closestDiff = diff
-          closest = entry
-        }
-      }
-
-      const probaPluie = Math.round((closest.pop || 0) * 100)
-      const temp = Math.round(closest.main.temp)
-      const description = closest.weather[0].description
-      const statutMeteo = probaPluie >= 50 ? 'alerte' : 'normal'
-
-      await supabase.from('meteo_log').insert({
-        chantier_id: chantier.id,
-        date: new Date(closest.dt * 1000).toISOString().split('T')[0],
-        prevision_json: closest,
-        probabilite_pluie: probaPluie,
-        temperature: temp,
-        statut: statutMeteo,
-      })
-
-      const alerte = probaPluie >= 50 ? ' ⚠️ Reporter la pose ?' : ''
-      setMeteoMsg((m) => ({
-        ...m,
-        [chantier.id]: `${villeTrouvee} — J+6 : ${description}, ${temp}°C, pluie ${probaPluie}%.${alerte}`,
-      }))
-    } catch (err) {
-      setMeteoMsg((m) => ({ ...m, [chantier.id]: 'Erreur météo : ' + (err as Error).message }))
-    }
+    setNom("");
+    setClientId("");
+    setDateDebut("");
+    setDateFin("");
+    fetchChantiers();
   }
 
   return (
-    <main className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Chantiers</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-white">Chantiers</h1>
+        <p className="text-sm text-slate-400">Suivi de la pose et du bardage</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mb-8 space-y-3 border p-4 rounded-lg">
-        <h2 className="font-semibold">Créer un chantier</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-4"
+      >
+        <h2 className="font-medium text-white">Nouveau chantier</h2>
+        <input
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          placeholder="Nom du chantier (ex. Bardage bois — hangar)"
+          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+        />
         <select
-          className="border p-2 w-full rounded"
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
           required
+          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
         >
           <option value="">-- Choisir un client --</option>
           {clients.map((c) => (
-            <option key={c.id} value={c.id}>{c.nom}</option>
+            <option key={c.id} value={c.id}>
+              {c.nom}
+            </option>
           ))}
         </select>
-        <label className="block text-sm">Date début</label>
-        <input
-          type="date"
-          className="border p-2 w-full rounded"
-          value={dateDebut}
-          onChange={(e) => setDateDebut(e.target.value)}
-        />
-        <label className="block text-sm">Date fin</label>
-        <input
-          type="date"
-          className="border p-2 w-full rounded"
-          value={dateFin}
-          onChange={(e) => setDateFin(e.target.value)}
-        />
-        <button type="submit" className="bg-black text-white px-4 py-2 rounded">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs uppercase tracking-wide text-slate-500">
+              Date début
+            </label>
+            <input
+              type="date"
+              value={dateDebut}
+              onChange={(e) => setDateDebut(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wide text-slate-500">
+              Date fin
+            </label>
+            <input
+              type="date"
+              value={dateFin}
+              onChange={(e) => setDateFin(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+        </div>
+        <button
+          type="submit"
+          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+        >
           Créer le chantier
         </button>
       </form>
 
-      <h2 className="font-semibold mb-3">Liste des chantiers</h2>
       {loading ? (
-        <p>Chargement...</p>
+        <p className="text-sm text-slate-400">Chargement…</p>
       ) : chantiers.length === 0 ? (
-        <p className="text-gray-500">Aucun chantier pour l'instant.</p>
+        <p className="text-sm text-slate-500">Aucun chantier pour l&apos;instant.</p>
       ) : (
-        <ul className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {chantiers.map((ch) => (
-            <li key={ch.id} className="border p-3 rounded-lg">
-              <p className="font-medium">{ch.clients?.nom || 'Client inconnu'}</p>
-              <p className="text-sm text-gray-600">
-                {ch.date_debut || '?'} → {ch.date_fin || '?'}
+            <Link
+              key={ch.id}
+              href={`/terrain/chantier/${ch.id}`}
+              className="rounded-xl border border-slate-700 bg-slate-800 p-4 hover:border-red-600/40"
+            >
+              <p className="font-medium text-white">
+                {ch.nom || ch.clients?.nom || "Chantier sans nom"}
               </p>
-              <select
-                className="border p-1 rounded mt-2 text-sm"
-                value={ch.statut}
-                onChange={(e) => changerStatut(ch, e.target.value)}
-              >
-                <option value="prevu">Prévu</option>
-                <option value="en_cours">En cours</option>
-                <option value="termine">Terminé</option>
-              </select>
-              <div className="mt-2 space-y-1 text-sm">
-                {['tasseaux', 'pare_pluie', 'pose', 'finition'].map((tache) => (
-                  <label key={tache} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!ch.checklist?.[tache as keyof typeof ch.checklist]}
-                      onChange={() => toggleTache(ch, tache)}
-                    />
-                    {tache.replace('_', ' ')}
-                  </label>
-                ))}
-              </div>
-
-              {ch.statut !== 'termine' && (
-                <div className="mt-3">
-                  <button
-                    onClick={() => verifierMeteo(ch)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                  >
-                    Vérifier météo
-                  </button>
-                  {meteoMsg[ch.id] && (
-                    <p className="text-sm mt-2 text-gray-700">{meteoMsg[ch.id]}</p>
-                  )}
-                </div>
-              )}
-            </li>
+              <p className="text-sm text-slate-400">{ch.clients?.nom}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {ch.date_debut || "?"} → {ch.date_fin || "?"}
+              </p>
+              <span className="mt-2 inline-block rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-300">
+                {ch.statut}
+              </span>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
-    </main>
-  )
+    </div>
+  );
 }
