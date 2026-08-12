@@ -16,9 +16,13 @@ export type Zone = {
 
 export function calculerZone(zone: Zone) {
   const bruteFacade = zone.type === "facade" ? zone.largeur * zone.hauteur_mur : 0;
+
   const hFaite = zone.hauteur_faite ?? 0;
-  const brutePignon =
+  const rectanglePignon = zone.type === "pignon" ? zone.largeur * zone.hauteur_mur : 0;
+  const trianglePignon =
     zone.type === "pignon" ? (zone.largeur * (hFaite - zone.hauteur_mur)) / 2 : 0;
+  const brutePignon = rectanglePignon + trianglePignon;
+
   const pente =
     zone.type === "pignon" && zone.largeur > 0
       ? ((hFaite - zone.hauteur_mur) / (zone.largeur / 2)) * 100
@@ -108,7 +112,7 @@ export default function ZoneCard({
           onChange={(v) => update({ largeur: v })}
         />
         <Field
-          label="H. mur / rampant (m)"
+          label={zone.type === "pignon" ? "H. mur (rectangle, m)" : "H. mur / rampant (m)"}
           value={zone.hauteur_mur}
           onChange={(v) => update({ hauteur_mur: v })}
         />
