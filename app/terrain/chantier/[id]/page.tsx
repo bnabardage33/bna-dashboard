@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, calculerZone } from "@/components/ZoneCard";
+import PhotosNotes from "@/components/PhotosNotes";
 
 type Chantier = {
   id: string;
@@ -231,14 +232,7 @@ export default function ChantierDetailPage() {
         </div>
       )}
 
-      {tab === "Photos & Notes" && (
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
-          <p className="text-sm text-slate-400">
-            Photos avant/pendant/après et bloc-notes terrain — à raccrocher au module Photos
-            existant.
-          </p>
-        </div>
-      )}
+      {tab === "Photos & Notes" && <PhotosNotes chantierId={id} />}
 
       {tab === "Documents" && (
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
