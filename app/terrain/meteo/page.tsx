@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import ChantiersMeteoCards from "@/components/ChantiersMeteoCards";
-import ChantiersMeteoCards from "@/components/ChantiersMeteoCards";
 
 const COULEURS = {
   vert: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
