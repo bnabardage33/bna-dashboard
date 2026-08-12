@@ -107,21 +107,34 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
       <div className="grid gap-3 sm:grid-cols-3">
         {COLONNES.map((col) => {
           const photosColonne = photos.filter((p) => p.type === col.type);
+          const busy = uploading === col.type;
           return (
             <div key={col.type} className="rounded-xl border border-slate-700 bg-slate-800 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-medium text-white">{col.label}</p>
-                <label className="cursor-pointer text-xs font-medium text-red-400 hover:text-red-300">
-                  {uploading === col.type ? "Envoi…" : "+ Ajouter"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    disabled={uploading !== null}
-                    onChange={(e) => handleUpload(col.type, e.target.files?.[0])}
-                  />
-                </label>
+                <div className="flex gap-2">
+                  <label className="cursor-pointer text-xs font-medium text-red-400 hover:text-red-300">
+                    {busy ? "Envoi…" : "📷 Prendre"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      disabled={uploading !== null}
+                      onChange={(e) => handleUpload(col.type, e.target.files?.[0])}
+                    />
+                  </label>
+                  <label className="cursor-pointer text-xs font-medium text-sky-400 hover:text-sky-300">
+                    {busy ? "…" : "🖼️ Importer"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading !== null}
+                      onChange={(e) => handleUpload(col.type, e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
               </div>
 
               {photosColonne.length === 0 ? (
