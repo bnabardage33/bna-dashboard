@@ -26,6 +26,7 @@ export default function ChantiersPage() {
   const [adresse, setAdresse] = useState("");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   async function fetchClients() {
     const { data } = await supabase
@@ -75,6 +76,18 @@ export default function ChantiersPage() {
     setAdresse("");
     setDateDebut("");
     setDateFin("");
+    fetchChantiers();
+  }
+
+  async function supprimerChantier(ch: Chantier) {
+    if (!confirm(`Supprimer le chantier "${ch.nom || ch.clients?.nom}" ?`)) return;
+    setDeleting(ch.id);
+    const { error } = await supabase.from("chantiers").delete().eq("id", ch.id);
+    setDeleting(null);
+    if (error) {
+      alert("Erreur : " + error.message);
+      return;
+    }
     fetchChantiers();
   }
 
@@ -185,6 +198,13 @@ export default function ChantiersPage() {
                   📍 {ch.adresse_chantier}
                 </a>
               )}
+              <button
+                onClick={() => supprimerChantier(ch)}
+                disabled={deleting === ch.id}
+                className="mt-3 text-xs font-medium text-slate-500 hover:text-red-400"
+              >
+                {deleting === ch.id ? "Suppression…" : "🗑️ Supprimer"}
+              </button>
             </div>
           ))}
         </div>

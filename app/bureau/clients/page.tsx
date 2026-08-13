@@ -10,6 +10,8 @@ type Client = {
   societe: string | null;
   siret: string | null;
   adresse_facturation: string | null;
+  code_postal: string | null;
+  ville: string | null;
   tel: string | null;
   email: string | null;
   created_at: string;
@@ -19,12 +21,15 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [recherche, setRecherche] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const [type, setType] = useState<"particulier" | "professionnel">("particulier");
   const [nom, setNom] = useState("");
   const [societe, setSociete] = useState("");
   const [siret, setSiret] = useState("");
   const [adresse, setAdresse] = useState("");
+  const [codePostal, setCodePostal] = useState("");
+  const [ville, setVille] = useState("");
   const [tel, setTel] = useState("");
   const [email, setEmail] = useState("");
 
@@ -53,6 +58,8 @@ export default function ClientsPage() {
       societe: type === "professionnel" ? societe || null : null,
       siret: type === "professionnel" ? siret || null : null,
       adresse_facturation: adresse || null,
+      code_postal: codePostal || null,
+      ville: ville || null,
       tel: tel || null,
       email: email || null,
     });
@@ -67,8 +74,27 @@ export default function ClientsPage() {
     setSociete("");
     setSiret("");
     setAdresse("");
+    setCodePostal("");
+    setVille("");
     setTel("");
     setEmail("");
+    fetchClients();
+  }
+
+  async function supprimerClient(client: Client) {
+    if (
+      !confirm(
+        `Supprimer ${client.nom} ? Cette action supprimera aussi ses chantiers liés.`
+      )
+    )
+      return;
+    setDeleting(client.id);
+    const { error } = await supabase.from("clients").delete().eq("id", client.id);
+    setDeleting(null);
+    if (error) {
+      alert("Erreur : " + error.message);
+      return;
+    }
     fetchClients();
   }
 
@@ -79,7 +105,8 @@ export default function ClientsPage() {
       c.nom.toLowerCase().includes(q) ||
       (c.societe ?? "").toLowerCase().includes(q) ||
       (c.tel ?? "").toLowerCase().includes(q) ||
-      (c.email ?? "").toLowerCase().includes(q)
+      (c.email ?? "").toLowerCase().includes(q) ||
+      (c.ville ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -148,6 +175,20 @@ export default function ClientsPage() {
         <div className="grid grid-cols-2 gap-3">
           <input
             className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            placeholder="Code postal"
+            value={codePostal}
+            onChange={(e) => setCodePostal(e.target.value)}
+          />
+          <input
+            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            placeholder="Ville"
+            value={ville}
+            onChange={(e) => setVille(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
             placeholder="Téléphone"
             value={tel}
             onChange={(e) => setTel(e.target.value)}
@@ -198,13 +239,28 @@ export default function ClientsPage() {
                     <p className="text-xs text-slate-500">SIRET {c.siret}</p>
                   )}
                 </div>
-                <span className="rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-400">
-                  {c.type === "professionnel" ? "Pro" : "Particulier"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-400">
+                    {c.type === "professionnel" ? "Pro" : "Particulier"}
+                  </span>
+                  <button
+                    onClick={() => supprimerClient(c)}
+                    disabled={deleting === c.id}
+                    className="text-xs font-medium text-slate-500 hover:text-red-400"
+                    title="Supprimer"
+                  >
+                    {deleting === c.id ? "…" : "🗑️"}
+                  </button>
+                </div>
               </div>
 
               {c.adresse_facturation && (
                 <p className="mt-2 text-sm text-slate-400">{c.adresse_facturation}</p>
+              )}
+              {(c.code_postal || c.ville) && (
+                <p className="text-sm text-slate-400">
+                  {c.code_postal} {c.ville}
+                </p>
               )}
 
               <div className="mt-3 flex flex-wrap gap-3 text-sm">
