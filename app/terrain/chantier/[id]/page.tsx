@@ -16,9 +16,10 @@ type Chantier = {
   date_fin: string | null;
   statut: string;
   checklist: Record<string, boolean>;
+  adresse_chantier: string | null;
   materiau_structurel: Materiau;
   moyen_acces: Acces;
-  clients: { nom: string; adresse_chantier: string | null } | null;
+  clients: { nom: string } | null;
 };
 
 const TABS = ["Général", "Métrés & Technique", "Photos & Notes", "Documents"] as const;
@@ -35,7 +36,7 @@ export default function ChantierDetailPage() {
   const fetchChantier = useCallback(async () => {
     const { data, error } = await supabase
       .from("chantiers")
-      .select("*, clients(nom, adresse_chantier)")
+      .select("*, clients(nom)")
       .eq("id", id)
       .single();
     if (error) console.error(error);
@@ -86,6 +87,15 @@ export default function ChantierDetailPage() {
     if (!chantier) return;
     const { error } = await supabase.from("chantiers").update({ moyen_acces }).eq("id", id);
     if (!error) setChantier({ ...chantier, moyen_acces });
+  }
+
+  async function changerAdresse(adresse_chantier: string) {
+    if (!chantier) return;
+    const { error } = await supabase
+      .from("chantiers")
+      .update({ adresse_chantier })
+      .eq("id", id);
+    if (!error) setChantier({ ...chantier, adresse_chantier });
   }
 
   async function ajouterZone() {
@@ -184,8 +194,33 @@ export default function ChantierDetailPage() {
           <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-500">Client</p>
             <p className="text-white">{chantier.clients?.nom}</p>
-            {chantier.clients?.adresse_chantier && (
-              <p className="text-sm text-slate-400">{chantier.clients.adresse_chantier}</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Adresse du chantier
+            </p>
+            <input
+              defaultValue={chantier.adresse_chantier ?? ""}
+              onBlur={(e) => {
+                if (e.target.value !== (chantier.adresse_chantier ?? "")) {
+                  changerAdresse(e.target.value);
+                }
+              }}
+              placeholder="Ex. 12 rue des Vignes, 33000 Bordeaux"
+              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            />
+            {chantier.adresse_chantier && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  chantier.adresse_chantier
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block text-xs font-medium text-sky-400 hover:text-sky-300"
+              >
+                📍 Ouvrir dans Maps / Waze
+              </a>
             )}
           </div>
 

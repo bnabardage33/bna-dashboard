@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-type Client = { id: string; nom: string };
+type Client = { id: string; nom: string; societe: string | null };
 
 type Chantier = {
   id: string;
   nom: string | null;
   client_id: string;
+  adresse_chantier: string | null;
   date_debut: string | null;
   date_fin: string | null;
   statut: string;
-  clients: { nom: string } | null;
+  clients: { nom: string; societe: string | null } | null;
 };
 
 export default function ChantiersPage() {
@@ -22,11 +23,15 @@ export default function ChantiersPage() {
   const [loading, setLoading] = useState(true);
   const [nom, setNom] = useState("");
   const [clientId, setClientId] = useState("");
+  const [adresse, setAdresse] = useState("");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
 
   async function fetchClients() {
-    const { data } = await supabase.from("clients").select("id, nom").order("nom");
+    const { data } = await supabase
+      .from("clients")
+      .select("id, nom, societe")
+      .order("nom");
     if (data) setClients(data as Client[]);
   }
 
@@ -34,7 +39,7 @@ export default function ChantiersPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("chantiers")
-      .select("*, clients(nom)")
+      .select("*, clients(nom, societe)")
       .order("created_at", { ascending: false });
     if (error) console.error(error);
     else setChantiers(data as Chantier[]);
@@ -53,6 +58,7 @@ export default function ChantiersPage() {
     const { error } = await supabase.from("chantiers").insert({
       nom: nom || null,
       client_id: clientId,
+      adresse_chantier: adresse || null,
       date_debut: dateDebut || null,
       date_fin: dateFin || null,
       statut: "prevu",
@@ -66,6 +72,7 @@ export default function ChantiersPage() {
 
     setNom("");
     setClientId("");
+    setAdresse("");
     setDateDebut("");
     setDateFin("");
     fetchChantiers();
@@ -98,10 +105,16 @@ export default function ChantiersPage() {
           <option value="">-- Choisir un client --</option>
           {clients.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.nom}
+              {c.societe ? `${c.societe} (${c.nom})` : c.nom}
             </option>
           ))}
         </select>
+        <input
+          value={adresse}
+          onChange={(e) => setAdresse(e.target.value)}
+          placeholder="Adresse du chantier (site des travaux)"
+          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+        />
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs uppercase tracking-wide text-slate-500">
@@ -141,22 +154,38 @@ export default function ChantiersPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {chantiers.map((ch) => (
-            <Link
+            <div
               key={ch.id}
-              href={`/terrain/chantier/${ch.id}`}
               className="rounded-xl border border-slate-700 bg-slate-800 p-4 hover:border-red-600/40"
             >
-              <p className="font-medium text-white">
-                {ch.nom || ch.clients?.nom || "Chantier sans nom"}
-              </p>
-              <p className="text-sm text-slate-400">{ch.clients?.nom}</p>
-              <p className="mt-1 text-xs text-slate-500">
-                {ch.date_debut || "?"} → {ch.date_fin || "?"}
-              </p>
-              <span className="mt-2 inline-block rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-300">
-                {ch.statut}
-              </span>
-            </Link>
+              <Link href={`/terrain/chantier/${ch.id}`}>
+                <p className="font-medium text-white">
+                  {ch.nom || ch.clients?.nom || "Chantier sans nom"}
+                </p>
+                <p className="text-sm text-slate-400">
+                  {ch.clients?.societe || ch.clients?.nom}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {ch.date_debut || "?"} → {ch.date_fin || "?"}
+                </p>
+                <span className="mt-2 inline-block rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-300">
+                  {ch.statut}
+                </span>
+              </Link>
+              {ch.adresse_chantier && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    ch.adresse_chantier
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-3 block text-xs font-medium text-sky-400 hover:text-sky-300"
+                >
+                  📍 {ch.adresse_chantier}
+                </a>
+              )}
+            </div>
           ))}
         </div>
       )}

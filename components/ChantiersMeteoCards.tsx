@@ -44,7 +44,7 @@ export default function ChantiersMeteoCards() {
 
       const { data, error } = await supabase
         .from("chantiers")
-        .select("id, nom, materiau_structurel, moyen_acces, statut, clients(adresse_chantier)")
+        .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut")
         .neq("statut", "termine");
 
       if (error || !data) {
@@ -55,7 +55,7 @@ export default function ChantiersMeteoCards() {
 
       const resultats = await Promise.all(
         data.map(async (ch: any) => {
-          const adresse = ch.clients?.adresse_chantier as string | null;
+          const adresse = ch.adresse_chantier as string | null;
           if (!adresse) {
             return {
               id: ch.id,
