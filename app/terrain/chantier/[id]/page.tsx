@@ -284,18 +284,33 @@ export default function ChantierDetailPage() {
             </div>
             <div>
               <label className="text-xs uppercase tracking-wide text-slate-500">
-                Zone de vent (1 à 4)
+                Zone de vent
               </label>
-              <select
-                value={chantier.zone_vent}
-                onChange={(e) => changerZoneVent(parseInt(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-              >
-                <option value={1}>Zone 1</option>
-                <option value={2}>Zone 2</option>
-                <option value={3}>Zone 3</option>
-                <option value={4}>Zone 4 (bord de mer / altitude)</option>
-              </select>
+              <div className="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => changerZoneVent(1)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
+                    chantier.zone_vent < 3
+                      ? "bg-red-600 text-white"
+                      : "border border-slate-600 text-slate-300"
+                  }`}
+                >
+                  Zone 1/2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changerZoneVent(3)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
+                    chantier.zone_vent >= 3
+                      ? "bg-red-600 text-white"
+                      : "border border-slate-600 text-slate-300"
+                  }`}
+                >
+                  Zone 3/4
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Bord de mer / altitude → 3/4</p>
             </div>
             <p className="text-xs text-slate-500 sm:col-span-2">
               Utilisés pour calculer l&apos;alerte météo/sécurité dans l&apos;onglet Météo &amp;

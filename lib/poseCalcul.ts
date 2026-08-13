@@ -27,7 +27,7 @@ function intervalles(longueur: number, marge: number, entraxeMax: number) {
 function calculerHPL(largeur: number, hauteur: number, angle: boolean, zoneVent: number): ResultatPose {
   const margeEquerre = 0.15;
   const entraxeHorizontal = 0.6; // chevron 75x75
-  const entraxeVerticalAngle = zoneVent === 4 ? 0.45 : 0.9;
+  const entraxeVerticalAngle = zoneVent >= 3 ? 0.45 : 0.9;
   const entraxeVertical = angle ? entraxeVerticalAngle : 1.15;
 
   const nbFixationsParChevron = intervalles(hauteur, margeEquerre, entraxeVertical) + 1;
@@ -45,7 +45,7 @@ function calculerHPL(largeur: number, hauteur: number, angle: boolean, zoneVent:
     remarques: [
       "Longueur chevron standard : 3 m",
       angle ? "Angle : double chevron fixé ensemble (superwood)" : "",
-      zoneVent >= 3 ? `Zone de vent ${zoneVent} : entraxe angle réduit à ${entraxeVerticalAngle * 100} cm` : "",
+      zoneVent >= 3 ? `Zone de vent 3/4 : entraxe angle réduit à ${entraxeVerticalAngle * 100} cm` : "",
     ].filter(Boolean),
   };
 }
