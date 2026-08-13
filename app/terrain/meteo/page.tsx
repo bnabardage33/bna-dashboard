@@ -89,13 +89,6 @@ export default function MeteoPage() {
         <ChantiersMeteoCards />
       </div>
 
-      <div className="pt-4">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Chantiers actifs
-        </h2>
-        <ChantiersMeteoCards />
-      </div>
-
       {detailOuvert && (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
               {meteo.heures.map((h) => (
