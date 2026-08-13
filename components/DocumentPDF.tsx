@@ -41,6 +41,7 @@ export type DocumentData = {
   tva_pct: number;
   acompte_pct?: number | null;
   delai_jours?: number | null;
+  type_facture?: "acompte" | "solde" | "totale";
 };
 
 function euros(n: number) {
@@ -89,6 +90,11 @@ export default function DocumentPDF({
           <span className="mt-1 inline-block rounded-full bg-slate-900 px-3 py-0.5 text-xs font-medium text-white">
             {doc.statut}
           </span>
+          {doc.kind === "facture" && doc.type_facture && doc.type_facture !== "totale" && (
+            <span className="ml-2 mt-1 inline-block rounded-full bg-red-600 px-3 py-0.5 text-xs font-semibold uppercase text-white">
+              {doc.type_facture}
+            </span>
+          )}
         </div>
       </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
+import { prochainNumero } from "@/lib/documents";
 
 type Client = {
   id: string;
@@ -90,15 +91,7 @@ export default function DevisPage() {
     fetchTout();
   }, []);
 
-  function prochainNumero() {
-    const annee = new Date().getFullYear();
-    const nums = devis
-      .map((d) => d.numero)
-      .filter((n) => n.startsWith(`DEV-${annee}-`))
-      .map((n) => parseInt(n.split("-")[2]) || 0);
-    const suivant = (nums.length ? Math.max(...nums) : 0) + 1;
-    return `DEV-${annee}-${String(suivant).padStart(3, "0")}`;
-  }
+
 
   function ajouterLigne() {
     setLignes((l) => [...l, { ...LIGNE_VIDE }]);
@@ -118,8 +111,10 @@ export default function DevisPage() {
     e.preventDefault();
     if (!clientId) return;
 
+    const numero = await prochainNumero("devis", "DEV");
+
     const { error } = await supabase.from("devis").insert({
-      numero: prochainNumero(),
+      numero,
       client_id: clientId,
       objet: objet || null,
       adresse_chantier: adresseChantier || null,
@@ -148,7 +143,56 @@ export default function DevisPage() {
 
   async function changerStatut(d: Devis, statut: string) {
     const { error } = await supabase.from("devis").update({ statut }).eq("id", d.id);
-    if (!error) fetchTout();
+    if (error) return;
+
+    if (statut === "accepte" && d.statut !== "accepte") {
+      await genererFactureAcompte(d);
+    }
+
+    fetchTout();
+  }
+
+  async function genererFactureAcompte(d: Devis) {
+    const { data: existantes } = await supabase
+      .from("factures")
+      .select("id")
+      .eq("devis_id", d.id)
+      .eq("type_facture", "acompte");
+
+    if (existantes && existantes.length > 0) return;
+
+    const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+    const pct = d.acompte_pct ?? 30;
+    const montantHT = totalHT * (pct / 100);
+
+    const numero = await prochainNumero("factures", "FAC");
+
+    const { error } = await supabase.from("factures").insert({
+      numero,
+      devis_id: d.id,
+      client_id: d.client_id,
+      objet: `Acompte ${pct}% — ${d.objet ?? d.numero}`,
+      adresse_chantier: d.adresse_chantier,
+      type_travaux: d.type_travaux,
+      tva_pct: d.tva_pct,
+      type_facture: "acompte",
+      statut: "brouillon",
+      lignes: [
+        {
+          designation: `Acompte ${pct}% à la commande`,
+          description: d.objet ?? undefined,
+          qte: 1,
+          unite: "forfait",
+          pu_ht: Math.round(montantHT * 100) / 100,
+        },
+      ],
+    });
+
+    if (error) {
+      alert("Devis accepté, mais erreur lors de la génération de la facture d'acompte : " + error.message);
+    } else {
+      alert(`Facture d'acompte ${numero} générée automatiquement (${pct}% — ${montantHT.toFixed(2)} € HT).`);
+    }
   }
 
   async function transformerEnChantier(d: Devis) {
@@ -283,7 +327,7 @@ export default function DevisPage() {
             className="max-h-[90vh] w-full max-w-2xl space-y-3 overflow-y-auto rounded-xl border border-slate-700 bg-slate-800 p-6"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Nouveau devis — {prochainNumero()}</h2>
+              <h2 className="text-lg font-semibold text-white">Nouveau devis</h2>
               <button type="button" onClick={() => setModalOuvert(false)} className="text-slate-400">
                 ✕
               </button>
