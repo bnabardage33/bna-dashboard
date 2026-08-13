@@ -19,6 +19,7 @@ type Chantier = {
   adresse_chantier: string | null;
   materiau_structurel: Materiau;
   moyen_acces: Acces;
+  zone_vent: number;
   clients: { nom: string } | null;
 };
 
@@ -98,6 +99,12 @@ export default function ChantierDetailPage() {
     if (!error) setChantier({ ...chantier, adresse_chantier });
   }
 
+  async function changerZoneVent(zone_vent: number) {
+    if (!chantier) return;
+    const { error } = await supabase.from("chantiers").update({ zone_vent }).eq("id", id);
+    if (!error) setChantier({ ...chantier, zone_vent });
+  }
+
   async function ajouterZone() {
     const { data, error } = await supabase
       .from("chantier_zones")
@@ -109,6 +116,8 @@ export default function ChantierDetailPage() {
         hauteur_mur: 0,
         materiau: "lames",
         ouvertures: [],
+        famille_pose: null,
+        angle: false,
       })
       .select()
       .single();
@@ -131,6 +140,9 @@ export default function ChantierDetailPage() {
         hauteur_faite: zone.hauteur_faite,
         materiau: zone.materiau,
         ouvertures: zone.ouvertures,
+        famille_pose: zone.famille_pose,
+        angle: zone.angle,
+        largeur_lame_mm: zone.largeur_lame_mm,
       })
       .eq("id", zone.id);
     if (error) console.error(error);
@@ -270,6 +282,21 @@ export default function ChantierDetailPage() {
                 ))}
               </select>
             </div>
+            <div>
+              <label className="text-xs uppercase tracking-wide text-slate-500">
+                Zone de vent (1 à 4)
+              </label>
+              <select
+                value={chantier.zone_vent}
+                onChange={(e) => changerZoneVent(parseInt(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              >
+                <option value={1}>Zone 1</option>
+                <option value={2}>Zone 2</option>
+                <option value={3}>Zone 3</option>
+                <option value={4}>Zone 4 (bord de mer / altitude)</option>
+              </select>
+            </div>
             <p className="text-xs text-slate-500 sm:col-span-2">
               Utilisés pour calculer l&apos;alerte météo/sécurité dans l&apos;onglet Météo &amp;
               Alertes.
@@ -309,6 +336,7 @@ export default function ChantierDetailPage() {
               <ZoneCard
                 key={zone.id}
                 zone={zone}
+                zoneVent={chantier.zone_vent}
                 onChange={updateZone}
                 onDelete={supprimerZone}
               />
