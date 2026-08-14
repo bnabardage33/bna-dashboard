@@ -400,8 +400,9 @@ export default function DevisPage() {
                 <label className="text-xs uppercase text-slate-500">TVA (%)</label>
                 <input
                   type="number"
+                  step="0.1"
                   value={tva}
-                  onChange={(e) => setTva(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
                   className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                 />
               </div>
