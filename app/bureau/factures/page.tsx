@@ -82,6 +82,8 @@ export default function FacturesPage() {
   const [typeFacture, setTypeFacture] = useState<"acompte" | "solde" | "totale">("totale");
   const [tva, setTva] = useState(10);
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
+  const [totalDevisHT, setTotalDevisHT] = useState<number | null>(null);
+  const [dejaFactureHT, setDejaFactureHT] = useState<number | null>(null);
 
   async function fetchTout() {
     setLoading(true);
@@ -106,8 +108,10 @@ export default function FacturesPage() {
     fetchTout();
   }, []);
 
-  function chargerDepuisDevis(devisId: string) {
+  async function chargerDepuisDevis(devisId: string) {
     setDepuisDevis(devisId);
+    setTotalDevisHT(null);
+    setDejaFactureHT(null);
     if (!devisId) return;
     const d = devisAcceptes.find((x) => x.id === devisId);
     if (!d) return;
@@ -117,6 +121,35 @@ export default function FacturesPage() {
     setTypeTravaux(d.type_travaux ?? "");
     setTva(d.tva_pct);
     setLignes(d.lignes.length ? d.lignes : [{ ...LIGNE_VIDE }]);
+
+    const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+    setTotalDevisHT(totalHT);
+
+    const { data: facturesExistantes } = await supabase
+      .from("factures")
+      .select("lignes")
+      .eq("devis_id", devisId);
+
+    const deja = (facturesExistantes ?? []).reduce(
+      (s, f: any) => s + f.lignes.reduce((t: number, l: Ligne) => t + l.qte * l.pu_ht, 0),
+      0
+    );
+    setDejaFactureHT(deja);
+  }
+
+  function remplirSolde() {
+    if (totalDevisHT === null || dejaFactureHT === null) return;
+    const reste = Math.max(0, totalDevisHT - dejaFactureHT);
+    setLignes([
+      {
+        designation: "Solde de facturation",
+        description: objet || undefined,
+        qte: 1,
+        unite: "forfait",
+        pu_ht: Math.round(reste * 100) / 100,
+      },
+    ]);
+    setTypeFacture("solde");
   }
 
   function ajouterLigne() {
@@ -323,6 +356,32 @@ export default function FacturesPage() {
                   </option>
                 ))}
               </select>
+            )}
+
+            {totalDevisHT !== null && dejaFactureHT !== null && (
+              <div className="flex items-center justify-between rounded-lg border border-sky-600/30 bg-sky-600/5 p-3 text-sm">
+                <div>
+                  <p className="text-slate-300">
+                    Total devis HT : <span className="font-semibold text-white">{totalDevisHT.toFixed(2)} €</span>
+                  </p>
+                  <p className="text-slate-300">
+                    Déjà facturé HT : <span className="font-semibold text-white">{dejaFactureHT.toFixed(2)} €</span>
+                  </p>
+                  <p className="text-slate-300">
+                    Reste à facturer :{" "}
+                    <span className="font-semibold text-emerald-400">
+                      {Math.max(0, totalDevisHT - dejaFactureHT).toFixed(2)} €
+                    </span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={remplirSolde}
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+                >
+                  Remplir le solde
+                </button>
+              </div>
             )}
 
             <select
