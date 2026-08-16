@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BoutonMicroNote from "@/components/BoutonMicroNote";
 
 type Note = {
   id: string;
@@ -113,6 +114,12 @@ export default function NotesPage() {
           placeholder="Écris ta note ici…"
           rows={3}
           className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+        />
+        <BoutonMicroNote
+          onTexteReformule={(texte) =>
+            setContenu((prev) => (prev.trim() ? prev.trim() + " " + texte : texte))
+          }
+          onErreur={(msg) => console.warn(msg)}
         />
         <button
           type="submit"
