@@ -1,4 +1,11 @@
 // components/BoutonMicroNote.tsx
+// Bouton micro pour dicter une note terrain.
+// v2 : enregistre l'audio (MediaRecorder) puis l'envoie une seule fois à la fin
+// pour transcription (Whisper via Groq), au lieu d'utiliser la reconnaissance
+// vocale "live" du navigateur — instable sur Android avec une connexion faible
+// (redémarrages en boucle du moteur causant des mots/phrases dupliqués).
+// Flux : enregistrement → /api/transcrire-note (Whisper) → /api/reformuler-note (anonymisation + Groq)
+
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
@@ -9,121 +16,126 @@ interface BoutonMicroNoteProps {
   onErreur?: (message: string) => void;
 }
 
-type Etat = 'inactif' | 'ecoute' | 'traitement' | 'erreur';
+type Etat = 'inactif' | 'enregistrement' | 'transcription' | 'reformulation' | 'erreur';
 
 export default function BoutonMicroNote({ onTexteReformule, onErreur }: BoutonMicroNoteProps) {
   const [etat, setEtat] = useState<Etat>('inactif');
-  const [transcriptionLive, setTranscriptionLive] = useState('');
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const demarrerEcoute = useCallback(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const demarrerEnregistrement = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
 
-    if (!SpeechRecognition) {
-      const msg = "La reconnaissance vocale n'est pas supportée sur ce navigateur.";
-      setEtat('erreur');
-      onErreur?.(msg);
-      return;
-    }
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'fr-FR';
-    recognition.continuous = true;
-    recognition.interimResults = true;
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
 
-    let texteFinal = '';
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
 
-    recognition.onstart = () => {
-      setEtat('ecoute');
-      setTranscriptionLive('');
-    };
+      mediaRecorder.onstop = async () => {
+        streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
 
-    recognition.onresult = (event: any) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          texteFinal += transcript + ' ';
-        } else {
-          interim += transcript;
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+
+        if (audioBlob.size < 1000) {
+          setEtat('inactif');
+          return;
         }
-      }
-      setTranscriptionLive(texteFinal + interim);
-    };
 
-    recognition.onerror = (event: any) => {
-      const msg = `Erreur de reconnaissance vocale : ${event.error}`;
+        await traiterEnregistrement(audioBlob);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setEtat('enregistrement');
+    } catch (err: any) {
+      const msg = `Impossible d'accéder au micro : ${err.message}`;
       setEtat('erreur');
       onErreur?.(msg);
-    };
-
-    recognition.onend = async () => {
-      if (!texteFinal.trim()) {
-        setEtat('inactif');
-        return;
-      }
-      await envoyerPourReformulation(texteFinal.trim());
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    }
   }, [onTexteReformule, onErreur]);
 
-  const arreterEcoute = useCallback(() => {
-    recognitionRef.current?.stop();
+  const arreterEnregistrement = useCallback(() => {
+    mediaRecorderRef.current?.stop();
   }, []);
 
-  const envoyerPourReformulation = async (texteBrut: string) => {
-    setEtat('traitement');
+  const traiterEnregistrement = async (audioBlob: Blob) => {
+    setEtat('transcription');
     try {
-      const res = await fetch('/api/reformuler-note', {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'note.webm');
+
+      const resTranscription = await fetch('/api/transcrire-note', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!resTranscription.ok) {
+        throw new Error(`Erreur transcription (${resTranscription.status})`);
+      }
+
+      const dataTranscription = await resTranscription.json();
+      const texteBrut = dataTranscription.texteBrut?.trim();
+
+      if (!texteBrut) {
+        setEtat('inactif');
+        onErreur?.('Aucun texte détecté dans l\'enregistrement.');
+        return;
+      }
+
+      setEtat('reformulation');
+      const resReformulation = await fetch('/api/reformuler-note', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ texteBrut }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Erreur serveur (${res.status})`);
+      if (!resReformulation.ok) {
+        throw new Error(`Erreur reformulation (${resReformulation.status})`);
       }
 
-      const data = await res.json();
-      onTexteReformule(data.texteReformule ?? texteBrut);
+      const dataReformulation = await resReformulation.json();
+      onTexteReformule(dataReformulation.texteReformule ?? texteBrut);
       setEtat('inactif');
-      setTranscriptionLive('');
     } catch (err: any) {
-      onTexteReformule(texteBrut);
-      const msg = `Reformulation IA indisponible, texte brut utilisé (${err.message})`;
+      const msg = `Erreur lors du traitement : ${err.message}`;
       onErreur?.(msg);
       setEtat('inactif');
-      setTranscriptionLive('');
     }
   };
+
+  const enCours = etat === 'transcription' || etat === 'reformulation';
 
   return (
     <div className="flex flex-col gap-2">
       <button
         type="button"
-        onClick={etat === 'ecoute' ? arreterEcoute : demarrerEcoute}
-        disabled={etat === 'traitement'}
+        onClick={etat === 'enregistrement' ? arreterEnregistrement : demarrerEnregistrement}
+        disabled={enCours}
         className={`flex items-center justify-center gap-2 rounded-full px-5 py-3 font-medium transition-colors
-          ${etat === 'ecoute' ? 'bg-red-600 text-white animate-pulse' : ''}
-          ${etat === 'traitement' ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : ''}
+          ${etat === 'enregistrement' ? 'bg-red-600 text-white animate-pulse' : ''}
+          ${enCours ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : ''}
           ${etat === 'inactif' || etat === 'erreur' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
         `}
       >
-        {etat === 'traitement' && <Loader2 className="h-5 w-5 animate-spin" />}
-        {etat === 'ecoute' && <Square className="h-5 w-5" />}
+        {enCours && <Loader2 className="h-5 w-5 animate-spin" />}
+        {etat === 'enregistrement' && <Square className="h-5 w-5" />}
         {(etat === 'inactif' || etat === 'erreur') && <Mic className="h-5 w-5" />}
 
-        {etat === 'ecoute' && 'Arrêter'}
-        {etat === 'traitement' && 'Reformulation en cours…'}
+        {etat === 'enregistrement' && 'Arrêter'}
+        {etat === 'transcription' && 'Transcription en cours…'}
+        {etat === 'reformulation' && 'Reformulation en cours…'}
         {(etat === 'inactif' || etat === 'erreur') && 'Dicter une note'}
       </button>
-
-      {etat === 'ecoute' && transcriptionLive && (
-        <p className="text-sm text-gray-500 italic px-2">{transcriptionLive}</p>
-      )}
     </div>
   );
 }
