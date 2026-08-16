@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.0",
@@ -29,3 +29,4 @@
     "@tailwindcss/oxide-linux-x64-gnu": "^4.3.3"
   }
 }
+
