@@ -27,7 +27,7 @@ const TABS = ["Général", "Métrés & Technique", "Photos & Notes", "Documents"
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
-export const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
+const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
 
 export default function ChantierDetailPage() {
   const params = useParams();
