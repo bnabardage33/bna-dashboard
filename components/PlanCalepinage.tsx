@@ -118,7 +118,7 @@ export default function PlanCalepinage({
               { length: Math.floor(largeurM / (pose.entraxeHorizontal ?? largeurM)) + 1 },
               (_, i) => i * (pose.entraxeHorizontal ?? largeurM)
             )
-              .filter((x) => x <= largeurM + EPSILON)
+              .filter((x) => x <= largeurM + EPSILON_M)
               .map((x, i) => {
                 const yHaut = hauteurToitAtX(x);
                 return (
@@ -138,13 +138,13 @@ export default function PlanCalepinage({
               { length: Math.floor(largeurM / (pose.entraxeHorizontal ?? largeurM)) + 1 },
               (_, i) => i * (pose.entraxeHorizontal ?? largeurM)
             )
-              .filter((x) => x <= largeurM + EPSILON)
+              .filter((x) => x <= largeurM + EPSILON_M)
               .map((x, ci) =>
                 Array.from(
                   { length: Math.floor(hauteurAffichee / pose.entraxeVertical) + 1 },
                   (_, i) => i * pose.entraxeVertical
                 )
-                  .filter((y) => y <= hauteurToitAtX(x) + EPSILON)
+                  .filter((y) => y <= hauteurToitAtX(x) + EPSILON_M)
                   .map((y, ri) => (
                     <circle
                       key={`equerre-${ci}-${ri}`}
