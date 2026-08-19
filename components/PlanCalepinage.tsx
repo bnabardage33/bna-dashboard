@@ -388,16 +388,19 @@ export default function PlanCalepinage({
               ${px(0)},${py(0)}
               ${px(largeurM)},${py(0)}
               ${px(largeurM)},${py(hauteurM)}
-              ${px(largeurM / 2)},${py(hauteurFaiteCalculeeM)}
+              ${px(
+                largeurM / 2
+              )},${py(
+                hauteurFaiteCalculeeM
+              )}
               ${px(0)},${py(hauteurM)}
             `}
             fill="none"
             stroke="#64748b"
             strokeWidth={2}
-         />
-       ) : (
-          
-         <rect
+          />
+        ) : (
+          <rect
             x={MARGE_SVG}
             y={MARGE_SVG}
             width={largeurSvg}
@@ -496,30 +499,62 @@ export default function PlanCalepinage({
                   <g
                     key={`piece-${index}`}
                   >
-                    <rect
-                      x={px(p.xM)}
-                      y={py(
-                        p.yM +
-                          p.hauteurM
-                      )}
-                      width={
-                        p.largeurM *
-                        echelle
-                      }
-                      height={
-                        p.hauteurM *
-                        echelle
-                      }
-                      fill={
-                        p.type ===
-                        "pleine"
-                          ? "#38bdf8"
-                          : "#f59e0b"
-                      }
-                      fillOpacity={0.65}
-                      stroke="#f8fafc"
-                      strokeWidth={1.5}
-                    />
+                    {/*
+                     * Pour un pignon, chaque pièce peut avoir été
+                     * découpée par la pente du toit (p.points).
+                     * Dans ce cas on dessine le polygone réel
+                     * plutôt qu'un rectangle plein, sinon la pièce
+                     * déborderait visuellement au-dessus du rampant.
+                     */}
+
+                    {p.points ? (
+                      <polygon
+                        points={p.points
+                          .map(
+                            (pt) =>
+                              `${px(
+                                pt.xM
+                              )},${py(
+                                pt.yM
+                              )}`
+                          )
+                          .join(" ")}
+                        fill={
+                          p.type ===
+                          "pleine"
+                            ? "#38bdf8"
+                            : "#f59e0b"
+                        }
+                        fillOpacity={0.65}
+                        stroke="#f8fafc"
+                        strokeWidth={1.5}
+                      />
+                    ) : (
+                      <rect
+                        x={px(p.xM)}
+                        y={py(
+                          p.yM +
+                            p.hauteurM
+                        )}
+                        width={
+                          p.largeurM *
+                          echelle
+                        }
+                        height={
+                          p.hauteurM *
+                          echelle
+                        }
+                        fill={
+                          p.type ===
+                          "pleine"
+                            ? "#38bdf8"
+                            : "#f59e0b"
+                        }
+                        fillOpacity={0.65}
+                        stroke="#f8fafc"
+                        strokeWidth={1.5}
+                      />
+                    )}
 
                     {p.largeurM *
                         echelle >
@@ -657,4 +692,4 @@ export default function PlanCalepinage({
       </p>
     </div>
   );
-            }
+    }
