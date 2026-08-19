@@ -103,16 +103,19 @@ function decouperChevron(
 export default function PlanCalepinage({
   largeurM,
   hauteurM,
+  hauteurFaiteM,
   pose,
   calepinage,
   estPignon,
 }: {
   largeurM: number;
   hauteurM: number;
+  hauteurFaiteM: number | null;
   pose: ResultatPose | null;
   calepinage: ResultatCalepinage | null;
   estPignon: boolean;
 }) {
+  
   const [vue, setVue] = useState<
     "ossature" | "plaques"
   >("ossature");
