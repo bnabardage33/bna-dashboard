@@ -387,18 +387,17 @@ export default function PlanCalepinage({
             points={`
               ${px(0)},${py(0)}
               ${px(largeurM)},${py(0)}
-              ${px(
-                largeurM / 2
-              )},${py(
-                hauteurFaiteCalculeeM
-              )}
+              ${px(largeurM)},${py(hauteurM)}
+              ${px(largeurM / 2)},${py(hauteurFaiteCalculeeM)}
+              ${px(0)},${py(hauteurM)}
             `}
             fill="none"
             stroke="#64748b"
             strokeWidth={2}
-          />
-        ) : (
-          <rect
+         />
+       ) : (
+          
+         <rect
             x={MARGE_SVG}
             y={MARGE_SVG}
             width={largeurSvg}
