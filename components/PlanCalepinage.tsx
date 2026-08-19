@@ -7,7 +7,7 @@ import { ResultatCalepinage } from "@/lib/calepinageCalcul";
 const MARGE_SVG = 40;
 const LARGEUR_MAX_SVG = 700;
 
-// Longueur maximale réglementaire / chantier d'un chevron.
+// Longueur maximale d'un chevron.
 const LONGUEUR_MAX_CHEVRON_M = 3;
 
 type SegmentChevron = {
@@ -17,26 +17,43 @@ type SegmentChevron = {
   numero: number;
 };
 
+/**
+ * Calcule la hauteur disponible du pignon
+ * à une position X donnée.
+ *
+ * Le pignon est considéré comme symétrique :
+ * mur -> faîtage -> mur.
+ */
 function hauteurPignonA(
   xM: number,
   largeurM: number,
   hauteurMurM: number,
   hauteurFaiteM: number
-) {
-  if (largeurM <= 0) return hauteurMurM;
-
-  const demiLargeur = largeurM / 2;
-  const deltaHauteur = hauteurFaiteReelleM - hauteurMurM;
-
-  // Pignon symétrique :
-  // montée jusqu'au faîtage puis descente.
-  if (xM <= demiLargeur) {
-    return hauteurMurM + (xM / demiLargeur) * deltaHauteur;
+): number {
+  if (largeurM <= 0) {
+    return hauteurMurM;
   }
 
+  const demiLargeur = largeurM / 2;
+  const deltaHauteur = hauteurFaiteM - hauteurMurM;
+
+  if (deltaHauteur <= 0) {
+    return hauteurMurM;
+  }
+
+  // Côté gauche du pignon
+  if (xM <= demiLargeur) {
+    return (
+      hauteurMurM +
+      (xM / demiLargeur) * deltaHauteur
+    );
+  }
+
+  // Côté droit du pignon
   return (
     hauteurMurM +
-    ((largeurM - xM) / demiLargeur) * deltaHauteur
+    ((largeurM - xM) / demiLargeur) *
+      deltaHauteur
   );
 }
 
@@ -44,12 +61,15 @@ function hauteurPignonA(
  * Découpe un chevron selon sa longueur réelle.
  *
  * Exemple :
- * 4,70 m
- *   -> 3,00 m
- *   -> 1,70 m
  *
- * Chaque segment est ensuite traité comme un vrai chevron
- * et reçoit ses propres équerres.
+ * 4,70 m
+ *
+ * -> 3,00 m
+ * -> 1,70 m
+ *
+ * Chaque segment est considéré comme
+ * un chevron indépendant et reçoit donc
+ * ses propres équerres.
  */
 function decouperChevron(
   xM: number,
@@ -67,11 +87,13 @@ function decouperChevron(
       xM,
       largeurM,
       hauteurMurM,
-      hauteurFaiteReelleM
+      hauteurFaiteM
     );
   }
 
-  if (hauteurTotale <= 0) return [];
+  if (hauteurTotale <= 0) {
+    return [];
+  }
 
   const segments: SegmentChevron[] = [];
 
@@ -115,21 +137,37 @@ export default function PlanCalepinage({
   calepinage: ResultatCalepinage | null;
   estPignon: boolean;
 }) {
-  
   const [vue, setVue] = useState<
     "ossature" | "plaques"
   >("ossature");
 
-  if (largeurM <= 0 || hauteurM <= 0) return null;
+  if (largeurM <= 0 || hauteurM <= 0) {
+    return null;
+  }
 
-  const hauteurFaiteReelleM = estPignon
-  ? Math.max(hauteurM, hauteurFaiteM ?? hauteurM)
-  : hauteurM;
-    
+  /*
+   * Hauteur réelle du faîtage.
+   *
+   * Pour une façade :
+   * hauteur du plan = hauteur du mur.
+   *
+   * Pour un pignon :
+   * hauteur du plan = hauteur du faîtage.
+   */
+  const hauteurFaiteCalculeeM = estPignon
+    ? Math.max(
+        hauteurM,
+        hauteurFaiteReelleM ?? hauteurM
+      )
+    : hauteurM;
+
   const hauteurPlanM = estPignon
-  ? hauteurFaiteM
-  : hauteurM;
+    ? hauteurFaiteCalculeeM
+    : hauteurM;
 
+  /*
+   * Échelle SVG.
+   */
   const echelle =
     LARGEUR_MAX_SVG / largeurM;
 
@@ -153,59 +191,84 @@ export default function PlanCalepinage({
     (hauteurPlanM - yM) * echelle;
 
   /*
-   * Génération dynamique des chevrons.
+   * ============================================================
+   * CHEVRONS
+   * ============================================================
+   *
+   * Chaque chevron est calculé individuellement.
+   *
+   * Règle :
+   * maximum 3 mètres par chevron.
    */
   const chevrons: SegmentChevron[] = [];
 
   if (pose) {
     const entraxe =
-      pose.entraxeHorizontal ??
-      largeurM;
+      pose.entraxeHorizontal ?? largeurM;
 
-    const positionsX: number[] = [];
+    if (entraxe > 0) {
+      const positionsX: number[] = [];
 
-    for (
-      let x = 0;
-      x <= largeurM + 0.001;
-      x += entraxe
-    ) {
-      positionsX.push(
-        Math.min(x, largeurM)
-      );
-    }
+      for (
+        let x = 0;
+        x <= largeurM + 0.001;
+        x += entraxe
+      ) {
+        positionsX.push(
+          Math.min(x, largeurM)
+        );
+      }
 
-    if (
-      positionsX.length === 0 ||
-      positionsX[positionsX.length - 1] !== largeurM
-    ) {
-      positionsX.push(largeurM);
-    }
+      /*
+       * On garantit toujours un chevron
+       * sur le bord droit.
+       */
+      if (
+        positionsX.length === 0 ||
+        Math.abs(
+          positionsX[
+            positionsX.length - 1
+          ] - largeurM
+        ) > 0.001
+      ) {
+        positionsX.push(largeurM);
+      }
 
-    let numero = 1;
+      let numero = 1;
 
-    for (const x of positionsX) {
-      const segments = decouperChevron(
-        x,
-        hauteurM,
-        estPignon,
-        largeurM,
-        hauteurM,
-        hauteurFaiteReelleM,
-        numero
-      );
+      for (const x of positionsX) {
+        const segments =
+          decouperChevron(
+            x,
+            hauteurM,
+            estPignon,
+            largeurM,
+            hauteurM,
+            hauteurFaiteCalculeeM,
+            numero
+          );
 
-      chevrons.push(...segments);
+        chevrons.push(...segments);
 
-      numero += segments.length;
+        numero += segments.length;
+      }
     }
   }
 
   /*
-   * Équerres.
+   * ============================================================
+   * ÉQUERRES
+   * ============================================================
    *
-   * Chaque segment de chevron est indépendant.
-   * Une coupure à 3 m crée donc un nouveau chevron
-   * avec ses propres équerres.
+   * Chaque morceau de chevron est indépendant.
+   *
+   * Exemple :
+   *
+   * C1 = 3,00 m
+   * C2 = 1,70 m
+   *
+   * C1 possède ses équerres.
+   * C2 possède ses propres équerres.
    */
   const equerres: {
     xM: number;
@@ -213,22 +276,19 @@ export default function PlanCalepinage({
     chevron: number;
   }[] = [];
 
-  if (pose) {
+  if (
+    pose &&
+    pose.entraxeVertical > 0
+  ) {
     for (const chevron of chevrons) {
       const entraxeVertical =
         pose.entraxeVertical;
-
-      if (
-        entraxeVertical <= 0
-      ) {
-        continue;
-      }
 
       let y =
         chevron.yDebutM;
 
       /*
-       * Première équerre au début du segment.
+       * Première équerre.
        */
       equerres.push({
         xM: chevron.xM,
@@ -253,11 +313,10 @@ export default function PlanCalepinage({
       }
 
       /*
-       * Dernière équerre à la fin du chevron.
+       * Dernière équerre.
        */
       if (
-        chevron.yFinM -
-          y >
+        chevron.yFinM - y >
         0.001
       ) {
         equerres.push({
@@ -271,6 +330,10 @@ export default function PlanCalepinage({
 
   return (
     <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+      {/* ====================================================== */}
+      {/* EN-TÊTE */}
+      {/* ====================================================== */}
+
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           Plan de calepinage dynamique
@@ -307,11 +370,18 @@ export default function PlanCalepinage({
         </div>
       </div>
 
+      {/* ====================================================== */}
+      {/* PLAN SVG */}
+      {/* ====================================================== */}
+
       <svg
         viewBox={`0 0 ${viewW} ${viewH}`}
         className="w-full rounded bg-slate-950"
       >
-        {/* Contour réel de la zone */}
+        {/* ==================================================== */}
+        {/* CONTOUR DE LA ZONE */}
+        {/* ==================================================== */}
+
         {estPignon ? (
           <polygon
             points={`
@@ -320,7 +390,7 @@ export default function PlanCalepinage({
               ${px(
                 largeurM / 2
               )},${py(
-                hauteurFaiteReelleM
+                hauteurFaiteCalculeeM
               )}
             `}
             fill="none"
@@ -339,9 +409,14 @@ export default function PlanCalepinage({
           />
         )}
 
+        {/* ==================================================== */}
+        {/* OSSATURE */}
+        {/* ==================================================== */}
+
         {vue === "ossature" && (
           <g>
             {/* CHEVRONS */}
+
             {chevrons.map(
               (chevron) => (
                 <line
@@ -365,10 +440,11 @@ export default function PlanCalepinage({
             )}
 
             {/* ÉQUERRES */}
+
             {equerres.map(
-              (equerre, i) => (
+              (equerre, index) => (
                 <circle
-                  key={`equerre-${equerre.chevron}-${i}`}
+                  key={`equerre-${equerre.chevron}-${index}`}
                   cx={px(
                     equerre.xM
                   )}
@@ -384,6 +460,7 @@ export default function PlanCalepinage({
             )}
 
             {/* NUMÉROS DES CHEVRONS */}
+
             {chevrons.map(
               (chevron) => (
                 <text
@@ -408,12 +485,18 @@ export default function PlanCalepinage({
           </g>
         )}
 
+        {/* ==================================================== */}
+        {/* PLAQUES */}
+        {/* ==================================================== */}
+
         {vue === "plaques" &&
           calepinage && (
             <g>
               {calepinage.pieces.map(
-                (p, i) => (
-                  <g key={i}>
+                (p, index) => (
+                  <g
+                    key={`piece-${index}`}
+                  >
                     <rect
                       x={px(p.xM)}
                       y={py(
@@ -483,12 +566,17 @@ export default function PlanCalepinage({
           )}
       </svg>
 
+      {/* ====================================================== */}
+      {/* INFOS OSSATURE */}
+      {/* ====================================================== */}
+
       {vue === "ossature" && (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <div>
             <p className="text-slate-500">
               Chevrons
             </p>
+
             <p className="font-semibold text-white">
               {chevrons.length}
             </p>
@@ -498,6 +586,7 @@ export default function PlanCalepinage({
             <p className="text-slate-500">
               Équerres
             </p>
+
             <p className="font-semibold text-white">
               {equerres.length}
             </p>
@@ -507,12 +596,17 @@ export default function PlanCalepinage({
             <p className="text-slate-500">
               Max / chevron
             </p>
+
             <p className="font-semibold text-white">
               3,00 m
             </p>
           </div>
         </div>
       )}
+
+      {/* ====================================================== */}
+      {/* INFOS PLAQUES */}
+      {/* ====================================================== */}
 
       {vue === "plaques" &&
         calepinage && (
@@ -521,6 +615,7 @@ export default function PlanCalepinage({
               <p className="text-slate-500">
                 Plaques nécessaires
               </p>
+
               <p className="font-semibold text-white">
                 {
                   calepinage.nbPlaquesNecessaires
@@ -532,6 +627,7 @@ export default function PlanCalepinage({
               <p className="text-slate-500">
                 Taux de chute
               </p>
+
               <p className="font-semibold text-amber-400">
                 {calepinage.tauxChutePct.toFixed(
                   1
@@ -544,6 +640,7 @@ export default function PlanCalepinage({
               <p className="text-slate-500">
                 Joints
               </p>
+
               <p className="font-semibold text-white">
                 {calepinage.nbJoints}
               </p>
@@ -551,10 +648,14 @@ export default function PlanCalepinage({
           </div>
         )}
 
+      {/* ====================================================== */}
+      {/* RÈGLE MÉTIER */}
+      {/* ====================================================== */}
+
       <p className="text-xs text-slate-500">
         Chevron limité à 3,00 m. Chaque segment
         possède ses propres équerres.
       </p>
     </div>
   );
-                }
+            }
