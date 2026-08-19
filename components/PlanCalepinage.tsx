@@ -26,7 +26,7 @@ function hauteurPignonA(
   if (largeurM <= 0) return hauteurMurM;
 
   const demiLargeur = largeurM / 2;
-  const deltaHauteur = hauteurFaiteM - hauteurMurM;
+  const deltaHauteur = hauteurFaiteReelleM - hauteurMurM;
 
   // Pignon symétrique :
   // montée jusqu'au faîtage puis descente.
@@ -67,7 +67,7 @@ function decouperChevron(
       xM,
       largeurM,
       hauteurMurM,
-      hauteurFaiteM
+      hauteurFaiteReelleM
     );
   }
 
@@ -103,14 +103,14 @@ function decouperChevron(
 export default function PlanCalepinage({
   largeurM,
   hauteurM,
-  hauteurFaiteM,
+  hauteurFaiteReelleM,
   pose,
   calepinage,
   estPignon,
 }: {
   largeurM: number;
   hauteurM: number;
-  hauteurFaiteM: number | null;
+  hauteurFaiteReelleM: number | null;
   pose: ResultatPose | null;
   calepinage: ResultatCalepinage | null;
   estPignon: boolean;
@@ -122,13 +122,13 @@ export default function PlanCalepinage({
 
   if (largeurM <= 0 || hauteurM <= 0) return null;
 
-  const hauteurFaiteM = estPignon
-    ? Math.max(hauteurM, pose?.hauteurFaiteM ?? hauteurM)
-    : hauteurM;
-
+  const hauteurFaiteReelleM = estPignon
+  ? Math.max(hauteurM, hauteurFaiteM ?? hauteurM)
+  : hauteurM;
+    
   const hauteurPlanM = estPignon
-    ? hauteurFaiteM
-    : hauteurM;
+  ? hauteurFaiteM
+  : hauteurM;
 
   const echelle =
     LARGEUR_MAX_SVG / largeurM;
@@ -190,7 +190,7 @@ export default function PlanCalepinage({
         estPignon,
         largeurM,
         hauteurM,
-        hauteurFaiteM,
+        hauteurFaiteReelleM,
         numero
       );
 
@@ -320,7 +320,7 @@ export default function PlanCalepinage({
               ${px(
                 largeurM / 2
               )},${py(
-                hauteurFaiteM
+                hauteurFaiteReelleM
               )}
             `}
             fill="none"
