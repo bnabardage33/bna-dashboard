@@ -233,9 +233,12 @@ Deno.serve(async () => {
     .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces")
     .neq("statut", "termine");
 
-  if (error || !chantiers) {
-    return new Response(JSON.stringify({ error: "Impossible de lister les chantiers" }), { status: 500 });
+    if (error || !chantiers) {
+    console.error("Erreur listage chantiers:", JSON.stringify(error));
+    return new Response(JSON.stringify({ error: "Impossible de lister les chantiers", detail: error }), { status: 500 });
   }
+    
+  
 
   for (const ch of chantiers) {
     const adresse = ch.adresse_chantier as string | null;
