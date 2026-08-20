@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { fetchMeteo } from "@/lib/meteo";
-import { evaluerAlerteChantier, Materiau, Acces } from "@/lib/meteoAlerte";
+import {
+  evaluerAlerteChantier,
+  evaluerJourChantier,
+  Materiau,
+  Acces,
+} from "@/lib/meteoAlerte";
+import { fetchVigilance } from "@/lib/meteoVigilance";
+import { adresseVersDepartement } from "@/lib/departement";
 
 type ChantierMeteo = {
   id: string;
@@ -33,6 +40,82 @@ const EMOJIS: Record<string, string> = {
   rouge: "🔴",
   inconnu: "⚪",
 };
+
+// Génère le prochain numéro de rapport intempéries (RI-2026-001, ...).
+async function prochainNumeroRapport(): Promise<string> {
+  const annee = new Date().getFullYear();
+  const { data, error } = await supabase
+    .from("rapports_intemperies")
+    .select("numero")
+    .ilike("numero", `RI-${annee}-%`);
+
+  if (error) {
+    console.error(error);
+    return `RI-${annee}-001`;
+  }
+
+  const nums = (data ?? []).map((d) => parseInt(d.numero.split("-")[2]) || 0);
+  const suivant = (nums.length ? Math.max(...nums) : 0) + 1;
+  return `RI-${annee}-${String(suivant).padStart(3, "0")}`;
+}
+
+// Vérifie si un rapport auto existe déjà aujourd'hui pour ce chantier,
+// et l'insère sinon. Ne bloque jamais l'affichage de la carte en cas d'échec.
+async function genererRapportSiNecessaire(
+  chantierId: string,
+  decision: ReturnType<typeof evaluerJourChantier> extends infer T ? T : never,
+  meteoJour: { rafalesMax: number; tempMax: number; pluieCumul: number },
+  materiau: Materiau,
+  acces: Acces,
+  departement: string | null
+) {
+  const doitGenerer = decision.jourArrete || decision.aValider;
+  if (!doitGenerer) return;
+
+  const debutJour = new Date();
+  debutJour.setHours(0, 0, 0, 0);
+
+  const { data: existant, error: errCheck } = await supabase
+    .from("rapports_intemperies")
+    .select("id")
+    .eq("chantier_id", chantierId)
+    .eq("cree_par", "auto")
+    .gte("cree_le", debutJour.toISOString())
+    .maybeSingle();
+
+  if (errCheck) {
+    console.error(errCheck);
+    return;
+  }
+  if (existant) return; // déjà généré aujourd'hui
+
+  const numero = await prochainNumeroRapport();
+
+  const { error: errInsert } = await supabase
+    .from("rapports_intemperies")
+    .insert({
+      numero,
+      chantier_id: chantierId,
+      vigilance_officielle: decision.vigilanceOfficielle,
+      jour_arrete: decision.jourArrete,
+      a_valider: decision.aValider,
+      pluie_continue: decision.pluieContinue,
+      motif: decision.motif,
+      risque_technique_niveau: decision.risqueTechnique.niveau,
+      risque_technique_motif: decision.risqueTechnique.motif,
+      temp_max: meteoJour.tempMax,
+      rafales_max: meteoJour.rafalesMax,
+      pluie_cumul: meteoJour.pluieCumul,
+      materiau,
+      acces,
+      departement,
+      cree_par: "auto",
+    });
+
+  if (errInsert) {
+    console.error(errInsert);
+  }
+}
 
 export default function ChantiersMeteoCards() {
   const [chantiers, setChantiers] = useState<ChantierMeteo[]>([]);
@@ -76,11 +159,41 @@ export default function ChantiersMeteoCards() {
             const tempMax = Math.max(jour.matin.temp, jour.apresMidi.temp);
             const pluieCumul = jour.heures.reduce((s, h) => s + h.pluie, 0);
 
+            // Risque technique maison — affiché sur la carte, comme avant.
             const alerte = evaluerAlerteChantier(ch.materiau_structurel, ch.moyen_acces, {
               rafalesMax,
               tempMax,
               pluieCumul,
             });
+
+            // Vigilance officielle + décision jour d'arrêt — pour le rapport.
+            const departement = adresseVersDepartement(adresse);
+            if (departement) {
+              try {
+                const vigilance = await fetchVigilance(departement);
+                const decision = evaluerJourChantier(
+                  ch.materiau_structurel,
+                  ch.moyen_acces,
+                  { rafalesMax, tempMax, pluieCumul },
+                  jour.heures,
+                  vigilance
+                );
+
+                await genererRapportSiNecessaire(
+                  ch.id,
+                  decision,
+                  { rafalesMax, tempMax, pluieCumul },
+                  ch.materiau_structurel,
+                  ch.moyen_acces,
+                  departement
+                );
+              } catch (errVigilance) {
+                // La vigilance officielle est indisponible (clé API pas
+                // encore configurée, panne, etc.) : on n'empêche pas
+                // l'affichage de la carte, on génère juste pas de rapport.
+                console.error("Vigilance météo indisponible:", errVigilance);
+              }
+            }
 
             return {
               id: ch.id,
