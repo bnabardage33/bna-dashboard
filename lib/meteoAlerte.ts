@@ -1,3 +1,25 @@
+// lib/meteoAlerte.ts
+//
+// Deux notions bien séparées :
+//
+// 1) "Risque technique" (evaluerAlerteChantier, inchangé) :
+//    seuils maison par matériau/accès, utile pour savoir si la pose est
+//    risquée. Reste affiché sur la fiche chantier pour info terrain.
+//
+// 2) "Décision jour d'arrêt" (evaluerJourChantier, nouveau) :
+//    ce qui compte pour le rapport intempéries officiel. Basé sur la
+//    vigilance Météo-France (vent + pluie-inondation) et sur une
+//    détection de pluie continue toute la journée à partir des relevés
+//    horaires — indépendante des seuils maison, pour rester "propre et
+//    carré" en cas de litige.
+
+import { HeureMeteo } from "./meteo";
+import {
+  VigilanceDepartement,
+  couleurPourPhenomene,
+  couleurLaPlusForte,
+} from "./meteoVigilance";
+
 export type Materiau = "bois" | "metal" | "composite" | "fibrociment";
 export type Acces = "echafaudage" | "nacelle";
 export type NiveauAlerte = "vert" | "jaune" | "orange" | "rouge";
@@ -16,6 +38,10 @@ const SEUILS_ACCES: Record<Acces, { vent_vigilance: number; vent_critique: numbe
   echafaudage: { vent_vigilance: 45, vent_critique: 60 },
   nacelle: { vent_vigilance: 35, vent_critique: 45 },
 };
+
+// -----------------------------------------------------------------------
+// 1) Risque technique (seuils maison, matériau/accès) — inchangé
+// -----------------------------------------------------------------------
 
 export function evaluerAlerteChantier(
   materiau: Materiau,
@@ -53,6 +79,126 @@ export function evaluerAlerteChantier(
     };
   }
   return { niveau: "vert", motif: "Conditions optimales de pose" };
+}
+
+// -----------------------------------------------------------------------
+// 2) Détection pluie continue sur la journée (données locales horaires)
+// -----------------------------------------------------------------------
+
+// Seuil pour considérer une heure "pluvieuse".
+const SEUIL_PLUIE_HORAIRE_MM = 0.2;
+// Fraction des heures de la journée devant être pluvieuses pour parler de
+// "pluie toute la journée".
+const FRACTION_MINI_HEURES_PLUIE = 0.75;
+
+export function pleutTouteLaJournee(heures: HeureMeteo[]): boolean {
+  if (!heures || heures.length === 0) return false;
+
+  const heuresPluvieuses = heures.filter(
+    (h) => h.pluie >= SEUIL_PLUIE_HORAIRE_MM
+  ).length;
+
+  return heuresPluvieuses / heures.length >= FRACTION_MINI_HEURES_PLUIE;
+}
+
+// -----------------------------------------------------------------------
+// 3) Décision "jour d'arrêt" — ce qui compte pour le rapport officiel
+// -----------------------------------------------------------------------
+
+export interface DecisionJourChantier {
+  // Couleur de vigilance officielle retenue (max entre vent et pluie-inondation).
+  vigilanceOfficielle: NiveauAlerte;
+  // Risque technique maison (matériau/accès), gardé à titre indicatif.
+  risqueTechnique: { niveau: NiveauAlerte; motif: string };
+  // Pluie continue détectée localement sur la journée.
+  pluieContinue: boolean;
+  // Décision auto : ce jour compte comme un jour d'arrêt de chantier.
+  jourArrete: boolean;
+  // true si la décision n'est pas automatisable et doit être confirmée
+  // par le chef de chantier (cas vigilance orange).
+  aValider: boolean;
+  // Texte de synthèse à afficher/imprimer sur le rapport.
+  motif: string;
+}
+
+export function evaluerJourChantier(
+  materiau: Materiau,
+  acces: Acces,
+  meteoJour: { rafalesMax: number; pluieCumul: number; tempMax: number },
+  heures: HeureMeteo[],
+  vigilance: VigilanceDepartement
+): DecisionJourChantier {
+  const risqueTechnique = evaluerAlerteChantier(materiau, acces, meteoJour);
+
+  const vigilanceVent = couleurPourPhenomene(vigilance, "vent");
+  const vigilancePluie = couleurPourPhenomene(vigilance, "pluie-inondation");
+  const vigilanceOfficielle = couleurLaPlusForte(vigilanceVent, vigilancePluie);
+
+  const pluieContinue = pleutTouteLaJournee(heures);
+
+  if (vigilanceOfficielle === "rouge") {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: true,
+      aValider: false,
+      motif: `Vigilance rouge Météo-France (${vigilanceVent === "rouge" ? "vent" : "pluie-inondation"}) — arrêt de chantier`,
+    };
+  }
+
+  if (vigilanceOfficielle === "orange") {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      motif: "Vigilance orange Météo-France — arrêt à confirmer selon les prévisions et la décision du chef de chantier",
+    };
+  }
+
+  if (vigilanceOfficielle === "jaune") {
+    if (pluieContinue) {
+      return {
+        vigilanceOfficielle,
+        risqueTechnique,
+        pluieContinue,
+        jourArrete: true,
+        aValider: false,
+        motif: "Vigilance jaune Météo-France + pluie continue constatée toute la journée — arrêt de chantier",
+      };
+    }
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: false,
+      motif: "Vigilance jaune Météo-France — travail possible, vigilance de rigueur",
+    };
+  }
+
+  // vigilanceOfficielle === "vert"
+  if (pluieContinue) {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: true,
+      aValider: false,
+      motif: "Pluie continue constatée toute la journée sur le chantier (hors vigilance officielle Météo-France)",
+    };
+  }
+
+  return {
+    vigilanceOfficielle,
+    risqueTechnique,
+    pluieContinue,
+    jourArrete: false,
+    aValider: false,
+    motif: "Conditions normales — pas d'intempérie constatée",
+  };
 }
 
 export const LABELS_MATERIAU: Record<Materiau, string> = {
