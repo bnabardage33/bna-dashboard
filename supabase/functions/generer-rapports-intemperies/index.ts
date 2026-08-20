@@ -225,7 +225,14 @@ async function prochainNumero(): Promise<string> {
 // Handler principal
 // ---------------------------------------------------------------------
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  let force = false;
+  try {
+    const body = await req.json();
+    force = body?.force === true;
+  } catch {
+    // pas de body ou body invalide, on ignore
+  }
   const resultats: { chantier: string; statut: string }[] = [];
 
   const { data: chantiers, error } = await supabase
