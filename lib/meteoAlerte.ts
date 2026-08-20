@@ -132,7 +132,10 @@ export function evaluerJourChantier(
 
   const vigilanceVent = couleurPourPhenomene(vigilance, "vent");
   const vigilancePluie = couleurPourPhenomene(vigilance, "pluie-inondation");
-  const vigilanceOfficielle = couleurLaPlusForte(vigilanceVent, vigilancePluie);
+  const vigilanceOrages = couleurPourPhenomene(vigilance, "orages");
+  const vigilanceOfficielle = couleurLaPlusForte(vigilanceVent, vigilancePluie, vigilanceOrages);
+  
+  
 
   const pluieContinue = pleutTouteLaJournee(heures);
 
