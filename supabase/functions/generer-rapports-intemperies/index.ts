@@ -287,11 +287,17 @@ Deno.serve(async (req) => {
       );
 
       // On ne génère un rapport que si la journée est réellement impactée
-      // (arrêt effectif ou à valider). Une journée normale ne produit rien.
-      if (!decision.jourArrete && !decision.aValider) {
+      // (arrêt effectif ou à valider). Une journée normale ne produit rien,
+      // sauf en mode "force" (test manuel).
+      if (!decision.jourArrete && !decision.aValider && !force) {
         resultats.push({ chantier: ch.nom ?? ch.id, statut: "conditions normales, pas de rapport" });
         continue;
       }
+      
+      
+        
+        
+      
 
       const numero = await prochainNumero();
 
