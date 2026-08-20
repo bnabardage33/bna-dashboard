@@ -187,7 +187,10 @@ function evaluerJour(
   vigilance: { couleurMax: NiveauAlerte; phenomenes: { nom: string; couleur: NiveauAlerte }[] }
 ) {
   const risqueTechnique = evaluerRisqueTechnique(materiau, acces, meteoJour);
-  const vigilanceOfficielle = plusForte(couleurPhenomene(vigilance, "vent"), couleurPhenomene(vigilance, "pluie-inondation"));
+  const vigilanceOfficielle = plusForte(
+    plusForte(couleurPhenomene(vigilance, "vent"), couleurPhenomene(vigilance, "pluie-inondation")),
+    couleurPhenomene(vigilance, "orages")
+  );
   const pluieContinue = pleutTouteLaJournee(heures);
 
   if (vigilanceOfficielle === "rouge")
