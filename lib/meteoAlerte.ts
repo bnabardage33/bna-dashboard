@@ -134,19 +134,19 @@ export function evaluerJourChantier(
   const vigilancePluie = couleurPourPhenomene(vigilance, "pluie-inondation");
   const vigilanceOrages = couleurPourPhenomene(vigilance, "orages");
   const vigilanceOfficielle = couleurLaPlusForte(vigilanceVent, vigilancePluie, vigilanceOrages);
-  
-  
 
   const pluieContinue = pleutTouteLaJournee(heures);
 
   if (vigilanceOfficielle === "rouge") {
+    const cause =
+      vigilanceVent === "rouge" ? "vent" : vigilanceOrages === "rouge" ? "orages" : "pluie-inondation";
     return {
       vigilanceOfficielle,
       risqueTechnique,
       pluieContinue,
       jourArrete: true,
       aValider: false,
-      motif: `Vigilance rouge Météo-France (${vigilanceVent === "rouge" ? "vent" : "pluie-inondation"}) — arrêt de chantier`,
+      motif: `Vigilance rouge Météo-France (${cause}) — arrêt de chantier`,
     };
   }
 
