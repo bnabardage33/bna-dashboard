@@ -67,7 +67,8 @@ async function genererRapportSiNecessaire(
   meteoJour: { rafalesMax: number; tempMax: number; pluieCumul: number },
   materiau: Materiau,
   acces: Acces,
-  departement: string | null
+  departement: string | null,
+  heures: { heure: string; temp: number; vent: number; rafales: number; pluie: number }[]
 ) {
   const doitGenerer = decision.jourArrete || decision.aValider;
   if (!doitGenerer) return;
@@ -109,6 +110,7 @@ async function genererRapportSiNecessaire(
       materiau,
       acces,
       departement,
+      releve_horaire: heures,
       cree_par: "auto",
     });
 
@@ -185,7 +187,8 @@ export default function ChantiersMeteoCards() {
                   { rafalesMax, tempMax, pluieCumul },
                   ch.materiau_structurel,
                   ch.moyen_acces,
-                  departement
+                  departement,
+                  jour.heures
                 );
               } catch (errVigilance) {
                 // La vigilance officielle est indisponible (clé API pas
