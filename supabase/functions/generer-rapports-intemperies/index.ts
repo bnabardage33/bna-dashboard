@@ -1,25 +1,39 @@
 // supabase/functions/generer-rapports-intemperies/index.ts
 //
-// Deux modes, appelés par des cron différents :
+// GESTION DES RAPPORTS D'INTEMPÉRIES
 //
-// MODE "capture" (6h et 16h Europe/Paris) :
-//   Prend juste une photo de la vigilance officielle du moment pour chaque
-//   chantier actif, et la stocke dans vigilance_captures. Ne génère aucun
-//   rapport. Body attendu : {"mode": "capture", "periode": "matin"} ou
-//   {"mode": "capture", "periode": "apresmidi"}.
+// MODE CAPTURE
+// ------------
+// Appelé par les cron à 06h et 16h Europe/Paris.
+// Capture uniquement la vigilance officielle Météo-France
+// pour chaque chantier actif.
 //
-// MODE "generer" (défaut, appelé le soir, ex 18h Europe/Paris) :
-//   Pour chaque chantier, relit les captures matin + après-midi du jour,
-//   les combine avec les mesures météo locales réelles de la journée
-//   (rafales/pluie/temp mesurées, pas juste annoncées), et décide si le
-//   jour compte comme un arrêt de chantier. Une vigilance orange/rouge
-//   qui ne se traduit par AUCUN dépassement de seuil réel sur le terrain
-//   ne bloque pas automatiquement le jour : elle est marquée "à valider"
-//   pour que le chef de chantier tranche avec le recul du terrain.
-//   Body optionnel : {"force": true} pour forcer même en conditions calmes.
+// Body :
+//   { "mode": "capture", "periode": "matin" }
+//   { "mode": "capture", "periode": "apresmidi" }
 //
-// Secrets nécessaires : VISUALCROSSING_API_KEY, METEOFRANCE_API_KEY,
-// SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY (fournis par la plateforme).
+// AUCUN rapport n'est créé pendant une capture.
+//
+// MODE GÉNÉRER
+// ------------
+// Appelé en fin de journée.
+// Combine :
+//   - vigilance Météo-France du matin
+//   - vigilance Météo-France de l'après-midi
+//   - météo réelle de la journée
+//   - seuils techniques matériau / accès
+//   - pluie continue
+//
+// Puis décide :
+//   - journée arrêtée
+//   - à valider
+//   - conditions normales
+//
+// Secrets nécessaires :
+//   SUPABASE_URL
+//   SUPABASE_SERVICE_ROLE_KEY
+//   VISUALCROSSING_API_KEY
+//   METEOFRANCE_API_KEY
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -28,42 +42,144 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const VISUALCROSSING_API_KEY = Deno.env.get("VISUALCROSSING_API_KEY")!;
-const METEOFRANCE_API_KEY = Deno.env.get("METEOFRANCE_API_KEY")!;
+const VISUALCROSSING_API_KEY =
+  Deno.env.get("VISUALCROSSING_API_KEY") ?? "";
 
-// ---------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------
+const METEOFRANCE_API_KEY =
+  Deno.env.get("METEOFRANCE_API_KEY") ?? "";
 
-type HeureMeteo = { heure: string; temp: number; vent: number; rafales: number; pluie: number };
-type NiveauAlerte = "vert" | "jaune" | "orange" | "rouge";
-type Materiau = "bois" | "metal" | "composite" | "fibrociment";
-type Acces = "echafaudage" | "nacelle";
-type Periode = "matin" | "apresmidi";
-type VigilanceInfo = { couleurMax: NiveauAlerte; phenomenes: { nom: string; couleur: NiveauAlerte }[] };
+const URL_VIGILANCE =
+  "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
 
-// ---------------------------------------------------------------------
-// Code postal -> département
-// ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// TYPES
+// -----------------------------------------------------------------------------
 
-function adresseVersDepartement(adresse: string): string | null {
+type NiveauAlerte =
+  | "vert"
+  | "jaune"
+  | "orange"
+  | "rouge";
+
+type Materiau =
+  | "bois"
+  | "metal"
+  | "composite"
+  | "fibrociment";
+
+type Acces =
+  | "echafaudage"
+  | "nacelle";
+
+type Periode =
+  | "matin"
+  | "apresmidi";
+
+type HeureMeteo = {
+  heure: string;
+  temp: number;
+  vent: number;
+  rafales: number;
+  pluie: number;
+};
+
+type VigilancePhenomene = {
+  id: number;
+  nom: string;
+  couleur: NiveauAlerte;
+};
+
+type VigilanceInfo = {
+  couleurMax: NiveauAlerte;
+  phenomenes: VigilancePhenomene[];
+  misAJourLe: string | null;
+};
+
+// -----------------------------------------------------------------------------
+// CONSTANTES VIGILANCE
+// -----------------------------------------------------------------------------
+
+const ORDRE_VIGILANCE: Record<NiveauAlerte, number> = {
+  vert: 0,
+  jaune: 1,
+  orange: 2,
+  rouge: 3,
+};
+
+const COULEUR_PAR_ID: Record<number, NiveauAlerte> = {
+  1: "vert",
+  2: "jaune",
+  3: "orange",
+  4: "rouge",
+};
+
+const PHENOMENE_PAR_ID: Record<number, string> = {
+  1: "vent",
+  2: "pluie-inondation",
+  3: "orages",
+  4: "inondation",
+  5: "neige-verglas",
+  6: "canicule",
+  7: "grand-froid",
+  8: "avalanches",
+  9: "vagues-submersion",
+};
+
+function plusForte(
+  a: NiveauAlerte,
+  b: NiveauAlerte
+): NiveauAlerte {
+  return ORDRE_VIGILANCE[a] >= ORDRE_VIGILANCE[b]
+    ? a
+    : b;
+}
+
+// -----------------------------------------------------------------------------
+// ADRESSE -> DÉPARTEMENT
+// -----------------------------------------------------------------------------
+
+function adresseVersDepartement(
+  adresse: string | null
+): string | null {
   if (!adresse) return null;
+
   const raw = adresse.trim();
-  const match = raw.match(/\b\d{5}\b/);
-  if (match) {
-    const cp = match[0];
-    if (cp.startsWith("97")) return cp.slice(0, 3);
-    if (cp.startsWith("20")) {
-      const val = parseInt(cp, 10);
-      return val <= 20190 ? "2A" : "2B";
+
+  const matchCP = raw.match(/\b\d{5}\b/);
+
+  if (matchCP) {
+    const cp = matchCP[0];
+
+    // DOM-TOM
+    if (cp.startsWith("97")) {
+      return cp.slice(0, 3);
     }
+
+    // Corse
+    if (cp.startsWith("20")) {
+      const valeur = Number(cp);
+
+      return valeur <= 20190
+        ? "2A"
+        : "2B";
+    }
+
     return cp.slice(0, 2);
   }
 
-  const matchDept = raw.match(/\b(2A|2B|2a|2b|\d{2})\b/i);
-  if (matchDept) return matchDept[1].toUpperCase();
+  const matchDept = raw.match(
+    /\b(2A|2B|\d{2})\b/i
+  );
 
-  const lower = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (matchDept) {
+    return matchDept[1].toUpperCase();
+  }
+
+  const lower = raw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
   if (
     lower.includes("ajaccio") ||
     lower.includes("porto vecchio") ||
@@ -74,6 +190,7 @@ function adresseVersDepartement(adresse: string): string | null {
   ) {
     return "2A";
   }
+
   if (
     lower.includes("bastia") ||
     lower.includes("calvi") ||
@@ -83,6 +200,7 @@ function adresseVersDepartement(adresse: string): string | null {
   ) {
     return "2B";
   }
+
   if (
     lower.includes("bordeaux") ||
     lower.includes("merignac") ||
@@ -91,435 +209,1194 @@ function adresseVersDepartement(adresse: string): string | null {
   ) {
     return "33";
   }
+
   return null;
 }
 
-// ---------------------------------------------------------------------
-// Météo du jour complet (Visual Crossing)
-// ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// MÉTÉO VISUAL CROSSING
+// -----------------------------------------------------------------------------
 
-async function fetchMeteoJour(adresse: string): Promise<{
+async function fetchMeteoJour(
+  adresse: string
+): Promise<{
   heures: HeureMeteo[];
   tempMax: number;
   rafalesMax: number;
   pluieCumul: number;
 }> {
-  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
-    adresse
-  )}/today?unitGroup=metric&key=${VISUALCROSSING_API_KEY}&contentType=json&include=days,hours&elements=datetime,temp,windspeed,windgust,precip`;
+  if (!VISUALCROSSING_API_KEY) {
+    throw new Error(
+      "VISUALCROSSING_API_KEY non configurée"
+    );
+  }
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Erreur Visual Crossing (${res.status})`);
+  const url =
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/` +
+    `${encodeURIComponent(adresse)}/today` +
+    `?unitGroup=metric` +
+    `&key=${VISUALCROSSING_API_KEY}` +
+    `&contentType=json` +
+    `&include=days,hours` +
+    `&elements=datetime,temp,windspeed,windgust,precip`;
 
-  const data = await res.json();
-  const today = data.days?.[0];
-  if (!today) throw new Error("Pas de données météo pour cette adresse");
-
-  const heures: HeureMeteo[] = (today.hours || []).map((h: any) => ({
-    heure: h.datetime.slice(0, 5),
-    temp: Math.round(h.temp),
-    vent: Math.round(h.windspeed),
-    rafales: Math.round(h.windgust ?? h.windspeed),
-    pluie: h.precip ?? 0,
-  }));
-
-  const tempMax = heures.length ? Math.max(...heures.map((h) => h.temp)) : 0;
-  const rafalesMax = heures.length ? Math.max(...heures.map((h) => h.rafales)) : 0;
-  const pluieCumul = heures.reduce((s, h) => s + h.pluie, 0);
-
-  return { heures, tempMax, rafalesMax, pluieCumul };
-}
-
-// ---------------------------------------------------------------------
-// Vigilance officielle Météo-France
-// ---------------------------------------------------------------------
-
-const COULEUR_PAR_ID: Record<number, NiveauAlerte> = { 1: "vert", 2: "jaune", 3: "orange", 4: "rouge" };
-const PHENOMENE_PAR_ID: Record<number, string> = { 1: "vent", 2: "pluie-inondation", 3: "orages" };
-
-async function fetchVigilance(departement: string): Promise<VigilanceInfo> {
-  const res = await fetch(
-    "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours",
-    { headers: { apikey: METEOFRANCE_API_KEY } }
-  );
-  if (!res.ok) throw new Error(`Erreur Vigilance Météo-France (${res.status})`);
-
-  const data = await res.json();
-  const periodes = data?.product?.periods ?? [];
-  const periodeEnCours = periodes[0];
-  const deptNormalized = departement.trim().toUpperCase();
-  const domaineDept = domaineArray.find((d: any) => {
-    const dId = d?.domain_id?.toString().trim().toUpperCase();
-    if (!dId) return false;
-    if (dId === deptNormalized) return true;
-    if (deptNormalized === "2A" && (dId === "20A" || dId === "2A" || dId === "200" || dId === "201")) return true;
-    if (deptNormalized === "2B" && (dId === "20B" || dId === "2B" || dId === "202")) return true;
-    return false;
+  const response = await fetch(url, {
+    cache: "no-store",
   });
 
-  if (!domaineDept) return { couleurMax: "vert", phenomenes: [] };
+  if (!response.ok) {
+    const texte = await response.text();
 
-  const couleurMax = COULEUR_PAR_ID[domaineDept.max_color_id] ?? "vert";
-  const phenomenesBrut: any[] = domaineDept.phenomenon_items ?? [];
-  const phenomenes = phenomenesBrut
-    .map((p: any) => {
-      const id = p.phenomenon_id;
-      const couleurId = p.phenomenon_max_color_id;
-      if (!id || !PHENOMENE_PAR_ID[id]) return null;
-      return { nom: PHENOMENE_PAR_ID[id], couleur: COULEUR_PAR_ID[couleurId] ?? "vert" };
-    })
-    .filter(Boolean) as { nom: string; couleur: NiveauAlerte }[];
+    throw new Error(
+      `Visual Crossing ${response.status}: ${texte.slice(0, 300)}`
+    );
+  }
 
-  return { couleurMax, phenomenes };
+  const data = await response.json();
+
+  const today = data?.days?.[0];
+
+  if (!today) {
+    throw new Error(
+      "Visual Crossing : aucune donnée pour cette adresse"
+    );
+  }
+
+  const heures: HeureMeteo[] = (
+    today.hours ?? []
+  ).map((h: any) => ({
+    heure: String(h.datetime ?? "").slice(0, 5),
+    temp: Number.isFinite(h.temp)
+      ? Math.round(h.temp)
+      : 0,
+    vent: Number.isFinite(h.windspeed)
+      ? Math.round(h.windspeed)
+      : 0,
+    rafales: Number.isFinite(h.windgust)
+      ? Math.round(h.windgust)
+      : Number.isFinite(h.windspeed)
+        ? Math.round(h.windspeed)
+        : 0,
+    pluie: Number.isFinite(h.precip)
+      ? Number(h.precip)
+      : 0,
+  }));
+
+  const tempMax =
+    heures.length > 0
+      ? Math.max(...heures.map((h) => h.temp))
+      : 0;
+
+  const rafalesMax =
+    heures.length > 0
+      ? Math.max(...heures.map((h) => h.rafales))
+      : 0;
+
+  const pluieCumul = heures.reduce(
+    (total, h) => total + h.pluie,
+    0
+  );
+
+  return {
+    heures,
+    tempMax,
+    rafalesMax,
+    pluieCumul,
+  };
 }
 
-function couleurPhenomene(vigilance: VigilanceInfo, nom: string): NiveauAlerte {
-  return vigilance.phenomenes.find((p) => p.nom === nom)?.couleur ?? vigilance.couleurMax;
+// -----------------------------------------------------------------------------
+// VIGILANCE MÉTÉO-FRANCE
+// -----------------------------------------------------------------------------
+
+async function fetchVigilance(
+  departement: string
+): Promise<VigilanceInfo> {
+  if (!METEOFRANCE_API_KEY) {
+    throw new Error(
+      "METEOFRANCE_API_KEY non configurée"
+    );
+  }
+
+  const response = await fetch(
+    URL_VIGILANCE,
+    {
+      headers: {
+        apikey: METEOFRANCE_API_KEY,
+      },
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    const texte = await response.text();
+
+    throw new Error(
+      `Météo-France ${response.status}: ${texte.slice(0, 300)}`
+    );
+  }
+
+  const data = await response.json();
+
+  const periodes =
+    data?.product?.periods ??
+    data?.periods ??
+    [];
+
+  if (!Array.isArray(periodes) || periodes.length === 0) {
+    return {
+      couleurMax: "vert",
+      phenomenes: [],
+      misAJourLe: null,
+    };
+  }
+
+  const periode = periodes[0];
+
+  // CORRECTION IMPORTANTE :
+  // domaineArray n'existait pas dans l'ancien fichier.
+  const domaines =
+    periode?.timelaps?.domain_ids ??
+    periode?.domain_ids ??
+    [];
+
+  const domaineArray: any[] =
+    Array.isArray(domaines)
+      ? domaines
+      : Object.values(domaines ?? {});
+
+  const deptNormalized =
+    departement.trim().toUpperCase();
+
+  const domaineDept = domaineArray.find(
+    (d: any) => {
+      const id = d?.domain_id
+        ?.toString()
+        .trim()
+        .toUpperCase();
+
+      if (!id) return false;
+
+      if (id === deptNormalized) {
+        return true;
+      }
+
+      if (
+        deptNormalized === "2A" &&
+        ["20A", "2A", "200", "201"].includes(id)
+      ) {
+        return true;
+      }
+
+      if (
+        deptNormalized === "2B" &&
+        ["20B", "2B", "202"].includes(id)
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+  );
+
+  if (!domaineDept) {
+    return {
+      couleurMax: "vert",
+      phenomenes: [],
+      misAJourLe:
+        data?.product?.update_time ?? null,
+    };
+  }
+
+  const couleurMax =
+    COULEUR_PAR_ID[
+      Number(domaineDept.max_color_id)
+    ] ?? "vert";
+
+  const phenomenesBrut =
+    domaineDept.phenomenon_items ??
+    domaineDept.phenomenon_max_colors ??
+    [];
+
+  const phenomenes: VigilancePhenomene[] =
+    (Array.isArray(phenomenesBrut)
+      ? phenomenesBrut
+      : Object.values(phenomenesBrut ?? {})
+    )
+      .map((p: any) => {
+        const id = Number(
+          p?.phenomenon_id ??
+          p?.phenomenon_max_color_id
+            ?.phenomenon_id
+        );
+
+        const couleurId = Number(
+          p?.phenomenon_max_color_id ??
+          p?.color_id ??
+          p?.max_color_id ??
+          1
+        );
+
+        const nom = PHENOMENE_PAR_ID[id];
+
+        if (!nom) {
+          return null;
+        }
+
+        return {
+          id,
+          nom,
+          couleur:
+            COULEUR_PAR_ID[couleurId] ??
+            "vert",
+        };
+      })
+      .filter(Boolean) as VigilancePhenomene[];
+
+  return {
+    couleurMax,
+    phenomenes,
+    misAJourLe:
+      data?.product?.update_time ?? null,
+  };
 }
 
-const ORDRE: Record<NiveauAlerte, number> = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
-function plusForte(a: NiveauAlerte, b: NiveauAlerte): NiveauAlerte {
-  return ORDRE[a] >= ORDRE[b] ? a : b;
+function couleurPhenomene(
+  vigilance: VigilanceInfo,
+  nom: string
+): NiveauAlerte {
+  return (
+    vigilance.phenomenes.find(
+      (p) => p.nom === nom
+    )?.couleur ??
+    "vert"
+  );
 }
 
-function vigilancePertinente(v: VigilanceInfo): NiveauAlerte {
-  return plusForte(plusForte(couleurPhenomene(v, "vent"), couleurPhenomene(v, "pluie-inondation")), couleurPhenomene(v, "orages"));
+function vigilancePertinente(
+  vigilance: VigilanceInfo
+): NiveauAlerte {
+  return plusForte(
+    plusForte(
+      couleurPhenomene(vigilance, "vent"),
+      couleurPhenomene(
+        vigilance,
+        "pluie-inondation"
+      )
+    ),
+    couleurPhenomene(vigilance, "orages")
+  );
 }
 
-// ---------------------------------------------------------------------
-// Risque technique maison (seuils matériau/accès)
-// ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// RISQUE TECHNIQUE
+// -----------------------------------------------------------------------------
 
-const SEUILS_MATERIAUX: Record<Materiau, { vent_vigilance: number; vent_critique: number; pluie_critique: number; temp_mini: number; temp_maxi: number }> = {
-  bois: { vent_vigilance: 30, vent_critique: 60, pluie_critique: 1.0, temp_mini: 0.0, temp_maxi: 30.0 },
-  metal: { vent_vigilance: 25, vent_critique: 45, pluie_critique: 1.0, temp_mini: 0.0, temp_maxi: 35.0 },
-  composite: { vent_vigilance: 30, vent_critique: 60, pluie_critique: 1.0, temp_mini: 1.0, temp_maxi: 30.0 },
-  fibrociment: { vent_vigilance: 30, vent_critique: 60, pluie_critique: 2.0, temp_mini: 0.0, temp_maxi: 30.0 },
+const SEUILS_MATERIAUX: Record<
+  Materiau,
+  {
+    vent_vigilance: number;
+    vent_critique: number;
+    pluie_critique: number;
+    temp_mini: number;
+    temp_maxi: number;
+  }
+> = {
+  bois: {
+    vent_vigilance: 30,
+    vent_critique: 60,
+    pluie_critique: 1,
+    temp_mini: 0,
+    temp_maxi: 30,
+  },
+
+  metal: {
+    vent_vigilance: 25,
+    vent_critique: 45,
+    pluie_critique: 1,
+    temp_mini: 0,
+    temp_maxi: 35,
+  },
+
+  composite: {
+    vent_vigilance: 30,
+    vent_critique: 60,
+    pluie_critique: 1,
+    temp_mini: 1,
+    temp_maxi: 30,
+  },
+
+  fibrociment: {
+    vent_vigilance: 30,
+    vent_critique: 60,
+    pluie_critique: 2,
+    temp_mini: 0,
+    temp_maxi: 30,
+  },
 };
-const SEUILS_ACCES: Record<Acces, { vent_vigilance: number; vent_critique: number }> = {
-  echafaudage: { vent_vigilance: 45, vent_critique: 60 },
-  nacelle: { vent_vigilance: 35, vent_critique: 45 },
+
+const SEUILS_ACCES: Record<
+  Acces,
+  {
+    vent_vigilance: number;
+    vent_critique: number;
+  }
+> = {
+  echafaudage: {
+    vent_vigilance: 45,
+    vent_critique: 60,
+  },
+
+  nacelle: {
+    vent_vigilance: 35,
+    vent_critique: 45,
+  },
 };
 
-function evaluerRisqueTechnique(materiau: Materiau, acces: Acces, meteo: { rafalesMax: number; pluieCumul: number; tempMax: number }) {
-  const sm = SEUILS_MATERIAUX[materiau] ?? SEUILS_MATERIAUX.bois;
-  const sa = SEUILS_ACCES[acces] ?? SEUILS_ACCES.echafaudage;
-  const ventCritique = Math.min(sm.vent_critique, sa.vent_critique);
-  const ventVigilance = Math.min(sm.vent_vigilance, sa.vent_vigilance);
-
-  if (meteo.rafalesMax >= ventCritique)
-    return { niveau: "rouge" as NiveauAlerte, motif: `Vent critique (${meteo.rafalesMax} km/h ≥ seuil ${ventCritique} km/h)` };
-  if (meteo.pluieCumul >= sm.pluie_critique && meteo.pluieCumul >= 8)
-    return { niveau: "rouge" as NiveauAlerte, motif: `Pluie critique (${meteo.pluieCumul.toFixed(1)} mm)` };
-  if (meteo.tempMax <= sm.temp_mini || meteo.tempMax >= sm.temp_maxi)
-    return { niveau: "orange" as NiveauAlerte, motif: `Température limite (${meteo.tempMax}°C) pour ${materiau}` };
-  if (meteo.rafalesMax >= ventVigilance)
-    return { niveau: "jaune" as NiveauAlerte, motif: `Vent de vigilance (${meteo.rafalesMax} km/h)` };
-  return { niveau: "vert" as NiveauAlerte, motif: "Conditions optimales de pose" };
-}
-
-function pleutTouteLaJournee(heures: HeureMeteo[]): boolean {
-  if (!heures.length) return false;
-  const pluvieuses = heures.filter((h) => h.pluie >= 0.2).length;
-  return pluvieuses / heures.length >= 0.75;
-}
-
-// ---------------------------------------------------------------------
-// Décision finale du soir : croise vigilance (matin+après-midi) et réel terrain
-// ---------------------------------------------------------------------
-
-function evaluerJour(
+function evaluerRisqueTechnique(
   materiau: Materiau,
   acces: Acces,
-  meteoJour: { rafalesMax: number; pluieCumul: number; tempMax: number },
-  heures: HeureMeteo[],
-  vigilanceMatin: NiveauAlerte | null,
-  vigilanceApresmidi: NiveauAlerte | null
-) {
-  const risqueTechnique = evaluerRisqueTechnique(materiau, acces, meteoJour);
-  const pluieContinue = pleutTouteLaJournee(heures);
+  meteo: {
+    rafalesMax: number;
+    pluieCumul: number;
+    tempMax: number;
+  }
+): {
+  niveau: NiveauAlerte;
+  motif: string;
+} {
+  const sm =
+    SEUILS_MATERIAUX[materiau] ??
+    SEUILS_MATERIAUX.bois;
 
-  const vMatin = vigilanceMatin ?? "vert";
-  const vAprem = vigilanceApresmidi ?? "vert";
-  const vigilanceOfficielle = plusForte(vMatin, vAprem);
+  const sa =
+    SEUILS_ACCES[acces] ??
+    SEUILS_ACCES.echafaudage;
 
-  const evolution =
-    vigilanceMatin && vigilanceApresmidi && vigilanceMatin !== vigilanceApresmidi
-      ? ` (vigilance ${vigilanceMatin} le matin, ${vigilanceApresmidi} l'après-midi)`
-      : "";
+  const ventCritique = Math.min(
+    sm.vent_critique,
+    sa.vent_critique
+  );
 
-  // Le terrain confirme-t-il un vrai risque, indépendamment de l'annonce ?
-  const risqueConfirmeParLeTerrain = risqueTechnique.niveau === "orange" || risqueTechnique.niveau === "rouge";
+  const ventVigilance = Math.min(
+    sm.vent_vigilance,
+    sa.vent_vigilance
+  );
 
-  if (vigilanceOfficielle === "rouge") {
-    if (risqueConfirmeParLeTerrain) {
-      return {
-        vigilanceOfficielle, risqueTechnique, pluieContinue,
-        jourArrete: true, aValider: false, ampleurImpact: "complete" as const,
-        motif: `Vigilance rouge Météo-France confirmée par les mesures du chantier${evolution} — arrêt de chantier`,
-      };
-    }
+  if (
+    meteo.rafalesMax >= ventCritique
+  ) {
     return {
-      vigilanceOfficielle, risqueTechnique, pluieContinue,
-      jourArrete: false, aValider: true, ampleurImpact: "partielle" as const,
-      motif: `Vigilance rouge Météo-France${evolution}, mais aucun dépassement mesuré sur le chantier — à confirmer par le chef de chantier`,
+      niveau: "rouge",
+      motif:
+        `Vent critique (${meteo.rafalesMax} km/h ≥ ` +
+        `seuil ${ventCritique} km/h)`,
     };
   }
 
-  if (vigilanceOfficielle === "orange") {
+  if (
+    meteo.pluieCumul >= sm.pluie_critique &&
+    meteo.pluieCumul >= 8
+  ) {
     return {
-      vigilanceOfficielle, risqueTechnique, pluieContinue,
-      jourArrete: false, aValider: true, ampleurImpact: "partielle" as const,
-      motif: `Vigilance orange Météo-France${evolution} — arrêt à confirmer selon le déroulement réel de la journée`,
+      niveau: "rouge",
+      motif:
+        `Pluie critique (${meteo.pluieCumul.toFixed(1)} mm)`,
     };
   }
 
-  if (vigilanceOfficielle === "jaune") {
-    if (pluieContinue) {
-      return {
-        vigilanceOfficielle, risqueTechnique, pluieContinue,
-        jourArrete: true, aValider: false, ampleurImpact: "complete" as const,
-        motif: "Vigilance jaune Météo-France + pluie continue constatée toute la journée — arrêt de chantier",
-      };
-    }
+  if (
+    meteo.tempMax <= sm.temp_mini ||
+    meteo.tempMax >= sm.temp_maxi
+  ) {
     return {
-      vigilanceOfficielle, risqueTechnique, pluieContinue,
-      jourArrete: false, aValider: true, ampleurImpact: "partielle" as const,
-      motif: `Vigilance jaune Météo-France${evolution} — conditions météo dégradées à surveiller sur le chantier`,
+      niveau: "orange",
+      motif:
+        `Température limite (${meteo.tempMax}°C) pour ${materiau}`,
     };
   }
 
-  if (vigilanceOfficielle === "vert" && pluieContinue) {
+  if (
+    meteo.rafalesMax >= ventVigilance
+  ) {
     return {
-      vigilanceOfficielle, risqueTechnique, pluieContinue,
-      jourArrete: true, aValider: false, ampleurImpact: "complete" as const,
-      motif: "Pluie continue constatée toute la journée (hors vigilance officielle)",
-    };
-  }
-
-  // Cas générique : vigilance jaune ou verte, mais les mesures réelles du
-  // chantier dépassent quand même les seuils matériau/accès. On ne l'ignore
-  // pas — on le signale, à valider par le chef de chantier.
-  if (risqueConfirmeParLeTerrain) {
-    const contexte =
-      vigilanceOfficielle === "vert"
-        ? "Pas de vigilance officielle"
-        : `Vigilance ${vigilanceOfficielle} Météo-France${evolution}`;
-    return {
-      vigilanceOfficielle, risqueTechnique, pluieContinue,
-      jourArrete: false, aValider: true, ampleurImpact: "partielle" as const,
-      motif: `${contexte}, mais dépassement mesuré sur le chantier (${risqueTechnique.motif}) — à confirmer par le chef de chantier`,
+      niveau: "jaune",
+      motif:
+        `Vent de vigilance (${meteo.rafalesMax} km/h)`,
     };
   }
 
   return {
-    vigilanceOfficielle, risqueTechnique, pluieContinue,
-    jourArrete: false, aValider: false, ampleurImpact: null,
-    motif: "Conditions normales — pas d'intempérie constatée",
+    niveau: "vert",
+    motif: "Conditions optimales de pose",
   };
 }
 
-// ---------------------------------------------------------------------
-// Numérotation
-// ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// PLUIE CONTINUE
+// -----------------------------------------------------------------------------
+
+const SEUIL_PLUIE_HORAIRE = 0.2;
+const FRACTION_HEURES_PLUIE = 0.75;
+
+function pleutTouteLaJournee(
+  heures: HeureMeteo[]
+): boolean {
+  if (!heures.length) {
+    return false;
+  }
+
+  const heuresPluvieuses =
+    heures.filter(
+      (h) =>
+        h.pluie >= SEUIL_PLUIE_HORAIRE
+    ).length;
+
+  return (
+    heuresPluvieuses / heures.length >=
+    FRACTION_HEURES_PLUIE
+  );
+}
+
+// -----------------------------------------------------------------------------
+// DÉCISION FINALE
+// -----------------------------------------------------------------------------
+
+function evaluerJour(
+  materiau: Materiau,
+  acces: Acces,
+  meteoJour: {
+    rafalesMax: number;
+    pluieCumul: number;
+    tempMax: number;
+  },
+  heures: HeureMeteo[],
+  vigilanceMatin: NiveauAlerte | null,
+  vigilanceApresmidi: NiveauAlerte | null
+) {
+  const risqueTechnique =
+    evaluerRisqueTechnique(
+      materiau,
+      acces,
+      meteoJour
+    );
+
+  const pluieContinue =
+    pleutTouteLaJournee(heures);
+
+  const vMatin =
+    vigilanceMatin ?? "vert";
+
+  const vAprem =
+    vigilanceApresmidi ?? "vert";
+
+  const vigilanceOfficielle =
+    plusForte(vMatin, vAprem);
+
+  const evolution =
+    vigilanceMatin &&
+    vigilanceApresmidi &&
+    vigilanceMatin !== vigilanceApresmidi
+      ? ` (vigilance ${vigilanceMatin} le matin, ${vigilanceApresmidi} l'après-midi)`
+      : "";
+
+  const risqueConfirmeParTerrain =
+    risqueTechnique.niveau === "orange" ||
+    risqueTechnique.niveau === "rouge";
+
+  // ROUGE
+  if (vigilanceOfficielle === "rouge") {
+    if (risqueConfirmeParTerrain) {
+      return {
+        vigilanceOfficielle,
+        risqueTechnique,
+        pluieContinue,
+        jourArrete: true,
+        aValider: false,
+        ampleurImpact: "complete" as const,
+        motif:
+          `Vigilance rouge Météo-France confirmée ` +
+          `par les mesures du chantier${evolution} — ` +
+          `arrêt de chantier`,
+      };
+    }
+
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      ampleurImpact: "partielle" as const,
+      motif:
+        `Vigilance rouge Météo-France${evolution}, ` +
+        `mais aucun dépassement mesuré sur le chantier — ` +
+        `à confirmer par le chef de chantier`,
+    };
+  }
+
+  // ORANGE
+  if (vigilanceOfficielle === "orange") {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      ampleurImpact: "partielle" as const,
+      motif:
+        `Vigilance orange Météo-France${evolution} — ` +
+        `arrêt à confirmer selon les conditions réelles ` +
+        `du chantier`,
+    };
+  }
+
+  // JAUNE
+  if (vigilanceOfficielle === "jaune") {
+    if (pluieContinue) {
+      return {
+        vigilanceOfficielle,
+        risqueTechnique,
+        pluieContinue,
+        jourArrete: true,
+        aValider: false,
+        ampleurImpact: "complete" as const,
+        motif:
+          `Vigilance jaune Météo-France + pluie continue ` +
+          `constatée toute la journée — arrêt de chantier`,
+      };
+    }
+
+    if (risqueConfirmeParTerrain) {
+      return {
+        vigilanceOfficielle,
+        risqueTechnique,
+        pluieContinue,
+        jourArrete: false,
+        aValider: true,
+        ampleurImpact: "partielle" as const,
+        motif:
+          `Vigilance jaune Météo-France${evolution} + ` +
+          `dépassement technique mesuré ` +
+          `(${risqueTechnique.motif}) — ` +
+          `à confirmer par le chef de chantier`,
+      };
+    }
+
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      ampleurImpact: "partielle" as const,
+      motif:
+        `Vigilance jaune Météo-France${evolution} — ` +
+        `conditions météo dégradées à surveiller`,
+    };
+  }
+
+  // VERT + PLUIE CONTINUE
+  if (
+    vigilanceOfficielle === "vert" &&
+    pluieContinue
+  ) {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: true,
+      aValider: false,
+      ampleurImpact: "complete" as const,
+      motif:
+        `Pluie continue constatée toute la journée ` +
+        `(hors vigilance officielle)`,
+    };
+  }
+
+  // VERT + RISQUE TECHNIQUE
+  if (risqueConfirmeParTerrain) {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      ampleurImpact: "partielle" as const,
+      motif:
+        `Pas de vigilance officielle, mais dépassement ` +
+        `mesuré sur le chantier (${risqueTechnique.motif}) — ` +
+        `à confirmer par le chef de chantier`,
+    };
+  }
+
+  // NORMAL
+  return {
+    vigilanceOfficielle,
+    risqueTechnique,
+    pluieContinue,
+    jourArrete: false,
+    aValider: false,
+    ampleurImpact: null,
+    motif:
+      "Conditions normales — pas d'intempérie constatée",
+  };
+}
+
+// -----------------------------------------------------------------------------
+// NUMÉRO RAPPORT
+// -----------------------------------------------------------------------------
 
 async function prochainNumero(): Promise<string> {
   const annee = new Date().getFullYear();
-  const { data } = await supabase.from("rapports_intemperies").select("numero").ilike("numero", `RI-${annee}-%`);
-  const nums = (data ?? []).map((d: any) => parseInt(d.numero.split("-")[2]) || 0);
-  const suivant = (nums.length ? Math.max(...nums) : 0) + 1;
-  return `RI-${annee}-${String(suivant).padStart(3, "0")}`;
-}
 
-// ---------------------------------------------------------------------
-// Mode CAPTURE (6h / 16h)
-// ---------------------------------------------------------------------
-
-async function modeCapture(periode: Periode) {
-  const resultats: { chantier: string; statut: string }[] = [];
-
-  const { data: chantiers, error } = await supabase
-    .from("chantiers")
-    .select("id, nom, adresse_chantier")
-    .neq("statut", "termine");
-
-  if (error || !chantiers) {
-    return new Response(JSON.stringify({ error: "Impossible de lister les chantiers", detail: error }), { status: 500 });
-  }
-
-  const debutJour = new Date();
-  debutJour.setHours(0, 0, 0, 0);
-
-  for (const ch of chantiers) {
-    const adresse = ch.adresse_chantier as string | null;
-    if (!adresse) {
-      resultats.push({ chantier: ch.nom ?? ch.id, statut: "ignoré (pas d'adresse)" });
-      continue;
-    }
-
-    try {
-      const { data: existant } = await supabase
-        .from("vigilance_captures")
-        .select("id")
-        .eq("chantier_id", ch.id)
-        .eq("periode", periode)
-        .gte("capture_le", debutJour.toISOString())
-        .maybeSingle();
-
-      if (existant) {
-        resultats.push({ chantier: ch.nom ?? ch.id, statut: `capture ${periode} déjà faite aujourd'hui` });
-        continue;
-      }
-
-      const departement = adresseVersDepartement(adresse);
-      const vigilance = departement
-        ? await fetchVigilance(departement)
-        : { couleurMax: "vert" as NiveauAlerte, phenomenes: [] };
-
-      const couleur = vigilancePertinente(vigilance);
-
-      const { error: errInsert } = await supabase.from("vigilance_captures").insert({
-        chantier_id: ch.id,
-        periode,
-        departement,
-        vigilance_couleur: couleur,
-        vigilance_phenomenes: vigilance.phenomenes,
-      });
-
-      if (errInsert) throw errInsert;
-
-      resultats.push({ chantier: ch.nom ?? ch.id, statut: `capture ${periode} enregistrée (${couleur})` });
-    } catch (err) {
-      resultats.push({ chantier: ch.nom ?? ch.id, statut: `erreur : ${(err as Error).message}` });
-    }
-  }
-
-  return new Response(JSON.stringify({ mode: "capture", periode, resultats }, null, 2), {
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-// ---------------------------------------------------------------------
-// Mode GÉNÉRATION (soir)
-// ---------------------------------------------------------------------
-
-async function modeGenerer(force: boolean) {
-  const resultats: { chantier: string; statut: string }[] = [];
-
-  const { data: chantiers, error } = await supabase
-    .from("chantiers")
-    .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces")
-    .neq("statut", "termine");
-
-  if (error || !chantiers) {
-    return new Response(JSON.stringify({ error: "Impossible de lister les chantiers", detail: error }), { status: 500 });
-  }
-
-  const debutJour = new Date();
-  debutJour.setHours(0, 0, 0, 0);
-
-  for (const ch of chantiers) {
-    const adresse = ch.adresse_chantier as string | null;
-    if (!adresse) {
-      resultats.push({ chantier: ch.nom ?? ch.id, statut: "ignoré (pas d'adresse)" });
-      continue;
-    }
-
-    try {
-      const { data: existant } = await supabase
-        .from("rapports_intemperies")
-        .select("id")
-        .eq("chantier_id", ch.id)
-        .gte("cree_le", debutJour.toISOString())
-        .maybeSingle();
-
-      if (existant) {
-        resultats.push({ chantier: ch.nom ?? ch.id, statut: "déjà généré aujourd'hui" });
-        continue;
-      }
-
-      const { data: captures } = await supabase
-        .from("vigilance_captures")
-        .select("periode, vigilance_couleur")
-        .eq("chantier_id", ch.id)
-        .gte("capture_le", debutJour.toISOString());
-
-      const captureMatin = captures?.find((c: any) => c.periode === "matin");
-      const captureAprem = captures?.find((c: any) => c.periode === "apresmidi");
-      const vigilanceMatin = (captureMatin?.vigilance_couleur as NiveauAlerte) ?? null;
-      const vigilanceApresmidi = (captureAprem?.vigilance_couleur as NiveauAlerte) ?? null;
-
-      const meteoJour = await fetchMeteoJour(adresse);
-      const departement = adresseVersDepartement(adresse);
-
-      const decision = evaluerJour(
-        ch.materiau_structurel,
-        ch.moyen_acces,
-        { rafalesMax: meteoJour.rafalesMax, tempMax: meteoJour.tempMax, pluieCumul: meteoJour.pluieCumul },
-        meteoJour.heures,
-        vigilanceMatin,
-        vigilanceApresmidi
+  const { data, error } =
+    await supabase
+      .from("rapports_intemperies")
+      .select("numero")
+      .ilike(
+        "numero",
+        `RI-${annee}-%`
       );
 
-      if (!decision.jourArrete && !decision.aValider && !force) {
-        resultats.push({ chantier: ch.nom ?? ch.id, statut: "conditions normales, pas de rapport" });
+  if (error) {
+    throw new Error(
+      `Erreur numérotation : ${error.message}`
+    );
+  }
+
+  const numeros = (data ?? [])
+    .map((row: any) => {
+      const parts =
+        String(row.numero ?? "").split("-");
+
+      return Number(parts[2]) || 0;
+    });
+
+  const suivant =
+    (numeros.length
+      ? Math.max(...numeros)
+      : 0) + 1;
+
+  return (
+    `RI-${annee}-` +
+    String(suivant).padStart(3, "0")
+  );
+}
+
+// -----------------------------------------------------------------------------
+// MODE CAPTURE
+// -----------------------------------------------------------------------------
+
+async function modeCapture(
+  periode: Periode
+): Promise<Response> {
+  const resultats: {
+    chantier: string;
+    statut: string;
+  }[] = [];
+
+  const { data: chantiers, error } =
+    await supabase
+      .from("chantiers")
+      .select(
+        "id, nom, adresse_chantier"
+      )
+      .neq("statut", "termine");
+
+  if (error || !chantiers) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "Impossible de lister les chantiers",
+        detail: error,
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+      }
+    );
+  }
+
+  const debutJour = new Date();
+  debutJour.setHours(0, 0, 0, 0);
+
+  for (const chantier of chantiers) {
+    const nom =
+      chantier.nom ?? chantier.id;
+
+    const adresse =
+      chantier.adresse_chantier as
+        | string
+        | null;
+
+    if (!adresse) {
+      resultats.push({
+        chantier: nom,
+        statut:
+          "ignoré (pas d'adresse)",
+      });
+
+      continue;
+    }
+
+    try {
+      const { data: existant } =
+        await supabase
+          .from("vigilance_captures")
+          .select("id")
+          .eq(
+            "chantier_id",
+            chantier.id
+          )
+          .eq("periode", periode)
+          .gte(
+            "capture_le",
+            debutJour.toISOString()
+          )
+          .maybeSingle();
+
+      if (existant) {
+        resultats.push({
+          chantier: nom,
+          statut:
+            `capture ${periode} déjà faite aujourd'hui`,
+        });
+
         continue;
       }
 
-      const numero = await prochainNumero();
+      const departement =
+        adresseVersDepartement(adresse);
 
-      const { error: errInsert } = await supabase.from("rapports_intemperies").insert({
-        numero,
-        chantier_id: ch.id,
-        vigilance_officielle: decision.vigilanceOfficielle,
-        jour_arrete: decision.jourArrete,
-        a_valider: decision.aValider,
-        ampleur_impact: decision.ampleurImpact,
-        pluie_continue: decision.pluieContinue,
-        motif: decision.motif,
-        risque_technique_niveau: decision.risqueTechnique.niveau,
-        risque_technique_motif: decision.risqueTechnique.motif,
-        temp_max: meteoJour.tempMax,
-        rafales_max: meteoJour.rafalesMax,
-        pluie_cumul: meteoJour.pluieCumul,
-        materiau: ch.materiau_structurel,
-        acces: ch.moyen_acces,
-        departement,
-        releve_horaire: meteoJour.heures,
-        cree_par: "auto",
+      let vigilance: VigilanceInfo = {
+        couleurMax: "vert",
+        phenomenes: [],
+        misAJourLe: null,
+      };
+
+      if (departement) {
+        vigilance =
+          await fetchVigilance(
+            departement
+          );
+      }
+
+      const couleur =
+        vigilancePertinente(vigilance);
+
+      const { error: insertError } =
+        await supabase
+          .from("vigilance_captures")
+          .insert({
+            chantier_id:
+              chantier.id,
+            periode,
+            departement,
+            vigilance_couleur:
+              couleur,
+            vigilance_phenomenes:
+              vigilance.phenomenes,
+          });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      resultats.push({
+        chantier: nom,
+        statut:
+          `capture ${periode} enregistrée (${couleur})`,
       });
-
-      if (errInsert) throw errInsert;
-
-      resultats.push({ chantier: ch.nom ?? ch.id, statut: `rapport ${numero} généré` });
-    } catch (err) {
-      resultats.push({ chantier: ch.nom ?? ch.id, statut: `erreur : ${(err as Error).message}` });
+    } catch (error) {
+      resultats.push({
+        chantier: nom,
+        statut:
+          `erreur : ${
+            error instanceof Error
+              ? error.message
+              : String(error)
+          }`,
+      });
     }
   }
 
-  return new Response(JSON.stringify({ mode: "generer", resultats }, null, 2), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: "capture",
+      periode,
+      resultats,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+    }
+  );
 }
 
-// ---------------------------------------------------------------------
-// Handler
-// ---------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// MODE GÉNÉRATION
+// -----------------------------------------------------------------------------
+
+async function modeGenerer(
+  force: boolean
+): Promise<Response> {
+  const resultats: {
+    chantier: string;
+    statut: string;
+  }[] = [];
+
+  const { data: chantiers, error } =
+    await supabase
+      .from("chantiers")
+      .select(
+        `
+        id,
+        nom,
+        adresse_chantier,
+        materiau_structural,
+        moyen_acces
+        `
+      )
+      .neq("statut", "termine");
+
+  if (error || !chantiers) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "Impossible de lister les chantiers",
+        detail: error,
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+      }
+    );
+  }
+
+  const debutJour = new Date();
+  debutJour.setHours(0, 0, 0, 0);
+
+  for (const chantier of chantiers) {
+    const nom =
+      chantier.nom ?? chantier.id;
+
+    const adresse =
+      chantier.adresse_chantier as
+        | string
+        | null;
+
+    if (!adresse) {
+      resultats.push({
+        chantier: nom,
+        statut:
+          "ignoré (pas d'adresse)",
+      });
+
+      continue;
+    }
+
+    try {
+      // ---------------------------------------------------------------
+      // Évite le doublon du jour
+      // ---------------------------------------------------------------
+
+      const { data: existant } =
+        await supabase
+          .from("rapports_intemperies")
+          .select("id, numero")
+          .eq(
+            "chantier_id",
+            chantier.id
+          )
+          .gte(
+            "cree_le",
+            debutJour.toISOString()
+          )
+          .maybeSingle();
+
+      if (existant) {
+        resultats.push({
+          chantier: nom,
+          statut:
+            `déjà généré aujourd'hui (${existant.numero})`,
+        });
+
+        continue;
+      }
+
+      // ---------------------------------------------------------------
+      // Récupération des captures
+      // ---------------------------------------------------------------
+
+      const { data: captures } =
+        await supabase
+          .from("vigilance_captures")
+          .select(
+            "periode, vigilance_couleur"
+          )
+          .eq(
+            "chantier_id",
+            chantier.id
+          )
+          .gte(
+            "capture_le",
+            debutJour.toISOString()
+          );
+
+      const captureMatin =
+        captures?.find(
+          (c: any) =>
+            c.periode === "matin"
+        );
+
+      const captureApresmidi =
+        captures?.find(
+          (c: any) =>
+            c.periode ===
+            "apresmidi"
+        );
+
+      const vigilanceMatin =
+        (captureMatin
+          ?.vigilance_couleur ??
+          null) as NiveauAlerte | null;
+
+      const vigilanceApresmidi =
+        (captureApresmidi
+          ?.vigilance_couleur ??
+          null) as NiveauAlerte | null;
+
+      // ---------------------------------------------------------------
+      // Météo réelle du jour
+      // ---------------------------------------------------------------
+
+      const meteo =
+        await fetchMeteoJour(
+          adresse
+        );
+
+      const departement =
+        adresseVersDepartement(
+          adresse
+        );
+
+      // ---------------------------------------------------------------
+      // Matériau / accès sécurisés
+      // ---------------------------------------------------------------
+
+      const materiau =
+        (
+          chantier
+            .materiau_structural ??
+          "bois"
+        ) as Materiau;
+
+      const acces =
+        (
+          chantier.moyen_acces ??
+          "echafaudage"
+        ) as Acces;
+
+      // ---------------------------------------------------------------
+      // Décision
+      // ---------------------------------------------------------------
+
+      const decision =
+        evaluerJour(
+          materiau,
+          acces,
+          {
+            rafalesMax:
+              meteo.rafalesMax,
+            tempMax:
+              meteo.tempMax,
+            pluieCumul:
+              meteo.pluieCumul,
+          },
+          meteo.heures,
+          vigilanceMatin,
+          vigilanceApresmidi
+        );
+
+      // ---------------------------------------------------------------
+      // Pas d'intempérie
+      // ---------------------------------------------------------------
+
+      if (
+        !decision.jourArrete &&
+        !decision.aValider &&
+        !force
+      ) {
+        resultats.push({
+          chantier: nom,
+          statut:
+            "conditions normales, pas de rapport",
+        });
+
+        continue;
+      }
+
+      // ---------------------------------------------------------------
+      // Création rapport
+      // ---------------------------------------------------------------
+
+      const numero =
+        await prochainNumero();
+
+      const { data: rapportCree, error: insertError } =
+        await supabase
+          .from("rapports_intemperies")
+          .insert({
+            numero,
+            chantier_id:
+              chantier.id,
+
+            vigilance_officielle:
+              decision.vigilanceOfficielle,
+
+            jour_arrete:
+              decision.jourArrete,
+
+            a_valider:
+              decision.aValider,
+
+            ampleur_impact:
+              decision.ampleurImpact,
+
+            pluie_continue:
+              decision.pluieContinue,
+
+            motif:
+              decision.motif,
+
+            risque_technique_niveau:
+              decision.risqueTechnique
+                .niveau,
+
+            risque_technique_motif:
+              decision.risqueTechnique
+                .motif,
+
+            temp_max:
+              meteo.tempMax,
+
+            rafales_max:
+              meteo.rafalesMax,
+
+            pluie_cumul:
+              Number(
+                meteo.pluieCumul.toFixed(2)
+              ),
+
+            materiau,
+
+            acces,
+
+            departement,
+
+            releve_horaire:
+              meteo.heures,
+
+            cree_par: "auto",
+          })
+          .select("id")
+          .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      resultats.push({
+        chantier: nom,
+        statut:
+          `rapport ${numero} généré`,
+      });
+    } catch (error) {
+      console.error(
+        `Erreur rapport chantier ${chantier.id}:`,
+        error
+      );
+
+      resultats.push({
+        chantier: nom,
+        statut:
+          `erreur : ${
+            error instanceof Error
+              ? error.message
+              : String(error)
+          }`,
+      });
+    }
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      mode: "generer",
+      force,
+      total: resultats.length,
+      resultats,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+    }
+  );
+}
+
+// -----------------------------------------------------------------------------
+// HANDLER SUPABASE EDGE FUNCTION
+// -----------------------------------------------------------------------------
 
 Deno.serve(async (req) => {
-  let mode = "generer";
+  let mode:
+    | "capture"
+    | "generer" = "generer";
+
   let periode: Periode = "matin";
   let force = false;
 
   try {
     const body = await req.json();
-    if (body?.mode === "capture") mode = "capture";
-    if (body?.periode === "apresmidi") periode = "apresmidi";
-    force = body?.force === true;
+
+    if (
+      body?.mode === "capture"
+    ) {
+      mode = "capture";
+    }
+
+    if (
+      body?.periode ===
+      "apresmidi"
+    ) {
+      periode = "apresmidi";
+    }
+
+    if (body?.force === true) {
+      force = true;
+    }
   } catch {
-    // pas de body ou body invalide : on garde les valeurs par défaut
+    // Aucun body ou body invalide.
+    // On conserve les valeurs par défaut.
   }
 
-  if (mode === "capture") return modeCapture(periode);
+  if (mode === "capture") {
+    return modeCapture(periode);
+  }
+
   return modeGenerer(force);
 });
