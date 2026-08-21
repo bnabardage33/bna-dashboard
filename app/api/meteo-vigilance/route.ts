@@ -75,12 +75,11 @@ export async function GET(request: NextRequest) {
   
   try {
     const res = await fetch(URL_VIGILANCE, {
-      headers: { apikey: apiKey },
-      // La vigilance ne bouge pas seconde par seconde, on peut cacher un peu.
+      headers: { Authorization: `Bearer ${apiKey}` },
       next: { revalidate: 600 },
     });
-
-    if (!res.ok) {
+      
+      if (!res.ok) {
       const texte = await res.text();
       console.error("Erreur API Vigilance Météo-France:", res.status, texte);
 
