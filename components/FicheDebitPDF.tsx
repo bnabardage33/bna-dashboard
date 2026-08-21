@@ -182,34 +182,64 @@ export default function FicheDebitPDF({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
+              {pose.isolant.actif && (
+                <>
+                  <tr className="bg-emerald-50/50">
+                    <td className="py-1.5 font-medium text-emerald-950">
+                      {pose.isolant.typeIsolant} (ép. {pose.isolant.epaisseurMm} mm)
+                    </td>
+                    <td className="py-1.5 text-center text-emerald-800">+8% perte</td>
+                    <td className="py-1.5 text-right font-bold text-emerald-900">
+                      {pose.isolant.nbPaquetsACommander} pqt ({pose.isolant.surfaceACommanderM2} m²)
+                    </td>
+                    <td className="py-1.5 text-right text-emerald-800">
+                      paquets ({pose.isolant.surfacePaquetM2} m²)
+                    </td>
+                  </tr>
+                  <tr className="bg-emerald-50/50">
+                    <td className="py-1.5 font-medium text-emerald-950">Chevilles rosaces d'isolant à frapper ITE</td>
+                    <td className="py-1.5 text-center text-emerald-800">5 / m²</td>
+                    <td className="py-1.5 text-right font-bold text-emerald-900">{pose.isolant.nbChevillesRosaces}</td>
+                    <td className="py-1.5 text-right text-emerald-800">chevilles</td>
+                  </tr>
+                </>
+              )}
               <tr>
-                <td className="py-1.5 font-medium">Montants chevrons verticaux</td>
-                <td className="py-1.5 text-center">{pose.entraxeHorizontal ? `${pose.entraxeHorizontal * 100} cm` : "—"}</td>
-                <td className="py-1.5 text-right font-bold">{pose.nbMontants}</td>
-                <td className="py-1.5 text-right">lignes</td>
+                <td className="py-1.5 font-medium">Chevrons bois verticaux (max 3m / segment)</td>
+                <td className="py-1.5 text-center">{pose.entraxeHorizontal ? `${Math.round(pose.entraxeHorizontal * 100)} cm` : "60 cm"}</td>
+                <td className="py-1.5 text-right font-bold">{pose.nbSegmentsChevrons} pcs ({pose.lineaireChevronsM.toFixed(1)} ml)</td>
+                <td className="py-1.5 text-right">{pose.nbMontants} lignes</td>
               </tr>
               <tr>
-                <td className="py-1.5 font-medium">Équerres Isolco 3000 P2 (avec MP3-S)</td>
-                <td className="py-1.5 text-center">{pose.entraxeVertical} m {zone.angle ? "(angle)" : ""}</td>
+                <td className="py-1.5 font-medium">Équerres {pose.isolant.modeleEquerreIsolco} ({pose.nbEquerresPorteuses} porteuses + {pose.nbEquerresGuides} guides)</td>
+                <td className="py-1.5 text-center">{pose.entraxeVertical} m {zone.angle || zone.zone_vent_rive ? "(angle/vent)" : ""}</td>
                 <td className="py-1.5 text-right font-bold">{pose.nbFixationsTotal}</td>
                 <td className="py-1.5 text-right">équerres</td>
               </tr>
               <tr>
-                <td className="py-1.5 font-medium">Chevilles Spit MP3-S (2 par équerre)</td>
-                <td className="py-1.5 text-center">Ø12mm prof. 70mm</td>
-                <td className="py-1.5 text-right font-bold">{pose.nbFixationsTotal * 2}</td>
+                <td className="py-1.5 font-medium">Chevilles maçonnerie Spit MP3-S Ø12×70mm</td>
+                <td className="py-1.5 text-center">2 / équerre (15 Nm)</td>
+                <td className="py-1.5 text-right font-bold">{pose.nbChevillesMurales}</td>
                 <td className="py-1.5 text-right">chevilles</td>
               </tr>
               <tr>
-                <td className="py-1.5 font-medium">Vis de fixation (total structure + parement)</td>
-                <td className="py-1.5 text-center">—</td>
-                <td className="py-1.5 text-right font-bold">{pose.nbVis}</td>
-                <td className="py-1.5 text-right">vis</td>
+                <td className="py-1.5 font-medium">Vis Inox chevron sur équerre (4/porteuse, 2/guide)</td>
+                <td className="py-1.5 text-center">Inox A2 auto-perf</td>
+                <td className="py-1.5 text-right font-bold">{pose.nbVisChevronEquerre}</td>
+                <td className="py-1.5 text-right">vis inox</td>
               </tr>
+              {pose.nbVisParement > 0 && (
+                <tr>
+                  <td className="py-1.5 font-medium">Fixations parement bardage (vis laquées / clips)</td>
+                  <td className="py-1.5 text-center">—</td>
+                  <td className="py-1.5 text-right font-bold">{pose.nbVisParement}</td>
+                  <td className="py-1.5 text-right">vis</td>
+                </tr>
+              )}
               <tr>
-                <td className="py-1.5 font-medium">Bande de protection EPDM (80mm)</td>
-                <td className="py-1.5 text-center">100% chevrons</td>
-                <td className="py-1.5 text-right font-bold">{(pose.nbMontants * zone.hauteur_mur).toFixed(1)}</td>
+                <td className="py-1.5 font-medium">Bande de protection EPDM (80-100mm)</td>
+                <td className="py-1.5 text-center">100% chevrons + 5%</td>
+                <td className="py-1.5 text-right font-bold">{pose.lineaireBandeEPDMM}</td>
                 <td className="py-1.5 text-right">ml</td>
               </tr>
               <tr>

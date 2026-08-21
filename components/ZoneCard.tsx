@@ -38,6 +38,10 @@ export type Zone = {
   module_largeur_mm?: number | null;
   module_hauteur_mm?: number | null;
   sens_pose: SensPose | null;
+  epaisseur_isolant_mm?: number | null;
+  type_isolant?: "laine_roche" | "laine_verre" | "sans_isolant" | null;
+  surface_paquet_m2?: number | null;
+  zone_vent_rive?: boolean | null;
 };
 
 export type LigneCommande = {
@@ -183,7 +187,13 @@ export default function ZoneCard({
           zone.largeur_lame_mm ??
             defautModule(
               zone.famille_pose
-            )
+            ),
+          {
+            zoneVentRive: zone.zone_vent_rive ?? zone.angle,
+            epaisseurIsolantMm: zone.epaisseur_isolant_mm ?? 120,
+            typeIsolant: zone.type_isolant ?? "laine_roche",
+            surfacePaquetM2: zone.surface_paquet_m2 ?? 4.8,
+          }
         )
       : null;
 
@@ -361,31 +371,62 @@ export default function ZoneCard({
     }
 
     /*
-     * OSSATURE
+     * OSSATURE & INFRASTRUCTURE
      */
     if (pose) {
+      // 1. ISOLANT ITE (si activé)
+      if (pose.isolant.actif) {
+        lignes.push({
+          designation: `Isolant ITE ${pose.isolant.typeIsolant} ép. ${pose.isolant.epaisseurMm}mm (${pose.isolant.surfaceACommanderM2} m² avec +8% perte — ${pose.isolant.nbPaquetsACommander} paquets de ${pose.isolant.surfacePaquetM2} m²) — ${zone.nom}`,
+          quantite: pose.isolant.nbPaquetsACommander,
+          unite: "paquets",
+        });
+
+        lignes.push({
+          designation: `Chevilles rosaces d'isolant à frapper (5/m²) — ${zone.nom}`,
+          quantite: pose.isolant.nbChevillesRosaces,
+          unite: "chevilles",
+        });
+      }
+
+      // 2. OSSATURE CHEVRONS & ÉQUERRES
       lignes.push({
-        designation:
-          "Chevrons / montants",
-        quantite:
-          pose.nbMontants,
+        designation: `Chevrons / Montants (${pose.lineaireChevronsM.toFixed(1)} ml — ${pose.nbSegmentsChevrons} pièces max 3m) — ${zone.nom}`,
+        quantite: pose.nbSegmentsChevrons,
         unite: "pièces",
       });
 
       lignes.push({
-        designation:
-          "Équerres Isolco 3000 P2",
-        quantite:
-          pose.nbFixationsTotal,
-        unite: "pièces",
+        designation: `Équerres ${pose.isolant.modeleEquerreIsolco} (${pose.nbEquerresPorteuses} porteuses + ${pose.nbEquerresGuides} guides) — ${zone.nom}`,
+        quantite: pose.nbFixationsTotal,
+        unite: "équerres",
       });
 
       lignes.push({
-        designation:
-          "Visserie / chevilles",
-        quantite: pose.nbVis,
-        unite: "pièces",
+        designation: `Chevilles maçonnerie Spit MP3-S Ø12×70mm (2/équerre) — ${zone.nom}`,
+        quantite: pose.nbChevillesMurales,
+        unite: "chevilles",
       });
+
+      lignes.push({
+        designation: `Vis Inox assemblage chevron/équerre (4/porteuse, 2/guide) — ${zone.nom}`,
+        quantite: pose.nbVisChevronEquerre,
+        unite: "vis inox",
+      });
+
+      lignes.push({
+        designation: `Bande de protection EPDM 80-100mm — ${zone.nom}`,
+        quantite: pose.lineaireBandeEPDMM,
+        unite: "ml",
+      });
+
+      if (pose.nbVisParement > 0) {
+        lignes.push({
+          designation: `Vis / Clips fixation parement — ${zone.nom}`,
+          quantite: pose.nbVisParement,
+          unite: "vis",
+        });
+      }
     }
 
     if (lignes.length === 0) {
@@ -612,6 +653,107 @@ export default function ZoneCard({
               })
             }
           />
+        )}
+
+        {/* ==================================================== */}
+        {/* ISOLATION ITE & ÉQUERRES */}
+        {/* ==================================================== */}
+        {zone.famille_pose && (
+          <div className="space-y-3 rounded-lg border border-emerald-500/30 bg-emerald-950/10 p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
+                🧱 Isolation ITE & Équerres Isolco
+              </p>
+              {pose && pose.isolant.actif && (
+                <span className="rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                  {pose.isolant.nbPaquetsACommander} paquets ({pose.isolant.surfaceACommanderM2} m²)
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* Épaisseur Isolant */}
+              <div>
+                <label className="text-[11px] text-slate-400">Épaisseur Isolant</label>
+                <select
+                  value={zone.epaisseur_isolant_mm ?? 120}
+                  onChange={(e) => update({ epaisseur_isolant_mm: parseInt(e.target.value, 10) })}
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                >
+                  <option value={0}>0 mm (Sans isolant / Lame d'air seule)</option>
+                  <option value={80}>80 mm (R = 2.25)</option>
+                  <option value={100}>100 mm (R = 2.85)</option>
+                  <option value={120}>120 mm (R = 3.40 — Standard)</option>
+                  <option value={140}>140 mm (R = 4.00)</option>
+                  <option value={160}>160 mm (R = 4.55)</option>
+                  <option value={180}>180 mm (R = 5.10)</option>
+                  <option value={200}>200 mm (R = 5.70 — Haute perf.)</option>
+                </select>
+              </div>
+
+              {/* Type d'isolant */}
+              <div>
+                <label className="text-[11px] text-slate-400">Type d'isolant</label>
+                <select
+                  value={zone.type_isolant ?? "laine_roche"}
+                  onChange={(e) => update({ type_isolant: e.target.value as any })}
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                >
+                  <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>
+                  <option value="laine_verre">Laine de verre (ISOVER / Knauf)</option>
+                  <option value="sans_isolant">Sans isolant rapporté</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Conditionnement paquet & Options vent */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Surface / Paquet (m²)"
+                value={zone.surface_paquet_m2 ?? 4.8}
+                onChange={(v) => update({ surface_paquet_m2: v || null })}
+              />
+
+              <div className="flex flex-col justify-end">
+                <button
+                  type="button"
+                  onClick={() => update({ zone_vent_rive: !(zone.zone_vent_rive ?? zone.angle) })}
+                  className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    (zone.zone_vent_rive ?? zone.angle)
+                      ? "border-sky-500 bg-sky-950/40 text-sky-300"
+                      : "border-slate-600 bg-slate-900 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <span>💨 Rives renforcées (40cm)</span>
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      (zone.zone_vent_rive ?? zone.angle) ? "bg-sky-400" : "bg-slate-600"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Badge de synthèse technique */}
+            {pose && (
+              <div className="rounded-md border border-slate-700 bg-slate-900/80 p-2 text-[11px] text-slate-300 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Modèle d'équerre auto :</span>
+                  <span className="font-semibold text-sky-400">{pose.isolant.modeleEquerreIsolco}</span>
+                </div>
+                {pose.isolant.actif && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Chevilles rosaces isolant (5/m²) :</span>
+                    <span className="font-semibold text-emerald-400">{pose.isolant.nbChevillesRosaces} chevilles à frapper</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Vis Inox chevron/équerre :</span>
+                  <span className="font-semibold text-amber-400">{pose.nbVisChevronEquerre} vis (4/porteuse, 2/guide)</span>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* ==================================================== */}

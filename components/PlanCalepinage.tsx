@@ -212,55 +212,36 @@ export default function PlanCalepinage({
   const chevrons: SegmentChevron[] = [];
 
   if (pose) {
-    const entraxe =
-      pose.entraxeHorizontal ?? largeurM;
+    const positionsX =
+      pose.positionsChevronsM && pose.positionsChevronsM.length > 0
+        ? pose.positionsChevronsM
+        : (() => {
+            const entraxe = pose.entraxeHorizontal ?? 0.6;
+            const pos: number[] = [];
+            for (let x = 0; x <= largeurM + 0.001; x += entraxe) {
+              pos.push(Math.min(x, largeurM));
+            }
+            if (pos.length === 0 || Math.abs(pos[pos.length - 1] - largeurM) > 0.001) {
+              pos.push(largeurM);
+            }
+            return pos;
+          })();
 
-    if (entraxe > 0) {
-      const positionsX: number[] = [];
+    let numero = 1;
 
-      for (
-        let x = 0;
-        x <= largeurM + 0.001;
-        x += entraxe
-      ) {
-        positionsX.push(
-          Math.min(x, largeurM)
-        );
-      }
+    for (const x of positionsX) {
+      const segments = decouperChevron(
+        x,
+        hauteurM,
+        estPignon,
+        largeurM,
+        hauteurM,
+        hauteurFaiteCalculeeM,
+        numero
+      );
 
-      /*
-       * On garantit toujours un chevron
-       * sur le bord droit.
-       */
-      if (
-        positionsX.length === 0 ||
-        Math.abs(
-          positionsX[
-            positionsX.length - 1
-          ] - largeurM
-        ) > 0.001
-      ) {
-        positionsX.push(largeurM);
-      }
-
-      let numero = 1;
-
-      for (const x of positionsX) {
-        const segments =
-          decouperChevron(
-            x,
-            hauteurM,
-            estPignon,
-            largeurM,
-            hauteurM,
-            hauteurFaiteCalculeeM,
-            numero
-          );
-
-        chevrons.push(...segments);
-
-        numero += segments.length;
-      }
+      chevrons.push(...segments);
+      numero += segments.length;
     }
   }
 
@@ -279,59 +260,53 @@ export default function PlanCalepinage({
    * C1 possède ses équerres.
    * C2 possède ses propres équerres.
    */
-  const equerres: {
+  type EquerreDessin = {
     xM: number;
     yM: number;
     chevron: number;
-  }[] = [];
+    type: "porteuse" | "guide";
+  };
 
-  if (
-    pose &&
-    pose.entraxeVertical > 0
-  ) {
+  const equerres: EquerreDessin[] = [];
+
+  if (pose && pose.entraxeVertical > 0) {
     for (const chevron of chevrons) {
-      const entraxeVertical =
-        pose.entraxeVertical;
+      const entraxeVertical = pose.entraxeVertical;
+      const longueur = chevron.yFinM - chevron.yDebutM;
+      if (longueur <= 0) continue;
 
-      let y =
-        chevron.yDebutM;
+      // Distance de rive conforme DTU 41.2 (15 cm du bord du chevron)
+      const margeExt = Math.min(0.15, longueur / 4);
+      const yBas = chevron.yDebutM + margeExt;
+      const yHaut = chevron.yFinM - margeExt;
 
-      /*
-       * Première équerre.
-       */
+      // Équerre Haute = Porteuse (Point Fixe)
       equerres.push({
         xM: chevron.xM,
-        yM: y,
+        yM: yHaut,
         chevron: chevron.numero,
+        type: "porteuse",
       });
 
-      /*
-       * Équerres intermédiaires.
-       */
-      while (
-        y + entraxeVertical <
-        chevron.yFinM - 0.001
-      ) {
-        y += entraxeVertical;
-
+      // Équerres intermédiaires (Guides / Points Coulissants)
+      let y = yBas + entraxeVertical;
+      while (y < yHaut - 0.10) {
         equerres.push({
           xM: chevron.xM,
           yM: y,
           chevron: chevron.numero,
+          type: "guide",
         });
+        y += entraxeVertical;
       }
 
-      /*
-       * Dernière équerre.
-       */
-      if (
-        chevron.yFinM - y >
-        0.001
-      ) {
+      // Équerre Basse = Guide (Point Coulissant, garantit au moins 2 équerres par segment)
+      if (yHaut - yBas > 0.10) {
         equerres.push({
           xM: chevron.xM,
-          yM: chevron.yFinM,
+          yM: yBas,
           chevron: chevron.numero,
+          type: "guide",
         });
       }
     }
@@ -427,48 +402,53 @@ export default function PlanCalepinage({
         {vue === "ossature" && (
           <g>
             {/* CHEVRONS */}
-
-            {chevrons.map(
-              (chevron) => (
-                <line
-                  key={`chevron-${chevron.numero}`}
-                  x1={px(
-                    chevron.xM
-                  )}
-                  y1={py(
-                    chevron.yDebutM
-                  )}
-                  x2={px(
-                    chevron.xM
-                  )}
-                  y2={py(
-                    chevron.yFinM
-                  )}
-                  stroke="#38bdf8"
-                  strokeWidth={4}
-                />
-              )
-            )}
+            {chevrons.map((chevron) => (
+              <line
+                key={`chevron-${chevron.numero}`}
+                x1={px(chevron.xM)}
+                y1={py(chevron.yDebutM + (chevron.yDebutM > 0 ? 0.015 : 0))}
+                x2={px(chevron.xM)}
+                y2={py(chevron.yFinM - 0.015)}
+                stroke="#38bdf8"
+                strokeWidth={4.5}
+                strokeLinecap="round"
+              />
+            ))}
 
             {/* ÉQUERRES */}
-
-            {equerres.map(
-              (equerre, index) => (
-                <circle
-                  key={`equerre-${equerre.chevron}-${index}`}
-                  cx={px(
-                    equerre.xM
-                  )}
-                  cy={py(
-                    equerre.yM
-                  )}
-                  r={4}
-                  fill="#f87171"
-                  stroke="#fecaca"
-                  strokeWidth={1}
-                />
-              )
-            )}
+            {equerres.map((equerre, index) => (
+              <g key={`equerre-${equerre.chevron}-${index}`}>
+                {equerre.type === "porteuse" ? (
+                  // Équerre Porteuse (Point Fixe) : rouge vif avec cercle central
+                  <>
+                    <circle
+                      cx={px(equerre.xM)}
+                      cy={py(equerre.yM)}
+                      r={5}
+                      fill="#ef4444"
+                      stroke="#fecaca"
+                      strokeWidth={1.5}
+                    />
+                    <circle
+                      cx={px(equerre.xM)}
+                      cy={py(equerre.yM)}
+                      r={1.5}
+                      fill="#ffffff"
+                    />
+                  </>
+                ) : (
+                  // Équerre Guide (Point Coulissant) : orange ambre
+                  <circle
+                    cx={px(equerre.xM)}
+                    cy={py(equerre.yM)}
+                    r={4}
+                    fill="#f59e0b"
+                    stroke="#fef3c7"
+                    strokeWidth={1}
+                  />
+                )}
+              </g>
+            ))}
 
             {/* NUMÉROS DES CHEVRONS */}
 
@@ -656,35 +636,58 @@ export default function PlanCalepinage({
       {/* ====================================================== */}
 
       {vue === "ossature" && (
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div>
-            <p className="text-slate-500">
-              Chevrons
-            </p>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+              <p className="text-[10px] uppercase text-slate-400">Lignes montants</p>
+              <p className="text-base font-bold text-white">
+                {pose ? pose.nbMontants : chevrons.length}
+              </p>
+              <p className="text-[10px] text-slate-500">
+                Entraxe {pose && pose.entraxeHorizontal ? `${Math.round(pose.entraxeHorizontal * 100)} cm` : "60 cm"}
+              </p>
+            </div>
 
-            <p className="font-semibold text-white">
-              {chevrons.length}
-            </p>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+              <p className="text-[10px] uppercase text-slate-400">Chevrons (max 3m)</p>
+              <p className="text-base font-bold text-sky-400">
+                {chevrons.length} chevrons
+              </p>
+              <p className="text-[10px] text-slate-500">
+                ~{pose ? pose.lineaireChevronsM.toFixed(1) : 0} ml total
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+              <p className="text-[10px] uppercase text-slate-400">Équerres Isolco</p>
+              <p className="text-base font-bold text-red-400">
+                {equerres.length} équerres
+              </p>
+              <p className="text-[10px] text-slate-500">
+                {equerres.length * 2} chevilles Spit MP3-S
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+              <p className="text-[10px] uppercase text-slate-400">Bande EPDM (80mm)</p>
+              <p className="text-base font-bold text-emerald-400">
+                {pose ? pose.lineaireBandeEPDMM : 0} ml
+              </p>
+              <p className="text-[10px] text-slate-500">
+                Entraxe vert. {pose ? `${Math.round(pose.entraxeVertical * 100)} cm` : "135 cm"}
+              </p>
+            </div>
           </div>
 
-          <div>
-            <p className="text-slate-500">
-              Équerres
-            </p>
-
-            <p className="font-semibold text-white">
-              {equerres.length}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-slate-500">
-              Max / chevron
-            </p>
-
-            <p className="font-semibold text-white">
-              3,00 m
-            </p>
+          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full border border-red-200 bg-red-500"></span>
+              Équerre Porteuse (Point Fixe en tête) : {pose ? pose.nbEquerresPorteuses : chevrons.length}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-2.5 w-2.5 rounded-full border border-amber-200 bg-amber-500"></span>
+              Équerre Guide (Point Coulissant) : {pose ? pose.nbEquerresGuides : equerres.length - chevrons.length}
+            </span>
           </div>
         </div>
       )}
