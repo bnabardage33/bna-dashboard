@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { compresserImage } from "@/lib/imageCompress";
 
 type Photo = {
   id: string;
@@ -71,30 +72,37 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
     if (!file) return;
     setUploading(type);
 
-    const fileName = `${chantierId}/${type}-${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("photos")
-      .upload(fileName, file);
+    try {
+      // Compression automatique côté client pour réduire la taille (10 Mo -> ~350 Ko)
+      const fichierCompresse = await compresserImage(file, 1920, 0.82);
 
-    if (uploadError) {
-      alert("Erreur upload : " + uploadError.message);
+      const fileName = `${chantierId}/${type}-${Date.now()}-${fichierCompresse.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("photos")
+        .upload(fileName, fichierCompresse);
+
+      if (uploadError) {
+        alert("Erreur upload : " + uploadError.message);
+        setUploading(null);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("photos").getPublicUrl(fileName);
+
+      const { error: insertError } = await supabase.from("photos").insert({
+        chantier_id: chantierId,
+        url: urlData.publicUrl,
+        type,
+        date_prise: new Date().toISOString(),
+      });
+
+      if (insertError) alert("Erreur enregistrement : " + insertError.message);
+    } catch (err: any) {
+      alert("Erreur traitement photo : " + (err.message || String(err)));
+    } finally {
       setUploading(null);
-      return;
+      fetchPhotos();
     }
-
-    const { data: urlData } = supabase.storage.from("photos").getPublicUrl(fileName);
-
-    const { error: insertError } = await supabase.from("photos").insert({
-      chantier_id: chantierId,
-      url: urlData.publicUrl,
-      type,
-      date_prise: new Date().toISOString(),
-    });
-
-    if (insertError) alert("Erreur enregistrement : " + insertError.message);
-
-    setUploading(null);
-    fetchPhotos();
   }
 
   async function supprimerPhoto(photo: Photo) {

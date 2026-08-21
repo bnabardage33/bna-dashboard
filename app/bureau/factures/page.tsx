@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
+import { CATALOGUE_OUVRAGES } from "@/lib/catalogueOuvrages";
 
 type Client = {
   id: string;
@@ -137,6 +138,21 @@ export default function FacturesPage() {
     setDejaFactureHT(deja);
   }
 
+  function remplirAcompte(pourcentage = 30) {
+    if (totalDevisHT === null || totalDevisHT <= 0) return;
+    const montantAcompte = Math.round(totalDevisHT * (pourcentage / 100) * 100) / 100;
+    setLignes([
+      {
+        designation: `Acompte de ${pourcentage}% à la commande`,
+        description: objet ? `Acompte de ${pourcentage}% sur : ${objet}` : undefined,
+        qte: 1,
+        unite: "forfait",
+        pu_ht: montantAcompte,
+      },
+    ]);
+    setTypeFacture("acompte");
+  }
+
   function remplirSolde() {
     if (totalDevisHT === null || dejaFactureHT === null) return;
     const reste = Math.max(0, totalDevisHT - dejaFactureHT);
@@ -150,6 +166,25 @@ export default function FacturesPage() {
       },
     ]);
     setTypeFacture("solde");
+  }
+
+  function insererDepuisCatalogue(ouvrageId: string) {
+    if (!ouvrageId) return;
+    const ouv = CATALOGUE_OUVRAGES.find((o) => o.id === ouvrageId);
+    if (!ouv) return;
+    setLignes((prev) => {
+      const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
+      return [
+        ...nettes,
+        {
+          designation: ouv.designation,
+          description: ouv.description,
+          qte: 1,
+          unite: ouv.unite,
+          pu_ht: ouv.pu_ht,
+        },
+      ];
+    });
   }
 
   function ajouterLigne() {
@@ -374,13 +409,22 @@ export default function FacturesPage() {
                     </span>
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={remplirSolde}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
-                >
-                  Remplir le solde
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => remplirAcompte(30)}
+                    className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-500"
+                  >
+                    ⚡ Acompte 30%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={remplirSolde}
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+                  >
+                    ⚡ Remplir le solde
+                  </button>
+                </div>
               </div>
             )}
 
@@ -493,13 +537,32 @@ export default function FacturesPage() {
                   </button>
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={ajouterLigne}
-                className="text-sm font-medium text-red-400 hover:text-red-300"
-              >
-                + Ajouter une ligne
-              </button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={ajouterLigne}
+                  className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
+                >
+                  + Ajouter une ligne vierge
+                </button>
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    insererDepuisCatalogue(e.target.value);
+                    e.target.value = "";
+                  }}
+                  className="flex-1 rounded-lg border border-red-600/50 bg-slate-900 px-3 py-1.5 text-xs text-red-300 font-medium hover:border-red-500"
+                >
+                  <option value="" disabled>
+                    📦 + Insérer un ouvrage depuis le catalogue standard...
+                  </option>
+                  {CATALOGUE_OUVRAGES.map((ouv) => (
+                    <option key={ouv.id} value={ouv.id}>
+                      [{ouv.familleLabel}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <p className="text-right text-sm font-semibold text-white">

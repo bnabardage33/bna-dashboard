@@ -23,6 +23,38 @@ type Chantier = {
   clients: { nom: string } | null;
 };
 
+type DevisLie = {
+  id: string;
+  numero: string;
+  objet: string | null;
+  date_emission: string;
+  statut: string;
+  lignes: { designation: string; qte: number; pu_ht: number }[];
+  tva_pct: number;
+};
+
+type FactureLiee = {
+  id: string;
+  numero: string;
+  objet: string | null;
+  date_emission: string;
+  statut: string;
+  type_facture: string;
+  lignes: { designation: string; qte: number; pu_ht: number }[];
+  tva_pct: number;
+};
+
+type CommandeLiee = {
+  id: string;
+  designation: string;
+  quantite: number | null;
+  unite: string | null;
+  montant_ht: number | null;
+  statut: string;
+  date_livraison_prevue: string | null;
+  fournisseurs: { nom: string } | null;
+};
+
 const TABS = ["Général", "Métrés & Technique", "Photos & Notes", "Documents"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
@@ -36,6 +68,10 @@ export default function ChantierDetailPage() {
 
   const [chantier, setChantier] = useState<Chantier | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
+  const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
+  const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
+  const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Général");
 
@@ -59,10 +95,52 @@ export default function ChantierDetailPage() {
     else setZones((data as Zone[]).map((z) => ({ ...z, ouvertures: z.ouvertures || [] })));
   }, [id]);
 
+  const fetchDocuments = useCallback(async () => {
+    setLoadingDocs(true);
+    const [coRes, devisRes, facturesRes] = await Promise.all([
+      supabase
+        .from("commandes")
+        .select("*, fournisseurs(nom)")
+        .eq("chantier_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("devis")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("factures")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (coRes.data) setCommandesLiees(coRes.data as unknown as CommandeLiee[]);
+    if (devisRes.data && chantier?.client_id) {
+      setDevisLies(
+        (devisRes.data as DevisLie[]).filter(
+          (d) => (d as any).client_id === chantier.client_id
+        )
+      );
+    }
+    if (facturesRes.data && chantier?.client_id) {
+      setFacturesLiees(
+        (facturesRes.data as FactureLiee[]).filter(
+          (f) => (f as any).client_id === chantier.client_id
+        )
+      );
+    }
+    setLoadingDocs(false);
+  }, [id, chantier?.client_id]);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchChantier(), fetchZones()]).finally(() => setLoading(false));
   }, [fetchChantier, fetchZones]);
+
+  useEffect(() => {
+    if (tab === "Documents" && chantier) {
+      fetchDocuments();
+    }
+  }, [tab, chantier, fetchDocuments]);
 
   async function changerStatut(statut: string) {
     if (!chantier) return;
@@ -395,11 +473,250 @@ export default function ChantierDetailPage() {
       {tab === "Photos & Notes" && <PhotosNotes chantierId={id} />}
 
       {tab === "Documents" && (
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">
-          <p className="text-sm text-slate-400">
-            Devis et factures liés à ce chantier — à connecter une fois le module Devis &
-            Factures repris.
-          </p>
+        <div className="space-y-6">
+          {/* Synthèse financière du chantier */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Total Devisé HT</p>
+              <p className="mt-1 text-xl font-bold text-white">
+                {devisLies
+                  .reduce(
+                    (s, d) => s + (d.lignes || []).reduce((acc, l) => acc + l.qte * l.pu_ht, 0),
+                    0
+                  )
+                  .toFixed(2)}{" "}
+                €
+              </p>
+              <p className="text-xs text-slate-500">{devisLies.length} devis rattaché(s)</p>
+            </div>
+
+            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Total Facturé TTC</p>
+              <p className="mt-1 text-xl font-bold text-emerald-400">
+                {facturesLiees
+                  .reduce((s, f) => {
+                    const ht = (f.lignes || []).reduce((acc, l) => acc + l.qte * l.pu_ht, 0);
+                    return s + ht * (1 + (f.tva_pct || 10) / 100);
+                  }, 0)
+                  .toFixed(2)}{" "}
+                €
+              </p>
+              <p className="text-xs text-slate-500">{facturesLiees.length} facture(s)</p>
+            </div>
+
+            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Achats Matériaux HT</p>
+              <p className="mt-1 text-xl font-bold text-sky-400">
+                {commandesLiees
+                  .reduce((s, c) => s + (c.montant_ht || 0), 0)
+                  .toFixed(2)}{" "}
+                €
+              </p>
+              <p className="text-xs text-slate-500">{commandesLiees.length} commande(s) fournisseur</p>
+            </div>
+          </div>
+
+          {loadingDocs ? (
+            <p className="text-sm text-slate-400">Chargement des documents…</p>
+          ) : (
+            <div className="space-y-6">
+              {/* Devis */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                    Devis Client
+                  </h3>
+                  <Link
+                    href="/bureau/devis-factures"
+                    className="text-xs text-red-400 hover:text-red-300"
+                  >
+                    + Nouveau devis →
+                  </Link>
+                </div>
+                {devisLies.length === 0 ? (
+                  <p className="text-xs text-slate-500">Aucun devis lié pour ce client.</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="p-3">Numéro</th>
+                          <th className="p-3">Objet</th>
+                          <th className="p-3">Date</th>
+                          <th className="p-3 text-right">Total HT</th>
+                          <th className="p-3">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                        {devisLies.map((d) => {
+                          const ht = (d.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
+                          return (
+                            <tr key={d.id}>
+                              <td className="p-3 font-semibold text-white">{d.numero}</td>
+                              <td className="p-3 text-slate-300">{d.objet || "—"}</td>
+                              <td className="p-3 text-slate-400">
+                                {new Date(d.date_emission).toLocaleDateString("fr-FR")}
+                              </td>
+                              <td className="p-3 text-right font-medium">{ht.toFixed(2)} €</td>
+                              <td className="p-3">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                    d.statut === "accepte"
+                                      ? "bg-emerald-500/20 text-emerald-400"
+                                      : d.statut === "refuse"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : "bg-slate-700 text-slate-300"
+                                  }`}
+                                >
+                                  {d.statut}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Factures */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                    Factures & Acomptes
+                  </h3>
+                  <Link
+                    href="/bureau/factures"
+                    className="text-xs text-red-400 hover:text-red-300"
+                  >
+                    + Nouvelle facture →
+                  </Link>
+                </div>
+                {facturesLiees.length === 0 ? (
+                  <p className="text-xs text-slate-500">Aucune facture pour ce client.</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="p-3">Numéro</th>
+                          <th className="p-3">Type</th>
+                          <th className="p-3">Objet</th>
+                          <th className="p-3">Date</th>
+                          <th className="p-3 text-right">Total TTC</th>
+                          <th className="p-3">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                        {facturesLiees.map((f) => {
+                          const ht = (f.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
+                          const ttc = ht * (1 + (f.tva_pct || 10) / 100);
+                          return (
+                            <tr key={f.id}>
+                              <td className="p-3 font-semibold text-white">{f.numero}</td>
+                              <td className="p-3">
+                                <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] uppercase text-slate-300">
+                                  {f.type_facture || "totale"}
+                                </span>
+                              </td>
+                              <td className="p-3 text-slate-300">{f.objet || "—"}</td>
+                              <td className="p-3 text-slate-400">
+                                {new Date(f.date_emission).toLocaleDateString("fr-FR")}
+                              </td>
+                              <td className="p-3 text-right font-medium text-emerald-400">
+                                {ttc.toFixed(2)} €
+                              </td>
+                              <td className="p-3">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                    f.statut === "payee"
+                                      ? "bg-emerald-500/20 text-emerald-400"
+                                      : f.statut === "envoyee"
+                                      ? "bg-amber-500/20 text-amber-400"
+                                      : "bg-slate-700 text-slate-300"
+                                  }`}
+                                >
+                                  {f.statut}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Commandes Fournisseurs */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                    Commandes Fournisseurs & Matériaux
+                  </h3>
+                  <Link
+                    href="/bureau/fournisseurs"
+                    className="text-xs text-red-400 hover:text-red-300"
+                  >
+                    + Gérer les achats →
+                  </Link>
+                </div>
+                {commandesLiees.length === 0 ? (
+                  <p className="text-xs text-slate-500">Aucune commande fournisseur pour ce chantier.</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="p-3">Fournisseur</th>
+                          <th className="p-3">Désignation</th>
+                          <th className="p-3">Quantité</th>
+                          <th className="p-3 text-right">Montant HT</th>
+                          <th className="p-3">Livraison</th>
+                          <th className="p-3">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                        {commandesLiees.map((c) => (
+                          <tr key={c.id}>
+                            <td className="p-3 font-semibold text-white">
+                              {c.fournisseurs?.nom || "Fournisseur"}
+                            </td>
+                            <td className="p-3 text-slate-300">{c.designation}</td>
+                            <td className="p-3 text-slate-400">
+                              {c.quantite ? `${c.quantite} ${c.unite || ""}` : "—"}
+                            </td>
+                            <td className="p-3 text-right font-medium">
+                              {c.montant_ht ? `${c.montant_ht.toFixed(2)} €` : "—"}
+                            </td>
+                            <td className="p-3 text-slate-400">
+                              {c.date_livraison_prevue
+                                ? new Date(c.date_livraison_prevue).toLocaleDateString("fr-FR")
+                                : "—"}
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                  c.statut === "livree"
+                                    ? "bg-emerald-500/20 text-emerald-400"
+                                    : c.statut === "commandee"
+                                    ? "bg-sky-500/20 text-sky-400"
+                                    : "bg-slate-700 text-slate-300"
+                                }`}
+                              >
+                                {c.statut}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

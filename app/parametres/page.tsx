@@ -25,6 +25,7 @@ export default function ParametresPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "ok" | "erreur">("idle");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     async function charger() {
@@ -42,6 +43,20 @@ export default function ParametresPage() {
 
   function update(field: keyof Settings, value: string | number) {
     setForm((f) => (f ? { ...f, [field]: value } : f));
+  }
+
+  async function handleLogoUpload(file: File | undefined) {
+    if (!file) return;
+    setUploadingLogo(true);
+    const fileName = `logo-${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("photos").upload(fileName, file);
+    if (!uploadError) {
+      const { data } = supabase.storage.from("photos").getPublicUrl(fileName);
+      update("logo_url", data.publicUrl);
+    } else {
+      alert("Erreur téléversement logo : " + uploadError.message);
+    }
+    setUploadingLogo(false);
   }
 
   async function enregistrer(e: React.FormEvent) {
@@ -100,6 +115,43 @@ export default function ParametresPage() {
           value={String(form.taux_cotisations)}
           onChange={(v) => update("taux_cotisations", parseFloat(v) || 0)}
         />
+
+        {/* Logo de l'entreprise */}
+        <div className="sm:col-span-2 rounded-lg border border-slate-600 bg-slate-900/50 p-4">
+          <label className="text-xs font-bold uppercase tracking-wide text-slate-400">
+            Logo de l&apos;entreprise (affiché sur les devis, factures & bons de commande)
+          </label>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            {form.logo_url ? (
+              <div className="flex items-center gap-3 rounded-lg border border-slate-700 bg-white p-2">
+                <img src={form.logo_url} alt="Logo entreprise" className="h-12 w-auto object-contain" />
+              </div>
+            ) : (
+              <div className="flex h-12 w-28 items-center justify-center rounded-lg border border-dashed border-slate-600 text-xs text-slate-500">
+                Aucun logo
+              </div>
+            )}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                disabled={uploadingLogo}
+                className="w-full text-xs text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-red-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-red-500"
+              />
+              {uploadingLogo && <p className="mt-1 text-xs text-amber-400">Envoi du logo en cours…</p>}
+            </div>
+            {form.logo_url && (
+              <button
+                type="button"
+                onClick={() => update("logo_url", "")}
+                className="text-xs text-slate-400 hover:text-red-400"
+              >
+                Supprimer
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-700 bg-slate-800 p-6">

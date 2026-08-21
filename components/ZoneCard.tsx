@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   calculerPose,
   FamillePose,
@@ -10,6 +11,7 @@ import {
   SensPose,
 } from "@/lib/calepinageCalcul";
 import PlanCalepinage from "@/components/PlanCalepinage";
+import FicheDebitPDF from "@/components/FicheDebitPDF";
 
 type Ouverture = {
   id: string;
@@ -151,6 +153,7 @@ export default function ZoneCard({
     zoneNom: string
   ) => void;
 }) {
+  const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
   const calc = calculerZone(zone);
 
   /*
@@ -965,6 +968,9 @@ export default function ZoneCard({
             zone.type ===
             "pignon"
           }
+          ouvertures={
+            zone.ouvertures
+          }
         />
       )}
 
@@ -984,23 +990,74 @@ export default function ZoneCard({
         )}
 
       {/* ====================================================== */}
-      {/* COMMANDE */}
+      {/* ACTIONS : DÉBIT ATELIER & COMMANDE */}
       {/* ====================================================== */}
 
-      {onCreerCommande &&
-        (calc.surfaceACommander >
-          0 ||
-          pose) && (
+      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+        {(calc.surfaceNette > 0 || pose) && (
           <button
             type="button"
-            onClick={
-              creerCommande
-            }
-            className="w-full rounded-lg border border-red-600/40 bg-red-600/10 py-2 text-sm font-medium text-red-400 hover:bg-red-600/20"
+            onClick={() => setModalDebitOuvert(true)}
+            className="flex-1 rounded-lg border border-slate-600 bg-slate-800 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-700 transition-colors text-center"
           >
-            ➕ Créer une commande depuis cette zone
+            📄 Fiche Débit & Atelier
           </button>
         )}
+
+        {onCreerCommande &&
+          (calc.surfaceACommander >
+            0 ||
+            pose) && (
+            <button
+              type="button"
+              onClick={
+                creerCommande
+              }
+              className="flex-1 rounded-lg border border-red-600/40 bg-red-600/10 py-2 text-sm font-medium text-red-400 hover:bg-red-600/20 transition-colors text-center"
+            >
+              ➕ Créer une commande
+            </button>
+          )}
+      </div>
+
+      {/* MODAL FICHE DÉBIT & ATELIER */}
+      {modalDebitOuvert && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4"
+          onClick={() => setModalDebitOuvert(false)}
+        >
+          <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex justify-end gap-2 print:hidden">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+              >
+                🖨️ Imprimer / PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalDebitOuvert(false)}
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Fermer
+              </button>
+            </div>
+            <FicheDebitPDF
+              zone={zone}
+              chantier={{ nom: "Chantier BNA", adresse: null }}
+              entreprise={{
+                raison_sociale: "BNA Bardage",
+                telephone: null,
+                email: null,
+                logo_url: "/logo-bna.png",
+              }}
+              pose={pose}
+              calepinage={calepinage}
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );

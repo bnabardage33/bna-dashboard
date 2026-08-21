@@ -13,8 +13,12 @@ type Note = {
   updated_at: string;
 };
 
+type ChantierItem = { id: string; nom: string | null; clients: { nom: string } | null };
+
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [chantiers, setChantiers] = useState<ChantierItem[]>([]);
+  const [chantierId, setChantierId] = useState("");
   const [loading, setLoading] = useState(true);
   const [titre, setTitre] = useState("");
   const [contenu, setContenu] = useState("");
@@ -24,13 +28,22 @@ export default function NotesPage() {
 
   async function fetchNotes() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("notes_patron")
-      .select("*")
-      .order("epingle", { ascending: false })
-      .order("updated_at", { ascending: false });
-    if (error) console.error(error);
-    else setNotes(data as Note[]);
+    const [notesRes, chRes] = await Promise.all([
+      supabase
+        .from("notes_patron")
+        .select("*")
+        .order("epingle", { ascending: false })
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("chantiers")
+        .select("id, nom, clients(nom)")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (notesRes.error) console.error(notesRes.error);
+    else setNotes(notesRes.data as Note[]);
+
+    if (chRes.data) setChantiers(chRes.data as unknown as ChantierItem[]);
     setLoading(false);
   }
 
@@ -41,8 +54,16 @@ export default function NotesPage() {
   async function ajouterNote(e: React.FormEvent) {
     e.preventDefault();
     if (!contenu.trim()) return;
+
+    let titreFinal = titre.trim();
+    if (chantierId) {
+      const ch = chantiers.find((c) => c.id === chantierId);
+      const chNom = ch?.nom || ch?.clients?.nom || "Chantier";
+      titreFinal = titreFinal ? `[${chNom}] ${titreFinal}` : `[${chNom}] Note chantier`;
+    }
+
     const { error } = await supabase.from("notes_patron").insert({
-      titre: titre.trim() || null,
+      titre: titreFinal || null,
       contenu: contenu.trim(),
     });
     if (error) {
@@ -51,6 +72,7 @@ export default function NotesPage() {
     }
     setTitre("");
     setContenu("");
+    setChantierId("");
     fetchNotes();
   }
 
@@ -102,12 +124,26 @@ export default function NotesPage() {
         onSubmit={ajouterNote}
         className="space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-4"
       >
-        <input
-          value={titre}
-          onChange={(e) => setTitre(e.target.value)}
-          placeholder="Titre (optionnel)"
-          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-        />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select
+            value={chantierId}
+            onChange={(e) => setChantierId(e.target.value)}
+            className="sm:w-1/3 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+          >
+            <option value="">🏢 Note générale (libre)</option>
+            {chantiers.map((c) => (
+              <option key={c.id} value={c.id}>
+                📍 {c.nom || c.clients?.nom || "Chantier"}
+              </option>
+            ))}
+          </select>
+          <input
+            value={titre}
+            onChange={(e) => setTitre(e.target.value)}
+            placeholder="Titre (optionnel)"
+            className="flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+          />
+        </div>
         <textarea
           value={contenu}
           onChange={(e) => setContenu(e.target.value)}

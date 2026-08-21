@@ -122,6 +122,13 @@ function decouperChevron(
   return segments;
 }
 
+export type OuvertureCalepinage = {
+  id: string;
+  type: "fenetre" | "porte";
+  largeur: number;
+  hauteur: number;
+};
+
 export default function PlanCalepinage({
   largeurM,
   hauteurM,
@@ -129,6 +136,7 @@ export default function PlanCalepinage({
   pose,
   calepinage,
   estPignon,
+  ouvertures,
 }: {
   largeurM: number;
   hauteurM: number;
@@ -136,6 +144,7 @@ export default function PlanCalepinage({
   pose: ResultatPose | null;
   calepinage: ResultatCalepinage | null;
   estPignon: boolean;
+  ouvertures?: OuvertureCalepinage[];
 }) {
   const [vue, setVue] = useState<
     "ossature" | "plaques"
@@ -596,6 +605,60 @@ export default function PlanCalepinage({
                   </g>
                 )
               )}
+            </g>
+          )}
+
+          {/* ====================================================== */}
+          {/* OUVERTURES (Fenêtres / Portes) */}
+          {/* ====================================================== */}
+          {ouvertures && ouvertures.length > 0 && (
+            <g className="ouvertures">
+              {ouvertures.map((ouv, idx) => {
+                const spacing = largeurM / (ouvertures.length + 1);
+                const ouvX = Math.max(0.2, Math.min(largeurM - ouv.largeur - 0.2, spacing * (idx + 1) - ouv.largeur / 2));
+                const ouvY = ouv.type === "porte" ? 0 : Math.min(1.0, Math.max(0.2, (hauteurM - ouv.hauteur) / 2));
+                const svgX = px(ouvX);
+                const svgY = py(ouvY + ouv.hauteur);
+                const svgW = ouv.largeur * echelle;
+                const svgH = ouv.hauteur * echelle;
+
+                return (
+                  <g key={`ouv-${ouv.id || idx}`}>
+                    <rect
+                      x={svgX}
+                      y={svgY}
+                      width={svgW}
+                      height={svgH}
+                      fill="#0f172a"
+                      fillOpacity={0.75}
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      strokeDasharray="4 3"
+                    />
+                    <text
+                      x={svgX + svgW / 2}
+                      y={svgY + svgH / 2 - 6}
+                      fill="#f8fafc"
+                      fontSize={11}
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {ouv.type === "porte" ? "🚪 PORTE" : "🪟 FENÊTRE"}
+                    </text>
+                    <text
+                      x={svgX + svgW / 2}
+                      y={svgY + svgH / 2 + 8}
+                      fill="#94a3b8"
+                      fontSize={9}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {ouv.largeur.toFixed(2)}m × {ouv.hauteur.toFixed(2)}m
+                    </text>
+                  </g>
+                );
+              })}
             </g>
           )}
       </svg>

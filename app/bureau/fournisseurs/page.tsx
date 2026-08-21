@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BonCommandePDF from "@/components/BonCommandePDF";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 
@@ -88,23 +89,28 @@ export default function FournisseursPage() {
   const [cMontant, setCMontant] = useState("");
   const [cDateLivraison, setCDateLivraison] = useState("");
 
+  const [apercuCommande, setApercuCommande] = useState<Commande | null>(null);
+  const [entreprise, setEntreprise] = useState<any>(null);
+
   // Mode "plusieurs lignes" — utilisé quand la commande arrive pré-remplie depuis un métré
   const [lignesMultiples, setLignesMultiples] = useState<LigneMultiple[] | null>(null);
   const [prefillInfo, setPrefillInfo] = useState<{ chantierNom: string; zoneNom: string } | null>(null);
 
   async function fetchTout() {
     setLoading(true);
-    const [fRes, chRes, coRes] = await Promise.all([
+    const [fRes, chRes, coRes, settingsRes] = await Promise.all([
       supabase.from("fournisseurs").select("*").order("nom"),
       supabase.from("chantiers").select("id, nom, clients(nom)").order("created_at", { ascending: false }),
       supabase
         .from("commandes")
-        .select("*, fournisseurs(nom), chantiers(nom, clients(nom))")
+        .select("*, fournisseurs(nom, contact, telephone, email, conditions_paiement), chantiers(nom, adresse_chantier, clients(nom))")
         .order("created_at", { ascending: false }),
+      supabase.from("entreprise_settings").select("*").eq("id", 1).single(),
     ]);
     if (fRes.data) setFournisseurs(fRes.data as Fournisseur[]);
     if (chRes.data) setChantiers(chRes.data as unknown as Chantier[]);
     if (coRes.data) setCommandes(coRes.data as unknown as Commande[]);
+    if (settingsRes.data) setEntreprise(settingsRes.data);
     setLoading(false);
   }
 
@@ -424,6 +430,14 @@ export default function FournisseursPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setApercuCommande(c)}
+                        className="rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1 text-xs text-sky-400 hover:bg-slate-700 hover:text-sky-300"
+                        title="Voir et imprimer le bon de commande officiel"
+                      >
+                        📄 Bon de commande
+                      </button>
                       <select
                         value={c.statut}
                         onChange={(e) => changerStatutCommande(c, e.target.value)}
@@ -690,6 +704,68 @@ export default function FournisseursPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL APERÇU ET IMPRESSION BON DE COMMANDE PDF */}
+      {apercuCommande && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4"
+          onClick={() => setApercuCommande(null)}
+        >
+          <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex justify-end gap-2 print:hidden">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+              >
+                🖨️ Imprimer / PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setApercuCommande(null)}
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Fermer
+              </button>
+            </div>
+            <BonCommandePDF
+              commande={{
+                id: apercuCommande.id,
+                created_at: apercuCommande.created_at,
+                designation: apercuCommande.designation,
+                quantite: apercuCommande.quantite,
+                unite: apercuCommande.unite,
+                montant_ht: apercuCommande.montant_ht,
+                date_livraison_prevue: apercuCommande.date_livraison_prevue,
+              }}
+              fournisseur={{
+                nom: (apercuCommande.fournisseurs as any)?.nom || "Fournisseur",
+                contact: (apercuCommande.fournisseurs as any)?.contact || null,
+                telephone: (apercuCommande.fournisseurs as any)?.telephone || null,
+                email: (apercuCommande.fournisseurs as any)?.email || null,
+                conditions_paiement: (apercuCommande.fournisseurs as any)?.conditions_paiement || null,
+              }}
+              chantier={{
+                nom: (apercuCommande.chantiers as any)?.nom || "Chantier BNA",
+                adresse: (apercuCommande.chantiers as any)?.adresse_chantier || null,
+                clientNom: (apercuCommande.chantiers as any)?.clients?.nom || null,
+              }}
+              entreprise={
+                entreprise || {
+                  raison_sociale: "BNA Bardage",
+                  siret: null,
+                  telephone: null,
+                  email: null,
+                  adresse: null,
+                  code_postal: null,
+                  ville: null,
+                  logo_url: "/logo-bna.png",
+                }
+              }
+            />
+          </div>
         </div>
       )}
     </div>
