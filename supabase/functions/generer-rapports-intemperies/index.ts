@@ -1,59 +1,82 @@
 // supabase/functions/generer-rapports-intemperies/index.ts
 //
-// GESTION DES RAPPORTS D'INTEMPÉRIES
+// Génération automatique des rapports d'intempéries.
 //
-// MODE CAPTURE
-// ------------
-// Appelé par les cron à 06h et 16h Europe/Paris.
-// Capture uniquement la vigilance officielle Météo-France
-// pour chaque chantier actif.
+// Deux modes:
 //
-// Body :
-//   { "mode": "capture", "periode": "matin" }
-//   { "mode": "capture", "periode": "apresmidi" }
+// 1. CAPTURE
+//    Appelé par un cron le matin et l'après-midi.
+//    Exemple:
+//      { "mode": "capture", "periode": "matin" }
+//      { "mode": "capture", "periode": "apresmidi" }
 //
-// AUCUN rapport n'est créé pendant une capture.
+//    Enregistre uniquement la vigilance officielle Météo-France
+//    dans vigilance_captures.
 //
-// MODE GÉNÉRER
-// ------------
-// Appelé en fin de journée.
-// Combine :
-//   - vigilance Météo-France du matin
-//   - vigilance Météo-France de l'après-midi
-//   - météo réelle de la journée
-//   - seuils techniques matériau / accès
-//   - pluie continue
+// 2. GENERER
+//    Appelé le soir.
+//    Récupère:
+//      - les captures de vigilance du matin
+//      - les captures de vigilance de l'après-midi
+//      - la météo réelle de la journée via Visual Crossing
+//      - les caractéristiques du chantier
 //
-// Puis décide :
-//   - journée arrêtée
-//   - à valider
-//   - conditions normales
+//    Puis décide si:
+//      - le jour est arrêté
+//      - le rapport doit être validé
+//      - aucun rapport n'est nécessaire.
 //
-// Secrets nécessaires :
+// Secrets nécessaires:
+//
 //   SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
 //   VISUALCROSSING_API_KEY
 //   METEOFRANCE_API_KEY
+//
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+// -----------------------------------------------------------------------------
+// Supabase
+// -----------------------------------------------------------------------------
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get(
+  "SUPABASE_SERVICE_ROLE_KEY"
 );
 
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error(
+    "SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant"
+  );
+}
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY
+);
+
+// -----------------------------------------------------------------------------
+// Clés API
+// -----------------------------------------------------------------------------
+
 const VISUALCROSSING_API_KEY =
-  Deno.env.get("VISUALCROSSING_API_KEY") ?? "";
+  Deno.env.get("VISUALCROSSING_API_KEY");
 
 const METEOFRANCE_API_KEY =
-  Deno.env.get("METEOFRANCE_API_KEY") ?? "";
-
-const URL_VIGILANCE =
-  "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
+  Deno.env.get("METEOFRANCE_API_KEY");
 
 // -----------------------------------------------------------------------------
-// TYPES
+// Types
 // -----------------------------------------------------------------------------
+
+type HeureMeteo = {
+  heure: string;
+  temp: number;
+  vent: number;
+  rafales: number;
+  pluie: number;
+};
 
 type NiveauAlerte =
   | "vert"
@@ -75,13 +98,10 @@ type Periode =
   | "matin"
   | "apresmidi";
 
-type HeureMeteo = {
-  heure: string;
-  temp: number;
-  vent: number;
-  rafales: number;
-  pluie: number;
-};
+type AmpleurImpact =
+  | "complete"
+  | "partielle"
+  | null;
 
 type VigilancePhenomene = {
   id: number;
@@ -92,63 +112,66 @@ type VigilancePhenomene = {
 type VigilanceInfo = {
   couleurMax: NiveauAlerte;
   phenomenes: VigilancePhenomene[];
-  misAJourLe: string | null;
+};
+
+type RisqueTechnique = {
+  niveau: NiveauAlerte;
+  motif: string;
+};
+
+type DecisionJour = {
+  vigilanceOfficielle: NiveauAlerte;
+  risqueTechnique: RisqueTechnique;
+  pluieContinue: boolean;
+  jourArrete: boolean;
+  aValider: boolean;
+  ampleurImpact: AmpleurImpact;
+  motif: string;
 };
 
 // -----------------------------------------------------------------------------
-// CONSTANTES VIGILANCE
+// Ordre des niveaux de vigilance
 // -----------------------------------------------------------------------------
 
-const ORDRE_VIGILANCE: Record<NiveauAlerte, number> = {
+const ORDRE: Record<NiveauAlerte, number> = {
   vert: 0,
   jaune: 1,
   orange: 2,
   rouge: 3,
 };
 
-const COULEUR_PAR_ID: Record<number, NiveauAlerte> = {
-  1: "vert",
-  2: "jaune",
-  3: "orange",
-  4: "rouge",
-};
-
-const PHENOMENE_PAR_ID: Record<number, string> = {
-  1: "vent",
-  2: "pluie-inondation",
-  3: "orages",
-  4: "inondation",
-  5: "neige-verglas",
-  6: "canicule",
-  7: "grand-froid",
-  8: "avalanches",
-  9: "vagues-submersion",
-};
-
 function plusForte(
   a: NiveauAlerte,
   b: NiveauAlerte
 ): NiveauAlerte {
-  return ORDRE_VIGILANCE[a] >= ORDRE_VIGILANCE[b]
-    ? a
-    : b;
+  return ORDRE[a] >= ORDRE[b] ? a : b;
 }
 
 // -----------------------------------------------------------------------------
-// ADRESSE -> DÉPARTEMENT
+// Adresse -> département
 // -----------------------------------------------------------------------------
 
 function adresseVersDepartement(
   adresse: string | null
 ): string | null {
-  if (!adresse) return null;
+  if (!adresse) {
+    return null;
+  }
 
   const raw = adresse.trim();
 
-  const matchCP = raw.match(/\b\d{5}\b/);
+  if (!raw) {
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Code postal
+  // ---------------------------------------------------------------------------
+
+  const matchCP = raw.match(/\b(\d{5})\b/);
 
   if (matchCP) {
-    const cp = matchCP[0];
+    const cp = matchCP[1];
 
     // DOM-TOM
     if (cp.startsWith("97")) {
@@ -157,7 +180,7 @@ function adresseVersDepartement(
 
     // Corse
     if (cp.startsWith("20")) {
-      const valeur = Number(cp);
+      const valeur = Number.parseInt(cp, 10);
 
       return valeur <= 20190
         ? "2A"
@@ -167,6 +190,10 @@ function adresseVersDepartement(
     return cp.slice(0, 2);
   }
 
+  // ---------------------------------------------------------------------------
+  // Département déjà présent
+  // ---------------------------------------------------------------------------
+
   const matchDept = raw.match(
     /\b(2A|2B|\d{2})\b/i
   );
@@ -175,46 +202,95 @@ function adresseVersDepartement(
     return matchDept[1].toUpperCase();
   }
 
+  // ---------------------------------------------------------------------------
+  // Quelques villes principales
+  // ---------------------------------------------------------------------------
+
   const lower = raw
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (
-    lower.includes("ajaccio") ||
-    lower.includes("porto vecchio") ||
-    lower.includes("porticcio") ||
-    lower.includes("bonifacio") ||
-    lower.includes("propriano") ||
-    lower.includes("corse du sud")
-  ) {
-    return "2A";
-  }
+  const villes: Record<string, string> = {
+    ajaccio: "2A",
+    "porto vecchio": "2A",
+    portovecchio: "2A",
+    propriano: "2A",
+    bonifacio: "2A",
+    sartene: "2A",
+    bastia: "2B",
+    calvi: "2B",
+    corte: "2B",
+    "ile rousse": "2B",
 
-  if (
-    lower.includes("bastia") ||
-    lower.includes("calvi") ||
-    lower.includes("corte") ||
-    lower.includes("ile rousse") ||
-    lower.includes("haute corse")
-  ) {
-    return "2B";
-  }
+    bordeaux: "33",
+    merignac: "33",
+    pessac: "33",
+    talence: "33",
+    cenon: "33",
+    arcachon: "33",
+    libourne: "33",
+    gironde: "33",
 
-  if (
-    lower.includes("bordeaux") ||
-    lower.includes("merignac") ||
-    lower.includes("arcachon") ||
-    lower.includes("gironde")
-  ) {
-    return "33";
+    pau: "64",
+    bayonne: "64",
+    biarritz: "64",
+    anglet: "64",
+
+    montdemarsan: "40",
+    dax: "40",
+
+    perigueux: "24",
+    bergerac: "24",
+
+    agen: "47",
+
+    larochelle: "17",
+    saintes: "17",
+    rochefort: "17",
+
+    angouleme: "16",
+    cognac: "16",
+
+    poitiers: "86",
+    niort: "79",
+    limoges: "87",
+
+    paris: "75",
+    marseille: "13",
+    lyon: "69",
+    toulouse: "31",
+    nice: "06",
+    nantes: "44",
+    rennes: "35",
+    strasbourg: "67",
+    montpellier: "34",
+    lille: "59",
+    toulon: "83",
+    grenoble: "38",
+    rouen: "76",
+    caen: "14",
+    dijon: "21",
+    tours: "37",
+    amiens: "80",
+    annecy: "74",
+    perpignan: "66",
+    metz: "57",
+    nancy: "54",
+    avignon: "84",
+  };
+
+  for (const [ville, departement] of Object.entries(villes)) {
+    if (lower.includes(ville)) {
+      return departement;
+    }
   }
 
   return null;
 }
 
 // -----------------------------------------------------------------------------
-// MÉTÉO VISUAL CROSSING
+// Visual Crossing
 // -----------------------------------------------------------------------------
 
 async function fetchMeteoJour(
@@ -232,7 +308,8 @@ async function fetchMeteoJour(
   }
 
   const url =
-    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/` +
+    "https://weather.visualcrossing.com/" +
+    "VisualCrossingWebServices/rest/services/timeline/" +
     `${encodeURIComponent(adresse)}/today` +
     `?unitGroup=metric` +
     `&key=${VISUALCROSSING_API_KEY}` +
@@ -240,15 +317,13 @@ async function fetchMeteoJour(
     `&include=days,hours` +
     `&elements=datetime,temp,windspeed,windgust,precip`;
 
-  const response = await fetch(url, {
-    cache: "no-store",
-  });
+  const response = await fetch(url);
 
   if (!response.ok) {
     const texte = await response.text();
 
     throw new Error(
-      `Visual Crossing ${response.status}: ${texte.slice(0, 300)}`
+      `Erreur Visual Crossing (${response.status}) ${texte}`
     );
   }
 
@@ -258,28 +333,39 @@ async function fetchMeteoJour(
 
   if (!today) {
     throw new Error(
-      "Visual Crossing : aucune donnée pour cette adresse"
+      "Pas de données météo pour cette adresse"
     );
   }
 
   const heures: HeureMeteo[] = (
     today.hours ?? []
   ).map((h: any) => ({
-    heure: String(h.datetime ?? "").slice(0, 5),
-    temp: Number.isFinite(h.temp)
-      ? Math.round(h.temp)
-      : 0,
-    vent: Number.isFinite(h.windspeed)
-      ? Math.round(h.windspeed)
-      : 0,
-    rafales: Number.isFinite(h.windgust)
-      ? Math.round(h.windgust)
-      : Number.isFinite(h.windspeed)
+    heure:
+      typeof h.datetime === "string"
+        ? h.datetime.slice(0, 5)
+        : "--:--",
+
+    temp:
+      Number.isFinite(h.temp)
+        ? Math.round(h.temp)
+        : 0,
+
+    vent:
+      Number.isFinite(h.windspeed)
         ? Math.round(h.windspeed)
         : 0,
-    pluie: Number.isFinite(h.precip)
-      ? Number(h.precip)
-      : 0,
+
+    rafales:
+      Number.isFinite(h.windgust)
+        ? Math.round(h.windgust)
+        : Number.isFinite(h.windspeed)
+          ? Math.round(h.windspeed)
+          : 0,
+
+    pluie:
+      Number.isFinite(h.precip)
+        ? Number(h.precip)
+        : 0,
   }));
 
   const tempMax =
@@ -293,7 +379,8 @@ async function fetchMeteoJour(
       : 0;
 
   const pluieCumul = heures.reduce(
-    (total, h) => total + h.pluie,
+    (total, heure) =>
+      total + heure.pluie,
     0
   );
 
@@ -306,8 +393,37 @@ async function fetchMeteoJour(
 }
 
 // -----------------------------------------------------------------------------
-// VIGILANCE MÉTÉO-FRANCE
+// Vigilance Météo-France
 // -----------------------------------------------------------------------------
+
+const URL_VIGILANCE =
+  "https://public-api.meteofrance.fr/public/" +
+  "DPVigilance/v1/cartevigilance/encours";
+
+const COULEUR_PAR_ID: Record<
+  number,
+  NiveauAlerte
+> = {
+  1: "vert",
+  2: "jaune",
+  3: "orange",
+  4: "rouge",
+};
+
+const PHENOMENE_PAR_ID: Record<
+  number,
+  string
+> = {
+  1: "vent",
+  2: "pluie-inondation",
+  3: "orages",
+  4: "inondation",
+  5: "neige-verglas",
+  6: "canicule",
+  7: "grand-froid",
+  8: "avalanches",
+  9: "vagues-submersion",
+};
 
 async function fetchVigilance(
   departement: string
@@ -324,7 +440,6 @@ async function fetchVigilance(
       headers: {
         apikey: METEOFRANCE_API_KEY,
       },
-      cache: "no-store",
     }
   );
 
@@ -332,29 +447,34 @@ async function fetchVigilance(
     const texte = await response.text();
 
     throw new Error(
-      `Météo-France ${response.status}: ${texte.slice(0, 300)}`
+      `Erreur Vigilance Météo-France (${response.status}) ${texte}`
     );
   }
 
   const data = await response.json();
+
+  // ---------------------------------------------------------------------------
+  // Même logique d'extraction que /api/meteo-vigilance
+  // ---------------------------------------------------------------------------
 
   const periodes =
     data?.product?.periods ??
     data?.periods ??
     [];
 
-  if (!Array.isArray(periodes) || periodes.length === 0) {
+  if (
+    !Array.isArray(periodes) ||
+    periodes.length === 0
+  ) {
     return {
       couleurMax: "vert",
       phenomenes: [],
-      misAJourLe: null,
     };
   }
 
-  const periode = periodes[0];
+  const periode =
+    periodes[0];
 
-  // CORRECTION IMPORTANTE :
-  // domaineArray n'existait pas dans l'ancien fichier.
   const domaines =
     periode?.timelaps?.domain_ids ??
     periode?.domain_ids ??
@@ -363,19 +483,26 @@ async function fetchVigilance(
   const domaineArray: any[] =
     Array.isArray(domaines)
       ? domaines
-      : Object.values(domaines ?? {});
+      : Object.values(
+          domaines ?? {}
+        );
 
   const deptNormalized =
-    departement.trim().toUpperCase();
+    departement
+      .trim()
+      .toUpperCase();
 
-  const domaineDept = domaineArray.find(
-    (d: any) => {
-      const id = d?.domain_id
-        ?.toString()
-        .trim()
-        .toUpperCase();
+  const domaineDept =
+    domaineArray.find((d: any) => {
+      const id =
+        d?.domain_id
+          ?.toString()
+          .trim()
+          .toUpperCase();
 
-      if (!id) return false;
+      if (!id) {
+        return false;
+      }
 
       if (id === deptNormalized) {
         return true;
@@ -383,83 +510,101 @@ async function fetchVigilance(
 
       if (
         deptNormalized === "2A" &&
-        ["20A", "2A", "200", "201"].includes(id)
+        [
+          "20A",
+          "2A",
+          "200",
+          "201",
+        ].includes(id)
       ) {
         return true;
       }
 
       if (
         deptNormalized === "2B" &&
-        ["20B", "2B", "202"].includes(id)
+        [
+          "20B",
+          "2B",
+          "202",
+        ].includes(id)
       ) {
         return true;
       }
 
       return false;
-    }
-  );
+    });
 
   if (!domaineDept) {
     return {
       couleurMax: "vert",
       phenomenes: [],
-      misAJourLe:
-        data?.product?.update_time ?? null,
     };
   }
 
   const couleurMax =
     COULEUR_PAR_ID[
-      Number(domaineDept.max_color_id)
+      domaineDept.max_color_id
     ] ?? "vert";
 
-  const phenomenesBrut =
+  const phenomenesBrut: any[] =
     domaineDept.phenomenon_items ??
     domaineDept.phenomenon_max_colors ??
     [];
 
   const phenomenes: VigilancePhenomene[] =
-    (Array.isArray(phenomenesBrut)
-      ? phenomenesBrut
-      : Object.values(phenomenesBrut ?? {})
-    )
+    phenomenesBrut
       .map((p: any) => {
-        const id = Number(
+        const id =
           p?.phenomenon_id ??
           p?.phenomenon_max_color_id
-            ?.phenomenon_id
-        );
+            ?.phenomenon_id;
 
-        const couleurId = Number(
-          p?.phenomenon_max_color_id ??
-          p?.color_id ??
-          p?.max_color_id ??
-          1
-        );
+        let couleurId: number | undefined;
 
-        const nom = PHENOMENE_PAR_ID[id];
+        if (
+          typeof p?.phenomenon_max_color_id ===
+          "number"
+        ) {
+          couleurId =
+            p.phenomenon_max_color_id;
+        } else {
+          couleurId =
+            p?.color_id ??
+            p?.max_color_id;
+        }
 
-        if (!nom) {
+        if (
+          typeof id !== "number" ||
+          !PHENOMENE_PAR_ID[id]
+        ) {
           return null;
         }
 
         return {
           id,
-          nom,
+          nom: PHENOMENE_PAR_ID[id],
           couleur:
-            COULEUR_PAR_ID[couleurId] ??
-            "vert",
+            COULEUR_PAR_ID[
+              couleurId ?? 0
+            ] ?? "vert",
         };
       })
-      .filter(Boolean) as VigilancePhenomene[];
+      .filter(
+        (
+          p
+        ): p is VigilancePhenomene =>
+          p !== null
+      );
 
   return {
     couleurMax,
     phenomenes,
-    misAJourLe:
-      data?.product?.update_time ?? null,
   };
 }
+
+// -----------------------------------------------------------------------------
+// Couleur d'un phénomène
+// -----------------------------------------------------------------------------
 
 function couleurPhenomene(
   vigilance: VigilanceInfo,
@@ -469,27 +614,43 @@ function couleurPhenomene(
     vigilance.phenomenes.find(
       (p) => p.nom === nom
     )?.couleur ??
-    "vert"
-  );
-}
-
-function vigilancePertinente(
-  vigilance: VigilanceInfo
-): NiveauAlerte {
-  return plusForte(
-    plusForte(
-      couleurPhenomene(vigilance, "vent"),
-      couleurPhenomene(
-        vigilance,
-        "pluie-inondation"
-      )
-    ),
-    couleurPhenomene(vigilance, "orages")
+    vigilance.couleurMax
   );
 }
 
 // -----------------------------------------------------------------------------
-// RISQUE TECHNIQUE
+// Vigilance pertinente pour le chantier
+// -----------------------------------------------------------------------------
+
+function vigilancePertinente(
+  vigilance: VigilanceInfo
+): NiveauAlerte {
+  const vent =
+    couleurPhenomene(
+      vigilance,
+      "vent"
+    );
+
+  const pluie =
+    couleurPhenomene(
+      vigilance,
+      "pluie-inondation"
+    );
+
+  const orages =
+    couleurPhenomene(
+      vigilance,
+      "orages"
+    );
+
+  return plusForte(
+    plusForte(vent, pluie),
+    orages
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Seuils techniques
 // -----------------------------------------------------------------------------
 
 const SEUILS_MATERIAUX: Record<
@@ -553,6 +714,10 @@ const SEUILS_ACCES: Record<
   },
 };
 
+// -----------------------------------------------------------------------------
+// Risque technique
+// -----------------------------------------------------------------------------
+
 function evaluerRisqueTechnique(
   materiau: Materiau,
   acces: Acces,
@@ -561,10 +726,7 @@ function evaluerRisqueTechnique(
     pluieCumul: number;
     tempMax: number;
   }
-): {
-  niveau: NiveauAlerte;
-  motif: string;
-} {
+): RisqueTechnique {
   const sm =
     SEUILS_MATERIAUX[materiau] ??
     SEUILS_MATERIAUX.bois;
@@ -573,29 +735,40 @@ function evaluerRisqueTechnique(
     SEUILS_ACCES[acces] ??
     SEUILS_ACCES.echafaudage;
 
-  const ventCritique = Math.min(
-    sm.vent_critique,
-    sa.vent_critique
-  );
+  const ventCritique =
+    Math.min(
+      sm.vent_critique,
+      sa.vent_critique
+    );
 
-  const ventVigilance = Math.min(
-    sm.vent_vigilance,
-    sa.vent_vigilance
-  );
+  const ventVigilance =
+    Math.min(
+      sm.vent_vigilance,
+      sa.vent_vigilance
+    );
+
+  // ---------------------------------------------------------------------------
+  // Vent critique
+  // ---------------------------------------------------------------------------
 
   if (
-    meteo.rafalesMax >= ventCritique
+    meteo.rafalesMax >=
+    ventCritique
   ) {
     return {
       niveau: "rouge",
       motif:
-        `Vent critique (${meteo.rafalesMax} km/h ≥ ` +
-        `seuil ${ventCritique} km/h)`,
+        `Vent critique (${meteo.rafalesMax} km/h ≥ seuil ${ventCritique} km/h)`,
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // Pluie critique
+  // ---------------------------------------------------------------------------
+
   if (
-    meteo.pluieCumul >= sm.pluie_critique &&
+    meteo.pluieCumul >=
+      sm.pluie_critique &&
     meteo.pluieCumul >= 8
   ) {
     return {
@@ -604,6 +777,10 @@ function evaluerRisqueTechnique(
         `Pluie critique (${meteo.pluieCumul.toFixed(1)} mm)`,
     };
   }
+
+  // ---------------------------------------------------------------------------
+  // Température limite
+  // ---------------------------------------------------------------------------
 
   if (
     meteo.tempMax <= sm.temp_mini ||
@@ -616,8 +793,13 @@ function evaluerRisqueTechnique(
     };
   }
 
+  // ---------------------------------------------------------------------------
+  // Vent de vigilance
+  // ---------------------------------------------------------------------------
+
   if (
-    meteo.rafalesMax >= ventVigilance
+    meteo.rafalesMax >=
+    ventVigilance
   ) {
     return {
       niveau: "jaune",
@@ -628,16 +810,17 @@ function evaluerRisqueTechnique(
 
   return {
     niveau: "vert",
-    motif: "Conditions optimales de pose",
+    motif:
+      "Conditions optimales de pose",
   };
 }
 
 // -----------------------------------------------------------------------------
-// PLUIE CONTINUE
+// Pluie continue
 // -----------------------------------------------------------------------------
 
-const SEUIL_PLUIE_HORAIRE = 0.2;
-const FRACTION_HEURES_PLUIE = 0.75;
+const SEUIL_PLUIE_HORAIRE_MM = 0.2;
+const FRACTION_MINI_HEURES_PLUIE = 0.75;
 
 function pleutTouteLaJournee(
   heures: HeureMeteo[]
@@ -649,17 +832,19 @@ function pleutTouteLaJournee(
   const heuresPluvieuses =
     heures.filter(
       (h) =>
-        h.pluie >= SEUIL_PLUIE_HORAIRE
+        h.pluie >=
+        SEUIL_PLUIE_HORAIRE_MM
     ).length;
 
   return (
-    heuresPluvieuses / heures.length >=
-    FRACTION_HEURES_PLUIE
+    heuresPluvieuses /
+      heures.length >=
+    FRACTION_MINI_HEURES_PLUIE
   );
 }
 
 // -----------------------------------------------------------------------------
-// DÉCISION FINALE
+// Décision finale
 // -----------------------------------------------------------------------------
 
 function evaluerJour(
@@ -671,9 +856,11 @@ function evaluerJour(
     tempMax: number;
   },
   heures: HeureMeteo[],
-  vigilanceMatin: NiveauAlerte | null,
-  vigilanceApresmidi: NiveauAlerte | null
-) {
+  vigilanceMatin:
+    NiveauAlerte | null,
+  vigilanceApresmidi:
+    NiveauAlerte | null
+): DecisionJour {
   const risqueTechnique =
     evaluerRisqueTechnique(
       materiau,
@@ -682,42 +869,58 @@ function evaluerJour(
     );
 
   const pluieContinue =
-    pleutTouteLaJournee(heures);
+    pleutTouteLaJournee(
+      heures
+    );
 
   const vMatin =
-    vigilanceMatin ?? "vert";
+    vigilanceMatin ??
+    "vert";
 
   const vAprem =
-    vigilanceApresmidi ?? "vert";
+    vigilanceApresmidi ??
+    "vert";
 
   const vigilanceOfficielle =
-    plusForte(vMatin, vAprem);
+    plusForte(
+      vMatin,
+      vAprem
+    );
 
   const evolution =
     vigilanceMatin &&
     vigilanceApresmidi &&
-    vigilanceMatin !== vigilanceApresmidi
-      ? ` (vigilance ${vigilanceMatin} le matin, ${vigilanceApresmidi} l'après-midi)`
+    vigilanceMatin !==
+      vigilanceApresmidi
+      ? ` (vigilance ${vigilanceMatin} le matin, vigilance ${vigilanceApresmidi} l'après-midi)`
       : "";
 
-  const risqueConfirmeParTerrain =
-    risqueTechnique.niveau === "orange" ||
-    risqueTechnique.niveau === "rouge";
+  const risqueConfirmeParLeTerrain =
+    risqueTechnique.niveau ===
+      "orange" ||
+    risqueTechnique.niveau ===
+      "rouge";
 
+  // ---------------------------------------------------------------------------
   // ROUGE
-  if (vigilanceOfficielle === "rouge") {
-    if (risqueConfirmeParTerrain) {
+  // ---------------------------------------------------------------------------
+
+  if (
+    vigilanceOfficielle ===
+    "rouge"
+  ) {
+    if (
+      risqueConfirmeParLeTerrain
+    ) {
       return {
         vigilanceOfficielle,
         risqueTechnique,
         pluieContinue,
         jourArrete: true,
         aValider: false,
-        ampleurImpact: "complete" as const,
+        ampleurImpact: "complete",
         motif:
-          `Vigilance rouge Météo-France confirmée ` +
-          `par les mesures du chantier${evolution} — ` +
-          `arrêt de chantier`,
+          `Vigilance rouge Météo-France confirmée par les mesures du chantier${evolution} — arrêt de chantier`,
       };
     }
 
@@ -727,32 +930,40 @@ function evaluerJour(
       pluieContinue,
       jourArrete: false,
       aValider: true,
-      ampleurImpact: "partielle" as const,
+      ampleurImpact: "partielle",
       motif:
-        `Vigilance rouge Météo-France${evolution}, ` +
-        `mais aucun dépassement mesuré sur le chantier — ` +
-        `à confirmer par le chef de chantier`,
+        `Vigilance rouge Météo-France${evolution}, mais aucun dépassement mesuré sur le chantier — à confirmer par le chef de chantier`,
     };
   }
 
+  // ---------------------------------------------------------------------------
   // ORANGE
-  if (vigilanceOfficielle === "orange") {
+  // ---------------------------------------------------------------------------
+
+  if (
+    vigilanceOfficielle ===
+    "orange"
+  ) {
     return {
       vigilanceOfficielle,
       risqueTechnique,
       pluieContinue,
       jourArrete: false,
       aValider: true,
-      ampleurImpact: "partielle" as const,
+      ampleurImpact: "partielle",
       motif:
-        `Vigilance orange Météo-France${evolution} — ` +
-        `arrêt à confirmer selon les conditions réelles ` +
-        `du chantier`,
+        `Vigilance orange Météo-France${evolution} — arrêt à confirmer selon le déroulement réel de la journée`,
     };
   }
 
+  // ---------------------------------------------------------------------------
   // JAUNE
-  if (vigilanceOfficielle === "jaune") {
+  // ---------------------------------------------------------------------------
+
+  if (
+    vigilanceOfficielle ===
+    "jaune"
+  ) {
     if (pluieContinue) {
       return {
         vigilanceOfficielle,
@@ -760,26 +971,9 @@ function evaluerJour(
         pluieContinue,
         jourArrete: true,
         aValider: false,
-        ampleurImpact: "complete" as const,
+        ampleurImpact: "complete",
         motif:
-          `Vigilance jaune Météo-France + pluie continue ` +
-          `constatée toute la journée — arrêt de chantier`,
-      };
-    }
-
-    if (risqueConfirmeParTerrain) {
-      return {
-        vigilanceOfficielle,
-        risqueTechnique,
-        pluieContinue,
-        jourArrete: false,
-        aValider: true,
-        ampleurImpact: "partielle" as const,
-        motif:
-          `Vigilance jaune Météo-France${evolution} + ` +
-          `dépassement technique mesuré ` +
-          `(${risqueTechnique.motif}) — ` +
-          `à confirmer par le chef de chantier`,
+          "Vigilance jaune Météo-France + pluie continue constatée toute la journée — arrêt de chantier",
       };
     }
 
@@ -789,16 +983,19 @@ function evaluerJour(
       pluieContinue,
       jourArrete: false,
       aValider: true,
-      ampleurImpact: "partielle" as const,
+      ampleurImpact: "partielle",
       motif:
-        `Vigilance jaune Météo-France${evolution} — ` +
-        `conditions météo dégradées à surveiller`,
+        `Vigilance jaune Météo-France${evolution} — conditions météo dégradées à surveiller sur le chantier`,
     };
   }
 
-  // VERT + PLUIE CONTINUE
+  // ---------------------------------------------------------------------------
+  // VERT + pluie continue
+  // ---------------------------------------------------------------------------
+
   if (
-    vigilanceOfficielle === "vert" &&
+    vigilanceOfficielle ===
+      "vert" &&
     pluieContinue
   ) {
     return {
@@ -807,30 +1004,41 @@ function evaluerJour(
       pluieContinue,
       jourArrete: true,
       aValider: false,
-      ampleurImpact: "complete" as const,
+      ampleurImpact: "complete",
       motif:
-        `Pluie continue constatée toute la journée ` +
-        `(hors vigilance officielle)`,
+        "Pluie continue constatée toute la journée (hors vigilance officielle)",
     };
   }
 
-  // VERT + RISQUE TECHNIQUE
-  if (risqueConfirmeParTerrain) {
+  // ---------------------------------------------------------------------------
+  // Dépassement technique malgré vigilance verte
+  // ---------------------------------------------------------------------------
+
+  if (
+    risqueConfirmeParLeTerrain
+  ) {
+    const contexte =
+      vigilanceOfficielle ===
+      "vert"
+        ? "Pas de vigilance officielle"
+        : `Vigilance ${vigilanceOfficielle} Météo-France${evolution}`;
+
     return {
       vigilanceOfficielle,
       risqueTechnique,
       pluieContinue,
       jourArrete: false,
       aValider: true,
-      ampleurImpact: "partielle" as const,
+      ampleurImpact: "partielle",
       motif:
-        `Pas de vigilance officielle, mais dépassement ` +
-        `mesuré sur le chantier (${risqueTechnique.motif}) — ` +
-        `à confirmer par le chef de chantier`,
+        `${contexte}, mais dépassement mesuré sur le chantier (${risqueTechnique.motif}) — à confirmer par le chef de chantier`,
     };
   }
 
-  // NORMAL
+  // ---------------------------------------------------------------------------
+  // Conditions normales
+  // ---------------------------------------------------------------------------
+
   return {
     vigilanceOfficielle,
     risqueTechnique,
@@ -844,11 +1052,15 @@ function evaluerJour(
 }
 
 // -----------------------------------------------------------------------------
-// NUMÉRO RAPPORT
+// Numéro du rapport
 // -----------------------------------------------------------------------------
 
 async function prochainNumero(): Promise<string> {
-  const annee = new Date().getFullYear();
+  const annee =
+    new Date().getFullYear();
+
+  const prefixe =
+    `RI-${annee}-`;
 
   const { data, error } =
     await supabase
@@ -856,22 +1068,28 @@ async function prochainNumero(): Promise<string> {
       .select("numero")
       .ilike(
         "numero",
-        `RI-${annee}-%`
+        `${prefixe}%`
       );
 
   if (error) {
     throw new Error(
-      `Erreur numérotation : ${error.message}`
+      `Impossible de récupérer les numéros de rapports : ${error.message}`
     );
   }
 
-  const numeros = (data ?? [])
-    .map((row: any) => {
-      const parts =
-        String(row.numero ?? "").split("-");
+  const numeros =
+    (data ?? [])
+      .map((rapport: any) => {
+        const morceaux =
+          String(
+            rapport.numero ?? ""
+          ).split("-");
 
-      return Number(parts[2]) || 0;
-    });
+        return Number.parseInt(
+          morceaux[2] ?? "0",
+          10
+        ) || 0;
+      });
 
   const suivant =
     (numeros.length
@@ -879,9 +1097,27 @@ async function prochainNumero(): Promise<string> {
       : 0) + 1;
 
   return (
-    `RI-${annee}-` +
-    String(suivant).padStart(3, "0")
+    `${prefixe}` +
+    String(suivant)
+      .padStart(3, "0")
   );
+}
+
+// -----------------------------------------------------------------------------
+// Début de journée
+// -----------------------------------------------------------------------------
+
+function debutJournee(): Date {
+  const date = new Date();
+
+  date.setHours(
+    0,
+    0,
+    0,
+    0
+  );
+
+  return date;
 }
 
 // -----------------------------------------------------------------------------
@@ -896,15 +1132,23 @@ async function modeCapture(
     statut: string;
   }[] = [];
 
-  const { data: chantiers, error } =
-    await supabase
-      .from("chantiers")
-      .select(
-        "id, nom, adresse_chantier"
-      )
-      .neq("statut", "termine");
+  const {
+    data: chantiers,
+    error,
+  } = await supabase
+    .from("chantiers")
+    .select(
+      "id, nom, adresse_chantier"
+    )
+    .neq(
+      "statut",
+      "termine"
+    );
 
-  if (error || !chantiers) {
+  if (
+    error ||
+    !chantiers
+  ) {
     return new Response(
       JSON.stringify({
         error:
@@ -921,12 +1165,13 @@ async function modeCapture(
     );
   }
 
-  const debutJour = new Date();
-  debutJour.setHours(0, 0, 0, 0);
+  const debut =
+    debutJournee();
 
   for (const chantier of chantiers) {
     const nom =
-      chantier.nom ?? chantier.id;
+      chantier.nom ??
+      chantier.id;
 
     const adresse =
       chantier.adresse_chantier as
@@ -944,20 +1189,28 @@ async function modeCapture(
     }
 
     try {
-      const { data: existant } =
-        await supabase
-          .from("vigilance_captures")
-          .select("id")
-          .eq(
-            "chantier_id",
-            chantier.id
-          )
-          .eq("periode", periode)
-          .gte(
-            "capture_le",
-            debutJour.toISOString()
-          )
-          .maybeSingle();
+      // -----------------------------------------------------------------------
+      // Évite une double capture le même jour
+      // -----------------------------------------------------------------------
+
+      const {
+        data: existant,
+      } = await supabase
+        .from("vigilance_captures")
+        .select("id")
+        .eq(
+          "chantier_id",
+          chantier.id
+        )
+        .eq(
+          "periode",
+          periode
+        )
+        .gte(
+          "capture_le",
+          debut.toISOString()
+        )
+        .maybeSingle();
 
       if (existant) {
         resultats.push({
@@ -969,41 +1222,64 @@ async function modeCapture(
         continue;
       }
 
-      const departement =
-        adresseVersDepartement(adresse);
+      // -----------------------------------------------------------------------
+      // Département
+      // -----------------------------------------------------------------------
 
-      let vigilance: VigilanceInfo = {
-        couleurMax: "vert",
-        phenomenes: [],
-        misAJourLe: null,
-      };
+      const departement =
+        adresseVersDepartement(
+          adresse
+        );
+
+      let couleur: NiveauAlerte =
+        "vert";
+
+      let phenomenes:
+        VigilancePhenomene[] =
+        [];
+
+      // -----------------------------------------------------------------------
+      // Vigilance officielle
+      // -----------------------------------------------------------------------
 
       if (departement) {
-        vigilance =
+        const vigilance =
           await fetchVigilance(
             departement
           );
+
+        couleur =
+          vigilancePertinente(
+            vigilance
+          );
+
+        phenomenes =
+          vigilance.phenomenes;
       }
 
-      const couleur =
-        vigilancePertinente(vigilance);
+      // -----------------------------------------------------------------------
+      // Enregistrement
+      // -----------------------------------------------------------------------
 
-      const { error: insertError } =
-        await supabase
-          .from("vigilance_captures")
-          .insert({
-            chantier_id:
-              chantier.id,
-            periode,
-            departement,
-            vigilance_couleur:
-              couleur,
-            vigilance_phenomenes:
-              vigilance.phenomenes,
-          });
+      const {
+        error: erreurInsert,
+      } = await supabase
+        .from(
+          "vigilance_captures"
+        )
+        .insert({
+          chantier_id:
+            chantier.id,
+          periode,
+          departement,
+          vigilance_couleur:
+            couleur,
+          vigilance_phenomenes:
+            phenomenes,
+        });
 
-      if (insertError) {
-        throw insertError;
+      if (erreurInsert) {
+        throw erreurInsert;
       }
 
       resultats.push({
@@ -1025,14 +1301,16 @@ async function modeCapture(
   }
 
   return new Response(
-    JSON.stringify({
-      success: true,
-      mode: "capture",
-      periode,
-      resultats,
-    }),
+    JSON.stringify(
+      {
+        mode: "capture",
+        periode,
+        resultats,
+      },
+      null,
+      2
+    ),
     {
-      status: 200,
       headers: {
         "Content-Type":
           "application/json",
@@ -1053,21 +1331,23 @@ async function modeGenerer(
     statut: string;
   }[] = [];
 
-  const { data: chantiers, error } =
-    await supabase
-      .from("chantiers")
-      .select(
-        `
-        id,
-        nom,
-        adresse_chantier,
-        materiau_structural,
-        moyen_acces
-        `
-      )
-      .neq("statut", "termine");
+  const {
+    data: chantiers,
+    error,
+  } = await supabase
+    .from("chantiers")
+    .select(
+      "id, nom, adresse_chantier, materiau_structurel, moyen_acces"
+    )
+    .neq(
+      "statut",
+      "termine"
+    );
 
-  if (error || !chantiers) {
+  if (
+    error ||
+    !chantiers
+  ) {
     return new Response(
       JSON.stringify({
         error:
@@ -1084,12 +1364,13 @@ async function modeGenerer(
     );
   }
 
-  const debutJour = new Date();
-  debutJour.setHours(0, 0, 0, 0);
+  const debut =
+    debutJournee();
 
   for (const chantier of chantiers) {
     const nom =
-      chantier.nom ?? chantier.id;
+      chantier.nom ??
+      chantier.id;
 
     const adresse =
       chantier.adresse_chantier as
@@ -1107,93 +1388,121 @@ async function modeGenerer(
     }
 
     try {
-      // ---------------------------------------------------------------
-      // Évite le doublon du jour
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Empêche plusieurs rapports le même jour
+      // -----------------------------------------------------------------------
 
-      const { data: existant } =
-        await supabase
-          .from("rapports_intemperies")
-          .select("id, numero")
-          .eq(
-            "chantier_id",
-            chantier.id
-          )
-          .gte(
-            "cree_le",
-            debutJour.toISOString()
-          )
-          .maybeSingle();
+      const {
+        data: existant,
+      } = await supabase
+        .from(
+          "rapports_intemperies"
+        )
+        .select("id")
+        .eq(
+          "chantier_id",
+          chantier.id
+        )
+        .gte(
+          "cree_le",
+          debut.toISOString()
+        )
+        .maybeSingle();
 
       if (existant) {
         resultats.push({
           chantier: nom,
           statut:
-            `déjà généré aujourd'hui (${existant.numero})`,
+            "déjà généré aujourd'hui",
         });
 
         continue;
       }
 
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
       // Récupération des captures
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
-      const { data: captures } =
-        await supabase
-          .from("vigilance_captures")
-          .select(
-            "periode, vigilance_couleur"
-          )
-          .eq(
-            "chantier_id",
-            chantier.id
-          )
-          .gte(
-            "capture_le",
-            debutJour.toISOString()
-          );
+      const {
+        data: captures,
+        error:
+          erreurCaptures,
+      } = await supabase
+        .from(
+          "vigilance_captures"
+        )
+        .select(
+          "periode, vigilance_couleur, vigilance_phenomenes"
+        )
+        .eq(
+          "chantier_id",
+          chantier.id
+        )
+        .gte(
+          "capture_le",
+          debut.toISOString()
+        );
+
+      if (erreurCaptures) {
+        throw erreurCaptures;
+      }
 
       const captureMatin =
         captures?.find(
-          (c: any) =>
-            c.periode === "matin"
+          (capture: any) =>
+            capture.periode ===
+            "matin"
         );
 
       const captureApresmidi =
         captures?.find(
-          (c: any) =>
-            c.periode ===
+          (capture: any) =>
+            capture.periode ===
             "apresmidi"
         );
 
       const vigilanceMatin =
-        (captureMatin
-          ?.vigilance_couleur ??
-          null) as NiveauAlerte | null;
+        (
+          captureMatin
+            ?.vigilance_couleur ??
+          null
+        ) as
+          | NiveauAlerte
+          | null;
 
       const vigilanceApresmidi =
-        (captureApresmidi
-          ?.vigilance_couleur ??
-          null) as NiveauAlerte | null;
+        (
+          captureApresmidi
+            ?.vigilance_couleur ??
+          null
+        ) as
+          | NiveauAlerte
+          | null;
 
-      // ---------------------------------------------------------------
-      // Météo réelle du jour
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Météo réelle de la journée
+      // -----------------------------------------------------------------------
 
-      const meteo =
+      const meteoJour =
         await fetchMeteoJour(
           adresse
         );
+
+      // -----------------------------------------------------------------------
+      // Département
+      // -----------------------------------------------------------------------
 
       const departement =
         adresseVersDepartement(
           adresse
         );
 
-      // ---------------------------------------------------------------
-      // Matériau / accès sécurisés
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Matériau et accès
+      //
+      // Valeurs par défaut pour éviter qu'une donnée manquante fasse planter
+      // toute la génération.
+      // -----------------------------------------------------------------------
 
       const materiau =
         (
@@ -1204,13 +1513,14 @@ async function modeGenerer(
 
       const acces =
         (
-          chantier.moyen_acces ??
+          chantier
+            .moyen_acces ??
           "echafaudage"
         ) as Acces;
 
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
       // Décision
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
 
       const decision =
         evaluerJour(
@@ -1218,20 +1528,20 @@ async function modeGenerer(
           acces,
           {
             rafalesMax:
-              meteo.rafalesMax,
+              meteoJour.rafalesMax,
             tempMax:
-              meteo.tempMax,
+              meteoJour.tempMax,
             pluieCumul:
-              meteo.pluieCumul,
+              meteoJour.pluieCumul,
           },
-          meteo.heures,
+          meteoJour.heures,
           vigilanceMatin,
           vigilanceApresmidi
         );
 
-      // ---------------------------------------------------------------
-      // Pas d'intempérie
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Rien à signaler
+      // -----------------------------------------------------------------------
 
       if (
         !decision.jourArrete &&
@@ -1247,74 +1557,82 @@ async function modeGenerer(
         continue;
       }
 
-      // ---------------------------------------------------------------
-      // Création rapport
-      // ---------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // Numéro du rapport
+      // -----------------------------------------------------------------------
 
       const numero =
         await prochainNumero();
 
-      const { data: rapportCree, error: insertError } =
-        await supabase
-          .from("rapports_intemperies")
-          .insert({
-            numero,
-            chantier_id:
-              chantier.id,
+      // -----------------------------------------------------------------------
+      // Création du rapport
+      // -----------------------------------------------------------------------
 
-            vigilance_officielle:
-              decision.vigilanceOfficielle,
+      const {
+        error:
+          erreurInsert,
+      } = await supabase
+        .from(
+          "rapports_intemperies"
+        )
+        .insert({
+          numero,
 
-            jour_arrete:
-              decision.jourArrete,
+          chantier_id:
+            chantier.id,
 
-            a_valider:
-              decision.aValider,
+          vigilance_officielle:
+            decision.vigilanceOfficielle,
 
-            ampleur_impact:
-              decision.ampleurImpact,
+          jour_arrete:
+            decision.jourArrete,
 
-            pluie_continue:
-              decision.pluieContinue,
+          a_valider:
+            decision.aValider,
 
-            motif:
-              decision.motif,
+          ampleur_impact:
+            decision.ampleurImpact,
 
-            risque_technique_niveau:
-              decision.risqueTechnique
-                .niveau,
+          pluie_continue:
+            decision.pluieContinue,
 
-            risque_technique_motif:
-              decision.risqueTechnique
-                .motif,
+          motif:
+            decision.motif,
 
-            temp_max:
-              meteo.tempMax,
+          risque_technique_niveau:
+            decision
+              .risqueTechnique
+              .niveau,
 
-            rafales_max:
-              meteo.rafalesMax,
+          risque_technique_motif:
+            decision
+              .risqueTechnique
+              .motif,
 
-            pluie_cumul:
-              Number(
-                meteo.pluieCumul.toFixed(2)
-              ),
+          temp_max:
+            meteoJour.tempMax,
 
-            materiau,
+          rafales_max:
+            meteoJour.rafalesMax,
 
-            acces,
+          pluie_cumul:
+            meteoJour.pluieCumul,
 
-            departement,
+          materiau,
 
-            releve_horaire:
-              meteo.heures,
+          acces,
 
-            cree_par: "auto",
-          })
-          .select("id")
-          .single();
+          departement,
 
-      if (insertError) {
-        throw insertError;
+          releve_horaire:
+            meteoJour.heures,
+
+          cree_par:
+            "auto",
+        });
+
+      if (erreurInsert) {
+        throw erreurInsert;
       }
 
       resultats.push({
@@ -1323,11 +1641,6 @@ async function modeGenerer(
           `rapport ${numero} généré`,
       });
     } catch (error) {
-      console.error(
-        `Erreur rapport chantier ${chantier.id}:`,
-        error
-      );
-
       resultats.push({
         chantier: nom,
         statut:
@@ -1341,15 +1654,16 @@ async function modeGenerer(
   }
 
   return new Response(
-    JSON.stringify({
-      success: true,
-      mode: "generer",
-      force,
-      total: resultats.length,
-      resultats,
-    }),
+    JSON.stringify(
+      {
+        mode: "generer",
+        force,
+        resultats,
+      },
+      null,
+      2
+    ),
     {
-      status: 200,
       headers: {
         "Content-Type":
           "application/json",
@@ -1359,7 +1673,7 @@ async function modeGenerer(
 }
 
 // -----------------------------------------------------------------------------
-// HANDLER SUPABASE EDGE FUNCTION
+// HANDLER PRINCIPAL
 // -----------------------------------------------------------------------------
 
 Deno.serve(async (req) => {
@@ -1367,14 +1681,22 @@ Deno.serve(async (req) => {
     | "capture"
     | "generer" = "generer";
 
-  let periode: Periode = "matin";
+  let periode: Periode =
+    "matin";
+
   let force = false;
 
+  // ---------------------------------------------------------------------------
+  // Lecture du body
+  // ---------------------------------------------------------------------------
+
   try {
-    const body = await req.json();
+    const body =
+      await req.json();
 
     if (
-      body?.mode === "capture"
+      body?.mode ===
+      "capture"
     ) {
       mode = "capture";
     }
@@ -1383,20 +1705,37 @@ Deno.serve(async (req) => {
       body?.periode ===
       "apresmidi"
     ) {
-      periode = "apresmidi";
+      periode =
+        "apresmidi";
     }
 
-    if (body?.force === true) {
+    if (
+      body?.force === true
+    ) {
       force = true;
     }
   } catch {
-    // Aucun body ou body invalide.
+    // Pas de body ou body invalide.
     // On conserve les valeurs par défaut.
   }
 
-  if (mode === "capture") {
-    return modeCapture(periode);
+  // ---------------------------------------------------------------------------
+  // Capture
+  // ---------------------------------------------------------------------------
+
+  if (
+    mode === "capture"
+  ) {
+    return modeCapture(
+      periode
+    );
   }
 
-  return modeGenerer(force);
+  // ---------------------------------------------------------------------------
+  // Génération
+  // ---------------------------------------------------------------------------
+
+  return modeGenerer(
+    force
+  );
 });
