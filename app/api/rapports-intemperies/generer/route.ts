@@ -1,61 +1,33 @@
 // app/api/rapports-intemperies/generer/route.ts
 //
 // Génération des rapports d'intempéries.
+// ------------------------------------------------------------
+// Sources utilisées :
+//   1. Visual Crossing -> données météo réelles
+//   2. /api/meteo-vigilance -> vigilance officielle Météo-France
+//   3. lib/meteoAlerte.ts -> analyse technique du chantier
 //
-// La route orchestre uniquement :
-// 1. récupération du chantier
-// 2. récupération de la météo locale
-// 3. récupération de la vigilance officielle
-// 4. appel du moteur métier evaluerJourChantier()
-// 5. enregistrement du rapport dans Supabase
-//
-// Les règles de décision sont centralisées dans lib/meteoAlerte.ts.
+// IMPORTANT :
+// La vigilance officielle Météo-France et le risque technique
+// du chantier restent deux notions distinctes.
+// ------------------------------------------------------------
 
 import { NextRequest, NextResponse } from "next/server";
-
 import { supabase } from "@/lib/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
-
 import {
   evaluerJourChantier,
   Materiau,
   Acces,
+  NiveauAlerte,
 } from "@/lib/meteoAlerte";
+import type { HeureMeteo } from "@/lib/meteo";
 
-import {
-  VigilanceDepartement,
-  CouleurVigilance,
-} from "@/lib/meteoVigilance";
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
 
-const URL_VIGILANCE =
-  "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
-
-const COULEUR_PAR_ID: Record<
-  number,
-  CouleurVigilance
-> = {
-  1: "vert",
-  2: "jaune",
-  3: "orange",
-  4: "rouge",
-};
-
-const PHENOMENE_PAR_ID: Record<
-  number,
-  string
-> = {
-  1: "vent",
-  2: "pluie-inondation",
-  3: "orages",
-  4: "inondation",
-  5: "neige-verglas",
-  6: "canicule",
-  7: "grand-froid",
-  8: "avalanches",
-  9: "vagues-submersion",
-};
-
-export type HeureMeteo = {
+type HeureRapport = {
   heure: string;
   temp: number;
   vent: number;
@@ -64,107 +36,153 @@ export type HeureMeteo = {
 };
 
 type MeteoJour = {
-  heures: HeureMeteo[];
+  heures: HeureRapport[];
   tempMax: number;
   rafalesMax: number;
   pluieCumul: number;
 };
 
-type VigilanceInfo = VigilanceDepartement;
+type ResultatGeneration = {
+  chantierId: string;
+  nom: string | null;
+  numero?: string;
+  vigilance?: NiveauAlerte;
+  rapportId?: string;
+  statut: string;
+  erreur?: string;
+};
 
-/* ------------------------------------------------------------------ */
-/* Météo Visual Crossing                                               */
-/* ------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
+// Configuration
+// -----------------------------------------------------------------------------
+
+const VISUAL_CROSSING_URL =
+  "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
+
+const ORDRE_VIGILANCE: Record<NiveauAlerte, number> = {
+  vert: 0,
+  jaune: 1,
+  orange: 2,
+  rouge: 3,
+};
+
+// -----------------------------------------------------------------------------
+// Utilitaires
+// -----------------------------------------------------------------------------
+
+function plusForte(
+  a: NiveauAlerte,
+  b: NiveauAlerte
+): NiveauAlerte {
+  return ORDRE_VIGILANCE[a] >= ORDRE_VIGILANCE[b] ? a : b;
+}
+
+function normaliserMateriau(value: unknown): Materiau {
+  const valeur = String(value ?? "").toLowerCase().trim();
+
+  switch (valeur) {
+    case "metal":
+    case "métal":
+    case "bac_acier":
+    case "bac-acier":
+      return "metal";
+
+    case "composite":
+      return "composite";
+
+    case "fibrociment":
+    case "fibre-ciment":
+      return "fibrociment";
+
+    case "bois":
+    default:
+      return "bois";
+  }
+}
+
+function normaliserAcces(value: unknown): Acces {
+  const valeur = String(value ?? "").toLowerCase().trim();
+
+  switch (valeur) {
+    case "nacelle":
+      return "nacelle";
+
+    case "echafaudage":
+    case "échafaudage":
+    default:
+      return "echafaudage";
+  }
+}
+
+function normaliserZoneVent(value: unknown): number {
+  const zone = Number(value);
+
+  if (!Number.isFinite(zone)) return 1;
+
+  return Math.min(4, Math.max(1, Math.round(zone)));
+}
+
+// -----------------------------------------------------------------------------
+// Météo Visual Crossing
+// -----------------------------------------------------------------------------
 
 async function fetchMeteoVisualCrossing(
   adresse: string,
   apiKey: string
 ): Promise<MeteoJour> {
   const url =
-    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/` +
-    `${encodeURIComponent(adresse)}/today` +
+    `${VISUAL_CROSSING_URL}/${encodeURIComponent(adresse)}/today` +
     `?unitGroup=metric` +
     `&key=${encodeURIComponent(apiKey)}` +
     `&contentType=json` +
     `&include=days,hours` +
     `&elements=datetime,temp,windspeed,windgust,precip`;
 
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     cache: "no-store",
   });
 
-  if (!res.ok) {
+  if (!response.ok) {
+    const texte = await response.text().catch(() => "");
+
     throw new Error(
-      `Erreur Visual Crossing (${res.status}) pour l'adresse "${adresse}".`
+      `Visual Crossing (${response.status})${
+        texte ? ` : ${texte.slice(0, 200)}` : ""
+      }`
     );
   }
 
-  const data = await res.json();
-
+  const data = await response.json();
   const today = data?.days?.[0];
 
   if (!today) {
-    throw new Error(
-      `Aucune donnée météo disponible pour "${adresse}".`
-    );
+    throw new Error("Aucune donnée météo disponible pour aujourd'hui");
   }
 
-  const heures: HeureMeteo[] = (
-    Array.isArray(today.hours)
-      ? today.hours
-      : []
-  ).map((h: any) => ({
-    heure: String(
-      h.datetime ?? ""
-    ).slice(0, 5),
-
-    temp:
-      typeof h.temp === "number"
-        ? Math.round(h.temp)
-        : 0,
-
-    vent:
-      typeof h.windspeed === "number"
-        ? Math.round(h.windspeed)
-        : 0,
-
-    rafales:
-      typeof h.windgust === "number"
-        ? Math.round(h.windgust)
-        : typeof h.windspeed === "number"
-          ? Math.round(h.windspeed)
-          : 0,
-
-    pluie:
-      typeof h.precip === "number"
-        ? h.precip
-        : 0,
+  const heures: HeureRapport[] = (today.hours ?? []).map((h: any) => ({
+    heure: String(h.datetime ?? "").slice(0, 5),
+    temp: Math.round(Number(h.temp ?? 0)),
+    vent: Math.round(Number(h.windspeed ?? 0)),
+    rafales: Math.round(
+      Number(h.windgust ?? h.windspeed ?? 0)
+    ),
+    pluie: Number(h.precip ?? 0),
   }));
 
   const tempMax =
     heures.length > 0
-      ? Math.max(
-          ...heures.map(
-            (h) => h.temp
-          )
-        )
-      : 0;
+      ? Math.max(...heures.map((h) => h.temp))
+      : Number(today.tempmax ?? 0);
 
   const rafalesMax =
     heures.length > 0
-      ? Math.max(
-          ...heures.map(
-            (h) => h.rafales
-          )
-        )
-      : 0;
+      ? Math.max(...heures.map((h) => h.rafales))
+      : Number(today.windgust ?? today.windspeed ?? 0);
 
   const pluieCumul =
-    heures.reduce(
-      (total, h) =>
-        total + h.pluie,
-      0
-    );
+    heures.length > 0
+      ? heures.reduce((total, h) => total + h.pluie, 0)
+      : Number(today.precip ?? 0);
 
   return {
     heures,
@@ -174,763 +192,457 @@ async function fetchMeteoVisualCrossing(
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* Vigilance Météo-France                                              */
-/* ------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
+// Vigilance Météo-France
+// -----------------------------------------------------------------------------
+//
+// On utilise la même route interne que le reste de l'application.
+// La clé Météo-France reste donc côté serveur.
+// -----------------------------------------------------------------------------
 
-async function fetchVigilanceMeteoFrance(
-  departement: string,
-  apiKey?: string
-): Promise<VigilanceInfo> {
-  /*
-   * Si la clé n'est pas configurée,
-   * on ne prétend pas avoir une vigilance officielle.
-   *
-   * Pour éviter de bloquer complètement la génération,
-   * on utilise vert comme valeur de repli.
-   */
-  if (!apiKey) {
-    console.warn(
-      "METEOFRANCE_API_KEY non configurée."
+async function fetchVigilanceInterne(
+  request: NextRequest,
+  departement: string
+) {
+  const origin = new URL(request.url).origin;
+
+  const url =
+    `${origin}/api/meteo-vigilance?departement=` +
+    encodeURIComponent(departement);
+
+  const response = await fetch(url, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+
+    throw new Error(
+      data?.error ||
+        `Impossible de récupérer la vigilance Météo-France (${response.status})`
     );
-
-    return {
-      departement,
-      couleurMax: "vert",
-      phenomenes: [],
-      misAJourLe: null,
-    };
   }
 
-  try {
-    const res = await fetch(
-      URL_VIGILANCE,
-      {
-        headers: {
-          apikey: apiKey,
-        },
-        cache: "no-store",
-      }
-    );
-
-    if (!res.ok) {
-      console.warn(
-        `API Vigilance Météo-France indisponible (${res.status}).`
-      );
-
-      return {
-        departement,
-        couleurMax: "vert",
-        phenomenes: [],
-        misAJourLe: null,
-      };
-    }
-
-    const data = await res.json();
-
-    const periodes =
-      data?.product?.periods ??
-      data?.periods ??
-      [];
-
-    const periodeEnCours =
-      periodes?.[0];
-
-    const domaines =
-      periodeEnCours?.timelaps
-        ?.domain_ids ??
-      periodeEnCours?.domain_ids ??
-      [];
-
-    const domaineArray: any[] =
-      Array.isArray(domaines)
-        ? domaines
-        : Object.values(
-            domaines ?? {}
-          );
-
-    const departementNormalise =
-      departement
-        .trim()
-        .toUpperCase();
-
-    const domaineDepartement =
-      domaineArray.find(
-        (d: any) => {
-          const id =
-            d?.domain_id
-              ?.toString()
-              .trim()
-              .toUpperCase();
-
-          if (!id) {
-            return false;
-          }
-
-          if (
-            id ===
-            departementNormalise
-          ) {
-            return true;
-          }
-
-          /*
-           * Corse.
-           */
-          if (
-            departementNormalise ===
-              "2A" &&
-            [
-              "20A",
-              "2A",
-              "200",
-              "201",
-            ].includes(id)
-          ) {
-            return true;
-          }
-
-          if (
-            departementNormalise ===
-              "2B" &&
-            [
-              "20B",
-              "2B",
-              "202",
-            ].includes(id)
-          ) {
-            return true;
-          }
-
-          return false;
-        }
-      );
-
-    if (!domaineDepartement) {
-      return {
-        departement,
-        couleurMax: "vert",
-        phenomenes: [],
-        misAJourLe: null,
-      };
-    }
-
-    const couleurMax =
-      COULEUR_PAR_ID[
-        Number(
-          domaineDepartement.max_color_id
-        )
-      ] ?? "vert";
-
-    const phenomenesBruts: any[] =
-      domaineDepartement.phenomenon_items ??
-      domaineDepartement.phenomenon_max_colors ??
-      [];
-
-    const phenomenes =
-      phenomenesBruts
-        .map(
-          (p: any) => {
-            const id =
-              p?.phenomenon_id ??
-              p?.phenomenon_max_color_id
-                ?.phenomenon_id;
-
-            const couleurId =
-              p?.phenomenon_max_color_id ??
-              p?.color_id ??
-              p?.max_color_id;
-
-            const nom =
-              PHENOMENE_PAR_ID[
-                Number(id)
-              ];
-
-            if (!nom) {
-              return null;
-            }
-
-            return {
-              id: Number(id),
-              nom,
-              couleur:
-                COULEUR_PAR_ID[
-                  Number(
-                    couleurId
-                  )
-                ] ?? "vert",
-            };
-          }
-        )
-        .filter(Boolean);
-
-    return {
-      departement,
-      couleurMax,
-      phenomenes,
-      misAJourLe:
-        data?.product?.update_time ??
-        data?.update_time ??
-        null,
-    };
-  } catch (error) {
-    console.error(
-      "Erreur lecture vigilance Météo-France :",
-      error
-    );
-
-    return {
-      departement,
-      couleurMax: "vert",
-      phenomenes: [],
-      misAJourLe: null,
-    };
-  }
+  return response.json();
 }
 
-/* ------------------------------------------------------------------ */
-/* Numéro du rapport                                                   */
-/* ------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
+// Numéro de rapport
+// -----------------------------------------------------------------------------
 
 async function prochainNumero(): Promise<string> {
-  const annee =
-    new Date().getFullYear();
+  const annee = new Date().getFullYear();
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from(
-      "rapports_intemperies"
-    )
+  const { data, error } = await supabase
+    .from("rapports_intemperies")
     .select("numero")
-    .ilike(
-      "numero",
-      `RI-${annee}-%`
-    );
+    .ilike("numero", `RI-${annee}-%`);
 
   if (error) {
     throw new Error(
-      `Impossible de récupérer les numéros de rapports : ${error.message}`
+      `Impossible de récupérer les numéros existants : ${error.message}`
     );
   }
 
-  const numeros =
-    (data ?? [])
-      .map((row: any) => {
-        const morceaux =
-          String(
-            row.numero ?? ""
-          ).split("-");
+  const numeros = (data ?? [])
+    .map((ligne: any) => {
+      const morceaux = String(ligne.numero ?? "").split("-");
+      return Number.parseInt(morceaux[2] ?? "", 10);
+    })
+    .filter((numero) => Number.isFinite(numero));
 
-        return Number.parseInt(
-          morceaux[2],
-          10
-        );
-      })
-      .filter(
-        Number.isFinite
-      );
+  const prochain =
+    numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
 
-  const suivant =
-    numeros.length > 0
-      ? Math.max(...numeros) + 1
-      : 1;
-
-  return `RI-${annee}-${String(
-    suivant
-  ).padStart(3, "0")}`;
+  return `RI-${annee}-${String(prochain).padStart(3, "0")}`;
 }
 
-/* ------------------------------------------------------------------ */
-/* POST                                                                 */
-/* ------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
+// Vérification rapport existant aujourd'hui
+// -----------------------------------------------------------------------------
 
-export async function POST(
-  request: NextRequest
+async function rapportDuJourExiste(
+  chantierId: string
 ) {
+  const debut = new Date();
+  debut.setHours(0, 0, 0, 0);
+
+  const fin = new Date(debut);
+  fin.setDate(fin.getDate() + 1);
+
+  const { data, error } = await supabase
+    .from("rapports_intemperies")
+    .select("id, numero, cree_le")
+    .eq("chantier_id", chantierId)
+    .gte("cree_le", debut.toISOString())
+    .lt("cree_le", fin.toISOString())
+    .order("cree_le", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(
+      `Erreur recherche rapport existant : ${error.message}`
+    );
+  }
+
+  return data;
+}
+
+// -----------------------------------------------------------------------------
+// POST
+// -----------------------------------------------------------------------------
+
+export async function POST(request: NextRequest) {
   let body: {
     chantierId?: string;
     force?: boolean;
   } = {};
 
   try {
-    body =
-      await request.json();
+    body = await request.json();
   } catch {
     body = {};
   }
 
   const chantierId =
-    typeof body.chantierId ===
-      "string" &&
-    body.chantierId.trim()
-      ? body.chantierId.trim()
+    typeof body.chantierId === "string"
+      ? body.chantierId
       : undefined;
 
-  /*
-   * force=true par défaut pour le bouton
-   * "Générer le rapport du jour".
-   */
-  const force =
-    body.force !== false;
+  // Appel manuel depuis l'interface :
+  // force=true permet de régénérer.
+  const force = body.force === true;
 
   const visualCrossingKey =
-    process.env
-      .VISUALCROSSING_API_KEY;
-
-  const meteoFranceKey =
-    process.env
-      .METEOFRANCE_API_KEY;
+    process.env.VISUALCROSSING_API_KEY;
 
   if (!visualCrossingKey) {
     return NextResponse.json(
       {
         success: false,
         error:
-          "Clé VISUALCROSSING_API_KEY non configurée dans .env.local.",
+          "VISUALCROSSING_API_KEY non configurée dans .env.local",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 
-  /* -------------------------------------------------------------- */
-  /* Chantiers                                                       */
-  /* -------------------------------------------------------------- */
+  // ---------------------------------------------------------------------------
+  // 1. Récupération des chantiers
+  // ---------------------------------------------------------------------------
 
   let query = supabase
     .from("chantiers")
     .select(
-      `
-        id,
-        nom,
-        adresse_chantier,
-        materiau_structural,
-        moyen_acces,
-        zone_vent,
-        est_en_angle,
-        statut
-      `
+      [
+        "id",
+        "nom",
+        "adresse_chantier",
+        "materiau_structural",
+        "moyen_acces",
+        "zone_vent",
+        "statut",
+      ].join(", ")
     );
 
   if (chantierId) {
-    query =
-      query.eq(
-        "id",
-        chantierId
-      );
+    query = query.eq("id", chantierId);
   } else {
-    query =
-      query.neq(
-        "statut",
-        "termine"
-      );
+    query = query.neq("statut", "termine");
   }
 
   const {
     data: chantiers,
-    error:
-      erreurChantiers,
+    error: erreurChantiers,
   } = await query;
 
-  if (
-    erreurChantiers ||
-    !chantiers ||
-    chantiers.length === 0
-  ) {
+  if (erreurChantiers) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Erreur chargement des chantiers : ${erreurChantiers.message}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  if (!chantiers || chantiers.length === 0) {
     return NextResponse.json(
       {
         success: false,
         error: chantierId
-          ? "Chantier introuvable."
-          : "Aucun chantier actif trouvé.",
+          ? "Chantier introuvable"
+          : "Aucun chantier actif trouvé",
       },
-      {
-        status: 404,
-      }
+      { status: 404 }
     );
   }
 
-  /* -------------------------------------------------------------- */
-  /* Fenêtre du jour                                                 */
-  /* -------------------------------------------------------------- */
+  // ---------------------------------------------------------------------------
+  // 2. Génération pour chaque chantier
+  // ---------------------------------------------------------------------------
 
-  const maintenant =
-    new Date();
-
-  const debutJour =
-    new Date(
-      maintenant
-    );
-
-  debutJour.setHours(
-    0,
-    0,
-    0,
-    0
-  );
-
-  const finJour =
-    new Date(
-      maintenant
-    );
-
-  finJour.setHours(
-    23,
-    59,
-    59,
-    999
-  );
-
-  const resultats: any[] =
-    [];
-
-  /* -------------------------------------------------------------- */
-  /* Traitement                                                       */
-  /* -------------------------------------------------------------- */
+  const resultats: ResultatGeneration[] = [];
 
   for (const chantier of chantiers) {
     try {
-      /*
-       * Adresse météo.
-       */
-      const adresse =
-        chantier.adresse_chantier ||
-        chantier.nom ||
-        "Bordeaux, France";
+      // -----------------------------------------------------------------------
+      // Protection contre les doublons
+      // -----------------------------------------------------------------------
 
-      /* ---------------------------------------------------------- */
-      /* Rapport déjà présent                                       */
-      /* ---------------------------------------------------------- */
+      const existant = await rapportDuJourExiste(
+        chantier.id
+      );
 
-      const {
-        data:
-          rapportExistant,
-        error:
-          erreurExistant,
-      } = await supabase
-        .from(
-          "rapports_intemperies"
-        )
-        .select(
-          "id, numero"
-        )
-        .eq(
-          "chantier_id",
-          chantier.id
-        )
-        .gte(
-          "cree_le",
-          debutJour.toISOString()
-        )
-        .lte(
-          "cree_le",
-          finJour.toISOString()
-        )
-        .order(
-          "cree_le",
-          {
-            ascending: false,
-          }
-        )
-        .limit(1)
-        .maybeSingle();
-
-      if (erreurExistant) {
-        throw new Error(
-          `Erreur recherche rapport existant : ${erreurExistant.message}`
-        );
-      }
-
-      if (
-        rapportExistant &&
-        !force
-      ) {
+      if (existant && !force) {
         resultats.push({
-          chantierId:
-            chantier.id,
-          nom:
-            chantier.nom,
-          statut:
-            `Rapport déjà existant (${rapportExistant.numero})`,
-          rapportId:
-            rapportExistant.id,
+          chantierId: chantier.id,
+          nom: chantier.nom,
+          numero: existant.numero,
+          rapportId: existant.id,
+          statut: "Rapport déjà existant pour aujourd'hui",
         });
 
         continue;
       }
 
-      /* ---------------------------------------------------------- */
-      /* Département                                                 */
-      /* ---------------------------------------------------------- */
+      // -----------------------------------------------------------------------
+      // Paramètres chantier
+      // -----------------------------------------------------------------------
+
+      const adresse =
+        chantier.adresse_chantier?.trim() ||
+        chantier.nom?.trim() ||
+        "Bordeaux, France";
 
       const departement =
-        adresseVersDepartement(
-          adresse
-        ) || "33";
+        adresseVersDepartement(adresse) || "33";
 
-      /* ---------------------------------------------------------- */
-      /* Météo locale                                                */
-      /* ---------------------------------------------------------- */
+      const materiau = normaliserMateriau(
+        chantier.materiau_structural
+      );
 
-      const meteoJour =
-        await fetchMeteoVisualCrossing(
-          adresse,
-          visualCrossingKey
-        );
+      const acces = normaliserAcces(
+        chantier.moyen_acces
+      );
 
-      /* ---------------------------------------------------------- */
-      /* Vigilance officielle                                       */
-      /* ---------------------------------------------------------- */
+      const zoneVent = normaliserZoneVent(
+        chantier.zone_vent
+      );
 
-      const vigilance =
-        await fetchVigilanceMeteoFrance(
-          departement,
-          meteoFranceKey
-        );
+      // -----------------------------------------------------------------------
+      // 3. Météo réelle
+      // -----------------------------------------------------------------------
 
-      /* ---------------------------------------------------------- */
-      /* Paramètres du chantier                                     */
-      /* ---------------------------------------------------------- */
+      const meteo = await fetchMeteoVisualCrossing(
+        adresse,
+        visualCrossingKey
+      );
 
-      const materiau =
-        (chantier
-          .materiau_structural as Materiau) ||
-        "bois";
+      // -----------------------------------------------------------------------
+      // 4. Vigilance officielle Météo-France
+      // -----------------------------------------------------------------------
 
-      const acces =
-        (chantier
-          .moyen_acces as Acces) ||
-        "echafaudage";
+      const vigilance = await fetchVigilanceInterne(
+        request,
+        departement
+      );
 
-      const zoneVent =
-        typeof chantier.zone_vent ===
-        "number"
-          ? chantier.zone_vent
-          : 1;
+      // -----------------------------------------------------------------------
+      // 5. Conversion des heures pour lib/meteoAlerte.ts
+      // -----------------------------------------------------------------------
 
-      const estEnAngle =
-        chantier.est_en_angle ===
-        true;
+      const heuresMeteo: HeureMeteo[] =
+        meteo.heures.map((h) => ({
+          heure: h.heure,
+          temp: h.temp,
+          vent: h.vent,
+          rafales: h.rafales,
+          pluie: h.pluie,
+        }));
 
-      /* ---------------------------------------------------------- */
-      /* MOTEUR MÉTIER CENTRAL                                      */
-      /* ---------------------------------------------------------- */
+      // -----------------------------------------------------------------------
+      // 6. Décision centrale
+      // -----------------------------------------------------------------------
+      //
+      // Ici, toute la logique métier passe par lib/meteoAlerte.ts.
+      //
 
-      const decision =
-        evaluerJourChantier(
-          materiau,
-          acces,
-          {
-            rafalesMax:
-              meteoJour.rafalesMax,
+      const decision = evaluerJourChantier(
+        materiau,
+        acces,
+        {
+          rafalesMax: meteo.rafalesMax,
+          pluieCumul: meteo.pluieCumul,
+          tempMax: meteo.tempMax,
+        },
+        heuresMeteo,
+        vigilance,
+        zoneVent,
+        false
+      );
 
-            pluieCumul:
-              meteoJour.pluieCumul,
+      // -----------------------------------------------------------------------
+      // 7. Sécurité supplémentaire :
+      //    le risque technique ne remplace PAS la vigilance officielle.
+      //
+      //    On conserve néanmoins le niveau le plus élevé pour l'analyse
+      //    générale du rapport, sans prétendre que Météo-France a émis
+      //    cette vigilance.
+      // -----------------------------------------------------------------------
 
-            tempMax:
-              meteoJour.tempMax,
-          },
-          meteoJour.heures,
-          vigilance,
-          zoneVent,
-          estEnAngle
-        );
+      const niveauRapport = plusForte(
+        decision.vigilanceOfficielle,
+        decision.risqueTechnique.niveau
+      );
 
-      /* ---------------------------------------------------------- */
-      /* Numéro                                                      */
-      /* ---------------------------------------------------------- */
+      let motif = decision.motif;
 
-      const numero =
-        await prochainNumero();
+      if (
+        decision.risqueTechnique.niveau !== "vert" &&
+        decision.risqueTechnique.motif
+      ) {
+        motif += ` Risque technique : ${decision.risqueTechnique.motif}.`;
+      }
 
-      /* ---------------------------------------------------------- */
-      /* Création du rapport                                         */
-      /* ---------------------------------------------------------- */
+      // -----------------------------------------------------------------------
+      // 8. Création du rapport
+      // -----------------------------------------------------------------------
 
-      const {
-        data:
-          rapportCree,
-        error:
-          erreurInsertion,
-      } = await supabase
-        .from(
-          "rapports_intemperies"
-        )
-        .insert({
-          numero,
+      const numero = await prochainNumero();
 
-          chantier_id:
-            chantier.id,
+      const { data: rapportCree, error: erreurInsertion } =
+        await supabase
+          .from("rapports_intemperies")
+          .insert({
+            numero,
+            chantier_id: chantier.id,
 
-          vigilance_officielle:
-            decision.vigilanceOfficielle,
+            // Niveau retenu pour le rapport.
+            vigilance_officielle: niveauRapport,
 
-          jour_arrete:
-            decision.jourArrete,
+            jour_arrete: decision.jourArrete,
+            a_valider: decision.aValider,
 
-          a_valider:
-            decision.aValider,
+            // Si arrêt = complet.
+            // Si validation nécessaire = partiel.
+            ampleur_impact: decision.jourArrete
+              ? "complete"
+              : decision.aValider
+                ? "partielle"
+                : null,
 
-          ampleur_impact:
-            decision.ampleurImpact,
+            pluie_continue: decision.pluieContinue,
 
-          pluie_continue:
-            decision.pluieContinue,
+            motif,
 
-          motif:
-            decision.motif,
+            risque_technique_niveau:
+              decision.risqueTechnique.niveau,
 
-          risque_technique_niveau:
-            decision
-              .risqueTechnique
-              .niveau,
+            risque_technique_motif:
+              decision.risqueTechnique.motif,
 
-          risque_technique_motif:
-            decision
-              .risqueTechnique
-              .motif,
+            temp_max: meteo.tempMax,
+            rafales_max: meteo.rafalesMax,
+            pluie_cumul: meteo.pluieCumul,
 
-          temp_max:
-            meteoJour.tempMax,
+            materiau,
+            acces,
+            departement,
 
-          rafales_max:
-            meteoJour.rafalesMax,
+            releve_horaire: meteo.heures,
 
-          pluie_cumul:
-            Number(
-              meteoJour.pluieCumul.toFixed(
-                2
-              )
-            ),
+            // Rapport généré par le moteur automatique.
+            cree_par: "auto",
+          })
+          .select()
+          .single();
 
-          materiau,
-
-          acces,
-
-          zone_vent:
-            zoneVent,
-
-          est_en_angle:
-            estEnAngle,
-
-          departement,
-
-          releve_horaire:
-            meteoJour.heures,
-
-          cree_par:
-            "manuel",
-        })
-        .select()
-        .single();
-
-      if (erreurInsertion) {
+      if (erreurInsertion || !rapportCree) {
         throw new Error(
-          `Erreur création rapport : ${erreurInsertion.message}`
+          erreurInsertion?.message ||
+            "Impossible de créer le rapport"
         );
       }
 
-      /* ---------------------------------------------------------- */
-      /* Résultat                                                    */
-      /* ---------------------------------------------------------- */
+      // -----------------------------------------------------------------------
+      // 9. Résultat
+      // -----------------------------------------------------------------------
 
       resultats.push({
-        chantierId:
-          chantier.id,
-
-        nom:
-          chantier.nom,
-
+        chantierId: chantier.id,
+        nom: chantier.nom,
         numero,
-
-        vigilance:
-          decision.vigilanceOfficielle,
-
-        risqueTechnique:
-          decision.risqueTechnique
-            .niveau,
-
-        jourArrete:
-          decision.jourArrete,
-
-        aValider:
-          decision.aValider,
-
-        ampleurImpact:
-          decision.ampleurImpact,
-
-        pluieContinue:
-          decision.pluieContinue,
-
-        rapportId:
-          rapportCree.id,
-
-        statut:
-          "Rapport généré avec succès.",
+        vigilance: niveauRapport,
+        rapportId: rapportCree.id,
+        statut: "Rapport généré avec succès",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : String(error);
+
       console.error(
-        `Erreur génération rapport pour ${chantier.id}:`,
+        `Erreur génération rapport chantier ${chantier.id}:`,
         error
       );
 
       resultats.push({
-        chantierId:
-          chantier.id,
-
-        nom:
-          chantier.nom,
-
-        statut:
-          `Erreur : ${
-            error?.message ??
-            String(error)
-          }`,
+        chantierId: chantier.id,
+        nom: chantier.nom,
+        statut: "Erreur lors de la génération",
+        erreur: message,
       });
     }
   }
 
-  /* -------------------------------------------------------------- */
-  /* Réponse                                                         */
-  /* -------------------------------------------------------------- */
+  // ---------------------------------------------------------------------------
+  // 10. Réponse
+  // ---------------------------------------------------------------------------
 
-  const erreurs =
-    resultats.filter(
-      (resultat) =>
-        typeof resultat.statut ===
-          "string" &&
-        resultat.statut.startsWith(
-          "Erreur"
-        )
-    );
+  const erreurs = resultats.filter((r) => r.erreur);
 
   return NextResponse.json({
-    success:
-      erreurs.length === 0,
-
-    total:
-      resultats.length,
-
-    succes:
-      resultats.length -
-      erreurs.length,
-
-    erreurs:
-      erreurs.length,
-
+    success: erreurs.length === 0,
+    total: resultats.length,
+    generes: resultats.filter(
+      (r) => r.rapportId
+    ).length,
+    erreurs: erreurs.length,
     resultats,
   });
 }
 
-/* ------------------------------------------------------------------ */
-/* GET                                                                  */
-/* ------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
+// GET
+// -----------------------------------------------------------------------------
+//
+// Permet de tester rapidement la route dans le navigateur.
+// Exemple :
+// /api/rapports-intemperies/generer?chantierId=xxx
+//
+// Le GET est converti en POST interne.
+// -----------------------------------------------------------------------------
 
-export async function GET(
-  request: NextRequest
-) {
-  return POST(request);
+export async function GET(request: NextRequest) {
+  const chantierId =
+    request.nextUrl.searchParams.get("chantierId");
+
+  const url = new URL(request.url);
+
+  const nouvelleRequete = new NextRequest(
+    url.toString(),
+    {
+      method: "POST",
+      headers: request.headers,
+      body: JSON.stringify({
+        chantierId: chantierId || undefined,
+        force: false,
+      }),
+    }
+  );
+
+  return POST(nouvelleRequete);
 }
