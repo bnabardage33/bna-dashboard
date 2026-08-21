@@ -252,40 +252,23 @@ export default function DocumentPDF({
           </div>
         </div>
 
-        {/* Règlement & Conditions sommaires */}
-        <div className="grid grid-cols-3 gap-3 border-t border-slate-300 pt-3 text-xs">
-          {doc.kind === "devis" ? (
-            <>
-              <div>
-                <p className="font-bold text-slate-800">Délai prévisionnel</p>
-                <p className="text-slate-500 text-[11px]">{doc.delai_jours ? `${doc.delai_jours} jours ouvrés` : "À convenir"}</p>
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">Paiement</p>
-                <p className="text-slate-500 text-[11px]">{doc.acompte_pct ?? 30}% commande, solde réception</p>
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">Normes DTU</p>
-                <p className="text-slate-500 text-[11px]">Conforme DTU 41.2 / 31.2 &amp; Décennale</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <p className="font-bold text-slate-800">Règlement</p>
-                <p className="text-slate-500 text-[11px]">Virement à réception</p>
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">IBAN</p>
-                <p className="text-slate-600 font-mono text-[11px]">{entreprise.iban || "—"}</p>
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">BIC</p>
-                <p className="text-slate-600 font-mono text-[11px]">{entreprise.bic || "—"}</p>
-              </div>
-            </>
-          )}
-        </div>
+        {/* Coordonnées bancaires pour les factures uniquement */}
+        {doc.kind === "facture" && (
+          <div className="grid grid-cols-3 gap-3 border-t border-slate-300 pt-3 text-xs">
+            <div>
+              <p className="font-bold text-slate-800">Règlement</p>
+              <p className="text-slate-500 text-[11px]">Virement à réception</p>
+            </div>
+            <div>
+              <p className="font-bold text-slate-800">IBAN</p>
+              <p className="text-slate-600 font-mono text-[11px]">{entreprise.iban || "—"}</p>
+            </div>
+            <div>
+              <p className="font-bold text-slate-800">BIC</p>
+              <p className="text-slate-600 font-mono text-[11px]">{entreprise.bic || "—"}</p>
+            </div>
+          </div>
+        )}
 
         {entreprise.mentions_legales && (
           <p className="text-[10px] text-slate-400 italic pt-1">{entreprise.mentions_legales}</p>
