@@ -247,94 +247,130 @@ export default function DevisPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-white">Devis</h1>
-          <p className="text-sm text-slate-400">Propositions commerciales et transformation en chantier</p>
+          <h1 className="text-xl font-bold text-slate-100">Devis Commerciaux</h1>
+          <p className="text-xs text-slate-400">Édition des devis, acomptes automatiques et transformation en chantiers</p>
         </div>
         <button
           onClick={() => setModalOuvert(true)}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
         >
-          + Nouveau devis
+          <span>+</span> Nouveau Devis
         </button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-400">Chargement…</p>
+        <div className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-12 text-center text-xs text-slate-400">
+          Chargement des devis…
+        </div>
       ) : devis.length === 0 ? (
-        <p className="text-sm text-slate-500">Aucun devis pour l&apos;instant.</p>
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
+          <p className="text-sm font-medium text-slate-400">Aucun devis pour l&apos;instant.</p>
+          <button
+            onClick={() => setModalOuvert(true)}
+            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+          >
+            + Créer un premier devis
+          </button>
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-700">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-700 bg-slate-800 text-left text-xs uppercase text-slate-500">
-                <th className="p-3">Numéro</th>
-                <th className="p-3">Client</th>
-                <th className="p-3">Objet</th>
-                <th className="p-3">Date</th>
-                <th className="p-3 text-right">Total HT</th>
-                <th className="p-3">Statut</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devis.map((d) => {
-                const total = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
-                return (
-                  <tr key={d.id} className="border-b border-slate-800">
-                    <td className="p-3 font-medium text-white">{d.numero}</td>
-                    <td className="p-3 text-slate-300">
-                      {d.clients?.societe || d.clients?.nom}
-                    </td>
-                    <td className="p-3 text-slate-400">{d.objet || "—"}</td>
-                    <td className="p-3 text-slate-400">
-                      {new Date(d.date_emission).toLocaleDateString("fr-FR")}
-                    </td>
-                    <td className="p-3 text-right text-slate-300">{total.toFixed(2)} €</td>
-                    <td className="p-3">
-                      <select
-                        value={d.statut}
-                        onChange={(e) => changerStatut(d, e.target.value)}
-                        className="rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
-                      >
-                        <option value="brouillon">Brouillon</option>
-                        <option value="envoye">Envoyé</option>
-                        <option value="accepte">Accepté</option>
-                        <option value="refuse">Refusé</option>
-                      </select>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-2 text-xs">
-                        <button
-                          onClick={() => setApercu(d)}
-                          className="text-sky-400 hover:text-sky-300"
-                        >
-                          👁️
-                        </button>
-                        <button
-                          onClick={() => transformerEnChantier(d)}
-                          className="text-emerald-400 hover:text-emerald-300"
-                          title="Transformer en chantier"
-                        >
-                          ✅
-                        </button>
-                        <button
-                          onClick={() => supprimerDevis(d)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          🗑️
-                        </button>
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          {devis.map((d) => {
+            const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+            const totalTTC = totalHT * (1 + (d.tva_pct || 10) / 100);
+            const nomClient = d.clients?.societe || d.clients?.nom || "Client direct";
+
+            return (
+              <div
+                key={d.id}
+                className="flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-slate-750"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-sky-400">{d.numero}</span>
+                        <span className="text-xs text-slate-500">· {new Date(d.date_emission).toLocaleDateString("fr-FR")}</span>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <h2 className="text-base font-bold text-slate-100 mt-0.5">{nomClient}</h2>
+                      {d.objet && <p className="text-xs text-slate-400 line-clamp-1">{d.objet}</p>}
+                    </div>
+
+                    <select
+                      value={d.statut}
+                      onChange={(e) => changerStatut(d, e.target.value)}
+                      className={`rounded-xl border px-2.5 py-1 text-xs font-bold uppercase tracking-wider focus:outline-none ${
+                        d.statut === "accepte"
+                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"
+                          : d.statut === "refuse"
+                          ? "border-red-500/40 bg-red-950/40 text-red-300"
+                          : d.statut === "envoye"
+                          ? "border-sky-500/40 bg-sky-950/40 text-sky-300"
+                          : "border-slate-600 bg-slate-900 text-slate-300"
+                      }`}
+                    >
+                      <option value="brouillon" className="bg-slate-900 text-slate-100">Brouillon</option>
+                      <option value="envoye" className="bg-slate-900 text-slate-100">Envoyé</option>
+                      <option value="accepte" className="bg-slate-900 text-slate-100">Accepté</option>
+                      <option value="refuse" className="bg-slate-900 text-slate-100">Refusé</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl bg-slate-900/60 p-2.5 border border-slate-700/60">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Montant HT</p>
+                      <p className="text-xs font-semibold text-slate-300">{totalHT.toFixed(2)} €</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Total TTC ({d.tva_pct}%)</p>
+                      <p className="text-sm font-bold text-sky-400 font-mono">{totalTTC.toFixed(2)} €</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3.5 flex items-center justify-between border-t border-slate-700/60 pt-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setApercu(d)}
+                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-slate-700 flex items-center gap-1"
+                    >
+                      👁️ Aperçu PDF
+                    </button>
+                    {d.statut !== "accepte" && (
+                      <button
+                        onClick={() => transformerEnChantier(d)}
+                        className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/40"
+                        title="Valider et transformer en chantier"
+                      >
+                        ⚡ En chantier
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => supprimerDevis(d)}
+                    className="text-xs text-slate-500 hover:text-red-400 p-1.5 transition-colors"
+                    title="Supprimer le devis"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {/* FAB (+) */}
+      <button
+        onClick={() => setModalOuvert(true)}
+        aria-label="Créer un devis"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+      >
+        <span className="text-2xl font-bold leading-none">+</span>
+      </button>
 
       {modalOuvert && (
         <div

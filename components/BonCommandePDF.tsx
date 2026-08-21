@@ -57,29 +57,31 @@ export default function BonCommandePDF({
     : [{ designation: commande.designation, quantite: commande.quantite || 1, unite: commande.unite || "u", montant_ht: commande.montant_ht }];
 
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900">
-      {/* Bandeau supérieur */}
-      <div className="mb-1 h-1.5 w-full bg-red-600" />
+    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl">
+      {/* Bandeau supérieur bleu acier */}
+      <div className="mb-2 h-1.5 w-full bg-sky-600 rounded-full" />
 
       {/* En-tête */}
-      <div className="flex items-start justify-between pt-4">
-        <div className="flex items-center gap-3">
-          {entreprise.logo_url && (
-            <img src={entreprise.logo_url} alt="Logo" className="h-14 w-auto" />
-          )}
+      <div className="flex items-start justify-between pt-3">
+        <div className="flex items-center gap-3.5">
+          <img
+            src={entreprise.logo_url || "/logo-bna.png"}
+            alt="Logo BNA"
+            className="max-h-12 w-auto object-contain"
+          />
           <div>
-            <p className="text-lg font-bold text-slate-900">{entreprise.raison_sociale}</p>
-            <p className="text-xs text-slate-500">Bardage · Façade · Nouvelle-Aquitaine</p>
+            <p className="text-lg font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
+            <p className="text-xs text-slate-500 font-medium">Spécialiste Bardage Rapporté · Isolation ITE</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <p className="text-3xl font-black tracking-tight text-slate-900">
             BON DE COMMANDE
           </p>
-          <p className="text-sm font-semibold text-red-600">
+          <p className="text-sm font-bold text-sky-600 font-mono">
             RÉF #{commande.id.slice(0, 8).toUpperCase()}
           </p>
-          <p className="text-xs text-slate-500">Date d&apos;émission : {dateEmission}</p>
+          <p className="text-xs text-slate-500 mt-0.5">Date d&apos;émission : {dateEmission}</p>
         </div>
       </div>
 

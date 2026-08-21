@@ -1,10 +1,11 @@
 import SubNav from "@/components/SubNav";
 
 const items = [
-  { label: "Météo & Alertes", href: "/terrain/meteo" },
-  { label: "Chantier", href: "/terrain/chantier" },
-  { label: "Notes du Patron", href: "/terrain/notes" },
-  { label: "Fiche technique", href: "/terrain/fiche-technique" },
+  { label: "Chantiers", href: "/terrain/chantier" },
+  { label: "Boîte à Outils", href: "/terrain/outils" },
+  { label: "Météo & Vigilance", href: "/terrain/meteo" },
+  { label: "Notes Patron", href: "/terrain/notes" },
+  { label: "Fiches DTU", href: "/terrain/fiche-technique" },
 ];
 
 export default function TerrainLayout({

@@ -160,6 +160,7 @@ export default function ZoneCard({
   ) => void;
 }) {
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
+  const [replie, setReplie] = useState(false);
   const calc = calculerZone(zone);
 
   /*
@@ -440,34 +441,48 @@ export default function ZoneCard({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
+    <div className="space-y-4 rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-md transition-all">
 
       {/* ====================================================== */}
-      {/* EN-TÊTE */}
+      {/* EN-TÊTE ACCORDÉON */}
       {/* ====================================================== */}
 
-      <div className="flex items-center justify-between gap-2">
-        <input
-          value={zone.nom}
-          onChange={(e) =>
-            update({
-              nom: e.target.value,
-            })
-          }
-          placeholder="Nom de la zone (ex. Façade Nord)"
-          className="flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm font-medium text-white"
-        />
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-1 items-center gap-2 min-w-[240px]">
+          <button
+            type="button"
+            onClick={() => setReplie(!replie)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-sky-400 hover:bg-slate-750 transition-colors"
+            title={replie ? "Déplier la zone" : "Replier la zone"}
+          >
+            <span className="text-xs">{replie ? "▶" : "▼"}</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() =>
-            onDelete(zone.id)
-          }
-          className="rounded-lg border border-red-600/40 px-3 py-2 text-sm text-red-400 hover:bg-red-600/10"
-        >
-          Supprimer
-        </button>
+          <input
+            value={zone.nom}
+            onChange={(e) => update({ nom: e.target.value })}
+            placeholder="Nom de la zone (ex. Façade Nord)"
+            className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm font-bold text-white focus:border-sky-500 focus:outline-none"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-slate-900 border border-slate-700 px-2.5 py-1 text-xs font-bold text-emerald-400">
+            {calc.surfaceNette.toFixed(1)} m² net
+          </span>
+
+          <button
+            type="button"
+            onClick={() => onDelete(zone.id)}
+            className="rounded-xl border border-red-500/30 bg-red-950/20 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-950/40 transition-colors"
+          >
+            Supprimer
+          </button>
+        </div>
       </div>
+
+      {!replie && (
+        <div className="space-y-4 pt-1">
 
       {/* ====================================================== */}
       {/* TYPE DE ZONE */}
@@ -1278,6 +1293,8 @@ export default function ZoneCard({
         </div>
       )}
 
+        </div>
+      )}
     </div>
   );
 }

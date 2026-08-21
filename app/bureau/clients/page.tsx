@@ -57,6 +57,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [recherche, setRecherche] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [modalOuvert, setModalOuvert] = useState(false);
 
   const [type, setType] = useState<"particulier" | "professionnel">("particulier");
   const [nom, setNom] = useState("");
@@ -181,6 +182,7 @@ export default function ClientsPage() {
     setVille("");
     setTel("");
     setEmail("");
+    setModalOuvert(false);
     fetchClients();
   }
 
@@ -215,146 +217,211 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-white">Clients</h1>
-        <p className="text-sm text-slate-400">Répertoire des particuliers et professionnels</p>
-      </div>
-
-      {/* Formulaire Nouveau Client avec recherche SIRET */}
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-4"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="font-medium text-white">Nouveau client</h2>
-          <div className="flex gap-2">
-            {(["particulier", "professionnel"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  type === t
-                    ? "bg-red-600 text-white"
-                    : "border border-slate-600 text-slate-300 hover:bg-slate-700"
-                }`}
-              >
-                {t === "particulier" ? "👤 Particulier" : "🏢 Professionnel"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {type === "professionnel" && (
-          <div className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-            <div className="relative">
-              <label className="text-xs uppercase tracking-wide text-slate-400">
-                🔍 Recherche Entreprise / SIRET (API Officielle État)
-              </label>
-              <input
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                placeholder="Tapez un nom de société ou numéro SIRET..."
-                value={rechercheGouv}
-                onChange={(e) => setRechercheGouv(e.target.value)}
-              />
-              {rechercheGouvLoading && (
-                <span className="absolute right-3 top-8 text-xs text-slate-400">Recherche...</span>
-              )}
-
-              {resultatsGouv.length > 0 && (
-                <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-600 bg-slate-900 shadow-xl">
-                  {resultatsGouv.map((item, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => appliquerEntrepriseGouv(item)}
-                      className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-slate-800"
-                    >
-                      <p className="font-semibold text-white">{item.nom_complet}</p>
-                      <p className="text-slate-400">
-                        SIRET : {item.siege?.siret || item.siren} · {item.siege?.commune} (
-                        {item.siege?.code_postal})
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <input
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                placeholder="Raison sociale"
-                value={societe}
-                onChange={(e) => setSociete(e.target.value)}
-              />
-              <input
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                placeholder="Numéro SIRET"
-                value={siret}
-                onChange={(e) => setSiret(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        <input
-          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-          placeholder={type === "professionnel" ? "Nom du contact principal" : "Nom et prénom"}
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          required
-        />
-        <input
-          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-          placeholder="Adresse de facturation"
-          value={adresse}
-          onChange={(e) => setAdresse(e.target.value)}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-            placeholder="Code postal"
-            value={codePostal}
-            onChange={(e) => setCodePostal(e.target.value)}
-          />
-          <input
-            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-            placeholder="Ville"
-            value={ville}
-            onChange={(e) => setVille(e.target.value)}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-            placeholder="Téléphone"
-            value={tel}
-            onChange={(e) => setTel(e.target.value)}
-          />
-          <input
-            className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-100">Répertoire Clients</h1>
+          <p className="text-xs text-slate-400">Gestion des particuliers, professionnels et fiches 360°</p>
         </div>
 
         <button
-          type="submit"
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+          onClick={() => setModalOuvert(true)}
+          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
         >
-          + Enregistrer le client
+          <span>+</span> Nouveau Client
         </button>
-      </form>
+      </div>
 
       {/* Barre de recherche */}
-      <input
-        value={recherche}
-        onChange={(e) => setRecherche(e.target.value)}
-        placeholder="Rechercher par nom, société, ville, téléphone..."
-        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100"
-      />
+      <div className="w-full">
+        <input
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          placeholder="Rechercher par nom, société, ville, téléphone..."
+          className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+        />
+      </div>
+
+      {/* Bouton Flottant FAB (+) */}
+      <button
+        onClick={() => setModalOuvert(true)}
+        aria-label="Ajouter un client"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+      >
+        <span className="text-2xl font-bold leading-none">+</span>
+      </button>
+
+      {/* Modal / Bottom Sheet Nouveau Client */}
+      {modalOuvert && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-100">Nouveau Client</h2>
+                <p className="text-xs text-slate-400">Renseignez les coordonnées ou recherchez le SIRET</p>
+              </div>
+              <button
+                onClick={() => setModalOuvert(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <div className="flex gap-2">
+                {(["particulier", "professionnel"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setType(t)}
+                    className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
+                      type === t
+                        ? "bg-sky-500 text-slate-950 font-bold"
+                        : "border border-slate-600 bg-slate-900 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    {t === "particulier" ? "👤 Particulier" : "🏢 Professionnel"}
+                  </button>
+                ))}
+              </div>
+
+              {type === "professionnel" && (
+                <div className="space-y-2 rounded-xl border border-slate-700 bg-slate-900/80 p-3">
+                  <div className="relative">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                      🔍 Recherche SIRET (API Officielle)
+                    </label>
+                    <input
+                      className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                      placeholder="Tapez un nom de société ou numéro SIRET..."
+                      value={rechercheGouv}
+                      onChange={(e) => setRechercheGouv(e.target.value)}
+                    />
+                    {rechercheGouvLoading && (
+                      <span className="absolute right-3 top-7 text-xs text-slate-400">Recherche...</span>
+                    )}
+
+                    {resultatsGouv.length > 0 && (
+                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-slate-900 shadow-2xl">
+                        {resultatsGouv.map((item, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => appliquerEntrepriseGouv(item)}
+                            className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-slate-800"
+                          >
+                            <p className="font-bold text-white">{item.nom_complet}</p>
+                            <p className="text-slate-400 text-[11px]">
+                              SIRET : {item.siege?.siret || item.siren} · {item.siege?.commune} (
+                              {item.siege?.code_postal})
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <input
+                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100"
+                      placeholder="Raison sociale"
+                      value={societe}
+                      onChange={(e) => setSociete(e.target.value)}
+                    />
+                    <input
+                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100"
+                      placeholder="Numéro SIRET"
+                      value={siret}
+                      onChange={(e) => setSiret(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300">
+                  {type === "professionnel" ? "Nom du contact principal *" : "Nom et prénom *"}
+                </label>
+                <input
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  placeholder={type === "professionnel" ? "Ex: Jean Dupont" : "Ex: M. et Mme Martin"}
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300">Adresse de facturation</label>
+                <input
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  placeholder="Ex: 12 Rue des Chênes"
+                  value={adresse}
+                  onChange={(e) => setAdresse(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Code postal</label>
+                  <input
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    placeholder="33000"
+                    value={codePostal}
+                    onChange={(e) => setCodePostal(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Ville</label>
+                  <input
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    placeholder="Bordeaux"
+                    value={ville}
+                    onChange={(e) => setVille(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Téléphone</label>
+                  <input
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    placeholder="06 00 00 00 00"
+                    value={tel}
+                    onChange={(e) => setTel(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Email</label>
+                  <input
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    placeholder="contact@exemple.fr"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setModalOuvert(false)}
+                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
+                >
+                  Enregistrer le client
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-sm text-slate-400">Chargement des clients…</p>

@@ -276,105 +276,132 @@ export default function FacturesPage() {
     .reduce((s, f) => s + f.lignes.reduce((t, l) => t + l.qte * l.pu_ht, 0) * (1 + f.tva_pct / 100), 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-white">Factures</h1>
-          <p className="text-sm text-slate-400">Encaissements et suivi du régime simplifié</p>
+          <h1 className="text-xl font-bold text-slate-100">Factures &amp; Encaissements</h1>
+          <p className="text-xs text-slate-400">Émission des factures d&apos;acompte, solde et suivi de la trésorerie</p>
         </div>
         <button
           onClick={() => setModalOuvert(true)}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
         >
-          + Nouvelle facture
+          <span>+</span> Nouvelle Facture
         </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">CA encaissé</p>
-          <p className="text-xl font-semibold text-white">{caEncaisse.toFixed(2)} €</p>
+        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-sm">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">CA Encaissé (Payé)</p>
+          <p className="text-2xl font-black text-slate-100 font-mono mt-0.5">{caEncaisse.toFixed(2)} €</p>
         </div>
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">En attente de paiement</p>
-          <p className="text-xl font-semibold text-white">{enAttente.toFixed(2)} €</p>
+        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-sm">
+          <p className="text-[10px] uppercase font-bold tracking-wider text-amber-400">En attente de règlement</p>
+          <p className="text-2xl font-black text-slate-100 font-mono mt-0.5">{enAttente.toFixed(2)} €</p>
         </div>
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-400">Chargement…</p>
+        <div className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-12 text-center text-xs text-slate-400">
+          Chargement des factures…
+        </div>
       ) : factures.length === 0 ? (
-        <p className="text-sm text-slate-500">Aucune facture pour l&apos;instant.</p>
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
+          <p className="text-sm font-medium text-slate-400">Aucune facture pour l&apos;instant.</p>
+          <button
+            onClick={() => setModalOuvert(true)}
+            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+          >
+            + Créer une première facture
+          </button>
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-700">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-700 bg-slate-800 text-left text-xs uppercase text-slate-500">
-                <th className="p-3">Numéro</th>
-                <th className="p-3">Client</th>
-                <th className="p-3">Objet</th>
-                <th className="p-3">Date</th>
-                <th className="p-3 text-right">Total TTC</th>
-                <th className="p-3">Statut</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {factures.map((f) => {
-                const ht = f.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
-                const ttc = ht * (1 + f.tva_pct / 100);
-                return (
-                  <tr key={f.id} className="border-b border-slate-800">
-                    <td className="p-3 font-medium text-white">
-                      {f.numero}
-                      {f.type_facture !== "totale" && (
-                        <span className="ml-2 rounded-full bg-red-600/20 px-2 py-0.5 text-[10px] uppercase text-red-400">
-                          {f.type_facture}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 text-slate-300">
-                      {f.clients?.societe || f.clients?.nom}
-                    </td>
-                    <td className="p-3 text-slate-400">{f.objet || "—"}</td>
-                    <td className="p-3 text-slate-400">
-                      {new Date(f.date_emission).toLocaleDateString("fr-FR")}
-                    </td>
-                    <td className="p-3 text-right text-slate-300">{ttc.toFixed(2)} €</td>
-                    <td className="p-3">
-                      <select
-                        value={f.statut}
-                        onChange={(e) => changerStatut(f, e.target.value)}
-                        className="rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
-                      >
-                        <option value="brouillon">Brouillon</option>
-                        <option value="envoyee">Envoyée</option>
-                        <option value="payee">Payée</option>
-                      </select>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-2 text-xs">
-                        <button
-                          onClick={() => setApercu(f)}
-                          className="text-sky-400 hover:text-sky-300"
-                        >
-                          👁️
-                        </button>
-                        <button
-                          onClick={() => supprimerFacture(f)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          🗑️
-                        </button>
+        <div className="grid gap-3.5 sm:grid-cols-2">
+          {factures.map((f) => {
+            const ht = f.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+            const ttc = ht * (1 + f.tva_pct / 100);
+            const nomClient = f.clients?.societe || f.clients?.nom || "Client direct";
+
+            return (
+              <div
+                key={f.id}
+                className="flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-slate-750"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-sky-400">{f.numero}</span>
+                        {f.type_facture !== "totale" && (
+                          <span className="rounded-full bg-sky-500/15 border border-sky-500/40 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-300">
+                            {f.type_facture}
+                          </span>
+                        )}
+                        <span className="text-xs text-slate-500">· {new Date(f.date_emission).toLocaleDateString("fr-FR")}</span>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <h2 className="text-base font-bold text-slate-100 mt-0.5">{nomClient}</h2>
+                      {f.objet && <p className="text-xs text-slate-400 line-clamp-1">{f.objet}</p>}
+                    </div>
+
+                    <select
+                      value={f.statut}
+                      onChange={(e) => changerStatut(f, e.target.value)}
+                      className={`rounded-xl border px-2.5 py-1 text-xs font-bold uppercase tracking-wider focus:outline-none ${
+                        f.statut === "payee"
+                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"
+                          : f.statut === "envoyee"
+                          ? "border-amber-500/40 bg-amber-950/40 text-amber-300"
+                          : "border-slate-600 bg-slate-900 text-slate-300"
+                      }`}
+                    >
+                      <option value="brouillon" className="bg-slate-900 text-slate-100">Brouillon</option>
+                      <option value="envoyee" className="bg-slate-900 text-slate-100">Envoyée</option>
+                      <option value="payee" className="bg-slate-900 text-slate-100">Payée</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl bg-slate-900/60 p-2.5 border border-slate-700/60">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Montant HT</p>
+                      <p className="text-xs font-semibold text-slate-300">{ht.toFixed(2)} €</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Total TTC ({f.tva_pct}%)</p>
+                      <p className="text-sm font-bold text-sky-400 font-mono">{ttc.toFixed(2)} €</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3.5 flex items-center justify-between border-t border-slate-700/60 pt-3">
+                  <button
+                    onClick={() => setApercu(f)}
+                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-slate-700 flex items-center gap-1"
+                  >
+                    👁️ Aperçu Facture
+                  </button>
+
+                  <button
+                    onClick={() => supprimerFacture(f)}
+                    className="text-xs text-slate-500 hover:text-red-400 p-1.5 transition-colors"
+                    title="Supprimer la facture"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {/* FAB (+) */}
+      <button
+        onClick={() => setModalOuvert(true)}
+        aria-label="Créer une facture"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+      >
+        <span className="text-2xl font-bold leading-none">+</span>
+      </button>
 
       {modalOuvert && (
         <div

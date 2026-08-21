@@ -306,31 +306,33 @@ export default function FournisseursPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5">
         <button
           onClick={() => setModalFournisseur(true)}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+          className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
         >
-          + Nouveau fournisseur
+          <span>+</span> Nouveau Fournisseur
         </button>
         <button
           onClick={() => setModalCommande(true)}
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+          className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-750"
         >
-          📦 Nouvelle commande
+          <span>📦</span> Nouvelle Commande
         </button>
       </div>
 
-      <div className="flex gap-1 border-b border-slate-700">
+      <div className="flex gap-2 border-b border-slate-700/80">
         {(["fournisseurs", "commandes"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-3 py-2 text-sm font-medium ${
-              tab === t ? "border-b-2 border-red-500 text-white" : "text-slate-400"
+            className={`px-4 py-2 text-xs font-bold transition-all ${
+              tab === t
+                ? "border-b-2 border-sky-400 text-sky-400"
+                : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            {t === "fournisseurs" ? "Fournisseurs" : "Commandes"}
+            {t === "fournisseurs" ? "🏢 Fournisseurs" : "📦 Commandes Matériaux"}
           </button>
         ))}
       </div>
@@ -768,6 +770,15 @@ export default function FournisseursPage() {
           </div>
         </div>
       )}
+
+      {/* FAB (+) */}
+      <button
+        onClick={() => (tab === "fournisseurs" ? setModalFournisseur(true) : setModalCommande(true))}
+        aria-label="Ajouter fournisseur ou commande"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+      >
+        <span className="text-2xl font-bold leading-none">+</span>
+      </button>
     </div>
   );
 }

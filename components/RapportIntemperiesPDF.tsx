@@ -85,33 +85,29 @@ export default function RapportIntemperiesPDF({
   chantier: Chantier;
 }) {
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900">
-      <div className="mb-1 h-1.5 w-full bg-red-600" />
+    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl">
+      <div className="mb-2 h-1.5 w-full rounded-full bg-sky-600" />
 
       {/* En-tête */}
-      <div className="flex items-start justify-between pt-4">
-        <div className="flex items-center gap-3">
-          {entreprise.logo_url && (
-            <img src={entreprise.logo_url} alt="Logo" className="h-14 w-auto" />
-          )}
+      <div className="flex items-start justify-between pt-3">
+        <div className="flex items-center gap-3.5">
+          <img
+            src={entreprise.logo_url || "/logo-bna.png"}
+            alt="Logo BNA"
+            className="max-h-12 w-auto object-contain"
+          />
           <div>
-            <p className="text-lg font-bold text-slate-900">{entreprise.raison_sociale}</p>
-            <p className="text-xs text-slate-500">Bardage · Façade · Nouvelle-Aquitaine</p>
+            <p className="text-lg font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
+            <p className="font-medium text-slate-500 text-xs">Spécialiste Bardage Rapporté · Isolation ITE</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-extrabold leading-none tracking-tight text-slate-900">
-            RAPPORT
-            <br />
-            INTEMPÉRIES
+          <p className="text-2xl font-black uppercase tracking-tight text-slate-900">
+            RAPPORT D&apos;INTEMPÉRIES
           </p>
-          <p className="mt-1 text-sm font-medium text-red-600">N° {rapport.numero}</p>
-          <p className="text-xs text-slate-500">
-            {new Date(rapport.cree_le).toLocaleDateString("fr-FR")} ·{" "}
-            {new Date(rapport.cree_le).toLocaleTimeString("fr-FR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+          <p className="font-mono text-sm font-bold text-sky-600">N° {rapport.numero}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Établi le {new Date(rapport.cree_le).toLocaleDateString("fr-FR")}
           </p>
           <div className="mt-1">
             <span

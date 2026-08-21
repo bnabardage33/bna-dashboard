@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import TopNav from "@/components/TopNav";
+import BottomNav from "@/components/BottomNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,9 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${inter.variable} h-full`}>
-      <body className="min-h-full bg-slate-900 text-slate-100 antialiased">
+      <body className="min-h-full bg-slate-900 text-slate-100 antialiased selection:bg-sky-500/30 selection:text-sky-200">
         <TopNav />
-        {children}
+        <main className="pb-28">{children}</main>
+        <BottomNav />
       </body>
     </html>
   );

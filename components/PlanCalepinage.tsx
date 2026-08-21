@@ -149,6 +149,7 @@ export default function PlanCalepinage({
   const [vue, setVue] = useState<
     "ossature" | "plaques"
   >("ossature");
+  const [pleinEcran, setPleinEcran] = useState(false);
 
   if (largeurM <= 0 || hauteurM <= 0) {
     return null;
@@ -313,43 +314,55 @@ export default function PlanCalepinage({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+    <div
+      className={
+        pleinEcran
+          ? "fixed inset-0 z-50 overflow-y-auto bg-slate-950/98 p-4 sm:p-8 space-y-4 backdrop-blur-md animate-in fade-in"
+          : "space-y-3 rounded-xl border border-slate-700 bg-slate-900/60 p-3.5"
+      }
+    >
       {/* ====================================================== */}
       {/* EN-TÊTE */}
       {/* ====================================================== */}
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           Plan de calepinage dynamique
         </p>
 
-        <div className="flex overflow-hidden rounded-lg border border-slate-600">
-          <button
-            type="button"
-            onClick={() =>
-              setVue("ossature")
-            }
-            className={`px-3 py-1 text-xs font-medium ${
-              vue === "ossature"
-                ? "bg-sky-600 text-white"
-                : "bg-slate-800 text-slate-400"
-            }`}
-          >
-            Ossature
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+            <button
+              type="button"
+              onClick={() => setVue("ossature")}
+              className={`px-3 py-1 text-xs font-semibold transition-colors ${
+                vue === "ossature"
+                  ? "bg-sky-500 text-slate-950"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Ossature
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setVue("plaques")}
+              className={`px-3 py-1 text-xs font-semibold transition-colors ${
+                vue === "plaques"
+                  ? "bg-sky-500 text-slate-950"
+                  : "bg-slate-900 text-slate-400 hover:text-white"
+              }`}
+            >
+              Plaques
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={() =>
-              setVue("plaques")
-            }
-            className={`px-3 py-1 text-xs font-medium ${
-              vue === "plaques"
-                ? "bg-red-600 text-white"
-                : "bg-slate-800 text-slate-400"
-            }`}
+            onClick={() => setPleinEcran(!pleinEcran)}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-bold text-sky-400 hover:bg-slate-800 transition-colors shadow-sm"
           >
-            Plaques
+            <span>{pleinEcran ? "✕ Réduire" : "⛶ Plein écran"}</span>
           </button>
         </div>
       </div>

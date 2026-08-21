@@ -1,4 +1,4 @@
--- Migration : Création de la table pv_receptions (Procès-Verbaux de Réception de Chantier)
+-- Migration : Création et enrichissement de la table pv_receptions (Procès-Verbaux de Réception de Chantier)
 
 CREATE TABLE IF NOT EXISTS pv_receptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS pv_receptions (
   type_travaux TEXT DEFAULT 'Travaux de bardage et isolation extérieure (ITE)',
   adresse_chantier TEXT,
   materiaux_utilises TEXT,
-  reserves JSONB DEFAULT '[]'::jsonb, -- Array of { id: string, designation: string, localisation: string, date_limite: string, levee: boolean, date_levee?: string }
+  zones_metres JSONB DEFAULT '[]'::jsonb, -- Array de { id, nom, type, largeur, hauteur_mur, surfaceBrute, surfaceOuvertures, surfaceNette, materiau }
+  photos JSONB DEFAULT '[]'::jsonb, -- Array de { id, url, titre }
+  notice_entretien JSONB DEFAULT '{"remise_fiches_techniques": true, "remise_guide_entretien": true, "remise_attestation_decennale": true}'::jsonb,
+  reserves JSONB DEFAULT '[]'::jsonb, -- Array de { id: string, designation: string, localisation: string, date_limite: string, levee: boolean, date_levee?: string }
   observations TEXT,
   signature_client TEXT, -- Data URL (base64)
   signataire_client_nom TEXT,
@@ -21,5 +24,11 @@ CREATE TABLE IF NOT EXISTS pv_receptions (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Ajout des colonnes enrichies si la table existait déjà
+ALTER TABLE pv_receptions ADD COLUMN IF NOT EXISTS zones_metres JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE pv_receptions ADD COLUMN IF NOT EXISTS photos JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE pv_receptions ADD COLUMN IF NOT EXISTS notice_entretien JSONB DEFAULT '{"remise_fiches_techniques": true, "remise_guide_entretien": true, "remise_attestation_decennale": true}'::jsonb;
+
+-- Index pour des requêtes ultra-rapides
 CREATE INDEX IF NOT EXISTS idx_pv_receptions_chantier ON pv_receptions(chantier_id);
 CREATE INDEX IF NOT EXISTS idx_pv_receptions_client ON pv_receptions(client_id);
