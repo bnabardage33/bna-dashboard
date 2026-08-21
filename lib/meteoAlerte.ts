@@ -1,13 +1,30 @@
-// lib/meteoAlerte.ts
+/// lib/meteoAlerte.ts
 //
-// Deux notions bien séparées :
+// Moteur métier des rapports d'intempéries.
 //
-// 1) "Risque technique" (evaluerAlerteChantier) :
-//    seuils maison par matériau/accès, ajustés selon la zone de vent (1 à 4)
-//    et la position (angle ou courant). Utile pour la sécurité terrain.
+// Le système distingue volontairement 3 notions :
 //
-// 2) "Décision jour d'arrêt" (evaluerJourChantier) :
-//    ce qui compte pour le rapport intempéries officiel (Vigilance Météo-France).
+// 1) VIGILANCE OFFICIELLE
+//    Donnée provenant exclusivement de Météo-France.
+//
+// 2) RISQUE TECHNIQUE CHANTIER
+//    Analyse interne basée sur :
+//      - matériau
+//      - moyen d'accès
+//      - rafales
+//      - pluie
+//      - température
+//      - zone de vent
+//      - position en angle
+//
+// 3) DÉCISION CHANTIER
+//    Décision opérationnelle résultant de la vigilance officielle,
+//    du risque technique et des conditions météo locales.
+//
+// IMPORTANT :
+// Un risque technique ne modifie JAMAIS la vigilance officielle
+// Météo-France.
+//
 
 import { HeureMeteo } from "./meteo";
 import {
@@ -16,175 +33,598 @@ import {
   couleurLaPlusForte,
 } from "./meteoVigilance";
 
-export type Materiau = "bois" | "metal" | "composite" | "fibrociment";
-export type Acces = "echafaudage" | "nacelle";
-export type NiveauAlerte = "vert" | "jaune" | "orange" | "rouge";
+export type Materiau =
+  | "bois"
+  | "metal"
+  | "composite"
+  | "fibrociment";
 
+export type Acces =
+  | "echafaudage"
+  | "nacelle";
+
+export type NiveauAlerte =
+  | "vert"
+  | "jaune"
+  | "orange"
+  | "rouge";
+
+const ORDRE_NIVEAU: Record<NiveauAlerte, number> = {
+  vert: 0,
+  jaune: 1,
+  orange: 2,
+  rouge: 3,
+};
+
+/**
+ * Retourne le niveau le plus élevé entre deux niveaux.
+ */
+export function plusForte(
+  a: NiveauAlerte,
+  b: NiveauAlerte
+): NiveauAlerte {
+  return ORDRE_NIVEAU[a] >= ORDRE_NIVEAU[b]
+    ? a
+    : b;
+}
+
+/**
+ * Seuils météo propres aux matériaux.
+ *
+ * Ces seuils sont des règles métier internes au logiciel.
+ * Ils ne représentent PAS les seuils officiels Météo-France.
+ */
 const SEUILS_MATERIAUX: Record<
   Materiau,
-  { vent_vigilance: number; vent_critique: number; pluie_critique: number; temp_mini: number; temp_maxi: number }
+  {
+    vent_vigilance: number;
+    vent_critique: number;
+    pluie_critique: number;
+    temp_mini: number;
+    temp_maxi: number;
+  }
 > = {
-  bois: { vent_vigilance: 30, vent_critique: 60, pluie_critique: 1.0, temp_mini: 0.0, temp_maxi: 30.0 },
-  metal: { vent_vigilance: 25, vent_critique: 45, pluie_critique: 1.0, temp_mini: 0.0, temp_maxi: 35.0 },
-  composite: { vent_vigilance: 30, vent_critique: 60, pluie_critique: 1.0, temp_mini: 1.0, temp_maxi: 30.0 },
-  fibrociment: { vent_vigilance: 30, vent_critique: 60, pluie_critique: 2.0, temp_mini: 0.0, temp_maxi: 30.0 },
+  bois: {
+    vent_vigilance: 30,
+    vent_critique: 60,
+    pluie_critique: 1.0,
+    temp_mini: 0,
+    temp_maxi: 30,
+  },
+
+  metal: {
+    vent_vigilance: 25,
+    vent_critique: 45,
+    pluie_critique: 1.0,
+    temp_mini: 0,
+    temp_maxi: 35,
+  },
+
+  composite: {
+    vent_vigilance: 30,
+    vent_critique: 60,
+    pluie_critique: 1.0,
+    temp_mini: 1,
+    temp_maxi: 30,
+  },
+
+  fibrociment: {
+    vent_vigilance: 30,
+    vent_critique: 60,
+    pluie_critique: 2.0,
+    temp_mini: 0,
+    temp_maxi: 30,
+  },
 };
 
-const SEUILS_ACCES: Record<Acces, { vent_vigilance: number; vent_critique: number }> = {
-  echafaudage: { vent_vigilance: 45, vent_critique: 60 },
-  nacelle: { vent_vigilance: 35, vent_critique: 45 },
+/**
+ * Seuils liés au moyen d'accès.
+ */
+const SEUILS_ACCES: Record<
+  Acces,
+  {
+    vent_vigilance: number;
+    vent_critique: number;
+  }
+> = {
+  echafaudage: {
+    vent_vigilance: 45,
+    vent_critique: 60,
+  },
+
+  nacelle: {
+    vent_vigilance: 35,
+    vent_critique: 45,
+  },
 };
 
-// -----------------------------------------------------------------------
-// 1) Risque technique (seuils maison, matériau/accès/zone de vent)
-// -----------------------------------------------------------------------
-
+/**
+ * Analyse du risque technique du chantier.
+ *
+ * Cette fonction ne touche JAMAIS à la vigilance officielle
+ * Météo-France.
+ */
 export function evaluerAlerteChantier(
   materiau: Materiau,
   acces: Acces,
-  meteo: { rafalesMax: number; pluieCumul: number; tempMax: number },
-  zoneVent: number = 1,     // Ajouté : 1, 2, 3 ou 4 depuis la BDD chantiers
-  estEnAngle: boolean = false // Ajouté : réduit les seuils si vrai
-): { niveau: NiveauAlerte; motif: string } {
-  const sm = SEUILS_MATERIAUX[materiau] ?? SEUILS_MATERIAUX.bois;
-  const sa = SEUILS_ACCES[acces] ?? SEUILS_ACCES.echafaudage;
+  meteo: {
+    rafalesMax: number;
+    pluieCumul: number;
+    tempMax: number;
+  },
+  zoneVent: number = 1,
+  estEnAngle: boolean = false
+): {
+  niveau: NiveauAlerte;
+  motif: string;
+} {
+  const seuilMateriau =
+    SEUILS_MATERIAUX[materiau] ??
+    SEUILS_MATERIAUX.bois;
 
-  // Calcul du vent critique de base
-  let ventCritique = Math.min(sm.vent_critique, sa.vent_critique);
-  let ventVigilance = Math.min(sm.vent_vigilance, sa.vent_vigilance);
+  const seuilAcces =
+    SEUILS_ACCES[acces] ??
+    SEUILS_ACCES.echafaudage;
 
-  // LOGIQUE DE MINORATION SELON ZONE DE VENT & POSITION ANGLE (Ajustement DTU)
-  // Si zone de vent forte (3 ou 4), on réduit le seuil de tolérance aux rafales de 10 km/h
+  /*
+   * On prend le seuil le plus restrictif entre
+   * le matériau et le moyen d'accès.
+   */
+  let ventCritique = Math.min(
+    seuilMateriau.vent_critique,
+    seuilAcces.vent_critique
+  );
+
+  let ventVigilance = Math.min(
+    seuilMateriau.vent_vigilance,
+    seuilAcces.vent_vigilance
+  );
+
+  /*
+   * Zone de vent 3 ou 4 :
+   * seuils abaissés de 10 km/h.
+   */
   if (zoneVent >= 3) {
     ventCritique -= 10;
     ventVigilance -= 10;
   }
-  
-  // Si la pose se fait dans une zone d'angle du bâtiment, l'effet de sillage réduit le seuil de 5 km/h supplémentaires
+
+  /*
+   * Position en angle :
+   * seuils abaissés de 5 km/h.
+   */
   if (estEnAngle) {
     ventCritique -= 5;
     ventVigilance -= 5;
   }
 
+  /*
+   * Sécurité minimale :
+   * on évite qu'un cumul d'ajustements fasse tomber
+   * les seuils à des valeurs absurdes.
+   */
+  ventCritique = Math.max(20, ventCritique);
+  ventVigilance = Math.max(15, ventVigilance);
+
+  /*
+   * 1. Vent critique
+   */
   if (meteo.rafalesMax >= ventCritique) {
     return {
       niveau: "rouge",
-      motif: `Vent critique (${meteo.rafalesMax} km/h >= seuil ajusté ${ventCritique} km/h pour Zone ${zoneVent}${estEnAngle ? ' en Angle' : ''}) — pose interdite`,
+      motif:
+        `Vent critique : ${meteo.rafalesMax} km/h ` +
+        `≥ seuil ${ventCritique} km/h ` +
+        `(Zone ${zoneVent}${estEnAngle ? ", angle" : ""}) ` +
+        `• pose interdite.`,
     };
   }
-  if (meteo.pluieCumul >= sm.pluie_critique && meteo.pluieCumul >= 8) {
+
+  /*
+   * 2. Pluie critique
+   *
+   * On conserve la double condition :
+   * - seuil propre au matériau
+   * - cumul réellement important
+   */
+  if (
+    meteo.pluieCumul >=
+      seuilMateriau.pluie_critique &&
+    meteo.pluieCumul >= 8
+  ) {
     return {
       niveau: "rouge",
-      motif: `Pluie critique (${meteo.pluieCumul.toFixed(1)} mm) — protection isolant/glissance`,
+      motif:
+        `Pluie importante : ${meteo.pluieCumul.toFixed(
+          1
+        )} mm ` +
+        `• protection de l'isolant, glissance ou conditions de pose incompatibles.`,
     };
   }
-  if (meteo.tempMax <= sm.temp_mini || meteo.tempMax >= sm.temp_maxi) {
+
+  /*
+   * 3. Température limite
+   */
+  if (
+    meteo.tempMax <= seuilMateriau.temp_mini ||
+    meteo.tempMax >= seuilMateriau.temp_maxi
+  ) {
     return {
       niveau: "orange",
-      motif: `Température limite (${meteo.tempMax}°C) pour ${materiau}`,
+      motif:
+        `Température limite : ${meteo.tempMax}°C ` +
+        `pour le matériau ${LABELS_MATERIAU[materiau]}.`,
     };
   }
+
+  /*
+   * 4. Vent de vigilance
+   */
   if (meteo.rafalesMax >= ventVigilance) {
     return {
       niveau: "jaune",
-      motif: `Vent de vigilance (${meteo.rafalesMax} km/h >= seuil ${ventVigilance} km/h) — attention effet voile`,
+      motif:
+        `Vent de vigilance : ${meteo.rafalesMax} km/h ` +
+        `≥ seuil ${ventVigilance} km/h ` +
+        `• attention à l'effet de voile.`,
     };
   }
-  return { niveau: "vert", motif: "Conditions optimales de pose" };
+
+  /*
+   * 5. Conditions techniques normales
+   */
+  return {
+    niveau: "vert",
+    motif: "Conditions techniques compatibles avec la pose.",
+  };
 }
 
-// -----------------------------------------------------------------------
-// 2) Détection pluie continue sur la journée
-// -----------------------------------------------------------------------
+/* ------------------------------------------------------------------ */
+/* Pluie continue                                                     */
+/* ------------------------------------------------------------------ */
+
 const SEUIL_PLUIE_HORAIRE_MM = 0.2;
+
+/**
+ * Au moins 75 % des relevés horaires doivent
+ * présenter une pluie significative.
+ */
 const FRACTION_MINI_HEURES_PLUIE = 0.75;
 
-export function pleutTouteLaJournee(heures: HeureMeteo[]): boolean {
-  if (!heures || heures.length === 0) return false;
+export function pleutTouteLaJournee(
+  heures: HeureMeteo[]
+): boolean {
+  if (!heures || heures.length === 0) {
+    return false;
+  }
 
-  const heuresPluvieuses = heures.filter(
-    (h) => h.pluie >= SEUIL_PLUIE_HORAIRE_MM
-  ).length;
+  const heuresPluvieuses =
+    heures.filter(
+      (heure) =>
+        heure.pluie >=
+        SEUIL_PLUIE_HORAIRE_MM
+    ).length;
 
-  return heuresPluvieuses / heures.length >= FRACTION_MINI_HEURES_PLUIE;
+  return (
+    heuresPluvieuses / heures.length >=
+    FRACTION_MINI_HEURES_PLUIE
+  );
 }
 
-// -----------------------------------------------------------------------
-// 3) Décision "jour d'arrêt"
-// -----------------------------------------------------------------------
+/* ------------------------------------------------------------------ */
+/* Décision du jour                                                   */
+/* ------------------------------------------------------------------ */
+
 export interface DecisionJourChantier {
+  /**
+   * Vigilance officielle Météo-France.
+   */
   vigilanceOfficielle: NiveauAlerte;
-  risqueTechnique: { niveau: NiveauAlerte; motif: string };
+
+  /**
+   * Risque technique calculé par le moteur interne.
+   */
+  risqueTechnique: {
+    niveau: NiveauAlerte;
+    motif: string;
+  };
+
+  /**
+   * Détection météo locale.
+   */
   pluieContinue: boolean;
+
+  /**
+   * Décision opérationnelle.
+   */
   jourArrete: boolean;
   aValider: boolean;
+
+  /**
+   * Impact :
+   * - complete
+   * - partielle
+   * - null
+   */
+  ampleurImpact:
+    | "complete"
+    | "partielle"
+    | null;
+
+  /**
+   * Explication destinée au rapport.
+   */
   motif: string;
 }
 
+/**
+ * Détermine la vigilance officielle Météo-France
+ * à partir des phénomènes pertinents pour le chantier.
+ *
+ * IMPORTANT :
+ * Le risque technique n'est PAS inclus dans cette valeur.
+ */
+function determinerVigilanceOfficielle(
+  vigilance: VigilanceDepartement
+): NiveauAlerte {
+  const vigilanceVent =
+    couleurPourPhenomene(
+      vigilance,
+      "vent"
+    );
+
+  const vigilancePluie =
+    couleurPourPhenomene(
+      vigilance,
+      "pluie-inondation"
+    );
+
+  const vigilanceOrages =
+    couleurPourPhenomene(
+      vigilance,
+      "orages"
+    );
+
+  return couleurLaPlusForte(
+    vigilanceVent,
+    vigilancePluie,
+    vigilanceOrages
+  );
+}
+
+/**
+ * Identifie le phénomène officiel principal
+ * correspondant au niveau maximal.
+ */
+function determinerCauseVigilance(
+  vigilance: VigilanceDepartement,
+  niveau: NiveauAlerte
+): string {
+  const phenomenes = [
+    {
+      nom: "vent",
+      couleur: couleurPourPhenomene(
+        vigilance,
+        "vent"
+      ),
+    },
+    {
+      nom: "pluie-inondation",
+      couleur: couleurPourPhenomene(
+        vigilance,
+        "pluie-inondation"
+      ),
+    },
+    {
+      nom: "orages",
+      couleur: couleurPourPhenomene(
+        vigilance,
+        "orages"
+      ),
+    },
+  ];
+
+  return (
+    phenomenes.find(
+      (phenomene) =>
+        phenomene.couleur === niveau
+    )?.nom ?? "conditions météorologiques"
+  );
+}
+
+/**
+ * Décision opérationnelle complète du chantier.
+ *
+ * Hiérarchie :
+ *
+ * 1. Vigilance rouge officielle
+ *    → arrêt total automatique
+ *
+ * 2. Risque technique rouge
+ *    → arrêt total automatique
+ *
+ * 3. Vigilance orange officielle
+ *    → validation humaine
+ *
+ * 4. Risque technique orange
+ *    → validation humaine
+ *
+ * 5. Vigilance jaune
+ *    → validation humaine
+ *    ou arrêt automatique si pluie continue
+ *
+ * 6. Pluie continue
+ *    → arrêt automatique
+ *
+ * 7. Risque technique jaune
+ *    → validation humaine
+ *
+ * 8. Sinon
+ *    → conditions normales
+ */
 export function evaluerJourChantier(
   materiau: Materiau,
   acces: Acces,
-  meteoJour: { rafalesMax: number; pluieCumul: number; tempMax: number },
+  meteoJour: {
+    rafalesMax: number;
+    pluieCumul: number;
+    tempMax: number;
+  },
   heures: HeureMeteo[],
   vigilance: VigilanceDepartement,
-  zoneVent: number = 1,       // Transmis pour le risque technique
-  estEnAngle: boolean = false  // Transmis pour le risque technique
+  zoneVent: number = 1,
+  estEnAngle: boolean = false
 ): DecisionJourChantier {
-  // Transfert des paramètres de zone de vent à l'évaluation technique
-  const risqueTechnique = evaluerAlerteChantier(materiau, acces, meteoJour, zoneVent, estEnAngle);
+  /*
+   * 1. Risque technique local.
+   */
+  const risqueTechnique =
+    evaluerAlerteChantier(
+      materiau,
+      acces,
+      meteoJour,
+      zoneVent,
+      estEnAngle
+    );
 
-  const vigilanceVent = couleurPourPhenomene(vigilance, "vent");
-  const vigilancePluie = couleurPourPhenomene(vigilance, "pluie-inondation");
-  const vigilanceOrages = couleurPourPhenomene(vigilance, "orages");
-  const vigilanceOfficielle = couleurLaPlusForte(vigilanceVent, vigilancePluie, vigilanceOrages);
+  /*
+   * 2. Vigilance officielle Météo-France.
+   */
+  const vigilanceOfficielle =
+    determinerVigilanceOfficielle(
+      vigilance
+    );
 
-  const pluieContinue = pleutTouteLaJournee(heures);
+  /*
+   * 3. Pluie continue.
+   */
+  const pluieContinue =
+    pleutTouteLaJournee(heures);
 
-  if (vigilanceOfficielle === "rouge") {
+  /*
+   * 4. Vigilance ROUGE officielle.
+   *
+   * C'est la priorité absolue.
+   */
+  if (
+    vigilanceOfficielle === "rouge"
+  ) {
     const cause =
-      vigilanceVent === "rouge" ? "vent" : vigilanceOrages === "rouge" ? "orages" : "pluie-inondation";
+      determinerCauseVigilance(
+        vigilance,
+        vigilanceOfficielle
+      );
+
     return {
       vigilanceOfficielle,
       risqueTechnique,
       pluieContinue,
       jourArrete: true,
       aValider: false,
-      motif: `Vigilance rouge Météo-France (${cause}) — arrêt de chantier`,
+      ampleurImpact: "complete",
+      motif:
+        `Vigilance ROUGE Météo-France (${cause}) ` +
+        `• arrêt total du chantier.`,
     };
   }
 
-  if (vigilanceOfficielle === "orange") {
+  /*
+   * 5. Risque technique ROUGE.
+   *
+   * Même si Météo-France est vert,
+   * les conditions locales peuvent rendre
+   * une opération techniquement dangereuse.
+   */
+  if (
+    risqueTechnique.niveau === "rouge"
+  ) {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: true,
+      aValider: false,
+      ampleurImpact: "complete",
+      motif:
+        `Arrêt technique chantier : ` +
+        `${risqueTechnique.motif}`,
+    };
+  }
+
+  /*
+   * 6. Vigilance ORANGE officielle.
+   */
+  if (
+    vigilanceOfficielle === "orange"
+  ) {
+    const cause =
+      determinerCauseVigilance(
+        vigilance,
+        vigilanceOfficielle
+      );
+
     return {
       vigilanceOfficielle,
       risqueTechnique,
       pluieContinue,
       jourArrete: false,
       aValider: true,
-      motif: "Vigilance orange Météo-France — arrêt à confirmer selon les prévisions et la décision du chef de chantier",
+      ampleurImpact: "partielle",
+      motif:
+        `Vigilance ORANGE Météo-France (${cause}) ` +
+        `• arrêt partiel ou complet à valider par le chef de chantier.`,
     };
   }
 
-  if (vigilanceOfficielle === "jaune") {
-    if (pluieContinue) {
-      return {
-        vigilanceOfficielle,
-        risqueTechnique,
-        pluieContinue,
-        jourArrete: true,
-        aValider: false,
-        motif: "Vigilance jaune Météo-France + pluie continue constatée toute la journée — arrêt de chantier",
-      };
-    }
+  /*
+   * 7. Risque technique ORANGE.
+   */
+  if (
+    risqueTechnique.niveau === "orange"
+  ) {
     return {
       vigilanceOfficielle,
       risqueTechnique,
       pluieContinue,
       jourArrete: false,
       aValider: true,
-      motif: "Vigilance jaune Météo-France — conditions météo dégradées constatées sur zone",
+      ampleurImpact: "partielle",
+      motif:
+        `Risque technique chantier important ` +
+        `• ${risqueTechnique.motif}`,
     };
   }
 
+  /*
+   * 8. Vigilance JAUNE + pluie continue.
+   */
+  if (
+    vigilanceOfficielle === "jaune" &&
+    pluieContinue
+  ) {
+    const cause =
+      determinerCauseVigilance(
+        vigilance,
+        vigilanceOfficielle
+      );
+
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: true,
+      aValider: false,
+      ampleurImpact: "complete",
+      motif:
+        `Vigilance JAUNE Météo-France (${cause}) ` +
+        `+ pluie continue constatée ` +
+        `• arrêt du chantier.`,
+    };
+  }
+
+  /*
+   * 9. Pluie continue sans vigilance officielle.
+   */
   if (pluieContinue) {
     return {
       vigilanceOfficielle,
@@ -192,28 +632,90 @@ export function evaluerJourChantier(
       pluieContinue,
       jourArrete: true,
       aValider: false,
-      motif: "Pluie continue constatée toute la journée sur le chantier (hors vigilance officielle Météo-France)",
+      ampleurImpact: "complete",
+      motif:
+        `Pluie continue constatée sur le chantier ` +
+        `• conditions incompatibles avec certains travaux.`,
     };
   }
 
+  /*
+   * 10. Vigilance JAUNE sans pluie continue.
+   */
+  if (
+    vigilanceOfficielle === "jaune"
+  ) {
+    const cause =
+      determinerCauseVigilance(
+        vigilance,
+        vigilanceOfficielle
+      );
+
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      ampleurImpact: "partielle",
+      motif:
+        `Vigilance JAUNE Météo-France (${cause}) ` +
+        `• conditions dégradées à surveiller et valider.`,
+    };
+  }
+
+  /*
+   * 11. Risque technique JAUNE.
+   */
+  if (
+    risqueTechnique.niveau === "jaune"
+  ) {
+    return {
+      vigilanceOfficielle,
+      risqueTechnique,
+      pluieContinue,
+      jourArrete: false,
+      aValider: true,
+      ampleurImpact: "partielle",
+      motif:
+        `Vigilance technique chantier ` +
+        `• ${risqueTechnique.motif}`,
+    };
+  }
+
+  /*
+   * 12. Tout est normal.
+   */
   return {
     vigilanceOfficielle,
     risqueTechnique,
     pluieContinue,
     jourArrete: false,
     aValider: false,
-    motif: "Conditions normales — pas d'intempérie constatée",
+    ampleurImpact: null,
+    motif:
+      "Conditions météorologiques et techniques normales.",
   };
 }
 
-export const LABELS_MATERIAU: Record<Materiau, string> = {
+/* ------------------------------------------------------------------ */
+/* Libellés                                                            */
+/* ------------------------------------------------------------------ */
+
+export const LABELS_MATERIAU: Record<
+  Materiau,
+  string
+> = {
   bois: "Bois",
   metal: "Métal / Bac acier",
   composite: "Composite",
   fibrociment: "Fibrociment",
 };
 
-export const LABELS_ACCES: Record<Acces, string> = {
+export const LABELS_ACCES: Record<
+  Acces,
+  string
+> = {
   echafaudage: "Échafaudage",
   nacelle: "Nacelle",
 };
