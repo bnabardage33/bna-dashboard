@@ -3,12 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev --webpack",
-  "build": "next build",
-  "start": "next start",
-  "lint": "next lint --dir app --dir components --dir lib"
-},
-
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint --dir app --dir components --dir lib"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.0",
     "dotenv": "^17.4.2",
