@@ -35,8 +35,74 @@ const supabase = createClient(
 const VISUALCROSSING_API_KEY =
   Deno.env.get("VISUALCROSSING_API_KEY")!;
 
-const METEOFRANCE_API_KEY =
-  Deno.env.get("METEOFRANCE_API_KEY")!;
+// À coller en haut de supabase/functions/generer-rapports-intemperies/index.ts
+// à la place de la ligne :
+//   const METEOFRANCE_API_KEY = Deno.env.get("METEOFRANCE_API_KEY")!;
+
+const METEOFRANCE_APPLICATION_ID =
+  Deno.env.get("METEOFRANCE_APPLICATION_ID")!;
+
+const URL_TOKEN_METEOFRANCE =
+  "https://portail-api.meteofrance.fr/token";
+
+let tokenCache: {
+  accessToken: string;
+  expireLe: number;
+} | null = null;
+
+const MARGE_SECURITE_MS = 5 * 60 * 1000;
+
+async function obtenirTokenMeteoFrance(): Promise<string> {
+  const maintenant = Date.now();
+
+  if (
+    tokenCache &&
+    tokenCache.expireLe - MARGE_SECURITE_MS > maintenant
+  ) {
+    return tokenCache.accessToken;
+  }
+
+  const response = await fetch(URL_TOKEN_METEOFRANCE, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${METEOFRANCE_APPLICATION_ID}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+  });
+
+  if (!response.ok) {
+    const texte = await response.text();
+    throw new Error(
+      `Échec génération token Météo-France (${response.status}): ${texte}`
+    );
+  }
+
+  const data = await response.json();
+  const accessToken: string = data.access_token;
+  const expiresInSec: number = data.expires_in ?? 3600;
+
+  if (!accessToken) {
+    throw new Error("Réponse token Météo-France sans access_token");
+  }
+
+  tokenCache = {
+    accessToken,
+    expireLe: maintenant + expiresInSec * 1000,
+  };
+
+  return accessToken;
+}
+
+// -----------------------------------------------------------------------
+// Puis dans fetchVigilance(), remplace :
+//   headers: { apikey: METEOFRANCE_API_KEY },
+// par :
+//   headers: { apikey: await obtenirTokenMeteoFrance() },
+// (et rendre fetchVigilance async si ce n'est pas déjà le cas — ça
+//  l'est déjà vu qu'elle fait un await fetch juste après)
+// -----------------------------------------------------------------------
+  
 
 // -----------------------------------------------------------------------------
 // TYPES
