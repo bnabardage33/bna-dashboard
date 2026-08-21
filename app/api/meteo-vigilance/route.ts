@@ -7,6 +7,7 @@
 // Clé API attendue dans la variable d'env METEOFRANCE_API_KEY (.env.local).
 
 import { NextRequest, NextResponse } from "next/server";
+import { obtenirTokenMeteoFrance, invaliderCacheToken } from "@/lib/meteoFranceToken";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 
 const URL_VIGILANCE =
@@ -60,14 +61,18 @@ export async function GET(request: NextRequest) {
   // Résolution automatique si l'utilisateur envoie "Ajaccio", "20000", "Bordeaux", "2A", etc.
   const departement = adresseVersDepartement(rawParam) || rawParam.trim().toUpperCase();
 
-  const apiKey = process.env.METEOFRANCE_API_KEY;
-  if (!apiKey) {
+  let apiKey: string;
+
+  try {
+    apiKey = await obtenirTokenMeteoFrance();
+  } catch (error) {
+    console.error("Erreur génération token Météo-France:", error);
     return NextResponse.json(
-      { error: "METEOFRANCE_API_KEY non configurée" },
+      { error: "Impossible d'obtenir un token Météo-France" },
       { status: 500 }
     );
   }
-
+  
   try {
     const res = await fetch(URL_VIGILANCE, {
       headers: { apikey: apiKey },
@@ -80,6 +85,9 @@ export async function GET(request: NextRequest) {
       console.error("Erreur API Vigilance Météo-France:", res.status, texte);
       return NextResponse.json(
         { error: "Échec de l'appel à l'API Vigilance" },
+    if (response.status === 401) {
+  invaliderCacheToken();
+      }
         { status: 502 }
       );
     }
