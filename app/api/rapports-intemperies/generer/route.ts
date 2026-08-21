@@ -384,8 +384,9 @@ export async function POST(request: NextRequest) {
   // ---------------------------------------------------------------------------
 
   const resultats: ResultatGeneration[] = [];
+  const listeChantiers = (chantiers || []) as any[];
 
-  for (const chantier of chantiers) {
+  for (const chantier of listeChantiers) {
     try {
       // -----------------------------------------------------------------------
       // Protection contre les doublons
@@ -478,9 +479,8 @@ export async function POST(request: NextRequest) {
           tempMax: meteo.tempMax,
         },
         heuresMeteo,
-        vigilance,
-        zoneVent,
-        false
+        vigilance?.couleurMax ?? "vert",
+        vigilance?.couleurMax ?? "vert"
       );
 
       // -----------------------------------------------------------------------

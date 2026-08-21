@@ -93,9 +93,7 @@ export default function ChantiersMeteoCards() {
             const alerte = evaluerAlerteChantier(
               ch.materiau_structurel, 
               ch.moyen_acces, 
-              { rafalesMax, tempMax, pluieCumul },
-              zoneVent,
-              false
+              { rafalesMax, tempMax, pluieCumul }
             );
 
             return {

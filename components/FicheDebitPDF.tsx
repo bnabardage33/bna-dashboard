@@ -39,25 +39,27 @@ export default function FicheDebitPDF({
   });
 
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900">
-      {/* Bandeau d'en-tête */}
-      <div className="mb-1 h-1.5 w-full bg-red-600" />
+    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl text-xs">
+      {/* Bandeau supérieur bleu acier */}
+      <div className="mb-2 h-1.5 w-full bg-sky-600 rounded-full" />
 
-      <div className="flex items-start justify-between pt-4">
-        <div className="flex items-center gap-3">
-          {entreprise.logo_url && (
-            <img src={entreprise.logo_url} alt="Logo" className="h-12 w-auto" />
-          )}
+      <div className="flex items-start justify-between pt-3">
+        <div className="flex items-center gap-3.5">
+          <img
+            src={entreprise.logo_url || "/logo-bna.png"}
+            alt="Logo BNA"
+            className="h-20 sm:h-24 max-h-24 w-auto object-contain"
+          />
           <div>
-            <p className="text-base font-bold text-slate-900">{entreprise.raison_sociale}</p>
-            <p className="text-xs text-slate-500">Atelier & Préparation Chantier</p>
+            <p className="text-base font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
+            <p className="text-xs text-slate-500 font-medium">Atelier & Préparation Chantier</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+          <p className="text-2xl font-black tracking-tight text-slate-900">
             FICHE DÉBIT & ATELIER
           </p>
-          <p className="text-sm font-semibold text-red-600">{zone.nom}</p>
+          <p className="text-sm font-bold text-sky-600 font-mono">{zone.nom}</p>
           <p className="text-xs text-slate-500">{dateStr}</p>
         </div>
       </div>

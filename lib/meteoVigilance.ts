@@ -459,3 +459,37 @@ function extraireDepartement(
     misAJourLe,
   };
 }
+
+export function couleurPourPhenomene(
+  vigilance: VigilanceDepartement | null | undefined,
+  phenomeneNom: string
+): CouleurVigilance {
+  if (!vigilance || !vigilance.phenomenes) return "vert";
+  const p = vigilance.phenomenes.find(
+    (item) => item.nom.toLowerCase() === phenomeneNom.toLowerCase()
+  );
+  return p ? p.couleur : "vert";
+}
+
+const POIDS_COULEUR: Record<CouleurVigilance, number> = {
+  vert: 0,
+  jaune: 1,
+  orange: 2,
+  rouge: 3,
+};
+
+export function couleurLaPlusForte(
+  ...couleurs: (CouleurVigilance | undefined | null)[]
+): CouleurVigilance {
+  let maxPoids = 0;
+  let maxCouleur: CouleurVigilance = "vert";
+
+  for (const c of couleurs) {
+    if (c && POIDS_COULEUR[c] > maxPoids) {
+      maxPoids = POIDS_COULEUR[c];
+      maxCouleur = c;
+    }
+  }
+
+  return maxCouleur;
+}

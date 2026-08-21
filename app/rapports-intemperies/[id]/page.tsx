@@ -157,9 +157,9 @@ export default function RapportDetailPage() {
 
           <button
             onClick={imprimer}
-            className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
+            className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
           >
-            🖨️ Imprimer / PDF
+            <span>🖨️</span> Imprimer / Exporter PDF
           </button>
         </div>
       </div>

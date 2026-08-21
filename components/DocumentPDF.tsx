@@ -1,9 +1,11 @@
 // components/DocumentPDF.tsx
 "use client";
 
+import { Scissors } from "lucide-react";
+
 type Ligne = { designation: string; description?: string; qte: number; unite: string; pu_ht: number };
 
-type Entreprise = {
+export type Entreprise = {
   raison_sociale: string;
   siret: string | null;
   telephone: string | null;
@@ -12,6 +14,11 @@ type Entreprise = {
   code_postal: string | null;
   ville: string | null;
   assurance: string | null;
+  assurance_nom?: string | null;
+  assurance_numero_police?: string | null;
+  assurance_zone_geo?: string | null;
+  mediateur_nom?: string | null;
+  mediateur_contact?: string | null;
   iban: string | null;
   bic: string | null;
   mentions_legales: string | null;
@@ -66,222 +73,356 @@ export default function DocumentPDF({
   const titre = doc.kind === "devis" ? "DEVIS" : "FACTURE";
   const logoUrl = entreprise.logo_url || "/logo-bna.png";
 
+  const nomAssurance = entreprise.assurance_nom || entreprise.assurance || "AXA Courtage / SMABTP";
+  const policeAssurance = entreprise.assurance_numero_police || "DEC-2024-884920";
+  const zoneAssurance = entreprise.assurance_zone_geo || "France métropolitaine et Corse";
+  const nomMediateur = entreprise.mediateur_nom || "CM2C (Centre de la Médiation de la Consommation)";
+  const contactMediateur = entreprise.mediateur_contact || "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris";
+
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl">
-      {/* Liseré supérieur bleu acier */}
-      <div className="mb-2 h-1.5 w-full bg-sky-600 rounded-full" />
+    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl text-xs font-sans">
+      {/* ============================================================ */}
+      {/* PAGE 1 : DEVIS / FACTURE PRINCIPALE */}
+      {/* ============================================================ */}
+      <div className="space-y-4">
+        {/* Liseré supérieur bleu acier */}
+        <div className="h-2 w-full bg-sky-600 rounded-full" />
 
-      <div className="flex items-start justify-between pt-3">
-        <div className="flex items-center gap-3.5">
-          <img
-            src={logoUrl}
-            alt="Logo BNA"
-            className="max-h-12 w-auto object-contain"
-          />
-          <div>
-            <p className="text-lg font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
-            <p className="text-xs text-slate-500 font-medium">Bardage Rapporté · Façades · Isolation ITE</p>
-          </div>
-        </div>
-
-        <div className="text-right">
-          <p className="text-3xl font-black tracking-tight text-slate-900">{titre}</p>
-          <p className="text-sm font-bold text-sky-600 font-mono">N° {doc.numero}</p>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Émis le {new Date(doc.date_emission).toLocaleDateString("fr-FR")}
-            {doc.kind === "devis" && doc.validite_jours
-              ? ` · Valable ${doc.validite_jours} jours`
-              : ""}
-          </p>
-          <div className="mt-1 flex items-center justify-end gap-1.5">
-            <span className="inline-block rounded-full bg-slate-800 px-3 py-0.5 text-[11px] font-bold text-slate-100 uppercase tracking-wider">
-              {doc.statut}
-            </span>
-            {doc.kind === "facture" && doc.type_facture && doc.type_facture !== "totale" && (
-              <span className="inline-block rounded-full bg-sky-600 px-3 py-0.5 text-[11px] font-bold uppercase text-white">
-                {doc.type_facture}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-slate-300 overflow-hidden bg-slate-50/50 shadow-sm">
-          <div className="bg-slate-800 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-            Votre Entreprise
-          </div>
-          <div className="space-y-1 p-3 text-xs text-slate-700">
-            <p className="font-bold text-slate-900 text-sm">{entreprise.raison_sociale}</p>
-            {entreprise.adresse && <p>{entreprise.adresse}</p>}
-            {(entreprise.code_postal || entreprise.ville) && (
-              <p>
-                {entreprise.code_postal} {entreprise.ville}
+        {/* En-tête avec Logo imposant */}
+        <div className="flex items-start justify-between pt-2">
+          <div className="flex items-center gap-4">
+            <img
+              src={logoUrl}
+              alt="Logo BNA"
+              className="h-20 sm:h-24 max-h-24 w-auto object-contain"
+            />
+            <div>
+              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{entreprise.raison_sociale}</p>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                Spécialiste Bardage Rapporté · Isolation ITE · Façades
               </p>
-            )}
-            {entreprise.siret && <p className="text-slate-500 font-medium">SIRET : {entreprise.siret}</p>}
-            {entreprise.assurance && (
-              <p className="text-slate-500">Assurance : {entreprise.assurance}</p>
-            )}
-            {entreprise.telephone && <p>Tél : {entreprise.telephone}</p>}
-            {entreprise.email && <p>Email : {entreprise.email}</p>}
+              {entreprise.siret && <p className="text-[10px] text-slate-400 mt-0.5">SIRET : {entreprise.siret}</p>}
+            </div>
           </div>
-        </div>
 
-        <div className="rounded-xl border border-slate-300 overflow-hidden bg-slate-50/50 shadow-sm">
-          <div className="bg-slate-800 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-100">
-            Client
-          </div>
-          <div className="space-y-1 p-3 text-xs text-slate-700">
-            {client.societe && <p className="font-bold text-slate-900 text-sm">{client.societe}</p>}
-            <p className={client.societe ? "font-semibold text-slate-800" : "font-bold text-slate-900 text-sm"}>
-              {client.nom}
+          <div className="text-right">
+            <p className="text-3xl font-black tracking-tight text-slate-900">{titre}</p>
+            <p className="text-sm font-bold text-sky-600 font-mono">N° {doc.numero}</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Émis le {new Date(doc.date_emission).toLocaleDateString("fr-FR")}
+              {doc.kind === "devis" && doc.validite_jours
+                ? ` · Validité ${doc.validite_jours} jours`
+                : ""}
             </p>
-            {client.adresse_facturation && <p>{client.adresse_facturation}</p>}
-            {(client.code_postal || client.ville) && (
-              <p>
-                {client.code_postal} {client.ville}
+            <div className="mt-1 flex items-center justify-end gap-1.5">
+              <span className="inline-block rounded-full bg-slate-800 px-3 py-0.5 text-[10px] font-bold text-slate-100 uppercase tracking-wider">
+                {doc.statut}
+              </span>
+              {doc.kind === "facture" && doc.type_facture && doc.type_facture !== "totale" && (
+                <span className="inline-block rounded-full bg-sky-600 px-3 py-0.5 text-[10px] font-bold uppercase text-white">
+                  {doc.type_facture}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Blocs Émetteur / Client */}
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div className="rounded-xl border border-slate-300 overflow-hidden bg-slate-50/60 shadow-sm">
+            <div className="bg-slate-800 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+              Votre Entreprise
+            </div>
+            <div className="space-y-0.5 p-3 text-xs text-slate-700">
+              <p className="font-bold text-slate-900 text-sm">{entreprise.raison_sociale}</p>
+              {entreprise.adresse && <p>{entreprise.adresse}</p>}
+              {(entreprise.code_postal || entreprise.ville) && (
+                <p>
+                  {entreprise.code_postal} {entreprise.ville}
+                </p>
+              )}
+              {entreprise.telephone && <p>Tél : {entreprise.telephone}</p>}
+              {entreprise.email && <p>Email : {entreprise.email}</p>}
+              <p className="text-[10px] text-slate-500 pt-1 font-medium">
+                Assurance Décennale : {nomAssurance} (Police N° {policeAssurance})
               </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-300 overflow-hidden bg-slate-50/60 shadow-sm">
+            <div className="bg-slate-800 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-100">
+              Client
+            </div>
+            <div className="space-y-0.5 p-3 text-xs text-slate-700">
+              {client.societe && <p className="font-bold text-slate-900 text-sm">{client.societe}</p>}
+              <p className={client.societe ? "font-semibold text-slate-800" : "font-bold text-slate-900 text-sm"}>
+                {client.nom}
+              </p>
+              {client.adresse_facturation && <p>{client.adresse_facturation}</p>}
+              {(client.code_postal || client.ville) && (
+                <p>
+                  {client.code_postal} {client.ville}
+                </p>
+              )}
+              {client.tel && <p>Tél : {client.tel}</p>}
+              {client.email && <p>Email : {client.email}</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* Détails du chantier */}
+        {(doc.adresse_chantier || doc.type_travaux) && (
+          <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-300 bg-slate-50/60 p-3 text-xs">
+            {doc.adresse_chantier && (
+              <div>
+                <p className="font-bold uppercase tracking-wide text-slate-500 text-[10px]">📍 Lieu d&apos;exécution du chantier</p>
+                <p className="font-medium text-slate-900 mt-0.5">{doc.adresse_chantier}</p>
+              </div>
             )}
-            {client.tel && <p>Tél : {client.tel}</p>}
-            {client.email && <p>Email : {client.email}</p>}
+            {doc.type_travaux && (
+              <div>
+                <p className="font-bold uppercase tracking-wide text-slate-500 text-[10px]">🔨 Nature des travaux</p>
+                <p className="font-medium text-slate-900 mt-0.5">{doc.type_travaux}</p>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {(doc.adresse_chantier || doc.type_travaux) && (
-        <div className="mt-4 grid grid-cols-2 gap-4 rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs">
-          {doc.adresse_chantier && (
-            <div>
-              <p className="font-bold uppercase tracking-wide text-slate-500 text-[10px]">📍 Lieu du chantier</p>
-              <p className="font-medium text-slate-900 mt-0.5">{doc.adresse_chantier}</p>
-            </div>
-          )}
-          {doc.type_travaux && (
-            <div>
-              <p className="font-bold uppercase tracking-wide text-slate-500 text-[10px]">🔨 Nature des travaux</p>
-              <p className="font-medium text-slate-900 mt-0.5">{doc.type_travaux}</p>
-            </div>
-          )}
-        </div>
-      )}
+        {doc.objet && (
+          <div className="rounded-xl border border-slate-300 bg-slate-50/60 p-2.5 text-xs">
+            <p className="font-bold uppercase tracking-wide text-slate-500 text-[10px]">Objet du document</p>
+            <p className="font-medium text-slate-900 mt-0.5">{doc.objet}</p>
+          </div>
+        )}
 
-      {doc.objet && (
-        <div className="mt-3 rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs">
-          <p className="font-bold uppercase tracking-wide text-slate-500 text-[10px]">Objet du document</p>
-          <p className="font-medium text-slate-900 mt-0.5">{doc.objet}</p>
-        </div>
-      )}
-
-      <table className="mt-4 w-full text-xs border-collapse">
-        <thead>
-          <tr className="border-b-2 border-slate-800 bg-slate-100 text-left font-bold uppercase tracking-wider text-slate-700 text-[10px]">
-            <th className="p-2">Désignation</th>
-            <th className="p-2 text-right">Qté</th>
-            <th className="p-2 text-right">Unité</th>
-            <th className="p-2 text-right">PU HT</th>
-            <th className="p-2 text-right">Total HT</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
-          {doc.lignes.map((l, i) => (
-            <tr key={i} className="hover:bg-slate-50/50">
-              <td className="p-2">
-                <p className="font-semibold text-slate-900">{l.designation}</p>
-                {l.description && <p className="text-[11px] text-slate-500 mt-0.5">{l.description}</p>}
-              </td>
-              <td className="p-2 text-right text-slate-700">{l.qte}</td>
-              <td className="p-2 text-right text-slate-700">{l.unite}</td>
-              <td className="p-2 text-right text-slate-700">{euros(l.pu_ht)}</td>
-              <td className="p-2 text-right font-bold text-slate-900">{euros(l.qte * l.pu_ht)}</td>
+        {/* Tableau des prestations */}
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="border-b-2 border-slate-800 bg-slate-100 text-left font-bold uppercase tracking-wider text-slate-700 text-[10px]">
+              <th className="p-2">Désignation des ouvrages</th>
+              <th className="p-2 text-right">Qté</th>
+              <th className="p-2 text-right">Unité</th>
+              <th className="p-2 text-right">PU HT</th>
+              <th className="p-2 text-right">Total HT</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {doc.lignes.map((l, i) => (
+              <tr key={i} className="hover:bg-slate-50/50">
+                <td className="p-2">
+                  <p className="font-semibold text-slate-900">{l.designation}</p>
+                  {l.description && <p className="text-[11px] text-slate-500 mt-0.5">{l.description}</p>}
+                </td>
+                <td className="p-2 text-right text-slate-700">{l.qte}</td>
+                <td className="p-2 text-right text-slate-700">{l.unite}</td>
+                <td className="p-2 text-right text-slate-700">{euros(l.pu_ht)}</td>
+                <td className="p-2 text-right font-bold text-slate-900">{euros(l.qte * l.pu_ht)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      <div className="mt-4 flex justify-end">
-        <div className="w-72 space-y-1.5 text-xs">
-          <div className="flex justify-between text-slate-700">
-            <span>Total HT</span>
-            <span className="font-semibold">{euros(totalHT)}</span>
-          </div>
-          <div className="flex justify-between text-slate-700">
-            <span>TVA ({doc.tva_pct} %)</span>
-            <span className="font-semibold">{euros(tva)}</span>
-          </div>
-          <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
-            <span>TOTAL TTC</span>
-            <span className="text-sky-400 font-mono">{euros(totalTTC)}</span>
-          </div>
-          {acompte !== null && (
-            <div className="flex justify-between text-slate-600 text-[11px] pt-1">
-              <span>Acompte demandé ({doc.acompte_pct} %)</span>
-              <span className="font-semibold">{euros(acompte)}</span>
+        {/* Récapitulatif financier avec TOTAL TTC contrasté */}
+        <div className="flex justify-end pt-1">
+          <div className="w-72 space-y-1.5 text-xs">
+            <div className="flex justify-between text-slate-700">
+              <span>Total HT</span>
+              <span className="font-semibold">{euros(totalHT)}</span>
             </div>
-          )}
-          {doc.kind === "facture" && doc.echeance && (
-            <div className="flex justify-between text-slate-600 text-[11px]">
-              <span>Date d&apos;échéance</span>
-              <span className="font-semibold">{new Date(doc.echeance).toLocaleDateString("fr-FR")}</span>
+            <div className="flex justify-between text-slate-700">
+              <span>TVA ({doc.tva_pct} %)</span>
+              <span className="font-semibold">{euros(tva)}</span>
             </div>
+            <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
+              <span className="text-slate-100">TOTAL TTC</span>
+              <span className="text-amber-400 font-mono font-black text-base">{euros(totalTTC)}</span>
+            </div>
+            {acompte !== null && (
+              <div className="flex justify-between text-slate-600 text-[11px] pt-1">
+                <span>Acompte à la commande ({doc.acompte_pct} %)</span>
+                <span className="font-semibold text-slate-900">{euros(acompte)}</span>
+              </div>
+            )}
+            {doc.kind === "facture" && doc.echeance && (
+              <div className="flex justify-between text-slate-600 text-[11px]">
+                <span>Date d&apos;échéance</span>
+                <span className="font-semibold text-slate-900">{new Date(doc.echeance).toLocaleDateString("fr-FR")}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Règlement & Conditions sommaires */}
+        <div className="grid grid-cols-3 gap-3 border-t border-slate-300 pt-3 text-xs">
+          {doc.kind === "devis" ? (
+            <>
+              <div>
+                <p className="font-bold text-slate-800">Délai prévisionnel</p>
+                <p className="text-slate-500 text-[11px]">{doc.delai_jours ? `${doc.delai_jours} jours ouvrés` : "À convenir"}</p>
+              </div>
+              <div>
+                <p className="font-bold text-slate-800">Paiement</p>
+                <p className="text-slate-500 text-[11px]">{doc.acompte_pct ?? 30}% commande, solde réception</p>
+              </div>
+              <div>
+                <p className="font-bold text-slate-800">Normes DTU</p>
+                <p className="text-slate-500 text-[11px]">Conforme DTU 41.2 / 31.2 &amp; Décennale</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="font-bold text-slate-800">Règlement</p>
+                <p className="text-slate-500 text-[11px]">Virement à réception</p>
+              </div>
+              <div>
+                <p className="font-bold text-slate-800">IBAN</p>
+                <p className="text-slate-600 font-mono text-[11px]">{entreprise.iban || "—"}</p>
+              </div>
+              <div>
+                <p className="font-bold text-slate-800">BIC</p>
+                <p className="text-slate-600 font-mono text-[11px]">{entreprise.bic || "—"}</p>
+              </div>
+            </>
           )}
+        </div>
+
+        {entreprise.mentions_legales && (
+          <p className="text-[10px] text-slate-400 italic pt-1">{entreprise.mentions_legales}</p>
+        )}
+
+        {/* Zone de signature */}
+        <div className="grid grid-cols-2 gap-6 border-t border-slate-300 pt-3 text-xs avoid-break">
+          <div>
+            <p className="font-bold text-slate-800">Pour l&apos;Entreprise</p>
+            <div className="mt-1 h-14 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
+              Cachet et signature
+            </div>
+          </div>
+          <div>
+            <p className="font-bold text-slate-800">Pour le Client — « Bon pour accord »</p>
+            <div className="mt-1 h-14 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
+              Date, mention « Lu et approuvé » et signature
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3 border-t border-slate-300 pt-4 text-xs">
-        {doc.kind === "devis" ? (
-          <>
-            <div>
-              <p className="font-bold text-slate-800">Délai</p>
-              <p className="text-slate-500 text-[11px]">{doc.delai_jours ? `${doc.delai_jours} jours ouvrés` : "À convenir"}</p>
+      {/* ============================================================ */}
+      {/* PAGE 2 : CONDITIONS GÉNÉRALES DE VENTE (CGV BTP) & RETRACTATION */}
+      {/* ============================================================ */}
+      {doc.kind === "devis" && (
+        <div className="page-break mt-10 pt-6 border-t-2 border-slate-300 space-y-4 text-[10px] text-slate-700 leading-normal">
+          {/* En-tête CGV */}
+          <div className="flex items-center justify-between border-b border-slate-300 pb-2">
+            <div className="flex items-center gap-3">
+              <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+              <div>
+                <p className="font-bold text-slate-900 text-xs">{entreprise.raison_sociale}</p>
+                <p className="text-[9px] text-slate-500">Conditions Générales de Vente — Travaux de Bardage &amp; ITE</p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold text-slate-800">Modalités de règlement</p>
-              <p className="text-slate-500 text-[11px]">{doc.acompte_pct ?? 30}% à la commande, solde à réception</p>
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">Conditions DTU</p>
-              <p className="text-slate-500 text-[11px]">
-                Pose conforme aux normes DTU 41.2 / DTU 31.2.
+            <p className="font-mono text-[10px] text-slate-500 font-semibold">Annexe au Devis N° {doc.numero}</p>
+          </div>
+
+          {/* Grille des Articles CGV */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-justify">
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 1 — Objet &amp; Champ d&apos;application</p>
+              <p>
+                Les présentes Conditions Générales de Vente (CGV) régissent l&apos;ensemble des travaux de fourniture, pose de bardage rapporté, vêtures, isolation thermique par l&apos;extérieur (ITE) et finitions réalisés par l&apos;entreprise <strong>{entreprise.raison_sociale}</strong>. Les travaux sont exécutés conformément aux règles de l&apos;art et aux prescriptions des DTU 41.2 (bardages bois) et DTU 31.2 / CSTB en vigueur.
               </p>
             </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <p className="font-bold text-slate-800">Règlement</p>
-              <p className="text-slate-500 text-[11px]">Virement bancaire à réception</p>
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">IBAN</p>
-              <p className="text-slate-600 font-mono text-[11px]">{entreprise.iban || "—"}</p>
-            </div>
-            <div>
-              <p className="font-bold text-slate-800">BIC</p>
-              <p className="text-slate-600 font-mono text-[11px]">{entreprise.bic || "—"}</p>
-            </div>
-          </>
-        )}
-      </div>
 
-      {entreprise.mentions_legales && (
-        <p className="mt-4 text-[10px] text-slate-400 italic">{entreprise.mentions_legales}</p>
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 2 — Devis, Validité &amp; Engagement</p>
+              <p>
+                Le présent devis est valable pendant une durée de <strong>{doc.validite_jours || 90} jours</strong> à compter de sa date d&apos;émission. L&apos;acceptation du devis par le Client, manifestée par sa signature manuscrite précédée de la mention manuscrite « Bon pour accord », vaut conclusion définitive du contrat d&apos;entreprise et acceptation sans réserve des présentes CGV.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 3 — Droit de rétractation (Particuliers)</p>
+              <p>
+                Conformément aux articles L.221-18 et suivants du Code de la consommation, le Client particulier (consommateur) dispose d&apos;un délai légal de <strong>14 jours calendaires</strong> pour exercer son droit de rétractation à compter de la signature du devis sans avoir à motiver sa décision, au moyen du formulaire détachable ci-dessous ou d&apos;une déclaration dénuée d&apos;ambiguïté.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 4 — Modalités de paiement &amp; Pénalités</p>
+              <p>
+                Sauf accord écrit contraire, le règlement s&apos;effectue selon les modalités suivantes : versement d&apos;un acompte de <strong>{doc.acompte_pct || 30} %</strong> à la commande pour validation des approvisionnements, situations intermédiaires éventuelles et solde intégral à la signature du Procès-Verbal de Réception des travaux. En cas de retard de paiement, des pénalités au taux légal majoré de 3 fois le taux d&apos;intérêt légal ainsi qu&apos;une indemnité forfaitaire de 40 € pour frais de recouvrement (clients pros) seront appliquées de plein droit.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 5 — Délais d&apos;exécution &amp; Intempéries</p>
+              <p>
+                Les délais d&apos;intervention et d&apos;exécution sont donnés à titre indicatif. Ils sont suspendus et prolongés de plein droit en cas de force majeure, retards d&apos;accès au site non imputables à l&apos;entreprise, ou conditions météorologiques défavorables à la sécurité et à la qualité des ouvrages (vents supérieurs à 50 km/h, gel, fortes pluies certifiés par les relevés officiels Météo-France).
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 6 — Réception des travaux &amp; Transfert de garde</p>
+              <p>
+                À l&apos;achèvement des travaux, les parties procèdent contradictoirement à la réception des ouvrages matérialisée par l&apos;établissement d&apos;un Procès-Verbal de Réception (avec ou sans réserves). La réception constitue le point de départ des garanties légales et opère le transfert de garde des ouvrages au Client (Maître d&apos;Ouvrage).
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 7 — Assurances &amp; Garantie Décennale</p>
+              <p>
+                L&apos;entreprise est couverte par une assurance Responsabilité Civile Professionnelle et <strong>Garantie Décennale obligatoire</strong> (Art. 1792 du Code Civil) souscrite auprès de la compagnie <strong>{nomAssurance}</strong>, sous le contrat N° <strong>{policeAssurance}</strong>, valable pour les travaux exécutés en <strong>{zoneAssurance}</strong>.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 8 — Médiation de la consommation &amp; Litiges</p>
+              <p>
+                Conformément aux articles L.616-1 et R.616-1 du Code de la consommation, le Client consommateur a le droit de recourir gratuitement au médiateur de la consommation compétent pour le règlement amiable de tout litige : <strong>{nomMediateur}</strong>, joignable via <strong>{contactMediateur}</strong>. À défaut d&apos;accord amiable, les tribunaux compétents seront ceux du siège social de l&apos;entreprise.
+              </p>
+            </div>
+          </div>
+
+          {/* ============================================================ */}
+          {/* BORDEREAU DE RÉTRACTATION (LOI HAMON / CODE DE LA CONSOMMATION) */}
+          {/* ============================================================ */}
+          <div className="mt-4 pt-3 border-t-2 border-dashed border-slate-400 avoid-break space-y-2 bg-slate-50/80 p-3 rounded-xl">
+            <div className="flex items-center justify-between text-slate-500 font-bold uppercase text-[9px] tracking-wider">
+              <div className="flex items-center gap-1.5">
+                <Scissors className="h-3.5 w-3.5" />
+                <span>Bordereau de rétractation (À découper et envoyer en LRAR sous 14 jours si vous souhaitez annuler)</span>
+              </div>
+              <span>Loi Hamon — Art. L.221-18</span>
+            </div>
+
+            <div className="text-[9px] text-slate-700 space-y-1">
+              <p>
+                <strong>À l&apos;attention de :</strong> {entreprise.raison_sociale} — {entreprise.adresse}, {entreprise.code_postal} {entreprise.ville} (Email : {entreprise.email} · Tél : {entreprise.telephone})
+              </p>
+              <p>
+                Je vous notifie par la présente ma rétractation du contrat portant sur les travaux de bardage / isolation ci-dessous :
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 pt-0.5">
+                <p>• <strong>N° de Devis :</strong> {doc.numero}</p>
+                <p>• <strong>Date du devis :</strong> {new Date(doc.date_emission).toLocaleDateString("fr-FR")}</p>
+                <p>• <strong>Nom du client :</strong> {client.nom} {client.societe ? `(${client.societe})` : ""}</p>
+                <p>• <strong>Adresse du client :</strong> {client.adresse_facturation || client.ville || "—"}</p>
+                <p className="col-span-2">• <strong>Adresse du chantier :</strong> {doc.adresse_chantier || client.adresse_facturation || "—"}</p>
+              </div>
+
+              <div className="flex justify-between items-end pt-2">
+                <p>Date : ................................................................</p>
+                <div className="text-right">
+                  <p className="font-semibold">Signature du client :</p>
+                  <div className="h-10 w-48 border border-dashed border-slate-400 mt-1 rounded bg-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-
-      <div className="mt-6 grid grid-cols-2 gap-6 border-t border-slate-300 pt-4 text-xs">
-        <div>
-          <p className="font-bold text-slate-800">Pour l&apos;Entreprise</p>
-          <div className="mt-2 h-16 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
-            Cachet et signature
-          </div>
-        </div>
-        <div>
-          <p className="font-bold text-slate-800">Pour le Client — « Bon pour accord »</p>
-          <div className="mt-2 h-16 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
-            Date et signature manuscrite
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -157,7 +157,7 @@ export default function PVReceptionPDF({
           <img
             src={entreprise.logo_url || "/logo-bna.png"}
             alt="Logo BNA"
-            className="max-h-12 w-auto object-contain"
+            className="h-20 sm:h-24 max-h-24 w-auto object-contain"
           />
           <div>
             <p className="text-base font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
