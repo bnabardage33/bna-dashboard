@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -63,7 +63,7 @@ const TABS = ["Général", "Métrés & Technique", "Météo & Intempéries", "Ph
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
 const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
 
-export default function ChantierDetailPage() {
+function ChantierDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -982,5 +982,13 @@ function Resume({
         {value.toFixed(1)} m²
       </p>
     </div>
+  );
+}
+
+export default function ChantierDetailPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-slate-400">Chargement du chantier…</div>}>
+      <ChantierDetailContent />
+    </Suspense>
   );
 }

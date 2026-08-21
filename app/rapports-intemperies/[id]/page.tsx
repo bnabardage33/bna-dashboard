@@ -1,13 +1,13 @@
 // app/rapports-intemperies/[id]/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import RapportIntemperiesPDF, { RapportIntemperiesData } from "@/components/RapportIntemperiesPDF";
 
-export default function RapportDetailPage() {
+function RapportDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -173,5 +173,19 @@ export default function RapportDetailPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function RapportDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-sm text-slate-400">
+          Chargement du rapport…
+        </div>
+      }
+    >
+      <RapportDetailContent />
+    </Suspense>
   );
 }

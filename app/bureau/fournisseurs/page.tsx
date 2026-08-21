@@ -95,6 +95,7 @@ export default function FournisseursPage() {
   // Mode "plusieurs lignes" — utilisé quand la commande arrive pré-remplie depuis un métré
   const [lignesMultiples, setLignesMultiples] = useState<LigneMultiple[] | null>(null);
   const [prefillInfo, setPrefillInfo] = useState<{ chantierNom: string; zoneNom: string } | null>(null);
+  const [maintenant, setMaintenant] = useState<Date | null>(null);
 
   async function fetchTout() {
     setLoading(true);
@@ -116,6 +117,7 @@ export default function FournisseursPage() {
 
   useEffect(() => {
     fetchTout();
+    setMaintenant(new Date());
   }, []);
 
   // Récupère une éventuelle commande pré-remplie transmise depuis un métré (Chantier → Zone)
@@ -141,7 +143,15 @@ export default function FournisseursPage() {
   }, []);
 
   const kpis = useMemo(() => {
-    const maintenant = new Date();
+    if (!maintenant) {
+      return {
+        commandesEnCours: 0,
+        livraisonsAttendues: 0,
+        achatsEngages: 0,
+        achatsRecus: 0,
+      };
+    }
+
     const commandesEnCours = commandes.filter(
       (c) => c.statut !== "livree" && c.statut !== "annulee"
     ).length;

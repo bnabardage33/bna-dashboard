@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import SubNav from "@/components/SubNav";
 
 const items = [
@@ -15,7 +16,9 @@ export default function TerrainLayout({
 }) {
   return (
     <div>
-      <SubNav items={items} />
+      <Suspense fallback={null}>
+        <SubNav items={items} />
+      </Suspense>
       <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>
     </div>
   );

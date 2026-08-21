@@ -103,7 +103,7 @@ export default function FinChantierPage() {
   const [formId, setFormId] = useState<string | null>(null);
   const [formChantierId, setFormChantierId] = useState("");
   const [formClientId, setFormClientId] = useState("");
-  const [formDateReception, setFormDateReception] = useState(new Date().toISOString().slice(0, 10));
+  const [formDateReception, setFormDateReception] = useState("");
   const [formStatut, setFormStatut] = useState<StatutPV>("sans_reserve");
   const [formTypeTravaux, setFormTypeTravaux] = useState("Travaux de bardage et isolation extérieure (ITE)");
   const [formAdresseChantier, setFormAdresseChantier] = useState("");
@@ -227,6 +227,7 @@ export default function FinChantierPage() {
 
   useEffect(() => {
     chargerDonnees();
+    setFormDateReception(new Date().toISOString().slice(0, 10));
   }, [chargerDonnees]);
 
   // Ouverture automatique si ?chantierId= est dans l'URL

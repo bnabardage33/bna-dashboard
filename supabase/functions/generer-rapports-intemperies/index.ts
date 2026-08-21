@@ -1116,7 +1116,7 @@ async function modeGenerer(
   } = await supabase
     .from("chantiers")
     .select(
-      "id, nom, adresse_chantier, materiau_structural, moyen_acces"
+      "id, nom, adresse_chantier, materiau_structurel, moyen_acces"
     )
     .neq(
       "statut",
@@ -1268,7 +1268,7 @@ async function modeGenerer(
 
       const decision =
         evaluerJour(
-          ch.materiau_structural,
+          ch.materiau_structurel,
           ch.moyen_acces,
           {
             rafalesMax:
@@ -1358,7 +1358,7 @@ async function modeGenerer(
             meteoJour.pluieCumul,
 
           materiau:
-            ch.materiau_structural,
+            ch.materiau_structurel,
 
           acces:
             ch.moyen_acces,

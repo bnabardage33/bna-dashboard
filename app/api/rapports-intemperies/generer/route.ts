@@ -339,7 +339,7 @@ export async function POST(request: NextRequest) {
         "id",
         "nom",
         "adresse_chantier",
-        "materiau_structural",
+        "materiau_structurel",
         "moyen_acces",
         "zone_vent",
         "statut",
@@ -421,7 +421,7 @@ export async function POST(request: NextRequest) {
         adresseVersDepartement(adresse) || "33";
 
       const materiau = normaliserMateriau(
-        chantier.materiau_structural
+        chantier.materiau_structurel
       );
 
       const acces = normaliserAcces(
