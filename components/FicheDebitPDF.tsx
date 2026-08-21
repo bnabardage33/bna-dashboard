@@ -135,6 +135,37 @@ export default function FicheDebitPDF({
         </div>
       </div>
 
+      {/* Synthèse Débit Panneaux HPL & Imbrication */}
+      {calepinage && (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-700">
+            Débit & Imbrication Panneaux HPL
+          </p>
+          <div className="mt-2 grid grid-cols-4 gap-2 text-center text-xs">
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase">Plaques brutes mères</p>
+              <p className="font-bold text-slate-900">{calepinage.nbPlaquesNecessaires} plaques</p>
+              <p className="text-[10px] text-slate-500">{calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase">Modules finis débités</p>
+              <p className="font-bold text-slate-900">{calepinage.nbPiecesPosees} modules</p>
+              <p className="text-[10px] text-slate-500">Trame {calepinage.moduleCibleLargeurMm}×{calepinage.moduleCibleHauteurMm} mm</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase">Rendement de coupe</p>
+              <p className="font-bold text-slate-900">~{calepinage.modulesParPlaqueBrute} mod. / plaque</p>
+              <p className="text-[10px] text-slate-500">{calepinage.nbJoints} joints</p>
+            </div>
+            <div>
+              <p className="text-slate-500 text-[10px] uppercase">Taux de chute réel</p>
+              <p className="font-bold text-emerald-700">{calepinage.tauxChutePct.toFixed(1)} %</p>
+              <p className="text-[10px] text-slate-500">{(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chutes</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Nomenclature des Fournitures & Consommables */}
       {pose && (
         <div className="mt-4">

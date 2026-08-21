@@ -35,6 +35,8 @@ export type Zone = {
   largeur_lame_mm: number | null;
   plaque_longueur_mm: number | null;
   plaque_largeur_mm: number | null;
+  module_largeur_mm?: number | null;
+  module_hauteur_mm?: number | null;
   sens_pose: SensPose | null;
 };
 
@@ -198,37 +200,53 @@ export default function ZoneCard({
    * également la hauteur du faîtage afin de
    * traiter toute la géométrie du pignon.
    */
+  const rawLongueurMm =
+    zone.plaque_longueur_mm && zone.plaque_longueur_mm > 0
+      ? zone.plaque_longueur_mm < 20
+        ? zone.plaque_longueur_mm * 1000
+        : zone.plaque_longueur_mm
+      : 3050;
+
+  const rawLargeurMm =
+    zone.plaque_largeur_mm && zone.plaque_largeur_mm > 0
+      ? zone.plaque_largeur_mm < 20
+        ? zone.plaque_largeur_mm * 1000
+        : zone.plaque_largeur_mm
+      : 1300;
+
+  const modLargeurMm =
+    zone.module_largeur_mm && zone.module_largeur_mm > 0
+      ? zone.module_largeur_mm < 20
+        ? zone.module_largeur_mm * 1000
+        : zone.module_largeur_mm
+      : 1000;
+
+  const modHauteurMm =
+    zone.module_hauteur_mm && zone.module_hauteur_mm > 0
+      ? zone.module_hauteur_mm < 20
+        ? zone.module_hauteur_mm * 1000
+        : zone.module_hauteur_mm
+      : 600;
+
+  const sensPoseActif = zone.sens_pose ?? "horizontal";
+
   const peutCalepiner =
     zone.famille_pose === "hpl" &&
     zone.largeur > 0 &&
-    zone.hauteur_mur > 0 &&
-    !!zone.plaque_longueur_mm &&
-    !!zone.plaque_largeur_mm &&
-    !!zone.sens_pose;
+    hauteurTotale > 0;
 
   const calepinage =
     peutCalepiner
       ? calculerCalepinage({
-          zoneLargeurM:
-            zone.largeur,
-
-          zoneHauteurM:
-            zone.hauteur_mur,
-
-          plaqueLongueurMm:
-            zone.plaque_longueur_mm!,
-
-          plaqueLargeurMm:
-            zone.plaque_largeur_mm!,
-
-          sensPose:
-            zone.sens_pose!,
-
-          estPignon:
-            zone.type === "pignon",
-
-          hauteurFaiteM:
-            zone.hauteur_faite,
+          zoneLargeurM: zone.largeur,
+          zoneHauteurM: zone.hauteur_mur,
+          plaqueLongueurMm: rawLongueurMm,
+          plaqueLargeurMm: rawLargeurMm,
+          moduleLargeurMm: modLargeurMm,
+          moduleHauteurMm: modHauteurMm,
+          sensPose: sensPoseActif,
+          estPignon: zone.type === "pignon",
+          hauteurFaiteM: zone.hauteur_faite,
         })
       : null;
 
@@ -602,81 +620,140 @@ export default function ZoneCard({
 
         {zone.famille_pose ===
           "hpl" && (
-          <div className="space-y-2 rounded-lg border border-slate-600 p-3">
+          <div className="space-y-4 rounded-lg border border-slate-600 bg-slate-900/60 p-3.5">
+            {/* PARTIE 1 : PLAQUE BRUTE MATIÈRE PREMIÈRE */}
+            <div className="space-y-2 rounded-lg border border-slate-700 bg-slate-800/60 p-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
+                  📦 Plaque brute (Approvisionnement / Stock)
+                </p>
+                <span className="text-[10px] text-slate-400">Matière première</span>
+              </div>
 
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Calepinage · dimensions de plaque
-            </p>
+              <div>
+                <label className="text-[11px] text-slate-400">Format standard fabricant</label>
+                <select
+                  value={
+                    zone.plaque_longueur_mm && zone.plaque_largeur_mm
+                      ? `${zone.plaque_longueur_mm}x${zone.plaque_largeur_mm}`
+                      : "3050x1300"
+                  }
+                  onChange={(e) => {
+                    const [lStr, wStr] = e.target.value.split("x");
+                    if (lStr && wStr) {
+                      update({
+                        plaque_longueur_mm: parseInt(lStr, 10),
+                        plaque_largeur_mm: parseInt(wStr, 10),
+                      });
+                    }
+                  }}
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                >
+                  <option value="3050x1300">Trespa Meteon Standard (3050 × 1300 mm)</option>
+                  <option value="3650x1860">Trespa Meteon Grand Format (3650 × 1860 mm)</option>
+                  <option value="2550x1860">Trespa Meteon Moyen (2550 × 1860 mm)</option>
+                  <option value="2800x1300">Fundermax Standard (2800 × 1300 mm)</option>
+                  <option value="4100x1300">Fundermax Max Compact (4100 × 1300 mm)</option>
+                  <option value="custom">Format personnalisé...</option>
+                </select>
+              </div>
 
-            <div className="grid grid-cols-2 gap-3">
-
-              <Field
-                label="Longueur plaque (mm)"
-                value={
-                  zone.plaque_longueur_mm ??
-                  0
-                }
-                onChange={(v) =>
-                  update({
-                    plaque_longueur_mm:
-                      v || null,
-                  })
-                }
-              />
-
-              <Field
-                label="Largeur plaque (mm)"
-                value={
-                  zone.plaque_largeur_mm ??
-                  0
-                }
-                onChange={(v) =>
-                  update({
-                    plaque_largeur_mm:
-                      v || null,
-                  })
-                }
-              />
-
+              <div className="grid grid-cols-2 gap-2">
+                <Field
+                  label="Longueur brute (mm)"
+                  value={zone.plaque_longueur_mm ?? 3050}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ plaque_longueur_mm: mm || null });
+                  }}
+                />
+                <Field
+                  label="Largeur brute (mm)"
+                  value={zone.plaque_largeur_mm ?? 1300}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ plaque_largeur_mm: mm || null });
+                  }}
+                />
+              </div>
             </div>
 
-            {/* SENS DE POSE */}
+            {/* PARTIE 2 : MODULES POSÉS EN FAÇADE */}
+            <div className="space-y-2 rounded-lg border border-red-500/30 bg-red-950/10 p-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wide text-red-300">
+                  🧱 Modules posés en façade (Trame esthétique)
+                </p>
+                <span className="text-[10px] text-red-400">Dimensions maniables</span>
+              </div>
 
-            <div>
-              <label className="text-xs uppercase tracking-wide text-slate-500">
-                Sens de pose
-              </label>
-
-              <div className="mt-1 flex gap-2">
-
-                {(
-                  [
-                    "horizontal",
-                    "vertical",
-                  ] as const
-                ).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() =>
+              <div>
+                <label className="text-[11px] text-slate-400">Trame cible des modules</label>
+                <select
+                  value={
+                    zone.module_largeur_mm && zone.module_hauteur_mm
+                      ? `${zone.module_largeur_mm}x${zone.module_hauteur_mm}`
+                      : "1000x600"
+                  }
+                  onChange={(e) => {
+                    const [wStr, hStr] = e.target.value.split("x");
+                    if (wStr && hStr) {
                       update({
-                        sens_pose: s,
-                      })
+                        module_largeur_mm: parseInt(wStr, 10),
+                        module_hauteur_mm: parseInt(hStr, 10),
+                      });
                     }
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${
-                      zone.sens_pose ===
-                      s
-                        ? "bg-red-600 text-white"
-                        : "border border-slate-600 text-slate-300"
-                    }`}
-                  >
-                    {s ===
-                    "horizontal"
-                      ? "Horizontal"
-                      : "Vertical"}
-                  </button>
-                ))}
+                  }}
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                >
+                  <option value="1000x600">Standard maniable (1000 × 600 mm)</option>
+                  <option value="1200x800">Grand format architectural (1200 × 800 mm)</option>
+                  <option value="1500x450">Bandeau horizontal élancé (1500 × 450 mm)</option>
+                  <option value="600x1200">Module vertical (600 × 1200 mm)</option>
+                  <option value="custom">Trame personnalisée...</option>
+                </select>
+              </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                <Field
+                  label="Largeur module (mm)"
+                  value={zone.module_largeur_mm ?? 1000}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ module_largeur_mm: mm || null });
+                  }}
+                />
+                <Field
+                  label="Hauteur module (mm)"
+                  value={zone.module_hauteur_mm ?? 600}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ module_hauteur_mm: mm || null });
+                  }}
+                />
+              </div>
+
+              {/* SENS DE POSE */}
+              <div className="pt-1">
+                <label className="text-xs uppercase tracking-wide text-slate-400">
+                  Orientation de pose
+                </label>
+                <div className="mt-1 flex gap-2">
+                  {(["horizontal", "vertical"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => update({ sens_pose: s })}
+                      className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        (zone.sens_pose ?? "horizontal") === s
+                          ? "bg-red-600 text-white"
+                          : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                      }`}
+                    >
+                      {s === "horizontal" ? "↔ Horizontal" : "↕ Vertical"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

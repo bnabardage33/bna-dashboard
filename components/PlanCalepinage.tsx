@@ -565,43 +565,31 @@ export default function PlanCalepinage({
                       />
                     )}
 
-                    {p.largeurM *
-                        echelle >
-                        45 &&
-                      p.hauteurM *
-                        echelle >
-                        20 && (
-                        <text
-                          x={
-                            px(
-                              p.xM
-                            ) +
-                            (p.largeurM *
-                              echelle) /
-                              2
-                          }
-                          y={py(
-                            p.yM +
-                              p.hauteurM /
-                                2
-                          )}
-                          fill="#0f172a"
-                          fontSize={10}
-                          fontWeight="600"
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                        >
-                          {(
-                            p.largeurM *
-                            1000
-                          ).toFixed(0)}
-                          ×
-                          {(
-                            p.hauteurM *
-                            1000
-                          ).toFixed(0)}
-                        </text>
-                      )}
+                    {(() => {
+                      const hasPoints = p.points && p.points.length >= 3;
+                      const labelX = hasPoints
+                        ? px(p.points!.reduce((s, pt) => s + pt.xM, 0) / p.points!.length)
+                        : px(p.xM) + (p.largeurM * echelle) / 2;
+                      const labelY = hasPoints
+                        ? py(p.points!.reduce((s, pt) => s + pt.yM, 0) / p.points!.length)
+                        : py(p.yM + p.hauteurM / 2);
+
+                      return (
+                        (p.surfaceM2 > 0.12 || (p.largeurM * echelle > 40 && p.hauteurM * echelle > 18)) && (
+                          <text
+                            x={labelX}
+                            y={labelY}
+                            fill="#0f172a"
+                            fontSize={10}
+                            fontWeight="bold"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            {(p.largeurM * 1000).toFixed(0)} × {(p.hauteurM * 1000).toFixed(0)}
+                          </text>
+                        )
+                      );
+                    })()}
                   </g>
                 )
               )}
@@ -702,46 +690,61 @@ export default function PlanCalepinage({
       )}
 
       {/* ====================================================== */}
-      {/* INFOS PLAQUES */}
+      {/* INFOS PLAQUES & NESTING */}
       {/* ====================================================== */}
 
       {vue === "plaques" &&
         calepinage && (
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div>
-              <p className="text-slate-500">
-                Plaques nécessaires
-              </p>
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+                <p className="text-[10px] uppercase text-slate-400">Plaques brutes à cder</p>
+                <p className="text-base font-bold text-white">
+                  {calepinage.nbPlaquesNecessaires}
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
+                </p>
+              </div>
 
-              <p className="font-semibold text-white">
-                {
-                  calepinage.nbPlaquesNecessaires
-                }
-              </p>
+              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+                <p className="text-[10px] uppercase text-slate-400">Modules posés</p>
+                <p className="text-base font-bold text-sky-400">
+                  {calepinage.nbPiecesPosees}
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  Trame {calepinage.moduleCibleLargeurMm}×{calepinage.moduleCibleHauteurMm} mm
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+                <p className="text-[10px] uppercase text-slate-400">Taux de chute réel</p>
+                <p
+                  className={`text-base font-bold ${
+                    calepinage.tauxChutePct <= 15 ? "text-emerald-400" : "text-amber-400"
+                  }`}
+                >
+                  {calepinage.tauxChutePct.toFixed(1)} %
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  {(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chute
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+                <p className="text-[10px] uppercase text-slate-400">Rendement de débit</p>
+                <p className="text-base font-bold text-white">
+                  ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-slate-400">mod./plaque</span>
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  {calepinage.nbJoints} joints façade
+                </p>
+              </div>
             </div>
 
-            <div>
-              <p className="text-slate-500">
-                Taux de chute
-              </p>
-
-              <p className="font-semibold text-amber-400">
-                {calepinage.tauxChutePct.toFixed(
-                  1
-                )}
-                %
-              </p>
-            </div>
-
-            <div>
-              <p className="text-slate-500">
-                Joints
-              </p>
-
-              <p className="font-semibold text-white">
-                {calepinage.nbJoints}
-              </p>
-            </div>
+            <p className="text-[11px] text-slate-400 italic">
+              💡 Imbrication 2D : {calepinage.nbPiecesPosees} modules débités dans {calepinage.nbPlaquesNecessaires} plaques brutes ({calepinage.surfacePlaquesAchetesM2.toFixed(1)} m² bruts pour {calepinage.surfaceZoneM2.toFixed(1)} m² nets posés).
+            </p>
           </div>
         )}
 
