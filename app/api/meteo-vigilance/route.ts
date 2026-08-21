@@ -83,15 +83,17 @@ export async function GET(request: NextRequest) {
     if (!res.ok) {
       const texte = await res.text();
       console.error("Erreur API Vigilance Météo-France:", res.status, texte);
+
+      if (res.status === 401) {
+        invaliderCacheToken();
+      }
+
       return NextResponse.json(
         { error: "Échec de l'appel à l'API Vigilance" },
-    if (response.status === 401) {
-  invaliderCacheToken();
-      }
         { status: 502 }
       );
     }
-
+      
     const data = await res.json();
 
     const resultat = extraireDepartement(data, departement, demain);
