@@ -2,16 +2,12 @@
 //
 // Deux notions bien séparées :
 //
-// 1) "Risque technique" (evaluerAlerteChantier, inchangé) :
-//    seuils maison par matériau/accès, utile pour savoir si la pose est
-//    risquée. Reste affiché sur la fiche chantier pour info terrain.
+// 1) "Risque technique" (evaluerAlerteChantier) :
+//    seuils maison par matériau/accès, ajustés selon la zone de vent (1 à 4)
+//    et la position (angle ou courant). Utile pour la sécurité terrain.
 //
-// 2) "Décision jour d'arrêt" (evaluerJourChantier, nouveau) :
-//    ce qui compte pour le rapport intempéries officiel. Basé sur la
-//    vigilance Météo-France (vent + pluie-inondation) et sur une
-//    détection de pluie continue toute la journée à partir des relevés
-//    horaires — indépendante des seuils maison, pour rester "propre et
-//    carré" en cas de litige.
+// 2) "Décision jour d'arrêt" (evaluerJourChantier) :
+//    ce qui compte pour le rapport intempéries officiel (Vigilance Météo-France).
 
 import { HeureMeteo } from "./meteo";
 import {
@@ -40,24 +36,40 @@ const SEUILS_ACCES: Record<Acces, { vent_vigilance: number; vent_critique: numbe
 };
 
 // -----------------------------------------------------------------------
-// 1) Risque technique (seuils maison, matériau/accès) — inchangé
+// 1) Risque technique (seuils maison, matériau/accès/zone de vent)
 // -----------------------------------------------------------------------
 
 export function evaluerAlerteChantier(
   materiau: Materiau,
   acces: Acces,
-  meteo: { rafalesMax: number; pluieCumul: number; tempMax: number }
+  meteo: { rafalesMax: number; pluieCumul: number; tempMax: number },
+  zoneVent: number = 1,     // Ajouté : 1, 2, 3 ou 4 depuis la BDD chantiers
+  estEnAngle: boolean = false // Ajouté : réduit les seuils si vrai
 ): { niveau: NiveauAlerte; motif: string } {
   const sm = SEUILS_MATERIAUX[materiau] ?? SEUILS_MATERIAUX.bois;
   const sa = SEUILS_ACCES[acces] ?? SEUILS_ACCES.echafaudage;
 
-  const ventCritique = Math.min(sm.vent_critique, sa.vent_critique);
-  const ventVigilance = Math.min(sm.vent_vigilance, sa.vent_vigilance);
+  // Calcul du vent critique de base
+  let ventCritique = Math.min(sm.vent_critique, sa.vent_critique);
+  let ventVigilance = Math.min(sm.vent_vigilance, sa.vent_vigilance);
+
+  // LOGIQUE DE MINORATION SELON ZONE DE VENT & POSITION ANGLE (Ajustement DTU)
+  // Si zone de vent forte (3 ou 4), on réduit le seuil de tolérance aux rafales de 10 km/h
+  if (zoneVent >= 3) {
+    ventCritique -= 10;
+    ventVigilance -= 10;
+  }
+  
+  // Si la pose se fait dans une zone d'angle du bâtiment, l'effet de sillage réduit le seuil de 5 km/h supplémentaires
+  if (estEnAngle) {
+    ventCritique -= 5;
+    ventVigilance -= 5;
+  }
 
   if (meteo.rafalesMax >= ventCritique) {
     return {
       niveau: "rouge",
-      motif: `Vent critique (${meteo.rafalesMax} km/h ≥ seuil ${ventCritique} km/h) — pose interdite`,
+      motif: `Vent critique (${meteo.rafalesMax} km/h >= seuil ajusté ${ventCritique} km/h pour Zone ${zoneVent}${estEnAngle ? ' en Angle' : ''}) — pose interdite`,
     };
   }
   if (meteo.pluieCumul >= sm.pluie_critique && meteo.pluieCumul >= 8) {
@@ -75,20 +87,16 @@ export function evaluerAlerteChantier(
   if (meteo.rafalesMax >= ventVigilance) {
     return {
       niveau: "jaune",
-      motif: `Vent de vigilance (${meteo.rafalesMax} km/h) — attention effet voile`,
+      motif: `Vent de vigilance (${meteo.rafalesMax} km/h >= seuil ${ventVigilance} km/h) — attention effet voile`,
     };
   }
   return { niveau: "vert", motif: "Conditions optimales de pose" };
 }
 
 // -----------------------------------------------------------------------
-// 2) Détection pluie continue sur la journée (données locales horaires)
+// 2) Détection pluie continue sur la journée
 // -----------------------------------------------------------------------
-
-// Seuil pour considérer une heure "pluvieuse".
 const SEUIL_PLUIE_HORAIRE_MM = 0.2;
-// Fraction des heures de la journée devant être pluvieuses pour parler de
-// "pluie toute la journée".
 const FRACTION_MINI_HEURES_PLUIE = 0.75;
 
 export function pleutTouteLaJournee(heures: HeureMeteo[]): boolean {
@@ -102,22 +110,14 @@ export function pleutTouteLaJournee(heures: HeureMeteo[]): boolean {
 }
 
 // -----------------------------------------------------------------------
-// 3) Décision "jour d'arrêt" — ce qui compte pour le rapport officiel
+// 3) Décision "jour d'arrêt"
 // -----------------------------------------------------------------------
-
 export interface DecisionJourChantier {
-  // Couleur de vigilance officielle retenue (max entre vent et pluie-inondation).
   vigilanceOfficielle: NiveauAlerte;
-  // Risque technique maison (matériau/accès), gardé à titre indicatif.
   risqueTechnique: { niveau: NiveauAlerte; motif: string };
-  // Pluie continue détectée localement sur la journée.
   pluieContinue: boolean;
-  // Décision auto : ce jour compte comme un jour d'arrêt de chantier.
   jourArrete: boolean;
-  // true si la décision n'est pas automatisable et doit être confirmée
-  // par le chef de chantier (cas vigilance orange).
   aValider: boolean;
-  // Texte de synthèse à afficher/imprimer sur le rapport.
   motif: string;
 }
 
@@ -126,9 +126,12 @@ export function evaluerJourChantier(
   acces: Acces,
   meteoJour: { rafalesMax: number; pluieCumul: number; tempMax: number },
   heures: HeureMeteo[],
-  vigilance: VigilanceDepartement
+  vigilance: VigilanceDepartement,
+  zoneVent: number = 1,       // Transmis pour le risque technique
+  estEnAngle: boolean = false  // Transmis pour le risque technique
 ): DecisionJourChantier {
-  const risqueTechnique = evaluerAlerteChantier(materiau, acces, meteoJour);
+  // Transfert des paramètres de zone de vent à l'évaluation technique
+  const risqueTechnique = evaluerAlerteChantier(materiau, acces, meteoJour, zoneVent, estEnAngle);
 
   const vigilanceVent = couleurPourPhenomene(vigilance, "vent");
   const vigilancePluie = couleurPourPhenomene(vigilance, "pluie-inondation");
@@ -182,7 +185,6 @@ export function evaluerJourChantier(
     };
   }
 
-  // vigilanceOfficielle === "vert"
   if (pluieContinue) {
     return {
       vigilanceOfficielle,
