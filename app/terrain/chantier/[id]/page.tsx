@@ -6,7 +6,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
 import PhotosNotes from "@/components/PhotosNotes";
-import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES } from "@/lib/meteoAlerte";
+import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
+import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 
 type Chantier = {
@@ -56,7 +57,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Métrés & Technique", "Photos & Notes", "Documents"] as const;
+const TABS = ["Général", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -75,6 +76,9 @@ export default function ChantierDetailPage() {
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Général");
+  const [meteo, setMeteo] = useState<JourMeteo | null>(null);
+  const [loadingMeteo, setLoadingMeteo] = useState(false);
+  const [detailMeteoOuvert, setDetailMeteoOuvert] = useState(false);
 
   const fetchChantier = useCallback(async () => {
     const { data, error } = await supabase
@@ -140,6 +144,14 @@ export default function ChantierDetailPage() {
   useEffect(() => {
     if (tab === "Documents" && chantier) {
       fetchDocuments();
+    }
+    if (tab === "Météo & Intempéries" && chantier) {
+      const adresse = chantier.adresse_chantier || chantier.nom || "Ajaccio, Corse";
+      setLoadingMeteo(true);
+      fetchMeteo(adresse)
+        .then((m) => setMeteo(m))
+        .catch((e) => console.error("Erreur météo chantier:", e))
+        .finally(() => setLoadingMeteo(false));
     }
   }, [tab, chantier, fetchDocuments]);
 
@@ -468,6 +480,121 @@ export default function ChantierDetailPage() {
           >
             + Ajouter une zone
           </button>
+        </div>
+      )}
+
+      {tab === "Météo & Intempéries" && (
+        <div className="space-y-6">
+          {/* Météo en direct pour le chantier */}
+          <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wide text-slate-300">
+                  🌤️ Météo en direct · {chantier.adresse_chantier || chantier.nom || "Ajaccio"}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Relevé en temps réel · Matériau : {LABELS_MATERIAU[chantier.materiau_structurel]} · Accès : {LABELS_ACCES[chantier.moyen_acces]}
+                </p>
+              </div>
+
+              {meteo && (
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${
+                    meteo.alerte.niveau === "rouge"
+                      ? "bg-red-500/20 text-red-400"
+                      : meteo.alerte.niveau === "orange"
+                      ? "bg-orange-500/20 text-orange-400"
+                      : meteo.alerte.niveau === "jaune"
+                      ? "bg-amber-500/20 text-amber-400"
+                      : "bg-emerald-500/20 text-emerald-400"
+                  }`}
+                >
+                  {meteo.alerte.niveau === "rouge" ? "🔴 " : meteo.alerte.niveau === "orange" ? "🟠 " : meteo.alerte.niveau === "jaune" ? "🟡 " : "🟢 "}
+                  {meteo.alerte.niveau.toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            {loadingMeteo ? (
+              <p className="text-sm text-slate-400">Chargement de la météo en direct…</p>
+            ) : meteo ? (
+              <>
+                <div
+                  className={`rounded-lg border p-3 ${
+                    meteo.alerte.niveau === "rouge"
+                      ? "border-red-500/40 bg-red-500/10 text-red-300"
+                      : meteo.alerte.niveau === "orange"
+                      ? "border-orange-500/40 bg-orange-500/10 text-orange-300"
+                      : meteo.alerte.niveau === "jaune"
+                      ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                      : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                  }`}
+                >
+                  <p className="text-xs font-semibold">{meteo.alerte.motif}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                    <p className="text-xs text-slate-500">Matin</p>
+                    <p className="text-lg font-bold text-white">{meteo.matin.temp}°C</p>
+                    <p className="text-[11px] text-slate-400">Rafales {meteo.matin.rafales} km/h</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                    <p className="text-xs text-slate-500">Après-midi</p>
+                    <p className="text-lg font-bold text-white">{meteo.apresMidi.temp}°C</p>
+                    <p className="text-[11px] text-slate-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                    <p className="text-xs text-slate-500">Rafales Max</p>
+                    <p className="text-lg font-bold text-sky-400">
+                      {Math.max(meteo.matin.rafales, meteo.apresMidi.rafales)} km/h
+                    </p>
+                    <p className="text-[11px] text-slate-400">Sur la journée</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                    <p className="text-xs text-slate-500">Précipitations</p>
+                    <p className="text-lg font-bold text-emerald-400">
+                      {meteo.heures.reduce((s, h) => s + h.pluie, 0).toFixed(1)} mm
+                    </p>
+                    <p className="text-[11px] text-slate-400">Cumul journalier</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDetailMeteoOuvert((v) => !v)}
+                  className="text-xs font-medium text-slate-400 hover:text-slate-200"
+                >
+                  {detailMeteoOuvert ? "▲ Masquer le détail heure par heure" : "▼ Afficher le détail heure par heure"}
+                </button>
+
+                {detailMeteoOuvert && (
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                    {meteo.heures.map((h) => (
+                      <div
+                        key={h.heure}
+                        className="rounded-lg border border-slate-700 bg-slate-900/60 p-2 text-center"
+                      >
+                        <p className="text-[10px] text-slate-500">{h.heure}</p>
+                        <p className="text-xs font-bold text-white">{h.temp}°C</p>
+                        <p className="text-[10px] text-slate-400">{h.vent}·{h.rafales} km/h</p>
+                        {h.pluie > 0 && <p className="text-[10px] text-sky-400">{h.pluie} mm</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-slate-400">
+                Impossible de charger la météo en direct pour cette adresse.
+              </p>
+            )}
+          </div>
+
+          {/* Liste et génération des Rapports Intempéries */}
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <RapportsIntemperiesListe chantierId={id} />
+          </div>
         </div>
       )}
 

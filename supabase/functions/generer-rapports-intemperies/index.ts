@@ -47,15 +47,51 @@ type VigilanceInfo = { couleurMax: NiveauAlerte; phenomenes: { nom: string; coul
 // ---------------------------------------------------------------------
 
 function adresseVersDepartement(adresse: string): string | null {
-  const match = adresse.match(/\b\d{5}\b/);
-  if (!match) return null;
-  const cp = match[0];
-  if (cp.startsWith("97")) return cp.slice(0, 3);
-  if (cp.startsWith("20")) {
-    const prefix3 = cp.slice(0, 3);
-    return ["200", "201"].includes(prefix3) ? "2A" : "2B";
+  if (!adresse) return null;
+  const raw = adresse.trim();
+  const match = raw.match(/\b\d{5}\b/);
+  if (match) {
+    const cp = match[0];
+    if (cp.startsWith("97")) return cp.slice(0, 3);
+    if (cp.startsWith("20")) {
+      const val = parseInt(cp, 10);
+      return val <= 20190 ? "2A" : "2B";
+    }
+    return cp.slice(0, 2);
   }
-  return cp.slice(0, 2);
+
+  const matchDept = raw.match(/\b(2A|2B|2a|2b|\d{2})\b/i);
+  if (matchDept) return matchDept[1].toUpperCase();
+
+  const lower = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (
+    lower.includes("ajaccio") ||
+    lower.includes("porto vecchio") ||
+    lower.includes("porticcio") ||
+    lower.includes("bonifacio") ||
+    lower.includes("propriano") ||
+    lower.includes("corse du sud")
+  ) {
+    return "2A";
+  }
+  if (
+    lower.includes("bastia") ||
+    lower.includes("calvi") ||
+    lower.includes("corte") ||
+    lower.includes("ile rousse") ||
+    lower.includes("haute corse")
+  ) {
+    return "2B";
+  }
+  if (
+    lower.includes("bordeaux") ||
+    lower.includes("merignac") ||
+    lower.includes("arcachon") ||
+    lower.includes("gironde")
+  ) {
+    return "33";
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------
@@ -111,9 +147,15 @@ async function fetchVigilance(departement: string): Promise<VigilanceInfo> {
   const data = await res.json();
   const periodes = data?.product?.periods ?? [];
   const periodeEnCours = periodes[0];
-  const domaines = periodeEnCours?.timelaps?.domain_ids ?? [];
-  const domaineArray: any[] = Array.isArray(domaines) ? domaines : Object.values(domaines ?? {});
-  const domaineDept = domaineArray.find((d: any) => d?.domain_id === departement);
+  const deptNormalized = departement.trim().toUpperCase();
+  const domaineDept = domaineArray.find((d: any) => {
+    const dId = d?.domain_id?.toString().trim().toUpperCase();
+    if (!dId) return false;
+    if (dId === deptNormalized) return true;
+    if (deptNormalized === "2A" && (dId === "20A" || dId === "2A" || dId === "200" || dId === "201")) return true;
+    if (deptNormalized === "2B" && (dId === "20B" || dId === "2B" || dId === "202")) return true;
+    return false;
+  });
 
   if (!domaineDept) return { couleurMax: "vert", phenomenes: [] };
 
@@ -232,11 +274,18 @@ function evaluerJour(
     };
   }
 
-  if (vigilanceOfficielle === "jaune" && pluieContinue) {
+  if (vigilanceOfficielle === "jaune") {
+    if (pluieContinue) {
+      return {
+        vigilanceOfficielle, risqueTechnique, pluieContinue,
+        jourArrete: true, aValider: false, ampleurImpact: "complete" as const,
+        motif: "Vigilance jaune Météo-France + pluie continue constatée toute la journée — arrêt de chantier",
+      };
+    }
     return {
       vigilanceOfficielle, risqueTechnique, pluieContinue,
-      jourArrete: true, aValider: false, ampleurImpact: "complete" as const,
-      motif: "Vigilance jaune + pluie continue constatée toute la journée — arrêt de chantier",
+      jourArrete: false, aValider: true, ampleurImpact: "partielle" as const,
+      motif: `Vigilance jaune Météo-France${evolution} — conditions météo dégradées à surveiller sur le chantier`,
     };
   }
 

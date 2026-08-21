@@ -7,6 +7,7 @@
 // Clé API attendue dans la variable d'env METEOFRANCE_API_KEY (.env.local).
 
 import { NextRequest, NextResponse } from "next/server";
+import { adresseVersDepartement } from "@/lib/meteoDepartements";
 
 const URL_VIGILANCE =
   "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
@@ -46,15 +47,18 @@ export interface VigilanceDepartement {
 }
 
 export async function GET(request: NextRequest) {
-  const departement = request.nextUrl.searchParams.get("departement");
+  const rawParam = request.nextUrl.searchParams.get("departement") || request.nextUrl.searchParams.get("location");
   const demain = request.nextUrl.searchParams.get("demain") === "true";
 
-  if (!departement) {
+  if (!rawParam) {
     return NextResponse.json(
-      { error: "Paramètre 'departement' manquant" },
+      { error: "Paramètre 'departement' ou 'location' manquant" },
       { status: 400 }
     );
   }
+
+  // Résolution automatique si l'utilisateur envoie "Ajaccio", "20000", "Bordeaux", "2A", etc.
+  const departement = adresseVersDepartement(rawParam) || rawParam.trim().toUpperCase();
 
   const apiKey = process.env.METEOFRANCE_API_KEY;
   if (!apiKey) {
@@ -104,8 +108,7 @@ export async function GET(request: NextRequest) {
 /*
  * IMPORTANT : la forme exacte du JSON renvoyé par Météo-France peut varier
  * légèrement. On fouille donc la réponse de façon tolérante plutôt que de
- * viser un chemin fixe. À la première vraie clé API dispo, il faudra
- * logguer `data` une fois en brut pour confirmer/ajuster ce parsing.
+ * viser un chemin fixe.
  */
 function extraireDepartement(
   data: any,
@@ -128,9 +131,16 @@ function extraireDepartement(
     ? domaines
     : Object.values(domaines ?? {});
 
-  const domaineDept = domaineArray.find(
-    (d: any) => d?.domain_id === departement || d?.domain_id === `${departement}`
-  );
+  const deptNormalized = departement.toString().trim().toUpperCase();
+
+  const domaineDept = domaineArray.find((d: any) => {
+    const dId = d?.domain_id?.toString().trim().toUpperCase();
+    if (!dId) return false;
+    if (dId === deptNormalized) return true;
+    if (deptNormalized === "2A" && (dId === "20A" || dId === "2A" || dId === "200" || dId === "201")) return true;
+    if (deptNormalized === "2B" && (dId === "20B" || dId === "2B" || dId === "202")) return true;
+    return false;
+  });
 
   if (!domaineDept) return null;
 

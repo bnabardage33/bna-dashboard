@@ -177,8 +177,8 @@ export function evaluerJourChantier(
       risqueTechnique,
       pluieContinue,
       jourArrete: false,
-      aValider: false,
-      motif: "Vigilance jaune Météo-France — travail possible, vigilance de rigueur",
+      aValider: true,
+      motif: "Vigilance jaune Météo-France — conditions météo dégradées constatées sur zone",
     };
   }
 
