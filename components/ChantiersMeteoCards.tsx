@@ -18,6 +18,7 @@ type ChantierMeteo = {
   adresse: string | null;
   materiau: Materiau;
   acces: Acces;
+  zoneVent: number; // Ajouté pour le typage
   niveau: "vert" | "jaune" | "orange" | "rouge" | "inconnu";
   motif: string;
   rafales: number | null;
@@ -48,9 +49,10 @@ export default function ChantiersMeteoCards() {
     async function charger() {
       setLoading(true);
 
+      // FIX BDD : Ajout de 'zone_vent' dans le select
       const { data, error } = await supabase
         .from("chantiers")
-        .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut")
+        .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut, zone_vent")
         .neq("statut", "termine");
 
       if (error || !data) {
@@ -62,6 +64,8 @@ export default function ChantiersMeteoCards() {
       const resultats = await Promise.all(
         data.map(async (ch: any) => {
           const adresse = ch.adresse_chantier as string | null;
+          const zoneVent = ch.zone_vent ? Number(ch.zone_vent) : 1; // Sécurité fallback zone 1
+
           if (!adresse) {
             return {
               id: ch.id,
@@ -69,6 +73,7 @@ export default function ChantiersMeteoCards() {
               adresse: null,
               materiau: ch.materiau_structurel,
               acces: ch.moyen_acces,
+              zoneVent,
               niveau: "inconnu" as const,
               motif: "Pas d'adresse renseignée pour ce client.",
               rafales: null,
@@ -82,11 +87,16 @@ export default function ChantiersMeteoCards() {
             const tempMax = Math.max(jour.matin.temp, jour.apresMidi.temp);
             const pluieCumul = jour.heures.reduce((s, h) => s + h.pluie, 0);
 
-            const alerte = evaluerAlerteChantier(ch.materiau_structurel, ch.moyen_acces, {
-              rafalesMax,
-              tempMax,
-              pluieCumul,
-            });
+            // FIX MOTEUR : On passe désormais 'zoneVent' à la fonction
+            // Note : Pour l'instant on met 'false' pour l'angle, car l'information d'angle 
+            // est gérée dynamiquement par zone de façade dans 'chantier_zones' et non dans la table racine 'chantiers'
+            const alerte = evaluerAlerteChantier(
+              ch.materiau_structurel, 
+              ch.moyen_acces, 
+              { rafalesMax, tempMax, pluieCumul },
+              zoneVent,
+              false
+            );
 
             return {
               id: ch.id,
@@ -94,6 +104,7 @@ export default function ChantiersMeteoCards() {
               adresse,
               materiau: ch.materiau_structurel,
               acces: ch.moyen_acces,
+              zoneVent,
               niveau: alerte.niveau,
               motif: alerte.motif,
               rafales: rafalesMax,
@@ -106,6 +117,7 @@ export default function ChantiersMeteoCards() {
               adresse,
               materiau: ch.materiau_structurel,
               acces: ch.moyen_acces,
+              zoneVent,
               niveau: "inconnu" as const,
               motif: "Météo indisponible pour cette adresse.",
               rafales: null,
@@ -144,11 +156,16 @@ export default function ChantiersMeteoCards() {
           </div>
           {ch.adresse && <p className="text-xs text-slate-400">{ch.adresse}</p>}
           <p className="mt-2 text-sm text-slate-300">{ch.motif}</p>
-          {ch.rafales !== null && (
-            <p className="mt-1 text-xs text-slate-500">
-              Rafales {ch.rafales} km/h · {ch.temp}°C max
-            </p>
-          )}
+          <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+            {ch.rafales !== null && (
+              <span>
+                Rafales {ch.rafales} km/h · {ch.temp}°C max
+              </span>
+            )}
+            <span className="rounded bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-400">
+              Zone {ch.zoneVent}
+            </span>
+          </div>
         </Link>
       ))}
     </div>
