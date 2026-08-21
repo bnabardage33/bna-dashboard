@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
 import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES } from "@/lib/meteoAlerte";
+import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 
 type Chantier = {
   id: string;
@@ -648,7 +649,13 @@ export default function ChantierDetailPage() {
                   </div>
                 )}
               </div>
-
+              {/* Rapports Intempéries */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                  Rapports Intempéries
+                </h3>
+                <RapportsIntemperiesListe chantierId={id} />
+              </div>
               {/* Commandes Fournisseurs */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
