@@ -471,25 +471,40 @@ export function couleurPourPhenomene(
   return p ? p.couleur : "vert";
 }
 
-const POIDS_COULEUR: Record<CouleurVigilance, number> = {
+
+const ORDRE_COULEUR: Record<CouleurVigilance, number> = {
   vert: 0,
   jaune: 1,
   orange: 2,
   rouge: 3,
 };
 
-export function couleurLaPlusForte(
-  ...couleurs: (CouleurVigilance | undefined | null)[]
+export function couleurPourPhenomene(
+  vigilance: VigilanceDepartement,
+  nomPhenomene: string
 ): CouleurVigilance {
-  let maxPoids = 0;
-  let maxCouleur: CouleurVigilance = "vert";
+  const nomRecherche = nomPhenomene.trim().toLowerCase();
 
-  for (const c of couleurs) {
-    if (c && POIDS_COULEUR[c] > maxPoids) {
-      maxPoids = POIDS_COULEUR[c];
-      maxCouleur = c;
-    }
-  }
+  const phenomene = vigilance.phenomenes.find(
+    (p) => p.nom.trim().toLowerCase() === nomRecherche
+  );
 
-  return maxCouleur;
+  return phenomene?.couleur ?? vigilance.couleurMax;
 }
+
+export function couleurLaPlusForte(
+  ...couleurs: CouleurVigilance[]
+): CouleurVigilance {
+  return couleurs.reduce<CouleurVigilance>(
+    (max, couleur) =>
+      ORDRE_COULEUR[couleur] > ORDRE_COULEUR[max] ? couleur : max,
+    "vert"
+  );
+}
+
+export const EMOJI_VIGILANCE: Record<CouleurVigilance, string> = {
+  vert: "🟢",
+  jaune: "🟡",
+  orange: "🟠",
+  rouge: "🔴",
+};
