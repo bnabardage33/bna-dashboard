@@ -1,8 +1,10 @@
 // lib/meteoVigilance.ts
-// Wrapper client pour interroger la vigilance officielle Météo-France
-// via la route interne /api/meteo-vigilance (qui garde la clé API côté serveur).
 
-export type CouleurVigilance = "vert" | "jaune" | "orange" | "rouge";
+export type CouleurVigilance =
+  | "vert"
+  | "jaune"
+  | "orange"
+  | "rouge";
 
 export interface VigilancePhenomene {
   id: number;
@@ -17,7 +19,10 @@ export interface VigilanceDepartement {
   misAJourLe: string | null;
 }
 
-const ORDRE_COULEUR: Record<CouleurVigilance, number> = {
+const ORDRE_COULEUR: Record<
+  CouleurVigilance,
+  number
+> = {
   vert: 0,
   jaune: 1,
   orange: 2,
@@ -25,42 +30,80 @@ const ORDRE_COULEUR: Record<CouleurVigilance, number> = {
 };
 
 export async function fetchVigilance(
-  departement: string
+  departement: string,
+  demain = false
 ): Promise<VigilanceDepartement> {
-  const res = await fetch(
-    `/api/meteo-vigilance?departement=${encodeURIComponent(departement)}`
-  );
+  const params = new URLSearchParams({
+    departement,
+  });
 
-  if (!res.ok) {
-    throw new Error("Erreur vigilance météo");
+  if (demain) {
+    params.set("demain", "true");
   }
 
-  return res.json();
+  const response = await fetch(
+    `/api/meteo-vigilance?${params.toString()}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    let message = "Erreur vigilance météo";
+
+    try {
+      const data = await response.json();
+
+      if (data?.error) {
+        message = data.error;
+      }
+    } catch {
+      // Réponse non JSON
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
 }
 
-// Récupère la couleur officielle pour un phénomène précis (vent ou
-// pluie-inondation nous intéressent surtout pour le bardage).
-// Si le phénomène n'est pas trouvé dans le détail, on retombe sur la
-// couleur max du département par sécurité.
 export function couleurPourPhenomene(
   vigilance: VigilanceDepartement,
   nomPhenomene: string
 ): CouleurVigilance {
-  const phenomene = vigilance.phenomenes.find(
-    (p) => p.nom === nomPhenomene
+  const phenomene =
+    vigilance.phenomenes.find(
+      (item) =>
+        item.nom === nomPhenomene
+    );
+
+  return (
+    phenomene?.couleur ??
+    vigilance.couleurMax
   );
-  return phenomene?.couleur ?? vigilance.couleurMax;
 }
 
 export function couleurLaPlusForte(
   ...couleurs: CouleurVigilance[]
 ): CouleurVigilance {
-  return couleurs.reduce((max, c) =>
-    ORDRE_COULEUR[c] > ORDRE_COULEUR[max] ? c : max
-  , "vert" as CouleurVigilance);
+  if (!couleurs.length) {
+    return "vert";
+  }
+
+  return couleurs.reduce(
+    (max, couleur) =>
+      ORDRE_COULEUR[couleur] >
+      ORDRE_COULEUR[max]
+        ? couleur
+        : max,
+    "vert" as CouleurVigilance
+  );
 }
 
-export const EMOJI_VIGILANCE: Record<CouleurVigilance, string> = {
+export const EMOJI_VIGILANCE: Record<
+  CouleurVigilance,
+  string
+> = {
   vert: "🟢",
   jaune: "🟡",
   orange: "🟠",
