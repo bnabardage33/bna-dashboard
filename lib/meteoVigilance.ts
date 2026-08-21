@@ -460,38 +460,6 @@ function extraireDepartement(
   };
 }
 
-export function couleurPourPhenomene(
-  vigilance: VigilanceDepartement | null | undefined,
-  phenomeneNom: string
-): CouleurVigilance {
-  if (!vigilance || !vigilance.phenomenes) return "vert";
-  const p = vigilance.phenomenes.find(
-    (item) => item.nom.toLowerCase() === phenomeneNom.toLowerCase()
-  );
-  return p ? p.couleur : "vert";
-}
-
-
-const ORDRE_COULEUR: Record<CouleurVigilance, number> = {
-  vert: 0,
-  jaune: 1,
-  orange: 2,
-  rouge: 3,
-};
-
-export function couleurPourPhenomene(
-  vigilance: VigilanceDepartement,
-  nomPhenomene: string
-): CouleurVigilance {
-  const nomRecherche = nomPhenomene.trim().toLowerCase();
-
-  const phenomene = vigilance.phenomenes.find(
-    (p) => p.nom.trim().toLowerCase() === nomRecherche
-  );
-
-  return phenomene?.couleur ?? vigilance.couleurMax;
-}
-
 export function couleurLaPlusForte(
   ...couleurs: CouleurVigilance[]
 ): CouleurVigilance {
