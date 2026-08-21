@@ -73,6 +73,7 @@ export default function ChantierDetailPage() {
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
+  const [pvsLies, setPvsLies] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Général");
@@ -102,7 +103,7 @@ export default function ChantierDetailPage() {
 
   const fetchDocuments = useCallback(async () => {
     setLoadingDocs(true);
-    const [coRes, devisRes, facturesRes] = await Promise.all([
+    const [coRes, devisRes, facturesRes, pvsRes] = await Promise.all([
       supabase
         .from("commandes")
         .select("*, fournisseurs(nom)")
@@ -116,9 +117,15 @@ export default function ChantierDetailPage() {
         .from("factures")
         .select("*")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("pv_receptions")
+        .select("*")
+        .eq("chantier_id", id)
+        .order("created_at", { ascending: false }),
     ]);
 
     if (coRes.data) setCommandesLiees(coRes.data as unknown as CommandeLiee[]);
+    if (pvsRes.data) setPvsLies(pvsRes.data);
     if (devisRes.data && chantier?.client_id) {
       setDevisLies(
         (devisRes.data as DevisLie[]).filter(
@@ -795,6 +802,89 @@ export default function ChantierDetailPage() {
                   </div>
                 )}
               </div>
+              {/* Procès-Verbaux de Réception (Fin de chantier) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                    Procès-Verbaux de Réception (Fin de chantier)
+                  </h3>
+                  <Link
+                    href={`/bureau/fin-chantier?chantierId=${id}`}
+                    className="text-xs font-semibold text-red-400 hover:text-red-300"
+                  >
+                    + Rédiger un PV de réception →
+                  </Link>
+                </div>
+
+                {pvsLies.length === 0 ? (
+                  <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 text-xs text-slate-400 flex items-center justify-between">
+                    <span>Aucun PV de réception émis pour ce chantier.</span>
+                    <Link
+                      href={`/bureau/fin-chantier?chantierId=${id}`}
+                      className="font-semibold text-red-400 hover:text-red-300"
+                    >
+                      Établir le PV →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="p-3">Numéro</th>
+                          <th className="p-3">Date</th>
+                          <th className="p-3">Statut</th>
+                          <th className="p-3 text-center">Réserves</th>
+                          <th className="p-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                        {pvsLies.map((p) => {
+                          const nbRes = (p.reserves || []).length;
+                          const nbLevees = (p.reserves || []).filter((r: any) => r.levee).length;
+                          return (
+                            <tr key={p.id}>
+                              <td className="p-3 font-semibold text-white font-mono">{p.numero}</td>
+                              <td className="p-3 text-slate-400">
+                                {new Date(p.date_reception).toLocaleDateString("fr-FR")}
+                              </td>
+                              <td className="p-3">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                    p.statut === "sans_reserve"
+                                      ? "bg-emerald-500/20 text-emerald-400"
+                                      : p.statut === "reserves_levees"
+                                      ? "bg-sky-500/20 text-sky-400"
+                                      : "bg-amber-500/20 text-amber-400"
+                                  }`}
+                                >
+                                  {p.statut === "sans_reserve"
+                                    ? "Sans réserve"
+                                    : p.statut === "reserves_levees"
+                                    ? "Réserves levées"
+                                    : "Avec réserves"}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center text-slate-400">
+                                {nbRes === 0 ? "—" : `${nbLevees}/${nbRes} levée(s)`}
+                              </td>
+                              <td className="p-3 text-right">
+                                <Link
+                                  href={`/bureau/fin-chantier`}
+                                  className="rounded bg-slate-700 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-600"
+                                >
+                                  Gérer / PDF →
+                                </Link>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
               {/* Rapports Intempéries */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">

@@ -109,6 +109,21 @@ export default function FacturesPage() {
     fetchTout();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const typeParam = params.get("type");
+      const clientParam = params.get("clientId");
+      const objetParam = params.get("objet");
+      if (typeParam === "solde" || clientParam || objetParam) {
+        if (typeParam === "solde") setTypeFacture("solde");
+        if (clientParam) setClientId(clientParam);
+        if (objetParam) setObjet(objetParam);
+        setModalOuvert(true);
+      }
+    }
+  }, []);
+
   async function chargerDepuisDevis(devisId: string) {
     setDepuisDevis(devisId);
     setTotalDevisHT(null);
