@@ -448,6 +448,25 @@ export default function ChantierDetailPage() {
               ))}
             </div>
           </div>
+
+          {/* Clôture & PV de Réception */}
+          <div className="rounded-xl border border-red-500/30 bg-red-950/10 p-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-red-400">
+                🏁 Fin de Chantier &amp; PV de Réception
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Rédiger le procès-verbal, consigner les réserves éventuelles, faire signer le client et déclencher la garantie décennale.
+              </p>
+            </div>
+
+            <Link
+              href={`/bureau/fin-chantier?chantierId=${id}`}
+              className="rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white shadow-md hover:bg-red-500 transition-colors"
+            >
+              Établir le PV de Réception →
+            </Link>
+          </div>
         </div>
       )}
 
