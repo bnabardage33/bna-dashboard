@@ -30,42 +30,55 @@ export default function RapportDetailPage() {
   useEffect(() => {
     async function charger() {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: dataRapport, error: errRapport } = await supabase
         .from("rapports_intemperies")
-        .select("*, chantiers(id, nom, adresse_chantier)")
+        .select("*")
         .eq("id", id)
         .single();
 
-      if (!error && data) {
-        setRapport({
-          numero: data.numero,
-          cree_le: data.cree_le,
-          cree_par: data.cree_par || "manuel",
-          vigilance_officielle: data.vigilance_officielle || "jaune",
-          jour_arrete: data.jour_arrete ?? false,
-          a_valider: data.a_valider ?? false,
-          pluie_continue: data.pluie_continue ?? false,
-          motif: data.motif || "",
-          risque_technique_niveau: data.risque_technique_niveau,
-          risque_technique_motif: data.risque_technique_motif,
-          temp_max: data.temp_max,
-          rafales_max: data.rafales_max,
-          pluie_cumul: data.pluie_cumul,
-          materiau: data.materiau,
-          acces: data.acces,
-          mesures_prises: data.mesures_prises,
-          heures: data.releve_horaire,
-        });
+      if (errRapport || !dataRapport) {
+        console.error("Erreur chargement rapport intempéries:", errRapport);
+        setLoading(false);
+        return;
+      }
 
-        if (data.chantiers) {
+      setRapport({
+        numero: dataRapport.numero,
+        cree_le: dataRapport.cree_le,
+        cree_par: dataRapport.cree_par || "manuel",
+        vigilance_officielle: dataRapport.vigilance_officielle || "jaune",
+        jour_arrete: dataRapport.jour_arrete ?? false,
+        a_valider: dataRapport.a_valider ?? false,
+        pluie_continue: dataRapport.pluie_continue ?? false,
+        motif: dataRapport.motif || "",
+        risque_technique_niveau: dataRapport.risque_technique_niveau,
+        risque_technique_motif: dataRapport.risque_technique_motif,
+        temp_max: dataRapport.temp_max,
+        rafales_max: dataRapport.rafales_max,
+        pluie_cumul: dataRapport.pluie_cumul,
+        materiau: dataRapport.materiau,
+        acces: dataRapport.acces,
+        mesures_prises: dataRapport.mesures_prises,
+        heures: dataRapport.releve_horaire,
+      });
+
+      if (dataRapport.chantier_id) {
+        const { data: ch } = await supabase
+          .from("chantiers")
+          .select("id, nom, adresse_chantier")
+          .eq("id", dataRapport.chantier_id)
+          .maybeSingle();
+
+        if (ch) {
           setChantier({
-            nom: data.chantiers.nom,
-            adresse: data.chantiers.adresse_chantier,
+            nom: ch.nom,
+            adresse: ch.adresse_chantier,
             code_postal: "",
             ville: "",
           });
         }
       }
+
       setLoading(false);
     }
     charger();

@@ -48,15 +48,47 @@ export default function BureauRapportsIntemperiesPage() {
 
   async function charger() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("rapports_intemperies")
-      .select(
-        "id, numero, vigilance_officielle, jour_arrete, a_valider, ampleur_impact, motif, cree_le, cree_par, chantiers(nom)"
-      )
-      .order("cree_le", { ascending: false });
+    const [rapportsRes, chantiersRes] = await Promise.all([
+      supabase
+        .from("rapports_intemperies")
+        .select(
+          "id, numero, chantier_id, vigilance_officielle, jour_arrete, a_valider, ampleur_impact, motif, cree_le, cree_par"
+        )
+        .order("cree_le", { ascending: false }),
+      supabase
+        .from("chantiers")
+        .select("id, nom, adresse_chantier"),
+    ]);
 
-    if (error) console.error(error);
-    else setRapports((data as unknown as RapportListe[]) ?? []);
+    if (rapportsRes.error) {
+      console.error("Erreur chargement rapports intempéries:", rapportsRes.error);
+      setLoading(false);
+      return;
+    }
+
+    const chantiersMap = new Map<string, string>();
+    if (chantiersRes.data) {
+      for (const ch of chantiersRes.data) {
+        chantiersMap.set(ch.id, ch.nom || ch.adresse_chantier || "Chantier");
+      }
+    }
+
+    const formatted: RapportListe[] = (rapportsRes.data || []).map((r: any) => ({
+      id: r.id,
+      numero: r.numero,
+      vigilance_officielle: r.vigilance_officielle,
+      jour_arrete: r.jour_arrete,
+      a_valider: r.a_valider,
+      ampleur_impact: r.ampleur_impact,
+      motif: r.motif,
+      cree_le: r.cree_le,
+      cree_par: r.cree_par,
+      chantiers: {
+        nom: chantiersMap.get(r.chantier_id) || "Chantier",
+      },
+    }));
+
+    setRapports(formatted);
     setLoading(false);
   }
 
