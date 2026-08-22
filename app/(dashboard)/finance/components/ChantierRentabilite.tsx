@@ -2,7 +2,8 @@
 
 import { useRentabiliteChantiers } from "@/hooks/useFinance";
 import { fmtEuro, fmtPct } from "@/lib/financeCalculs";
-import { AlertTriangle, FileText, BarChart2 } from "lucide-react";
+import { AlertTriangle, FileText, BarChart2, Trash2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import SituationTravauxPDF from "./exports/SituationTravauxPDF";
 import BilanChantierPDF from "./exports/BilanChantierPDF";
@@ -11,6 +12,25 @@ export default function ChantierRentabilite() {
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
   const [printingSit, setPrintingSit] = useState<any>(null);
   const [printingBilan, setPrintingBilan] = useState<any>(null);
+  const [supprimantId, setSupprimantId] = useState<string | null>(null);
+
+  const handleSupprimerChantier = async (id: string, nom: string) => {
+    const confirmation = window.confirm(
+      `Supprimer définitivement le chantier "${nom}" ? Cette action est irréversible.`
+    );
+    if (!confirmation) return;
+
+    setSupprimantId(id);
+    try {
+      const { error } = await supabase.from("chantiers").delete().eq("id", id);
+      if (error) throw error;
+      window.location.reload();
+    } catch (err: any) {
+      alert("Erreur lors de la suppression : " + err.message);
+    } finally {
+      setSupprimantId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -135,6 +155,14 @@ export default function ChantierRentabilite() {
                           title="Générer le Bilan Analytique"
                         >
                           <BarChart2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleSupprimerChantier(r.chantier_id, r.nom)}
+                          disabled={supprimantId === r.chantier_id}
+                          className="flex items-center justify-center rounded p-1.5 text-slate-400 hover:bg-slate-700 hover:text-rose-400 transition-colors disabled:opacity-50"
+                          title="Supprimer le chantier"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>

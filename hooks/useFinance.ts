@@ -667,17 +667,20 @@ export function useTresoreriePrevision(days = 90) {
 export function useHistoriqueSaisies() {
   const [pointages, setPointages] = useState<any[]>([]);
   const [depenses, setDepenses] = useState<any[]>([]);
+  const [avancements, setAvancements] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     setIsLoading(true);
-    const [resP, resD] = await Promise.all([
+    const [resP, resD, resA] = await Promise.all([
       supabase.from("pointages").select("*, chantiers(nom), profiles:user_id(full_name)").order("created_at", { ascending: false }).limit(50),
-      supabase.from("depenses_chantier").select("*, chantiers(nom), fournisseurs(nom)").order("created_at", { ascending: false }).limit(50)
+      supabase.from("depenses_chantier").select("*, chantiers(nom), fournisseurs(nom)").order("created_at", { ascending: false }).limit(50),
+      supabase.from("avancements_chantier").select("*, chantiers(nom)").order("created_at", { ascending: false }).limit(50)
     ]);
 
     if (resP.data) setPointages(resP.data);
     if (resD.data) setDepenses(resD.data);
+    if (resA.data) setAvancements(resA.data);
     setIsLoading(false);
   };
 
@@ -699,5 +702,12 @@ export function useHistoriqueSaisies() {
     setDepenses(prev => prev.filter(d => d.id !== id));
   };
 
-  return { pointages, depenses, isLoading, supprimerPointage, supprimerDepense, refresh: fetchData };
+  const supprimerAvancement = async (id: string) => {
+    const confirm = window.confirm("Supprimer cette saisie d'avancement ?");
+    if (!confirm) return;
+    await supabase.from("avancements_chantier").delete().eq("id", id);
+    setAvancements(prev => prev.filter(a => a.id !== id));
+  };
+
+  return { pointages, depenses, avancements, isLoading, supprimerPointage, supprimerDepense, supprimerAvancement, refresh: fetchData };
 }

@@ -6,7 +6,7 @@ import { Trash2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function HistoriquePage() {
-  const { pointages, depenses, isLoading, supprimerPointage, supprimerDepense } = useHistoriqueSaisies();
+  const { pointages, depenses, avancements, isLoading, supprimerPointage, supprimerDepense, supprimerAvancement } = useHistoriqueSaisies();
 
   if (isLoading) {
     return (
@@ -115,6 +115,48 @@ export default function HistoriquePage() {
                   {depenses.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-4 text-center text-slate-500">Aucune dépense.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Tableau Avancements */}
+          <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
+            <h2 className="text-lg font-bold text-slate-200 mb-4">Dernières Saisies Avancement</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="border-b border-slate-700 text-xs uppercase text-slate-400">
+                  <tr>
+                    <th className="px-2 py-2">Date</th>
+                    <th className="px-2 py-2">Chantier</th>
+                    <th className="px-2 py-2 text-right">Avancement</th>
+                    <th className="px-2 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700/50">
+                  {avancements.map((a) => (
+                    <tr key={a.id} className="hover:bg-slate-700/20">
+                      <td className="px-2 py-2">{new Date(a.date).toLocaleDateString("fr-FR")}</td>
+                      <td className="px-2 py-2 truncate max-w-[120px]" title={a.chantiers?.nom}>{a.chantiers?.nom}</td>
+                      <td className="px-2 py-2 text-right font-medium text-cyan-400">
+                        {a.pourcentage}%
+                      </td>
+                      <td className="px-2 py-2 text-right">
+                        <button
+                          onClick={() => supprimerAvancement(a.id)}
+                          className="text-slate-500 hover:text-rose-400 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {avancements.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-slate-500">Aucun avancement.</td>
                     </tr>
                   )}
                 </tbody>
