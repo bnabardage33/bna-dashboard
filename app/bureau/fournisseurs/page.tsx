@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BonCommandePDF from "@/components/BonCommandePDF";
+import SignaturePad from "@/components/SignaturePad";
+import { PenTool } from "lucide-react";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 

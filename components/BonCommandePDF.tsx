@@ -34,6 +34,7 @@ export type BonCommandeData = {
   montant_ht: number | null;
   date_livraison_prevue: string | null;
   lignes?: { designation: string; quantite: number; unite: string; montant_ht?: number | null }[];
+  signature_acheteur?: string | null;
 };
 
 export default function BonCommandePDF({
@@ -176,9 +177,15 @@ export default function BonCommandePDF({
         <div>
           <p className="font-semibold text-slate-800">Pour l&apos;acheteur ({entreprise.raison_sociale})</p>
           <p className="text-[10px] text-slate-500">Bon pour accord et commande</p>
-          <div className="mt-4 h-16 rounded-lg border border-dashed border-slate-300 p-2 text-[10px] text-slate-400">
-            Signature & Cachet
-          </div>
+          {commande.signature_acheteur ? (
+            <div className="mt-2 rounded-xl border border-slate-300 flex items-center justify-center p-2">
+              <img src={commande.signature_acheteur} alt="Signature Acheteur" className="h-12 object-contain" />
+            </div>
+          ) : (
+            <div className="mt-4 h-16 rounded-lg border border-dashed border-slate-300 p-2 text-[10px] text-slate-400">
+              Signature & Cachet
+            </div>
+          )}
         </div>
 
         <div>

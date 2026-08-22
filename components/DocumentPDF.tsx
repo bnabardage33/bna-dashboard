@@ -50,6 +50,8 @@ export type DocumentData = {
   acompte_pct?: number | null;
   delai_jours?: number | null;
   type_facture?: "acompte" | "solde" | "totale";
+  signature_client?: string | null;
+  signataire_client_nom?: string | null;
 };
 
 function euros(n: number) {
@@ -284,9 +286,16 @@ export default function DocumentPDF({
           </div>
           <div>
             <p className="font-bold text-slate-800">Pour le Client — « Bon pour accord »</p>
-            <div className="mt-1 h-14 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
-              Date, mention « Lu et approuvé » et signature
-            </div>
+            {doc.signature_client ? (
+              <div className="mt-1 rounded-xl border border-slate-300 flex flex-col items-center justify-center p-2">
+                <p className="text-[10px] text-slate-600 mb-1 w-full text-left">Signé par : <strong>{doc.signataire_client_nom || "Le Client"}</strong></p>
+                <img src={doc.signature_client} alt="Signature Client" className="h-12 object-contain" />
+              </div>
+            ) : (
+              <div className="mt-1 h-14 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
+                Date, mention « Lu et approuvé » et signature
+              </div>
+            )}
           </div>
         </div>
       </div>

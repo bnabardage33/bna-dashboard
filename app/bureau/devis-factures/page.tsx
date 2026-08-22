@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
+import SignaturePad from "@/components/SignaturePad";
+import { PenTool } from "lucide-react";
 
 type CatalogueOuvrage = {
   id: string;
@@ -72,6 +74,8 @@ export default function DevisPage() {
   const [billType, setBillType] = useState<"acompte" | "situation" | "totale">("acompte");
   const [billPct, setBillPct] = useState<number>(30);
   const [apercu, setApercu] = useState<Devis | null>(null);
+  const [modeSignature, setModeSignature] = useState(false);
+  const [signatureData, setSignatureData] = useState<{ image: string; nom: string } | null>(null);
 
   const [clientId, setClientId] = useState("");
   const [objet, setObjet] = useState("");
@@ -629,18 +633,26 @@ export default function DevisPage() {
       {apercu && entreprise && (
         <div
           className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4"
-          onClick={() => setApercu(null)}
+          onClick={() => { setApercu(null); setSignatureData(null); setModeSignature(false); }}
         >
           <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            
             <div className="mb-3 flex justify-end gap-2 print:hidden">
+              <button
+                onClick={() => setModeSignature(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 transition-all"
+              >
+                <PenTool className="h-4 w-4" /> Faire signer
+              </button>
               <button
                 onClick={imprimer}
                 className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
               >
                 <span>🖨️</span> Imprimer / Exporter PDF
               </button>
+
               <button
-                onClick={() => setApercu(null)}
+                onClick={() => { setApercu(null); setSignatureData(null); setModeSignature(false); }}
                 className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Fermer
