@@ -108,7 +108,7 @@ export default function RapportIntemperiesPDF({
   const ventMoyen = calculerVentMoyen(rapport);
 
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl text-sm leading-relaxed">
+    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-6 text-slate-900 shadow-xl text-sm leading-relaxed">
       <div className="mb-2 h-1.5 w-full rounded-full bg-sky-600" />
 
       {/* En-tête */}
@@ -148,7 +148,7 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 1. Identification du chantier */}
-      <p className="mt-6 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
         1. Identification du chantier
       </p>
       <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
@@ -165,7 +165,7 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 2. Données météorologiques de contrôle */}
-      <div className="mt-5 rounded-lg border-2 border-sky-200 bg-sky-50/50 p-4">
+      <div className="mt-3 rounded-lg border-2 border-sky-200 bg-sky-50/50 p-4">
         <p className="text-xs font-extrabold uppercase tracking-wide text-sky-800">
           🚩 Données météorologiques de contrôle (générées via API)
         </p>
@@ -187,7 +187,7 @@ export default function RapportIntemperiesPDF({
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
           <p>💨 Vent maximum (rafales) : <strong>{rapport.rafales_max ?? "—"} km/h</strong></p>
           <p>💨 Vent moyen : <strong>{ventMoyen ?? "—"} km/h</strong></p>
-          <p>🌧️ Précipitations cumulées : <strong>{rapport.pluie_cumul ?? "—"} mm</strong></p>
+          <p>🌧️ Précipitations cumulées : <strong>{rapport.pluie_cumul !== null ? Math.round(rapport.pluie_cumul * 10) / 10 : "—"} mm</strong></p>
           <p>🌡️ Température min / max : <strong>{tempMin ?? "—"}°C / {rapport.temp_max ?? "—"}°C</strong></p>
         </div>
 
@@ -198,7 +198,7 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 3. Description de l'impact */}
-      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
         2. Description de l&apos;impact sur les travaux
       </p>
       <div className="mt-2 space-y-1.5">
@@ -218,7 +218,7 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 4. Mesures conservatoires */}
-      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
         3. Mesures conservatoires prises immédiatement
       </p>
       <div className="mt-2 min-h-[50px] rounded-lg border border-dashed border-slate-300 p-3 text-sm">
@@ -226,7 +226,7 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 5. Conséquences planning */}
-      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
         4. Conséquences sur le planning
       </p>
       <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
@@ -236,7 +236,7 @@ export default function RapportIntemperiesPDF({
 
       {/* Relevé horaire (annexe technique) */}
       {rapport.heures && rapport.heures.length > 0 && (
-        <details className="mt-5">
+        <details className="mt-3">
           <summary className="cursor-pointer text-xs font-bold uppercase tracking-wide text-slate-500">
             Annexe — Relevé horaire complet (pièce jointe)
           </summary>
@@ -266,7 +266,7 @@ export default function RapportIntemperiesPDF({
       )}
 
       {/* 6. Pièces jointes */}
-      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
         5. Pièces jointes
       </p>
       <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
@@ -275,18 +275,18 @@ export default function RapportIntemperiesPDF({
       </ul>
 
       {/* Signatures */}
-      <div className="mt-7 grid grid-cols-2 gap-6 border-t border-slate-200 pt-4 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-6 border-t border-slate-200 pt-3 text-xs">
         <div>
           <p className="font-semibold">L&apos;entreprise</p>
-          <div className="mt-8 h-14 rounded-lg border border-dashed border-slate-300" />
+          <div className="mt-4 h-10 rounded-lg border border-dashed border-slate-300" />
         </div>
         <div>
           <p className="font-semibold">Chef de chantier</p>
-          <div className="mt-8 h-14 rounded-lg border border-dashed border-slate-300" />
+          <div className="mt-4 h-10 rounded-lg border border-dashed border-slate-300" />
         </div>
       </div>
 
-      <p className="mt-4 text-[9.5px] leading-relaxed text-slate-400">
+      <p className="mt-3 text-[9.5px] leading-relaxed text-slate-400">
         Rapport généré {rapport.cree_par === "auto" ? "automatiquement" : "manuellement"} à partir de la vigilance
         officielle Météo-France et des données météo locales du chantier. Document à conserver au dossier chantier
         en cas de sinistre ou de litige lié aux conditions météorologiques et aux dispositions des DTU 41.2 / 31.2.
