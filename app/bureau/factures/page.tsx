@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF from "@/components/DocumentPDF";
+import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
+import { AlertCircle } from "lucide-react";
 import { prochainNumero } from "@/lib/documents";
 
 type CatalogueOuvrage = {
@@ -82,6 +84,7 @@ export default function FacturesPage() {
   const [loading, setLoading] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [apercu, setApercu] = useState<Facture | null>(null);
+  const [apercuRelance, setApercuRelance] = useState<{ facture: Facture, penalites: boolean } | null>(null);
 
   const [depuisDevis, setDepuisDevis] = useState("");
   const [clientId, setClientId] = useState("");
@@ -336,7 +339,7 @@ export default function FacturesPage() {
             return (
               <div
                 key={f.id}
-                className="flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-slate-750"
+                className={`flex flex-col justify-between rounded-2xl border bg-slate-800 p-4.5 shadow-md transition-all ${f.statut === "envoyee" && f.echeance && new Date(f.echeance) < new Date() ? "border-rose-500/60 hover:border-rose-400 bg-rose-950/10" : "border-slate-700 hover:border-sky-500/60 hover:bg-slate-750"}`}
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
