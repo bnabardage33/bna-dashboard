@@ -3,20 +3,19 @@
 //
 // Architecture Métier BNA Bardage :
 // 1. MODULES POSÉS (Façade & Pignons) :
-//    - Trame architecturale en modules finis (ex: 1000 × 600 mm, 1200 × 800 mm).
+//    - Trame architecturale en modules finis (Pose Droite ou À Joints Croisés rectangulaires).
+//    - Panneaux 100% rectangulaires sans division diagonale ou triangulaire parasite.
 //    - Prise en compte normative du joint de dilatation de 8 mm (DTU 41.2 / DTU 31.2).
 //    - Découpe symétrique des rives et gestion automatique des rampants de pignons.
 //    - Chaque panneau reçoit un repère unique (ex: M-01, R-01 pour rive, P-01 pour pignon).
 //
 // 2. IMBRICATION & DÉBIT D'ATELIER (Nesting 2D Guillotine) :
 //    - Répartition optimisée des modules sur les plaques brutes d'achat (ex: 3050 × 1300 mm).
-//    - Les découpes triangulaires opposées de pignons s'associent en paires rectangulaires.
-//    - Détection intelligente des chutes :
-//      * Chutes réutilisables (longueur >= 800 mm ou surface >= 0.30 m²) pour tableaux de fenêtres ou départs.
-//      * Pertes réelles / sciure.
+//    - Détection intelligente des chutes réutilisables vs pertes réelles / sciure.
 //    - Taux de chute net réel calculé précisément.
 
 export type SensPose = "horizontal" | "vertical";
+export type TypePoseCalepinage = "pose_droite" | "joints_croises";
 
 export interface CalepinageInput {
   zoneLargeurM: number;
@@ -28,6 +27,7 @@ export interface CalepinageInput {
   moduleLargeurMm?: number | null;  // ex: 1000 mm
   moduleHauteurMm?: number | null;  // ex: 600 mm
   sensPose?: SensPose | null;
+  typePose?: TypePoseCalepinage | null; // Pose Droite (standard) ou À Joints Croisés
   estPignon?: boolean;
   hauteurFaiteM?: number | null;
   traitDeScieMm?: number | null;   // Épaisseur de lame de coupe (défaut: 3 mm)
@@ -117,6 +117,7 @@ export interface ResultatCalepinage {
   nbJointsHorizontaux: number;
   lineaireJointsM: number;          // Mètres linéaires de joints (pour bandes EPDM / profilés)
   surfaceJointsM2: number;          // Surface décomptée par les joints
+  typePose: TypePoseCalepinage;     // "pose_droite" ou "joints_croises"
   estPignon: boolean;
   hauteurFaiteM: number;
   pentePct: number;
@@ -500,12 +501,14 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     moduleLargeurMm,
     moduleHauteurMm,
     sensPose = "horizontal",
+    typePose = "pose_droite", // Pose Droite rectangulaire par défaut
     estPignon = false,
     hauteurFaiteM = null,
     traitDeScieMm = 3,
     jointMm = 8, // Joint de dilatation standard 8 mm (DTU 41.2)
   } = input;
 
+  const modePose: TypePoseCalepinage = typePose === "joints_croises" ? "joints_croises" : "pose_droite";
   const epaisseurJointMm = jointMm !== null && jointMm !== undefined && jointMm >= 0 ? jointMm : 8;
   const jointM = epaisseurJointMm / 1000;
 
@@ -537,7 +540,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
 
-  // Découpage architectural de la façade en trames d'axes régulières
+  // Découpage architectural standard de la façade en trames rectangulaires (Pose Droite)
   const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm);
   const rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
 
@@ -550,12 +553,19 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   rangeesHauteursM.forEach((hauteurPiece, rangee) => {
     let xCumul = 0;
 
+    // Décalage pour pose à joints croisés (rectangulaire 1/2)
+    let decalageRangeeM = 0;
+    if (modePose === "joints_croises" && rangee % 2 === 1) {
+      decalageRangeeM = dimModuleLargeurAxeM / 2;
+    }
+
     colonnesLargeursM.forEach((largeurPiece, colonne) => {
+      const pieceX = xCumul;
       const rectangle: PointCalepinage[] = [
-        { xM: xCumul, yM: yCumul },
-        { xM: xCumul + largeurPiece, yM: yCumul },
-        { xM: xCumul + largeurPiece, yM: yCumul + hauteurPiece },
-        { xM: xCumul + largeurPiece, yM: yCumul + hauteurPiece },
+        { xM: pieceX, yM: yCumul },
+        { xM: pieceX + largeurPiece, yM: yCumul },
+        { xM: pieceX + largeurPiece, yM: yCumul + hauteurPiece },
+        { xM: pieceX, yM: yCumul + hauteurPiece },
       ];
 
       const points = estPignon
@@ -580,7 +590,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
         }
 
         // Cote nette débitée : la plaque réelle est déduite du joint de 8 mm
-        // (ex: trame de 1000 mm avec joint de 8 mm -> pièce débitée de 992 mm)
         const largeurNetteMm = Math.max(50, Math.round(largeurPiece * 1000 - epaisseurJointMm));
         const hauteurNetteMm = Math.max(50, Math.round(hauteurPiece * 1000 - epaisseurJointMm));
 
@@ -589,7 +598,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
           repere,
           colonne,
           rangee,
-          xM: xCumul,
+          xM: pieceX,
           yM: yCumul,
           largeurM: largeurPiece,
           hauteurM: hauteurPiece,
@@ -597,7 +606,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
           hauteurNetteMm,
           type,
           surfaceM2,
-          points: estPignon ? points : undefined,
+          points: estCoupePignon ? points : undefined, // Ne conserve points que si pignon coupé
         });
       }
 
@@ -679,6 +688,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     nbJointsHorizontaux,
     lineaireJointsM,
     surfaceJointsM2,
+    typePose: modePose,
     estPignon,
     hauteurFaiteM: hauteurFaite,
     pentePct,

@@ -522,7 +522,7 @@ export default function PlanCalepinage({
             )}
 
             {/* ==================================================== */}
-            {/* PANNEAUX, JOINTS 8 MM & TEXTE RESPONSIVE ADAPTATIF */}
+            {/* PANNEAUX RECTANGULAIRES UNIFORMES (COULEUR UNIQUE & JOINTS 8 MM) */}
             {/* ==================================================== */}
             {vue === "plaques" && calepinage && (
               <g className="panneaux">
@@ -537,15 +537,14 @@ export default function PlanCalepinage({
                   const hPx = p.hauteurM * echelle * zoom;
                   const peutAfficherTexte = wPx >= 44 && hPx >= 26;
 
-                  // Couleurs élégantes adoucies avec bordure contrastée
-                  const isPignon = p.type === "pignon";
-                  const isRive = p.type === "coupe";
-
-                  const fillCouleur = isPignon ? "#f59e0b" : isRive ? "#0ea5e9" : "#0284c7";
-                  const strokeCouleur = estSelectionne ? "#ffffff" : isPignon ? "#fbbf24" : isRive ? "#7dd3fc" : "#38bdf8";
-                  const fillOpacity = estSelectionne ? 0.85 : isPignon ? 0.5 : isRive ? 0.45 : 0.38;
+                  // Couleur UNIQUE et uniforme (Bleu Acier Épuré) pour tous les modules
+                  const fillCouleur = "#0284c7";
+                  const strokeCouleur = estSelectionne ? "#ffffff" : "#38bdf8";
+                  const fillOpacity = estSelectionne ? 0.85 : 0.42;
 
                   const dimNette = `${p.largeurNetteMm || Math.round(p.largeurM * 1000)}×${p.hauteurNetteMm || Math.round(p.hauteurM * 1000)}`;
+
+                  const estPolygonePignon = estPignon && p.type === "pignon" && p.points && p.points.length >= 3;
 
                   return (
                     <g
@@ -553,9 +552,9 @@ export default function PlanCalepinage({
                       onClick={() => setPanneauSelectionne(p)}
                       className="cursor-pointer group"
                     >
-                      {p.points ? (
+                      {estPolygonePignon ? (
                         <polygon
-                          points={p.points.map((pt) => `${px(pt.xM)},${py(pt.yM)}`).join(" ")}
+                          points={p.points!.map((pt) => `${px(pt.xM)},${py(pt.yM)}`).join(" ")}
                           fill={fillCouleur}
                           fillOpacity={fillOpacity}
                           stroke={strokeCouleur}
@@ -767,15 +766,7 @@ export default function PlanCalepinage({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded bg-sky-600/40 border border-sky-400" />
-              <span className="text-slate-300">Modules pleins (M)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded bg-sky-400/40 border border-sky-200" />
-              <span className="text-slate-300">Rives ajustées (R)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded bg-amber-500/40 border border-amber-300" />
-              <span className="text-slate-300">Coupes pignon (P)</span>
+              <span className="text-slate-300">Panneaux de façade (M / Rives R)</span>
             </div>
             <span className="text-slate-500 italic hidden sm:inline">
               👉 Cliquez sur un panneau pour afficher ses cotes d&apos;atelier
