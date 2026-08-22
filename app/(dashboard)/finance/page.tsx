@@ -4,19 +4,33 @@ import TvaWidget from "./components/TvaWidget";
 import TresorerieWidget from "./components/TresorerieWidget";
 import UrsaafWidget from "./components/UrsaafWidget";
 import Link from "next/link";
-import { Clock, Receipt, TrendingUp, FileText, History } from "lucide-react";
+import { Clock, Receipt, TrendingUp, FileText, History, Download } from "lucide-react";
 import CaEvolutionChart from "./components/charts/CaEvolutionChart";
 import CoutRepartitionChart from "./components/charts/CoutRepartitionChart";
 import TresoreriePrevisionChart from "./components/charts/TresoreriePrevisionChart";
 import MargeParTypeChart from "./components/charts/MargeParTypeChart";
 import RapportMensuelPDF from "./components/exports/RapportMensuelPDF";
 import { useState } from "react";
+import { genererExportComptaCSV } from "@/lib/csvExport";
 
 export default function FinanceDashboard() {
   const [printingRapport, setPrintingRapport] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [selectedMois, setSelectedMois] = useState(
     new Date().toISOString().slice(0, 7)
   );
+
+  const handleExportCsv = async () => {
+    setExportingCsv(true);
+    try {
+      await genererExportComptaCSV(selectedMois);
+    } catch (error) {
+      console.error("Erreur export CSV:", error);
+      alert("Erreur lors de l'export CSV");
+    } finally {
+      setExportingCsv(false);
+    }
+  };
 
   const moisAffiche = new Date(selectedMois + "-01").toLocaleDateString("fr-FR", {
     month: "long",
@@ -54,6 +68,15 @@ export default function FinanceDashboard() {
               >
                 <FileText className="h-4 w-4" />
                 Rapport mensuel
+              </button>
+              <button
+                onClick={handleExportCsv}
+                disabled={exportingCsv}
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                title="Export Tableur pour le Comptable"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
               </button>
             </div>
           </div>
