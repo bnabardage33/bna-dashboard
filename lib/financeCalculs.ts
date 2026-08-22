@@ -92,6 +92,7 @@ export function calculerRentabiliteChantier(
       marge_brute,
       taux_marge_pct,
       alerte_depassement,
+      avancement_reel: avancementReel,
     };
   } catch (error) {
     console.error("Erreur dans calculerRentabiliteChantier:", error);

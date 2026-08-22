@@ -57,6 +57,7 @@ export interface RentabiliteResult {
   marge_brute: number;
   taux_marge_pct: number;
   alerte_depassement: boolean;
+  avancement_reel: number;
 }
 
 export interface KpiMensuelResult {

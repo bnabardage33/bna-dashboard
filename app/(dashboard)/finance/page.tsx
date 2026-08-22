@@ -4,13 +4,17 @@ import TvaWidget from "./components/TvaWidget";
 import TresorerieWidget from "./components/TresorerieWidget";
 import UrsaafWidget from "./components/UrsaafWidget";
 import Link from "next/link";
-import { Clock, Receipt, TrendingUp } from "lucide-react";
+import { Clock, Receipt, TrendingUp, FileText } from "lucide-react";
 import CaEvolutionChart from "./components/charts/CaEvolutionChart";
 import CoutRepartitionChart from "./components/charts/CoutRepartitionChart";
 import TresoreriePrevisionChart from "./components/charts/TresoreriePrevisionChart";
 import MargeParTypeChart from "./components/charts/MargeParTypeChart";
+import RapportMensuelPDF from "./components/exports/RapportMensuelPDF";
+import { useState } from "react";
 
 export default function FinanceDashboard() {
+  const [printingRapport, setPrintingRapport] = useState(false);
+
   const moisAffiche = new Date().toLocaleDateString("fr-FR", {
     month: "long",
     year: "numeric",
@@ -18,15 +22,34 @@ export default function FinanceDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-900 p-4 lg:p-8 text-slate-100">
+      {printingRapport && (
+        <div className="hidden print:block">
+          <RapportMensuelPDF onReady={() => {
+            window.print();
+            setPrintingRapport(false);
+          }} />
+        </div>
+      )}
+      
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-bold text-slate-100">
               Finance & Pilotage
             </h1>
-            <p className="text-sm font-medium text-slate-400 capitalize">
-              {moisAffiche}
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-sm font-medium text-slate-400 capitalize">
+                {moisAffiche}
+              </p>
+              <button
+                onClick={() => setPrintingRapport(true)}
+                disabled={printingRapport}
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+              >
+                <FileText className="h-3 w-3" />
+                📄 Rapport mensuel
+              </button>
+            </div>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
