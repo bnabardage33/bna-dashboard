@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight } from "lucide-react";
+import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid } from "lucide-react";
 
 type Client = { id: string; nom: string; societe: string | null };
 
@@ -26,6 +26,7 @@ export default function ChantiersPage() {
   const [loading, setLoading] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [recherche, setRecherche] = useState("");
+  const [vue, setVue] = useState<"liste" | "planning">("liste");
 
   // Formulaire nouveau chantier
   const [nom, setNom] = useState("");
@@ -158,6 +159,21 @@ export default function ChantiersPage() {
         <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
           <HardHat className="mx-auto h-10 w-10 text-slate-500" />
           <p className="text-sm font-medium text-slate-400">Aucun chantier trouvé.</p>
+          
+          <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+            <button
+              onClick={() => setVue("liste")}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "liste" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-slate-200"}`}
+            >
+              <List className="h-4 w-4" /> Liste
+            </button>
+            <button
+              onClick={() => setVue("planning")}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "planning" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-slate-200"}`}
+            >
+              <Calendar className="h-4 w-4" /> Planning
+            </button>
+          </div>
           <button
             onClick={() => setModalOuvert(true)}
             className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"

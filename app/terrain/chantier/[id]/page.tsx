@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
+import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
+import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
+import { Scissors } from "lucide-react";
 import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
@@ -23,6 +26,15 @@ type Chantier = {
   moyen_acces: Acces;
   zone_vent: number;
   clients: { nom: string } | null;
+};
+
+type Pointage = {
+  id: string;
+  user_id: string;
+  date: string;
+  heures: number;
+  type_heure: string;
+  profiles: { full_name: string } | null;
 };
 
 type DevisLie = {
@@ -57,7 +69,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
+const TABS = ["Général", "Équipe & Pointages", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -75,11 +87,22 @@ function ChantierDetailContent() {
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
   const [pvsLies, setPvsLies] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [pointages, setPointages] = useState<Pointage[]>([]);
+  const [loadingPointages, setLoadingPointages] = useState(false);
+  const [ouvriers, setOuvriers] = useState<{id: string, full_name: string}[]>([]);
+  
+  const [nouveauPointage, setNouveauPointage] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    user_id: "",
+    heures: 7,
+    type_heure: "normale"
+  });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Général");
   const [meteo, setMeteo] = useState<JourMeteo | null>(null);
   const [loadingMeteo, setLoadingMeteo] = useState(false);
   const [detailMeteoOuvert, setDetailMeteoOuvert] = useState(false);
+  const [calepinageOuvert, setCalepinageOuvert] = useState<{zone: Zone, resultat: ResultatCalepinage} | null>(null);
 
   const fetchChantier = useCallback(async () => {
     const { data, error } = await supabase
