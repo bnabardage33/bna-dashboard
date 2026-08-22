@@ -33,6 +33,8 @@ body {
     margin: 0;
     padding: 0;
     box-shadow: none !important;
+    font-size: 90% !important;
+    line-height: 1.3 !important;
   }
   .page-break {
     page-break-before: always !important;

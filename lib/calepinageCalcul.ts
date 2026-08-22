@@ -501,8 +501,8 @@ function genererPlanDebitNesting(
         }
         if (placed) break;
 
-        // 2. Créer une nouvelle étagère dans cette plaque si hauteur suffisante
-        if (rawH - sheet.currentYMm >= ori.h) {
+        // 2. Créer une nouvelle étagère dans cette plaque si hauteur et largeur suffisantes
+        if (rawH - sheet.currentYMm >= ori.h && rawL >= ori.w) {
           const newShelf: Shelf2D = {
             yMm: sheet.currentYMm,
             heightMm: ori.h,
@@ -537,21 +537,28 @@ function genererPlanDebitNesting(
     // 3. Ouvrir une nouvelle plaque brute
     if (!placed) {
       const newSheetIndex = sheets.length + 1;
-      const firstOri = orientations[0];
+      // Choisir l'orientation qui rentre physiquement dans la plaque (sinon fallback)
+      let chosenOri = orientations[0];
+      for (const ori of orientations) {
+        if (ori.w <= rawL && ori.h <= rawH) {
+          chosenOri = ori;
+          break;
+        }
+      }
 
       const newShelf: Shelf2D = {
         yMm: 0,
-        heightMm: firstOri.h,
-        currentXMm: firstOri.w + traitDeScieMm,
+        heightMm: chosenOri.h,
+        currentXMm: chosenOri.w + traitDeScieMm,
         pieces: [
           {
             id: sourcePiece.id,
             repere: sourcePiece.repere,
-            nom: `${sourcePiece.repere} (${firstOri.w}×${firstOri.h})`,
+            nom: `${sourcePiece.repere} (${chosenOri.w}×${chosenOri.h})`,
             xMm: 0,
             yMm: 0,
-            largeurMm: firstOri.w,
-            hauteurMm: firstOri.h,
+            largeurMm: chosenOri.w,
+            hauteurMm: chosenOri.h,
             surfaceM2: sourcePiece.surfaceM2,
             type: sourcePiece.type,
             colonne: sourcePiece.colonne,
@@ -563,7 +570,7 @@ function genererPlanDebitNesting(
       sheets.push({
         index: newSheetIndex,
         shelves: [newShelf],
-        currentYMm: firstOri.h + traitDeScieMm,
+        currentYMm: chosenOri.h + traitDeScieMm,
       });
 
       sourcePiece.plaqueIndex = newSheetIndex;
@@ -623,7 +630,7 @@ function genererPlanDebitNesting(
       .filter((c) => c.reutilisable)
       .reduce((s, c) => s + c.surfaceM2, 0);
 
-    const tauxRendementPct = surfacePlaqueM2 > 0 ? (surfaceUtileM2 / surfacePlaqueM2) * 100 : 0;
+    const tauxRendementPct = surfacePlaqueM2 > 0 ? Math.min(100, (surfaceUtileM2 / surfacePlaqueM2) * 100) : 0;
 
     return {
       index: sheet.index,
@@ -914,9 +921,10 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     surfacePlaquesAchetesM2 - surfaceZoneM2 - totalChutesReutilisablesM2
   );
 
+  const chuteBruteM2 = Math.max(0, surfacePlaquesAchetesM2 - surfaceZoneM2);
   const tauxChuteBrutePct =
     surfacePlaquesAchetesM2 > 0
-      ? ((surfacePlaquesAchetesM2 - surfaceZoneM2) / surfacePlaquesAchetesM2) * 100
+      ? (chuteBruteM2 / surfacePlaquesAchetesM2) * 100
       : 0;
 
   const tauxChuteNettePct =
