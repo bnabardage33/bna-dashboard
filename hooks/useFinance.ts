@@ -482,3 +482,174 @@ export function useUrssaf() {
 
   return { masseSalariale, isLoading, error };
 }
+
+// --- Hooks pour Analyses & Graphiques ---
+
+export function useCaEvolution(months = 12) {
+  const [data, setData] = useState<{ month: string; ca: number }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchEvo = async () => {
+      try {
+        const d = new Date();
+        d.setMonth(d.getMonth() - months + 1);
+        const startDate = d.toISOString().slice(0, 7) + "-01";
+
+        const { data: factures } = await supabase
+          .from("factures")
+          .select("montant_ht, date_emission")
+          .neq("statut", "annulee")
+          .gte("date_emission", startDate);
+
+        if (isMounted && factures) {
+          const acc: Record<string, number> = {};
+          
+          // Initialiser les mois
+          for (let i = 0; i < months; i++) {
+            const tempD = new Date();
+            tempD.setMonth(tempD.getMonth() - (months - 1) + i);
+            const mKey = tempD.toISOString().slice(0, 7);
+            acc[mKey] = 0;
+          }
+
+          factures.forEach((f) => {
+            const m = f.date_emission.slice(0, 7);
+            if (acc[m] !== undefined) {
+              acc[m] += f.montant_ht;
+            }
+          });
+
+          const formattedData = Object.entries(acc).map(([k, v]) => {
+            const dateObj = new Date(k + "-01");
+            return {
+              month: dateObj.toLocaleDateString("fr-FR", { month: "short" }),
+              ca: v,
+            };
+          });
+
+          setData(formattedData);
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchEvo();
+    return () => {
+      isMounted = false;
+    };
+  }, [months]);
+
+  return { data, isLoading };
+}
+
+export function useCoutRepartition() {
+  const [data, setData] = useState<{ name: string; value: number }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRep = async () => {
+      try {
+        const { data: depenses } = await supabase
+          .from("depenses_chantier")
+          .select("nature, montant_ht");
+
+        if (isMounted && depenses) {
+          const acc: Record<string, number> = {
+            materiaux: 0,
+            quincaillerie: 0,
+            sous_traitance: 0,
+            location: 0,
+            frais: 0,
+            autre: 0,
+          };
+          depenses.forEach((d) => {
+            if (acc[d.nature] !== undefined) acc[d.nature] += d.montant_ht;
+            else acc.autre += d.montant_ht;
+          });
+
+          const finalData = [
+            { name: "Matériaux", value: acc.materiaux },
+            { name: "Quincaillerie", value: acc.quincaillerie },
+            { name: "Sous-traitance", value: acc.sous_traitance },
+            { name: "Location", value: acc.location },
+            { name: "Frais", value: acc.frais },
+            { name: "Autre", value: acc.autre },
+          ].filter((d) => d.value > 0);
+
+          setData(finalData);
+        }
+      } catch (err) {
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchRep();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { data, isLoading };
+}
+
+export function useTresoreriePrevision(days = 90) {
+  const { factures, achats, masseSalariale, isLoading: tresLoading } = useTresorerie();
+  const { valeur: soldeInitial, isLoading: paramLoading } = useParametreFinance("solde_bancaire");
+
+  const [data, setData] = useState<{ date: string; solde: number }[]>([]);
+
+  useEffect(() => {
+    if (tresLoading || paramLoading) return;
+
+    let currentSolde = soldeInitial ?? 0;
+    const dailyUrssaf = (masseSalariale * 0.47) / 30; // on amortit l'URSSAF sur le mois courant
+    
+    const today = new Date();
+    const result = [];
+
+    // On précalcule les sommes par jour
+    const entreesParJour: Record<string, number> = {};
+    const sortiesParJour: Record<string, number> = {};
+
+    factures.forEach(f => {
+      if (f.date_echeance) {
+        const d = f.date_echeance.slice(0, 10);
+        entreesParJour[d] = (entreesParJour[d] || 0) + f.montant_ttc;
+      }
+    });
+
+    achats.forEach(a => {
+      // utiliser la date_echeance si dispo, sinon la date + 30j par défaut pour une commande non payée
+      const d = a.date_echeance ? a.date_echeance.slice(0, 10) : new Date(new Date(a.date).getTime() + 30 * 86400000).toISOString().slice(0, 10);
+      sortiesParJour[d] = (sortiesParJour[d] || 0) + a.montant_ttc;
+    });
+
+    for (let i = 0; i < days; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().slice(0, 10);
+
+      const entrees = entreesParJour[dateStr] || 0;
+      const sorties = sortiesParJour[dateStr] || 0;
+      
+      // On soustrait l'urssaf lissé + sorties
+      currentSolde = currentSolde + entrees - sorties - dailyUrssaf;
+
+      result.push({
+        date: d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
+        solde: currentSolde
+      });
+    }
+
+    setData(result);
+
+  }, [factures, achats, masseSalariale, soldeInitial, tresLoading, paramLoading, days]);
+
+  return { data, isLoading: tresLoading || paramLoading };
+}
+

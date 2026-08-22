@@ -5,6 +5,10 @@ import TresorerieWidget from "./components/TresorerieWidget";
 import UrsaafWidget from "./components/UrsaafWidget";
 import Link from "next/link";
 import { Clock, Receipt, TrendingUp } from "lucide-react";
+import CaEvolutionChart from "./components/charts/CaEvolutionChart";
+import CoutRepartitionChart from "./components/charts/CoutRepartitionChart";
+import TresoreriePrevisionChart from "./components/charts/TresoreriePrevisionChart";
+import MargeParTypeChart from "./components/charts/MargeParTypeChart";
 
 export default function FinanceDashboard() {
   const moisAffiche = new Date().toLocaleDateString("fr-FR", {
@@ -62,6 +66,16 @@ export default function FinanceDashboard() {
             <TvaWidget />
             <TresorerieWidget />
             <UrsaafWidget />
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Analyses & Tendances</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CaEvolutionChart />
+            <CoutRepartitionChart />
+            <TresoreriePrevisionChart />
+            <MargeParTypeChart />
           </div>
         </section>
       </div>
