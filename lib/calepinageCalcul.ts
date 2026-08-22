@@ -1,21 +1,40 @@
 // lib/calepinageCalcul.ts
-// Moteur d'Optimisation de Découpe, Calepinage & Nesting 2D (Panneaux & Bardage)
+// Moteur DTU 45.4 HPL — Optimisation de Calepinage, Découpe & Nesting 2D (Panneaux HPL / Bardage)
 //
 // Architecture Métier BNA Bardage :
 // 1. MODULES POSÉS (Façade & Pignons) :
 //    - Trame architecturale en modules finis (Pose Droite ou À Joints Croisés rectangulaires).
 //    - Panneaux 100% rectangulaires sans division diagonale ou triangulaire parasite.
-//    - Prise en compte normative du joint de dilatation de 8 mm (DTU 41.2 / DTU 31.2).
-//    - Découpe symétrique des rives et gestion automatique des rampants de pignons.
+//    - Joint de dilatation DTU 45.4 / DTU 41.2 : 8 mm entre chaque panneau (strict).
+//    - Règle anti-filet DTU 45.4 : chute de rive ≥ 300 mm (ancrage sur 2 chevrons mini).
+//      Si rive < 300 mm → redistribution automatique sur tout le dernier module.
+//    - Mode A (mur avec ouvertures) : joint horizontal aligné sur hauteur de linteau.
+//    - Mode B (mur plein ou pignon) : répartition symétrique depuis le centre.
 //    - Chaque panneau reçoit un repère unique (ex: M-01, R-01 pour rive, P-01 pour pignon).
 //
 // 2. IMBRICATION & DÉBIT D'ATELIER (Nesting 2D Guillotine) :
 //    - Répartition optimisée des modules sur les plaques brutes d'achat (ex: 3050 × 1300 mm).
 //    - Détection intelligente des chutes réutilisables vs pertes réelles / sciure.
 //    - Taux de chute net réel calculé précisément.
+//
+// 3. QUANTITATIFS QUINCAILLERIE DTU 45.4 HPL :
+//    - Équerres Isolco 3000 P2 (Point Fixe perçage Ø 5,1 mm / Points Coulissants Ø 8 mm).
+//    - Chevilles Spit MP3 Ø12 mm, couple de serrage 15 Nm, profondeur 70 mm mini.
+//    - Tirefonds Inox A2 Ø 6 × 60 mm de chevron sur équerre.
+//    - Vis de parement HPL : 1 Point Fixe central Ø 5,1 mm + Points Coulissants Ø 8 mm.
 
 export type SensPose = "horizontal" | "vertical";
 export type TypePoseCalepinage = "pose_droite" | "joints_croises";
+
+/** Ouverture minimale pour calcul de la hauteur de linteau (Mode A DTU 45.4) */
+export interface OuvertureCalepinage {
+  id?: string;
+  type: "fenetre" | "porte";
+  largeur: number; // m
+  hauteur: number; // m
+  /** Hauteur du bas de linteau depuis le sol (m). Si absent, déduit de `hauteur`. */
+  hauteurLinteauM?: number | null;
+}
 
 export interface CalepinageInput {
   zoneLargeurM: number;
@@ -32,6 +51,8 @@ export interface CalepinageInput {
   hauteurFaiteM?: number | null;
   traitDeScieMm?: number | null;   // Épaisseur de lame de coupe (défaut: 3 mm)
   jointMm?: number | null;         // Épaisseur du joint de dilatation entre panneaux (défaut DTU 41.2: 8 mm)
+  /** Ouvertures de la zone — active le Mode A (alignement linteau) DTU 45.4 */
+  ouvertures?: OuvertureCalepinage[] | null;
 }
 
 export interface PointCalepinage {
@@ -97,6 +118,47 @@ export interface PlaqueDebit {
   tauxRendementPct: number;
 }
 
+/**
+ * Quantitatifs quincaillerie DTU 45.4 HPL
+ * Générés automatiquement par le moteur de calepinage.
+ */
+export interface QuincaillerieHPL {
+  /** Nombre de perçages Point Fixe Ø 5,1 mm (un par panneau, au centre en haut) */
+  nbPercagesPointFixe51: number;
+  /** Nombre de perçages Points Coulissants Ø 8 mm (deux par panneau en rives gauche/droite) */
+  nbPercagesPointsCoulissants8: number;
+  /** Nombre total de vis de parement HPL (1 PF + 2 PC par panneau) */
+  nbVisParementTotal: number;
+  /** Instructions de perçage Point Fixe */
+  instructionPercagePointFixe: string;
+  /** Instructions de perçage Points Coulissants */
+  instructionPercagePointsCoulissants: string;
+  /** Note générale de perçage conforme DTU 45.4 */
+  notePercage: string;
+  /** Nombre d'équerres Isolco porteuses (Point Fixe) */
+  nbEquerresIsolcoPorteuses: number;
+  /** Nombre d'équerres Isolco guides (Point Coulissant) */
+  nbEquerresIsolcoGuides: number;
+  /** Total équerres Isolco */
+  nbEquerresIsolcoTotal: number;
+  /** Modèle d'équerre Isolco recommandé */
+  modeleEquerreIsolco: string;
+  /** Nombre de chevilles Spit MP3 Ø12 mm (2 par équerre) */
+  nbChevilles_SpitMP3: number;
+  /** Instructions de pose chevillesMP3 */
+  instructionChevilles: string;
+  /** Nombre de tirefonds Inox A2 Ø6×60mm (2/équerre porteuse + 1/équerre guide) */
+  nbTirefondsInox: number;
+  /** Linéaire de joints EPDM 8 mm à remplir (ml) */
+  lineaireJointsMastic: number;
+  /** Tolérance anti-filet appliquée : true si au moins une rive a été redistribuée */
+  antiFiletApplique: boolean;
+  /** Mode DTU 45.4 appliqué */
+  modeCalepinage: "A_linteau" | "B_symetrique";
+  /** Résumé des rangées horizontales et alignement linteau éventuel */
+  resumeAlignementLinteau: string;
+}
+
 export interface ResultatCalepinage {
   colonnesLargeursM: number[];
   rangeesHauteursM: number[];
@@ -110,7 +172,7 @@ export interface ResultatCalepinage {
   tauxChutePct: number;             // Rétrocompatibilité (taux net)
   totalChutesReutilisablesM2: number;
   totalDechetsPerteM2: number;
-  // Données des joints de dilatation (8 mm DTU 41.2)
+  // Données des joints de dilatation (8 mm DTU 41.2 / DTU 45.4)
   jointMm: number;                  // Épaisseur de joint (8 mm)
   nbJoints: number;                 // Total nb de joints
   nbJointsVerticaux: number;
@@ -128,30 +190,121 @@ export interface ResultatCalepinage {
   moduleCibleHauteurMm: number;
   modulesParPlaqueBrute: number;
   plaquesDebit: PlaqueDebit[];      // Plan de débit pas-à-pas pour l'atelier
+  /** Quantitatifs quincaillerie DTU 45.4 HPL — Bon de commande matériel */
+  quincaillerie: QuincaillerieHPL;
 }
 
 const EPSILON_M = 0.0005;
 
 /**
- * Calepinage symétrique en largeur selon le module cible :
- * - Modules pleins centraux
- * - Rives coupées équilibrées à gauche et à droite
+ * Règle anti-filet DTU 45.4 § 5.3.4 :
+ * La chute de rive minimale est de 300 mm (ancrage sur 2 chevrons).
+ * Si une rive est < 300 mm, redistribue la largeur sur le dernier module
+ * pour absorber le filet dans un panneau plus large.
  */
-function axeSymetrique(dimTotaleM: number, dimModuleMm: number): number[] {
+const RIVE_MINI_MM = 300;
+
+/**
+ * DTU 45.4 Mode B — Répartition symétrique depuis le centre.
+ * Règle anti-filet : si rive < 300 mm, redistribue sur le dernier module.
+ *
+ * Retourne les largeurs de colonnes (en mètres) de gauche à droite.
+ */
+function axeSymetriqueHPL(
+  dimTotaleM: number,
+  dimModuleMm: number,
+  jointMm: number
+): { largeurs: number[]; antiFiletApplique: boolean } {
+  const jointM = jointMm / 1000;
   const dimModuleM = Math.max(0.1, dimModuleMm / 1000);
-  if (dimTotaleM <= 0) return [0];
-  if (dimTotaleM <= dimModuleM) return [dimTotaleM];
+  const riveMiniM = RIVE_MINI_MM / 1000;
 
-  const nFull = Math.floor(dimTotaleM / dimModuleM);
-  const reste = dimTotaleM - nFull * dimModuleM;
+  if (dimTotaleM <= 0) return { largeurs: [0], antiFiletApplique: false };
+  if (dimTotaleM <= dimModuleM) return { largeurs: [dimTotaleM], antiFiletApplique: false };
 
-  if (reste < EPSILON_M) {
-    return Array(Math.max(1, nFull)).fill(dimModuleM);
+  // Pas de trame incluant le joint : chaque module occupe (dimModule + joint), sauf le dernier
+  const nFull = Math.floor((dimTotaleM + jointM) / (dimModuleM + jointM));
+  const resteM = dimTotaleM - (nFull * (dimModuleM + jointM) - jointM);
+
+  let largeurs: number[];
+  let antiFiletApplique = false;
+
+  if (resteM < EPSILON_M) {
+    // Façade exactement remplie par des modules entiers
+    largeurs = Array(Math.max(1, nFull)).fill(dimModuleM);
+  } else {
+    // Répartition symétrique : rive = reste / 2
+    const bout = resteM / 2;
+
+    if (bout < riveMiniM && nFull >= 2) {
+      // Règle anti-filet : rive trop petite → absorbe-la dans le premier/dernier module plein
+      // Le module de rive devient : dimModule + bout (toujours ≤ plaque brute)
+      const moduleRiveM = dimModuleM + bout;
+      antiFiletApplique = true;
+      // n-2 modules centraux pleins + 2 modules de rive élargis
+      largeurs = [
+        moduleRiveM,
+        ...Array(Math.max(0, nFull - 2)).fill(dimModuleM),
+        moduleRiveM,
+      ];
+    } else if (bout < riveMiniM && nFull === 1) {
+      // Seul un module central, la rive est trop petite : un seul grand module
+      largeurs = [dimTotaleM];
+      antiFiletApplique = true;
+    } else {
+      // Rive conforme ≥ 300 mm : disposition normale (rive | modules | rive)
+      largeurs = [bout, ...Array(nFull).fill(dimModuleM), bout];
+    }
   }
 
-  // Répartition égale sur les 2 rives
-  const bout = reste / 2;
-  return [bout, ...Array(nFull).fill(dimModuleM), bout];
+  return { largeurs, antiFiletApplique };
+}
+
+/**
+ * DTU 45.4 Mode A — Hauteurs de rangées alignées sur les hauteurs de linteau des ouvertures.
+ *
+ * Principe :
+ * 1. Collecter toutes les hauteurs de linteau uniques des ouvertures (triées, dédoublonnées).
+ * 2. Découper la hauteur totale selon ces niveaux de référence, en subdivisant
+ *    chaque tranche par les modules cibles (axeEquivalent).
+ * 3. Si aucune ouverture ou hauteurs de linteau absentes, repli sur axeEquivalent.
+ */
+function axeLinteauHPL(
+  hauteurTotaleM: number,
+  dimModuleMm: number,
+  ouvertures: OuvertureCalepinage[],
+  jointMm: number
+): number[] {
+  const dimModuleM = Math.max(0.1, dimModuleMm / 1000);
+
+  // Hauteurs de linteau : hauteur du bas du linteau depuis le sol
+  const linteaux = ouvertures
+    .map((o) => {
+      // Si hauteurLinteauM renseigné, utiliser directement
+      if (o.hauteurLinteauM != null && o.hauteurLinteauM > 0) return o.hauteurLinteauM;
+      // Sinon déduire : linteau = hauteur de l'ouverture (porte : depuis le sol, fenêtre : à corriger si possible)
+      return o.hauteur;
+    })
+    .filter((h) => h > EPSILON_M && h < hauteurTotaleM - EPSILON_M);
+
+  if (linteaux.length === 0) {
+    // Mode B par défaut si pas de hauteur de linteau connue
+    return axeEquivalent(hauteurTotaleM, dimModuleMm);
+  }
+
+  // Niveaux de découpe = 0, linteaux triés, hauteurTotale
+  const niveaux = Array.from(new Set([0, ...linteaux, hauteurTotaleM])).sort((a, b) => a - b);
+
+  const rangees: number[] = [];
+  for (let i = 0; i < niveaux.length - 1; i++) {
+    const tranche = niveaux[i + 1] - niveaux[i];
+    if (tranche < EPSILON_M) continue;
+    // Subdivise la tranche en modules cibles
+    const sub = axeEquivalent(tranche, dimModuleMm);
+    rangees.push(...sub);
+  }
+
+  return rangees.length > 0 ? rangees : axeEquivalent(hauteurTotaleM, dimModuleMm);
 }
 
 /**
@@ -492,6 +645,93 @@ function genererPlanDebitNesting(
   };
 }
 
+/**
+ * Calcule les quantitatifs quincaillerie DTU 45.4 HPL à partir du résultat de calepinage.
+ *
+ * Règles métier :
+ * - 1 perçage Point Fixe Ø 5,1 mm au centre (en haut) de chaque panneau M (module plein) et R (rive).
+ * - 2 perçages Points Coulissants Ø 8 mm par panneau (1 gauche + 1 droite, sur les mêmes chevrons).
+ * - Équerres Isolco : 1 porteuse (Point Fixe) + 2 guides (Points Coulissants) par panneau.
+ * - Chevilles Spit MP3 Ø12 mm : 2 par équerre.
+ * - Tirefonds Inox A2 Ø6×60 mm : 4 vis par équerre porteuse (Point Fixe) + 2 par équerre guide.
+ */
+function calculerQuincaillerieHPL(
+  pieces: PieceCalepinage[],
+  lineaireJointsM: number,
+  epaisseurIsolantMm: number,
+  antiFiletApplique: boolean,
+  modeCalepinage: "A_linteau" | "B_symetrique",
+  linteauxM: number[]
+): QuincaillerieHPL {
+  // Filtrer les pièces non pignon (M + R uniquement)
+  const piecesMR = pieces.filter((p) => p.type !== "pignon");
+  const nbPanneaux = piecesMR.length;
+
+  // Perçages
+  const nbPercagesPointFixe51 = nbPanneaux; // 1 PF par panneau
+  const nbPercagesPointsCoulissants8 = nbPanneaux * 2; // 2 PC par panneau
+  const nbVisParementTotal = nbPercagesPointFixe51 + nbPercagesPointsCoulissants8;
+
+  // Équerres Isolco : 1 porteuse + 2 guides par panneau (3 équerres/panneau)
+  const nbEquerresIsolcoPorteuses = nbPanneaux; // 1 porteuse par panneau (Point Fixe)
+  const nbEquerresIsolcoGuides = nbPanneaux * 2; // 2 guides par panneau (Points Coulissants)
+  const nbEquerresIsolcoTotal = nbEquerresIsolcoPorteuses + nbEquerresIsolcoGuides;
+
+  // Modèle d'équerre Isolco selon épaisseur d'isolant
+  const porteeEquerre = epaisseurIsolantMm + 20; // +20mm lame d'air réglementaire
+  const tailleEquerre = Math.max(60, Math.ceil(porteeEquerre / 20) * 20);
+  const modeleEquerreIsolco = epaisseurIsolantMm > 0
+    ? `Isolco 3000 P2 ${tailleEquerre} mm (Isolant ${epaisseurIsolantMm}mm + lame d'air 20mm)`
+    : `Isolco 3000 P2 60 mm (lame d'air seule)`;
+
+  // Chevilles Spit MP3 : 2 par équerre
+  const nbChevilles_SpitMP3 = nbEquerresIsolcoTotal * 2;
+
+  // Tirefonds Inox A2 Ø6×60mm : 4 par porteuse + 2 par guide
+  const nbTirefondsInox = nbEquerresIsolcoPorteuses * 4 + nbEquerresIsolcoGuides * 2;
+
+  // Linéaire de joints mastic (= linéaire total des joints de dilatation)
+  const lineaireJointsMastic = lineaireJointsM;
+
+  // Instructions de perçage conformes DTU 45.4
+  const instructionPercagePointFixe =
+    "Point Fixe HPL : 1 trou Ø 5,1 mm centré en haut de chaque panneau — fraise à 90° pour tête conique — jeu de 0,5 mm entre vis et bord du trou.";
+  const instructionPercagePointsCoulissants =
+    "Points Coulissants HPL : 2 trous Ø 8 mm (gauche + droite) par panneau — trou oblong Ø8×12mm recommandé pour dilatation — vis à tête ronde Ø 5 mm.";
+  const notePercage =
+    "DTU 45.4 § 6.4 : Perçage HPL à froid — vitesse lente (< 1000 tr/min), sans percussion. " +
+    "Distance bord-trou ≥ 20 mm. Vis INOX A2 minimum, brossée ou laquée assortie. " +
+    "Chevillage mural Spit MP3 : Ø 12 mm, profondeur 70 mm mini, couple 15 Nm (clé dynamométrique).";
+
+  // Résumé alignement linteau
+  const resumeAlignementLinteau = modeCalepinage === "A_linteau" && linteauxM.length > 0
+    ? `Mode A (ouvertures) — joints horizontaux alignés sur ${linteauxM.length} niveaux de linteau : ` +
+      linteauxM.map((h) => `${(h * 100).toFixed(0)} cm`).join(", ") + "."
+    : "Mode B (symétrique depuis le centre) — aucune ouverture détectée ou pas de hauteur de linteau renseignée.";
+
+  return {
+    nbPercagesPointFixe51,
+    nbPercagesPointsCoulissants8,
+    nbVisParementTotal,
+    instructionPercagePointFixe,
+    instructionPercagePointsCoulissants,
+    notePercage,
+    nbEquerresIsolcoPorteuses,
+    nbEquerresIsolcoGuides,
+    nbEquerresIsolcoTotal,
+    modeleEquerreIsolco,
+    nbChevilles_SpitMP3,
+    instructionChevilles:
+      `Chevilles Spit MP3 Ø12×70mm — ${nbChevilles_SpitMP3} unités (2/équerre) — ` +
+      "perçage Ø12mm profondeur 70mm, distance mini 10 cm des arêtes maçonnerie, couple 15 Nm.",
+    nbTirefondsInox,
+    lineaireJointsMastic,
+    antiFiletApplique,
+    modeCalepinage,
+    resumeAlignementLinteau,
+  };
+}
+
 export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   let {
     zoneLargeurM,
@@ -505,7 +745,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     estPignon = false,
     hauteurFaiteM = null,
     traitDeScieMm = 3,
-    jointMm = 8, // Joint de dilatation standard 8 mm (DTU 41.2)
+    jointMm = 8, // Joint de dilatation standard 8 mm (DTU 45.4 / DTU 41.2)
+    ouvertures = null,
   } = input;
 
   const modePose: TypePoseCalepinage = typePose === "joints_croises" ? "joints_croises" : "pose_droite";
@@ -538,25 +779,54 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const dimModuleLargeurAxeMm = sens === "horizontal" ? modLargeurMm : modHauteurMm;
   const dimModuleHauteurAxeMm = sens === "horizontal" ? modHauteurMm : modLargeurMm;
 
-  const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
+  // ================================================================
+  // 3. DTU 45.4 HPL — CALEPINAGE HORIZONTAL (COLONNES / LARGEUR)
+  //    Mode B : Répartition symétrique avec règle anti-filet ≥ 300 mm
+  // ================================================================
+  const { largeurs: colonnesLargeursM, antiFiletApplique } = axeSymetriqueHPL(
+    largeur,
+    dimModuleLargeurAxeMm,
+    epaisseurJointMm
+  );
 
-  // Découpage architectural standard de la façade en trames rectangulaires (Pose Droite)
-  const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm);
-  const rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
+  // ================================================================
+  // 4. DTU 45.4 HPL — CALEPINAGE VERTICAL (RANGÉES / HAUTEUR)
+  //    Mode A si ouvertures avec linteaux, sinon Mode B (axeEquivalent)
+  // ================================================================
+  const ouverturesValides: OuvertureCalepinage[] =
+    (ouvertures ?? []).filter((o) => o.hauteur > 0);
 
+  const linteauxM = ouverturesValides
+    .map((o) => o.hauteurLinteauM != null && o.hauteurLinteauM > 0 ? o.hauteurLinteauM : o.hauteur)
+    .filter((h) => h > EPSILON_M && h < hauteurTotale - EPSILON_M);
+
+  const modeCalepinage: "A_linteau" | "B_symetrique" =
+    linteauxM.length > 0 ? "A_linteau" : "B_symetrique";
+
+  let rangeesHauteursM: number[];
+  if (modeCalepinage === "A_linteau") {
+    rangeesHauteursM = axeLinteauHPL(hauteurTotale, dimModuleHauteurAxeMm, ouverturesValides, epaisseurJointMm);
+  } else {
+    rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
+  }
+
+  // ================================================================
+  // 5. GÉNÉRATION DES PIÈCES (MODULES / RIVES / PIGNONS)
+  // ================================================================
   const pieces: PieceCalepinage[] = [];
   let yCumul = 0;
   let compteurPieces = 1;
   let compteurRives = 1;
   let compteurPignons = 1;
 
+  const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
+
   rangeesHauteursM.forEach((hauteurPiece, rangee) => {
     let xCumul = 0;
 
     // Décalage pour pose à joints croisés (rectangulaire 1/2)
-    let decalageRangeeM = 0;
     if (modePose === "joints_croises" && rangee % 2 === 1) {
-      decalageRangeeM = dimModuleLargeurAxeM / 2;
+      xCumul = dimModuleLargeurAxeM / 2;
     }
 
     colonnesLargeursM.forEach((largeurPiece, colonne) => {
@@ -619,7 +889,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const surfaceZoneM2 = pieces.reduce((s, p) => s + p.surfaceM2, 0);
   const nbPiecesPosees = pieces.length;
 
-  // 3. OPTIMISATION NESTING DANS LES PLAQUES BRUTES FOURNISSEUR
+  // 6. OPTIMISATION NESTING DANS LES PLAQUES BRUTES FOURNISSEUR
   const { plaquesDebit, modulesParPlaque: modulesParPlaqueBrute } = genererPlanDebitNesting(
     pieces,
     rawLongueurMm,
@@ -633,7 +903,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const surfacePlaqueBruteM2 = (rawLongueurMm * rawLargeurMm) / 1_000_000;
   const surfacePlaquesAchetesM2 = nbPlaquesNecessaires * surfacePlaqueBruteM2;
 
-  // 4. CALCUL PRÉCIS DES CHUTES & PERTES RÉELLES
+  // 7. CALCUL PRÉCIS DES CHUTES & PERTES RÉELLES
   const totalChutesReutilisablesM2 = plaquesDebit.reduce(
     (s, p) => s + p.surfaceChutesReutilisablesM2,
     0
@@ -654,7 +924,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       ? (totalDechetsPerteM2 / surfacePlaquesAchetesM2) * 100
       : 0;
 
-  // 5. CALCULS DES JOINTS DE DILATATION (8 MM)
+  // 8. CALCULS DES JOINTS DE DILATATION (8 MM DTU 45.4)
   const nbJointsVerticaux = Math.max(0, colonnesLargeursM.length - 1) * rangeesHauteursM.length;
   const nbJointsHorizontaux =
     Math.max(0, rangeesHauteursM.length - 1) * colonnesLargeursM.length;
@@ -668,6 +938,19 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     estPignon && largeur > 0
       ? ((hauteurFaite - hauteurMur) / (largeur / 2)) * 100
       : 0;
+
+  // 9. QUANTITATIFS QUINCAILLERIE DTU 45.4 HPL
+  // Épaisseur isolant par défaut 120 mm si non précisé dans l'input
+  // (l'input ne porte pas directement l'isolant — utilisé avec poseCalcul séparément)
+  const epaisseurIsolantMm = 120; // valeur conservative standard
+  const quincaillerie = calculerQuincaillerieHPL(
+    pieces,
+    lineaireJointsM,
+    epaisseurIsolantMm,
+    antiFiletApplique,
+    modeCalepinage,
+    linteauxM
+  );
 
   return {
     colonnesLargeursM,
@@ -698,5 +981,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     moduleCibleHauteurMm: modHauteurMm,
     modulesParPlaqueBrute,
     plaquesDebit,
+    quincaillerie,
   };
 }

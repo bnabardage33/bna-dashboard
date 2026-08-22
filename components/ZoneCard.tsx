@@ -259,6 +259,8 @@ export default function ZoneCard({
           sensPose: sensPoseActif,
           estPignon: zone.type === "pignon",
           hauteurFaiteM: zone.hauteur_faite,
+          // DTU 45.4 Mode A : ouvertures pour alignement joint sur linteau
+          ouvertures: zone.ouvertures.length > 0 ? zone.ouvertures : null,
         })
       : null;
 

@@ -253,8 +253,124 @@ export default function FicheDebitPDF({
         </div>
       )}
 
+      {/* ============================================================ */}
+      {/* BON DE COMMANDE QUINCAILLERIE DTU 45.4 HPL */}
+      {/* ============================================================ */}
+      {calepinage && calepinage.quincaillerie && (
+        <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50/40 p-3 avoid-break">
+          {/* En-tête */}
+          <div className="flex items-center justify-between border-b border-sky-200 pb-1.5 mb-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-sky-900">
+              🔩 Bon de Commande — Quincaillerie HPL (DTU 45.4)
+            </p>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              calepinage.quincaillerie.modeCalepinage === "A_linteau"
+                ? "bg-amber-100 text-amber-800"
+                : "bg-sky-100 text-sky-800"
+            }`}>
+              {calepinage.quincaillerie.modeCalepinage === "A_linteau"
+                ? "Mode A — Alignement Linteau"
+                : "Mode B — Symétrique Centre"}
+            </span>
+          </div>
+
+          {/* Alerte anti-filet */}
+          {calepinage.quincaillerie.antiFiletApplique && (
+            <div className="mb-2 rounded-lg bg-amber-50 border border-amber-300 px-3 py-1.5 text-[10px] text-amber-900 font-medium">
+              ⚠️ <strong>Règle anti-filet DTU 45.4 § 5.3.4 appliquée</strong> — Rive recalculée ≥ 300 mm pour garantir l&apos;ancrage sur 2 chevrons.
+            </div>
+          )}
+
+          {/* Résumé alignement */}
+          <p className="text-[10px] text-slate-600 italic mb-2">
+            {calepinage.quincaillerie.resumeAlignementLinteau}
+          </p>
+
+          {/* Tableau de commande */}
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b-2 border-sky-800 text-left uppercase text-sky-700 text-[10px]">
+                <th className="py-1">Désignation</th>
+                <th className="py-1 text-center">Règle / Norme</th>
+                <th className="py-1 text-right">Qté</th>
+                <th className="py-1 text-right">Unité</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-sky-100 text-[11px]">
+              {/* Équerres Isolco */}
+              <tr className="bg-white/50">
+                <td className="py-1.5 font-medium text-slate-800">
+                  Équerres {calepinage.quincaillerie.modeleEquerreIsolco} — Porteuses (Point Fixe)
+                </td>
+                <td className="py-1.5 text-center text-slate-500">1 / panneau</td>
+                <td className="py-1.5 text-right font-bold text-slate-900">{calepinage.quincaillerie.nbEquerresIsolcoPorteuses}</td>
+                <td className="py-1.5 text-right text-slate-600">équerres</td>
+              </tr>
+              <tr className="bg-white/50">
+                <td className="py-1.5 font-medium text-slate-800">
+                  Équerres Isolco — Guides (Points Coulissants)
+                </td>
+                <td className="py-1.5 text-center text-slate-500">2 / panneau</td>
+                <td className="py-1.5 text-right font-bold text-slate-900">{calepinage.quincaillerie.nbEquerresIsolcoGuides}</td>
+                <td className="py-1.5 text-right text-slate-600">équerres</td>
+              </tr>
+              {/* Chevilles Spit MP3 */}
+              <tr className="bg-sky-50/60">
+                <td className="py-1.5 font-medium text-slate-800">Chevilles Spit MP3 Ø12×70mm (couple 15 Nm)</td>
+                <td className="py-1.5 text-center text-slate-500">2 / équerre</td>
+                <td className="py-1.5 text-right font-bold text-sky-900">{calepinage.quincaillerie.nbChevilles_SpitMP3}</td>
+                <td className="py-1.5 text-right text-slate-600">chevilles</td>
+              </tr>
+              {/* Tirefonds */}
+              <tr className="bg-white/50">
+                <td className="py-1.5 font-medium text-slate-800">Tirefonds Inox A2 Ø6×60mm (chevron/équerre)</td>
+                <td className="py-1.5 text-center text-slate-500">4/porteuse · 2/guide</td>
+                <td className="py-1.5 text-right font-bold text-slate-900">{calepinage.quincaillerie.nbTirefondsInox}</td>
+                <td className="py-1.5 text-right text-slate-600">vis inox</td>
+              </tr>
+              {/* Vis de parement */}
+              <tr className="bg-sky-50/60">
+                <td className="py-1.5 font-medium text-slate-800">
+                  Vis parement HPL — Point Fixe Ø 5,1 mm
+                </td>
+                <td className="py-1.5 text-center text-slate-500">1 / panneau (centre haut)</td>
+                <td className="py-1.5 text-right font-bold text-sky-900">{calepinage.quincaillerie.nbPercagesPointFixe51}</td>
+                <td className="py-1.5 text-right text-slate-600">vis</td>
+              </tr>
+              <tr className="bg-sky-50/60">
+                <td className="py-1.5 font-medium text-slate-800">
+                  Vis parement HPL — Points Coulissants Ø 8 mm
+                </td>
+                <td className="py-1.5 text-center text-slate-500">2 / panneau (G + D)</td>
+                <td className="py-1.5 text-right font-bold text-sky-900">{calepinage.quincaillerie.nbPercagesPointsCoulissants8}</td>
+                <td className="py-1.5 text-right text-slate-600">vis</td>
+              </tr>
+              {/* Joints mastic */}
+              <tr className="bg-white/50">
+                <td className="py-1.5 font-medium text-slate-800">
+                  Mastic joint de dilatation EPDM 8 mm (DTU 45.4)
+                </td>
+                <td className="py-1.5 text-center text-slate-500">100 % des joints</td>
+                <td className="py-1.5 text-right font-bold text-slate-900">
+                  {calepinage.quincaillerie.lineaireJointsMastic.toFixed(1)}
+                </td>
+                <td className="py-1.5 text-right text-slate-600">ml</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Notes de perçage */}
+          <div className="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-[10px] text-slate-700 space-y-1">
+            <p><strong>PF :</strong> {calepinage.quincaillerie.instructionPercagePointFixe}</p>
+            <p><strong>PC :</strong> {calepinage.quincaillerie.instructionPercagePointsCoulissants}</p>
+            <p className="text-slate-500 italic">{calepinage.quincaillerie.notePercage}</p>
+          </div>
+        </div>
+      )}
+
       {/* Nomenclature des Fournitures & Consommables */}
       {pose && (
+
         <div className="mt-4 avoid-break">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Nomenclature Atelier &amp; Fixations
