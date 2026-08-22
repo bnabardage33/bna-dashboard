@@ -16,9 +16,17 @@ import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 
 type Ouverture = {
   id: string;
-  type: "fenetre" | "porte";
-  largeur: number;
-  hauteur: number;
+  type: "fenetre" | "porte" | "baie" | "porte_fenetre";
+  largeur: number;      // m
+  hauteur: number;      // m
+  /** X : distance depuis l'angle gauche du mur jusqu'au bord gauche de l'ouverture (en m) */
+  distanceAngleGaucheM: number;
+  /**
+   * Y : hauteur d'allège — distance du sol au bas de l'ouverture (en m).
+   * Porte / Baie vitrée / Porte-fenêtre = 0 (allège = sol).
+   * Fenêtre = saisie libre.
+   */
+  hauteurAllegeMm: number; // stocké en mm, affiché en mm
 };
 
 export type Zone = {
@@ -259,8 +267,20 @@ export default function ZoneCard({
           sensPose: sensPoseActif,
           estPignon: zone.type === "pignon",
           hauteurFaiteM: zone.hauteur_faite,
-          // DTU 45.4 Mode A : ouvertures pour alignement joint sur linteau
-          ouvertures: zone.ouvertures.length > 0 ? zone.ouvertures : null,
+          // DTU 45.4 Mode A : ouvertures avec position absolue (X, Y) pour alignement joint sur linteau
+          ouvertures: zone.ouvertures.length > 0
+            ? zone.ouvertures.map((o) => {
+                const allegeM = (o.hauteurAllegeMm ?? 0) / 1000;
+                return {
+                  id: o.id,
+                  type: o.type === "fenetre" ? "fenetre" as const : "porte" as const,
+                  largeur: o.largeur,
+                  hauteur: o.hauteur,
+                  // Hauteur du bas du linteau = allège + hauteur de l'ouverture
+                  hauteurLinteauM: allegeM + o.hauteur,
+                };
+              })
+            : null,
         })
       : null;
 
@@ -282,8 +302,10 @@ export default function ZoneCard({
      ============================================================ */
 
   function ajouterOuverture(
-    type: "fenetre" | "porte"
+    type: Ouverture["type"]
   ) {
+    const allegeParDefautMm =
+      type === "fenetre" ? 900 : 0; // fenêtre : 90 cm d'allège standard ; porte/baie/pf : sol
     update({
       ouvertures: [
         ...zone.ouvertures,
@@ -292,6 +314,8 @@ export default function ZoneCard({
           type,
           largeur: 0,
           hauteur: 0,
+          distanceAngleGaucheM: 0,
+          hauteurAllegeMm: allegeParDefautMm,
         },
       ],
     });
@@ -924,117 +948,157 @@ export default function ZoneCard({
       {/* OUVERTURES */}
       {/* ====================================================== */}
 
-      <div className="space-y-2">
-
-        <div className="flex items-center justify-between">
-
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-wide text-slate-500">
-            Ouvertures
+            Ouvertures — Position (X, Y) depuis angle bas-gauche
           </p>
-
-          <div className="flex gap-2">
-
-            <button
-              type="button"
-              onClick={() =>
-                ajouterOuverture(
-                  "fenetre"
-                )
-              }
-              className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
-            >
-              + Fenêtre
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                ajouterOuverture(
-                  "porte"
-                )
-              }
-              className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
-            >
-              + Porte
-            </button>
-
+          <div className="flex flex-wrap gap-1.5">
+            {(
+              [
+                { type: "fenetre" as const, label: "🪟 Fenêtre" },
+                { type: "porte" as const, label: "🚪 Porte" },
+                { type: "baie" as const, label: "🪟 Baie vitrée" },
+                { type: "porte_fenetre" as const, label: "🚪 Porte-fenêtre" },
+              ] as { type: Ouverture["type"]; label: string }[]
+            ).map(({ type, label }) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => ajouterOuverture(type)}
+                className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+              >
+                + {label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {zone.ouvertures.map(
-          (o) => (
+        {/* En-tête colonnes */}
+        {zone.ouvertures.length > 0 && (
+          <div className="grid grid-cols-[80px_68px_68px_72px_72px_1fr_28px] gap-1.5 text-[10px] uppercase font-bold text-slate-500 px-1">
+            <span>Type</span>
+            <span>L (m)</span>
+            <span>H (m)</span>
+            <span>X depuis ←</span>
+            <span>Allège Y</span>
+            <span>Linteau</span>
+            <span></span>
+          </div>
+        )}
+
+        {zone.ouvertures.map((o) => {
+          const estPorte = o.type === "porte" || o.type === "baie" || o.type === "porte_fenetre";
+          const allegeM = (o.hauteurAllegeMm || 0) / 1000;
+          const linteauM = allegeM + (o.hauteur || 0);
+          const typeLabel =
+            o.type === "fenetre" ? "Fenêtre" :
+            o.type === "porte" ? "Porte" :
+            o.type === "baie" ? "Baie" : "Pte-Fen.";
+          const typeColor =
+            o.type === "fenetre" ? "text-sky-300" :
+            o.type === "porte" ? "text-amber-300" : "text-violet-300";
+
+          return (
             <div
               key={o.id}
-              className="flex items-center gap-2"
+              className="grid grid-cols-[80px_68px_68px_72px_72px_1fr_28px] gap-1.5 items-center"
             >
-
-              <span className="w-16 text-xs text-slate-400">
-                {o.type ===
-                "fenetre"
-                  ? "Fenêtre"
-                  : "Porte"}
+              {/* Type */}
+              <span className={`text-xs font-bold truncate ${typeColor}`}>
+                {typeLabel}
               </span>
 
+              {/* Largeur */}
               <input
                 type="number"
-                value={o.largeur}
+                step="0.01"
+                min="0"
+                value={o.largeur || ""}
                 onChange={(e) =>
-                  updateOuverture(
-                    o.id,
-                    {
-                      largeur:
-                        parseFloat(
-                          e.target
-                            .value
-                        ) || 0,
-                    }
-                  )
+                  updateOuverture(o.id, { largeur: parseFloat(e.target.value) || 0 })
                 }
                 placeholder="L (m)"
-                className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
+                className="rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100 w-full"
               />
 
+              {/* Hauteur */}
               <input
                 type="number"
-                value={o.hauteur}
+                step="0.01"
+                min="0"
+                value={o.hauteur || ""}
                 onChange={(e) =>
-                  updateOuverture(
-                    o.id,
-                    {
-                      hauteur:
-                        parseFloat(
-                          e.target
-                            .value
-                        ) || 0,
-                    }
-                  )
+                  updateOuverture(o.id, { hauteur: parseFloat(e.target.value) || 0 })
                 }
                 placeholder="H (m)"
-                className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
+                className="rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100 w-full"
               />
 
-              <span className="text-xs text-slate-500">
-                {(
-                  o.largeur *
-                  o.hauteur
-                ).toFixed(2)}{" "}
-                m²
-              </span>
+              {/* X — distance de l'angle gauche (en mm) */}
+              <div className="relative">
+                <input
+                  type="number"
+                  step="10"
+                  min="0"
+                  value={Math.round((o.distanceAngleGaucheM || 0) * 1000) || ""}
+                  onChange={(e) =>
+                    updateOuverture(o.id, {
+                      distanceAngleGaucheM: (parseFloat(e.target.value) || 0) / 1000,
+                    })
+                  }
+                  placeholder="X (mm)"
+                  className="rounded-lg border border-amber-600/50 bg-slate-900 px-2 py-1 text-sm text-amber-200 w-full"
+                  title="Distance depuis l'angle gauche du mur jusqu'au bord gauche de l'ouverture (mm)"
+                />
+              </div>
 
+              {/* Y — hauteur d'allège (en mm), fixée à 0 pour les portes */}
+              {estPorte ? (
+                <div className="flex items-center px-2 py-1 text-xs text-slate-400 rounded-lg border border-slate-700 bg-slate-900/50">
+                  Y = 0 mm (sol)
+                </div>
+              ) : (
+                <input
+                  type="number"
+                  step="10"
+                  min="0"
+                  value={o.hauteurAllegeMm || ""}
+                  onChange={(e) =>
+                    updateOuverture(o.id, {
+                      hauteurAllegeMm: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  placeholder="Allège (mm)"
+                  className="rounded-lg border border-sky-600/50 bg-slate-900 px-2 py-1 text-sm text-sky-200 w-full"
+                  title="Hauteur d'allège : distance du sol au bas de la fenêtre (mm)"
+                />
+              )}
+
+              {/* Linteau calculé automatiquement */}
+              <div className="text-[10px] text-emerald-400 font-mono px-1">
+                {o.hauteur > 0
+                  ? `⬆ ${Math.round(linteauM * 1000)} mm`
+                  : <span className="text-slate-600">—</span>
+                }
+              </div>
+
+              {/* Supprimer */}
               <button
                 type="button"
-                onClick={() =>
-                  supprimerOuverture(
-                    o.id
-                  )
-                }
-                className="ml-auto text-xs text-red-400 hover:text-red-300"
+                onClick={() => supprimerOuverture(o.id)}
+                className="rounded-lg p-1 text-red-400 hover:text-red-300 hover:bg-slate-800"
               >
                 ✕
               </button>
-
             </div>
-          )
+          );
+        })}
+
+        {zone.ouvertures.length === 0 && (
+          <p className="text-xs text-slate-600 italic">
+            Aucune ouverture — le calepinage utilisera le Mode B (symétrique depuis le centre).
+          </p>
         )}
       </div>
 

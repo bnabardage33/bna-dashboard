@@ -21,9 +21,13 @@ type SegmentChevron = {
 
 type OuvertureCalepinage = {
   id: string;
-  type: "fenetre" | "porte";
-  largeur: number;
-  hauteur: number;
+  type: "fenetre" | "porte" | "baie" | "porte_fenetre";
+  largeur: number; // m
+  hauteur: number; // m
+  /** X : distance depuis l'angle gauche du mur (m) */
+  distanceAngleGaucheM?: number;
+  /** Y : hauteur d'allège en mm (0 pour portes/baies) */
+  hauteurAllegeMm?: number;
 };
 
 /**
@@ -626,58 +630,116 @@ export default function PlanCalepinage({
             )}
 
             {/* ==================================================== */}
-            {/* OUVERTURES (Fenêtres / Portes) */}
+            {/* OUVERTURES (Fenêtres / Portes) — Position absolue X, Y */}
             {/* ==================================================== */}
             {ouvertures && ouvertures.length > 0 && (
               <g className="ouvertures">
                 {ouvertures.map((ouv, idx) => {
-                  const spacing = largeurM / (ouvertures.length + 1);
-                  const ouvX = Math.max(
-                    0.2,
-                    Math.min(largeurM - ouv.largeur - 0.2, spacing * (idx + 1) - ouv.largeur / 2)
-                  );
-                  const ouvY =
-                    ouv.type === "porte" ? 0 : Math.min(1.0, Math.max(0.2, (hauteurM - ouv.hauteur) / 2));
-                  const svgX = px(ouvX);
-                  const svgY = py(ouvY + ouv.hauteur);
-                  const svgW = ouv.largeur * echelle;
-                  const svgH = ouv.hauteur * echelle;
+                  // Vrai positionnement depuis l'angle bas-gauche
+                  const estPorte = ouv.type === "porte" || ouv.type === "baie" || ouv.type === "porte_fenetre";
+                  const allegeM = estPorte ? 0 : (ouv.hauteurAllegeMm ?? 0) / 1000;
+
+                  // X : depuis l'angle gauche — centrage par défaut si non renseigné
+                  const xGaucheM =
+                    (ouv.distanceAngleGaucheM ?? null) !== null && (ouv.distanceAngleGaucheM ?? 0) > 0
+                      ? (ouv.distanceAngleGaucheM ?? 0)
+                      : Math.max(0.1, largeurM / (ouvertures.length + 1) * (idx + 1) - ouv.largeur / 2);
+
+                  const ouvXM = Math.max(0, Math.min(xGaucheM, largeurM - ouv.largeur));
+                  const ouvYbasM = allegeM;                    // Y bas (sol de l'allège)
+                  const ouvYhautM = allegeM + ouv.hauteur;    // Y haut (linteau)
+
+                  const svgX = px(ouvXM);
+                  const svgY = py(ouvYhautM);                  // SVG top = haut physique
+                  const svgW = Math.max(4, ouv.largeur * echelle);
+                  const svgH = Math.max(4, ouv.hauteur * echelle);
+
+                  const labelType =
+                    ouv.type === "porte" ? "🚪 PORTE" :
+                    ouv.type === "baie" ? "🔆 BAIE" :
+                    ouv.type === "porte_fenetre" ? "🚪 PF" : "🪟 FENÊTRE";
+
+                  const linteauPx = py(ouvYhautM); // ligne de linteau
 
                   return (
                     <g key={`ouv-${ouv.id || idx}`}>
+                      {/* Rectangle de l'ouverture (vide) */}
                       <rect
                         x={svgX}
                         y={svgY}
                         width={svgW}
                         height={svgH}
                         fill="#0f172a"
-                        fillOpacity={0.85}
+                        fillOpacity={0.92}
                         stroke="#ef4444"
                         strokeWidth={1.5}
-                        strokeDasharray="4 3"
+                        strokeDasharray="5 3"
                         rx={2}
                       />
-                      <text
-                        x={svgX + svgW / 2}
-                        y={svgY + svgH / 2 - 5}
-                        fill="#f8fafc"
-                        fontSize={10}
-                        fontWeight="bold"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                      >
-                        {ouv.type === "porte" ? "🚪 PORTE" : "🪟 FENÊTRE"}
-                      </text>
-                      <text
-                        x={svgX + svgW / 2}
-                        y={svgY + svgH / 2 + 7}
-                        fill="#cbd5e1"
-                        fontSize={9}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                      >
-                        {ouv.largeur.toFixed(2)} × {ouv.hauteur.toFixed(2)} m
-                      </text>
+
+                      {/* Croix interne indiquant le vide */}
+                      <line x1={svgX} y1={svgY} x2={svgX + svgW} y2={svgY + svgH}
+                        stroke="#ef4444" strokeWidth={0.6} strokeOpacity={0.35} />
+                      <line x1={svgX + svgW} y1={svgY} x2={svgX} y2={svgY + svgH}
+                        stroke="#ef4444" strokeWidth={0.6} strokeOpacity={0.35} />
+
+                      {/* Ligne de linteau (référence alignement joint horizontal Mode A) */}
+                      {ouv.hauteur > 0 && (
+                        <line
+                          x1={svgX - 6}
+                          y1={linteauPx}
+                          x2={svgX + svgW + 6}
+                          y2={linteauPx}
+                          stroke="#fbbf24"
+                          strokeWidth={1}
+                          strokeDasharray="3 2"
+                          strokeOpacity={0.8}
+                        />
+                      )}
+
+                      {/* Étiquette type */}
+                      {svgH >= 20 && svgW >= 30 && (
+                        <>
+                          <text
+                            x={svgX + svgW / 2}
+                            y={svgY + svgH / 2 - (svgH >= 36 ? 7 : 0)}
+                            fill="#fca5a5"
+                            fontSize={Math.min(10, svgW / 6)}
+                            fontWeight="bold"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            {labelType}
+                          </text>
+                          {svgH >= 36 && svgW >= 50 && (
+                            <text
+                              x={svgX + svgW / 2}
+                              y={svgY + svgH / 2 + 7}
+                              fill="#94a3b8"
+                              fontSize={Math.min(9, svgW / 7)}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                            >
+                              {ouv.largeur.toFixed(2)} × {ouv.hauteur.toFixed(2)} m
+                              {allegeM > 0 ? ` · Y+${Math.round(allegeM * 1000)}mm` : ""}
+                            </text>
+                          )}
+                        </>
+                      )}
+
+                      {/* Cote X (position depuis l'angle gauche) */}
+                      {(ouv.distanceAngleGaucheM ?? 0) > 0 && (
+                        <text
+                          x={svgX + svgW / 2}
+                          y={py(0) + 10}
+                          fill="#fbbf24"
+                          fontSize={8}
+                          textAnchor="middle"
+                          fontWeight="bold"
+                        >
+                          X={Math.round((ouv.distanceAngleGaucheM ?? 0) * 1000)}mm
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -834,13 +896,16 @@ export default function PlanCalepinage({
               <p className="text-[10px] uppercase text-slate-400 font-bold">Taux Chute Réel</p>
               <p
                 className={`text-base font-extrabold ${
-                  calepinage.tauxChutePct <= 15 ? "text-emerald-400" : "text-amber-400"
+                  calepinage.tauxChuteBrutePct <= 20 ? "text-emerald-400" : "text-amber-400"
                 }`}
               >
-                {calepinage.tauxChutePct.toFixed(1)} %
+                {calepinage.tauxChuteBrutePct.toFixed(1)} %
               </p>
               <p className="text-[10px] text-slate-500">
                 {(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chute
+                {calepinage.totalChutesReutilisablesM2 > 0 && (
+                  <span className="text-emerald-400/80"> · {calepinage.totalChutesReutilisablesM2.toFixed(2)} réutilis.</span>
+                )}
               </p>
             </div>
 
