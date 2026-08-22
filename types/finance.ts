@@ -9,7 +9,7 @@ export type NatureDepense = 'materiaux' | 'quincaillerie' | 'sous_traitance' | '
 
 export interface DepenseFinance {
   id: string;
-  chantier_id?: string;
+  chantier_id: string;
   nature: NatureDepense;
   montant_ht: number;
   date: string;
@@ -39,7 +39,9 @@ export interface FactureFinance {
 
 export interface AchatFinance {
   id: string;
+  chantier_id: string;
   montant_ht: number;
+  taux_tva: number;
   montant_tva: number;
   montant_ttc: number;
   date: string;

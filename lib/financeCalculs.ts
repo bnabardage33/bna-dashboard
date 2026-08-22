@@ -26,8 +26,8 @@ export function calculerRentabiliteChantier(
     let cout_frais = 0;
 
     depenses.forEach((dep) => {
-      // Filtrer les dépenses liées à ce chantier (si applicable)
-      if (dep.chantier_id && dep.chantier_id !== chantier.id) return;
+      // Filtrer les dépenses liées à ce chantier
+      if (dep.chantier_id !== chantier.id) return;
       
       switch (dep.nature) {
         case "materiaux":
