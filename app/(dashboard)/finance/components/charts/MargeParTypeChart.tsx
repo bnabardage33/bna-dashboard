@@ -41,7 +41,7 @@ export default function MargeParTypeChart() {
   };
 
   rentabilites.forEach((r) => {
-    const nom = r.nom.toLowerCase();
+    const nom = (r.nom || "").toLowerCase();
     let type = "Autre";
     
     if (nom.includes("bardage") || nom.includes("hpl")) type = "Bardage";
