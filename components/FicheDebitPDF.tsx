@@ -177,6 +177,15 @@ export default function FicheDebitPDF({
                 <p className="text-[10px] text-slate-500">{calepinage.totalDechetsPerteM2.toFixed(2)} m² sciure</p>
               </div>
             </div>
+
+            <div className="mt-2.5 pt-2 border-t border-slate-200 flex flex-wrap justify-between items-center text-[10px] text-slate-600">
+              <span className="font-medium">
+                📐 <strong>Joint de dilatation :</strong> {calepinage.jointMm ?? 8} mm (conforme DTU 41.2)
+              </span>
+              <span className="font-medium text-sky-700 font-mono">
+                Linéaire de joints : {calepinage.lineaireJointsM ? calepinage.lineaireJointsM.toFixed(1) : "0.0"} ml ({calepinage.nbJointsVerticaux} V + {calepinage.nbJointsHorizontaux} H = {calepinage.nbJoints} joints)
+              </span>
+            </div>
           </div>
 
           {/* Tableau des Découpes Pas-à-Pas pour l'Atelier */}

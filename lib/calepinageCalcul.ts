@@ -4,6 +4,7 @@
 // Architecture Métier BNA Bardage :
 // 1. MODULES POSÉS (Façade & Pignons) :
 //    - Trame architecturale en modules finis (ex: 1000 × 600 mm, 1200 × 800 mm).
+//    - Prise en compte normative du joint de dilatation de 8 mm (DTU 41.2 / DTU 31.2).
 //    - Découpe symétrique des rives et gestion automatique des rampants de pignons.
 //    - Chaque panneau reçoit un repère unique (ex: M-01, R-01 pour rive, P-01 pour pignon).
 //
@@ -30,6 +31,7 @@ export interface CalepinageInput {
   estPignon?: boolean;
   hauteurFaiteM?: number | null;
   traitDeScieMm?: number | null;   // Épaisseur de lame de coupe (défaut: 3 mm)
+  jointMm?: number | null;         // Épaisseur du joint de dilatation entre panneaux (défaut DTU 41.2: 8 mm)
 }
 
 export interface PointCalepinage {
@@ -42,10 +44,14 @@ export interface PieceCalepinage {
   repere: string; // ex: "M-01", "R-01", "P-01"
   colonne: number;
   rangee: number;
+  // Position et dimensions de la trame
   xM: number;
   yM: number;
   largeurM: number;
   hauteurM: number;
+  // Dimensions nettes réelles débitées (déduction faite du joint de 8 mm)
+  largeurNetteMm: number;
+  hauteurNetteMm: number;
   type: "pleine" | "coupe" | "pignon";
   surfaceM2: number;
   points?: PointCalepinage[];
@@ -104,7 +110,13 @@ export interface ResultatCalepinage {
   tauxChutePct: number;             // Rétrocompatibilité (taux net)
   totalChutesReutilisablesM2: number;
   totalDechetsPerteM2: number;
-  nbJoints: number;
+  // Données des joints de dilatation (8 mm DTU 41.2)
+  jointMm: number;                  // Épaisseur de joint (8 mm)
+  nbJoints: number;                 // Total nb de joints
+  nbJointsVerticaux: number;
+  nbJointsHorizontaux: number;
+  lineaireJointsM: number;          // Mètres linéaires de joints (pour bandes EPDM / profilés)
+  surfaceJointsM2: number;          // Surface décomptée par les joints
   estPignon: boolean;
   hauteurFaiteM: number;
   pentePct: number;
@@ -261,7 +273,7 @@ function genererPlanDebitNesting(
   const nY = Math.floor(rawH / moduleHauteurMm);
   const modulesParPlaque = Math.max(1, nX * nY);
 
-  // Préparer la liste des pièces à découper
+  // Préparer la liste des pièces à découper avec leurs dimensions nettes débitées
   type PieceToPlace = {
     sourcePiece: PieceCalepinage;
     wMm: number;
@@ -271,8 +283,8 @@ function genererPlanDebitNesting(
 
   const piecesToPlace: PieceToPlace[] = pieces.map((p) => ({
     sourcePiece: p,
-    wMm: Math.round(p.largeurM * 1000),
-    hMm: Math.round(p.hauteurM * 1000),
+    wMm: p.largeurNetteMm || Math.round(p.largeurM * 1000),
+    hMm: p.hauteurNetteMm || Math.round(p.hauteurM * 1000),
     surfaceM2: p.surfaceM2,
   }));
 
@@ -491,7 +503,11 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     estPignon = false,
     hauteurFaiteM = null,
     traitDeScieMm = 3,
+    jointMm = 8, // Joint de dilatation standard 8 mm (DTU 41.2)
   } = input;
+
+  const epaisseurJointMm = jointMm !== null && jointMm !== undefined && jointMm >= 0 ? jointMm : 8;
+  const jointM = epaisseurJointMm / 1000;
 
   // 1. SÉCURISATION DES DIMENSIONS PLAQUES BRUTES FOURNISSEUR
   let rawLongueurMm = plaqueLongueurMm && plaqueLongueurMm > 0 ? plaqueLongueurMm : 3050;
@@ -520,9 +536,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const dimModuleHauteurAxeMm = sens === "horizontal" ? modHauteurMm : modLargeurMm;
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
-  const dimModuleHauteurAxeM = dimModuleHauteurAxeMm / 1000;
 
-  // Découpage architectural de la façade en modules maniables
+  // Découpage architectural de la façade en trames d'axes régulières
   const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm);
   const rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
 
@@ -540,7 +555,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
         { xM: xCumul, yM: yCumul },
         { xM: xCumul + largeurPiece, yM: yCumul },
         { xM: xCumul + largeurPiece, yM: yCumul + hauteurPiece },
-        { xM: xCumul, yM: yCumul + hauteurPiece },
+        { xM: xCumul + largeurPiece, yM: yCumul + hauteurPiece },
       ];
 
       const points = estPignon
@@ -564,6 +579,11 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
           repere = `R-${String(compteurRives++).padStart(2, "0")}`;
         }
 
+        // Cote nette débitée : la plaque réelle est déduite du joint de 8 mm
+        // (ex: trame de 1000 mm avec joint de 8 mm -> pièce débitée de 992 mm)
+        const largeurNetteMm = Math.max(50, Math.round(largeurPiece * 1000 - epaisseurJointMm));
+        const hauteurNetteMm = Math.max(50, Math.round(hauteurPiece * 1000 - epaisseurJointMm));
+
         pieces.push({
           id: `piece-r${rangee}-c${colonne}`,
           repere,
@@ -573,6 +593,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
           yM: yCumul,
           largeurM: largeurPiece,
           hauteurM: hauteurPiece,
+          largeurNetteMm,
+          hauteurNetteMm,
           type,
           surfaceM2,
           points: estPignon ? points : undefined,
@@ -623,9 +645,15 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       ? (totalDechetsPerteM2 / surfacePlaquesAchetesM2) * 100
       : 0;
 
+  // 5. CALCULS DES JOINTS DE DILATATION (8 MM)
   const nbJointsVerticaux = Math.max(0, colonnesLargeursM.length - 1) * rangeesHauteursM.length;
   const nbJointsHorizontaux =
     Math.max(0, rangeesHauteursM.length - 1) * colonnesLargeursM.length;
+
+  const lineaireJointsVerticauxM = Math.max(0, colonnesLargeursM.length - 1) * hauteurTotale;
+  const lineaireJointsHorizontauxM = Math.max(0, rangeesHauteursM.length - 1) * largeur;
+  const lineaireJointsM = lineaireJointsVerticauxM + lineaireJointsHorizontauxM;
+  const surfaceJointsM2 = lineaireJointsM * jointM;
 
   const pentePct =
     estPignon && largeur > 0
@@ -645,7 +673,12 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     tauxChutePct: tauxChuteNettePct,
     totalChutesReutilisablesM2,
     totalDechetsPerteM2,
+    jointMm: epaisseurJointMm,
     nbJoints: nbJointsVerticaux + nbJointsHorizontaux,
+    nbJointsVerticaux,
+    nbJointsHorizontaux,
+    lineaireJointsM,
+    surfaceJointsM2,
     estPignon,
     hauteurFaiteM: hauteurFaite,
     pentePct,

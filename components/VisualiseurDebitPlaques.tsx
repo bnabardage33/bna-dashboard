@@ -331,7 +331,9 @@ export default function VisualiseurDebitPlaques({
             </div>
           </div>
 
-          <p className="text-[10px] text-slate-500 italic">Épaisseur trait de scie : 3 mm inclus</p>
+          <p className="text-[10px] text-slate-400 italic font-mono">
+            Trait de scie : 3 mm inclus · Joint de dilatation façade : {calepinage.jointMm ?? 8} mm décompté (DTU 41.2)
+          </p>
         </div>
       </div>
 

@@ -497,111 +497,83 @@ export default function PlanCalepinage({
           calepinage && (
             <g>
               {calepinage.pieces.map(
-                (p, index) => (
-                  <g
-                    key={`piece-${index}`}
-                  >
-                    {/*
-                     * Pour un pignon, chaque pièce peut avoir été
-                     * découpée par la pente du toit (p.points).
-                     * Dans ce cas on dessine le polygone réel
-                     * plutôt qu'un rectangle plein, sinon la pièce
-                     * déborderait visuellement au-dessus du rampant.
-                     */}
+                (p, index) => {
+                  const jointMm = calepinage?.jointMm ?? 8;
+                  const jointPx = Math.max(1.5, (jointMm / 1000) * echelle);
 
-                    {p.points ? (
-                      <polygon
-                        points={p.points
-                          .map(
-                            (pt) =>
-                              `${px(
-                                pt.xM
-                              )},${py(
-                                pt.yM
-                              )}`
+                  return (
+                    <g key={`piece-${index}`}>
+                      {p.points ? (
+                        <polygon
+                          points={p.points
+                            .map((pt) => `${px(pt.xM)},${py(pt.yM)}`)
+                            .join(" ")}
+                          fill={p.type === "pleine" ? "#38bdf8" : p.type === "coupe" ? "#7dd3fc" : "#f59e0b"}
+                          fillOpacity={0.75}
+                          stroke="#0f172a"
+                          strokeWidth={jointPx}
+                        />
+                      ) : (
+                        <rect
+                          x={px(p.xM) + jointPx / 2}
+                          y={py(p.yM + p.hauteurM) + jointPx / 2}
+                          width={Math.max(2, p.largeurM * echelle - jointPx)}
+                          height={Math.max(2, p.hauteurM * echelle - jointPx)}
+                          fill={p.type === "pleine" ? "#0284c7" : p.type === "coupe" ? "#38bdf8" : "#f59e0b"}
+                          fillOpacity={0.8}
+                          stroke="#0f172a"
+                          strokeWidth={jointPx}
+                          rx={1.5}
+                        />
+                      )}
+
+                      {(() => {
+                        const hasPoints = p.points && p.points.length >= 3;
+                        const labelX = hasPoints
+                          ? px(p.points!.reduce((s, pt) => s + pt.xM, 0) / p.points!.length)
+                          : px(p.xM) + (p.largeurM * echelle) / 2;
+                        const labelY = hasPoints
+                          ? py(p.points!.reduce((s, pt) => s + pt.yM, 0) / p.points!.length)
+                          : py(p.yM + p.hauteurM / 2);
+
+                        const dimAffichage = `${p.largeurNetteMm || Math.round(p.largeurM * 1000)}×${p.hauteurNetteMm || Math.round(p.hauteurM * 1000)}`;
+
+                        return (
+                          (p.surfaceM2 > 0.08 || (p.largeurM * echelle > 30 && p.hauteurM * echelle > 15)) && (
+                            <g>
+                              {p.repere && (
+                                <text
+                                  x={labelX}
+                                  y={labelY - (p.hauteurM * echelle > 28 ? 6 : 0)}
+                                  fill="#0f172a"
+                                  fontSize={p.hauteurM * echelle > 28 ? 10 : 8}
+                                  fontWeight="900"
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  {p.repere}
+                                </text>
+                              )}
+                              {p.hauteurM * echelle > 28 && (
+                                <text
+                                  x={labelX}
+                                  y={labelY + 7}
+                                  fill="#0f172a"
+                                  fontSize={8}
+                                  fontWeight="bold"
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  {dimAffichage}
+                                </text>
+                              )}
+                            </g>
                           )
-                          .join(" ")}
-                        fill={
-                          p.type ===
-                          "pleine"
-                            ? "#38bdf8"
-                            : "#f59e0b"
-                        }
-                        fillOpacity={0.65}
-                        stroke="#f8fafc"
-                        strokeWidth={1.5}
-                      />
-                    ) : (
-                      <rect
-                        x={px(p.xM)}
-                        y={py(
-                          p.yM +
-                            p.hauteurM
-                        )}
-                        width={
-                          p.largeurM *
-                          echelle
-                        }
-                        height={
-                          p.hauteurM *
-                          echelle
-                        }
-                        fill={
-                          p.type ===
-                          "pleine"
-                            ? "#38bdf8"
-                            : "#f59e0b"
-                        }
-                        fillOpacity={0.65}
-                        stroke="#f8fafc"
-                        strokeWidth={1.5}
-                      />
-                    )}
-
-                    {(() => {
-                      const hasPoints = p.points && p.points.length >= 3;
-                      const labelX = hasPoints
-                        ? px(p.points!.reduce((s, pt) => s + pt.xM, 0) / p.points!.length)
-                        : px(p.xM) + (p.largeurM * echelle) / 2;
-                      const labelY = hasPoints
-                        ? py(p.points!.reduce((s, pt) => s + pt.yM, 0) / p.points!.length)
-                        : py(p.yM + p.hauteurM / 2);
-
-                      return (
-                        (p.surfaceM2 > 0.08 || (p.largeurM * echelle > 30 && p.hauteurM * echelle > 15)) && (
-                          <g>
-                            {p.repere && (
-                              <text
-                                x={labelX}
-                                y={labelY - (p.hauteurM * echelle > 28 ? 6 : 0)}
-                                fill="#0f172a"
-                                fontSize={p.hauteurM * echelle > 28 ? 10 : 8}
-                                fontWeight="900"
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                {p.repere}
-                              </text>
-                            )}
-                            {p.hauteurM * echelle > 28 && (
-                              <text
-                                x={labelX}
-                                y={labelY + 7}
-                                fill="#0f172a"
-                                fontSize={8}
-                                fontWeight="bold"
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                {(p.largeurM * 1000).toFixed(0)}×{(p.hauteurM * 1000).toFixed(0)}
-                              </text>
-                            )}
-                          </g>
-                        )
-                      );
-                    })()}
-                  </g>
-                )
+                        );
+                      })()}
+                    </g>
+                  );
+                }
               )}
             </g>
           )}
@@ -729,11 +701,11 @@ export default function PlanCalepinage({
       {vue === "plaques" &&
         calepinage && (
           <div className="space-y-2.5">
-            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-5">
               <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-[10px] uppercase text-slate-400">Plaques brutes à cder</p>
+                <p className="text-[10px] uppercase text-slate-400">Plaques brutes</p>
                 <p className="text-base font-bold text-white">
-                  {calepinage.nbPlaquesNecessaires}
+                  {calepinage.nbPlaquesNecessaires} <span className="text-xs font-normal text-slate-400">pcs</span>
                 </p>
                 <p className="text-[10px] text-slate-500">
                   {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
@@ -747,6 +719,16 @@ export default function PlanCalepinage({
                 </p>
                 <p className="text-[10px] text-slate-500">
                   Trame {calepinage.moduleCibleLargeurMm}×{calepinage.moduleCibleHauteurMm} mm
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-sky-500/30 bg-sky-950/20 p-2">
+                <p className="text-[10px] uppercase text-sky-400 font-bold">Joint Dilatation</p>
+                <p className="text-base font-bold text-sky-300">
+                  {calepinage.jointMm ?? 8} mm
+                </p>
+                <p className="text-[10px] text-sky-400/80">
+                  {calepinage.lineaireJointsM ? `${calepinage.lineaireJointsM.toFixed(1)} ml joints` : "DTU 41.2"}
                 </p>
               </div>
 
@@ -764,19 +746,19 @@ export default function PlanCalepinage({
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
+              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2 col-span-2 sm:col-span-1">
                 <p className="text-[10px] uppercase text-slate-400">Rendement de débit</p>
                 <p className="text-base font-bold text-white">
                   ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-slate-400">mod./plaque</span>
                 </p>
                 <p className="text-[10px] text-slate-500">
-                  {calepinage.nbJoints} joints façade
+                  {calepinage.nbJoints} joints ({calepinage.nbJointsVerticaux}V + {calepinage.nbJointsHorizontaux}H)
                 </p>
               </div>
             </div>
 
             <p className="text-[11px] text-slate-400 italic">
-              💡 Imbrication 2D : {calepinage.nbPiecesPosees} modules débités dans {calepinage.nbPlaquesNecessaires} plaques brutes ({calepinage.surfacePlaquesAchetesM2.toFixed(1)} m² bruts pour {calepinage.surfaceZoneM2.toFixed(1)} m² nets posés).
+              💡 Imbrication 2D : {calepinage.nbPiecesPosees} modules débités dans {calepinage.nbPlaquesNecessaires} plaques brutes ({calepinage.surfacePlaquesAchetesM2.toFixed(1)} m² bruts pour {calepinage.surfaceZoneM2.toFixed(1)} m² nets posés avec joint creux de {calepinage.jointMm ?? 8} mm).
             </p>
           </div>
         )}
