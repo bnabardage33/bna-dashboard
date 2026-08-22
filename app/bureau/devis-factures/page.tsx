@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
-import { CATALOGUE_OUVRAGES } from "@/lib/catalogueOuvrages";
+
+type CatalogueOuvrage = {
+  id: string;
+  famille_label: string;
+  designation: string;
+  description: string;
+  unite: string;
+  pu_ht: number;
+};
 
 type Client = {
   id: string;
@@ -56,9 +64,13 @@ const LIGNE_VIDE: Ligne = { designation: "", description: "", qte: 1, unite: "fo
 export default function DevisPage() {
   const [devis, setDevis] = useState<Devis[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [catalogue, setCatalogue] = useState<CatalogueOuvrage[]>([]);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
+  const [devisToBill, setDevisToBill] = useState<Devis | null>(null);
+  const [billType, setBillType] = useState<"acompte" | "situation" | "totale">("acompte");
+  const [billPct, setBillPct] = useState<number>(30);
   const [apercu, setApercu] = useState<Devis | null>(null);
 
   const [clientId, setClientId] = useState("");
@@ -73,17 +85,20 @@ export default function DevisPage() {
 
   async function fetchTout() {
     setLoading(true);
-    const [devisRes, clientsRes, settingsRes] = await Promise.all([
+    const [devisRes, clientsRes, settingsRes, catRes] = await Promise.all([
+
       supabase
         .from("devis")
         .select("*, clients(*)")
         .order("created_at", { ascending: false }),
       supabase.from("clients").select("*").order("nom"),
       supabase.from("entreprise_settings").select("*").eq("id", 1).single(),
+      supabase.from("catalogue_ouvrages").select("*").order("designation"),
     ]);
     if (devisRes.error) console.error(devisRes.error);
     else setDevis(devisRes.data as Devis[]);
     if (clientsRes.data) setClients(clientsRes.data as Client[]);
+    if (catRes && catRes.data) setCatalogue(catRes.data as CatalogueOuvrage[]);
     if (settingsRes.data) setEntreprise(settingsRes.data as Entreprise);
     setLoading(false);
   }
@@ -100,7 +115,7 @@ export default function DevisPage() {
 
   function insererDepuisCatalogue(ouvrageId: string) {
     if (!ouvrageId) return;
-    const ouv = CATALOGUE_OUVRAGES.find((o) => o.id === ouvrageId);
+    const ouv = catalogue.find((o) => o.id === ouvrageId);
     if (!ouv) return;
     setLignes((prev) => {
       const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
@@ -166,9 +181,66 @@ export default function DevisPage() {
     if (error) return;
 
     if (statut === "accepte" && d.statut !== "accepte") {
-      await genererFactureAcompte(d);
+      setDevisToBill(d);
+    } else {
+      fetchTout();
+    }
+  }
+
+
+  async function handleGenererFacture(e: React.FormEvent) {
+    e.preventDefault();
+    if (!devisToBill) return;
+    const d = devisToBill;
+    
+    const numero = await prochainNumero("factures", "FAC");
+    let lignesFacture: Ligne[] = [];
+    
+    if (billType === "totale") {
+      // On copie exactement les lignes
+      lignesFacture = d.lignes;
+    } else if (billType === "acompte") {
+      // Ligne unique d'acompte
+      const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+      const montantHT = totalHT * (billPct / 100);
+      lignesFacture = [
+        {
+          designation: `Acompte ${billPct}% à la commande`,
+          description: d.objet ?? undefined,
+          qte: 1,
+          unite: "forfait",
+          pu_ht: Math.round(montantHT * 100) / 100,
+        },
+      ];
+    } else if (billType === "situation") {
+      // Situation: On copie les lignes mais on indique le pourcentage d'avancement dans la désignation
+      lignesFacture = d.lignes.map(l => ({
+        ...l,
+        designation: `[Avancement ${billPct}%] ${l.designation}`,
+        pu_ht: Math.round(l.pu_ht * (billPct / 100) * 100) / 100
+      }));
     }
 
+    const { error } = await supabase.from("factures").insert({
+      numero,
+      devis_id: d.id,
+      client_id: d.client_id,
+      objet: `${billType === "totale" ? "Facture" : billType === "acompte" ? "Acompte" : "Situation d'avancement"} — ${d.objet ?? d.numero}`,
+      adresse_chantier: d.adresse_chantier,
+      type_travaux: d.type_travaux,
+      tva_pct: d.tva_pct,
+      type_facture: billType === "totale" ? "solde" : billType,
+      statut: "brouillon",
+      lignes: lignesFacture,
+    });
+
+    if (error) {
+      alert("Erreur lors de la génération de la facture : " + error.message);
+    } else {
+      alert(`Facture ${numero} générée dans l'onglet Factures.`);
+    }
+    
+    setDevisToBill(null);
     fetchTout();
   }
 
@@ -522,9 +594,9 @@ export default function DevisPage() {
                   <option value="" disabled>
                     📦 + Insérer un ouvrage depuis le catalogue standard...
                   </option>
-                  {CATALOGUE_OUVRAGES.map((ouv) => (
+                  {catalogue.map((ouv) => (
                     <option key={ouv.id} value={ouv.id}>
-                      [{ouv.familleLabel}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                      [{ouv.famille_label}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
                     </option>
                   ))}
                 </select>

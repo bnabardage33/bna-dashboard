@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
-import { CATALOGUE_OUVRAGES } from "@/lib/catalogueOuvrages";
+
+type CatalogueOuvrage = {
+  id: string;
+  famille_label: string;
+  designation: string;
+  description: string;
+  unite: string;
+  pu_ht: number;
+};
 
 type Client = {
   id: string;
@@ -68,6 +76,7 @@ const LIGNE_VIDE: Ligne = { designation: "", description: "", qte: 1, unite: "fo
 export default function FacturesPage() {
   const [factures, setFactures] = useState<Facture[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [catalogue, setCatalogue] = useState<CatalogueOuvrage[]>([]);
   const [devisAcceptes, setDevisAcceptes] = useState<Devis[]>([]);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +97,7 @@ export default function FacturesPage() {
 
   async function fetchTout() {
     setLoading(true);
-    const [facturesRes, clientsRes, devisRes, settingsRes] = await Promise.all([
+    const [facturesRes, clientsRes, devisRes, settingsRes, catRes] = await Promise.all([
       supabase
         .from("factures")
         .select("*, clients(*)")
@@ -96,10 +105,12 @@ export default function FacturesPage() {
       supabase.from("clients").select("*").order("nom"),
       supabase.from("devis").select("*").eq("statut", "accepte"),
       supabase.from("entreprise_settings").select("*").eq("id", 1).single(),
+      supabase.from("catalogue_ouvrages").select("*").order("designation"),
     ]);
     if (facturesRes.error) console.error(facturesRes.error);
     else setFactures(facturesRes.data as Facture[]);
     if (clientsRes.data) setClients(clientsRes.data as Client[]);
+    if (catRes && catRes.data) setCatalogue(catRes.data as CatalogueOuvrage[]);
     if (devisRes.data) setDevisAcceptes(devisRes.data as Devis[]);
     if (settingsRes.data) setEntreprise(settingsRes.data as Entreprise);
     setLoading(false);
@@ -185,7 +196,7 @@ export default function FacturesPage() {
 
   function insererDepuisCatalogue(ouvrageId: string) {
     if (!ouvrageId) return;
-    const ouv = CATALOGUE_OUVRAGES.find((o) => o.id === ouvrageId);
+    const ouv = catalogue.find((o) => o.id === ouvrageId);
     if (!ouv) return;
     setLignes((prev) => {
       const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
@@ -598,9 +609,9 @@ export default function FacturesPage() {
                   <option value="" disabled>
                     📦 + Insérer un ouvrage depuis le catalogue standard...
                   </option>
-                  {CATALOGUE_OUVRAGES.map((ouv) => (
+                  {catalogue.map((ouv) => (
                     <option key={ouv.id} value={ouv.id}>
-                      [{ouv.familleLabel}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                      [{ouv.famille_label}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
                     </option>
                   ))}
                 </select>
