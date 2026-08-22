@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   calculerPose,
   FamillePose,
@@ -171,6 +171,25 @@ export default function ZoneCard({
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
   const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
   const [replie, setReplie] = useState(false);
+
+  const formatPlaquesStd = ["3050x1300", "3650x1860", "2550x1860", "2800x1300", "4100x1300"];
+  const currentPlaque = `${zone.plaque_longueur_mm ?? 3050}x${zone.plaque_largeur_mm ?? 1300}`;
+  const [isPlaqueCustom, setIsPlaqueCustom] = useState(!formatPlaquesStd.includes(currentPlaque));
+
+  const formatModulesStd = ["1000x600", "1200x800", "1500x450", "600x1200"];
+  const currentModule = `${zone.module_largeur_mm ?? 1000}x${zone.module_hauteur_mm ?? 600}`;
+  const [isModuleCustom, setIsModuleCustom] = useState(!formatModulesStd.includes(currentModule));
+
+  useEffect(() => {
+    const isCustom = !formatPlaquesStd.includes(`${zone.plaque_longueur_mm ?? 3050}x${zone.plaque_largeur_mm ?? 1300}`);
+    if (!isCustom && isPlaqueCustom) setIsPlaqueCustom(false);
+  }, [zone.plaque_longueur_mm, zone.plaque_largeur_mm]);
+
+  useEffect(() => {
+    const isCustom = !formatModulesStd.includes(`${zone.module_largeur_mm ?? 1000}x${zone.module_hauteur_mm ?? 600}`);
+    if (!isCustom && isModuleCustom) setIsModuleCustom(false);
+  }, [zone.module_largeur_mm, zone.module_hauteur_mm]);
+
   const calc = calculerZone(zone);
 
   /*
@@ -818,17 +837,25 @@ export default function ZoneCard({
                 <label className="text-[11px] text-slate-400">Format standard fabricant</label>
                 <select
                   value={
-                    zone.plaque_longueur_mm && zone.plaque_largeur_mm
-                      ? `${zone.plaque_longueur_mm}x${zone.plaque_largeur_mm}`
-                      : "3050x1300"
+                    isPlaqueCustom
+                      ? "custom"
+                      : (zone.plaque_longueur_mm && zone.plaque_largeur_mm
+                        ? `${zone.plaque_longueur_mm}x${zone.plaque_largeur_mm}`
+                        : "3050x1300")
                   }
                   onChange={(e) => {
-                    const [lStr, wStr] = e.target.value.split("x");
-                    if (lStr && wStr) {
-                      update({
-                        plaque_longueur_mm: parseInt(lStr, 10),
-                        plaque_largeur_mm: parseInt(wStr, 10),
-                      });
+                    const val = e.target.value;
+                    if (val === "custom") {
+                      setIsPlaqueCustom(true);
+                    } else {
+                      setIsPlaqueCustom(false);
+                      const [lStr, wStr] = val.split("x");
+                      if (lStr && wStr) {
+                        update({
+                          plaque_longueur_mm: parseInt(lStr, 10),
+                          plaque_largeur_mm: parseInt(wStr, 10),
+                        });
+                      }
                     }
                   }}
                   className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
@@ -846,6 +873,7 @@ export default function ZoneCard({
                 <Field
                   label="Longueur brute (mm)"
                   value={zone.plaque_longueur_mm ?? 3050}
+                  disabled={!isPlaqueCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ plaque_longueur_mm: mm || null });
@@ -854,6 +882,7 @@ export default function ZoneCard({
                 <Field
                   label="Largeur brute (mm)"
                   value={zone.plaque_largeur_mm ?? 1300}
+                  disabled={!isPlaqueCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ plaque_largeur_mm: mm || null });
@@ -875,17 +904,25 @@ export default function ZoneCard({
                 <label className="text-[11px] text-slate-400">Trame cible des modules</label>
                 <select
                   value={
-                    zone.module_largeur_mm && zone.module_hauteur_mm
-                      ? `${zone.module_largeur_mm}x${zone.module_hauteur_mm}`
-                      : "1000x600"
+                    isModuleCustom
+                      ? "custom"
+                      : (zone.module_largeur_mm && zone.module_hauteur_mm
+                        ? `${zone.module_largeur_mm}x${zone.module_hauteur_mm}`
+                        : "1000x600")
                   }
                   onChange={(e) => {
-                    const [wStr, hStr] = e.target.value.split("x");
-                    if (wStr && hStr) {
-                      update({
-                        module_largeur_mm: parseInt(wStr, 10),
-                        module_hauteur_mm: parseInt(hStr, 10),
-                      });
+                    const val = e.target.value;
+                    if (val === "custom") {
+                      setIsModuleCustom(true);
+                    } else {
+                      setIsModuleCustom(false);
+                      const [wStr, hStr] = val.split("x");
+                      if (wStr && hStr) {
+                        update({
+                          module_largeur_mm: parseInt(wStr, 10),
+                          module_hauteur_mm: parseInt(hStr, 10),
+                        });
+                      }
                     }
                   }}
                   className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
@@ -902,6 +939,7 @@ export default function ZoneCard({
                 <Field
                   label="Largeur module (mm)"
                   value={zone.module_largeur_mm ?? 1000}
+                  disabled={!isModuleCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ module_largeur_mm: mm || null });
@@ -910,6 +948,7 @@ export default function ZoneCard({
                 <Field
                   label="Hauteur module (mm)"
                   value={zone.module_hauteur_mm ?? 600}
+                  disabled={!isModuleCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ module_hauteur_mm: mm || null });
@@ -1408,10 +1447,12 @@ function Field({
   label,
   value,
   onChange,
+  disabled = false,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -1422,6 +1463,7 @@ function Field({
       <input
         type="number"
         value={value}
+        disabled={disabled}
         onChange={(e) =>
           onChange(
             parseFloat(
@@ -1429,7 +1471,9 @@ function Field({
             ) || 0
           )
         }
-        className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+        className={`mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 ${
+          disabled ? "opacity-50 cursor-not-allowed" : ""
+        }`}
       />
     </div>
   );
