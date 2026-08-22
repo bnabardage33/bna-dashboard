@@ -63,6 +63,7 @@ export interface KpiMensuelResult {
   ca_facture_ht: number;
   depenses_total: number;
   marge_brute: number;
+  taux_marge_pct: number;
   reste_a_facturer: number;
 }
 

@@ -119,6 +119,7 @@ export function calculerKpiMensuel(
     });
 
     const marge_brute = ca_facture_ht - depenses_total;
+    const taux_marge_pct = ca_facture_ht > 0 ? (marge_brute / ca_facture_ht) * 100 : 0;
 
     // Reste à facturer = total prix vente chantiers - total factures émises (hors brouillon/annulée)
     const total_prix_vente = chantiers.reduce((sum, c) => sum + c.prix_vente_ht, 0);
@@ -135,6 +136,7 @@ export function calculerKpiMensuel(
       ca_facture_ht,
       depenses_total,
       marge_brute,
+      taux_marge_pct,
       reste_a_facturer,
     };
   } catch (error) {
@@ -217,18 +219,24 @@ export function estimerChargesSociales(masseSalarialeBrute: number): ChargesSoci
    FORMATTERS DE DONNÉES
    ========================================================= */
 
-export function fmtEuro(montant: number): string {
+export function fmtEuro(montant?: number | null): string {
+  if (montant === null || montant === undefined || Number.isNaN(montant)) {
+    return "0,00 €";
+  }
   try {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(montant);
   } catch (error) {
-    return `${montant} €`;
+    return "0,00 €";
   }
 }
 
-export function fmtPct(valeur: number): string {
+export function fmtPct(valeur?: number | null): string {
+  if (valeur === null || valeur === undefined || Number.isNaN(valeur)) {
+    return "0,0 %";
+  }
   try {
     return new Intl.NumberFormat("fr-FR", {
       style: "percent",
@@ -236,7 +244,7 @@ export function fmtPct(valeur: number): string {
       maximumFractionDigits: 1,
     }).format(valeur / 100);
   } catch (error) {
-    return `${valeur.toFixed(1)} %`;
+    return "0,0 %";
   }
 }
 

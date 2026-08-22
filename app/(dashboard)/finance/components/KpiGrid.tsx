@@ -17,8 +17,8 @@ export default function KpiGrid() {
     );
   }
 
-  const margePositive = kpis.marge_brute >= 0;
-  const tauxMarge = kpis.ca_facture_ht > 0 ? (kpis.marge_brute / kpis.ca_facture_ht) * 100 : 0;
+  const margePositive = (kpis?.marge_brute ?? 0) >= 0;
+  const tauxMarge = kpis?.taux_marge_pct ?? 0;
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -29,7 +29,7 @@ export default function KpiGrid() {
           <span className="text-xs uppercase tracking-wider">CA Facturé HT</span>
         </div>
         <div className="mt-4 text-2xl font-bold text-slate-100">
-          {fmtEuro(kpis.ca_facture_ht)}
+          {fmtEuro(kpis?.ca_facture_ht ?? 0)}
         </div>
       </div>
 
@@ -40,7 +40,7 @@ export default function KpiGrid() {
           <span className="text-xs uppercase tracking-wider">Dépenses du mois</span>
         </div>
         <div className="mt-4 text-2xl font-bold text-slate-100">
-          {fmtEuro(kpis.depenses_total)}
+          {fmtEuro(kpis?.depenses_total ?? 0)}
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export default function KpiGrid() {
         </div>
         <div className="mt-4 flex items-baseline gap-2">
           <span className={`text-2xl font-bold ${margePositive ? "text-emerald-400" : "text-rose-400"}`}>
-            {fmtEuro(kpis.marge_brute)}
+            {fmtEuro(kpis?.marge_brute ?? 0)}
           </span>
           <span className={`text-sm font-medium ${margePositive ? "text-emerald-500" : "text-rose-500"}`}>
             ({fmtPct(tauxMarge)})
@@ -71,9 +71,9 @@ export default function KpiGrid() {
           <span className="text-xs uppercase tracking-wider">Reste à facturer</span>
         </div>
         <div className="mt-4 text-2xl font-bold text-slate-100">
-          {fmtEuro(kpis.reste_a_facturer)}
+          {fmtEuro(kpis?.reste_a_facturer ?? 0)}
         </div>
-        {kpis.reste_a_facturer > 50000 && (
+        {(kpis?.reste_a_facturer ?? 0) > 50000 && (
           <div className="absolute top-4 right-4 flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
             <AlertTriangle className="h-3 w-3" />
             Important
