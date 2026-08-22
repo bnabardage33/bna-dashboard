@@ -62,6 +62,7 @@ export default function ChantierRentabilite() {
               <tr>
                 <th className="px-4 py-3 font-medium">Chantier</th>
                 <th className="px-4 py-3 font-medium text-right">Prix vente</th>
+                <th className="px-4 py-3 font-medium text-center">Avancement</th>
                 <th className="px-4 py-3 font-medium text-right">Coût direct</th>
                 <th className="px-4 py-3 font-medium text-right">Marge</th>
                 <th className="px-4 py-3 font-medium text-center">Taux marge</th>
@@ -84,6 +85,14 @@ export default function ChantierRentabilite() {
                     </td>
                     <td className="px-4 py-3 text-right font-medium">
                       {fmtEuro(r.prix_vente_ht)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-xs font-bold text-cyan-400">{r.avancement_reel || 0}%</span>
+                        <div className="w-16 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min(r.avancement_reel || 0, 100)}%` }}></div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right text-slate-400">
                       {fmtEuro(r.cout_direct_total)}

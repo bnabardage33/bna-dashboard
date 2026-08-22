@@ -5,7 +5,7 @@ import { fmtEuro, fmtPct } from "@/lib/financeCalculs";
 import { Receipt, Package, TrendingUp, TrendingDown, Wallet, AlertTriangle } from "lucide-react";
 
 export default function KpiGrid({ mois }: { mois?: string }) {
-  const { kpis, isLoading } = useKpiMensuel();
+  const { kpis, isLoading } = useKpiMensuel(mois);
 
   if (isLoading) {
     return (

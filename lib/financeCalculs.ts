@@ -130,6 +130,12 @@ export function calculerKpiMensuel(
       }
     });
 
+    depenses.forEach((d) => {
+      if (d.date.startsWith(mois)) {
+        depenses_total += d.montant_ht;
+      }
+    });
+
     pointages.forEach((ptg) => {
       if (ptg.date.startsWith(mois)) {
         depenses_total += ptg.heures * ptg.taux_horaire_charge;

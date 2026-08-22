@@ -1,3 +1,5 @@
+"use client";
+
 import KpiGrid from "./components/KpiGrid";
 import ChantierRentabilite from "./components/ChantierRentabilite";
 import TvaWidget from "./components/TvaWidget";

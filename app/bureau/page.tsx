@@ -169,7 +169,11 @@ export default function BureauDashboard() {
               <Receipt className="h-8 w-8 text-cyan-400" />
               <span className="font-semibold text-slate-200">Factures</span>
             </Link>
-            <Link href="/bureau/rapports-intemperies" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-6 hover:bg-slate-700 hover:border-slate-500 transition-all text-center">
+            <Link href="/bureau/catalogue" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-6 hover:bg-slate-700 hover:border-slate-500 transition-all text-center">
+              <FileText className="h-8 w-8 text-cyan-400" />
+              <span className="font-semibold text-slate-200">Catalogue Ouvrages</span>
+            </Link>
+            <Link href="/bureau/rapports-intemperies" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-6 hover:bg-slate-700 hover:border-slate-500 transition-all text-center md:col-span-2 lg:col-span-1">
               <CheckCircle2 className="h-8 w-8 text-cyan-400" />
               <span className="font-semibold text-slate-200">Rapports Intempéries</span>
             </Link>
