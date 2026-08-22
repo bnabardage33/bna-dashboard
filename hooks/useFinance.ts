@@ -438,7 +438,8 @@ export function useTresorerie() {
 
 // --- Hook 6 : URSSAF ---
 
-export function useUrssaf() {
+export function useUrssaf(mois?: string) {
+  const targetMois = mois || new Date().toISOString().slice(0, 7);
   const [masseSalariale, setMasseSalariale] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -453,8 +454,7 @@ export function useUrssaf() {
         if (isMounted) setError(err);
       };
 
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const { startDate, endDate } = getMonthRange(currentMonth);
+      const { startDate, endDate } = getMonthRange(targetMois);
 
       const pointData = await safeFetch<PointageFinance>(
         supabase
@@ -478,14 +478,15 @@ export function useUrssaf() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [targetMois]);
 
   return { masseSalariale, isLoading, error };
 }
 
 // --- Hooks pour Analyses & Graphiques ---
 
-export function useCaEvolution(months = 12) {
+export function useCaEvolution(months = 12, endMois?: string) {
+  const targetMois = endMois || new Date().toISOString().slice(0, 7);
   const [data, setData] = useState<{ month: string; ca: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -493,22 +494,26 @@ export function useCaEvolution(months = 12) {
     let isMounted = true;
     const fetchEvo = async () => {
       try {
-        const d = new Date();
+        const d = new Date(targetMois + "-01");
         d.setMonth(d.getMonth() - months + 1);
         const startDate = d.toISOString().slice(0, 7) + "-01";
+        const endDateObj = new Date(targetMois + "-01");
+        endDateObj.setMonth(endDateObj.getMonth() + 1);
+        const endDate = endDateObj.toISOString().slice(0,7) + "-01";
 
         const { data: factures } = await supabase
           .from("factures")
           .select("montant_ht, date_emission")
           .neq("statut", "annulee")
-          .gte("date_emission", startDate);
+          .gte("date_emission", startDate)
+          .lt("date_emission", endDate);
 
         if (isMounted && factures) {
           const acc: Record<string, number> = {};
           
           // Initialiser les mois
           for (let i = 0; i < months; i++) {
-            const tempD = new Date();
+            const tempD = new Date(targetMois + "-01");
             tempD.setMonth(tempD.getMonth() - (months - 1) + i);
             const mKey = tempD.toISOString().slice(0, 7);
             acc[mKey] = 0;
@@ -541,12 +546,12 @@ export function useCaEvolution(months = 12) {
     return () => {
       isMounted = false;
     };
-  }, [months]);
+  }, [months, targetMois]);
 
   return { data, isLoading };
 }
 
-export function useCoutRepartition() {
+export function useCoutRepartition(mois?: string) {
   const [data, setData] = useState<{ name: string; value: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -554,9 +559,12 @@ export function useCoutRepartition() {
     let isMounted = true;
     const fetchRep = async () => {
       try {
-        const { data: depenses } = await supabase
-          .from("depenses_chantier")
-          .select("nature, montant_ht");
+        let query = supabase.from("depenses_chantier").select("nature, montant_ht");
+        if (mois) {
+          const { startDate, endDate } = getMonthRange(mois);
+          query = query.gte("date", startDate).lte("date", endDate);
+        }
+        const { data: depenses } = await query;
 
         if (isMounted && depenses) {
           const acc: Record<string, number> = {
@@ -592,7 +600,7 @@ export function useCoutRepartition() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [mois]);
 
   return { data, isLoading };
 }
@@ -653,3 +661,43 @@ export function useTresoreriePrevision(days = 90) {
   return { data, isLoading: tresLoading || paramLoading };
 }
 
+
+// --- Hook Historique Saisies ---
+
+export function useHistoriqueSaisies() {
+  const [pointages, setPointages] = useState<any[]>([]);
+  const [depenses, setDepenses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    const [resP, resD] = await Promise.all([
+      supabase.from("pointages").select("*, chantiers(nom), profiles:user_id(full_name)").order("created_at", { ascending: false }).limit(50),
+      supabase.from("depenses_chantier").select("*, chantiers(nom), fournisseurs(nom)").order("created_at", { ascending: false }).limit(50)
+    ]);
+
+    if (resP.data) setPointages(resP.data);
+    if (resD.data) setDepenses(resD.data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const supprimerPointage = async (id: string) => {
+    const confirm = window.confirm("Supprimer ce pointage ?");
+    if (!confirm) return;
+    await supabase.from("pointages").delete().eq("id", id);
+    setPointages(prev => prev.filter(p => p.id !== id));
+  };
+
+  const supprimerDepense = async (id: string) => {
+    const confirm = window.confirm("Supprimer cette dépense ?");
+    if (!confirm) return;
+    await supabase.from("depenses_chantier").delete().eq("id", id);
+    setDepenses(prev => prev.filter(d => d.id !== id));
+  };
+
+  return { pointages, depenses, isLoading, supprimerPointage, supprimerDepense, refresh: fetchData };
+}

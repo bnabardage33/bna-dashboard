@@ -4,7 +4,7 @@ import TvaWidget from "./components/TvaWidget";
 import TresorerieWidget from "./components/TresorerieWidget";
 import UrsaafWidget from "./components/UrsaafWidget";
 import Link from "next/link";
-import { Clock, Receipt, TrendingUp, FileText } from "lucide-react";
+import { Clock, Receipt, TrendingUp, FileText, History } from "lucide-react";
 import CaEvolutionChart from "./components/charts/CaEvolutionChart";
 import CoutRepartitionChart from "./components/charts/CoutRepartitionChart";
 import TresoreriePrevisionChart from "./components/charts/TresoreriePrevisionChart";
@@ -14,8 +14,11 @@ import { useState } from "react";
 
 export default function FinanceDashboard() {
   const [printingRapport, setPrintingRapport] = useState(false);
+  const [selectedMois, setSelectedMois] = useState(
+    new Date().toISOString().slice(0, 7)
+  );
 
-  const moisAffiche = new Date().toLocaleDateString("fr-FR", {
+  const moisAffiche = new Date(selectedMois + "-01").toLocaleDateString("fr-FR", {
     month: "long",
     year: "numeric",
   });
@@ -37,32 +40,43 @@ export default function FinanceDashboard() {
             <h1 className="text-3xl font-bold text-slate-100">
               Finance & Pilotage
             </h1>
-            <div className="flex items-center gap-4">
-              <p className="text-sm font-medium text-slate-400 capitalize">
-                {moisAffiche}
-              </p>
+            <div className="flex items-center gap-4 mt-2">
+              <input
+                type="month"
+                value={selectedMois}
+                onChange={(e) => setSelectedMois(e.target.value)}
+                className="rounded-md border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 outline-none focus:border-cyan-400"
+              />
               <button
                 onClick={() => setPrintingRapport(true)}
                 disabled={printingRapport}
-                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
               >
-                <FileText className="h-3 w-3" />
-                📄 Rapport mensuel
+                <FileText className="h-4 w-4" />
+                Rapport mensuel
               </button>
             </div>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/finance/saisie/pointage"
+              href="/finance/historique"
               className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+              title="Historique & Corrections"
+            >
+              <History className="h-4 w-4" />
+              Historique
+            </Link>
+            <Link
+              href="/finance/saisie/pointage"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-cyan-600/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-600/20"
             >
               <Clock className="h-4 w-4" />
               + Pointage
             </Link>
             <Link
               href="/finance/saisie/depense"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-rose-600/10 px-4 py-2 text-sm font-medium text-rose-400 transition-colors hover:bg-rose-600/20"
             >
               <Receipt className="h-4 w-4" />
               + Dépense
@@ -78,7 +92,7 @@ export default function FinanceDashboard() {
         </header>
 
         <section>
-          <KpiGrid />
+          <KpiGrid mois={selectedMois} />
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -86,17 +100,17 @@ export default function FinanceDashboard() {
             <ChantierRentabilite />
           </div>
           <div className="flex flex-col gap-6">
-            <TvaWidget />
+            <TvaWidget mois={selectedMois} />
             <TresorerieWidget />
-            <UrsaafWidget />
+            <UrsaafWidget mois={selectedMois} />
           </div>
         </section>
 
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-slate-100 mb-4">Analyses & Tendances</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CaEvolutionChart />
-            <CoutRepartitionChart />
+            <CaEvolutionChart endMois={selectedMois} />
+            <CoutRepartitionChart mois={selectedMois} />
             <TresoreriePrevisionChart />
             <MargeParTypeChart />
           </div>

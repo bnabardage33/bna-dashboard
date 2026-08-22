@@ -4,7 +4,7 @@ import { useTvaMensuelle } from "@/hooks/useFinance";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Calculator } from "lucide-react";
 
-export default function TvaWidget() {
+export default function TvaWidget({ mois }: { mois?: string }) {
   const { tva, isLoading } = useTvaMensuelle();
   const moisAffiche = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 

@@ -4,7 +4,7 @@ import { useUrssaf } from "@/hooks/useFinance";
 import { estimerChargesSociales, fmtEuro, fmtPct } from "@/lib/financeCalculs";
 import { Users } from "lucide-react";
 
-export default function UrsaafWidget() {
+export default function UrsaafWidget({ mois }: { mois?: string }) {
   const { masseSalariale, isLoading } = useUrssaf();
 
   if (isLoading) {

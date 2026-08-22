@@ -12,8 +12,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export default function CaEvolutionChart() {
-  const { data, isLoading } = useCaEvolution(12);
+export default function CaEvolutionChart({ endMois }: { endMois?: string }) {
+  const { data, isLoading } = useCaEvolution(12, endMois);
 
   if (isLoading) {
     return (

@@ -20,8 +20,8 @@ const COLORS: Record<string, string> = {
   "Autre": "#475569", // slate-600
 };
 
-export default function CoutRepartitionChart() {
-  const { data, isLoading } = useCoutRepartition();
+export default function CoutRepartitionChart({ mois }: { mois?: string }) {
+  const { data, isLoading } = useCoutRepartition(mois);
 
   if (isLoading) {
     return (
