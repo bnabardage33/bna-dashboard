@@ -1,6 +1,8 @@
 import KpiGrid from "./components/KpiGrid";
 import ChantierRentabilite from "./components/ChantierRentabilite";
 import TvaWidget from "./components/TvaWidget";
+import TresorerieWidget from "./components/TresorerieWidget";
+import UrsaafWidget from "./components/UrsaafWidget";
 
 export default function FinanceDashboard() {
   const moisAffiche = new Date().toLocaleDateString("fr-FR", {
@@ -28,8 +30,10 @@ export default function FinanceDashboard() {
           <div className="lg:col-span-2">
             <ChantierRentabilite />
           </div>
-          <div>
+          <div className="flex flex-col gap-6">
             <TvaWidget />
+            <TresorerieWidget />
+            <UrsaafWidget />
           </div>
         </section>
       </div>

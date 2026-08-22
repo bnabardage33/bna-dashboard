@@ -296,3 +296,183 @@ export function useTvaMensuelle(mois?: string) {
 
   return { tva, isLoading, error };
 }
+
+// --- Hook 4 : Paramètre Finance ---
+
+export function useParametreFinance(cle: string) {
+  const [valeur, setValeur] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchParam = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("parametres_finance")
+          .select("valeur")
+          .eq("cle", cle)
+          .single();
+        if (!error && data && isMounted) {
+          setValeur(data.valeur);
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchParam();
+    return () => {
+      isMounted = false;
+    };
+  }, [cle]);
+
+  const updateValeur = async (newVal: number) => {
+    setValeur(newVal);
+    await supabase
+      .from("parametres_finance")
+      .upsert({ cle, valeur: newVal }, { onConflict: "cle" });
+  };
+
+  return { valeur, updateValeur, isLoading };
+}
+
+// --- Hook 5 : Trésorerie ---
+
+export type TresorerieFacture = FactureFinance & {
+  client_nom?: string;
+  date_echeance?: string;
+};
+export type TresorerieAchat = AchatFinance & {
+  fournisseur_nom?: string;
+  date_echeance?: string;
+  statut?: string;
+};
+
+export function useTresorerie() {
+  const [factures, setFactures] = useState<TresorerieFacture[]>([]);
+  const [achats, setAchats] = useState<TresorerieAchat[]>([]);
+  const [masseSalariale, setMasseSalariale] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const handleError = (err: Error) => {
+        if (isMounted) setError(err);
+      };
+
+      const today = new Date();
+      const in30Days = new Date();
+      in30Days.setDate(today.getDate() + 30);
+
+      const todayStr = today.toISOString();
+      const in30DaysStr = in30Days.toISOString();
+
+      const currentMonth = todayStr.slice(0, 7);
+      const { startDate, endDate } = getMonthRange(currentMonth);
+
+      const [factData, achatsData, pointData] = await Promise.all([
+        safeFetch<TresorerieFacture>(
+          supabase
+            .from("factures")
+            .select("*, clients(nom)")
+            .in("statut", ["emise", "envoyee"])
+            .gte("date_echeance", todayStr)
+            .lte("date_echeance", in30DaysStr),
+          handleError
+        ),
+        safeFetch<TresorerieAchat>(
+          supabase
+            .from("commandes")
+            .select("*")
+            .not("statut", "in", '("paye","payee")')
+            .gte("date", todayStr)
+            .lte("date", in30DaysStr),
+          handleError
+        ),
+        safeFetch<PointageFinance>(
+          supabase
+            .from("pointages")
+            .select("*")
+            .gte("date", startDate)
+            .lte("date", endDate),
+          handleError
+        ),
+      ]);
+
+      if (isMounted) {
+        setFactures(
+          factData.map((f: any) => ({
+            ...f,
+            client_nom: f.clients?.nom || f.client_nom || "Client inconnu",
+          }))
+        );
+        setAchats(achatsData);
+        const masse = pointData.reduce(
+          (sum, p) => sum + p.heures * p.taux_horaire_charge,
+          0
+        );
+        setMasseSalariale(masse);
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { factures, achats, masseSalariale, isLoading, error };
+}
+
+// --- Hook 6 : URSSAF ---
+
+export function useUrssaf() {
+  const [masseSalariale, setMasseSalariale] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const handleError = (err: Error) => {
+        if (isMounted) setError(err);
+      };
+
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const { startDate, endDate } = getMonthRange(currentMonth);
+
+      const pointData = await safeFetch<PointageFinance>(
+        supabase
+          .from("pointages")
+          .select("*")
+          .gte("date", startDate)
+          .lte("date", endDate),
+        handleError
+      );
+
+      if (isMounted) {
+        const masse = pointData.reduce(
+          (sum, p) => sum + p.heures * p.taux_horaire_charge,
+          0
+        );
+        setMasseSalariale(masse);
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { masseSalariale, isLoading, error };
+}
