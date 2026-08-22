@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HardHat, Building2, ShoppingCart, Wrench } from "lucide-react";
+import { HardHat, Building2, ShoppingCart, Wrench, TrendingUp } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -50,6 +50,13 @@ export default function BottomNav() {
         path.startsWith("/terrain/fiche-technique") ||
         path.startsWith("/rapports-intemperies") ||
         path.startsWith("/bureau/rapports-intemperies"),
+    },
+    {
+      id: "finance",
+      label: "Finance",
+      href: "/finance",
+      icon: TrendingUp,
+      isActive: (path: string) => path.startsWith("/finance"),
     },
   ];
 
