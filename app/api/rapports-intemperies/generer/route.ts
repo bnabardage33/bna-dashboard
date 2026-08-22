@@ -13,7 +13,7 @@
 // ------------------------------------------------------------
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import {
   evaluerJourChantier,
@@ -507,63 +507,77 @@ export async function POST(request: NextRequest) {
       }
 
       // -----------------------------------------------------------------------
-      // 8. Création du rapport
+      // 8. Création OU mise à jour du rapport
+      // -----------------------------------------------------------------------
+      //
+      // Si un rapport existe déjà pour aujourd'hui ET force=true,
+      // on le met à jour (même numéro) plutôt que d'en créer un nouveau
+      // (la contrainte unique en base interdit 2 rapports auto/jour/chantier).
       // -----------------------------------------------------------------------
 
-      const numero = await prochainNumero();
+      const donneesRapport = {
+        vigilance_officielle: niveauRapport,
+        jour_arrete: decision.jourArrete,
+        a_valider: decision.aValider,
+        ampleur_impact: decision.jourArrete
+          ? "complete"
+          : decision.aValider
+            ? "partielle"
+            : null,
+        pluie_continue: decision.pluieContinue,
+        motif,
+        risque_technique_niveau: decision.risqueTechnique.niveau,
+        risque_technique_motif: decision.risqueTechnique.motif,
+        temp_max: meteo.tempMax,
+        rafales_max: meteo.rafalesMax,
+        pluie_cumul: meteo.pluieCumul,
+        materiau,
+        acces,
+        departement,
+        releve_horaire: meteo.heures,
+      };
 
-      const { data: rapportCree, error: erreurInsertion } =
-        await supabase
+      let numero: string;
+      let rapportFinal: any;
+
+      if (existant && force) {
+        numero = existant.numero;
+
+        const { data: rapportMaj, error: erreurMaj } = await supabase
+          .from("rapports_intemperies")
+          .update(donneesRapport)
+          .eq("id", existant.id)
+          .select()
+          .single();
+
+        if (erreurMaj || !rapportMaj) {
+          throw new Error(
+            erreurMaj?.message || "Impossible de mettre à jour le rapport"
+          );
+        }
+
+        rapportFinal = rapportMaj;
+      } else {
+        numero = await prochainNumero();
+
+        const { data: rapportCree, error: erreurInsertion } = await supabase
           .from("rapports_intemperies")
           .insert({
             numero,
             chantier_id: chantier.id,
-
-            // Niveau retenu pour le rapport.
-            vigilance_officielle: niveauRapport,
-
-            jour_arrete: decision.jourArrete,
-            a_valider: decision.aValider,
-
-            // Si arrêt = complet.
-            // Si validation nécessaire = partiel.
-            ampleur_impact: decision.jourArrete
-              ? "complete"
-              : decision.aValider
-                ? "partielle"
-                : null,
-
-            pluie_continue: decision.pluieContinue,
-
-            motif,
-
-            risque_technique_niveau:
-              decision.risqueTechnique.niveau,
-
-            risque_technique_motif:
-              decision.risqueTechnique.motif,
-
-            temp_max: meteo.tempMax,
-            rafales_max: meteo.rafalesMax,
-            pluie_cumul: meteo.pluieCumul,
-
-            materiau,
-            acces,
-            departement,
-
-            releve_horaire: meteo.heures,
-
-            // Rapport généré par le moteur automatique.
+            ...donneesRapport,
             cree_par: "auto",
           })
           .select()
           .single();
 
-      if (erreurInsertion || !rapportCree) {
-        throw new Error(
-          erreurInsertion?.message ||
-            "Impossible de créer le rapport"
-        );
+        if (erreurInsertion || !rapportCree) {
+          throw new Error(
+            erreurInsertion?.message || "Impossible de créer le rapport"
+          );
+        }
+
+        rapportFinal = rapportCree;
       }
 
       // -----------------------------------------------------------------------
@@ -575,8 +589,11 @@ export async function POST(request: NextRequest) {
         nom: chantier.nom,
         numero,
         vigilance: niveauRapport,
-        rapportId: rapportCree.id,
-        statut: "Rapport généré avec succès",
+        rapportId: rapportFinal.id,
+        statut:
+          existant && force
+            ? "Rapport mis à jour avec succès"
+            : "Rapport généré avec succès",
       });
     } catch (error: unknown) {
       const message =
@@ -585,8 +602,7 @@ export async function POST(request: NextRequest) {
           : String(error);
 
       console.error(
-        `Erreur génération rapport chantier ${chantier.id}:`,
-        error
+        `Erreur génération rapport chantier ${chantier.id}: ${message}`
       );
 
       resultats.push({

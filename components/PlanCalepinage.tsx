@@ -568,18 +568,35 @@ export default function PlanCalepinage({
                         : py(p.yM + p.hauteurM / 2);
 
                       return (
-                        (p.surfaceM2 > 0.12 || (p.largeurM * echelle > 40 && p.hauteurM * echelle > 18)) && (
-                          <text
-                            x={labelX}
-                            y={labelY}
-                            fill="#0f172a"
-                            fontSize={10}
-                            fontWeight="bold"
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                          >
-                            {(p.largeurM * 1000).toFixed(0)} × {(p.hauteurM * 1000).toFixed(0)}
-                          </text>
+                        (p.surfaceM2 > 0.08 || (p.largeurM * echelle > 30 && p.hauteurM * echelle > 15)) && (
+                          <g>
+                            {p.repere && (
+                              <text
+                                x={labelX}
+                                y={labelY - (p.hauteurM * echelle > 28 ? 6 : 0)}
+                                fill="#0f172a"
+                                fontSize={p.hauteurM * echelle > 28 ? 10 : 8}
+                                fontWeight="900"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                {p.repere}
+                              </text>
+                            )}
+                            {p.hauteurM * echelle > 28 && (
+                              <text
+                                x={labelX}
+                                y={labelY + 7}
+                                fill="#0f172a"
+                                fontSize={8}
+                                fontWeight="bold"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                {(p.largeurM * 1000).toFixed(0)}×{(p.hauteurM * 1000).toFixed(0)}
+                              </text>
+                            )}
+                          </g>
                         )
                       );
                     })()}

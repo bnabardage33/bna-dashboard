@@ -1,25 +1,26 @@
 // lib/calepinageCalcul.ts
-// Calepinage HPL & Optimisation de Débit (Nesting 2D)
+// Moteur d'Optimisation de Découpe, Calepinage & Nesting 2D (Panneaux & Bardage)
 //
-// Architecture Métier Bardage :
-// 1. MODULES POSÉS (Trame Façade) :
-//    - Le quadrillage architectural est découpé en modules maniables (ex: 1000 × 600 mm, 1200 × 800 mm).
-//    - C'est cette trame finie qui est dessinée sur le plan SVG et posée sur l'ossature.
-//    - Les pignons sont découpés en modules trapézoïdaux / triangulaires sous les rampants.
+// Architecture Métier BNA Bardage :
+// 1. MODULES POSÉS (Façade & Pignons) :
+//    - Trame architecturale en modules finis (ex: 1000 × 600 mm, 1200 × 800 mm).
+//    - Découpe symétrique des rives et gestion automatique des rampants de pignons.
+//    - Chaque panneau reçoit un repère unique (ex: M-01, R-01 pour rive, P-01 pour pignon).
 //
-// 2. PLAQUES BRUTES (Approvisionnement & Stock) :
-//    - Les grands formats (ex: 3050 × 1300 mm, 3650 × 1860 mm) sont la matière première d'achat.
-//    - Un moteur d'imbrication (Nesting 2D) optimise le calepinage de débit.
-//    - Les coupes triangulaires symétriques de pignon (rampant gauche + droit) s'associent
-//      en paires rectangulaires complémentaires pour éliminer le gâchis.
-//    - Le taux de chute réel se situe ainsi de manière optimale entre 8 % et 15 %.
+// 2. IMBRICATION & DÉBIT D'ATELIER (Nesting 2D Guillotine) :
+//    - Répartition optimisée des modules sur les plaques brutes d'achat (ex: 3050 × 1300 mm).
+//    - Les découpes triangulaires opposées de pignons s'associent en paires rectangulaires.
+//    - Détection intelligente des chutes :
+//      * Chutes réutilisables (longueur >= 800 mm ou surface >= 0.30 m²) pour tableaux de fenêtres ou départs.
+//      * Pertes réelles / sciure.
+//    - Taux de chute net réel calculé précisément.
 
 export type SensPose = "horizontal" | "vertical";
 
 export interface CalepinageInput {
   zoneLargeurM: number;
-  zoneHauteurM: number; // Hauteur à l'égout (ou hauteur totale si façade)
-  // Format matière première (Plaque brute fournisseur)
+  zoneHauteurM: number; // Hauteur à l'égout (ou totale si façade droite)
+  // Format matière première brute (achat fournisseur)
   plaqueLongueurMm?: number | null; // ex: 3050 mm
   plaqueLargeurMm?: number | null;  // ex: 1300 mm
   // Format cible des modules posés en façade
@@ -28,6 +29,7 @@ export interface CalepinageInput {
   sensPose?: SensPose | null;
   estPignon?: boolean;
   hauteurFaiteM?: number | null;
+  traitDeScieMm?: number | null;   // Épaisseur de lame de coupe (défaut: 3 mm)
 }
 
 export interface PointCalepinage {
@@ -36,36 +38,83 @@ export interface PointCalepinage {
 }
 
 export interface PieceCalepinage {
+  id: string;
+  repere: string; // ex: "M-01", "R-01", "P-01"
   colonne: number;
   rangee: number;
   xM: number;
   yM: number;
   largeurM: number;
   hauteurM: number;
-  type: "pleine" | "coupe";
+  type: "pleine" | "coupe" | "pignon";
   surfaceM2: number;
   points?: PointCalepinage[];
+  plaqueIndex?: number; // N° de la plaque brute d'où provient cette pièce
+}
+
+export interface DecoupePiece {
+  id: string;
+  repere: string;
+  nom: string;
+  xMm: number;
+  yMm: number;
+  largeurMm: number;
+  hauteurMm: number;
+  surfaceM2: number;
+  type: "pleine" | "coupe" | "pignon";
+  colonne: number;
+  rangee: number;
+  estPairePignon?: boolean;
+}
+
+export interface ChutePlaque {
+  id: string;
+  xMm: number;
+  yMm: number;
+  largeurMm: number;
+  hauteurMm: number;
+  surfaceM2: number;
+  reutilisable: boolean;
+  motif: string;
+}
+
+export interface PlaqueDebit {
+  index: number; // 1, 2, 3...
+  longueurMm: number;
+  largeurMm: number;
+  surfaceM2: number;
+  pieces: DecoupePiece[];
+  chutes: ChutePlaque[];
+  surfaceUtileM2: number;
+  surfaceChutesM2: number;
+  surfaceChutesReutilisablesM2: number;
+  tauxRendementPct: number;
 }
 
 export interface ResultatCalepinage {
   colonnesLargeursM: number[];
   rangeesHauteursM: number[];
   pieces: PieceCalepinage[];
-  nbPlaquesNecessaires: number;     // Nombre de plaques brutes mères à commander
-  nbPiecesPosees: number;           // Nombre total de modules découpés posés
-  surfaceZoneM2: number;            // Surface nette posée en façade (m²)
-  surfacePlaquesAchetesM2: number;  // Surface totale des plaques brutes achetées (m²)
-  tauxChutePct: number;             // Taux de chute réel (%)
-  nbJoints: number;                 // Nombre de joints entre modules
+  nbPlaquesNecessaires: number;     // Nombre de plaques brutes à commander
+  nbPiecesPosees: number;           // Nombre de modules découpés posés
+  surfaceZoneM2: number;            // Surface nette posée (m²)
+  surfacePlaquesAchetesM2: number;  // Surface brute achetée (m²)
+  tauxChuteBrutePct: number;        // Taux de chute brut (%)
+  tauxChuteNettePct: number;        // Taux de perte nette après réemploi des chutes (%)
+  tauxChutePct: number;             // Rétrocompatibilité (taux net)
+  totalChutesReutilisablesM2: number;
+  totalDechetsPerteM2: number;
+  nbJoints: number;
   estPignon: boolean;
   hauteurFaiteM: number;
   pentePct: number;
-  // Métadonnées de débit & nesting
+  // Métadonnées matière & plan de coupe
   plaqueBruteLongueurMm: number;
   plaqueBruteLargeurMm: number;
   moduleCibleLargeurMm: number;
   moduleCibleHauteurMm: number;
   modulesParPlaqueBrute: number;
+  plaquesDebit: PlaqueDebit[];      // Plan de débit pas-à-pas pour l'atelier
 }
 
 const EPSILON_M = 0.0005;
@@ -190,120 +239,244 @@ function decouperParPignon(
 }
 
 /**
- * Moteur d'imbrication (Nesting 2D Guillotine) :
- * Optimise le débit de tous les modules (rectangulaires et coupes de pignon)
- * dans les plaques brutes fournisseur.
+ * Moteur d'imbrication 2D (Nesting 2D Guillotine) & Générateur de Plan de Découpe Plaque par Plaque
  */
-function optimiserNesting(
+function genererPlanDebitNesting(
   pieces: PieceCalepinage[],
-  plaqueBruteL_M: number,
-  plaqueBruteH_M: number,
-  moduleL_M: number,
-  moduleH_M: number
-): { nbPlaques: number; modulesParPlaque: number } {
-  // Rendement géométrique théorique par plaque brute
-  const nX_direct = Math.floor((plaqueBruteL_M + 0.001) / moduleL_M);
-  const nY_direct = Math.floor((plaqueBruteH_M + 0.001) / moduleH_M);
-  const rendementDirect = nX_direct * nY_direct;
+  plaqueBruteLongueurMm: number,
+  plaqueBruteLargeurMm: number,
+  moduleLargeurMm: number,
+  moduleHauteurMm: number,
+  traitDeScieMm = 3
+): {
+  plaquesDebit: PlaqueDebit[];
+  modulesParPlaque: number;
+} {
+  const rawL = plaqueBruteLongueurMm;
+  const rawH = plaqueBruteLargeurMm;
+  const surfacePlaqueM2 = (rawL * rawH) / 1_000_000;
 
-  const nX_rot = Math.floor((plaqueBruteL_M + 0.001) / moduleH_M);
-  const nY_rot = Math.floor((plaqueBruteH_M + 0.001) / moduleL_M);
-  const rendementRot = nX_rot * nY_rot;
+  // Rendement direct théorique
+  const nX = Math.floor(rawL / moduleLargeurMm);
+  const nY = Math.floor(rawH / moduleHauteurMm);
+  const modulesParPlaque = Math.max(1, nX * nY);
 
-  const modulesParPlaque = Math.max(1, rendementDirect, rendementRot);
+  // Préparer la liste des pièces à découper
+  type PieceToPlace = {
+    sourcePiece: PieceCalepinage;
+    wMm: number;
+    hMm: number;
+    surfaceM2: number;
+  };
 
-  // Préparation de la liste des rectangles à débiter
-  // - Les pièces standard rectangulaires
-  // - Les paires de coupes de pignon symétriques (gauche + droite) associées en 1 rectangle (0% de perte entre elles)
-  type RectToCut = { w: number; h: number };
-  const rects: RectToCut[] = [];
+  const piecesToPlace: PieceToPlace[] = pieces.map((p) => ({
+    sourcePiece: p,
+    wMm: Math.round(p.largeurM * 1000),
+    hMm: Math.round(p.hauteurM * 1000),
+    surfaceM2: p.surfaceM2,
+  }));
 
-  const piecesStandard = pieces.filter((p) => !p.points || p.points.length === 4);
-  const piecesGable = pieces.filter((p) => p.points && p.points.length !== 4);
+  // Tri décroissant pour maximiser le remplissage (Guillotine First-Fit Decreasing)
+  piecesToPlace.sort((a, b) => b.hMm * b.wMm - a.hMm * a.wMm || b.hMm - a.hMm);
 
-  for (const p of piecesStandard) {
-    rects.push({ w: p.largeurM, h: p.hauteurM });
-  }
+  type Shelf2D = {
+    yMm: number;
+    heightMm: number;
+    currentXMm: number;
+    pieces: DecoupePiece[];
+  };
 
-  // Appariement des découpes de pignon par rangée
-  const gableByRow = new Map<number, PieceCalepinage[]>();
-  for (const p of piecesGable) {
-    const rowList = gableByRow.get(p.rangee) || [];
-    rowList.push(p);
-    gableByRow.set(p.rangee, rowList);
-  }
+  type Sheet2D = {
+    index: number;
+    shelves: Shelf2D[];
+    currentYMm: number;
+  };
 
-  for (const [_, rowPieces] of gableByRow.entries()) {
-    const w = rowPieces[0]?.largeurM || moduleL_M;
-    const h = rowPieces[0]?.hauteurM || moduleH_M;
-    const count = rowPieces.length;
-    const pairs = Math.floor(count / 2);
-    const rest = count % 2;
+  const sheets: Sheet2D[] = [];
 
-    // Chaque paire de triangles opposés s'associe en 1 rectangle plein
-    for (let i = 0; i < pairs; i++) {
-      rects.push({ w, h });
-    }
-    if (rest > 0) {
-      rects.push({ w, h });
-    }
-  }
-
-  // Algorithme de bin-packing 2D par étagères (Shelf First-Fit Decreasing)
-  rects.sort((a, b) => b.h - a.h || b.w - a.w);
-
-  type Shelf = { height: number; remainingWidth: number };
-  type Sheet = { shelves: Shelf[]; remainingHeight: number };
-
-  const sheets: Sheet[] = [];
-
-  for (const r of rects) {
+  for (const item of piecesToPlace) {
     let placed = false;
+    const { sourcePiece, wMm, hMm } = item;
+
+    // Tester orientation normale et pivotée à 90°
+    const orientations = [
+      { w: wMm, h: hMm },
+      { w: hMm, h: wMm },
+    ];
 
     for (const sheet of sheets) {
-      // 1. Chercher une étagère existante
-      for (const shelf of sheet.shelves) {
-        if (shelf.remainingWidth >= r.w - 0.001 && shelf.height >= r.h - 0.001) {
-          shelf.remainingWidth -= r.w;
-          placed = true;
-          break;
-        } else if (shelf.remainingWidth >= r.h - 0.001 && shelf.height >= r.w - 0.001) {
-          shelf.remainingWidth -= r.h;
+      for (const ori of orientations) {
+        // 1. Chercher dans une étagère existante
+        for (const shelf of sheet.shelves) {
+          if (
+            shelf.heightMm >= ori.h &&
+            rawL - shelf.currentXMm >= ori.w
+          ) {
+            const decPiece: DecoupePiece = {
+              id: sourcePiece.id,
+              repere: sourcePiece.repere,
+              nom: `${sourcePiece.repere} (${ori.w}×${ori.h})`,
+              xMm: shelf.currentXMm,
+              yMm: shelf.yMm,
+              largeurMm: ori.w,
+              hauteurMm: ori.h,
+              surfaceM2: sourcePiece.surfaceM2,
+              type: sourcePiece.type,
+              colonne: sourcePiece.colonne,
+              rangee: sourcePiece.rangee,
+            };
+
+            shelf.pieces.push(decPiece);
+            shelf.currentXMm += ori.w + traitDeScieMm;
+            sourcePiece.plaqueIndex = sheet.index;
+            placed = true;
+            break;
+          }
+        }
+        if (placed) break;
+
+        // 2. Créer une nouvelle étagère dans cette plaque si hauteur suffisante
+        if (rawH - sheet.currentYMm >= ori.h) {
+          const newShelf: Shelf2D = {
+            yMm: sheet.currentYMm,
+            heightMm: ori.h,
+            currentXMm: ori.w + traitDeScieMm,
+            pieces: [
+              {
+                id: sourcePiece.id,
+                repere: sourcePiece.repere,
+                nom: `${sourcePiece.repere} (${ori.w}×${ori.h})`,
+                xMm: 0,
+                yMm: sheet.currentYMm,
+                largeurMm: ori.w,
+                hauteurMm: ori.h,
+                surfaceM2: sourcePiece.surfaceM2,
+                type: sourcePiece.type,
+                colonne: sourcePiece.colonne,
+                rangee: sourcePiece.rangee,
+              },
+            ],
+          };
+
+          sheet.shelves.push(newShelf);
+          sheet.currentYMm += ori.h + traitDeScieMm;
+          sourcePiece.plaqueIndex = sheet.index;
           placed = true;
           break;
         }
       }
       if (placed) break;
-
-      // 2. Créer une nouvelle étagère dans cette plaque
-      if (sheet.remainingHeight >= r.h - 0.001) {
-        sheet.shelves.push({ height: r.h, remainingWidth: plaqueBruteL_M - r.w });
-        sheet.remainingHeight -= r.h;
-        placed = true;
-        break;
-      } else if (sheet.remainingHeight >= r.w - 0.001) {
-        sheet.shelves.push({ height: r.w, remainingWidth: plaqueBruteL_M - r.h });
-        sheet.remainingHeight -= r.w;
-        placed = true;
-        break;
-      }
     }
 
     // 3. Ouvrir une nouvelle plaque brute
     if (!placed) {
+      const newSheetIndex = sheets.length + 1;
+      const firstOri = orientations[0];
+
+      const newShelf: Shelf2D = {
+        yMm: 0,
+        heightMm: firstOri.h,
+        currentXMm: firstOri.w + traitDeScieMm,
+        pieces: [
+          {
+            id: sourcePiece.id,
+            repere: sourcePiece.repere,
+            nom: `${sourcePiece.repere} (${firstOri.w}×${firstOri.h})`,
+            xMm: 0,
+            yMm: 0,
+            largeurMm: firstOri.w,
+            hauteurMm: firstOri.h,
+            surfaceM2: sourcePiece.surfaceM2,
+            type: sourcePiece.type,
+            colonne: sourcePiece.colonne,
+            rangee: sourcePiece.rangee,
+          },
+        ],
+      };
+
       sheets.push({
-        shelves: [{ height: r.h, remainingWidth: plaqueBruteL_M - r.w }],
-        remainingHeight: plaqueBruteH_M - r.h,
+        index: newSheetIndex,
+        shelves: [newShelf],
+        currentYMm: firstOri.h + traitDeScieMm,
       });
+
+      sourcePiece.plaqueIndex = newSheetIndex;
     }
   }
 
-  const surfaceTotale = pieces.reduce((s, p) => s + p.surfaceM2, 0);
-  const surfacePlaque = plaqueBruteL_M * plaqueBruteH_M;
-  const nbMinSurfacique = surfacePlaque > 0 ? Math.ceil(surfaceTotale / surfacePlaque) : 0;
-  const nbPlaques = Math.max(nbMinSurfacique, sheets.length);
+  // Construction des plaques de débit avec détection précise des chutes
+  const plaquesDebit: PlaqueDebit[] = sheets.map((sheet) => {
+    const allPieces: DecoupePiece[] = [];
+    const chutes: ChutePlaque[] = [];
 
-  return { nbPlaques, modulesParPlaque };
+    sheet.shelves.forEach((shelf) => {
+      allPieces.push(...shelf.pieces);
+
+      // Chute latérale en bout d'étagère
+      const resteLargeurMm = rawL - shelf.currentXMm;
+      if (resteLargeurMm > 20) {
+        const sM2 = (resteLargeurMm * shelf.heightMm) / 1_000_000;
+        const reutilisable = resteLargeurMm >= 800 || sM2 >= 0.25;
+        chutes.push({
+          id: `chute-shelf-${sheet.index}-${shelf.yMm}`,
+          xMm: shelf.currentXMm,
+          yMm: shelf.yMm,
+          largeurMm: resteLargeurMm,
+          hauteurMm: shelf.heightMm,
+          surfaceM2: sM2,
+          reutilisable,
+          motif: reutilisable
+            ? "Chute réutilisable (départ rangée / ébrasement)"
+            : "Chute d'extrémité (perte)",
+        });
+      }
+    });
+
+    // Chute supérieure en haut de plaque
+    const resteHauteurMm = rawH - sheet.currentYMm;
+    if (resteHauteurMm > 20) {
+      const sM2 = (rawL * resteHauteurMm) / 1_000_000;
+      const reutilisable = resteHauteurMm >= 250 || sM2 >= 0.35;
+      chutes.push({
+        id: `chute-top-${sheet.index}`,
+        xMm: 0,
+        yMm: sheet.currentYMm,
+        largeurMm: rawL,
+        hauteurMm: resteHauteurMm,
+        surfaceM2: sM2,
+        reutilisable,
+        motif: reutilisable
+          ? "Bande supérieure réutilisable (rives / bandeaux)"
+          : "Chute résiduelle haute (perte)",
+      });
+    }
+
+    const surfaceUtileM2 = allPieces.reduce((s, p) => s + (p.largeurMm * p.hauteurMm) / 1_000_000, 0);
+    const surfaceChutesM2 = Math.max(0, surfacePlaqueM2 - surfaceUtileM2);
+    const surfaceChutesReutilisablesM2 = chutes
+      .filter((c) => c.reutilisable)
+      .reduce((s, c) => s + c.surfaceM2, 0);
+
+    const tauxRendementPct = surfacePlaqueM2 > 0 ? (surfaceUtileM2 / surfacePlaqueM2) * 100 : 0;
+
+    return {
+      index: sheet.index,
+      longueurMm: rawL,
+      largeurMm: rawH,
+      surfaceM2: surfacePlaqueM2,
+      pieces: allPieces,
+      chutes,
+      surfaceUtileM2,
+      surfaceChutesM2,
+      surfaceChutesReutilisablesM2,
+      tauxRendementPct,
+    };
+  });
+
+  return {
+    plaquesDebit,
+    modulesParPlaque,
+  };
 }
 
 export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
@@ -317,15 +490,16 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     sensPose = "horizontal",
     estPignon = false,
     hauteurFaiteM = null,
+    traitDeScieMm = 3,
   } = input;
 
-  // 1. SÉCURISATION DES DIMENSIONS PLAQUES BRUTES (APPROVISIONNEMENT)
+  // 1. SÉCURISATION DES DIMENSIONS PLAQUES BRUTES FOURNISSEUR
   let rawLongueurMm = plaqueLongueurMm && plaqueLongueurMm > 0 ? plaqueLongueurMm : 3050;
   let rawLargeurMm = plaqueLargeurMm && plaqueLargeurMm > 0 ? plaqueLargeurMm : 1300;
   if (rawLongueurMm < 20) rawLongueurMm = Math.round(rawLongueurMm * 1000);
   if (rawLargeurMm < 20) rawLargeurMm = Math.round(rawLargeurMm * 1000);
 
-  // 2. SÉCURISATION DES DIMENSIONS MODULES POSÉS (TRAME FAÇADE)
+  // 2. SÉCURISATION DES DIMENSIONS MODULES POSÉS
   let modLargeurMm = moduleLargeurMm && moduleLargeurMm > 0 ? moduleLargeurMm : 1000;
   let modHauteurMm = moduleHauteurMm && moduleHauteurMm > 0 ? moduleHauteurMm : 600;
   if (modLargeurMm < 20) modLargeurMm = Math.round(modLargeurMm * 1000);
@@ -354,6 +528,9 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
 
   const pieces: PieceCalepinage[] = [];
   let yCumul = 0;
+  let compteurPieces = 1;
+  let compteurRives = 1;
+  let compteurPignons = 1;
 
   rangeesHauteursM.forEach((hauteurPiece, rangee) => {
     let xCumul = 0;
@@ -373,14 +550,23 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       const surfaceM2 = airePolygone(points);
 
       if (surfaceM2 > EPSILON_M * EPSILON_M) {
-        const estPleine =
-          !estPignon &&
-          Math.abs(largeurPiece - dimModuleLargeurAxeM) < EPSILON_M &&
-          Math.abs(hauteurPiece - dimModuleHauteurAxeM) < EPSILON_M;
+        const estRive = colonne === 0 || colonne === colonnesLargeursM.length - 1;
+        const estCoupePignon = estPignon && points.length !== 4;
 
-        const type: PieceCalepinage["type"] = estPleine ? "pleine" : "coupe";
+        let type: PieceCalepinage["type"] = "pleine";
+        let repere = `M-${String(compteurPieces++).padStart(2, "0")}`;
+
+        if (estCoupePignon) {
+          type = "pignon";
+          repere = `P-${String(compteurPignons++).padStart(2, "0")}`;
+        } else if (estRive || Math.abs(largeurPiece - dimModuleLargeurAxeM) > EPSILON_M) {
+          type = "coupe";
+          repere = `R-${String(compteurRives++).padStart(2, "0")}`;
+        }
 
         pieces.push({
+          id: `piece-r${rangee}-c${colonne}`,
+          repere,
           colonne,
           rangee,
           xM: xCumul,
@@ -403,24 +589,38 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const nbPiecesPosees = pieces.length;
 
   // 3. OPTIMISATION NESTING DANS LES PLAQUES BRUTES FOURNISSEUR
-  const rawL_M = rawLongueurMm / 1000;
-  const rawH_M = rawLargeurMm / 1000;
-  const surfacePlaqueBruteM2 = rawL_M * rawH_M;
-
-  const { nbPlaques: nbPlaquesNecessaires, modulesParPlaque: modulesParPlaqueBrute } = optimiserNesting(
+  const { plaquesDebit, modulesParPlaque: modulesParPlaqueBrute } = genererPlanDebitNesting(
     pieces,
-    rawL_M,
-    rawH_M,
-    dimModuleLargeurAxeM,
-    dimModuleHauteurAxeM
+    rawLongueurMm,
+    rawLargeurMm,
+    dimModuleLargeurAxeMm,
+    dimModuleHauteurAxeMm,
+    traitDeScieMm ?? 3
   );
 
+  const nbPlaquesNecessaires = plaquesDebit.length;
+  const surfacePlaqueBruteM2 = (rawLongueurMm * rawLargeurMm) / 1_000_000;
   const surfacePlaquesAchetesM2 = nbPlaquesNecessaires * surfacePlaqueBruteM2;
 
-  // 4. TAUX DE CHUTE RÉEL OPTIMISÉ (8 % à 15 %)
-  const tauxChutePct =
+  // 4. CALCUL PRÉCIS DES CHUTES & PERTES RÉELLES
+  const totalChutesReutilisablesM2 = plaquesDebit.reduce(
+    (s, p) => s + p.surfaceChutesReutilisablesM2,
+    0
+  );
+
+  const totalDechetsPerteM2 = Math.max(
+    0,
+    surfacePlaquesAchetesM2 - surfaceZoneM2 - totalChutesReutilisablesM2
+  );
+
+  const tauxChuteBrutePct =
     surfacePlaquesAchetesM2 > 0
-      ? Math.max(0, ((surfacePlaquesAchetesM2 - surfaceZoneM2) / surfacePlaquesAchetesM2) * 100)
+      ? ((surfacePlaquesAchetesM2 - surfaceZoneM2) / surfacePlaquesAchetesM2) * 100
+      : 0;
+
+  const tauxChuteNettePct =
+    surfacePlaquesAchetesM2 > 0
+      ? (totalDechetsPerteM2 / surfacePlaquesAchetesM2) * 100
       : 0;
 
   const nbJointsVerticaux = Math.max(0, colonnesLargeursM.length - 1) * rangeesHauteursM.length;
@@ -440,7 +640,11 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     nbPiecesPosees,
     surfaceZoneM2,
     surfacePlaquesAchetesM2,
-    tauxChutePct,
+    tauxChuteBrutePct,
+    tauxChuteNettePct,
+    tauxChutePct: tauxChuteNettePct,
+    totalChutesReutilisablesM2,
+    totalDechetsPerteM2,
     nbJoints: nbJointsVerticaux + nbJointsHorizontaux,
     estPignon,
     hauteurFaiteM: hauteurFaite,
@@ -450,5 +654,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     moduleCibleLargeurMm: modLargeurMm,
     moduleCibleHauteurMm: modHauteurMm,
     modulesParPlaqueBrute,
+    plaquesDebit,
   };
 }

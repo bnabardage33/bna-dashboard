@@ -25,6 +25,7 @@ export type RapportIntemperiesData = {
   cree_le: string;
   cree_par: "auto" | "manuel";
   vigilance_officielle: NiveauVigilance;
+  vigilance_phenomene?: string | null; // ex: "orages", "vent", "pluie-inondation"
   jour_arrete: boolean;
   a_valider: boolean;
   pluie_continue: boolean;
@@ -32,13 +33,14 @@ export type RapportIntemperiesData = {
   risque_technique_niveau: string | null;
   risque_technique_motif: string | null;
   temp_max: number | null;
+  temp_min: number | null;
   rafales_max: number | null;
+  vent_moyen: number | null;
   pluie_cumul: number | null;
   materiau: string | null;
   acces: string | null;
+  departement: string | null;
   mesures_prises: string | null;
-  // Relevé horaire optionnel — nécessite d'ajouter une colonne jsonb
-  // (releve_horaire) à rapports_intemperies si tu veux le conserver.
   heures?: { heure: string; temp: number; vent: number; rafales: number; pluie: number }[];
 };
 
@@ -75,6 +77,24 @@ const LABELS_ACCES: Record<string, string> = {
   nacelle: "Nacelle",
 };
 
+// Calcule min/moyenne à partir du relevé horaire si dispo, sinon fallback
+function calculerTempMin(rapport: RapportIntemperiesData): number | null {
+  if (rapport.temp_min !== null && rapport.temp_min !== undefined) return rapport.temp_min;
+  if (rapport.heures && rapport.heures.length > 0) {
+    return Math.min(...rapport.heures.map((h) => h.temp));
+  }
+  return null;
+}
+
+function calculerVentMoyen(rapport: RapportIntemperiesData): number | null {
+  if (rapport.vent_moyen !== null && rapport.vent_moyen !== undefined) return rapport.vent_moyen;
+  if (rapport.heures && rapport.heures.length > 0) {
+    const total = rapport.heures.reduce((s, h) => s + h.vent, 0);
+    return Math.round(total / rapport.heures.length);
+  }
+  return null;
+}
+
 export default function RapportIntemperiesPDF({
   rapport,
   entreprise,
@@ -84,8 +104,11 @@ export default function RapportIntemperiesPDF({
   entreprise: Entreprise;
   chantier: Chantier;
 }) {
+  const tempMin = calculerTempMin(rapport);
+  const ventMoyen = calculerVentMoyen(rapport);
+
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl">
+    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl text-sm leading-relaxed">
       <div className="mb-2 h-1.5 w-full rounded-full bg-sky-600" />
 
       {/* En-tête */}
@@ -93,7 +116,7 @@ export default function RapportIntemperiesPDF({
         <div className="flex items-center gap-3.5">
           <img
             src={entreprise.logo_url || "/logo-bna.png"}
-            alt="Logo BNA"
+            alt="Logo"
             className="h-20 sm:h-24 max-h-24 w-auto object-contain"
           />
           <div>
@@ -102,12 +125,14 @@ export default function RapportIntemperiesPDF({
           </div>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-black uppercase tracking-tight text-slate-900">
-            RAPPORT D&apos;INTEMPÉRIES
+          <p className="text-xl font-black uppercase tracking-tight text-slate-900 leading-tight">
+            Rapport d&apos;arrêt de chantier
+            <br />
+            pour intempéries
           </p>
-          <p className="font-mono text-sm font-bold text-sky-600">N° {rapport.numero}</p>
+          <p className="font-mono text-sm font-bold text-sky-600 mt-1">N° {rapport.numero}</p>
           <p className="mt-0.5 text-xs text-slate-500">
-            Établi le {new Date(rapport.cree_le).toLocaleDateString("fr-FR")}
+            Rédigé le {new Date(rapport.cree_le).toLocaleDateString("fr-FR")}
           </p>
           <div className="mt-1">
             <span
@@ -122,136 +147,132 @@ export default function RapportIntemperiesPDF({
         </div>
       </div>
 
-      {/* Chantier / Émis par */}
-      <div className="mt-6 grid grid-cols-2 gap-4">
-        <div className="rounded-lg border border-slate-200">
-          <div className="bg-slate-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white">
-            Chantier
-          </div>
-          <div className="space-y-1 p-3 text-sm">
-            <p className="font-semibold">{chantier.nom || "Chantier"}</p>
-            {chantier.adresse && <p>{chantier.adresse}</p>}
-            {(chantier.code_postal || chantier.ville) && (
-              <p>
-                {chantier.code_postal} {chantier.ville}
-              </p>
-            )}
-            {rapport.materiau && (
-              <p className="text-xs text-slate-500">
-                Matériau : {LABELS_MATERIAU[rapport.materiau] ?? rapport.materiau}
-              </p>
-            )}
-            {rapport.acces && (
-              <p className="text-xs text-slate-500">
-                Moyen d&apos;accès : {LABELS_ACCES[rapport.acces] ?? rapport.acces}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-slate-200">
-          <div className="bg-slate-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white">
-            Émis par
-          </div>
-          <div className="space-y-1 p-3 text-sm">
-            <p className="font-semibold">{entreprise.raison_sociale}</p>
-            {entreprise.adresse && <p>{entreprise.adresse}</p>}
-            {(entreprise.code_postal || entreprise.ville) && (
-              <p>
-                {entreprise.code_postal} {entreprise.ville}
-              </p>
-            )}
-            {entreprise.siret && <p className="text-xs text-slate-500">SIRET {entreprise.siret}</p>}
-          </div>
-        </div>
-      </div>
-
-      {/* Bloc alerte */}
-      <div className="mt-5 rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{EMOJI_VIGILANCE[rapport.vigilance_officielle]}</span>
-          <p className="text-sm font-extrabold uppercase tracking-wide text-orange-800">
-            {rapport.jour_arrete
-              ? "Jour d'arrêt de chantier"
-              : rapport.a_valider
-                ? "Arrêt à confirmer"
-                : "Vigilance constatée"}
-          </p>
-        </div>
-        <p className="mt-1.5 text-sm leading-relaxed text-orange-900">{rapport.motif}</p>
-        {rapport.risque_technique_motif && (
-          <p className="mt-2 text-xs text-orange-700">
-            Risque technique (matériau/accès) : {rapport.risque_technique_motif}
-          </p>
+      {/* 1. Identification du chantier */}
+      <p className="mt-6 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+        1. Identification du chantier
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
+        <p><span className="text-slate-400">Entreprise de pose :</span> {entreprise.raison_sociale}</p>
+        <p><span className="text-slate-400">Maître d&apos;ouvrage / Client :</span> ______________________</p>
+        <p><span className="text-slate-400">Lieu des travaux :</span> {chantier.adresse || chantier.nom} {chantier.code_postal} {chantier.ville}</p>
+        <p><span className="text-slate-400">Chef d&apos;équipe :</span> ______________________</p>
+        {rapport.materiau && (
+          <p><span className="text-slate-400">Matériau :</span> {LABELS_MATERIAU[rapport.materiau] ?? rapport.materiau}</p>
+        )}
+        {rapport.acces && (
+          <p><span className="text-slate-400">Moyen d&apos;accès :</span> {LABELS_ACCES[rapport.acces] ?? rapport.acces}</p>
         )}
       </div>
 
-      {/* Statistiques */}
-      <div className="mt-4 grid grid-cols-4 gap-2.5">
-        <div className="rounded-lg border border-slate-200 p-2.5 text-center">
-          <p className="text-[10px] font-bold uppercase text-slate-400">Rafales max</p>
-          <p className="mt-0.5 text-lg font-extrabold text-slate-900">
-            {rapport.rafales_max ?? "—"} {rapport.rafales_max !== null && "km/h"}
+      {/* 2. Données météorologiques de contrôle */}
+      <div className="mt-5 rounded-lg border-2 border-sky-200 bg-sky-50/50 p-4">
+        <p className="text-xs font-extrabold uppercase tracking-wide text-sky-800">
+          🚩 Données météorologiques de contrôle (générées via API)
+        </p>
+        <p className="mt-1 text-xs text-slate-500">
+          Horodatage de l&apos;extraction : {new Date(rapport.cree_le).toLocaleString("fr-FR")}
+          {rapport.departement && ` · Département ${rapport.departement}`}
+        </p>
+
+        <div className="mt-3">
+          <p className="text-xs font-bold uppercase text-orange-700">
+            {EMOJI_VIGILANCE[rapport.vigilance_officielle]} Vigilance officielle (Météo-France)
+          </p>
+          <p className="text-sm mt-0.5">
+            Niveau d&apos;alerte : <strong>{LABELS_VIGILANCE[rapport.vigilance_officielle]}</strong>
+            {rapport.vigilance_phenomene && <> — Phénomène : <strong>{rapport.vigilance_phenomene}</strong></>}
           </p>
         </div>
-        <div className="rounded-lg border border-slate-200 p-2.5 text-center">
-          <p className="text-[10px] font-bold uppercase text-slate-400">Température max</p>
-          <p className="mt-0.5 text-lg font-extrabold text-slate-900">
-            {rapport.temp_max ?? "—"} {rapport.temp_max !== null && "°C"}
-          </p>
+
+        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <p>💨 Vent maximum (rafales) : <strong>{rapport.rafales_max ?? "—"} km/h</strong></p>
+          <p>💨 Vent moyen : <strong>{ventMoyen ?? "—"} km/h</strong></p>
+          <p>🌧️ Précipitations cumulées : <strong>{rapport.pluie_cumul ?? "—"} mm</strong></p>
+          <p>🌡️ Température min / max : <strong>{tempMin ?? "—"}°C / {rapport.temp_max ?? "—"}°C</strong></p>
         </div>
-        <div className="rounded-lg border border-slate-200 p-2.5 text-center">
-          <p className="text-[10px] font-bold uppercase text-slate-400">Cumul pluie</p>
-          <p className="mt-0.5 text-lg font-extrabold text-slate-900">
-            {rapport.pluie_cumul ?? "—"} {rapport.pluie_cumul !== null && "mm"}
-          </p>
-        </div>
-        <div className="rounded-lg border border-slate-200 p-2.5 text-center">
-          <p className="text-[10px] font-bold uppercase text-slate-400">Niveau</p>
-          <p className="mt-0.5 text-lg font-extrabold text-slate-900">
-            {LABELS_VIGILANCE[rapport.vigilance_officielle]}
-          </p>
-        </div>
+
+        <p className="mt-3 text-xs text-sky-800">
+          Statut réglementaire : ces relevés confirment {rapport.jour_arrete ? "un dépassement" : "une approche"} des
+          seuils de tolérance des DTU de la série 41 / 31 et du Code du travail.
+        </p>
       </div>
 
-      {/* Relevé horaire, si disponible */}
+      {/* 3. Description de l'impact */}
+      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+        2. Description de l&apos;impact sur les travaux
+      </p>
+      <div className="mt-2 space-y-1.5">
+        <p><span className="text-slate-400">Phase de travaux impactée :</span> ______________________</p>
+        <p><span className="text-slate-400">Risques identifiés :</span> {rapport.motif}</p>
+        {rapport.risque_technique_motif && (
+          <p><span className="text-slate-400">Risque technique (matériau/accès) :</span> {rapport.risque_technique_motif}</p>
+        )}
+        <p>
+          <span className="text-slate-400">Décision :</span>{" "}
+          {rapport.jour_arrete
+            ? "Arrêt des travaux en extérieur pour préserver la sécurité des compagnons et la conformité technique de l'ouvrage (DTU 41.2 / DTU 31.2)."
+            : rapport.a_valider
+              ? "Arrêt à confirmer par le chef de chantier au vu des conditions constatées sur site."
+              : "Poursuite des travaux, conditions conformes."}
+        </p>
+      </div>
+
+      {/* 4. Mesures conservatoires */}
+      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+        3. Mesures conservatoires prises immédiatement
+      </p>
+      <div className="mt-2 min-h-[50px] rounded-lg border border-dashed border-slate-300 p-3 text-sm">
+        {rapport.mesures_prises || "☐ ______________________________________________"}
+      </div>
+
+      {/* 5. Conséquences planning */}
+      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+        4. Conséquences sur le planning
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
+        <p><span className="text-slate-400">Heures perdues :</span> ______ h pour ______ poseur(s)</p>
+        <p><span className="text-slate-400">Report de livraison estimé :</span> ______ jour(s)</p>
+      </div>
+
+      {/* Relevé horaire (annexe technique) */}
       {rapport.heures && rapport.heures.length > 0 && (
-        <>
-          <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Relevé horaire du jour
-          </p>
-          <table className="mt-2 w-full text-sm">
+        <details className="mt-5">
+          <summary className="cursor-pointer text-xs font-bold uppercase tracking-wide text-slate-500">
+            Annexe — Relevé horaire complet (pièce jointe)
+          </summary>
+          <table className="mt-2 w-full text-xs">
             <thead>
-              <tr className="border-b-2 border-slate-900 text-left text-[10px] uppercase text-slate-400">
-                <th className="py-1.5">Heure</th>
-                <th className="py-1.5 text-right">Temp.</th>
-                <th className="py-1.5 text-right">Vent</th>
-                <th className="py-1.5 text-right">Rafales</th>
-                <th className="py-1.5 text-right">Pluie</th>
+              <tr className="border-b-2 border-slate-900 text-left uppercase text-slate-400">
+                <th className="py-1">Heure</th>
+                <th className="py-1 text-right">Temp.</th>
+                <th className="py-1 text-right">Vent</th>
+                <th className="py-1 text-right">Rafales</th>
+                <th className="py-1 text-right">Pluie</th>
               </tr>
             </thead>
             <tbody>
               {rapport.heures.map((h, i) => (
                 <tr key={i} className="border-b border-slate-100">
-                  <td className="py-1.5">{h.heure}</td>
-                  <td className="py-1.5 text-right">{h.temp}°C</td>
-                  <td className="py-1.5 text-right">{h.vent} km/h</td>
-                  <td className="py-1.5 text-right">{h.rafales} km/h</td>
-                  <td className="py-1.5 text-right">{h.pluie} mm</td>
+                  <td className="py-1">{h.heure}</td>
+                  <td className="py-1 text-right">{h.temp}°C</td>
+                  <td className="py-1 text-right">{h.vent} km/h</td>
+                  <td className="py-1 text-right">{h.rafales} km/h</td>
+                  <td className="py-1 text-right">{h.pluie} mm</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </>
+        </details>
       )}
 
-      {/* Mesures prises */}
-      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Mesures prises
+      {/* 6. Pièces jointes */}
+      <p className="mt-5 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+        5. Pièces jointes
       </p>
-      <div className="mt-2 min-h-[44px] rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-700">
-        {rapport.mesures_prises || "—"}
-      </div>
+      <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
+        <li>Relevé météo officiel (voir encadré ci-dessus)</li>
+        <li>Photos datées de l&apos;état du chantier au moment de l&apos;arrêt (à joindre au dossier)</li>
+      </ul>
 
       {/* Signatures */}
       <div className="mt-7 grid grid-cols-2 gap-6 border-t border-slate-200 pt-4 text-xs">
@@ -266,10 +287,9 @@ export default function RapportIntemperiesPDF({
       </div>
 
       <p className="mt-4 text-[9.5px] leading-relaxed text-slate-400">
-        Rapport généré {rapport.cree_par === "auto" ? "automatiquement" : "manuellement"} à partir
-        de la vigilance officielle Météo-France et des données météo locales du chantier. Document
-        à conserver au dossier chantier en cas de sinistre ou de litige lié aux conditions
-        météorologiques.
+        Rapport généré {rapport.cree_par === "auto" ? "automatiquement" : "manuellement"} à partir de la vigilance
+        officielle Météo-France et des données météo locales du chantier. Document à conserver au dossier chantier
+        en cas de sinistre ou de litige lié aux conditions météorologiques et aux dispositions des DTU 41.2 / 31.2.
       </p>
     </div>
   );

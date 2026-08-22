@@ -402,10 +402,26 @@ export default function FinChantierPage() {
           .eq("id", formId);
 
         if (error) throw error;
+
+        setModalFormOuvert(false);
+        await chargerDonnees();
+
+        // Ouvre automatiquement l'aperçu PDF du PV qu'on vient de modifier
+        setPvs((pvsActuels) => {
+          const pvMisAJour = pvsActuels.find((p) => p.id === formId);
+          if (pvMisAJour) {
+            setPvSelectionne(pvMisAJour);
+            setModalPdfOuvert(true);
+          }
+          return pvsActuels;
+        });
+
+        setSauvegardeEnCours(false);
+        return;
       } else {
         // Création
         const numero = await prochainNumero("pv_receptions", "PVR");
-        const { error } = await supabase.from("pv_receptions").insert({
+        const { data: nouveauPv, error } = await supabase.from("pv_receptions").insert({
           numero,
           chantier_id: formChantierId || null,
           client_id: formClientId || null,
@@ -424,13 +440,25 @@ export default function FinChantierPage() {
           signataire_client_nom: formSignClientNom,
           signature_entreprise: formSignEntreprise,
           signataire_entreprise_nom: formSignEntrepriseNom,
-        });
+        }).select().single();
 
         if (error) throw error;
-      }
 
-      setModalFormOuvert(false);
-      await chargerDonnees();
+        setModalFormOuvert(false);
+        await chargerDonnees();
+
+        // Ouvre automatiquement l'aperçu PDF du PV qu'on vient de créer
+        if (nouveauPv) {
+          setPvs((pvsActuels) => {
+            const pvCree = pvsActuels.find((p) => p.id === nouveauPv.id);
+            if (pvCree) {
+              setPvSelectionne(pvCree);
+              setModalPdfOuvert(true);
+            }
+            return pvsActuels;
+          });
+        }
+      }
     } catch (err: any) {
       if (
         err?.code === "42P01" ||

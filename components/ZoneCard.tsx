@@ -12,6 +12,7 @@ import {
 } from "@/lib/calepinageCalcul";
 import PlanCalepinage from "@/components/PlanCalepinage";
 import FicheDebitPDF from "@/components/FicheDebitPDF";
+import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 
 type Ouverture = {
   id: string;
@@ -160,6 +161,7 @@ export default function ZoneCard({
   ) => void;
 }) {
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
+  const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
   const [replie, setReplie] = useState(false);
   const calc = calculerZone(zone);
 
@@ -242,7 +244,6 @@ export default function ZoneCard({
   const sensPoseActif = zone.sens_pose ?? "horizontal";
 
   const peutCalepiner =
-    zone.famille_pose === "hpl" &&
     zone.largeur > 0 &&
     hauteurTotale > 0;
 
@@ -1254,41 +1255,75 @@ export default function ZoneCard({
           )}
       </div>
 
-      {/* MODAL FICHE DÉBIT & ATELIER */}
+      {/* MODAL FICHE DÉBIT & OPTIMISEUR DE COUPE */}
       {modalDebitOuvert && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/75 p-3 sm:p-5 backdrop-blur-sm"
           onClick={() => setModalDebitOuvert(false)}
         >
-          <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 flex justify-end gap-2 print:hidden">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
-              >
-                <span>🖨️</span> Imprimer / Exporter PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalDebitOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
-              >
-                Fermer
-              </button>
+          <div className="mx-auto max-w-4xl space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/90 p-3 rounded-2xl print:hidden">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOngletDebit("nesting")}
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                    ongletDebit === "nesting"
+                      ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
+                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <span>📐</span> Plan de Découpe &amp; Nesting
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOngletDebit("fiche_a4")}
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                    ongletDebit === "fiche_a4"
+                      ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
+                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <span>📑</span> Fiche Débit Atelier A4
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+                >
+                  <span>🖨️</span> Imprimer / Exporter PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalDebitOuvert(false)}
+                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                >
+                  Fermer
+                </button>
+              </div>
             </div>
-            <FicheDebitPDF
-              zone={zone}
-              chantier={{ nom: "Chantier BNA", adresse: null }}
-              entreprise={{
-                raison_sociale: "BNA Bardage",
-                telephone: null,
-                email: null,
-                logo_url: "/logo-bna.png",
-              }}
-              pose={pose}
-              calepinage={calepinage}
-            />
+
+            {ongletDebit === "nesting" && calepinage ? (
+              <div className="rounded-2xl border border-slate-700 bg-slate-800/90 p-4 shadow-2xl">
+                <VisualiseurDebitPlaques calepinage={calepinage} titreZone={zone.nom} />
+              </div>
+            ) : (
+              <FicheDebitPDF
+                zone={zone}
+                chantier={{ nom: "Chantier BNA", adresse: null }}
+                entreprise={{
+                  raison_sociale: "BNA Bardage",
+                  telephone: null,
+                  email: null,
+                  logo_url: "/logo-bna.png",
+                }}
+                pose={pose}
+                calepinage={calepinage}
+              />
+            )}
           </div>
         </div>
       )}
