@@ -478,26 +478,31 @@ export default function FournisseursPage() {
 
       {modalFournisseur && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={() => setModalFournisseur(false)}
         >
           <form
             onSubmit={creerFournisseur}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-6"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
           >
-            <h2 className="text-lg font-semibold text-white">Nouveau fournisseur</h2>
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <h2 className="text-base font-bold text-white">Nouveau Fournisseur</h2>
+              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                ✕
+              </button>
+            </div>
             <input
               value={fNom}
               onChange={(e) => setFNom(e.target.value)}
-              placeholder="Nom"
+              placeholder="Nom de l'entreprise"
               required
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
             <select
               value={fSpecialite}
               onChange={(e) => setFSpecialite(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
             >
               {SPECIALITES.map((s) => (
                 <option key={s} value={s}>
@@ -507,17 +512,17 @@ export default function FournisseursPage() {
             </select>
 
             <div>
-              <label className="mb-1 block text-xs uppercase text-slate-500">Statut du fournisseur</label>
+              <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-400">Statut du fournisseur</label>
               <div className="grid grid-cols-3 gap-2">
                 {RELATIONS.map((r) => (
                   <button
                     key={r.value}
                     type="button"
                     onClick={() => setFStatutRelation(r.value)}
-                    className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors ${
+                    className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
                       fStatutRelation === r.value
                         ? r.couleurActif
-                        : "border-slate-600 text-slate-400 hover:bg-slate-700"
+                        : "border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-700"
                     }`}
                   >
                     {r.label}
@@ -530,48 +535,48 @@ export default function FournisseursPage() {
               value={fContact}
               onChange={(e) => setFContact(e.target.value)}
               placeholder="Nom du contact"
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
             <div className="grid grid-cols-2 gap-3">
               <input
                 value={fTel}
                 onChange={(e) => setFTel(e.target.value)}
                 placeholder="Téléphone"
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <input
                 value={fEmail}
                 onChange={(e) => setFEmail(e.target.value)}
                 placeholder="Email"
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
             </div>
             <input
               value={fConditions}
               onChange={(e) => setFConditions(e.target.value)}
               placeholder="Conditions de paiement (ex. 30j fin de mois)"
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
             <textarea
               value={fNotes}
               onChange={(e) => setFNotes(e.target.value)}
-              placeholder="Notes"
+              placeholder="Notes et commentaires"
               rows={2}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
-            <div className="flex justify-end gap-2">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
-                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300"
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
               >
-                Enregistrer
+                Enregistrer le Fournisseur
               </button>
             </div>
           </form>
@@ -580,20 +585,25 @@ export default function FournisseursPage() {
 
       {modalCommande && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={fermerModalCommande}
         >
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-6"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
           >
-            <h2 className="text-lg font-semibold text-white">
-              {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
-            </h2>
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <h2 className="text-base font-bold text-white">
+                {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
+              </h2>
+              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                ✕
+              </button>
+            </div>
 
             {prefillInfo && (
-              <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-xs text-red-300">
+              <p className="rounded-xl border border-sky-500/30 bg-sky-950/40 px-3.5 py-2 text-xs font-semibold text-sky-300">
                 {prefillInfo.chantierNom} — {prefillInfo.zoneNom}
               </p>
             )}
@@ -605,29 +615,29 @@ export default function FournisseursPage() {
                     <input
                       value={l.designation}
                       onChange={(e) => updateLigneMultiple(i, { designation: e.target.value })}
-                      className="flex-1 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                      className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                     />
                     <input
                       type="number"
                       value={l.quantite}
                       onChange={(e) => updateLigneMultiple(i, { quantite: parseFloat(e.target.value) || 0 })}
-                      className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                      className="w-20 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                     />
                     <input
                       value={l.unite}
                       onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
-                      className="w-16 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                      className="w-16 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                     />
                     <button
                       type="button"
                       onClick={() => supprimerLigneMultiple(i)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs text-slate-500 hover:text-red-400 font-bold"
                     >
                       ✕
                     </button>
                   </div>
                 ))}
-                <p className="text-xs text-slate-500">
+                <p className="text-[11px] text-slate-400">
                   Complète le fournisseur ci-dessous. Les prix sont à ajouter ensuite sur chaque commande.
                 </p>
               </div>
@@ -637,14 +647,14 @@ export default function FournisseursPage() {
                 onChange={(e) => setCDesignation(e.target.value)}
                 placeholder="Désignation (ex. Bardage Douglas claire-voie)"
                 required
-                className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
             )}
 
             <select
               value={cFournisseurId}
               onChange={(e) => setCFournisseurId(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
             >
               <option value="">-- Fournisseur (optionnel) --</option>
               {fournisseurs.map((f) => (
@@ -656,7 +666,7 @@ export default function FournisseursPage() {
             <select
               value={cChantierId}
               onChange={(e) => setCChantierId(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
             >
               <option value="">-- Chantier (optionnel) --</option>
               {chantiers.map((c) => (
@@ -673,46 +683,46 @@ export default function FournisseursPage() {
                   value={cQuantite}
                   onChange={(e) => setCQuantite(e.target.value)}
                   placeholder="Quantité"
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
                 <input
                   value={cUnite}
                   onChange={(e) => setCUnite(e.target.value)}
                   placeholder="Unité"
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
                 <input
                   type="number"
                   value={cMontant}
                   onChange={(e) => setCMontant(e.target.value)}
                   placeholder="Montant HT"
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
               </div>
             )}
 
             <div>
-              <label className="text-xs uppercase text-slate-500">Date livraison prévue</label>
+              <label className="text-[11px] font-semibold uppercase text-slate-400">Date livraison prévue</label>
               <input
                 type="date"
                 value={cDateLivraison}
                 onChange={(e) => setCDateLivraison(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
               <button
                 type="button"
                 onClick={fermerModalCommande}
-                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300"
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
               >
-                Enregistrer
+                Enregistrer la Commande
               </button>
             </div>
           </form>

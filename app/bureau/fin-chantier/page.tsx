@@ -808,8 +808,8 @@ export default function FinChantierPage() {
       {/* MODAL : CRÉATION & ÉDITION D'UN PV DE RÉCEPTION ENRICHI */}
       {/* ============================================================ */}
       {modalFormOuvert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
-          <div className="relative w-full max-w-4xl rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-5 my-8 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-5 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
             <div className="flex items-center justify-between border-b border-slate-700 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white">
@@ -821,13 +821,13 @@ export default function FinChantierPage() {
               </div>
               <button
                 onClick={() => setModalFormOuvert(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSauvegarderPV} className="space-y-5">
+            <form onSubmit={handleSauvegarderPV} className="space-y-5 pb-20 sm:pb-6">
               {/* SECTION 1 : CHANTIER & CLIENT */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
@@ -1348,11 +1348,11 @@ export default function FinChantierPage() {
               </div>
 
               {/* BOUTONS D'ACTION */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-700">
+              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setModalFormOuvert(false)}
-                  className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
                 >
                   Annuler
                 </button>
@@ -1360,7 +1360,7 @@ export default function FinChantierPage() {
                 <button
                   type="submit"
                   disabled={sauvegardeEnCours}
-                  className="rounded-lg bg-red-600 px-5 py-2 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
                 >
                   {sauvegardeEnCours ? "Enregistrement..." : formId ? "Mettre à jour le PV" : "Créer le PV de Réception"}
                 </button>
@@ -1374,8 +1374,8 @@ export default function FinChantierPage() {
       {/* MODAL : GESTION DE LA LEVÉE DES RÉSERVES */}
       {/* ============================================================ */}
       {modalReservesOuvert && pvSelectionne && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="relative w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
             <div className="flex items-center justify-between border-b border-slate-700 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white">
@@ -1387,7 +1387,7 @@ export default function FinChantierPage() {
               </div>
               <button
                 onClick={() => setModalReservesOuvert(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
               >
                 ✕
               </button>
@@ -1438,17 +1438,17 @@ export default function FinChantierPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-700">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-between shadow-lg">
               <button
                 onClick={() => handleCreerFactureSolde(pvSelectionne)}
                 className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
               >
-                🧾 Passer à la Facture de Solde →
+                🧾 Facture de Solde →
               </button>
 
               <button
                 onClick={() => setModalReservesOuvert(false)}
-                className="rounded-lg bg-slate-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-slate-600"
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Fermer
               </button>
@@ -1461,8 +1461,8 @@ export default function FinChantierPage() {
       {/* MODAL : APERÇU ET IMPRESSION DU PV ENRICHI EN PDF */}
       {/* ============================================================ */}
       {modalPdfOuvert && pvSelectionne && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
-          <div className="relative w-full max-w-4xl rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4 my-8 max-h-[95vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-0 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-4xl rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4 my-auto max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-700 pb-3 print:hidden">
               <div className="flex items-center gap-3">
                 <h3 className="text-base font-bold text-white">

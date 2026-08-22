@@ -380,11 +380,11 @@ export default function DevisPage() {
           <form
             onSubmit={creerDevis}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[90vh] w-full max-w-2xl space-y-3 overflow-y-auto rounded-xl border border-slate-700 bg-slate-800 p-6"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-2xl space-y-3 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Nouveau devis</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="text-slate-400">
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <h2 className="text-base font-bold text-white">Nouveau Devis</h2>
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
                 ✕
               </button>
             </div>
@@ -393,7 +393,7 @@ export default function DevisPage() {
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               required
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
             >
               <option value="">-- Choisir un client --</option>
               {clients.map((c) => (
@@ -407,97 +407,97 @@ export default function DevisPage() {
               value={objet}
               onChange={(e) => setObjet(e.target.value)}
               placeholder="Objet (ex. Bardage bois claire-voie)"
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
             <div className="grid grid-cols-2 gap-3">
               <input
                 value={adresseChantier}
                 onChange={(e) => setAdresseChantier(e.target.value)}
                 placeholder="Adresse du chantier"
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <input
                 value={typeTravaux}
                 onChange={(e) => setTypeTravaux(e.target.value)}
                 placeholder="Type de travaux"
-                className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-4 gap-3">
               <div>
-                <label className="text-xs uppercase text-slate-500">Validité (j)</label>
+                <label className="text-[11px] font-semibold uppercase text-slate-400">Validité (j)</label>
                 <input
                   type="number"
                   value={validite}
                   onChange={(e) => setValidite(parseInt(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs uppercase text-slate-500">Délai (j)</label>
+                <label className="text-[11px] font-semibold uppercase text-slate-400">Délai (j)</label>
                 <input
                   type="number"
                   value={delai}
                   onChange={(e) => setDelai(parseInt(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs uppercase text-slate-500">Acompte (%)</label>
+                <label className="text-[11px] font-semibold uppercase text-slate-400">Acompte (%)</label>
                 <input
                   type="number"
                   value={acompte}
                   onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs uppercase text-slate-500">TVA (%)</label>
+                <label className="text-[11px] font-semibold uppercase text-slate-400">TVA (%)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={tva}
                   onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Lignes de prestation</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Lignes de prestation</p>
               {lignes.map((l, i) => (
                 <div key={i} className="grid grid-cols-12 gap-2">
                   <input
                     value={l.designation}
                     onChange={(e) => updateLigne(i, { designation: e.target.value })}
                     placeholder="Désignation"
-                    className="col-span-4 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                    className="col-span-4 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
                   />
                   <input
                     type="number"
                     value={l.qte}
                     onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
                     placeholder="Qté"
-                    className="col-span-2 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                    className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
                   />
                   <input
                     value={l.unite}
                     onChange={(e) => updateLigne(i, { unite: e.target.value })}
                     placeholder="Unité"
-                    className="col-span-2 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                    className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
                   />
                   <input
                     type="number"
                     value={l.pu_ht}
                     onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
                     placeholder="PU HT"
-                    className="col-span-3 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                    className="col-span-3 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => supprimerLigne(i)}
-                    className="col-span-1 text-red-400 hover:text-red-300"
+                    className="col-span-1 text-slate-500 hover:text-red-400 font-bold"
                   >
                     ✕
                   </button>
@@ -507,7 +507,7 @@ export default function DevisPage() {
                 <button
                   type="button"
                   onClick={ajouterLigne}
-                  className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
                 >
                   + Ajouter une ligne vierge
                 </button>
@@ -517,7 +517,7 @@ export default function DevisPage() {
                     insererDepuisCatalogue(e.target.value);
                     e.target.value = "";
                   }}
-                  className="flex-1 rounded-lg border border-red-600/50 bg-slate-900 px-3 py-1.5 text-xs text-red-300 font-medium hover:border-red-500"
+                  className="flex-1 rounded-xl border border-sky-500/50 bg-slate-900 px-3 py-1.5 text-xs text-sky-300 font-medium hover:border-sky-400"
                 >
                   <option value="" disabled>
                     📦 + Insérer un ouvrage depuis le catalogue standard...
@@ -531,23 +531,23 @@ export default function DevisPage() {
               </div>
             </div>
 
-            <p className="text-right text-sm font-semibold text-white">
-              Total HT : {totalHT.toFixed(2)} €
+            <p className="text-right text-sm font-bold text-white pt-2">
+              Total HT : <span className="font-mono text-amber-400">{totalHT.toFixed(2)} €</span>
             </p>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300"
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
               >
-                Enregistrer
+                Enregistrer le Devis
               </button>
             </div>
           </form>

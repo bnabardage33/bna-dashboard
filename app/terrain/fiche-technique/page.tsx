@@ -184,36 +184,36 @@ export default function FicheTechniquePage() {
 
       {fiche && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={() => setFiche(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-700 bg-slate-800 p-6"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between border-b border-slate-700 pb-3">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-red-400">
+                <p className="text-xs font-bold uppercase tracking-wide text-sky-400">
                   {fiche.categorie}
                 </p>
-                <h2 className="text-lg font-semibold text-white">{fiche.titre}</h2>
+                <h2 className="text-base font-bold text-white">{fiche.titre}</h2>
                 {fiche.reference && (
-                  <p className="text-xs text-slate-500">{fiche.reference}</p>
+                  <p className="text-xs text-slate-400">{fiche.reference}</p>
                 )}
               </div>
               <button
                 onClick={() => setFiche(null)}
-                className="text-slate-400 hover:text-white"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
               >
                 ✕
               </button>
             </div>
 
             {fiche.resume && (
-              <p className="mt-3 text-sm text-slate-300">{fiche.resume}</p>
+              <p className="mt-3 text-xs text-slate-300 leading-relaxed">{fiche.resume}</p>
             )}
             {fiche.contenu && (
-              <p className="mt-3 whitespace-pre-wrap text-sm text-slate-400">
+              <p className="mt-3 whitespace-pre-wrap text-xs text-slate-400 leading-relaxed">
                 {fiche.contenu}
               </p>
             )}
@@ -224,46 +224,61 @@ export default function FicheTechniquePage() {
                   href={fiche.fichier_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+                  className="inline-block rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-500 shadow-md"
                 >
                   Ouvrir le PDF dans un nouvel onglet
                 </a>
                 <iframe
                   src={fiche.fichier_url}
-                  className="h-96 w-full rounded-lg border border-slate-700"
+                  className="h-80 w-full rounded-xl border border-slate-700 bg-slate-900"
                   title={fiche.titre}
                 />
               </div>
             )}
+
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end shadow-lg">
+              <button
+                type="button"
+                onClick={() => setFiche(null)}
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+              >
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
             onSubmit={onSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-6"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3.5 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
           >
-            <h2 className="text-lg font-semibold text-white">Nouvelle fiche technique</h2>
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <h2 className="text-base font-bold text-white">Nouvelle Fiche Technique</h2>
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+                ✕
+              </button>
+            </div>
 
             <input
               value={form.titre}
               onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
-              placeholder="Titre"
+              placeholder="Titre de la fiche"
               required
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <select
                 value={form.categorie}
                 onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
-                className="w-1/2 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
               >
                 {CATEGORIES.filter((c) => c.value !== "toutes").map((c) => (
                   <option key={c.value} value={c.value}>
@@ -275,52 +290,52 @@ export default function FicheTechniquePage() {
                 value={form.reference}
                 onChange={(e) => setForm((p) => ({ ...p, reference: e.target.value }))}
                 placeholder="Référence (ex. DTU 41.2)"
-                className="w-1/2 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
             </div>
 
             <textarea
               value={form.resume}
               onChange={(e) => setForm((p) => ({ ...p, resume: e.target.value }))}
-              placeholder="Résumé"
+              placeholder="Résumé explicatif"
               rows={2}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
 
             <textarea
               value={form.contenu}
               onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
-              placeholder="Contenu détaillé"
+              placeholder="Contenu détaillé ou prescriptions techniques"
               rows={4}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
 
             <div>
-              <label className="text-xs uppercase tracking-wide text-slate-500">
-                Joindre un PDF (optionnel)
+              <label className="text-[11px] font-semibold uppercase text-slate-400">
+                Joindre un fichier PDF (optionnel)
               </label>
               <input
                 type="file"
                 accept="application/pdf"
                 onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-700 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-200"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={uploading}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
               >
-                {uploading ? "Envoi du PDF…" : "Enregistrer"}
+                {uploading ? "Envoi du PDF…" : "Enregistrer la Fiche"}
               </button>
             </div>
           </form>

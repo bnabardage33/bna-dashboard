@@ -1258,11 +1258,11 @@ export default function ZoneCard({
       {/* MODAL FICHE DÉBIT & OPTIMISEUR DE COUPE */}
       {modalDebitOuvert && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/75 p-3 sm:p-5 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={() => setModalDebitOuvert(false)}
         >
-          <div className="mx-auto max-w-4xl space-y-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/90 p-3 rounded-2xl print:hidden">
+          <div className="relative w-full max-w-4xl space-y-3 rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-900 p-4 sm:p-6 pb-20 sm:pb-6 shadow-2xl max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/90 pb-3 rounded-2xl print:hidden">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
