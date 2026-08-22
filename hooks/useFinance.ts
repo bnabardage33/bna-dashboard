@@ -59,6 +59,7 @@ export function useRentabiliteChantiers() {
   const [chantiers, setChantiers] = useState<any[]>([]);
   const [depenses, setDepenses] = useState<DepenseFinance[]>([]);
   const [pointages, setPointages] = useState<PointageFinance[]>([]);
+  const [avancements, setAvancements] = useState<any[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -74,7 +75,7 @@ export function useRentabiliteChantiers() {
         if (isMounted) setError(err);
       };
 
-      const [chantiersData, depensesData, pointagesData] = await Promise.all([
+      const [chantiersData, depensesData, pointagesData, avancementsData] = await Promise.all([
         safeFetch<any>(
           supabase.from("chantiers").select("id, nom, client_nom, prix_vente_ht, statut"),
           handleError
@@ -87,12 +88,17 @@ export function useRentabiliteChantiers() {
           supabase.from("pointages").select("*"),
           handleError
         ),
+        safeFetch<any>(
+          supabase.from("avancements_chantier").select("*"),
+          handleError
+        ),
       ]);
 
       if (isMounted) {
         setChantiers(chantiersData);
         setDepenses(depensesData);
         setPointages(pointagesData);
+        setAvancements(avancementsData);
         setIsLoading(false);
       }
     };
@@ -114,7 +120,7 @@ export function useRentabiliteChantiers() {
         avancement: 50, // Par défaut
       };
 
-      const result = calculerRentabiliteChantier(chantierBase, depenses, pointages);
+      const result = calculerRentabiliteChantier(chantierBase, depenses, pointages, avancements);
 
       return {
         ...result,
@@ -131,7 +137,7 @@ export function useRentabiliteChantiers() {
     );
 
     return { rentabilites: rentabilitesData, alertes: alertesData };
-  }, [chantiers, depenses, pointages]);
+  }, [chantiers, depenses, pointages, avancements]);
 
   return { rentabilites, alertes, isLoading, error };
 }

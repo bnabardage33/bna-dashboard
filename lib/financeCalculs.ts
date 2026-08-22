@@ -17,9 +17,26 @@ import {
 export function calculerRentabiliteChantier(
   chantier: ChantierFinance,
   depenses: DepenseFinance[],
-  pointages: PointageFinance[]
+  pointages: PointageFinance[],
+  avancements?: any[]
 ): RentabiliteResult {
   try {
+    let avancementReel = 50; // fallback
+    if (avancements && avancements.length > 0) {
+      // Filtrer pour ce chantier et trier du plus récent au plus ancien
+      const avs = avancements
+        .filter((a) => a.chantier_id === chantier.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      if (avs.length > 0) {
+        avancementReel = avs[0].pourcentage;
+      } else if (chantier.avancement) {
+        avancementReel = chantier.avancement;
+      }
+    } else if (chantier.avancement) {
+      avancementReel = chantier.avancement;
+    }
+
     let cout_materiaux = 0;
     let cout_sous_traitance = 0;
     let cout_location = 0;
@@ -63,7 +80,7 @@ export function calculerRentabiliteChantier(
 
     // Alerte si : coût_direct > (prix_vente_ht × 0.75 × 0.85) ET avancement < 80
     const seuil_alerte = chantier.prix_vente_ht * 0.75 * 0.85;
-    const alerte_depassement = cout_direct_total > seuil_alerte && chantier.avancement < 80;
+    const alerte_depassement = cout_direct_total > seuil_alerte && avancementReel < 80;
 
     return {
       cout_materiaux,
