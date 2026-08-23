@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
 import SignaturePad from "@/components/SignaturePad";
-import { PenTool } from "lucide-react";
+import { PenTool, Sparkles, Loader2 } from "lucide-react";
 
 type CatalogueOuvrage = {
   id: string;
@@ -76,6 +76,9 @@ export default function DevisPage() {
   const [apercu, setApercu] = useState<Devis | null>(null);
   const [modeSignature, setModeSignature] = useState(false);
   const [signatureData, setSignatureData] = useState<{ image: string; nom: string } | null>(null);
+  const [iaPromptOuvert, setIaPromptOuvert] = useState(false);
+  const [iaPrompt, setIaPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const [clientId, setClientId] = useState("");
   const [objet, setObjet] = useState("");

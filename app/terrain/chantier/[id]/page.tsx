@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -103,6 +104,33 @@ function ChantierDetailContent() {
   const [loadingMeteo, setLoadingMeteo] = useState(false);
   const [detailMeteoOuvert, setDetailMeteoOuvert] = useState(false);
   const [calepinageOuvert, setCalepinageOuvert] = useState<{zone: Zone, resultat: ResultatCalepinage} | null>(null);
+  const [consignesSecurite, setConsignesSecurite] = useState<string | null>(null);
+  const [isGeneratingSecurite, setIsGeneratingSecurite] = useState(false);
+
+
+  async function genererSecuriteIA() {
+    setIsGeneratingSecurite(true);
+    // On force le cast pour éviter les erreurs TS sur les index
+    const materiauClé = (chantier?.materiau_structurel as any) || "lames_bois";
+    const accesClé = (chantier?.moyen_acces as any) || "pied_oeuvre";
+    
+    const contexte = `Chantier: ${chantier?.nom}\nMatériau: ${LABELS_MATERIAU[materiauClé as keyof typeof LABELS_MATERIAU] || "Bois"}\nMoyen d'accès: ${LABELS_ACCES[accesClé as keyof typeof LABELS_ACCES] || "Pied d'oeuvre"}\nZone vent: ${chantier?.zone_vent}`;
+    
+    try {
+      const res = await fetch("/api/ia-securite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contexte }),
+      });
+      if (!res.ok) throw new Error("Erreur IA");
+      const data = await res.json();
+      setConsignesSecurite(data.texte);
+    } catch (err) {
+      alert("Impossible de générer les consignes.");
+    } finally {
+      setIsGeneratingSecurite(false);
+    }
+  }
 
   const fetchChantier = useCallback(async () => {
     const { data, error } = await supabase
@@ -346,6 +374,41 @@ function ChantierDetailContent() {
 
       {tab === "Général" && (
         <div className="space-y-4">
+
+          {/* Bloc Sécurité IA */}
+          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-slate-800 to-purple-950/20 p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-400" />
+                PPSPS Express (Consignes de Sécurité IA)
+              </h3>
+              {!consignesSecurite && (
+                <button
+                  onClick={genererSecuriteIA}
+                  disabled={isGeneratingSecurite}
+                  className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                >
+                  {isGeneratingSecurite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  {isGeneratingSecurite ? "Génération..." : "Générer"}
+                </button>
+              )}
+            </div>
+            {consignesSecurite ? (
+              <div className="mt-4 space-y-2 text-sm text-slate-300 bg-slate-900/50 p-4 rounded-lg border border-slate-700 whitespace-pre-wrap">
+                {consignesSecurite}
+                <div className="mt-4 flex justify-end">
+                  <button onClick={() => setConsignesSecurite(null)} className="text-xs text-slate-500 hover:text-slate-300 underline">
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400">
+                L'IA analyse le matériel (nacelle, échafaudage) et le matériau (HPL, bois) pour générer les 5 règles d'or de sécurité du jour.
+              </p>
+            )}
+          </div>
+
           <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-500">Client</p>
             <p className="text-white">{chantier.clients?.nom}</p>
