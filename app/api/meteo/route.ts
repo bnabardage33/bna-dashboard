@@ -9,9 +9,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
   }
 
+  // Plage : aujourd'hui + 4 jours suivants (5 jours au total)
+  const aujourdHui = new Date();
+  const dans4Jours = new Date();
+  dans4Jours.setDate(aujourdHui.getDate() + 4);
+
+  const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
+
   const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
     location
-  )}/today?unitGroup=metric&key=${key}&contentType=json&include=days,hours&elements=datetime,temp,windspeed,windgust,precip`;
+  )}/${fmtDate(aujourdHui)}/${fmtDate(dans4Jours)}?unitGroup=metric&key=${key}&contentType=json&include=days,hours,current&elements=datetime,tempmax,tempmin,temp,windspeed,windgust,precip,icon,conditions`;
 
   const vcRes = await fetch(url, { next: { revalidate: 1800 } });
   if (!vcRes.ok) {
@@ -19,11 +26,14 @@ export async function GET(req: NextRequest) {
   }
 
   const data = await vcRes.json();
-  const today = data.days?.[0];
+  const jours = data.days || [];
+  const today = jours[0];
+
   if (!today) {
     return NextResponse.json({ error: "Pas de données pour cette ville" }, { status: 502 });
   }
 
+  // --- Détail du jour (heures, matin/après-midi, alerte) ---
   const heures = (today.hours || []).map((h: any) => ({
     heure: h.datetime.slice(0, 5),
     temp: Math.round(h.temp),
@@ -50,7 +60,7 @@ export async function GET(req: NextRequest) {
   const apresMidi = { temp: avg(apremHeures, "temp"), vent: avg(apremHeures, "vent"), rafales: max(apremHeures, "rafales") };
 
   const rafalesMax = Math.max(matin.rafales, apresMidi.rafales);
-  const tempMax = Math.max(matin.temp, apresMidi.temp);
+  const tempMax = Math.round(today.tempmax);
   const heuresPluie = heures.filter((h: any) => h.pluie > 0.2).length;
   const cumulPluie = heures.reduce((s: number, h: any) => s + h.pluie, 0);
 
@@ -77,5 +87,29 @@ export async function GET(req: NextRequest) {
     motif = `Chaleur (${tempMax}°C) — vigilance renforcée`;
   }
 
-  return NextResponse.json({ matin, apresMidi, heures, alerte: { niveau, motif } });
+  // --- Prévisions des jours suivants (style JT) ---
+  const prochainsJours = jours.slice(1, 5).map((j: any) => ({
+    date: j.datetime,
+    tempMax: Math.round(j.tempmax),
+    tempMin: Math.round(j.tempmin),
+    icon: j.icon,
+    conditions: j.conditions,
+  }));
+
+  const tempActuelle = data.currentConditions?.temp !== undefined
+    ? Math.round(data.currentConditions.temp)
+    : Math.round(today.tempmax);
+
+  return NextResponse.json({
+    matin,
+    apresMidi,
+    heures,
+    alerte: { niveau, motif },
+    icon: data.currentConditions?.icon || today.icon,
+    conditions: today.conditions,
+    tempActuelle,
+    tempMaxJour: Math.round(today.tempmax),
+    tempMinJour: Math.round(today.tempmin),
+    prochainsJours,
+  });
 }

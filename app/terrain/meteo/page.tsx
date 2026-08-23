@@ -18,18 +18,28 @@ const COULEURS = {
 const EMOJIS = { vert: "🟢", jaune: "🟡", orange: "🟠", rouge: "🔴" } as const;
 
 // Mappe les codes icône Visual Crossing vers une icône Lucide
-function IconeMeteo({ icon, className }: { icon: string; className?: string }) {
+function IconeMeteo({ icon, conditions, className }: { icon: string; conditions?: string; className?: string }) {
   const props = { className: className || "h-8 w-8" };
+  const conditionsBasses = (conditions || "").toLowerCase();
+  const contientPluie = conditionsBasses.includes("rain") || conditionsBasses.includes("shower") || conditionsBasses.includes("drizzle");
+  const contientOrage = conditionsBasses.includes("thunder") || conditionsBasses.includes("storm");
+  const contientNeige = conditionsBasses.includes("snow");
+
   switch (icon) {
     case "clear-day":
       return <Sun {...props} className={`${props.className} text-amber-400`} />;
     case "clear-night":
       return <Sun {...props} className={`${props.className} text-slate-400`} />;
     case "partly-cloudy-day":
-      return <CloudSun {...props} className={`${props.className} text-amber-300`} />;
+      return contientPluie
+        ? <CloudRain {...props} className={`${props.className} text-sky-400`} />
+        : <CloudSun {...props} className={`${props.className} text-amber-300`} />;
     case "partly-cloudy-night":
       return <Cloud {...props} className={`${props.className} text-slate-400`} />;
     case "cloudy":
+      if (contientOrage) return <CloudRain {...props} className={`${props.className} text-indigo-400`} />;
+      if (contientNeige) return <Snowflake {...props} className={`${props.className} text-sky-200`} />;
+      if (contientPluie) return <CloudRain {...props} className={`${props.className} text-sky-400`} />;
       return <Cloud {...props} className={`${props.className} text-slate-400`} />;
     case "rain":
       return <CloudRain {...props} className={`${props.className} text-sky-400`} />;
@@ -40,6 +50,9 @@ function IconeMeteo({ icon, className }: { icon: string; className?: string }) {
     case "wind":
       return <Wind {...props} className={`${props.className} text-slate-400`} />;
     default:
+      if (contientOrage) return <CloudRain {...props} className={`${props.className} text-indigo-400`} />;
+      if (contientNeige) return <Snowflake {...props} className={`${props.className} text-sky-200`} />;
+      if (contientPluie) return <CloudRain {...props} className={`${props.className} text-sky-400`} />;
       return <Cloud {...props} className={`${props.className} text-slate-400`} />;
   }
 }
@@ -225,10 +238,14 @@ export default function HomeTerrainPage() {
                 <div className="p-5 text-center border-b border-slate-700/40">
                   <p className="text-xs uppercase tracking-widest text-sky-300/70 font-bold mb-2">{ville}</p>
                   <div className="flex items-center justify-center gap-3">
-                    <IconeMeteo icon={meteo.icon} className="h-14 w-14" />
+                    <IconeMeteo icon={meteo.icon} conditions={meteo.conditions} className="h-14 w-14" />
                     <div className="text-left">
-                      <p className="text-4xl font-black text-white leading-none">{meteo.tempMaxJour}°</p>
-                      <p className="text-sm text-slate-400 mt-1">{meteo.tempMinJour}° min</p>
+                      <p className="text-4xl font-black text-white leading-none">{meteo.tempActuelle}°</p>
+                      <p className="text-sm text-slate-400 mt-1">
+                        <span className="text-orange-300 font-semibold">{meteo.tempMaxJour}°</span>
+                        {" / "}
+                        <span className="text-sky-300 font-semibold">{meteo.tempMinJour}°</span>
+                      </p>
                     </div>
                   </div>
                   <p className="text-xs text-slate-400 mt-2 capitalize">{meteo.conditions}</p>
@@ -264,7 +281,7 @@ export default function HomeTerrainPage() {
                       <p className="text-[10px] font-bold text-slate-400 truncate w-full text-center">
                         {nomJour(j.date).slice(0, 3)}
                       </p>
-                      <IconeMeteo icon={j.icon} className="h-6 w-6" />
+                      <IconeMeteo icon={j.icon} conditions={j.conditions} className="h-6 w-6" />
                       <p className="text-xs font-bold text-white">{j.tempMax}°</p>
                       <p className="text-[10px] text-slate-500">{j.tempMin}°</p>
                     </div>

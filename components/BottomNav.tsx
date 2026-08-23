@@ -5,6 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HardHat, Building2, ShoppingCart, Wrench, TrendingUp } from "lucide-react";
 
+const COULEURS = {
+  orange: { bg: "bg-orange-500/15", text: "text-orange-400", shadow: "shadow-orange-500/20" },
+  sky: { bg: "bg-sky-500/15", text: "text-sky-400", shadow: "shadow-sky-500/20" },
+  pink: { bg: "bg-pink-500/15", text: "text-pink-400", shadow: "shadow-pink-500/20" },
+  amber: { bg: "bg-amber-500/15", text: "text-amber-400", shadow: "shadow-amber-500/20" },
+  emerald: { bg: "bg-emerald-500/15", text: "text-emerald-400", shadow: "shadow-emerald-500/20" },
+} as const;
+
 export default function BottomNav() {
   const pathname = usePathname();
 
@@ -14,6 +22,7 @@ export default function BottomNav() {
       label: "Chantiers",
       href: "/terrain/chantier",
       icon: HardHat,
+      couleur: "orange" as const,
       isActive: (path: string) =>
         path === "/" ||
         path.startsWith("/terrain/chantier") ||
@@ -28,6 +37,7 @@ export default function BottomNav() {
       label: "Bureau",
       href: "/bureau",
       icon: Building2,
+      couleur: "sky" as const,
       isActive: (path: string) =>
         path.startsWith("/bureau") && !path.startsWith("/bureau/fournisseurs"),
     },
@@ -36,6 +46,7 @@ export default function BottomNav() {
       label: "Achats",
       href: "/bureau/fournisseurs",
       icon: ShoppingCart,
+      couleur: "pink" as const,
       isActive: (path: string) => path.startsWith("/bureau/fournisseurs"),
     },
     {
@@ -43,6 +54,7 @@ export default function BottomNav() {
       label: "Outils",
       href: "/terrain/outils",
       icon: Wrench,
+      couleur: "amber" as const,
       isActive: (path: string) =>
         path.startsWith("/terrain/outils") ||
         path.startsWith("/terrain/meteo") ||
@@ -56,6 +68,7 @@ export default function BottomNav() {
       label: "Finance",
       href: "/finance",
       icon: TrendingUp,
+      couleur: "emerald" as const,
       isActive: (path: string) => path.startsWith("/finance"),
     },
   ];
@@ -69,6 +82,7 @@ export default function BottomNav() {
         {NAV_ITEMS.map((item) => {
           const active = item.isActive(pathname);
           const Icon = item.icon;
+          const c = COULEURS[item.couleur];
 
           return (
             <Link
@@ -76,14 +90,14 @@ export default function BottomNav() {
               href={item.href}
               className={`group flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 transition-all ${
                 active
-                  ? "text-sky-400 font-bold"
+                  ? `${c.text} font-bold`
                   : "text-slate-400 hover:text-slate-200 font-medium"
               }`}
             >
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${
                   active
-                    ? "bg-sky-500/15 text-sky-400 scale-105 shadow-sm shadow-sky-500/20"
+                    ? `${c.bg} ${c.text} scale-105 shadow-sm ${c.shadow}`
                     : "text-slate-400 group-hover:bg-slate-700/50 group-hover:text-slate-200"
                 }`}
               >
