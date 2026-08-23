@@ -89,6 +89,8 @@ export default function DevisPage() {
   const [acompte, setAcompte] = useState(30);
   const [tva, setTva] = useState(10);
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
+  const [promptIA, setPromptIA] = useState("");
+  const [genererIAEnCours, setGenererIAEnCours] = useState(false);
 
   async function fetchTout() {
     setLoading(true);
@@ -137,6 +139,40 @@ export default function DevisPage() {
         },
       ];
     });
+  }
+
+  async function genererLigneIA() {
+    if (!promptIA.trim()) return;
+    setGenererIAEnCours(true);
+    try {
+      const res = await fetch("/api/ia-devis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptIA }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Erreur IA");
+      }
+      setLignes((prev) => {
+        const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
+        return [
+          ...nettes,
+          {
+            designation: data.designation || "",
+            description: data.description || "",
+            qte: Number(data.qte) || 1,
+            unite: data.unite || "forfait",
+            pu_ht: Number(data.pu_ht) || 0,
+          },
+        ];
+      });
+      setPromptIA("");
+    } catch (err: any) {
+      alert("Erreur génération IA : " + err.message);
+    } finally {
+      setGenererIAEnCours(false);
+    }
   }
 
   function updateLigne(i: number, patch: Partial<Ligne>) {
@@ -582,6 +618,30 @@ export default function DevisPage() {
                   </button>
                 </div>
               ))}
+              <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-xl border border-violet-500/40 bg-violet-500/5 p-2">
+                <input
+                  value={promptIA}
+                  onChange={(e) => setPromptIA(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      genererLigneIA();
+                    }
+                  }}
+                  placeholder="✨ Décris la prestation (ex: bardage bois 50m² façade nord)..."
+                  disabled={genererIAEnCours}
+                  className="flex-1 rounded-lg border border-violet-500/40 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={genererLigneIA}
+                  disabled={genererIAEnCours || !promptIA.trim()}
+                  className="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition-colors whitespace-nowrap"
+                >
+                  {genererIAEnCours ? "Génération..." : "✨ Générer avec l'IA"}
+                </button>
+              </div>
+
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
                 <button
                   type="button"

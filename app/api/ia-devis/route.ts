@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error('Erreur IA Devis:', err);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Erreur IA Devis:', message);
+    return NextResponse.json({ error: "L'IA n'a pas pu générer une ligne de devis valide pour cette demande. Reformule ta demande." }, { status: 500 });
   }
 }
