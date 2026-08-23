@@ -2,9 +2,10 @@ import { Suspense } from "react";
 import SubNav from "@/components/SubNav";
 
 const items = [
+  { label: "Accueil", href: "/terrain/meteo" },
   { label: "Chantiers", href: "/terrain/chantier" },
   { label: "Boîte à Outils", href: "/terrain/outils" },
-  { label: "Météo & Vigilance", href: "/terrain/meteo" },
+
   { label: "Notes Patron", href: "/terrain/notes" },
   { label: "Fiches DTU", href: "/terrain/fiche-technique" },
 ];
