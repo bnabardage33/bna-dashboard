@@ -6,7 +6,7 @@ import TvaWidget from "./components/TvaWidget";
 import TresorerieWidget from "./components/TresorerieWidget";
 import UrsaafWidget from "./components/UrsaafWidget";
 import Link from "next/link";
-import { Clock, Receipt, TrendingUp, FileText, History, Download } from "lucide-react";
+import { Clock, Receipt, TrendingUp, FileText, History, Download, Users } from "lucide-react";
 import CaEvolutionChart from "./components/charts/CaEvolutionChart";
 import CoutRepartitionChart from "./components/charts/CoutRepartitionChart";
 import TresoreriePrevisionChart from "./components/charts/TresoreriePrevisionChart";
@@ -98,6 +98,13 @@ export default function FinanceDashboard() {
             >
               <Clock className="h-4 w-4" />
               + Pointage
+            </Link>
+            <Link
+              href="/finance/saisie/feuille-heures"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-emerald-600/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-600/20"
+            >
+              <Users className="h-4 w-4" />
+              Feuille d'heures
             </Link>
             <Link
               href="/finance/saisie/depense"

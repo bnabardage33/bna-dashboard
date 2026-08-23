@@ -53,7 +53,7 @@ export default function HistoriquePage() {
                 <tbody className="divide-y divide-slate-700/50">
                   {pointages.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-700/20">
-                      <td className="px-2 py-2">{new Date(p.date_pointage).toLocaleDateString("fr-FR")}</td>
+                      <td className="px-2 py-2">{new Date(p.date).toLocaleDateString("fr-FR")}</td>
                       <td className="px-2 py-2">{p.profiles?.full_name || "Inconnu"}</td>
                       <td className="px-2 py-2 truncate max-w-[120px]" title={p.chantiers?.nom}>{p.chantiers?.nom}</td>
                       <td className="px-2 py-2 text-right font-medium text-cyan-400">{p.heures}h</td>
