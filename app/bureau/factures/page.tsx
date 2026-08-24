@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF from "@/components/DocumentPDF";
+import SignaturePad from "@/components/SignaturePad";
 import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, PenTool } from "lucide-react";
 import { prochainNumero } from "@/lib/documents";
 
 type CatalogueOuvrage = {
@@ -84,6 +85,8 @@ export default function FacturesPage() {
   const [loading, setLoading] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [apercu, setApercu] = useState<Facture | null>(null);
+  const [modeSignature, setModeSignature] = useState(false);
+  const [signatureData, setSignatureData] = useState<{ image: string; nom: string } | null>(null);
   const [apercuRelance, setApercuRelance] = useState<{ facture: Facture, penalites: boolean } | null>(null);
 
   const [depuisDevis, setDepuisDevis] = useState("");
@@ -647,10 +650,16 @@ export default function FacturesPage() {
       {apercu && entreprise && (
         <div
           className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4"
-          onClick={() => setApercu(null)}
+          onClick={() => { setApercu(null); setModeSignature(false); setSignatureData(null); }}
         >
           <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex justify-end gap-2 print:hidden">
+              <button
+                onClick={() => setModeSignature(true)}
+                className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 transition-all"
+              >
+                <PenTool className="h-4 w-4" /> Faire signer
+              </button>
               <button
                 onClick={imprimer}
                 className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
@@ -658,7 +667,7 @@ export default function FacturesPage() {
                 <span>🖨️</span> Imprimer / Exporter PDF
               </button>
               <button
-                onClick={() => setApercu(null)}
+                onClick={() => { setApercu(null); setModeSignature(false); setSignatureData(null); }}
                 className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 Fermer
@@ -691,6 +700,43 @@ export default function FacturesPage() {
                 }
               }
             />
+
+            {modeSignature && (
+              <div className="mt-4 bg-slate-800 border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
+                <h3 className="text-sm font-bold text-slate-200">✍️ Signature de la facture (Acquittée)</h3>
+                <SignaturePad
+                  label="Signature"
+                  signerName={apercu.clients?.nom || ""}
+                  onChange={(img) =>
+                    setSignatureData(img ? { image: img, nom: apercu.clients?.nom || "" } : null)
+                  }
+                />
+                <div className="flex gap-3 pt-2">
+                  <button
+                    disabled={!signatureData}
+                    onClick={async () => {
+                      await supabase
+                        .from("factures")
+                        .update({ statut: "payee" })
+                        .eq("id", apercu.id);
+                      setApercu(null);
+                      setModeSignature(false);
+                      setSignatureData(null);
+                      fetchTout();
+                    }}
+                    className="rounded-xl bg-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Marquer comme Payée
+                  </button>
+                  <button
+                    onClick={() => setModeSignature(false)}
+                    className="rounded-xl border border-slate-600 bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition-all"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

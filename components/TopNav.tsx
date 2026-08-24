@@ -2,9 +2,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Settings, ShieldCheck } from "lucide-react";
 
 export default function TopNav() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
+    return null;
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-700 bg-slate-900/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">

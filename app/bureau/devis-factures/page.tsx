@@ -81,6 +81,8 @@ export default function DevisPage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const [clientId, setClientId] = useState("");
+  const [chantierId, setChantierId] = useState("");
+  const [chantiersClient, setChantiersClient] = useState<{id: string; nom: string; code_acces: string; adresse_chantier: string}[]>([]);
   const [objet, setObjet] = useState("");
   const [adresseChantier, setAdresseChantier] = useState("");
   const [typeTravaux, setTypeTravaux] = useState("");
@@ -194,6 +196,7 @@ export default function DevisPage() {
     const { error } = await supabase.from("devis").insert({
       numero,
       client_id: clientId,
+      chantier_id: chantierId || null,
       objet: objet || null,
       adresse_chantier: adresseChantier || null,
       type_travaux: typeTravaux || null,
@@ -212,6 +215,8 @@ export default function DevisPage() {
 
     setModalOuvert(false);
     setClientId("");
+    setChantierId("");
+    setChantiersClient([]);
     setObjet("");
     setAdresseChantier("");
     setTypeTravaux("");
@@ -506,7 +511,20 @@ export default function DevisPage() {
 
             <select
               value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
+              onChange={async (e) => {
+                const id = e.target.value;
+                setClientId(id);
+                setChantierId("");
+                setChantiersClient([]);
+                if (id) {
+                  const { data } = await supabase
+                    .from("chantiers")
+                    .select("id, nom, code_acces, adresse_chantier")
+                    .eq("client_id", id)
+                    .order("created_at", { ascending: false });
+                  if (data) setChantiersClient(data);
+                }
+              }}
               required
               className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
             >
@@ -517,6 +535,27 @@ export default function DevisPage() {
                 </option>
               ))}
             </select>
+
+            {chantiersClient.length > 0 && (
+              <select
+                value={chantierId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setChantierId(id);
+                  // Auto-remplir l'adresse si elle est vide
+                  const ch = chantiersClient.find(c => c.id === id);
+                  if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
+                }}
+                className="w-full rounded-xl border border-sky-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+              >
+                <option value="">-- Lier à un chantier (optionnel) --</option>
+                {chantiersClient.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nom} {c.code_acces ? `· Code: ${c.code_acces}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <input
               value={objet}
@@ -749,6 +788,43 @@ export default function DevisPage() {
                 }
               }
             />
+
+            {modeSignature && (
+              <div className="mt-4 bg-slate-800 border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
+                <h3 className="text-sm font-bold text-slate-200">✍️ Signature du client</h3>
+                <SignaturePad
+                  label="Signature"
+                  signerName={apercu.clients?.nom || ""}
+                  onChange={(img) =>
+                    setSignatureData(img ? { image: img, nom: apercu.clients?.nom || "" } : null)
+                  }
+                />
+                <div className="flex gap-3 pt-2">
+                  <button
+                    disabled={!signatureData}
+                    onClick={async () => {
+                      await supabase
+                        .from("devis")
+                        .update({ statut: "accepte" })
+                        .eq("id", apercu.id);
+                      setApercu(null);
+                      setModeSignature(false);
+                      setSignatureData(null);
+                      fetchTout();
+                    }}
+                    className="rounded-xl bg-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Valider la signature
+                  </button>
+                  <button
+                    onClick={() => setModeSignature(false)}
+                    className="rounded-xl border border-slate-600 bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition-all"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

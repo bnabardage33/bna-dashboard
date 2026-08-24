@@ -102,9 +102,17 @@ export default function TresorerieWidget() {
               <span className="text-emerald-400 font-medium">+{fmtEuro(totalEntrees)}</span>
             </div>
             {factures.slice(0, 3).map((f) => (
-              <div key={f.id} className="flex justify-between text-xs text-slate-500 pl-2">
-                <span className="truncate max-w-[120px]">{f.client_nom}</span>
-                <span>{f.date_echeance ? fmtDate(f.date_echeance) : ""}</span>
+              <div key={f.id} className="flex justify-between text-xs text-slate-500 pl-2 gap-2">
+                <span className="truncate max-w-[110px]">{f.client_nom}</span>
+                <span className="flex items-center gap-1.5 shrink-0">
+                  {f.statut === "payee" && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Payée
+                    </span>
+                  )}
+                  <span>{f.date_echeance ? fmtDate(f.date_echeance) : ""}</span>
+                </span>
               </div>
             ))}
             {factures.length > 3 && (

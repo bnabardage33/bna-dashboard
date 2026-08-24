@@ -387,7 +387,7 @@ export function useTresorerie() {
           supabase
             .from("factures")
             .select("*, clients(nom)")
-            .in("statut", ["emise", "envoyee"])
+            .in("statut", ["emise", "envoyee", "payee"])
             .gte("date_echeance", todayStr)
             .lte("date_echeance", in30DaysStr),
           handleError

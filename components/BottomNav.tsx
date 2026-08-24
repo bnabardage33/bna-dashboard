@@ -16,6 +16,10 @@ const COULEURS = {
 export default function BottomNav() {
   const pathname = usePathname();
 
+  if (pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
+    return null;
+  }
+
   const NAV_ITEMS = [
     {
       id: "chantiers",
