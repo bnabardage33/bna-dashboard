@@ -16,6 +16,8 @@ import {
   calculerRentabiliteChantier,
   calculerKpiMensuel,
   calculerTva,
+  calculerMontantTTCFacture,
+  calculerMontantTTCCommande,
 } from "@/lib/financeCalculs";
 
 export type RentabiliteChantierExt = RentabiliteResult & {
@@ -184,8 +186,8 @@ export function useKpiMensuel(mois?: string) {
           supabase
             .from("commandes")
             .select("*")
-            .gte("date", startDate)
-            .lte("date", endDate),
+            .gte("date_livraison_prevue", startDate)
+            .lte("date_livraison_prevue", endDate),
           handleError
         ),
         safeFetch<DepenseFinance>(
@@ -277,8 +279,8 @@ export function useTvaMensuelle(mois?: string) {
           supabase
             .from("commandes")
             .select("*")
-            .gte("date", startDate)
-            .lte("date", endDate),
+            .gte("date_livraison_prevue", startDate)
+            .lte("date_livraison_prevue", endDate),
           handleError
         ),
       ]);
@@ -347,11 +349,9 @@ export function useParametreFinance(cle: string) {
 
 export type TresorerieFacture = FactureFinance & {
   client_nom?: string;
-  date_echeance?: string;
 };
 export type TresorerieAchat = AchatFinance & {
   fournisseur_nom?: string;
-  date_echeance?: string;
   statut?: string;
 };
 
@@ -388,8 +388,8 @@ export function useTresorerie() {
             .from("factures")
             .select("*, clients(nom)")
             .in("statut", ["emise", "envoyee", "payee"])
-            .gte("date_echeance", todayStr)
-            .lte("date_echeance", in30DaysStr),
+            .gte("echeance", todayStr)
+            .lte("echeance", in30DaysStr),
           handleError
         ),
         safeFetch<TresorerieAchat>(
@@ -397,8 +397,8 @@ export function useTresorerie() {
             .from("commandes")
             .select("*")
             .not("statut", "in", '("paye","payee")')
-            .gte("date", todayStr)
-            .lte("date", in30DaysStr),
+            .gte("date_livraison_prevue", todayStr)
+            .lte("date_livraison_prevue", in30DaysStr),
           handleError
         ),
         safeFetch<PointageFinance>(
@@ -625,16 +625,18 @@ export function useTresoreriePrevision(days = 90) {
     const sortiesParJour: Record<string, number> = {};
 
     factures.forEach(f => {
-      if (f.date_echeance) {
-        const d = f.date_echeance.slice(0, 10);
-        entreesParJour[d] = (entreesParJour[d] || 0) + f.montant_ttc;
+      if (f.echeance) {
+        const d = f.echeance.slice(0, 10);
+        entreesParJour[d] = (entreesParJour[d] || 0) + calculerMontantTTCFacture(f);
       }
     });
 
     achats.forEach(a => {
-      // utiliser la date_echeance si dispo, sinon la date + 30j par défaut pour une commande non payée
-      const d = a.date_echeance ? a.date_echeance.slice(0, 10) : new Date(new Date(a.date).getTime() + 30 * 86400000).toISOString().slice(0, 10);
-      sortiesParJour[d] = (sortiesParJour[d] || 0) + a.montant_ttc;
+      // Utilise la date de livraison prévue, sinon 30j après la création de la commande
+      const d = a.date_livraison_prevue
+        ? a.date_livraison_prevue.slice(0, 10)
+        : new Date(new Date(a.created_at).getTime() + 30 * 86400000).toISOString().slice(0, 10);
+      sortiesParJour[d] = (sortiesParJour[d] || 0) + calculerMontantTTCCommande(a);
     });
 
     for (let i = 0; i < days; i++) {

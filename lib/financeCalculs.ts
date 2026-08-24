@@ -283,3 +283,16 @@ export function fmtDate(dateIso: string): string {
     return dateIso;
   }
 }
+
+// --- Helpers TTC (factures.montant_ttc et commandes.montant_ttc n'existent pas en base) ---
+
+export function calculerMontantTTCFacture(facture: any): number {
+  const lignes = facture.lignes || [];
+  const totalHT = lignes.reduce((s: number, l: any) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
+  const tvaPct = facture.tva_pct ?? 20;
+  return totalHT * (1 + tvaPct / 100);
+}
+
+export function calculerMontantTTCCommande(commande: any, tvaPct = 20): number {
+  return (commande.montant_ht || 0) * (1 + tvaPct / 100);
+}
