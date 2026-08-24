@@ -22,9 +22,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [clientData, setClientData] = useState<any>(null);
   const [avancement, setAvancement] = useState<number>(0);
   const [devisData, setDevisData] = useState<any[]>([]);
-  const [entreprise, setEntreprise] = useState<any>(null);
   const [facturesData, setFacturesData] = useState<any[]>([]);
   const [activeDoc, setActiveDoc] = useState<any>(null);
+  const [entreprise, setEntreprise] = useState<any>(null);
 
   useEffect(() => {
     // Fetch real data on mount
@@ -90,6 +90,26 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           }
           
           setDevisData(devisList);
+
+          // Fetch factures
+          let facturesList: any[] = [];
+          const { data: facturesParChantier } = await supabase
+            .from('factures')
+            .select('*')
+            .eq('chantier_id', chantier.id)
+            .in('statut', ['emise', 'envoyee', 'payee']);
+            
+          if (facturesParChantier && facturesParChantier.length > 0) {
+            facturesList = facturesParChantier;
+          } else if (chantier.client_id) {
+            const { data: facturesParClient } = await supabase
+              .from('factures')
+              .select('*')
+              .eq('client_id', chantier.client_id)
+              .in('statut', ['emise', 'envoyee', 'payee']);
+            if (facturesParClient) facturesList = facturesParClient;
+          }
+          setFacturesData(facturesList);
         } else {
           // Fallback if not found
           setChatMessages([
@@ -263,21 +283,23 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const submitSignature = async () => {
     if (!signatureData) return;
     
-    // Si on a un vrai devis en base, on le met à jour
-    if (devisData && devisData.length > 0) {
+    if (activeDoc) {
       try {
         const { supabase } = await import('@/lib/supabase');
         const { data: settings } = await supabase.from("entreprise_settings").select("*").eq("id", 1).single();
         if (settings) setEntreprise(settings);
 
-        // On met à jour le premier devis trouvé pour ce chantier
-        await supabase
-          .from('devis')
-          .update({ statut: 'accepte' })
-          .eq('id', devisData[0].id);
-          
-        // Dans une vraie application, on uploadrait aussi l'image (signatureData)
-        // dans un bucket Storage, puis on mettrait le lien dans la table.
+        if (activeDoc.kind === 'devis') {
+          await supabase
+            .from('devis')
+            .update({ statut: 'accepte' })
+            .eq('id', activeDoc.id);
+        } else if (activeDoc.kind === 'facture') {
+          await supabase
+            .from('factures')
+            .update({ statut: 'payee' })
+            .eq('id', activeDoc.id);
+        }
       } catch (e) {
         console.error("Erreur signature", e);
       }
@@ -289,7 +311,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     }, 2000);
   };
 
-  const devisEstSigne = isSigned || (devisData && devisData.length > 0 && devisData[0].statut === 'accepte');
+  const docEstSigne = isSigned || (activeDoc && (activeDoc.statut === 'accepte' || activeDoc.statut === 'payee'));
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans relative">
@@ -353,41 +375,76 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           <h3 className="font-bold mb-4 text-slate-800">Mes Documents</h3>
           <div className="space-y-3">
 
-            {devisData.length === 0 ? (
+            {devisData.length === 0 && facturesData.length === 0 ? (
               <p className="text-sm text-slate-400 italic text-center py-4">Aucun document à signer pour l'instant.</p>
             ) : (
-              devisData.map((devis: any) => {
-                const estSigne = isSigned || devis.statut === 'accepte';
-                const totalHT = (devis.lignes || []).reduce((s: number, l: any) => s + l.qte * l.pu_ht, 0);
-                const totalTTC = totalHT * (1 + (devis.tva_pct || 20) / 100);
-                return (
-                  <div
-                    key={devis.id}
-                    onClick={() => { setIsDevisOpen(true); }}
-                    className="p-4 flex items-center justify-between group hover:bg-slate-50 transition cursor-pointer border border-slate-100 rounded-xl bg-slate-50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`${estSigne ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} p-2 rounded-lg`}>
-                        {estSigne ? <CheckCircle2 size={18} /> : <FileText size={18} />}
+              <>
+                {devisData.map((devis: any) => {
+                  const estSigne = isSigned || devis.statut === 'accepte';
+                  const totalHT = (devis.lignes || []).reduce((s: number, l: any) => s + l.qte * l.pu_ht, 0);
+                  const totalTTC = totalHT * (1 + (devis.tva_pct || 20) / 100);
+                  return (
+                    <div
+                      key={`devis-${devis.id}`}
+                      onClick={() => { setActiveDoc({ ...devis, kind: 'devis' }); setIsDevisOpen(true); }}
+                      className="p-4 flex items-center justify-between group hover:bg-slate-50 transition cursor-pointer border border-slate-100 rounded-xl bg-slate-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`${estSigne ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} p-2 rounded-lg`}>
+                          {estSigne ? <CheckCircle2 size={18} /> : <FileText size={18} />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{devis.numero} – {devis.objet || 'Devis'}</p>
+                          {estSigne ? (
+                            <p className="text-xs font-semibold text-emerald-600">Statut : Validé et Signé</p>
+                          ) : (
+                            <p className="text-xs font-semibold text-amber-600">Action requise : En attente de signature</p>
+                          )}
+                          <p className="text-xs text-slate-400 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{devis.numero} – {devis.objet || 'Devis'}</p>
-                        {estSigne ? (
-                          <p className="text-xs font-semibold text-emerald-600">Statut : Validé et Signé</p>
-                        ) : (
-                          <p className="text-xs font-semibold text-amber-600">Action requise : En attente de signature</p>
-                        )}
-                        <p className="text-xs text-slate-400 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
-                      </div>
+                      {estSigne ? (
+                        <button className="text-blue-600 text-xs font-bold px-3 py-1.5 transition">Consulter</button>
+                      ) : (
+                        <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Signer</button>
+                      )}
                     </div>
-                    {estSigne ? (
-                      <button className="text-blue-600 text-xs font-bold px-3 py-1.5 transition">Consulter</button>
-                    ) : (
-                      <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Signer</button>
-                    )}
-                  </div>
-                );
-              })
+                  );
+                })}
+                
+                {facturesData.map((facture: any) => {
+                  const estPayee = isSigned || facture.statut === 'payee';
+                  const totalHT = (facture.lignes || []).reduce((s: number, l: any) => s + l.qte * l.pu_ht, 0);
+                  const totalTTC = totalHT * (1 + (facture.tva_pct || 20) / 100);
+                  return (
+                    <div
+                      key={`facture-${facture.id}`}
+                      onClick={() => { setActiveDoc({ ...facture, kind: 'facture' }); setIsDevisOpen(true); }}
+                      className="p-4 flex items-center justify-between group hover:bg-slate-50 transition cursor-pointer border border-slate-100 rounded-xl bg-slate-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`${estPayee ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} p-2 rounded-lg`}>
+                          {estPayee ? <CheckCircle2 size={18} /> : <FileText size={18} />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{facture.numero} – {facture.objet || 'Facture'}</p>
+                          {estPayee ? (
+                            <p className="text-xs font-semibold text-emerald-600">Statut : Réglée / Complétée</p>
+                          ) : (
+                            <p className="text-xs font-semibold text-amber-600">Action requise : À régler</p>
+                          )}
+                          <p className="text-xs text-slate-400 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
+                        </div>
+                      </div>
+                      {estPayee ? (
+                        <button className="text-blue-600 text-xs font-bold px-3 py-1.5 transition">Consulter</button>
+                      ) : (
+                        <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Action</button>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
             )}
 
             
@@ -492,7 +549,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
             {/* En-tête */}
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
-              <h2 className="font-bold">{devisEstSigne ? "Document Signé" : "Signature du document"}</h2>
+              <h2 className="font-bold">{docEstSigne ? "Document Signé" : "Signature du document"}</h2>
               <button onClick={() => setIsDevisOpen(false)} className="text-slate-400 hover:text-white transition">
                 <X size={24} />
               </button>
@@ -500,30 +557,30 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
             {/* Récapitulatif devis — toujours visible */}
             <div className="p-6 bg-slate-50 border-b border-slate-200 overflow-y-auto">
-              {entreprise && devisData[0] && (
+              {entreprise && activeDoc && (
                 <div className="bg-white">
                   <DocumentPDF 
-                    doc={{ ...devisData[0], kind: 'devis' }} 
+                    doc={activeDoc} 
                     entreprise={entreprise} 
                     client={clientData || { nom: 'Client' }} 
                   />
                 </div>
               )}
 
-              {devisEstSigne && !isSigned && (
+              {docEstSigne && !isSigned && (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start gap-3 bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-200">
                     <CheckCircle2 size={22} className="text-emerald-500 mt-0.5 shrink-0" />
-                    <p className="text-sm font-medium">Ce devis a été validé et signé électroniquement par vos soins. L'équipe BNA s'occupe de la suite !</p>
+                    <p className="text-sm font-medium">Ce document a été validé. L'équipe BNA s'occupe de la suite !</p>
                   </div>
                   <button className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">
                     <Download size={18} />
-                    Télécharger le devis signé (PDF)
+                    Télécharger le document signé (PDF)
                   </button>
                 </div>
               )}
 
-              {!devisEstSigne && (
+              {!docEstSigne && (
                 <p className="text-xs text-slate-500 italic">Je soussigné(e) {displayName}, donne mon bon pour accord.</p>
               )}
             </div>
@@ -534,13 +591,13 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                 <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-4">
                   <Check size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-1">Devis signé !</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-1">Document signé !</h3>
                 <p className="text-slate-500 text-sm">Merci, l'équipe BNA a bien reçu votre accord.</p>
               </div>
             )}
 
             {/* Zone de signature — uniquement si pas encore signé */}
-            {!devisEstSigne && !isSigned && (
+            {!docEstSigne && !isSigned && (
               <div className="p-6 flex flex-col">
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-sm font-bold text-slate-800">Votre signature ci-dessous :</label>
