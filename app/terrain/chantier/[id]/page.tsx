@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +27,7 @@ type Chantier = {
   moyen_acces: Acces;
   zone_vent: number;
   clients: { nom: string } | null;
+  code_acces: string | null;
 };
 
 type Pointage = {
@@ -82,6 +83,7 @@ function ChantierDetailContent() {
   const id = params.id as string;
 
   const [chantier, setChantier] = useState<Chantier | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
@@ -347,13 +349,30 @@ function ChantierDetailContent() {
         ← Chantiers
       </Link>
 
-      <div>
-        <h1 className="text-xl font-semibold text-white">
-          {chantier.nom || chantier.clients?.nom || "Chantier"}
-        </h1>
-        <p className="text-sm text-slate-400">
-          {chantier.clients?.nom} · {chantier.date_debut || "?"} → {chantier.date_fin || "?"}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-white">
+            {chantier.nom || chantier.clients?.nom || "Chantier"}
+          </h1>
+          <p className="text-sm text-slate-400">
+            {chantier.clients?.nom} · {chantier.date_debut || "?"} → {chantier.date_fin || "?"}
+          </p>
+        </div>
+
+        {chantier.code_acces && (
+          <button
+            onClick={() => {
+              const link = `${window.location.origin}/espace-client/${chantier.code_acces}`;
+              navigator.clipboard.writeText(link);
+              setCopiedLink(true);
+              setTimeout(() => setCopiedLink(false), 2000);
+            }}
+            className="flex items-center gap-1.5 rounded-xl bg-cyan-600/20 px-3 py-1.5 text-xs font-semibold text-cyan-400 hover:bg-cyan-600/30 transition-all border border-cyan-500/20"
+          >
+            {copiedLink ? <Check size={14} /> : <Copy size={14} />}
+            {copiedLink ? "Lien copié" : "Lien Espace Client"}
+          </button>
+        )}
       </div>
 
       <div className="flex gap-1 overflow-x-auto border-b border-slate-700">
@@ -456,7 +475,8 @@ function ChantierDetailContent() {
           </div>
 
           <div className="grid gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:grid-cols-2">
-            <div>
+            <div className="flex items-start justify-between">
+        <div>
               <label className="text-xs uppercase tracking-wide text-slate-500">
                 Matériau structurel
               </label>
@@ -472,7 +492,8 @@ function ChantierDetailContent() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="flex items-start justify-between">
+        <div>
               <label className="text-xs uppercase tracking-wide text-slate-500">
                 Moyen d&apos;accès
               </label>
@@ -488,7 +509,8 @@ function ChantierDetailContent() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="flex items-start justify-between">
+        <div>
               <label className="text-xs uppercase tracking-wide text-slate-500">
                 Zone de vent
               </label>
@@ -544,7 +566,8 @@ function ChantierDetailContent() {
 
           {/* Clôture & PV de Réception */}
           <div className="rounded-xl border border-red-500/30 bg-red-950/10 p-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
+            <div className="flex items-start justify-between">
+        <div>
               <p className="text-xs font-bold uppercase tracking-wide text-red-400">
                 🏁 Fin de Chantier &amp; PV de Réception
               </p>
@@ -600,7 +623,8 @@ function ChantierDetailContent() {
           {/* Météo en direct pour le chantier */}
           <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex items-start justify-between">
+        <div>
                 <h3 className="text-sm font-bold uppercase tracking-wide text-slate-300">
                   🌤️ Météo en direct · {chantier.adresse_chantier || chantier.nom || "Ajaccio"}
                 </h3>
