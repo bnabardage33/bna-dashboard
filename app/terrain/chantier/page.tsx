@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid } from "lucide-react";
+import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check } from "lucide-react";
 
 type Client = { id: string; nom: string; societe: string | null };
 
@@ -18,6 +18,7 @@ type Chantier = {
   statut: string;
   materiau_structurel?: string | null;
   clients: { nom: string; societe: string | null } | null;
+  code_acces: string | null;
 };
 
 export default function ChantiersPage() {
@@ -25,6 +26,7 @@ export default function ChantiersPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [recherche, setRecherche] = useState("");
   const [vue, setVue] = useState<"liste" | "planning">("liste");
 
@@ -237,6 +239,23 @@ export default function ChantiersPage() {
                     </div>
                   </div>
                 </Link>
+
+                {ch.code_acces && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const link = `${window.location.origin}/espace-client/${ch.code_acces}`;
+                      navigator.clipboard.writeText(link);
+                      setCopiedId(ch.id);
+                      setTimeout(() => setCopiedId(null), 2000);
+                    }}
+                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-slate-700/80 px-2 py-1 text-[10px] font-bold text-slate-300 hover:bg-sky-600 hover:text-white transition-all backdrop-blur-sm"
+                  >
+                    {copiedId === ch.id ? <Check size={12} /> : <Copy size={12} />}
+                    {copiedId === ch.id ? "Copié" : "Lien client"}
+                  </button>
+                )}
 
                 <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-700/40">
                   {ch.adresse_chantier ? (
