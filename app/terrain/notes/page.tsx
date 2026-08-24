@@ -158,7 +158,11 @@ export default function NotesPage() {
             <div
               key={note.id}
               className={`flex flex-col justify-between rounded-2xl border p-4.5 shadow-md transition-all ${
-                note.epingle
+                note.titre?.includes('🟢')
+                  ? "border-emerald-500/80 bg-slate-800/90 shadow-emerald-500/10"
+                  : note.titre?.includes('🔴')
+                  ? "border-red-500/80 bg-slate-800/90 shadow-red-500/10"
+                  : note.epingle
                   ? "border-sky-500/50 bg-slate-800 shadow-sky-500/5"
                   : "border-slate-700 bg-slate-800 hover:border-slate-600"
               }`}

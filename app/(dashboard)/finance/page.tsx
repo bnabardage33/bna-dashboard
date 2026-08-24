@@ -93,11 +93,11 @@ export default function FinanceDashboard() {
               Historique
             </Link>
             <Link
-              href="/finance/saisie/pointage"
+              href="/finance/saisie/frais-interim"
               className="flex items-center gap-2 rounded-lg border border-slate-600 bg-cyan-600/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-600/20"
             >
               <Clock className="h-4 w-4" />
-              + Pointage
+              Frais Intérim
             </Link>
             <Link
               href="/finance/saisie/feuille-heures"

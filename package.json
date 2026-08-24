@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --dir app --dir components --dir lib"
+    "lint": "eslint app components lib"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.0",
