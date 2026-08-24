@@ -75,6 +75,7 @@ export default function ChantiersPage() {
       date_fin: dateFin || null,
       materiau_structurel: materiauStructurel || null,
       statut: "prevu",
+      code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
     });
 

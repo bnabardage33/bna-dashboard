@@ -343,6 +343,7 @@ export default function DevisPage() {
       client_id: d.client_id,
       adresse_chantier: d.adresse_chantier,
       statut: "prevu",
+      code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
     });
 
