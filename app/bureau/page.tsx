@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { calculerMontantTTCFacture } from "@/lib/financeCalculs";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { 
@@ -41,14 +42,14 @@ export default function BureauDashboard() {
 
       const [devisRes, facturesRes, chantiersRes, fournRes] = await Promise.all([
         supabase.from("devis").select("id").in("statut", ["brouillon", "envoye"]),
-        supabase.from("factures").select("montant_ttc").eq("statut", "envoyee").lt("echeance", today),
+        supabase.from("factures").select("lignes, tva_pct").eq("statut", "envoyee").lt("echeance", today),
         supabase.from("chantiers").select("id").eq("statut", "en_cours"),
         supabase.from("fournisseurs").select("id").eq("statut_relation", "principal")
       ]);
 
       const devisEnAttente = devisRes.data?.length || 0;
       const facturesRetard = facturesRes.data?.length || 0;
-      const montantRetard = facturesRes.data?.reduce((sum, f) => sum + (f.montant_ttc || 0), 0) || 0;
+      const montantRetard = facturesRes.data?.reduce((sum, f) => sum + calculerMontantTTCFacture(f), 0) || 0;
       const chantiersEnCours = chantiersRes.data?.length || 0;
       const fournisseursActifs = fournRes.data?.length || 0;
 

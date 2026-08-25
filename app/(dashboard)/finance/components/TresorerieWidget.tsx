@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTresorerie, useParametreFinance } from "@/hooks/useFinance";
-import { fmtEuro, fmtDate } from "@/lib/financeCalculs";
+import { fmtEuro, fmtDate, calculerMontantTTCFacture, calculerMontantTTCCommande } from "@/lib/financeCalculs";
 import { Landmark, AlertTriangle, PenLine } from "lucide-react";
 
 export default function TresorerieWidget() {
@@ -26,8 +26,8 @@ export default function TresorerieWidget() {
     setIsEditing(false);
   };
 
-  const totalEntrees = factures.reduce((sum, f) => sum + f.montant_ttc, 0);
-  const totalSortiesAchats = achats.reduce((sum, a) => sum + a.montant_ttc, 0);
+  const totalEntrees = factures.reduce((sum, f) => sum + calculerMontantTTCFacture(f), 0);
+  const totalSortiesAchats = achats.reduce((sum, a) => sum + calculerMontantTTCCommande(a), 0);
   const estimationUrssaf = masseSalariale * 0.47;
   const totalSorties = totalSortiesAchats + estimationUrssaf;
 
