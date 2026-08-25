@@ -68,17 +68,18 @@ export default function FicheSAV() {
     intervenant: "",
     moyen_acces: "",
     photos: { client: null, avant: null, apres: null },
-    signature_client: null as string | null
+    signature_client: null as string | null,
+    chantiers: null as any
   });
 
   useEffect(() => {
     supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({data}) => { if (data) setEntreprise(data) });
     // Load chantiers for the dropdown
-    supabase.from("chantiers").select("id, nom, clients(nom)").order("created_at", { ascending: false })
+    supabase.from("chantiers").select("id, nom, client_id, adresse_chantier, clients(id, nom, societe)").order("created_at", { ascending: false })
       .then(({ data }) => { if (data) setChantiers(data); });
 
     if (!isNew) {
-      supabase.from("tickets_sav").select("*").eq("id", id).single().then(({ data }) => {
+      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }) => {
         if (data) {
           setTicket({
             ...data,
@@ -89,6 +90,55 @@ export default function FicheSAV() {
       });
     }
   }, [id, isNew]);
+
+  
+  const handleGenerateDevis = async () => {
+    if (!ticket.chantiers) return alert("Veuillez sélectionner et enregistrer le chantier d'abord.");
+    
+    const client_id = ticket.chantiers.client_id || ticket.chantiers.clients?.id;
+    if (!client_id) return alert("Client introuvable sur ce chantier.");
+
+    setSaving(true);
+    const numero = "SAV-" + Math.floor(1000 + Math.random() * 9000);
+    
+    // Matériel + 37% de marge (indicatif)
+    const lignes = [
+      {
+        designation: "Intervention SAV Hors Garantie (" + (ticket.type_sinistre || "Divers") + ")",
+        description: ticket.description || "Travaux de reprise et main d'oeuvre",
+        qte: 1,
+        unite: "Forfait",
+        pu_ht: 0 // Le tarif exact avec la marge sera à saisir par l'utilisateur
+      }
+    ];
+
+    const payload = {
+      numero,
+      client_id,
+      chantier_id: ticket.chantier_id,
+      objet: "Intervention SAV - " + (ticket.chantiers.nom || ""),
+      adresse_chantier: ticket.chantiers.adresse_chantier || "",
+      type_travaux: "SAV",
+      validite_jours: 30,
+      delai_jours: 15,
+      acompte_pct: 30,
+      tva_pct: 20,
+      statut: "brouillon",
+      lignes
+    };
+
+    const { data, error } = await supabase.from("devis").insert(payload).select().single();
+    setSaving(false);
+
+    if (error) {
+      console.error(error);
+      alert("Erreur lors de la création du devis.");
+    } else {
+      alert("Devis brouillon " + numero + " créé avec succès ! Retrouvez-le dans l'onglet Devis.");
+      router.push("/bureau/devis-factures");
+    }
+  };
+
 
   const saveTicket = async () => {
     if (!ticket.chantier_id) return alert("Veuillez sélectionner un chantier !");
@@ -399,8 +449,8 @@ export default function FicheSAV() {
 
           <div className="flex gap-3">
             {!ticket.sous_garantie && (
-              <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2">
-                <FileCheck size={18} /> Générer Devis (+37%)
+              <button onClick={handleGenerateDevis} disabled={saving} className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 disabled:opacity-50">
+                {saving ? <Loader2 size={18} className="animate-spin" /> : <FileCheck size={18} />} Générer Devis (+37%)
               </button>
             )}
             
