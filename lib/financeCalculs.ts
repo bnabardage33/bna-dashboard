@@ -118,14 +118,15 @@ export function calculerKpiMensuel(
     // "CA facturé HT = somme des factures du mois (statut ≠ annulée)"
     factures.forEach((f) => {
       if (f.statut !== "annulee" && f.date_emission.startsWith(mois)) {
-        ca_facture_ht += f.montant_ht;
+        ca_facture_ht += (f.lignes || []).reduce((s, l) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
       }
     });
 
     let depenses_total = 0;
     
     achats.forEach((a) => {
-      if (a.date.startsWith(mois)) {
+      const dateRef = a.date_livraison_prevue || a.created_at;
+      if (dateRef && dateRef.startsWith(mois)) {
         depenses_total += a.montant_ht;
       }
     });
@@ -149,7 +150,8 @@ export function calculerKpiMensuel(
     const total_prix_vente = chantiers.reduce((sum, c) => sum + c.prix_vente_ht, 0);
     const total_facture_valide = factures.reduce((sum, f) => {
       if (f.statut === "emise" || f.statut === "payee") {
-        return sum + f.montant_ht;
+        const totalHT = (f.lignes || []).reduce((s, l) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
+        return sum + totalHT;
       }
       return sum;
     }, 0);
@@ -184,9 +186,11 @@ export function calculerTva(
 
     factures.forEach((f) => {
       if (f.statut !== "annulee" && f.date_emission.startsWith(mois)) {
-        if (f.taux_tva === 20) collectee_20 += f.montant_tva;
-        else if (f.taux_tva === 10) collectee_10 += f.montant_tva;
-        else if (f.taux_tva === 5.5) collectee_5_5 += f.montant_tva;
+        const totalHT = (f.lignes || []).reduce((s, l) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
+        const montantTva = totalHT * ((f.tva_pct ?? 20) / 100);
+        if (f.tva_pct === 20) collectee_20 += montantTva;
+        else if (f.tva_pct === 10) collectee_10 += montantTva;
+        else if (f.tva_pct === 5.5) collectee_5_5 += montantTva;
       }
     });
 
@@ -194,8 +198,9 @@ export function calculerTva(
 
     let deductible_total = 0;
     achats.forEach((a) => {
-      if (a.date.startsWith(mois)) {
-        deductible_total += a.montant_tva;
+      const dateRef = a.date_livraison_prevue || a.created_at;
+      if (dateRef && dateRef.startsWith(mois)) {
+        deductible_total += (a.montant_ht || 0) * 0.20;
       }
     });
 

@@ -29,22 +29,20 @@ export type TauxTVA = 20 | 10 | 5.5 | 0;
 export interface FactureFinance {
   id: string;
   chantier_id: string;
-  montant_ht: number;
-  taux_tva: TauxTVA;
-  montant_tva: number;
-  montant_ttc: number;
+  lignes: { qte: number; pu_ht: number }[];
+  tva_pct: number;
   statut: StatutFacture;
   date_emission: string;
+  echeance: string;
 }
 
 export interface AchatFinance {
   id: string;
   chantier_id: string;
   montant_ht: number;
-  taux_tva: number;
-  montant_tva: number;
-  montant_ttc: number;
-  date: string;
+  statut: string;
+  date_livraison_prevue: string | null;
+  created_at: string;
 }
 
 export interface RentabiliteResult {

@@ -111,7 +111,7 @@ export default function TresorerieWidget() {
                       Payée
                     </span>
                   )}
-                  <span>{f.date_echeance ? fmtDate(f.date_echeance) : ""}</span>
+                  <span>{f.echeance ? fmtDate(f.echeance) : ""}</span>
                 </span>
               </div>
             ))}
