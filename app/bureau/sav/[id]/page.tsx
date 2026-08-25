@@ -9,6 +9,8 @@ import {
   AlertTriangle, Save, Loader2
 } from "lucide-react";
 import SignaturePad from "@/components/SignaturePad";
+import RapportSAVPDF from "@/components/RapportSAVPDF";
+import { Printer, X } from "lucide-react";
 
 export default function FicheSAV() {
   const params = useParams();
@@ -19,6 +21,8 @@ export default function FicheSAV() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [chantiers, setChantiers] = useState<any[]>([]);
+  const [entreprise, setEntreprise] = useState<any>(null);
+  const [showPDF, setShowPDF] = useState(false);
 
   const [uploading, setUploading] = useState<{avant: boolean, apres: boolean}>({avant: false, apres: false});
 
@@ -68,6 +72,7 @@ export default function FicheSAV() {
   });
 
   useEffect(() => {
+    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({data}) => { if (data) setEntreprise(data) });
     // Load chantiers for the dropdown
     supabase.from("chantiers").select("id, nom, clients(nom)").order("created_at", { ascending: false })
       .then(({ data }) => { if (data) setChantiers(data); });
@@ -329,7 +334,7 @@ export default function FicheSAV() {
               <p className="text-xs font-semibold text-slate-400">PHOTOS D'INTERVENTION</p>
               <div className="flex gap-3">
                 <label className="flex-1 border border-dashed border-slate-600 bg-slate-900/50 hover:bg-slate-800 rounded-xl h-24 flex flex-col items-center justify-center text-slate-400 transition-all cursor-pointer relative overflow-hidden">
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
                   {uploading.avant ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-sky-400" />
                   ) : ticket.photos.avant ? (
@@ -341,7 +346,7 @@ export default function FicheSAV() {
                 </label>
                 
                 <label className="flex-1 border border-dashed border-slate-600 bg-slate-900/50 hover:bg-slate-800 rounded-xl h-24 flex flex-col items-center justify-center text-slate-400 transition-all cursor-pointer relative overflow-hidden">
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'apres')} disabled={uploading.apres} />
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'apres')} disabled={uploading.apres} />
                   {uploading.apres ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-sky-400" />
                   ) : ticket.photos.apres ? (
@@ -406,11 +411,36 @@ export default function FicheSAV() {
             >
               <Save size={18} /> {ticket.statut === "cloture" ? "Ticket Clôturé" : "Clôturer le SAV"}
             </button>
+            {ticket.statut === "cloture" && (
+              <button onClick={() => setShowPDF(true)} className="bg-slate-700 hover:bg-slate-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center gap-2">
+                <FileCheck size={18} /> Voir le Rapport
+              </button>
+            )}
           </div>
 
         </div>
 
       </div>
+
+      {showPDF && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/90 flex flex-col backdrop-blur-sm">
+          <div className="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 print:hidden">
+            <h2 className="text-xl font-bold text-white">Rapport SAV</h2>
+            <div className="flex gap-4">
+              <button onClick={() => window.print()} className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl font-bold">
+                <Printer size={18} /> Imprimer / PDF
+              </button>
+              <button onClick={() => setShowPDF(false)} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300">
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950/50 flex justify-center print:bg-white print:p-0 print:block">
+            <RapportSAVPDF ticket={ticket} entreprise={entreprise} />
+          </div>
+        </div>
+      )}
     </div>
   );
+
 }
