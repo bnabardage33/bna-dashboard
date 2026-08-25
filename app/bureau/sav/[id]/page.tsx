@@ -98,17 +98,23 @@ export default function FicheSAV() {
     const client_id = ticket.chantiers.client_id || ticket.chantiers.clients?.id;
     if (!client_id) return alert("Client introuvable sur ce chantier.");
 
+    
+    
+    const prixStr = window.prompt("Quel est le montant HT à facturer pour cette intervention SAV ?\n(La marge de 37% doit être incluse dans votre prix)");
+    if (prixStr === null) return; // Annulation
+    const prix = parseFloat(prixStr.replace(',', '.'));
+    if (isNaN(prix)) return alert("Montant invalide, veuillez entrer un nombre (ex: 150.50).");
+
     setSaving(true);
     const numero = "SAV-" + Math.floor(1000 + Math.random() * 9000);
     
-    // Matériel + 37% de marge (indicatif)
     const lignes = [
       {
         designation: "Intervention SAV Hors Garantie (" + (ticket.type_sinistre || "Divers") + ")",
         description: ticket.description || "Travaux de reprise et main d'oeuvre",
         qte: 1,
         unite: "Forfait",
-        pu_ht: 0 // Le tarif exact avec la marge sera à saisir par l'utilisateur
+        pu_ht: prix
       }
     ];
 
