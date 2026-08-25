@@ -8,6 +8,7 @@ const items = [
   { label: "Fournisseurs & Achats", href: "/bureau/fournisseurs" },
   { label: "Rapports Intempéries", href: "/bureau/rapports-intemperies" },
   { label: "Fin de chantier", href: "/bureau/fin-chantier" },
+  { label: "SAV & Garantie", href: "/bureau/sav" },
 ];
 
 export default function BureauLayout({
