@@ -503,7 +503,7 @@ export function useCaEvolution(months = 12, endMois?: string) {
 
         const { data: factures } = await supabase
           .from("factures")
-          .select("montant_ht, date_emission")
+          .select("lignes, date_emission")
           .neq("statut", "annulee")
           .gte("date_emission", startDate)
           .lt("date_emission", endDate);
@@ -519,10 +519,11 @@ export function useCaEvolution(months = 12, endMois?: string) {
             acc[mKey] = 0;
           }
 
-          factures.forEach((f) => {
+          factures.forEach((f: any) => {
             const m = f.date_emission.slice(0, 7);
             if (acc[m] !== undefined) {
-              acc[m] += f.montant_ht;
+              const totalHT = (f.lignes || []).reduce((s: number, l: any) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
+              acc[m] += totalHT;
             }
           });
 
