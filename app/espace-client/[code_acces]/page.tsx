@@ -30,92 +30,28 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     // Fetch real data on mount
     const fetchRealData = async () => {
       try {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: settings } = await supabase.from("entreprise_settings").select("*").eq("id", 1).single();
-        if (settings) setEntreprise(settings);
+        const res = await fetch(`/api/espace-client/${codeAcces}`);
 
-        
-        // Fetch chantier by code_acces
-        const { data: chantiers } = await supabase
-          .from('chantiers')
-          .select('*, clients(*)')
-          .eq('code_acces', codeAcces)
-          .limit(1);
-          
-        if (chantiers && chantiers.length > 0) {
-          const chantier = chantiers[0];
-          setChantierData(chantier);
-          setClientData(chantier.clients);
-          
-          // Initial greeting with real name
-          const clientName = chantier.clients?.nom || "Client";
+        if (!res.ok) {
           setChatMessages([
-            { role: 'assistant', content: `Bonjour ${clientName} ! Votre chantier avance bien. Avez-vous des questions sur les travaux en cours ?` }
+            { role: 'assistant', content: "Bonjour ! Ce code d'accès semble invalide, mais vous pouvez tester le chatbot." }
           ]);
-
-          // Fetch real progress if exists
-          const { data: avancements } = await supabase
-            .from('avancements_chantier')
-            .select('pourcentage')
-            .eq('chantier_id', chantier.id)
-            .order('date', { ascending: false })
-            .limit(1);
-            
-          if (avancements && avancements.length > 0) {
-            setAvancement(avancements[0].pourcentage);
-          } else {
-            setAvancement(45); // Fausse progression par défaut
-          }
-
-          // Fetch devis visibles par le client (envoyés ou acceptés)
-          // On cherche d'abord par chantier_id, puis par client_id en fallback
-          let devisList: any[] = [];
-          
-          const { data: devisParChantier } = await supabase
-            .from('devis')
-            .select('*')
-            .eq('chantier_id', chantier.id)
-            .in('statut', ['envoye', 'accepte']);
-          
-          if (devisParChantier && devisParChantier.length > 0) {
-            devisList = devisParChantier;
-          } else if (chantier.client_id) {
-            // Fallback : chercher par client_id si pas de chantier_id sur le devis
-            const { data: devisParClient } = await supabase
-              .from('devis')
-              .select('*')
-              .eq('client_id', chantier.client_id)
-              .in('statut', ['envoye', 'accepte']);
-            if (devisParClient) devisList = devisParClient;
-          }
-          
-          setDevisData(devisList);
-
-          // Fetch factures
-          let facturesList: any[] = [];
-          const { data: facturesParChantier } = await supabase
-            .from('factures')
-            .select('*')
-            .eq('chantier_id', chantier.id)
-            .in('statut', ['emise', 'envoyee', 'payee']);
-            
-          if (facturesParChantier && facturesParChantier.length > 0) {
-            facturesList = facturesParChantier;
-          } else if (chantier.client_id) {
-            const { data: facturesParClient } = await supabase
-              .from('factures')
-              .select('*')
-              .eq('client_id', chantier.client_id)
-              .in('statut', ['emise', 'envoyee', 'payee']);
-            if (facturesParClient) facturesList = facturesParClient;
-          }
-          setFacturesData(facturesList);
-        } else {
-          // Fallback if not found
-          setChatMessages([
-            { role: 'assistant', content: 'Bonjour ! Ce code d\'accès semble invalide, mais vous pouvez tester le chatbot.' }
-          ]);
+          return;
         }
+
+        const data = await res.json();
+
+        if (data.entreprise) setEntreprise(data.entreprise);
+        setChantierData(data.chantier);
+        setClientData(data.client);
+        setAvancement(data.avancement);
+        setDevisData(data.devis || []);
+        setFacturesData(data.factures || []);
+
+        const clientName = data.client?.nom || "Client";
+        setChatMessages([
+          { role: 'assistant', content: `Bonjour ${clientName} ! Votre chantier avance bien. Avez-vous des questions sur les travaux en cours ?` }
+        ]);
       } catch (e) {
         console.error("Failed to fetch real data", e);
       }
@@ -285,23 +221,20 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     
     if (activeDoc) {
       try {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: settings } = await supabase.from("entreprise_settings").select("*").eq("id", 1).single();
-        if (settings) setEntreprise(settings);
+        const res = await fetch(`/api/espace-client/${codeAcces}/signer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ docId: activeDoc.id, docKind: activeDoc.kind }),
+        });
 
-        if (activeDoc.kind === 'devis') {
-          await supabase
-            .from('devis')
-            .update({ statut: 'accepte' })
-            .eq('id', activeDoc.id);
-        } else if (activeDoc.kind === 'facture') {
-          await supabase
-            .from('factures')
-            .update({ statut: 'payee' })
-            .eq('id', activeDoc.id);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.error("Erreur signature", data.error || res.status);
+          return;
         }
       } catch (e) {
         console.error("Erreur signature", e);
+        return;
       }
     }
     
