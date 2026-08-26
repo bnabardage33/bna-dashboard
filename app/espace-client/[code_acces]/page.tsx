@@ -1,13 +1,61 @@
-              .in('statut', ['emise', 'envoyee', 'payee']);
-            if (facturesParClient) facturesList = facturesParClient;
-          }
-          setFacturesData(facturesList);
-        } else {
-          // Fallback if not found
+'use client';
+
+import React, { useState, useRef, useEffect, use } from "react";
+import { 
+  FileText, CheckCircle2, MessageSquare, Clock, Download,
+  AlertCircle, Camera, HardHat, Send, X, Check
+} from "lucide-react";
+import DocumentPDF from "@/components/DocumentPDF";
+
+export default function ClientPortalPrototype({ params }: { params: Promise<{ code_acces: string }> }) {
+  const unwrappedParams = use(params);
+  const codeAcces = unwrappedParams.code_acces;
+  
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Real data states
+  const [chantierData, setChantierData] = useState<any>(null);
+  const [clientData, setClientData] = useState<any>(null);
+  const [avancement, setAvancement] = useState<number>(0);
+  const [devisData, setDevisData] = useState<any[]>([]);
+  const [facturesData, setFacturesData] = useState<any[]>([]);
+  const [activeDoc, setActiveDoc] = useState<any>(null);
+  const [entreprise, setEntreprise] = useState<any>(null);
+
+  useEffect(() => {
+    // Fetch real data on mount
+    const fetchRealData = async () => {
+      try {
+        // Toute la logique de récupération tourne maintenant côté serveur
+        // (route API avec supabaseAdmin) — le navigateur ne reçoit que les
+        // données de CE client, jamais la clé Supabase ni les autres lignes.
+        const res = await fetch(`/api/espace-client/${codeAcces}`);
+
+        if (!res.ok) {
           setChatMessages([
             { role: 'assistant', content: 'Bonjour ! Ce code d\'accès semble invalide, mais vous pouvez tester le chatbot.' }
           ]);
+          return;
         }
+
+        const data = await res.json();
+
+        if (data.entreprise) setEntreprise(data.entreprise);
+        setChantierData(data.chantier);
+        setClientData(data.client);
+
+        const clientName = data.client?.nom || "Client";
+        setChatMessages([
+          { role: 'assistant', content: `Bonjour ${clientName} ! Votre chantier avance bien. Avez-vous des questions sur les travaux en cours ?` }
+        ]);
+
+        setAvancement(data.avancement ?? 45);
+        setDevisData(data.devis || []);
+        setFacturesData(data.factures || []);
       } catch (e) {
         console.error("Failed to fetch real data", e);
       }
@@ -173,30 +221,24 @@
   };
 
   const submitSignature = async () => {
-    if (!signatureData) return;
-    
-    if (activeDoc) {
-      try {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: settings } = await supabase.from("entreprise_settings").select("*").eq("id", 1).single();
-        if (settings) setEntreprise(settings);
+    if (!signatureData || !activeDoc) return;
 
-        if (activeDoc.kind === 'devis') {
-          await supabase
-            .from('devis')
-            .update({ statut: 'accepte' })
-            .eq('id', activeDoc.id);
-        } else if (activeDoc.kind === 'facture') {
-          await supabase
-            .from('factures')
-            .update({ statut: 'payee' })
-            .eq('id', activeDoc.id);
-        }
-      } catch (e) {
-        console.error("Erreur signature", e);
+    try {
+      // La route API vérifie côté serveur que ce document appartient bien
+      // à CE code_acces avant de le modifier (empêche de signer le devis
+      // d'un autre client en devinant un id).
+      const res = await fetch(`/api/espace-client/${codeAcces}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: activeDoc.id, kind: activeDoc.kind }),
+      });
+      if (!res.ok) {
+        console.error("Erreur signature", await res.text());
       }
+    } catch (e) {
+      console.error("Erreur signature", e);
     }
-    
+
     setIsSigned(true);
     setTimeout(() => {
       setIsDevisOpen(false);
