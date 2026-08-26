@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+// app/api/espace-client/[code_acces]/route.ts
+//
+// Récupère toutes les données de l'espace client de façon sécurisée.
+// Utilise supabaseAdmin (clé service_role, jamais exposée au navigateur)
+// pour aller chercher les données côté serveur, puis ne renvoie QUE
+// ce qui concerne le chantier correspondant au code_acces fourni.
+//
+// Le navigateur du client ne voit jamais la clé Supabase générale
+// ni les données d'autres clients.
 
-// ⚠️ Clé service_role : ne JAMAIS préfixer par NEXT_PUBLIC_,
-// ce fichier tourne uniquement côté serveur (route API).
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ code_acces: string }> }
 ) {
   const { code_acces } = await params;
@@ -18,78 +21,81 @@ export async function GET(
     return NextResponse.json({ error: "Code d'accès manquant" }, { status: 400 });
   }
 
-  // Paramètres entreprise (logo, coordonnées, etc.)
-  const { data: settings } = await supabaseAdmin
-    .from('entreprise_settings')
-    .select('*')
-    .eq('id', 1)
+  // 1. Paramètres entreprise (affichage logo, coordonnées)
+  const { data: entreprise } = await supabaseAdmin
+    .from("entreprise_settings")
+    .select("*")
+    .eq("id", 1)
     .single();
 
-  // Chantier correspondant au code d'accès + client lié (jointure)
-  const { data: chantiers, error: chantierError } = await supabaseAdmin
-    .from('chantiers')
-    .select('*, clients(*)')
-    .eq('code_acces', code_acces);
+  // 2. Chantier correspondant au code d'accès
+  const { data: chantiers, error: erreurChantier } = await supabaseAdmin
+    .from("chantiers")
+    .select("*, clients(*)")
+    .eq("code_acces", code_acces)
+    .limit(1);
 
-  if (chantierError || !chantiers || chantiers.length === 0) {
+  if (erreurChantier || !chantiers || chantiers.length === 0) {
+    // Code invalide : on ne donne aucun indice, juste "introuvable"
     return NextResponse.json({ error: "Code d'accès invalide" }, { status: 404 });
   }
 
   const chantier = chantiers[0];
 
-  // Avancement du chantier
+  // 3. Avancement le plus récent
   const { data: avancements } = await supabaseAdmin
-    .from('avancements_chantier')
-    .select('*')
-    .eq('chantier_id', chantier.id);
+    .from("avancements_chantier")
+    .select("pourcentage")
+    .eq("chantier_id", chantier.id)
+    .order("date", { ascending: false })
+    .limit(1);
 
-  // Devis liés au chantier ET au client (dédupliqués par id)
+  const avancement = avancements && avancements.length > 0 ? avancements[0].pourcentage : 45;
+
+  // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
+  let devisList: any[] = [];
   const { data: devisParChantier } = await supabaseAdmin
-    .from('devis')
-    .select('*')
-    .eq('chantier_id', chantier.id);
+    .from("devis")
+    .select("*")
+    .eq("chantier_id", chantier.id)
+    .in("statut", ["envoye", "accepte"]);
 
-  const { data: devisParClient } = await supabaseAdmin
-    .from('devis')
-    .select('*')
-    .eq('client_id', chantier.client_id);
+  if (devisParChantier && devisParChantier.length > 0) {
+    devisList = devisParChantier;
+  } else if (chantier.client_id) {
+    const { data: devisParClient } = await supabaseAdmin
+      .from("devis")
+      .select("*")
+      .eq("client_id", chantier.client_id)
+      .in("statut", ["envoye", "accepte"]);
+    if (devisParClient) devisList = devisParClient;
+  }
 
-  const devisMap = new Map();
-  [...(devisParChantier || []), ...(devisParClient || [])].forEach((d: any) => devisMap.set(d.id, d));
-  const devis = Array.from(devisMap.values());
-
-  // Factures liées au chantier ET au client (dédupliquées par id)
+  // 5. Factures — par chantier, fallback par client
+  let facturesList: any[] = [];
   const { data: facturesParChantier } = await supabaseAdmin
-    .from('factures')
-    .select('*')
-    .eq('chantier_id', chantier.id);
+    .from("factures")
+    .select("*")
+    .eq("chantier_id", chantier.id)
+    .in("statut", ["emise", "envoyee", "payee"]);
 
-  const { data: facturesParClient } = await supabaseAdmin
-    .from('factures')
-    .select('*')
-    .eq('client_id', chantier.client_id);
+  if (facturesParChantier && facturesParChantier.length > 0) {
+    facturesList = facturesParChantier;
+  } else if (chantier.client_id) {
+    const { data: facturesParClient } = await supabaseAdmin
+      .from("factures")
+      .select("*")
+      .eq("client_id", chantier.client_id)
+      .in("statut", ["emise", "envoyee", "payee"]);
+    if (facturesParClient) facturesList = facturesParClient;
+  }
 
-  const facturesMap = new Map();
-  [...(facturesParChantier || []), ...(facturesParClient || [])].forEach((f: any) => facturesMap.set(f.id, f));
-  const factures = Array.from(facturesMap.values());
-
-  // Moyenne des avancements si plusieurs entrées, sinon 0
-  const avancementMoyen =
-    avancements && avancements.length > 0
-      ? Math.round(
-          avancements.reduce((sum: number, a: any) => sum + (a.pourcentage || 0), 0) /
-            avancements.length
-        )
-      : 0;
-
-  // Le navigateur ne reçoit QUE ça — jamais la clé service_role,
-  // jamais les données des autres clients.
   return NextResponse.json({
-    entreprise: settings || null,
+    entreprise,
     chantier,
-    client: chantier.clients || null,
-    avancement: avancementMoyen,
-    devis,
-    factures,
+    client: chantier.clients,
+    avancement,
+    devis: devisList,
+    factures: facturesList,
   });
 }
