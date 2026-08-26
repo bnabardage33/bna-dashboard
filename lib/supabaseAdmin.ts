@@ -1,12 +1,19 @@
-// lib/supabaseAdmin.ts
-//
-// Client Supabase avec la clé service_role.
-// Bypass RLS — À N'UTILISER QUE côté serveur (routes API, Edge Functions).
-// Ne JAMAIS importer ce fichier dans un composant client.
+import { createClient } from '@supabase/supabase-js';
 
-import { createClient } from '@supabase/supabase-js'
+// ⚠️ Ce client utilise la clé service_role : il contourne toutes les
+// policies RLS. Il ne doit JAMAIS être importé dans un composant "use client"
+// ni exposé au navigateur — uniquement dans app/api/**/route.ts (côté serveur).
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-export const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
+if (!supabaseServiceKey) {
+  throw new Error('SUPABASE_SERVICE_ROLE_KEY manquante dans les variables d\'environnement');
+}
+
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
