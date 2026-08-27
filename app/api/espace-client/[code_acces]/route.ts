@@ -35,6 +35,10 @@ export async function GET(
     .eq("code_acces", code_acces)
     .limit(1);
 
+  console.log("DEBUG code_acces reçu:", JSON.stringify(code_acces));
+  console.log("DEBUG erreurChantier:", JSON.stringify(erreurChantier));
+  console.log("DEBUG chantiers trouvés:", chantiers?.length);
+
   if (erreurChantier || !chantiers || chantiers.length === 0) {
     // Code invalide : on ne donne aucun indice, juste "introuvable"
     return NextResponse.json({ error: "Code d'accès invalide" }, { status: 404 });
