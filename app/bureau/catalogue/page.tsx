@@ -62,6 +62,7 @@ export default function CataloguePage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOuvrage, setEditingOuvrage] = useState<Ouvrage | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FormState>(emptyForm);
 
@@ -80,7 +81,6 @@ export default function CataloguePage() {
       
     if (error) {
       console.error(error);
-      // Fallback si la table n'existe pas encore
       if (error.code === '42P01') {
         alert("La table 'catalogue_ouvrages' n'existe pas encore. Veuillez exécuter le script SQL fourni.");
       }
@@ -109,25 +109,51 @@ export default function CataloguePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingOuvrage) {
-      // Update
-      const { error } = await supabase
-        .from("catalogue_ouvrages")
-        .update(formData)
-        .eq("id", editingOuvrage.id);
-      if (!error) {
-        setIsModalOpen(false);
-        fetchCatalogue();
+    setIsSubmitting(true);
+
+    // Coercition numérique stricte pour éviter tout rejet Supabase
+    const payload = {
+      ...formData,
+      pu_ht: Number(formData.pu_ht) || 0,
+      prix_ttc: formData.prix_ttc != null ? Number(formData.prix_ttc) : null,
+      longueur_mm: formData.longueur_mm != null ? Number(formData.longueur_mm) : null,
+      largeur_mm: formData.largeur_mm != null ? Number(formData.largeur_mm) : null,
+      epaisseur_mm: formData.epaisseur_mm != null ? Number(formData.epaisseur_mm) : null,
+      // Chaînes optionnelles : null plutôt que "" pour Supabase
+      fabricant: formData.fabricant?.trim() || null,
+      gamme: formData.gamme?.trim() || null,
+      code_decor: formData.code_decor?.trim() || null,
+      couleur: formData.couleur?.trim() || null,
+      finition: formData.finition?.trim() || null,
+      fournisseur: formData.fournisseur?.trim() || null,
+      description: formData.description?.trim() || null,
+    };
+
+    try {
+      let error;
+      if (editingOuvrage) {
+        ({ error } = await supabase
+          .from("catalogue_ouvrages")
+          .update(payload)
+          .eq("id", editingOuvrage.id));
+      } else {
+        ({ error } = await supabase
+          .from("catalogue_ouvrages")
+          .insert(payload));
       }
-    } else {
-      // Insert
-      const { error } = await supabase
-        .from("catalogue_ouvrages")
-        .insert(formData);
-      if (!error) {
+
+      if (error) {
+        console.error("Supabase error:", error);
+        alert(`Erreur Supabase : ${error.message}\n\nCode : ${error.code}`);
+      } else {
         setIsModalOpen(false);
-        fetchCatalogue();
+        await fetchCatalogue();
       }
+    } catch (err) {
+      console.error("Erreur inattendue :", err);
+      alert("Une erreur inattendue s'est produite. Vérifiez la console.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -525,16 +551,27 @@ export default function CataloguePage() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700"
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                    disabled={isSubmitting}
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500"
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
                   >
-                    <Save className="h-4 w-4" />
-                    Enregistrer
+                    {isSubmitting ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Enregistrer
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
