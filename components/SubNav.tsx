@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Item = { label: string; href: string };
+type Item = { label: string; href: string; icon?: React.ComponentType<any> };
 
 export default function SubNav({ items }: { items: Item[] }) {
   const pathname = usePathname();
@@ -14,6 +14,7 @@ export default function SubNav({ items }: { items: Item[] }) {
       <div className="mx-auto flex max-w-5xl gap-1.5 overflow-x-auto px-4 py-2.5 scrollbar-none">
         {items.map((item) => {
           const active = pathname === item.href || (item.href !== "/bureau" && item.href !== "/terrain" && pathname.startsWith(item.href));
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -24,6 +25,7 @@ export default function SubNav({ items }: { items: Item[] }) {
                   : "border border-slate-700/60 bg-slate-800/80 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white"
               }`}
             >
+              {Icon && <Icon className="inline-block h-4 w-4 mr-1 align-middle" />}
               {item.label}
             </Link>
           );
@@ -32,3 +34,6 @@ export default function SubNav({ items }: { items: Item[] }) {
     </div>
   );
 }
+
+
+

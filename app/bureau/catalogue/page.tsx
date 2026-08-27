@@ -16,6 +16,16 @@ type Ouvrage = {
   description: string;
   unite: string;
   pu_ht: number;
+  // Additional optional fields
+  fabricant?: string;
+  gamme?: string;
+  code_decor?: string;
+  couleur?: string;
+  finition?: string;
+  dimensions?: string;
+  epaisseur?: string;
+  prix_ttc?: number;
+  fournisseur?: string;
 };
 
 export default function CataloguePage() {
@@ -23,6 +33,7 @@ export default function CataloguePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("Toutes");
+  const [activeFabricant, setActiveFabricant] = useState<string>("All");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOuvrage, setEditingOuvrage] = useState<Ouvrage | null>(null);
@@ -113,9 +124,13 @@ export default function CataloguePage() {
 
   const filteredOuvrages = ouvrages.filter((o) => {
     const matchesCat = activeCategory === "Toutes" || o.categorie === activeCategory;
-    const matchesSearch = o.designation.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (o.description && o.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCat && matchesSearch;
+    const matchesFab = activeFabricant === "All" || o.fabricant === activeFabricant;
+    const lowerSearch = searchQuery.toLowerCase();
+    const matchesSearch = o.designation.toLowerCase().includes(lowerSearch) ||
+      (o.description && o.description.toLowerCase().includes(lowerSearch)) ||
+      (o.couleur && o.couleur.toLowerCase().includes(lowerSearch)) ||
+      (o.code_decor && o.code_decor.toLowerCase().includes(lowerSearch));
+    return matchesCat && matchesFab && matchesSearch;
   });
 
   return (
@@ -146,6 +161,7 @@ export default function CataloguePage() {
 
         {/* Filtres */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+          {/* Catégorie */}
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
               <button
@@ -161,11 +177,30 @@ export default function CataloguePage() {
               </button>
             ))}
           </div>
+          {/* Fabricant */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-400">Fabricant</label>
+            <select
+              value={activeFabricant}
+              onChange={(e) => setActiveFabricant(e.target.value)}
+              className="rounded border border-slate-600 bg-slate-900 p-1 text-xs text-slate-200"
+            >
+              <option value="All">Tous</option>
+              {Array.from(new Set(ouvrages.map((o) => o.fabricant).filter(Boolean)))
+                .sort()
+                .map((fab) => (
+                  <option key={fab} value={fab}>
+                    {fab}
+                  </option>
+                ))}
+            </select>
+          </div>
+          {/* Recherche texte */}
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
-              placeholder="Rechercher un ouvrage..."
+              placeholder="Rechercher (couleur / code décor)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-600 bg-slate-900 py-2 pl-9 pr-4 text-sm text-slate-200 outline-none focus:border-cyan-400"

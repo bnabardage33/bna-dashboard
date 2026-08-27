@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import SubNav from "@/components/SubNav";
+import { BookOpen } from "lucide-react";
 
 const items = [
   { label: "Clients", href: "/bureau/clients" },
@@ -9,6 +10,7 @@ const items = [
   { label: "Rapports Intempéries", href: "/bureau/rapports-intemperies" },
   { label: "Fin de chantier", href: "/bureau/fin-chantier" },
   { label: "SAV & Garantie", href: "/bureau/sav" },
+  { label: "Catalogue", href: "/bureau/catalogue", icon: BookOpen },
 ];
 
 export default function BureauLayout({
