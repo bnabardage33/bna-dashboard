@@ -1,10 +1,11 @@
 // components/SubNav.tsx
 "use client";
 
-import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
-type Item = { label: string; href: string; icon?: React.ComponentType<any> };
+type Item = { label: string; href: string; icon?: LucideIcon };
 
 export default function SubNav({ items }: { items: Item[] }) {
   const pathname = usePathname();

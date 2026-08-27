@@ -206,6 +206,19 @@ export default function CataloguePage() {
               className="w-full rounded-lg border border-slate-600 bg-slate-900 py-2 pl-9 pr-4 text-sm text-slate-200 outline-none focus:border-cyan-400"
             />
           </div>
+
+          {/* Reset Filters Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setActiveFabricant('All');
+              setActiveCategory('Toutes');
+            }}
+            className="ml-2 rounded bg-slate-700 px-3 py-1 text-xs text-slate-200 hover:bg-slate-600"
+          >
+            Réinitialiser
+          </button>
         </div>
 
         {/* Liste */}
@@ -238,7 +251,10 @@ export default function CataloguePage() {
                 </p>
                 <div className="mt-auto flex items-end justify-between border-t border-slate-700 pt-3">
                   <span className="text-xs font-medium text-slate-500">Unité : {o.unite}</span>
-                  <span className="text-lg font-black text-cyan-400">{fmtEuro(o.pu_ht)}</span>
+                  <span className="text-lg font-black text-cyan-400">{fmtEuro(o.pu_ht)} HT</span>
+                  {o.prix_ttc !== undefined && (
+                    <span className="text-sm font-medium text-slate-400">{fmtEuro(o.prix_ttc)} TTC</span>
+                  )}
                 </div>
               </div>
             ))}
