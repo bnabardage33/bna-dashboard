@@ -10,22 +10,47 @@ type CategorieOuvrage = "bardage" | "etancheite" | "habillage" | "isolation" | "
 
 type Ouvrage = {
   id: string;
+  // Identification
   categorie: string;
   famille_label: string;
   designation: string;
-  description: string;
-  unite: string;
-  pu_ht: number;
-  // Additional optional fields
+  description?: string;
+  // Marque & Décor
   fabricant?: string;
   gamme?: string;
   code_decor?: string;
   couleur?: string;
   finition?: string;
-  dimensions?: string;
-  epaisseur?: string;
-  prix_ttc?: number;
+  // Dimensions & Spécifications
+  longueur_mm?: number | null;
+  largeur_mm?: number | null;
+  epaisseur_mm?: number | null;
+  // Fournisseur & Tarifs
   fournisseur?: string;
+  unite: string;
+  pu_ht: number;
+  prix_ttc?: number | null;
+};
+
+type FormState = Omit<Ouvrage, "id">;
+
+const emptyForm: FormState = {
+  categorie: "bardage",
+  famille_label: "",
+  designation: "",
+  description: "",
+  fabricant: "",
+  gamme: "",
+  code_decor: "",
+  couleur: "",
+  finition: "",
+  longueur_mm: null,
+  largeur_mm: null,
+  epaisseur_mm: null,
+  fournisseur: "",
+  unite: "m²",
+  pu_ht: 0,
+  prix_ttc: null,
 };
 
 export default function CataloguePage() {
@@ -37,16 +62,11 @@ export default function CataloguePage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOuvrage, setEditingOuvrage] = useState<Ouvrage | null>(null);
-  
-  // Form state
-  const [formData, setFormData] = useState<Partial<Ouvrage>>({
-    categorie: "bardage",
-    famille_label: "",
-    designation: "",
-    description: "",
-    unite: "m²",
-    pu_ht: 0
-  });
+
+  const [formData, setFormData] = useState<FormState>(emptyForm);
+
+  const set = (field: keyof FormState, value: FormState[keyof FormState]) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
   const categories = ["Toutes", "bardage", "etancheite", "habillage", "isolation", "installation"];
 
@@ -77,17 +97,12 @@ export default function CataloguePage() {
   const handleOpenModal = (ouvrage?: Ouvrage) => {
     if (ouvrage) {
       setEditingOuvrage(ouvrage);
-      setFormData(ouvrage);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...rest } = ouvrage;
+      setFormData({ ...emptyForm, ...rest });
     } else {
       setEditingOuvrage(null);
-      setFormData({
-        categorie: "bardage",
-        famille_label: "",
-        designation: "",
-        description: "",
-        unite: "m²",
-        pu_ht: 0
-      });
+      setFormData(emptyForm);
     }
     setIsModalOpen(true);
   };
@@ -269,94 +284,244 @@ export default function CataloguePage() {
         {/* Modal Ajout/Edition */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
+            <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+              {/* Header fixe */}
+              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-700">
                 <h2 className="text-xl font-bold text-slate-100">
-                  {editingOuvrage ? "Modifier l'ouvrage" : "Nouvel ouvrage"}
+                  {editingOuvrage ? "Modifier le matériau" : "Nouveau matériau"}
                 </h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="space-y-4">
+              {/* Formulaire scrollable */}
+              <form onSubmit={handleSave} className="overflow-y-auto px-6 py-4 space-y-6">
+
+                {/* ── En-tête : Catégorie + Famille + Désignation ─────────── */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Catégorie</label>
                     <select
                       required
                       value={formData.categorie}
-                      onChange={(e) => setFormData({ ...formData, categorie: e.target.value })}
+                      onChange={(e) => set("categorie", e.target.value)}
                       className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
                     >
-                      {categories.filter(c => c !== "Toutes").map(c => (
+                      {categories.filter((c) => c !== "Toutes").map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Famille (ex: Bardage Bois)</label>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Famille (ex&nbsp;: Bardage HPL)</label>
                     <input
                       required
                       type="text"
-                      value={formData.famille_label}
-                      onChange={(e) => setFormData({ ...formData, famille_label: e.target.value })}
+                      placeholder="Bardage HPL"
+                      value={formData.famille_label ?? ""}
+                      onChange={(e) => set("famille_label", e.target.value)}
                       className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Désignation (Titre)</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Désignation (titre de la fiche)</label>
                   <input
                     required
                     type="text"
-                    value={formData.designation}
-                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    placeholder="ex&nbsp;: Trespa Meteon – Blanc Ménuires B015"
+                    value={formData.designation ?? ""}
+                    onChange={(e) => set("designation", e.target.value)}
                     className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Description détaillée</label>
-                  <textarea
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
-                  />
-                </div>
+                {/* ── Section 1 : Marque & Décor ─────────────────────────── */}
+                <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                    1 · Marque &amp; Décor
+                  </legend>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Unité</label>
-                    <select
-                      required
-                      value={formData.unite}
-                      onChange={(e) => setFormData({ ...formData, unite: e.target.value })}
-                      className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
-                    >
-                      <option value="m²">m²</option>
-                      <option value="ml">ml</option>
-                      <option value="u">u (Unité)</option>
-                      <option value="forfait">Forfait</option>
-                    </select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Fabricant</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: Polyrey, Trespa"
+                        value={formData.fabricant ?? ""}
+                        onChange={(e) => set("fabricant", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Gamme</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: Reysipur"
+                        value={formData.gamme ?? ""}
+                        onChange={(e) => set("gamme", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Code Décor</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: B015"
+                        value={formData.code_decor ?? ""}
+                        onChange={(e) => set("code_decor", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Nom / Couleur du Décor</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: Blanc Ménuires"
+                        value={formData.couleur ?? ""}
+                        onChange={(e) => set("couleur", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Prix Unitaire HT (€)</label>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Finition</label>
                     <input
-                      required
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.pu_ht}
-                      onChange={(e) => setFormData({ ...formData, pu_ht: parseFloat(e.target.value) })}
+                      type="text"
+                      placeholder="ex&nbsp;: FA Satin"
+                      value={formData.finition ?? ""}
+                      onChange={(e) => set("finition", e.target.value)}
                       className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
                     />
                   </div>
-                </div>
+                </fieldset>
 
-                <div className="flex justify-end gap-3 mt-6">
+                {/* ── Section 2 : Dimensions & Spécifications ────────────── */}
+                <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                    2 · Dimensions &amp; Spécifications
+                  </legend>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Longueur (mm)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="3050"
+                        value={formData.longueur_mm ?? ""}
+                        onChange={(e) => set("longueur_mm", e.target.value === "" ? null : parseFloat(e.target.value))}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Largeur (mm)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="1310"
+                        value={formData.largeur_mm ?? ""}
+                        onChange={(e) => set("largeur_mm", e.target.value === "" ? null : parseFloat(e.target.value))}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Épaisseur (mm)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="6"
+                        value={formData.epaisseur_mm ?? ""}
+                        onChange={(e) => set("epaisseur_mm", e.target.value === "" ? null : parseFloat(e.target.value))}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                {/* ── Section 3 : Fournisseur & Tarifs ──────────────────── */}
+                <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                    3 · Fournisseur &amp; Tarifs
+                  </legend>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Fournisseur</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: Dispano, Barillet"
+                        value={formData.fournisseur ?? ""}
+                        onChange={(e) => set("fournisseur", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Unité de vente</label>
+                      <select
+                        required
+                        value={formData.unite}
+                        onChange={(e) => set("unite", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      >
+                        <option value="m²">m²</option>
+                        <option value="U">U (Unité)</option>
+                        <option value="ml">ml</option>
+                        <option value="forfait">Forfait</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">Prix Unitaire HT (€)</label>
+                      <input
+                        required
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.pu_ht}
+                        onChange={(e) => {
+                          const ht = parseFloat(e.target.value) || 0;
+                          setFormData((prev) => ({
+                            ...prev,
+                            pu_ht: ht,
+                            prix_ttc: Math.round(ht * 1.2 * 100) / 100,
+                          }));
+                        }}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                        Prix TTC (€)
+                        <span className="ml-1 text-[10px] font-normal text-slate-500">(calculé auto à +20%)</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.prix_ttc ?? ""}
+                        onChange={(e) => set("prix_ttc", e.target.value === "" ? null : parseFloat(e.target.value))}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                {/* ── Boutons ─────────────────────────────────────────────── */}
+                <div className="flex justify-end gap-3 pb-2">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
@@ -380,3 +545,4 @@ export default function CataloguePage() {
     </div>
   );
 }
+
