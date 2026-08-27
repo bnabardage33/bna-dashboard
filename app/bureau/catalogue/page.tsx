@@ -112,7 +112,7 @@ export default function CataloguePage() {
     setIsSubmitting(true);
 
     // Coercition numérique stricte pour éviter tout rejet Supabase
-    const payload = {
+    const rawPayload = {
       ...formData,
       pu_ht: Number(formData.pu_ht) || 0,
       prix_ttc: formData.prix_ttc != null ? Number(formData.prix_ttc) : null,
@@ -128,6 +128,11 @@ export default function CataloguePage() {
       fournisseur: formData.fournisseur?.trim() || null,
       description: formData.description?.trim() || null,
     };
+
+    // Filtrer les valeurs null pour ne pas crasher si la colonne n'existe pas encore dans Supabase
+    const payload = Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v != null)
+    );
 
     try {
       let error;
