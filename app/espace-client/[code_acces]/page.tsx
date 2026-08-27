@@ -25,6 +25,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [facturesData, setFacturesData] = useState<any[]>([]);
   const [activeDoc, setActiveDoc] = useState<any>(null);
   const [entreprise, setEntreprise] = useState<any>(null);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   useEffect(() => {
     // Fetch real data on mount
@@ -54,6 +55,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         ]);
       } catch (e) {
         console.error("Failed to fetch real data", e);
+      } finally {
+        setIsPageLoading(false);
       }
     };
     
@@ -245,6 +248,14 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   };
 
   const docEstSigne = isSigned || (activeDoc && (activeDoc.statut === 'accepte' || activeDoc.statut === 'payee'));
+
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-800" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans relative">

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, Edit2, Trash2, Search, ArrowLeft, Save, X } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, ArrowLeft, Save, X, Upload } from "lucide-react";
 import Link from "next/link";
 import { fmtEuro } from "@/lib/financeCalculs";
+import Papa from "papaparse";
 
 type CategorieOuvrage = "bardage" | "etancheite" | "habillage" | "isolation" | "installation";
 
@@ -63,6 +64,8 @@ export default function CataloguePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOuvrage, setEditingOuvrage] = useState<Ouvrage | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormState>(emptyForm);
 
@@ -168,6 +171,74 @@ export default function CataloguePage() {
     fetchCatalogue();
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const data = results.data as any[];
+        let countNew = 0;
+        let countUpdated = 0;
+        
+        for (const row of data) {
+          if (!row.designation) continue;
+
+          // Construire le payload de base avec les valeurs du CSV, ou valeurs par défaut si vide
+          const pu_ht = Number(row.pu_ht?.replace(',', '.') || 0);
+          const prix_ttc = row.prix_ttc ? Number(row.prix_ttc.replace(',', '.')) : Math.round(pu_ht * 1.2 * 100) / 100;
+          
+          const payload: any = {
+            designation: row.designation.trim(),
+            categorie: row.categorie?.trim() || "bardage",
+            famille_label: row.famille_label?.trim() || "Import CSV",
+            unite: row.unite?.trim() || "m²",
+            pu_ht,
+            prix_ttc,
+            fabricant: row.fabricant?.trim() || null,
+            gamme: row.gamme?.trim() || null,
+            code_decor: row.code_decor?.trim() || null,
+            couleur: row.couleur?.trim() || null,
+            finition: row.finition?.trim() || null,
+            fournisseur: row.fournisseur?.trim() || null,
+            description: row.description?.trim() || null,
+            longueur_mm: row.longueur_mm ? Number(row.longueur_mm) : null,
+            largeur_mm: row.largeur_mm ? Number(row.largeur_mm) : null,
+            epaisseur_mm: row.epaisseur_mm ? Number(row.epaisseur_mm) : null,
+          };
+
+          // On retire les nulls pour éviter les crash si base pas à jour
+          const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v != null));
+
+          // Vérifie s'il existe déjà (recherche par designation)
+          const existing = ouvrages.find(o => o.designation.toLowerCase() === row.designation.trim().toLowerCase());
+          
+          if (existing) {
+            const { error } = await supabase.from("catalogue_ouvrages").update(cleanPayload).eq("id", existing.id);
+            if (!error) countUpdated++;
+          } else {
+            const { error } = await supabase.from("catalogue_ouvrages").insert(cleanPayload);
+            if (!error) countNew++;
+          }
+        }
+        
+        alert(`Import terminé !\n${countNew} nouveaux matériaux créés.\n${countUpdated} matériaux mis à jour.`);
+        setIsImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        fetchCatalogue();
+      },
+      error: (err) => {
+        console.error("Erreur parsing CSV:", err);
+        alert("Erreur lors de la lecture du fichier CSV.");
+        setIsImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    });
+  };
+
   const filteredOuvrages = ouvrages.filter((o) => {
     const matchesCat = activeCategory === "Toutes" || o.categorie === activeCategory;
     const matchesFab = activeFabricant === "All" || o.fabricant === activeFabricant;
@@ -196,13 +267,34 @@ export default function CataloguePage() {
               Gérez votre bibliothèque de prix pour la création des devis.
             </p>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Nouvel Ouvrage
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              type="file"
+              accept=".csv"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-bold text-white hover:bg-slate-600 transition-colors disabled:opacity-50"
+            >
+              {isImporting ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              {isImporting ? "Importation..." : "Importer CSV"}
+            </button>
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvel Ouvrage
+            </button>
+          </div>
         </header>
 
         {/* Filtres */}
