@@ -40,7 +40,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (!groqResponse.ok) {
-      return NextResponse.json({ error: 'Erreur API IA' }, { status: 502 });
+      const errBody = await groqResponse.text();
+      console.error('Erreur Groq API:', groqResponse.status, errBody);
+      return NextResponse.json({ error: 'Erreur API IA', detail: errBody }, { status: 502 });
     }
 
     const groqData = await groqResponse.json();
