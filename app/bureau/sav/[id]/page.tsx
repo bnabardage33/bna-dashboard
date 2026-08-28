@@ -26,12 +26,49 @@ export default function FicheSAV() {
 
   const [uploading, setUploading] = useState<{avant: boolean, apres: boolean}>({avant: false, apres: false});
 
+  const compressImage = (file: File, maxDim = 1920, quality = 0.8): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = () => {
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > height && width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => (blob ? resolve(blob) : reject(new Error('Compression echouee'))),
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avant' | 'apres') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
+
+    const file = rawFile.type.startsWith('image/')
+      ? await compressImage(rawFile)
+      : rawFile;
 
     setUploading(prev => ({ ...prev, [type]: true }));
-    const fileExt = file.name.split('.').pop();
+    const fileExt = rawFile.type.startsWith('image/') ? 'jpg' : rawFile.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
     const filePath = `${ticket.chantier_id || 'unassigned'}/${fileName}`;
 
