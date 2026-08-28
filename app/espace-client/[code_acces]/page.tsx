@@ -146,6 +146,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           }, 3000);
         }
       } else {
+        alert("DEBUG erreur: " + JSON.stringify(data));
         setChatMessages(prev => [...prev, { role: 'assistant', content: "Désolé, je rencontre un problème de connexion. Je laisse un message au patron." }]);
       }
     } catch (error) {
