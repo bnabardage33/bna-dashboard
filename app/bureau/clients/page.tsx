@@ -87,8 +87,8 @@ export default function ClientsPage() {
       .from("clients")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) console.error(error);
-    else setClients(data as Client[]);
+    if (error) { alert("DEBUG erreur clients: " + JSON.stringify(error)); console.error(error); }
+    else { alert("DEBUG data clients: " + JSON.stringify(data)); setClients(data as Client[]); }
     setLoading(false);
   }
 
