@@ -25,6 +25,7 @@ export default function LoginPage() {
       setError('Email ou mot de passe incorrect.')
       return
     }
+    alert("DEBUG: connexion reussie, redirection...")
     router.push('/')
     router.refresh()
   }
