@@ -3,10 +3,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, ShieldCheck } from "lucide-react";
+import { Settings, ShieldCheck, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   if (pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
     return null;
@@ -48,6 +58,14 @@ export default function TopNav() {
           >
             <Settings className="h-4 w-4" />
           </Link>
+
+          <button
+            onClick={handleLogout}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-300 transition-colors hover:border-red-500 hover:text-red-400"
+            title="Déconnexion"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </header>
