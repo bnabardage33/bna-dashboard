@@ -13,6 +13,7 @@ import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
+import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteView } from "@/components/TempsHeuresViews";
 
 type Chantier = {
   id: string;
@@ -71,7 +72,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Équipe & Pointages", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
+const TABS = ["Général", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -579,6 +580,14 @@ function ChantierDetailContent() {
               Établir le PV de Réception →
             </Link>
           </div>
+        </div>
+      )}
+
+      {tab === "Temps Heures" && (
+        <div className="space-y-6">
+          <ChantiersCalepinageView />
+          <PointageEquipeView />
+          <TableauDeBordRentabiliteView />
         </div>
       )}
 
