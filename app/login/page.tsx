@@ -21,6 +21,7 @@ export default function LoginPage() {
 
     setLoading(false)
     if (error) {
+      alert("DEBUG login erreur: " + JSON.stringify(error))
       setError('Email ou mot de passe incorrect.')
       return
     }
