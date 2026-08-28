@@ -39,6 +39,7 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `zones_chantier` | `id, chantier_id, type, nom, largeur, hauteur_mur, hauteur_faite, materiau, ouvertures (JSONB), famille_pose...` | Terrain Métrés |
 | `photos_notes_chantier` | `id, chantier_id, url, legende, created_at` | Terrain Photos & Notes |
 | `parametres_finance` | `id, cle, valeur` | Finance (taux horaire, salaires...) |
+| `tickets_sav` | `id, chantier_id, client_id, titre, description, statut, priorite, created_at` | Bureau SAV |
 
 ---
 
@@ -273,6 +274,24 @@ Page hub avec liens rapides vers :
 
 ---
 
+---
+
+### 9️⃣ Bureau → SAV (`/bureau/sav`)
+
+- Gestion du **Service Après-Vente** (tickets SAV)
+- Création de tickets liés à un chantier / client existant
+- Suivi du statut (en attente, en cours, résolu) et de la priorité
+
+---
+
+### 🔟 Bureau → Portails Clients (`/bureau/portails-clients`)
+
+- Gestion des **Espaces Clients** sécurisés par code d'accès (`chantiers.code_acces`)
+- URL unique `/espace-client/[code_acces]` partageable au client
+- **Côté Client** : Suivi de chantier, téléchargement des documents (Devis/Factures), Messagerie/Chat intégrée avec l'entreprise
+
+---
+
 ## 💰 MODULE FINANCE (`/(dashboard)/finance/*`)
 
 ---
@@ -344,6 +363,10 @@ Page hub avec liens rapides vers :
 | `/api/ia-devis` | Génération ligne de devis structurée (Groq) |
 | `/api/ia-securite` | Génération consignes PPSPS (Groq) |
 | `/api/rapports-intemperies/generer` | Génération rapports depuis Météo-France |
+| `/api/chat-client` | Gestion de la messagerie dans l'Espace Client |
+| `/api/chat-client-summary` | IA (Groq) pour résumer les conversations avec les clients |
+| `/api/espace-client` | Récupération des données pour le portail client |
+| `/api/finance-pin` | Sécurisation du module Finance via un code PIN |
 
 ---
 
