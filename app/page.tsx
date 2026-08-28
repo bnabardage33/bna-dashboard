@@ -33,7 +33,7 @@ export default function Home() {
     {
       name: "Espace Client",
       description: "Portail partagé avec vos clients",
-      href: "/espace-client",
+      href: "/bureau/portails-clients",
       icon: Users,
       color: "text-purple-400",
       bg: "bg-purple-400/10",
