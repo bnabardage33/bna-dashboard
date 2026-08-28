@@ -96,12 +96,15 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 
 #### Onglet 2 — Temps Heures (ex-Équipe & Pointages) :
 - Application de l'algorithme de chiffrage **Gaël Logic** (`lib/gaelLogic.ts`)
-- **Vue Chantiers & Calepinage** : Saisie surface/coupes/singularités et calcul immédiat du "Temps Budget" et "Temps à Planifier".
+- **Vue Chantiers & Calepinage** : Saisie surface/coupes/singularités et calcul immédiat du "Temps Budget" et "Temps à Planifier". Les champs (Surface, Coupes ML, Singularités) sont **pré-remplis automatiquement** grâce aux calculs de l'onglet Métrés.
 - **Vue Pointage Équipe (Mode Confiance)** : Saisie globale d'un forfait d'heures. L'API **Visual Crossing** (Météo) est interrogée en temps réel via une Server Action pour détecter les précipitations du jour et attribuer un coefficient météo de pénalité (`coef_meteo`).
 - **Vue Tableau de Bord / Rentabilité** : Jauge de progression. Le "Temps Réel Consommé" est ajusté (divisé) par le coefficient météo, protégeant ainsi les statistiques de l'équipe en cas d'intempéries. Affichage des icônes météo des jours pointés.
 
 #### Onglet 3 — Métrés & Technique :
 - **Récapitulatif des totaux** : Brut façades, brut pignons, ouvertures, total net, total à commander
+- **Gestion multizone** : Création/suppression de sous-zones de calepinage (Façade/Pignon)
+- **Visualiseur 2D (Panneaux / Bardage)** : Dessin de la façade à l'échelle (SVG) avec optimisation des chutes, calcul de la quincaillerie (équerres, chevilles Spit MP3, tirefonds, perçages) selon le DTU 45.4.
+- **Calcul des Coupes (ML)** : Intégré au moteur de calepinage (Traits de scie guillotine) et remonté dans le bandeau de stats. Ce total ML est synchronisé automatiquement avec le budget (Gaël Logic).
 - **ZoneCard** pour chaque façade/pignon :
   - Type : façade droite ou pignon triangulaire
   - Dimensions : largeur, hauteur mur, hauteur faîte
