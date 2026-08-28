@@ -23,7 +23,7 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `chantiers` | `id, nom, client_id, adresse_chantier, date_debut, date_fin, statut, materiau_structurel, moyen_acces, zone_vent, checklist, surface_m2, quantite_coupes_ml, singularites_nb, coef_perte_rendement` | Terrain, Finance, Bureau |
 | `equipe` | `id, nom, prenom, role` | Pointages globaux |
 | `catalogue_temps` | `id, nom_tache, temps_unitaire_heure` | Temps Heures, Calepinage |
-| `pointages_globaux` | `id, chantier_id, equipe_id, date_saisie, volume_heures_declare, commentaire` | Temps Heures (Mode Confiance) |
+| `pointages_globaux` | `id, chantier_id, equipe_id, date_saisie, volume_heures_declare, commentaire, meteo_relevee, coef_meteo` | Temps Heures (Mode Confiance) |
 | `devis` | `id, numero, client_id, chantier_id, objet, adresse_chantier, date_emission, validite_jours, tva_pct, statut, lignes (JSONB), acompte_pct` | Bureau Devis |
 | `factures` | `id, numero, client_id, chantier_id, objet, date_emission, echeance, tva_pct, statut, type_facture, lignes (JSONB)` | Bureau Factures |
 | `fournisseurs` | `id, nom, contact, telephone, email, statut_relation, notes` | Bureau Fournisseurs |
@@ -97,8 +97,8 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 #### Onglet 2 — Temps Heures (ex-Équipe & Pointages) :
 - Application de l'algorithme de chiffrage **Gaël Logic** (`lib/gaelLogic.ts`)
 - **Vue Chantiers & Calepinage** : Saisie surface/coupes/singularités et calcul immédiat du "Temps Budget" et "Temps à Planifier".
-- **Vue Pointage Équipe (Mode Confiance)** : Saisie simplifiée d'un forfait d'heures (sans heure de début/fin).
-- **Vue Tableau de Bord / Rentabilité** : Jauge de progression Budget vs Pointé avec écart positif/négatif et code couleur.
+- **Vue Pointage Équipe (Mode Confiance)** : Saisie globale d'un forfait d'heures. L'API **Visual Crossing** (Météo) est interrogée en temps réel via une Server Action pour détecter les précipitations du jour et attribuer un coefficient météo de pénalité (`coef_meteo`).
+- **Vue Tableau de Bord / Rentabilité** : Jauge de progression. Le "Temps Réel Consommé" est ajusté (divisé) par le coefficient météo, protégeant ainsi les statistiques de l'équipe en cas d'intempéries. Affichage des icônes météo des jours pointés.
 
 #### Onglet 3 — Métrés & Technique :
 - **Récapitulatif des totaux** : Brut façades, brut pignons, ouvertures, total net, total à commander

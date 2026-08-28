@@ -43,16 +43,30 @@ export function calculerTempsPlanification(
 }
 
 /**
+ * Calcule le Temps Réel Consommé (Ajusté selon la météo)
+ * Somme de (volume_heures_declare / coef_meteo)
+ * Ex: Si 10h pointées avec une pluie (coef 1.30), le temps consommé est 10 / 1.30 = 7.69h.
+ * 
+ * @param pointages Liste des pointages avec leurs heures et le coefficient météo appliqué
+ * @returns Temps réel consommé (ajusté)
+ */
+export function calculerTempsConsommeMeteo(
+  pointages: { volumeHeures: number, coefMeteo: number }[]
+): number {
+  return pointages.reduce((somme, p) => somme + (p.volumeHeures / (p.coefMeteo || 1.0)), 0);
+}
+
+/**
  * Étape 3 - Le Bilan de Rentabilité
- * Compare le "Temps Budget" avec la somme des heures déclarées.
+ * Compare le "Temps Budget" avec le temps consommé (idéalement ajusté par la météo).
  * 
  * @param tempsBudget Le temps budget initial
- * @param tempsReelDeclare Le total des heures pointées (somme des volume_heures_declare)
+ * @param tempsConsomme Le total des heures consommées (après ajustement météo)
  * @returns L'écart en heures (Positif = gain, Négatif = perte)
  */
 export function calculerBilanRentabilite(
   tempsBudget: number, 
-  tempsReelDeclare: number
+  tempsConsomme: number
 ): number {
-  return tempsBudget - tempsReelDeclare;
+  return tempsBudget - tempsConsomme;
 }

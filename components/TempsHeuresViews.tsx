@@ -4,8 +4,10 @@ import React, { useState } from "react";
 import { 
   calculerTempsBudget, 
   calculerTempsPlanification, 
-  calculerBilanRentabilite 
+  calculerBilanRentabilite,
+  calculerTempsConsommeMeteo
 } from "@/lib/gaelLogic";
+import { validerPointageAvecMeteo } from "@/app/actions/pointage";
 
 // -- Mock data pour la démo --
 const MOCK_CATALOGUE = {
@@ -14,10 +16,33 @@ const MOCK_CATALOGUE = {
   singularite: 1.5
 };
 
+// Chantiers avec des pointages détaillés incluant la météo
 const MOCK_CHANTIERS = [
-  { id: "1", nom: "Chantier A", budget: 45, reel: 40 },
-  { id: "2", nom: "Chantier B", budget: 30, reel: 35 },
+  { 
+    id: "1", 
+    nom: "Chantier A", 
+    budget: 45, 
+    pointages: [
+      { volumeHeures: 20, coefMeteo: 1.0, meteo: "Clément" },
+      { volumeHeures: 15, coefMeteo: 1.15, meteo: "Pluie fine" },
+      { volumeHeures: 5, coefMeteo: 1.30, meteo: "Grosse averse" }
+    ]
+  },
+  { 
+    id: "2", 
+    nom: "Chantier B", 
+    budget: 30, 
+    pointages: [
+      { volumeHeures: 35, coefMeteo: 1.0, meteo: "Clément" }
+    ]
+  },
 ];
+
+const METEO_ICONS: Record<string, string> = {
+  'Clément': '☀️',
+  'Pluie fine': '🌧️',
+  'Grosse averse': '⛈️'
+};
 
 /**
  * Vue 1 : Chantiers & Calepinage
@@ -82,10 +107,24 @@ export function ChantiersCalepinageView() {
 export function PointageEquipeView() {
   const [chantierId, setChantierId] = useState(MOCK_CHANTIERS[0].id);
   const [heures, setHeures] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
 
-  const validerPointage = () => {
-    alert(`Pointage validé : ${heures} heures pour le chantier ${chantierId}`);
-    setHeures(0);
+  const validerPointage = async () => {
+    if (heures <= 0) return;
+    setLoading(true);
+    // On simule un equipe_id bidon pour l'exemple
+    const equipeId = "00000000-0000-0000-0000-000000000000";
+    
+    // Appel Server Action
+    const result = await validerPointageAvecMeteo(chantierId, equipeId, heures);
+    
+    setLoading(false);
+    if (result.success) {
+      alert(`Pointage validé : ${heures}h.\nMétéo détectée : ${result.meteo_relevee} (Coef: ${result.coef_meteo})`);
+      setHeures(0);
+    } else {
+      alert("Erreur: " + result.error);
+    }
   };
 
   return (
@@ -118,9 +157,10 @@ export function PointageEquipeView() {
 
         <button 
           onClick={validerPointage}
-          className="w-full rounded-lg bg-sky-600 py-3 font-bold text-white hover:bg-sky-500 transition-colors"
+          disabled={loading || heures <= 0}
+          className="w-full rounded-lg bg-sky-600 py-3 font-bold text-white hover:bg-sky-500 transition-colors disabled:opacity-50"
         >
-          Valider le Pointage
+          {loading ? "Validation en cours..." : "Valider le Pointage"}
         </button>
       </div>
     </div>
@@ -135,19 +175,24 @@ export function TableauDeBordRentabiliteView() {
     <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 space-y-4">
       <h3 className="text-lg font-bold text-slate-100">Tableau de Bord / Rentabilité</h3>
       <p className="text-sm text-slate-400">
-        Analyse du "Temps Budget" vs "Temps Réel Pointé".
+        Analyse du "Temps Budget" vs "Temps Réel Consommé" (ajusté selon la météo).
       </p>
 
       <div className="space-y-6 mt-4">
         {MOCK_CHANTIERS.map(c => {
-          const ecart = calculerBilanRentabilite(c.budget, c.reel);
-          const pct = Math.min((c.reel / c.budget) * 100, 100);
+          const totalPointesBrut = c.pointages.reduce((sum, p) => sum + p.volumeHeures, 0);
+          const tempsConsomme = calculerTempsConsommeMeteo(c.pointages);
+          const ecart = calculerBilanRentabilite(c.budget, tempsConsomme);
+          const pct = Math.min((tempsConsomme / c.budget) * 100, 100);
           const estPositif = ecart >= 0;
+
+          // Déterminer la météo dominante ou l'afficher en icônes
+          const icones = Array.from(new Set(c.pointages.map(p => METEO_ICONS[p.meteo]))).join(" ");
 
           return (
             <div key={c.id} className="p-4 rounded-lg bg-slate-900 border border-slate-700">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-slate-200">{c.nom}</span>
+                <span className="font-bold text-slate-200">{c.nom} {icones}</span>
                 <span className={`font-bold ${estPositif ? 'text-emerald-400' : 'text-red-400'}`}>
                   Écart : {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} h
                 </span>
@@ -161,7 +206,11 @@ export function TableauDeBordRentabiliteView() {
               </div>
               
               <div className="flex justify-between text-xs text-slate-500 mt-2">
-                <span>Pointé : {c.reel}h</span>
+                <div>
+                  <span>Pointé brut : {totalPointesBrut}h</span>
+                  <span className="mx-2">|</span>
+                  <span className="text-sky-300">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
+                </div>
                 <span>Budget : {c.budget}h</span>
               </div>
             </div>
