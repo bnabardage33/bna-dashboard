@@ -29,6 +29,9 @@ type Chantier = {
   zone_vent: number;
   clients: { nom: string } | null;
   code_acces: string | null;
+  surface_m2?: number;
+  quantite_coupes_ml?: number;
+  singularites_nb?: number;
 };
 
 type Pointage = {
@@ -227,9 +230,10 @@ function ChantierDetailContent() {
         return {
           nette: acc.nette + c.surfaceNette,
           totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
+          ouvertures: acc.ouvertures + c.totalOuvertures,
         };
       },
-      { nette: 0, totalCoupesML: 0 }
+      { nette: 0, totalCoupesML: 0, ouvertures: 0 }
     );
 
     const surface_m2 = parseFloat(currentTotaux.nette.toFixed(2));

@@ -37,7 +37,7 @@ export type Zone = {
   largeur: number;
   hauteur_mur: number;
   hauteur_faite: number | null;
-  materiau: "lames" | "plaques";
+  materiau: "lames" | "plaques" | "plaques_hpl" | "fibres_ciment" | string;
   ouvertures: Ouverture[];
   famille_pose: FamillePose | null;
   angle: boolean;
