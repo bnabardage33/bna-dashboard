@@ -179,6 +179,7 @@ export interface ResultatCalepinage {
   nbJointsHorizontaux: number;
   lineaireJointsM: number;          // Mètres linéaires de joints (pour bandes EPDM / profilés)
   surfaceJointsM2: number;          // Surface décomptée par les joints
+  totalCoupesML: number;            // Mètres linéaires totaux de coupes à réaliser
   typePose: TypePoseCalepinage;     // "pose_droite" ou "joints_croises"
   estPignon: boolean;
   hauteurFaiteM: number;
@@ -960,6 +961,14 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     linteauxM
   );
 
+  // 10. CALCUL DES MÈTRES LINÉAIRES DE COUPE (ML)
+  // Approximation : on compte la largeur + hauteur nette de chaque pièce débitée.
+  // Cela représente les traits de scie croisés dans l'atelier + les rives/pignons.
+  const totalCoupesML = pieces.reduce(
+    (sum, p) => sum + (p.largeurNetteMm / 1000) + (p.hauteurNetteMm / 1000), 
+    0
+  );
+
   return {
     colonnesLargeursM,
     rangeesHauteursM,
@@ -979,6 +988,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     nbJointsHorizontaux,
     lineaireJointsM,
     surfaceJointsM2,
+    totalCoupesML,
     typePose: modePose,
     estPignon,
     hauteurFaiteM: hauteurFaite,

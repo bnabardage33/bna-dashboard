@@ -861,7 +861,7 @@ export default function PlanCalepinage({
       {/* ====================================================== */}
       {vue === "plaques" && calepinage && (
         <div className="space-y-2.5 border-t border-slate-800 pt-3">
-          <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3 md:grid-cols-6">
             <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5">
               <p className="text-[10px] uppercase text-slate-400 font-bold">Plaques Mères</p>
               <p className="text-base font-extrabold text-white">
@@ -889,6 +889,18 @@ export default function PlanCalepinage({
               </p>
               <p className="text-[10px] text-sky-400/80">
                 {calepinage.lineaireJointsM ? `${calepinage.lineaireJointsM.toFixed(1)} ml joints` : "DTU 41.2"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2.5">
+              <p className="text-[10px] uppercase text-amber-400 font-bold flex items-center justify-center gap-1">
+                🪚 Coupes (ML)
+              </p>
+              <p className="text-base font-extrabold text-amber-300">
+                {calepinage.totalCoupesML ? calepinage.totalCoupesML.toFixed(1) : "0"} ml
+              </p>
+              <p className="text-[10px] text-amber-400/80">
+                Utilisé pour le budget temps
               </p>
             </div>
 

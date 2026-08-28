@@ -47,11 +47,17 @@ const METEO_ICONS: Record<string, string> = {
 /**
  * Vue 1 : Chantiers & Calepinage
  */
-export function ChantiersCalepinageView() {
-  const [surface, setSurface] = useState<number>(0);
-  const [coupes, setCoupes] = useState<number>(0);
-  const [singularites, setSingularites] = useState<number>(0);
+export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0, initialSingularites = 0 }) {
+  const [surface, setSurface] = useState<number>(initialSurface);
+  const [coupes, setCoupes] = useState<number>(initialCoupes);
+  const [singularites, setSingularites] = useState<number>(initialSingularites);
   const [coef, setCoef] = useState<number>(1.8);
+
+  React.useEffect(() => {
+    setSurface(initialSurface);
+    setCoupes(initialCoupes);
+    setSingularites(initialSingularites);
+  }, [initialSurface, initialCoupes, initialSingularites]);
 
   const tempsBudget = calculerTempsBudget(
     surface, MOCK_CATALOGUE.surface,

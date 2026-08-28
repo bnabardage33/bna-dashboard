@@ -116,6 +116,35 @@ export function calculerZone(zone: Zone) {
   const surfaceACommander =
     surfaceNette * marge;
 
+  let totalCoupesML = 0;
+  if (zone.materiau === "plaques_hpl" || zone.materiau === "fibres_ciment") {
+    // Appel du calepinage pour obtenir les coupes
+    const rawLongueurMm = zone.plaque_longueur_mm && zone.plaque_longueur_mm > 0 ? (zone.plaque_longueur_mm < 20 ? zone.plaque_longueur_mm * 1000 : zone.plaque_longueur_mm) : 3050;
+    const rawLargeurMm = zone.plaque_largeur_mm && zone.plaque_largeur_mm > 0 ? (zone.plaque_largeur_mm < 20 ? zone.plaque_largeur_mm * 1000 : zone.plaque_largeur_mm) : 1300;
+    const modLargeurMm = zone.module_largeur_mm && zone.module_largeur_mm > 0 ? (zone.module_largeur_mm < 20 ? zone.module_largeur_mm * 1000 : zone.module_largeur_mm) : 1000;
+    const modHauteurMm = zone.module_hauteur_mm && zone.module_hauteur_mm > 0 ? (zone.module_hauteur_mm < 20 ? zone.module_hauteur_mm * 1000 : zone.module_hauteur_mm) : 600;
+
+    const calep = calculerCalepinage({
+      zoneLargeurM: zone.largeur,
+      zoneHauteurM: zone.hauteur_mur,
+      plaqueLongueurMm: rawLongueurMm,
+      plaqueLargeurMm: rawLargeurMm,
+      moduleLargeurMm: modLargeurMm,
+      moduleHauteurMm: modHauteurMm,
+      sensPose: zone.sens_pose ?? "horizontal",
+      estPignon: zone.type === "pignon",
+      hauteurFaiteM: zone.hauteur_faite,
+      ouvertures: zone.ouvertures.length > 0 ? zone.ouvertures.map(o => ({
+        id: o.id,
+        type: o.type === "fenetre" ? "fenetre" : "porte",
+        largeur: o.largeur,
+        hauteur: o.hauteur,
+        hauteurLinteauM: ((o.hauteurAllegeMm ?? 0) / 1000) + o.hauteur
+      })) : null
+    });
+    totalCoupesML = calep.totalCoupesML || 0;
+  }
+
   return {
     bruteFacade,
     brutePignon,
@@ -123,6 +152,7 @@ export function calculerZone(zone: Zone) {
     totalOuvertures,
     surfaceNette,
     surfaceACommander,
+    totalCoupesML,
   };
 }
 

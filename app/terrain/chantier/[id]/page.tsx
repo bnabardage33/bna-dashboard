@@ -216,6 +216,44 @@ function ChantierDetailContent() {
     }
   }, [tab, chantier, fetchDocuments]);
 
+  useEffect(() => {
+    // Sync les totaux de zones vers le chantier
+    if (!chantier || loading) return;
+    
+    // Calcul des totaux actuels
+    const currentTotaux = zones.reduce(
+      (acc, z) => {
+        const c = calculerZone(z);
+        return {
+          nette: acc.nette + c.surfaceNette,
+          totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
+        };
+      },
+      { nette: 0, totalCoupesML: 0 }
+    );
+
+    const surface_m2 = parseFloat(currentTotaux.nette.toFixed(2));
+    const quantite_coupes_ml = parseFloat(currentTotaux.totalCoupesML.toFixed(2));
+    const singularites_nb = currentTotaux.ouvertures;
+
+    const needsUpdate = 
+      (chantier.surface_m2 ?? 0) !== surface_m2 || 
+      (chantier.quantite_coupes_ml ?? 0) !== quantite_coupes_ml ||
+      (chantier.singularites_nb ?? 0) !== singularites_nb;
+
+    if (needsUpdate) {
+      supabase
+        .from("chantiers")
+        .update({ surface_m2, quantite_coupes_ml, singularites_nb })
+        .eq("id", chantier.id)
+        .then(({ error }) => {
+          if (!error) {
+            setChantier(prev => prev ? { ...prev, surface_m2, quantite_coupes_ml, singularites_nb } : null);
+          }
+        });
+    }
+  }, [zones, chantier?.id]);
+
   async function changerStatut(statut: string) {
     if (!chantier) return;
     const { error } = await supabase.from("chantiers").update({ statut }).eq("id", id);
@@ -336,9 +374,10 @@ function ChantierDetailContent() {
         ouvertures: acc.ouvertures + c.totalOuvertures,
         nette: acc.nette + c.surfaceNette,
         aCommander: acc.aCommander + c.surfaceACommander,
+        totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
       };
     },
-    { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0 }
+    { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0, totalCoupesML: 0 }
   );
 
   if (loading) return <p className="text-sm text-slate-400">Chargement…</p>;
@@ -585,7 +624,11 @@ function ChantierDetailContent() {
 
       {tab === "Temps Heures" && (
         <div className="space-y-6">
-          <ChantiersCalepinageView />
+          <ChantiersCalepinageView 
+            initialSurface={chantier.surface_m2 || 0} 
+            initialCoupes={chantier.quantite_coupes_ml || 0} 
+            initialSingularites={chantier.singularites_nb || 0} 
+          />
           <PointageEquipeView />
           <TableauDeBordRentabiliteView />
         </div>
