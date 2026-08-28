@@ -21,6 +21,7 @@ export default function LoginPage() {
 
     setLoading(false)
     if (error) {
+      alert("Erreur Supabase: " + error.message)
       setError('Email ou mot de passe incorrect.')
       return
     }
@@ -35,13 +36,13 @@ export default function LoginPage() {
         <input
           type="email" placeholder="Email" value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
+          className="w-full px-3 py-2 text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
           required
         />
         <input
           type="password" placeholder="Mot de passe" value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
+          className="w-full px-3 py-2 text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
           required
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
