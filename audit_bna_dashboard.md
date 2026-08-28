@@ -20,7 +20,10 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `profiles` | `id, full_name, role` | Pointages, connexion |
 | `entreprise_settings` | `id, raison_sociale, siret, telephone, email, adresse, code_postal, ville, iban, bic, assurance, assurance_nom, assurance_numero_police, assurance_zone_geo, mediateur_nom, mediateur_contact, mentions_legales, logo_url, seuil_ca, taux_cotisations` | Paramètres, tous PDF |
 | `clients` | `id, nom, societe, email, tel, adresse_facturation, code_postal, ville` | Bureau, Terrain |
-| `chantiers` | `id, nom, client_id, adresse_chantier, date_debut, date_fin, statut, materiau_structurel, moyen_acces, zone_vent, checklist` | Terrain, Finance, Bureau |
+| `chantiers` | `id, nom, client_id, adresse_chantier, date_debut, date_fin, statut, materiau_structurel, moyen_acces, zone_vent, checklist, surface_m2, quantite_coupes_ml, singularites_nb, coef_perte_rendement` | Terrain, Finance, Bureau |
+| `equipe` | `id, nom, prenom, role` | Pointages globaux |
+| `catalogue_temps` | `id, nom_tache, temps_unitaire_heure` | Temps Heures, Calepinage |
+| `pointages_globaux` | `id, chantier_id, equipe_id, date_saisie, volume_heures_declare, commentaire` | Temps Heures (Mode Confiance) |
 | `devis` | `id, numero, client_id, chantier_id, objet, adresse_chantier, date_emission, validite_jours, tva_pct, statut, lignes (JSONB), acompte_pct` | Bureau Devis |
 | `factures` | `id, numero, client_id, chantier_id, objet, date_emission, echeance, tva_pct, statut, type_facture, lignes (JSONB)` | Bureau Factures |
 | `fournisseurs` | `id, nom, contact, telephone, email, statut_relation, notes` | Bureau Fournisseurs |
@@ -90,10 +93,11 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 - **Adresse** modifiable inline
 - **Zone de vent** (1 à 4) modifiable inline
 
-#### Onglet 2 — Équipe & Pointages :
-- **Formulaire de pointage rapide** : Date, Ouvrier (depuis `profiles`), Heures (0.5 à 24), Type (normale / supplémentaire / intempérie)
-- **Historique des pointages** du chantier : tableau date / ouvrier / heures / type
-- **Supprimer** un pointage
+#### Onglet 2 — Temps Heures (ex-Équipe & Pointages) :
+- Application de l'algorithme de chiffrage **Gaël Logic** (`lib/gaelLogic.ts`)
+- **Vue Chantiers & Calepinage** : Saisie surface/coupes/singularités et calcul immédiat du "Temps Budget" et "Temps à Planifier".
+- **Vue Pointage Équipe (Mode Confiance)** : Saisie simplifiée d'un forfait d'heures (sans heure de début/fin).
+- **Vue Tableau de Bord / Rentabilité** : Jauge de progression Budget vs Pointé avec écart positif/négatif et code couleur.
 
 #### Onglet 3 — Métrés & Technique :
 - **Récapitulatif des totaux** : Brut façades, brut pignons, ouvertures, total net, total à commander
