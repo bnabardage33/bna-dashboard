@@ -9,39 +9,19 @@ import {
 } from "@/lib/gaelLogic";
 import { validerPointageAvecMeteo } from "@/app/actions/pointage";
 
-// -- Mock data pour la démo --
+import { supabase } from "@/lib/supabase";
+
 const MOCK_CATALOGUE = {
   surface: 0.5,
   coupe: 0.3,
   singularite: 1.5
 };
 
-// Chantiers avec des pointages détaillés incluant la météo
-const MOCK_CHANTIERS = [
-  { 
-    id: "1", 
-    nom: "Chantier A", 
-    budget: 45, 
-    pointages: [
-      { volumeHeures: 20, coefMeteo: 1.0, meteo: "Clément" },
-      { volumeHeures: 15, coefMeteo: 1.15, meteo: "Pluie fine" },
-      { volumeHeures: 5, coefMeteo: 1.30, meteo: "Grosse averse" }
-    ]
-  },
-  { 
-    id: "2", 
-    nom: "Chantier B", 
-    budget: 30, 
-    pointages: [
-      { volumeHeures: 35, coefMeteo: 1.0, meteo: "Clément" }
-    ]
-  },
-];
-
 const METEO_ICONS: Record<string, string> = {
   'Clément': '☀️',
   'Pluie fine': '🌧️',
-  'Grosse averse': '⛈️'
+  'Grosse averse': '⛈️',
+  'Non relevée': '➖'
 };
 
 /**
@@ -111,12 +91,23 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
  * Vue 2 : Pointage Équipe (Mode Confiance)
  */
 export function PointageEquipeView() {
-  const [chantierId, setChantierId] = useState(MOCK_CHANTIERS[0].id);
+  const [chantiers, setChantiers] = useState<{ id: string, nom: string }[]>([]);
+  const [chantierId, setChantierId] = useState("");
   const [heures, setHeures] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    supabase.from("chantiers").select("id, nom").order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setChantiers(data as any);
+          setChantierId(data[0].id);
+        }
+      });
+  }, []);
+
   const validerPointage = async () => {
-    if (heures <= 0) return;
+    if (heures <= 0 || !chantierId) return;
     setLoading(true);
     // On simule un equipe_id bidon pour l'exemple
     const equipeId = "00000000-0000-0000-0000-000000000000";
@@ -128,6 +119,8 @@ export function PointageEquipeView() {
     if (result.success) {
       alert(`Pointage validé : ${heures}h.\nMétéo détectée : ${result.meteo_relevee} (Coef: ${result.coef_meteo})`);
       setHeures(0);
+      // Event eventuel pour rafraîchir le tableau de bord
+      window.dispatchEvent(new Event("pointageAdded"));
     } else {
       alert("Erreur: " + result.error);
     }
@@ -144,8 +137,8 @@ export function PointageEquipeView() {
         <div>
           <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Chantier</label>
           <select value={chantierId} onChange={(e) => setChantierId(e.target.value)} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100">
-            {MOCK_CHANTIERS.map(c => (
-              <option key={c.id} value={c.id}>{c.nom}</option>
+            {chantiers.map(c => (
+              <option key={c.id} value={c.id}>{c.nom || "Chantier sans nom"}</option>
             ))}
           </select>
         </div>
@@ -177,6 +170,43 @@ export function PointageEquipeView() {
  * Vue 3 : Tableau de Bord / Rentabilité
  */
 export function TableauDeBordRentabiliteView() {
+  const [data, setData] = useState<any[]>([]);
+
+  const fetchData = async () => {
+    const { data: chantiers } = await supabase
+      .from("chantiers")
+      .select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee)");
+    
+    if (chantiers) {
+      const formatted = chantiers.map(c => {
+        // Calcul du budget à la volée avec les données du chantier
+        const budget = calculerTempsBudget(
+          c.surface_m2 || 0, MOCK_CATALOGUE.surface,
+          c.quantite_coupes_ml || 0, MOCK_CATALOGUE.coupe,
+          c.singularites_nb || 0, MOCK_CATALOGUE.singularite
+        );
+        
+        return {
+          id: c.id,
+          nom: c.nom || "Chantier sans nom",
+          budget: budget || 0, // Eviter division par zéro, ou l'afficher qd meme
+          pointages: (c.pointages_globaux as any[])?.map(p => ({
+            volumeHeures: Number(p.volume_heures_declare) || 0,
+            coefMeteo: Number(p.coef_meteo) || 1.0,
+            meteo: p.meteo_relevee || "Non relevée"
+          })) || []
+        };
+      });
+      setData(formatted);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchData();
+    window.addEventListener("pointageAdded", fetchData);
+    return () => window.removeEventListener("pointageAdded", fetchData);
+  }, []);
+
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 space-y-4">
       <h3 className="text-lg font-bold text-slate-100">Tableau de Bord / Rentabilité</h3>
@@ -185,15 +215,15 @@ export function TableauDeBordRentabiliteView() {
       </p>
 
       <div className="space-y-6 mt-4">
-        {MOCK_CHANTIERS.map(c => {
-          const totalPointesBrut = c.pointages.reduce((sum, p) => sum + p.volumeHeures, 0);
+        {data.map(c => {
+          const totalPointesBrut = c.pointages.reduce((sum: number, p: any) => sum + p.volumeHeures, 0);
           const tempsConsomme = calculerTempsConsommeMeteo(c.pointages);
           const ecart = calculerBilanRentabilite(c.budget, tempsConsomme);
-          const pct = Math.min((tempsConsomme / c.budget) * 100, 100);
+          const pct = c.budget > 0 ? Math.min((tempsConsomme / c.budget) * 100, 100) : 0;
           const estPositif = ecart >= 0;
 
           // Déterminer la météo dominante ou l'afficher en icônes
-          const icones = Array.from(new Set(c.pointages.map(p => METEO_ICONS[p.meteo]))).join(" ");
+          const icones = Array.from(new Set(c.pointages.map((p: any) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
 
           return (
             <div key={c.id} className="p-4 rounded-lg bg-slate-900 border border-slate-700">
@@ -217,7 +247,7 @@ export function TableauDeBordRentabiliteView() {
                   <span className="mx-2">|</span>
                   <span className="text-sky-300">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
                 </div>
-                <span>Budget : {c.budget}h</span>
+                <span>Budget : {c.budget.toFixed(1)}h</span>
               </div>
             </div>
           );

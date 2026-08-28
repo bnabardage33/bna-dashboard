@@ -23,36 +23,43 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
     // 2. Fetch de l'API Météo (Visual Crossing) pour la date du jour
     const apiKey = process.env.VISUAL_CROSSING_API_KEY;
     let precip = 0;
+    let apiSuccess = false;
     
     if (apiKey) {
-      const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/today?unitGroup=metric&key=${apiKey}&contentType=json`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const meteoData = await res.json();
-        precip = meteoData?.days?.[0]?.precip || 0;
-      } else {
-        console.warn("Erreur appel Visual Crossing, utilisation du fallback.");
-        precip = 0; // Fallback
+      try {
+        const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/today?unitGroup=metric&key=${apiKey}&contentType=json`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const meteoData = await res.json();
+          precip = meteoData?.days?.[0]?.precip || 0;
+          apiSuccess = true;
+        } else {
+          console.warn("Erreur appel Visual Crossing, utilisation du fallback.");
+        }
+      } catch (err) {
+        console.warn("Erreur réseau Visual Crossing, utilisation du fallback.");
       }
-    } else {
-      // Mock de secours si l'API échoue ou n'est pas configurée
-      // Simulation aléatoire pour la démonstration
-      precip = Math.random() * 5; 
     }
 
     // 3. Barème de pénalité (Logique)
     let coef_meteo = 1.0;
-    let meteo_relevee = 'Clément';
+    let meteo_relevee = 'Non relevée';
 
-    if (precip < 1) {
+    if (apiSuccess) {
+      if (precip < 1) {
+        coef_meteo = 1.0;
+        meteo_relevee = 'Clément'; // ☀️ Beau temps
+      } else if (precip >= 1 && precip <= 3) {
+        coef_meteo = 1.15;
+        meteo_relevee = 'Pluie fine'; // 🌧️ Baisse de rendement
+      } else if (precip > 3) {
+        coef_meteo = 1.30;
+        meteo_relevee = 'Grosse averse'; // ⛈️ Forte baisse
+      }
+    } else {
+      // Fallback
       coef_meteo = 1.0;
-      meteo_relevee = 'Clément'; // ☀️ Beau temps
-    } else if (precip >= 1 && precip <= 3) {
-      coef_meteo = 1.15;
-      meteo_relevee = 'Pluie fine'; // 🌧️ Baisse de rendement
-    } else if (precip > 3) {
-      coef_meteo = 1.30;
-      meteo_relevee = 'Grosse averse'; // ⛈️ Forte baisse
+      meteo_relevee = 'Non relevée';
     }
 
     // 4. Sauvegarde la saisie globale dans pointages_globaux
