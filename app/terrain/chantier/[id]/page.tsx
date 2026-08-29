@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import ChantierGaelLogicForm from "@/components/ChantierGaelLogicForm";
 import CommandeModal from "@/components/CommandeModal";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
