@@ -1140,6 +1140,7 @@ function ChantierDetailContent() {
         isOpen={commandeModalData.isOpen}
         onClose={() => setCommandeModalData({ ...commandeModalData, isOpen: false })}
         lignesInitiales={commandeModalData.lignes}
+        chantierId={chantier?.id || ""}
         chantierNom={commandeModalData.chantierNom || chantier?.nom || "Chantier en cours"}
         zoneNom={commandeModalData.zoneNom}
       />

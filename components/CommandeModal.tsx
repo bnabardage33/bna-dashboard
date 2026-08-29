@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { X, Search } from "lucide-react";
+import { X, Search, Loader2 } from "lucide-react";
 import { LigneCommande } from "@/components/ZoneCard";
+import { useRouter } from "next/navigation";
 
 type Article = {
   id: string;
@@ -37,19 +38,23 @@ export default function CommandeModal({
   isOpen,
   onClose,
   lignesInitiales,
+  chantierId,
   chantierNom,
   zoneNom,
 }: {
   isOpen: boolean;
   onClose: () => void;
   lignesInitiales: LigneCommande[];
+  chantierId: string;
   chantierNom: string;
   zoneNom: string;
 }) {
+  const router = useRouter();
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
   const [catalogue, setCatalogue] = useState<Article[]>([]);
   const [fournisseursList, setFournisseursList] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({});
   const [categoryFilters, setCategoryFilters] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState<Record<number, boolean>>({});
@@ -101,24 +106,56 @@ export default function CommandeModal({
     setLignes(newLignes);
   };
 
-  const handleEnregistrer = () => {
-    const selection = lignes.filter(l => l.articleSelectionne).map(l => {
-      const fourn = fournisseursList.find(f => f.id === l.fournisseurSelectionneId);
-      return {
-        besoin: l.designation,
-        articleId: l.articleSelectionne!.id,
-        quantiteFinale: l.quantite,
-        prixUnitaire: getPrix(l.articleSelectionne!),
-        totalHT: l.totalHT,
-        fournisseurId: l.fournisseurSelectionneId,
-        fournisseurNom: fourn ? fourn.nom : "Non spécifié"
-      };
-    });
-    console.log("=== COMMANDE PRÊTE À L'ENREGISTREMENT ===", selection);
-    alert("Chiffrage prêt ! Les données ont été tracées dans la console (Préparation BDD).");
-  };
-
   const totalGeneralHT = lignes.reduce((acc, l) => acc + (l.totalHT || 0), 0);
+
+  const handleEnregistrer = async () => {
+    const validLines = lignes.filter(l => l.articleSelectionne && l.fournisseurSelectionneId);
+    if (validLines.length === 0) {
+      alert("Veuillez sélectionner au moins un article et un fournisseur valide.");
+      return;
+    }
+    if (!chantierId) {
+      alert("Erreur: L'identifiant du chantier est introuvable.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Create commande
+      const { data: commande, error: cmdError } = await supabase
+        .from('commandes')
+        .insert({ chantier_id: chantierId, total_ht: totalGeneralHT })
+        .select('id')
+        .single();
+
+      if (cmdError) throw cmdError;
+
+      // 2. Insert lines
+      const lignesData = validLines.map(l => ({
+        commande_id: commande.id,
+        article_id: l.articleSelectionne!.id,
+        fournisseur_id: l.fournisseurSelectionneId,
+        quantite: l.quantite,
+        prix_unitaire: getPrix(l.articleSelectionne!),
+        total_ligne: l.totalHT
+      }));
+
+      const { error: linesError } = await supabase
+        .from('lignes_commande')
+        .insert(lignesData);
+
+      if (linesError) throw linesError;
+
+      alert("Chiffrage enregistré avec succès");
+      router.refresh();
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erreur lors de l'enregistrement: ${err.message || err.details || "Erreur inconnue"}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -282,8 +319,19 @@ export default function CommandeModal({
               <span className="text-sm uppercase tracking-wide text-slate-500">Total Général HT</span>
               <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">{totalGeneralHT.toFixed(2)} €</span>
             </div>
-            <button onClick={handleEnregistrer} className="w-full sm:w-auto rounded-lg bg-sky-600 px-6 py-2.5 font-bold text-white hover:bg-sky-500 transition-colors">
-              Enregistrer le chiffrage
+            <button 
+              onClick={handleEnregistrer} 
+              disabled={isSubmitting}
+              className="w-full sm:w-auto rounded-lg bg-sky-600 px-6 py-2.5 font-bold text-white hover:bg-sky-500 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                "Enregistrer le chiffrage"
+              )}
             </button>
           </div>
         </div>
