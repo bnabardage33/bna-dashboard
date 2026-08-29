@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
+import AvancementFacades from "@/components/AvancementFacades";
 import { Scissors } from "lucide-react";
 import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
@@ -442,6 +443,7 @@ function ChantierDetailContent() {
 
       {tab === "Général" && (
         <div className="space-y-4">
+          <AvancementFacades chantierId={id} />
 
           {/* Bloc Sécurité IA */}
           <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-slate-800 to-purple-950/20 p-4 shadow-lg">
