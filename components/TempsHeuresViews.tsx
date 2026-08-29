@@ -90,21 +90,9 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
 /**
  * Vue 2 : Pointage Équipe (Mode Confiance)
  */
-export function PointageEquipeView() {
-  const [chantiers, setChantiers] = useState<{ id: string, nom: string }[]>([]);
-  const [chantierId, setChantierId] = useState("");
+export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: string, chantierNom: string }) {
   const [heures, setHeures] = useState<number>(0);
   const [loading, setLoading] = useState(false);
-
-  React.useEffect(() => {
-    supabase.from("chantiers").select("id, nom").order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setChantiers(data as any);
-          setChantierId(data[0].id);
-        }
-      });
-  }, []);
 
   const validerPointage = async () => {
     if (heures <= 0 || !chantierId) return;
@@ -136,11 +124,9 @@ export function PointageEquipeView() {
       <div className="space-y-4">
         <div>
           <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Chantier</label>
-          <select value={chantierId} onChange={(e) => setChantierId(e.target.value)} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100">
-            {chantiers.map(c => (
-              <option key={c.id} value={c.id}>{c.nom || "Chantier sans nom"}</option>
-            ))}
-          </select>
+          <div className="w-full rounded-lg border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-slate-300">
+            {chantierNom}
+          </div>
         </div>
         
         <div>
@@ -169,34 +155,35 @@ export function PointageEquipeView() {
 /**
  * Vue 3 : Tableau de Bord / Rentabilité
  */
-export function TableauDeBordRentabiliteView() {
-  const [data, setData] = useState<any[]>([]);
+export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chantierId: string, chantierNom: string }) {
+  const [data, setData] = useState<any>(null);
 
   const fetchData = async () => {
-    const { data: chantiers } = await supabase
+    if (!chantierId) return;
+    const { data: chantier } = await supabase
       .from("chantiers")
-      .select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee)");
+      .select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee)")
+      .eq("id", chantierId)
+      .single();
     
-    if (chantiers) {
-      const formatted = chantiers.map(c => {
-        // Calcul du budget à la volée avec les données du chantier
-        const budget = calculerTempsBudget(
-          c.surface_m2 || 0, MOCK_CATALOGUE.surface,
-          c.quantite_coupes_ml || 0, MOCK_CATALOGUE.coupe,
-          c.singularites_nb || 0, MOCK_CATALOGUE.singularite
-        );
-        
-        return {
-          id: c.id,
-          nom: c.nom || "Chantier sans nom",
-          budget: budget || 0, // Eviter division par zéro, ou l'afficher qd meme
-          pointages: (c.pointages_globaux as any[])?.map(p => ({
-            volumeHeures: Number(p.volume_heures_declare) || 0,
-            coefMeteo: Number(p.coef_meteo) || 1.0,
-            meteo: p.meteo_relevee || "Non relevée"
-          })) || []
-        };
-      });
+    if (chantier) {
+      // Calcul du budget à la volée avec les données du chantier
+      const budget = calculerTempsBudget(
+        chantier.surface_m2 || 0, MOCK_CATALOGUE.surface,
+        chantier.quantite_coupes_ml || 0, MOCK_CATALOGUE.coupe,
+        chantier.singularites_nb || 0, MOCK_CATALOGUE.singularite
+      );
+      
+      const formatted = {
+        id: chantier.id,
+        nom: chantierNom,
+        budget: budget || 0,
+        pointages: (chantier.pointages_globaux as any[])?.map(p => ({
+          volumeHeures: Number(p.volume_heures_declare) || 0,
+          coefMeteo: Number(p.coef_meteo) || 1.0,
+          meteo: p.meteo_relevee || "Non relevée"
+        })) || []
+      };
       setData(formatted);
     }
   };
@@ -205,7 +192,18 @@ export function TableauDeBordRentabiliteView() {
     fetchData();
     window.addEventListener("pointageAdded", fetchData);
     return () => window.removeEventListener("pointageAdded", fetchData);
-  }, []);
+  }, [chantierId]);
+
+  if (!data) return null;
+
+  const totalPointesBrut = data.pointages.reduce((sum: number, p: any) => sum + p.volumeHeures, 0);
+  const tempsConsomme = calculerTempsConsommeMeteo(data.pointages);
+  const ecart = calculerBilanRentabilite(data.budget, tempsConsomme);
+  const pct = data.budget > 0 ? Math.min((tempsConsomme / data.budget) * 100, 100) : 0;
+  const estPositif = ecart >= 0;
+
+  // Déterminer la météo dominante ou l'afficher en icônes
+  const icones = Array.from(new Set(data.pointages.map((p: any) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
 
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 space-y-4">
@@ -215,43 +213,30 @@ export function TableauDeBordRentabiliteView() {
       </p>
 
       <div className="space-y-6 mt-4">
-        {data.map(c => {
-          const totalPointesBrut = c.pointages.reduce((sum: number, p: any) => sum + p.volumeHeures, 0);
-          const tempsConsomme = calculerTempsConsommeMeteo(c.pointages);
-          const ecart = calculerBilanRentabilite(c.budget, tempsConsomme);
-          const pct = c.budget > 0 ? Math.min((tempsConsomme / c.budget) * 100, 100) : 0;
-          const estPositif = ecart >= 0;
-
-          // Déterminer la météo dominante ou l'afficher en icônes
-          const icones = Array.from(new Set(c.pointages.map((p: any) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
-
-          return (
-            <div key={c.id} className="p-4 rounded-lg bg-slate-900 border border-slate-700">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-slate-200">{c.nom} {icones}</span>
-                <span className={`font-bold ${estPositif ? 'text-emerald-400' : 'text-red-400'}`}>
-                  Écart : {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} h
-                </span>
-              </div>
-              
-              <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden flex">
-                <div 
-                  className={`h-full ${estPositif ? 'bg-emerald-500' : 'bg-red-500'}`} 
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              
-              <div className="flex justify-between text-xs text-slate-500 mt-2">
-                <div>
-                  <span>Pointé brut : {totalPointesBrut}h</span>
-                  <span className="mx-2">|</span>
-                  <span className="text-sky-300">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
-                </div>
-                <span>Budget : {c.budget.toFixed(1)}h</span>
-              </div>
+        <div className="p-4 rounded-lg bg-slate-900 border border-slate-700">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-bold text-slate-200">{data.nom} {icones}</span>
+            <span className={`font-bold ${estPositif ? 'text-emerald-400' : 'text-red-400'}`}>
+              Écart : {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} h
+            </span>
+          </div>
+          
+          <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden flex">
+            <div 
+              className={`h-full ${estPositif ? 'bg-emerald-500' : 'bg-red-500'}`} 
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          
+          <div className="flex justify-between text-xs text-slate-500 mt-2">
+            <div>
+              <span>Pointé brut : {totalPointesBrut}h</span>
+              <span className="mx-2">|</span>
+              <span className="text-sky-300">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
             </div>
-          );
-        })}
+            <span>Budget : {data.budget.toFixed(1)}h</span>
+          </div>
+        </div>
       </div>
     </div>
   );

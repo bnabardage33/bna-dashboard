@@ -633,8 +633,14 @@ function ChantierDetailContent() {
             initialCoupes={chantier.quantite_coupes_ml || 0} 
             initialSingularites={chantier.singularites_nb || 0} 
           />
-          <PointageEquipeView />
-          <TableauDeBordRentabiliteView />
+          <PointageEquipeView 
+            chantierId={chantier.id}
+            chantierNom={chantier.nom || chantier.clients?.nom || "Chantier en cours"}
+          />
+          <TableauDeBordRentabiliteView 
+            chantierId={chantier.id}
+            chantierNom={chantier.nom || chantier.clients?.nom || "Chantier en cours"}
+          />
         </div>
       )}
 
