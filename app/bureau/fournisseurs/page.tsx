@@ -480,93 +480,97 @@ export default function FournisseursPage() {
 
       {modalFournisseur && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalFournisseur(false)}
         >
           <form
             onSubmit={creerFournisseur}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="bg-slate-800 w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouveau Fournisseur</h2>
               <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
                 ✕
               </button>
             </div>
-            <input
-              value={fNom}
-              onChange={(e) => setFNom(e.target.value)}
-              placeholder="Nom de l'entreprise"
-              required
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-            <select
-              value={fSpecialite}
-              onChange={(e) => setFSpecialite(e.target.value)}
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-            >
-              {SPECIALITES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
 
-            <div>
-              <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-400">Statut du fournisseur</label>
-              <div className="grid grid-cols-3 gap-2">
-                {RELATIONS.map((r) => (
-                  <button
-                    key={r.value}
-                    type="button"
-                    onClick={() => setFStatutRelation(r.value)}
-                    className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
-                      fStatutRelation === r.value
-                        ? r.couleurActif
-                        : "border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-700"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
+            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
+              <input
+                value={fNom}
+                onChange={(e) => setFNom(e.target.value)}
+                placeholder="Nom de l'entreprise"
+                required
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+              />
+              <select
+                value={fSpecialite}
+                onChange={(e) => setFSpecialite(e.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+              >
+                {SPECIALITES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
+              </select>
+
+              <div>
+                <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-400">Statut du fournisseur</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {RELATIONS.map((r) => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => setFStatutRelation(r.value)}
+                      className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
+                        fStatutRelation === r.value
+                          ? r.couleurActif
+                          : "border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-700"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <input
+                value={fContact}
+                onChange={(e) => setFContact(e.target.value)}
+                placeholder="Nom du contact"
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  value={fTel}
+                  onChange={(e) => setFTel(e.target.value)}
+                  placeholder="Téléphone"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                />
+                <input
+                  value={fEmail}
+                  onChange={(e) => setFEmail(e.target.value)}
+                  placeholder="Email"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                />
+              </div>
+              <input
+                value={fConditions}
+                onChange={(e) => setFConditions(e.target.value)}
+                placeholder="Conditions de paiement (ex. 30j fin de mois)"
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+              />
+              <textarea
+                value={fNotes}
+                onChange={(e) => setFNotes(e.target.value)}
+                placeholder="Notes et commentaires"
+                rows={2}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+              />
             </div>
 
-            <input
-              value={fContact}
-              onChange={(e) => setFContact(e.target.value)}
-              placeholder="Nom du contact"
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={fTel}
-                onChange={(e) => setFTel(e.target.value)}
-                placeholder="Téléphone"
-                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-              />
-              <input
-                value={fEmail}
-                onChange={(e) => setFEmail(e.target.value)}
-                placeholder="Email"
-                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-              />
-            </div>
-            <input
-              value={fConditions}
-              onChange={(e) => setFConditions(e.target.value)}
-              placeholder="Conditions de paiement (ex. 30j fin de mois)"
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-            <textarea
-              value={fNotes}
-              onChange={(e) => setFNotes(e.target.value)}
-              placeholder="Notes et commentaires"
-              rows={2}
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl">
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
