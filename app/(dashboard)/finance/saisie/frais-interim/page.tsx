@@ -59,6 +59,23 @@ export default function FraisInterimPage() {
       taux_tva: tauxTva,
     });
 
+    if (!error) {
+      const depenseData: any = {
+        nature: "sous_traitance",
+        montant_ht: totalHT,
+        taux_tva: tauxTva,
+        montant_tva: montantTva,
+        date: formData.date,
+        statut: "Engagé",
+      };
+      if (formData.chantier_id) depenseData.chantier_id = formData.chantier_id;
+
+      const { error: depenseError } = await supabase.from("depenses_chantier").insert(depenseData);
+      if (depenseError) {
+        console.error("Erreur insertion depense miroir frais interim:", depenseError);
+      }
+    }
+
     if (error) {
       setMessage("❌ Erreur : " + error.message);
     } else {
