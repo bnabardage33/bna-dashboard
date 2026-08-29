@@ -46,22 +46,33 @@ export async function GET(
 
   const chantier = chantiers[0];
 
-  // On trie par 'id' (qui est auto-incrémenté) plutôt que 'created_at' 
-  // au cas où la colonne created_at n'ait pas été correctement créée sur Supabase.
+  // On récupère toutes les entrées d'avancement pour ce chantier sans ORDER BY SQL
+  // (pour éviter tout bug lié aux colonnes de tri absentes ou mal indexées)
   const { data: avancements, error: avError } = await supabaseAdmin
     .from("avancements_chantier")
-    .select("pourcentage")
-    .eq("chantier_id", chantier.id)
-    .order("id", { ascending: false })
-    .limit(1);
+    .select("id, pourcentage, date, created_at")
+    .eq("chantier_id", chantier.id);
 
-  console.log("=== DEBUG ESPACE CLIENT ===");
-  console.log("Chantier ID:", chantier.id);
-  console.log("Avancements fetched:", avancements);
-  if (avError) console.error("Avancements fetch error:", avError);
+  let avancement = 0;
 
-  const avancement = avancements && avancements.length > 0 ? (avancements[0].pourcentage ?? 0) : 0;
-  console.log("Avancement final retourné:", avancement);
+  if (avError) {
+    console.error("Erreur lecture avancements_chantier :", avError);
+  } else if (avancements && avancements.length > 0) {
+    // Tri robuste en Javascript (par created_at ou par date)
+    const sorted = [...avancements].sort((a, b) => {
+      const timeA = new Date(a.created_at || a.date || 0).getTime();
+      const timeB = new Date(b.created_at || b.date || 0).getTime();
+      // Si les dates sont identiques (ex: pas de time), on utilise l'ID en string locale compare (fallback)
+      if (timeA === timeB) {
+        return String(b.id).localeCompare(String(a.id));
+      }
+      return timeB - timeA; // Descending
+    });
+    
+    // Récupérer le pourcentage de la toute dernière entrée
+    const latest = sorted[0];
+    avancement = latest.pourcentage != null ? Number(latest.pourcentage) : 0;
+  }
 
   // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
   let devisList: any[] = [];
