@@ -36,25 +36,52 @@ export default function ParametresPage() {
 
   useEffect(() => {
     async function charger() {
-      const { data, error } = await supabase
-        .from("entreprise_settings")
-        .select("*")
-        .eq("id", 1)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("entreprise_settings")
+          .select("*")
+          .eq("id", 1)
+          .single();
 
-      if (error) {
-        console.error(error);
-      } else if (data) {
+        if (error) {
+          alert("Erreur de chargement des paramètres : " + error.message);
+        }
+
+        const fb = data || {
+          raison_sociale: "",
+          siret: "",
+          telephone: "",
+          email: "",
+          adresse: "",
+          code_postal: "",
+          ville: "",
+          assurance: "",
+          assurance_nom: "",
+          assurance_numero_police: "",
+          assurance_zone_geo: "",
+          mediateur_nom: "",
+          mediateur_contact: "",
+          iban: "",
+          bic: "",
+          seuil_ca: 0,
+          taux_cotisations: 0,
+          mentions_legales: "",
+          logo_url: "",
+        };
+
         setForm({
-          ...data,
-          assurance_nom: data.assurance_nom || data.assurance || "AXA Courtage / SMABTP",
-          assurance_numero_police: data.assurance_numero_police || "DEC-2024-884920",
-          assurance_zone_geo: data.assurance_zone_geo || "France métropolitaine et Corse",
-          mediateur_nom: data.mediateur_nom || "CM2C (Centre de la Médiation de la Consommation)",
-          mediateur_contact: data.mediateur_contact || "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris",
+          ...fb,
+          assurance_nom: fb.assurance_nom || fb.assurance || "AXA Courtage / SMABTP",
+          assurance_numero_police: fb.assurance_numero_police || "DEC-2024-884920",
+          assurance_zone_geo: fb.assurance_zone_geo || "France métropolitaine et Corse",
+          mediateur_nom: fb.mediateur_nom || "CM2C (Centre de la Médiation de la Consommation)",
+          mediateur_contact: fb.mediateur_contact || "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris",
         } as Settings);
+      } catch (err: any) {
+        alert("Exception de chargement : " + (err?.message || String(err)));
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     charger();
   }, []);
