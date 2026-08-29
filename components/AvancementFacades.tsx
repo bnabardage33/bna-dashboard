@@ -40,20 +40,36 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
   });
 
   useEffect(() => {
-    // Charger le dernier avancement connu
     const fetchAvancement = async () => {
-      const { data, error } = await supabase
-        .from("avancements_chantier")
-        .select("*")
-        .eq("chantier_id", chantierId)
-        .order("created_at", { ascending: false })
-        .limit(1);
+      try {
+        const { data } = await supabase
+          .from("avancements_chantier")
+          .select("*")
+          .eq("chantier_id", chantierId)
+          .order("created_at", { ascending: false })
+          .limit(1);
 
-      if (data && data.length > 0 && data[0].details) {
-        setEtat(data[0].details as EtatAvancement);
-        // On ne recharge pas forcément les observations du jour précédent
+        if (data && data.length > 0 && data[0].details && typeof data[0].details === "object") {
+          const raw = data[0].details as Record<string, unknown>;
+          // Merge defensif : on ne prend que les valeurs connues, en fallback sur ETAT_INITIAL
+          const merged: EtatAvancement = { ...ETAT_INITIAL };
+          for (const f of FACADES) {
+            const facadeData = raw[f.id];
+            if (facadeData && typeof facadeData === "object") {
+              merged[f.id] = { ...ETAT_INITIAL[f.id] };
+              for (const e of ETAPES) {
+                const val = (facadeData as Record<string, unknown>)[e.id];
+                merged[f.id][e.id] = val === true;
+              }
+            }
+          }
+          setEtat(merged);
+        }
+      } catch (err) {
+        console.error("Erreur chargement avancement:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchAvancement();

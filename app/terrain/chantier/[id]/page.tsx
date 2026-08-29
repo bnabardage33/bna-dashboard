@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
-import AvancementFacades from "@/components/AvancementFacades";
+import AvancementFacades from "@/components/AvancementFacadesWrapper";
 import { Scissors } from "lucide-react";
 import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
@@ -86,7 +86,8 @@ const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
 function ChantierDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const rawId = params.id;
+  const id = Array.isArray(rawId) ? rawId[0] : (rawId ?? "");
 
   const [chantier, setChantier] = useState<Chantier | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
