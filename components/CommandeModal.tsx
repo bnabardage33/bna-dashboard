@@ -9,9 +9,14 @@ type Article = {
   id: string;
   reference?: string;
   code?: string;
+  code_decor?: string;
+  famille_label?: string;
+  couleur?: string;
+  description?: string;
   designation: string;
   prix_ht?: number;
   prix_unitaire_ht?: number;
+  pu_ht?: number;
   prix?: number;
   unite?: string;
 };
@@ -58,6 +63,12 @@ export default function CommandeModal({
     setLoading(true);
     // 1. Fetch catalogue
     let { data: catData, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
+    
+    // Log for debugging
+    if (catData && catData.length > 0) {
+      console.log("TEST ARTICLE:", catData[0]);
+    }
+
     if (catError || !catData || catData.length === 0) {
       const res = await supabase.from("articles").select("*");
       catData = res.data;
@@ -71,8 +82,8 @@ export default function CommandeModal({
     setLoading(false);
   };
 
-  const getPrix = (a: Article) => a.prix_ht || a.prix_unitaire_ht || a.prix || 0;
-  const getRef = (a: Article) => a.reference || a.code || "Sans réf";
+  const getPrix = (a: Article) => a.pu_ht ?? a.prix_ht ?? a.prix_unitaire_ht ?? a.prix ?? 0;
+  const getRef = (a: Article) => a.code_decor || a.reference || a.code || a.famille_label || "Sans réf";
 
   const handleSelectArticle = (index: number, article: Article) => {
     const newLignes = [...lignes];
@@ -140,10 +151,18 @@ export default function CommandeModal({
                 <tbody className="divide-y divide-slate-800">
                   {lignes.map((ligne, index) => {
                     const term = searchTerms[index] || "";
-                    const filteredCatalog = catalogue.filter(a => {
-                      const ref = getRef(a).toLowerCase();
-                      const des = (a.designation || "").toLowerCase();
-                      return des.includes(term.toLowerCase()) || ref.includes(term.toLowerCase());
+                    const lowerSearch = term.toLowerCase();
+                    const filteredCatalog = catalogue.filter(o => {
+                      if (!lowerSearch) return true;
+                      return (
+                        o.designation?.toLowerCase().includes(lowerSearch) ||
+                        o.description?.toLowerCase().includes(lowerSearch) ||
+                        o.couleur?.toLowerCase().includes(lowerSearch) ||
+                        o.code_decor?.toLowerCase().includes(lowerSearch) ||
+                        o.famille_label?.toLowerCase().includes(lowerSearch) ||
+                        o.reference?.toLowerCase().includes(lowerSearch) ||
+                        o.code?.toLowerCase().includes(lowerSearch)
+                      );
                     }).slice(0, 15);
 
                     return (
@@ -169,7 +188,7 @@ export default function CommandeModal({
                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                                     <input 
                                       type="text" 
-                                      placeholder="Rechercher une référence..."
+                                      placeholder="Rechercher (désignation, couleur, code)..."
                                       value={term}
                                       onChange={e => setSearchTerms({...searchTerms, [index]: e.target.value})}
                                       onFocus={() => setDropdownOpen({...dropdownOpen, [index]: true})}
@@ -185,7 +204,9 @@ export default function CommandeModal({
                                           className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
                                         >
                                           <span className="text-slate-200 text-xs font-semibold">{a.designation}</span>
-                                          <span className="text-slate-500 text-[10px] mt-1">Réf: {getRef(a)} - {getPrix(a).toFixed(2)}€ HT</span>
+                                          <span className="text-slate-500 text-[10px] mt-1">
+                                            Réf: {getRef(a)} - {getPrix(a).toFixed(2)}€ HT
+                                          </span>
                                         </button>
                                       ))}
                                       {filteredCatalog.length === 0 && (
