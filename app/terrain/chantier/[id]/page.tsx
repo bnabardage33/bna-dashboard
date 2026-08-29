@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import ChantierGaelLogicForm from "@/components/ChantierGaelLogicForm";
+import CommandeModal from "@/components/CommandeModal";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
@@ -355,18 +357,22 @@ function ChantierDetailContent() {
     if (!error) setZones((zs) => zs.filter((z) => z.id !== zoneId));
   }
 
-  // Transmet les lignes calculées depuis une zone vers le formulaire "Nouvelle commande"
-  // de la page Fournisseurs (via localStorage, le temps de la navigation), puis y redirige.
+  const [commandeModalData, setCommandeModalData] = useState<{ isOpen: boolean; lignes: LigneCommande[]; zoneNom: string; chantierNom: string }>({
+    isOpen: false,
+    lignes: [],
+    zoneNom: "",
+    chantierNom: "",
+  });
+
+  // Transmet les lignes calculées depuis une zone vers la modale de chiffrage/commande
   function handleCreerCommande(lignes: LigneCommande[], zoneNom: string) {
     if (!chantier) return;
-    const payload = {
-      chantierId: chantier.id,
-      chantierNom: chantier.nom || chantier.clients?.nom || "",
-      zoneNom,
+    setCommandeModalData({
+      isOpen: true,
       lignes,
-    };
-    localStorage.setItem(CLE_PREFILL_COMMANDE, JSON.stringify(payload));
-    router.push("/bureau/fournisseurs");
+      zoneNom,
+      chantierNom: chantier.nom || chantier.clients?.nom || "Chantier en cours"
+    });
   }
 
   const totaux = zones.reduce(
@@ -1129,6 +1135,15 @@ function ChantierDetailContent() {
           )}
         </div>
       )}
+
+      {/* MODAL DE CHIFFRAGE / COMMANDE */}
+      <CommandeModal
+        isOpen={commandeModalData.isOpen}
+        onClose={() => setCommandeModalData({ ...commandeModalData, isOpen: false })}
+        lignesInitiales={commandeModalData.lignes}
+        chantierNom={commandeModalData.chantierNom || chantier?.nom || "Chantier en cours"}
+        zoneNom={commandeModalData.zoneNom}
+      />
     </div>
   );
 }
