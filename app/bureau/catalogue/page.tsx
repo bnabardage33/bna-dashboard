@@ -114,11 +114,14 @@ export default function CataloguePage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const numericHt = parseFloat(String(formData.pu_ht).replace(',', '.')) || 0;
+    const prixTtcDerived = parseFloat((numericHt * 1.2).toFixed(2));
+
     // Coercition numérique stricte pour éviter tout rejet Supabase
     const rawPayload = {
       ...formData,
-      pu_ht: Number(formData.pu_ht) || 0,
-      prix_ttc: formData.prix_ttc != null ? Number(formData.prix_ttc) : null,
+      pu_ht: numericHt,
+      prix_ttc: prixTtcDerived,
       longueur_mm: formData.longueur_mm != null ? Number(formData.longueur_mm) : null,
       largeur_mm: formData.largeur_mm != null ? Number(formData.largeur_mm) : null,
       epaisseur_mm: formData.epaisseur_mm != null ? Number(formData.epaisseur_mm) : null,
@@ -609,17 +612,13 @@ export default function CataloguePage() {
                       <label className="block text-xs font-semibold text-slate-400 mb-1">Prix Unitaire HT (€)</label>
                       <input
                         required
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        type="text"
                         placeholder="0.00"
                         value={formData.pu_ht}
                         onChange={(e) => {
-                          const ht = parseFloat(e.target.value) || 0;
                           setFormData((prev) => ({
                             ...prev,
-                            pu_ht: ht,
-                            prix_ttc: Math.round(ht * 1.2 * 100) / 100,
+                            pu_ht: e.target.value as any,
                           }));
                         }}
                         className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
@@ -631,13 +630,11 @@ export default function CataloguePage() {
                         <span className="ml-1 text-[10px] font-normal text-slate-500">(calculé auto à +20%)</span>
                       </label>
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={formData.prix_ttc ?? ""}
-                        onChange={(e) => set("prix_ttc", e.target.value === "" ? null : parseFloat(e.target.value))}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        type="text"
+                        readOnly
+                        disabled
+                        value={((parseFloat(String(formData.pu_ht).replace(',', '.')) || 0) * 1.2).toFixed(2)}
+                        className="w-full rounded border border-slate-700 bg-slate-800 p-2 text-sm text-slate-400 cursor-not-allowed"
                       />
                     </div>
                   </div>
