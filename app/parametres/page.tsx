@@ -91,7 +91,12 @@ export default function ParametresPage() {
 
     const { error } = await supabase.from("entreprise_settings").update(payload).eq("id", 1);
     setSaving(false);
-    setStatus(error ? "erreur" : "ok");
+    if (error) {
+      alert("Erreur de sauvegarde : " + error.message);
+      setStatus("erreur");
+    } else {
+      setStatus("ok");
+    }
     setTimeout(() => setStatus("idle"), 3500);
   }
 
