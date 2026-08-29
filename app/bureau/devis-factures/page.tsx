@@ -495,226 +495,228 @@ export default function DevisPage() {
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
             onSubmit={creerDevis}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-2xl space-y-3 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="bg-slate-800 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouveau Devis</h2>
               <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
                 ✕
               </button>
             </div>
 
-            <select
-              value={clientId}
-              onChange={async (e) => {
-                const id = e.target.value;
-                setClientId(id);
-                setChantierId("");
-                setChantiersClient([]);
-                if (id) {
-                  const { data } = await supabase
-                    .from("chantiers")
-                    .select("id, nom, code_acces, adresse_chantier")
-                    .eq("client_id", id)
-                    .order("created_at", { ascending: false });
-                  if (data) setChantiersClient(data);
-                }
-              }}
-              required
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-            >
-              <option value="">-- Choisir un client --</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.societe ? `${c.societe} (${c.nom})` : c.nom}
-                </option>
-              ))}
-            </select>
-
-            {chantiersClient.length > 0 && (
+            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               <select
-                value={chantierId}
-                onChange={(e) => {
+                value={clientId}
+                onChange={async (e) => {
                   const id = e.target.value;
-                  setChantierId(id);
-                  // Auto-remplir l'adresse si elle est vide
-                  const ch = chantiersClient.find(c => c.id === id);
-                  if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
+                  setClientId(id);
+                  setChantierId("");
+                  setChantiersClient([]);
+                  if (id) {
+                    const { data } = await supabase
+                      .from("chantiers")
+                      .select("id, nom, code_acces, adresse_chantier")
+                      .eq("client_id", id)
+                      .order("created_at", { ascending: false });
+                    if (data) setChantiersClient(data);
+                  }
                 }}
-                className="w-full rounded-xl border border-sky-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                required
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
               >
-                <option value="">-- Lier à un chantier (optionnel) --</option>
-                {chantiersClient.map((c) => (
+                <option value="">-- Choisir un client --</option>
+                {clients.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.nom} {c.code_acces ? `· Code: ${c.code_acces}` : ""}
+                    {c.societe ? `${c.societe} (${c.nom})` : c.nom}
                   </option>
                 ))}
               </select>
-            )}
 
-            <input
-              value={objet}
-              onChange={(e) => setObjet(e.target.value)}
-              placeholder="Objet (ex. Bardage bois claire-voie)"
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                value={adresseChantier}
-                onChange={(e) => setAdresseChantier(e.target.value)}
-                placeholder="Adresse du chantier"
-                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-              />
-              <input
-                value={typeTravaux}
-                onChange={(e) => setTypeTravaux(e.target.value)}
-                placeholder="Type de travaux"
-                className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-4 gap-3">
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">Validité (j)</label>
-                <input
-                  type="number"
-                  value={validite}
-                  onChange={(e) => setValidite(parseInt(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">Délai (j)</label>
-                <input
-                  type="number"
-                  value={delai}
-                  onChange={(e) => setDelai(parseInt(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">Acompte (%)</label>
-                <input
-                  type="number"
-                  value={acompte}
-                  onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">TVA (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={tva}
-                  onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Lignes de prestation</p>
-              {lignes.map((l, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2">
-                  <input
-                    value={l.designation}
-                    onChange={(e) => updateLigne(i, { designation: e.target.value })}
-                    placeholder="Désignation"
-                    className="col-span-4 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
-                  />
-                  <input
-                    type="number"
-                    value={l.qte}
-                    onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
-                    placeholder="Qté"
-                    className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
-                  />
-                  <input
-                    value={l.unite}
-                    onChange={(e) => updateLigne(i, { unite: e.target.value })}
-                    placeholder="Unité"
-                    className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
-                  />
-                  <input
-                    type="number"
-                    value={l.pu_ht}
-                    onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
-                    placeholder="PU HT"
-                    className="col-span-3 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => supprimerLigne(i)}
-                    className="col-span-1 text-slate-500 hover:text-red-400 font-bold"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-xl border border-violet-500/40 bg-violet-500/5 p-2">
-                <input
-                  value={promptIA}
-                  onChange={(e) => setPromptIA(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      genererLigneIA();
-                    }
-                  }}
-                  placeholder="✨ Décris la prestation (ex: bardage bois 50m² façade nord)..."
-                  disabled={genererIAEnCours}
-                  className="flex-1 rounded-lg border border-violet-500/40 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 disabled:opacity-50"
-                />
-                <button
-                  type="button"
-                  onClick={genererLigneIA}
-                  disabled={genererIAEnCours || !promptIA.trim()}
-                  className="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition-colors whitespace-nowrap"
-                >
-                  {genererIAEnCours ? "Génération..." : "✨ Générer avec l'IA"}
-                </button>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={ajouterLigne}
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
-                >
-                  + Ajouter une ligne vierge
-                </button>
+              {chantiersClient.length > 0 && (
                 <select
-                  defaultValue=""
+                  value={chantierId}
                   onChange={(e) => {
-                    insererDepuisCatalogue(e.target.value);
-                    e.target.value = "";
+                    const id = e.target.value;
+                    setChantierId(id);
+                    // Auto-remplir l'adresse si elle est vide
+                    const ch = chantiersClient.find(c => c.id === id);
+                    if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
                   }}
-                  className="flex-1 rounded-xl border border-sky-500/50 bg-slate-900 px-3 py-1.5 text-xs text-sky-300 font-medium hover:border-sky-400"
+                  className="w-full rounded-xl border border-sky-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
                 >
-                  <option value="" disabled>
-                    📦 + Insérer un ouvrage depuis le catalogue standard...
-                  </option>
-                  {catalogue.map((ouv) => (
-                    <option key={ouv.id} value={ouv.id}>
-                      [{ouv.famille_label}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                  <option value="">-- Lier à un chantier (optionnel) --</option>
+                  {chantiersClient.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nom} {c.code_acces ? `· Code: ${c.code_acces}` : ""}
                     </option>
                   ))}
                 </select>
+              )}
+
+              <input
+                value={objet}
+                onChange={(e) => setObjet(e.target.value)}
+                placeholder="Objet (ex. Bardage bois claire-voie)"
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  value={adresseChantier}
+                  onChange={(e) => setAdresseChantier(e.target.value)}
+                  placeholder="Adresse du chantier"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                />
+                <input
+                  value={typeTravaux}
+                  onChange={(e) => setTypeTravaux(e.target.value)}
+                  placeholder="Type de travaux"
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                />
               </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold uppercase text-slate-400">Validité (j)</label>
+                  <input
+                    type="number"
+                    value={validite}
+                    onChange={(e) => setValidite(parseInt(e.target.value) || 0)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase text-slate-400">Délai (j)</label>
+                  <input
+                    type="number"
+                    value={delai}
+                    onChange={(e) => setDelai(parseInt(e.target.value) || 0)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase text-slate-400">Acompte (%)</label>
+                  <input
+                    type="number"
+                    value={acompte}
+                    onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase text-slate-400">TVA (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={tva}
+                    onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Lignes de prestation</p>
+                {lignes.map((l, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2">
+                    <input
+                      value={l.designation}
+                      onChange={(e) => updateLigne(i, { designation: e.target.value })}
+                      placeholder="Désignation"
+                      className="col-span-4 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                    />
+                    <input
+                      type="number"
+                      value={l.qte}
+                      onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
+                      placeholder="Qté"
+                      className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                    />
+                    <input
+                      value={l.unite}
+                      onChange={(e) => updateLigne(i, { unite: e.target.value })}
+                      placeholder="Unité"
+                      className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                    />
+                    <input
+                      type="number"
+                      value={l.pu_ht}
+                      onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
+                      placeholder="PU HT"
+                      className="col-span-3 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => supprimerLigne(i)}
+                      className="col-span-1 text-slate-500 hover:text-red-400 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-xl border border-violet-500/40 bg-violet-500/5 p-2">
+                  <input
+                    value={promptIA}
+                    onChange={(e) => setPromptIA(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        genererLigneIA();
+                      }
+                    }}
+                    placeholder="✨ Décris la prestation (ex: bardage bois 50m² façade nord)..."
+                    disabled={genererIAEnCours}
+                    className="flex-1 rounded-lg border border-violet-500/40 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={genererLigneIA}
+                    disabled={genererIAEnCours || !promptIA.trim()}
+                    className="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition-colors whitespace-nowrap"
+                  >
+                    {genererIAEnCours ? "Génération..." : "✨ Générer avec l'IA"}
+                  </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={ajouterLigne}
+                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                  >
+                    + Ajouter une ligne vierge
+                  </button>
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      insererDepuisCatalogue(e.target.value);
+                      e.target.value = "";
+                    }}
+                    className="flex-1 rounded-xl border border-sky-500/50 bg-slate-900 px-3 py-1.5 text-xs text-sky-300 font-medium hover:border-sky-400"
+                  >
+                    <option value="" disabled>
+                      📦 + Insérer un ouvrage depuis le catalogue standard...
+                    </option>
+                    {catalogue.map((ouv) => (
+                      <option key={ouv.id} value={ouv.id}>
+                        [{ouv.famille_label}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <p className="text-right text-sm font-bold text-white pt-2">
+                Total HT : <span className="font-mono text-amber-400">{totalHT.toFixed(2)} €</span>
+              </p>
             </div>
 
-            <p className="text-right text-sm font-bold text-white pt-2">
-              Total HT : <span className="font-mono text-amber-400">{totalHT.toFixed(2)} €</span>
-            </p>
-
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
