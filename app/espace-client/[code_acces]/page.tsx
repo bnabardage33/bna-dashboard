@@ -41,6 +41,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         }
 
         const data = await res.json();
+        console.log("=== DATA REÇUE CLIENT ===", data);
 
         if (data.entreprise) setEntreprise(data.entreprise);
         setChantierData(data.chantier);

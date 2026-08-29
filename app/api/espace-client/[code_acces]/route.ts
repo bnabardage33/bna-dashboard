@@ -46,15 +46,22 @@ export async function GET(
 
   const chantier = chantiers[0];
 
-  // Use created_at ordering (most recent save) instead of date to get latest entry
-  const { data: avancements } = await supabaseAdmin
+  // On trie par 'id' (qui est auto-incrémenté) plutôt que 'created_at' 
+  // au cas où la colonne created_at n'ait pas été correctement créée sur Supabase.
+  const { data: avancements, error: avError } = await supabaseAdmin
     .from("avancements_chantier")
     .select("pourcentage")
     .eq("chantier_id", chantier.id)
-    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(1);
 
+  console.log("=== DEBUG ESPACE CLIENT ===");
+  console.log("Chantier ID:", chantier.id);
+  console.log("Avancements fetched:", avancements);
+  if (avError) console.error("Avancements fetch error:", avError);
+
   const avancement = avancements && avancements.length > 0 ? (avancements[0].pourcentage ?? 0) : 0;
+  console.log("Avancement final retourné:", avancement);
 
   // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
   let devisList: any[] = [];
@@ -99,6 +106,8 @@ export async function GET(
     chantier,
     client: chantier.clients,
     avancement,
+    debug_avancements: avancements, // ADDED FOR DEBUGGING
+    debug_avError: avError,
     devis: devisList,
     factures: facturesList,
   }, {

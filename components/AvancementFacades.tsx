@@ -46,7 +46,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           .from("avancements_chantier")
           .select("*")
           .eq("chantier_id", chantierId)
-          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .limit(1);
 
         if (data && data.length > 0 && data[0].details && typeof data[0].details === "object") {
