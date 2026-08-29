@@ -251,78 +251,80 @@ export default function FicheTechniquePage() {
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
             onSubmit={onSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3.5 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="bg-slate-800 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouvelle Fiche Technique</h2>
               <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
                 ✕
               </button>
             </div>
 
-            <input
-              value={form.titre}
-              onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
-              placeholder="Titre de la fiche"
-              required
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-
-            <div className="grid grid-cols-2 gap-3">
-              <select
-                value={form.categorie}
-                onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-              >
-                {CATEGORIES.filter((c) => c.value !== "toutes").map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               <input
-                value={form.reference}
-                onChange={(e) => setForm((p) => ({ ...p, reference: e.target.value }))}
-                placeholder="Référence (ex. DTU 41.2)"
+                value={form.titre}
+                onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
+                placeholder="Titre de la fiche"
+                required
                 className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
-            </div>
 
-            <textarea
-              value={form.resume}
-              onChange={(e) => setForm((p) => ({ ...p, resume: e.target.value }))}
-              placeholder="Résumé explicatif"
-              rows={2}
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={form.categorie}
+                  onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                >
+                  {CATEGORIES.filter((c) => c.value !== "toutes").map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={form.reference}
+                  onChange={(e) => setForm((p) => ({ ...p, reference: e.target.value }))}
+                  placeholder="Référence (ex. DTU 41.2)"
+                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                />
+              </div>
 
-            <textarea
-              value={form.contenu}
-              onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
-              placeholder="Contenu détaillé ou prescriptions techniques"
-              rows={4}
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-            />
-
-            <div>
-              <label className="text-[11px] font-semibold uppercase text-slate-400">
-                Joindre un fichier PDF (optionnel)
-              </label>
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-                className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-700 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-200"
+              <textarea
+                value={form.resume}
+                onChange={(e) => setForm((p) => ({ ...p, resume: e.target.value }))}
+                placeholder="Résumé explicatif"
+                rows={2}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
+
+              <textarea
+                value={form.contenu}
+                onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
+                placeholder="Contenu détaillé ou prescriptions techniques"
+                rows={4}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+              />
+
+              <div>
+                <label className="text-[11px] font-semibold uppercase text-slate-400 block mb-1">
+                  Joindre un fichier PDF (optionnel)
+                </label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
+                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-700 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-200"
+                />
+              </div>
             </div>
 
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
@@ -335,7 +337,7 @@ export default function FicheTechniquePage() {
                 disabled={uploading}
                 className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
               >
-                {uploading ? "Envoi du PDF…" : "Enregistrer la Fiche"}
+                {uploading ? "Envoi du PDF…" : "Enregistrer"}
               </button>
             </div>
           </form>
