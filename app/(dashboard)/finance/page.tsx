@@ -113,13 +113,7 @@ export default function FinanceDashboard() {
               <Receipt className="h-4 w-4" />
               + Dépense
             </Link>
-            <Link
-              href="/finance/saisie/avancement"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
-            >
-              <TrendingUp className="h-4 w-4" />
-              Avancement
-            </Link>
+
           </div>
         </header>
 
