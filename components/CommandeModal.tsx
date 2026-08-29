@@ -7,9 +7,12 @@ import { LigneCommande } from "@/components/ZoneCard";
 
 type Article = {
   id: string;
-  reference: string;
+  reference?: string;
+  code?: string;
   designation: string;
-  prix_ht: number;
+  prix_ht?: number;
+  prix_unitaire_ht?: number;
+  prix?: number;
   unite?: string;
 };
 
@@ -68,10 +71,13 @@ export default function CommandeModal({
     setLoading(false);
   };
 
+  const getPrix = (a: Article) => a.prix_ht || a.prix_unitaire_ht || a.prix || 0;
+  const getRef = (a: Article) => a.reference || a.code || "Sans réf";
+
   const handleSelectArticle = (index: number, article: Article) => {
     const newLignes = [...lignes];
     newLignes[index].articleSelectionne = article;
-    newLignes[index].totalHT = (article.prix_ht || 0) * newLignes[index].quantite;
+    newLignes[index].totalHT = getPrix(article) * newLignes[index].quantite;
     setLignes(newLignes);
     setDropdownOpen({ ...dropdownOpen, [index]: false });
   };
@@ -89,7 +95,7 @@ export default function CommandeModal({
         besoin: l.designation,
         articleId: l.articleSelectionne!.id,
         quantiteFinale: l.quantite,
-        prixUnitaire: l.articleSelectionne!.prix_ht,
+        prixUnitaire: getPrix(l.articleSelectionne!),
         totalHT: l.totalHT,
         fournisseurId: l.fournisseurSelectionneId,
         fournisseurNom: fourn ? fourn.nom : "Non spécifié"
@@ -134,10 +140,11 @@ export default function CommandeModal({
                 <tbody className="divide-y divide-slate-800">
                   {lignes.map((ligne, index) => {
                     const term = searchTerms[index] || "";
-                    const filteredCatalog = catalogue.filter(a => 
-                      a.designation?.toLowerCase().includes(term.toLowerCase()) || 
-                      a.reference?.toLowerCase().includes(term.toLowerCase())
-                    ).slice(0, 15);
+                    const filteredCatalog = catalogue.filter(a => {
+                      const ref = getRef(a).toLowerCase();
+                      const des = (a.designation || "").toLowerCase();
+                      return des.includes(term.toLowerCase()) || ref.includes(term.toLowerCase());
+                    }).slice(0, 15);
 
                     return (
                       <tr key={index} className="hover:bg-slate-800/30 transition-colors">
@@ -178,7 +185,7 @@ export default function CommandeModal({
                                           className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
                                         >
                                           <span className="text-slate-200 text-xs font-semibold">{a.designation}</span>
-                                          <span className="text-slate-500 text-[10px] mt-1">Réf: {a.reference} - {a.prix_ht}€ HT</span>
+                                          <span className="text-slate-500 text-[10px] mt-1">Réf: {getRef(a)} - {getPrix(a).toFixed(2)}€ HT</span>
                                         </button>
                                       ))}
                                       {filteredCatalog.length === 0 && (
@@ -204,7 +211,7 @@ export default function CommandeModal({
                           </div>
                         </td>
                         <td className="p-3 text-right text-slate-300 whitespace-nowrap">
-                          {ligne.articleSelectionne ? `${ligne.articleSelectionne.prix_ht?.toFixed(2) || "0.00"} €` : "—"}
+                          {ligne.articleSelectionne ? `${getPrix(ligne.articleSelectionne).toFixed(2)} €` : "—"}
                         </td>
                         <td className="p-3 text-right font-bold text-white whitespace-nowrap">
                           {ligne.totalHT ? `${ligne.totalHT.toFixed(2)} €` : "—"}
