@@ -11,6 +11,7 @@ type Article = {
   code?: string;
   code_decor?: string;
   famille_label?: string;
+  categorie?: string;
   couleur?: string;
   description?: string;
   designation: string;
@@ -50,6 +51,7 @@ export default function CommandeModal({
   const [fournisseursList, setFournisseursList] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({});
+  const [categoryFilters, setCategoryFilters] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
@@ -151,8 +153,12 @@ export default function CommandeModal({
                 <tbody className="divide-y divide-slate-800">
                   {lignes.map((ligne, index) => {
                     const term = searchTerms[index] || "";
+                    const activeCat = categoryFilters[index] || "Toutes";
                     const lowerSearch = term.toLowerCase();
                     const filteredCatalog = catalogue.filter(o => {
+                      const matchCat = activeCat === "Toutes" || (o.categorie || "").toLowerCase() === activeCat.toLowerCase();
+                      if (!matchCat) return false;
+                      
                       if (!lowerSearch) return true;
                       return (
                         o.designation?.toLowerCase().includes(lowerSearch) ||
@@ -170,7 +176,7 @@ export default function CommandeModal({
                         <td className="p-3 font-medium text-slate-200">{ligne.designation}</td>
                         <td className="p-3 text-sky-400 font-bold">{ligne.quantite} {ligne.unite}</td>
                         <td className="p-3">
-                          <div className="flex flex-col gap-2 min-w-[250px]">
+                          <div className="flex flex-col gap-2 min-w-[300px]">
                             <div className="relative">
                               {ligne.articleSelectionne ? (
                                 <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-emerald-400">
@@ -184,6 +190,27 @@ export default function CommandeModal({
                                 </div>
                               ) : (
                                 <div>
+                                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-1">
+                                    {["Toutes", "bardage", "etancheite", "habillage", "isolation", "installation"].map(cat => {
+                                      const isActive = activeCat === cat;
+                                      return (
+                                        <button
+                                          key={cat}
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCategoryFilters({ ...categoryFilters, [index]: cat });
+                                            setDropdownOpen({ ...dropdownOpen, [index]: true });
+                                          }}
+                                          className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${
+                                            isActive ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700"
+                                          }`}
+                                        >
+                                          {cat}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                   <div className="relative">
                                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                                     <input 
@@ -210,7 +237,7 @@ export default function CommandeModal({
                                         </button>
                                       ))}
                                       {filteredCatalog.length === 0 && (
-                                        <div className="p-3 text-xs text-slate-500 text-center">Aucun résultat</div>
+                                        <div className="p-3 text-xs text-slate-500 text-center">Aucun résultat dans cette catégorie.</div>
                                       )}
                                     </div>
                                   )}
