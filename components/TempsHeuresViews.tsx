@@ -7,22 +7,8 @@ import {
   calculerBilanRentabilite,
   calculerTempsConsommeMeteo
 } from "@/lib/gaelLogic";
-import { validerPointageAvecMeteo } from "@/app/actions/pointage";
-
-import { supabase } from "@/lib/supabase";
-
-const MOCK_CATALOGUE = {
-  surface: 0.5,
-  coupe: 0.3,
-  singularite: 1.5
-};
-
-const METEO_ICONS: Record<string, string> = {
-  'Clément': '☀️',
-  'Pluie fine': '🌧️',
-  'Grosse averse': '⛈️',
-  'Non relevée': '➖'
-};
+import { validerPointageAvecMeteo, supprimerPointageGlob } from "@/app/actions/pointage";
+import { Trash2 } from "lucide-react";
 
 /**
  * Vue 1 : Chantiers & Calepinage
@@ -92,23 +78,59 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
  */
 export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: string, chantierNom: string }) {
   const [heures, setHeures] = useState<number>(0);
+  const [dateSaisie, setDateSaisie] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+  const [historique, setHistorique] = useState<any[]>([]);
+  const [equipes, setEquipes] = useState<any[]>([]);
+  const [equipeId, setEquipeId] = useState<string>("00000000-0000-0000-0000-000000000000");
+
+  const fetchHistorique = async () => {
+    if (!chantierId) return;
+    const { data } = await supabase
+      .from('pointages_globaux')
+      .select('id, date_saisie, volume_heures_declare, meteo_relevee, coef_meteo, equipe:equipe_id(nom, prenom)')
+      .eq('chantier_id', chantierId)
+      .order('date_saisie', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (data) setHistorique(data);
+  };
+
+  const fetchEquipes = async () => {
+    const { data } = await supabase.from('equipe').select('id, nom, prenom');
+    if (data && data.length > 0) {
+      setEquipes(data);
+      setEquipeId(data[0].id);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchHistorique();
+    fetchEquipes();
+    window.addEventListener("pointageChanged", fetchHistorique);
+    return () => window.removeEventListener("pointageChanged", fetchHistorique);
+  }, [chantierId]);
 
   const validerPointage = async () => {
-    if (heures <= 0 || !chantierId) return;
+    if (heures <= 0 || !chantierId || !dateSaisie) return;
     setLoading(true);
-    // On simule un equipe_id bidon pour l'exemple
-    const equipeId = "00000000-0000-0000-0000-000000000000";
     
-    // Appel Server Action
-    const result = await validerPointageAvecMeteo(chantierId, equipeId, heures);
+    const result = await validerPointageAvecMeteo(chantierId, equipeId, heures, dateSaisie);
     
     setLoading(false);
     if (result.success) {
       alert(`Pointage validé : ${heures}h.\nMétéo détectée : ${result.meteo_relevee} (Coef: ${result.coef_meteo})`);
       setHeures(0);
-      // Event eventuel pour rafraîchir le tableau de bord
-      window.dispatchEvent(new Event("pointageAdded"));
+      window.dispatchEvent(new Event("pointageChanged"));
+    } else {
+      alert("Erreur: " + result.error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Voulez-vous vraiment supprimer ce pointage ?")) return;
+    const result = await supprimerPointageGlob(id);
+    if (result.success) {
+      window.dispatchEvent(new Event("pointageChanged"));
     } else {
       alert("Erreur: " + result.error);
     }
@@ -128,7 +150,32 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
             {chantierNom}
           </div>
         </div>
+
+        {equipes.length > 0 && (
+          <div>
+            <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Équipe / Ouvrier</label>
+            <select 
+              value={equipeId} 
+              onChange={(e) => setEquipeId(e.target.value)} 
+              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            >
+              {equipes.map(eq => (
+                <option key={eq.id} value={eq.id}>{eq.prenom} {eq.nom}</option>
+              ))}
+            </select>
+          </div>
+        )}
         
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Date du pointage</label>
+          <input 
+            type="date" 
+            value={dateSaisie} 
+            onChange={(e) => setDateSaisie(e.target.value)} 
+            className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100" 
+          />
+        </div>
+
         <div>
           <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Heures globales (Forfait)</label>
           <input 
@@ -142,11 +189,46 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
 
         <button 
           onClick={validerPointage}
-          disabled={loading || heures <= 0}
+          disabled={loading || heures <= 0 || !dateSaisie}
           className="w-full rounded-lg bg-sky-600 py-3 font-bold text-white hover:bg-sky-500 transition-colors disabled:opacity-50"
         >
           {loading ? "Validation en cours..." : "Valider le Pointage"}
         </button>
+      </div>
+
+      <div className="mt-8 border-t border-slate-700 pt-6">
+        <h4 className="text-sm font-bold text-slate-200 mb-4">Historique des saisies</h4>
+        {historique.length === 0 ? (
+          <p className="text-xs text-slate-500 italic">Aucun pointage pour ce chantier.</p>
+        ) : (
+          <div className="space-y-2">
+            {historique.map(p => {
+              const adjusted = p.volume_heures_declare / p.coef_meteo;
+              const icon = METEO_ICONS[p.meteo_relevee] || '➖';
+              const equipeName = p.equipe ? `${p.equipe.prenom} ${p.equipe.nom}` : 'Équipe inconnue';
+              
+              return (
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{p.date_saisie}</p>
+                    <p className="text-xs text-slate-400">
+                      {equipeName} · Météo : {p.meteo_relevee} {icon} (Coef: {p.coef_meteo})
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-sm text-slate-300">Brut : {p.volume_heures_declare}h</p>
+                      <p className="text-xs text-sky-400">Ajusté : {adjusted.toFixed(1)}h</p>
+                    </div>
+                    <button onClick={() => handleDelete(p.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-md transition-colors" title="Supprimer">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

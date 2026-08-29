@@ -7,7 +7,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function validerPointageAvecMeteo(chantierId: string, equipeId: string, heures: number, commentaire: string = "") {
+export async function validerPointageAvecMeteo(chantierId: string, equipeId: string, heures: number, dateSaisie: string, commentaire: string = "") {
   try {
     // 1. Récupérer l'adresse du chantier
     const { data: chantier, error: chantierErr } = await supabase
@@ -27,7 +27,7 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
     
     if (apiKey) {
       try {
-        const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/today?unitGroup=metric&key=${apiKey}&contentType=json`;
+        const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/${dateSaisie}?unitGroup=metric&key=${apiKey}&contentType=json`;
         const res = await fetch(url);
         if (res.ok) {
           const meteoData = await res.json();
@@ -78,6 +78,7 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
     const payload: any = {
       chantier_id: chantierId,
       volume_heures_declare: heures,
+      date_saisie: dateSaisie,
       meteo_relevee: meteo_relevee,
       coef_meteo: coef_meteo,
       commentaire: commentaire
@@ -95,5 +96,16 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
   } catch (error: any) {
     console.error("Détail erreur pointage:", error);
     return { success: false, error: error.message || "Erreur inconnue" };
+  }
+}
+
+export async function supprimerPointageGlob(id: string) {
+  try {
+    const { error } = await supabase.from('pointages_globaux').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error("Erreur supprimer pointage:", error);
+    return { success: false, error: error.message };
   }
 }
