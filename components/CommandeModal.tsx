@@ -11,11 +11,16 @@ type Article = {
   designation: string;
   prix_ht: number;
   unite?: string;
-  fournisseur?: string;
+};
+
+type Fournisseur = {
+  id: string;
+  nom: string;
 };
 
 type LigneDevis = LigneCommande & {
   articleSelectionne?: Article | null;
+  fournisseurSelectionneId?: string;
   totalHT?: number;
 };
 
@@ -34,28 +39,32 @@ export default function CommandeModal({
 }) {
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
   const [catalogue, setCatalogue] = useState<Article[]>([]);
+  const [fournisseursList, setFournisseursList] = useState<Fournisseur[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (isOpen) {
-      setLignes(lignesInitiales.map(l => ({ ...l, articleSelectionne: null, totalHT: 0 })));
-      fetchCatalogue();
+      setLignes(lignesInitiales.map(l => ({ ...l, articleSelectionne: null, fournisseurSelectionneId: "", totalHT: 0 })));
+      fetchData();
     }
   }, [isOpen, lignesInitiales]);
 
-  const fetchCatalogue = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    // On essaie "catalogue_ouvrages", si vide on essaie "articles"
-    let { data, error } = await supabase.from("catalogue_ouvrages").select("*");
-    if (error || !data || data.length === 0) {
+    // 1. Fetch catalogue
+    let { data: catData, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
+    if (catError || !catData || catData.length === 0) {
       const res = await supabase.from("articles").select("*");
-      data = res.data;
+      catData = res.data;
     }
-    if (data) {
-      setCatalogue(data as Article[]);
-    }
+    if (catData) setCatalogue(catData as Article[]);
+
+    // 2. Fetch fournisseurs
+    const { data: fournData } = await supabase.from("fournisseurs").select("id, nom");
+    if (fournData) setFournisseursList(fournData);
+
     setLoading(false);
   };
 
@@ -67,15 +76,25 @@ export default function CommandeModal({
     setDropdownOpen({ ...dropdownOpen, [index]: false });
   };
 
+  const handleSelectFournisseur = (index: number, fournisseurId: string) => {
+    const newLignes = [...lignes];
+    newLignes[index].fournisseurSelectionneId = fournisseurId;
+    setLignes(newLignes);
+  };
+
   const handleEnregistrer = () => {
-    const selection = lignes.filter(l => l.articleSelectionne).map(l => ({
-      besoin: l.designation,
-      articleId: l.articleSelectionne!.id,
-      quantiteFinale: l.quantite,
-      prixUnitaire: l.articleSelectionne!.prix_ht,
-      totalHT: l.totalHT,
-      fournisseur: l.articleSelectionne!.fournisseur || "Inconnu"
-    }));
+    const selection = lignes.filter(l => l.articleSelectionne).map(l => {
+      const fourn = fournisseursList.find(f => f.id === l.fournisseurSelectionneId);
+      return {
+        besoin: l.designation,
+        articleId: l.articleSelectionne!.id,
+        quantiteFinale: l.quantite,
+        prixUnitaire: l.articleSelectionne!.prix_ht,
+        totalHT: l.totalHT,
+        fournisseurId: l.fournisseurSelectionneId,
+        fournisseurNom: fourn ? fourn.nom : "Non spécifié"
+      };
+    });
     console.log("=== COMMANDE PRÊTE À L'ENREGISTREMENT ===", selection);
     alert("Chiffrage prêt ! Les données ont été tracées dans la console (Préparation BDD).");
   };
@@ -99,14 +118,14 @@ export default function CommandeModal({
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-6">
           {loading ? (
-            <div className="text-center py-10 text-slate-400">Chargement du catalogue...</div>
+            <div className="text-center py-10 text-slate-400">Chargement des catalogues et fournisseurs...</div>
           ) : (
             <table className="w-full text-left text-sm text-slate-300">
               <thead className="bg-slate-800/50 text-slate-400 sticky top-0 z-10">
                 <tr>
                   <th className="p-3 font-medium rounded-tl-lg">Besoin (Calepinage)</th>
                   <th className="p-3 font-medium w-32">Quantité</th>
-                  <th className="p-3 font-medium w-96">Référence Catalogue</th>
+                  <th className="p-3 font-medium w-[450px]">Référence Catalogue & Fournisseur</th>
                   <th className="p-3 font-medium w-32 text-right">Prix Unitaire</th>
                   <th className="p-3 font-medium w-32 text-right rounded-tr-lg">Total HT</th>
                 </tr>
@@ -116,8 +135,7 @@ export default function CommandeModal({
                   const term = searchTerms[index] || "";
                   const filteredCatalog = catalogue.filter(a => 
                     a.designation?.toLowerCase().includes(term.toLowerCase()) || 
-                    a.reference?.toLowerCase().includes(term.toLowerCase()) ||
-                    a.fournisseur?.toLowerCase().includes(term.toLowerCase())
+                    a.reference?.toLowerCase().includes(term.toLowerCase())
                   ).slice(0, 15);
 
                   return (
@@ -125,58 +143,63 @@ export default function CommandeModal({
                       <td className="p-3 font-medium text-slate-200">{ligne.designation}</td>
                       <td className="p-3 text-sky-400 font-bold">{ligne.quantite} {ligne.unite}</td>
                       <td className="p-3">
-                        <div className="relative">
-                          {ligne.articleSelectionne ? (
-                            <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-emerald-400">
-                              <div className="flex flex-col pr-2">
+                        <div className="flex flex-col gap-2">
+                          <div className="relative">
+                            {ligne.articleSelectionne ? (
+                              <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-emerald-400">
                                 <span className="text-sm font-medium">{ligne.articleSelectionne.designation}</span>
-                                <span className="mt-1 text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded w-fit border border-gray-700">
-                                  {ligne.articleSelectionne.fournisseur || (ligne.articleSelectionne as any).marque || 'Inconnu'}
-                                </span>
+                                <button onClick={() => {
+                                  const newLignes = [...lignes];
+                                  newLignes[index].articleSelectionne = null;
+                                  newLignes[index].totalHT = 0;
+                                  setLignes(newLignes);
+                                }} className="hover:text-emerald-300 ml-2"><X size={16} /></button>
                               </div>
-                              <button onClick={() => {
-                                const newLignes = [...lignes];
-                                newLignes[index].articleSelectionne = null;
-                                newLignes[index].totalHT = 0;
-                                setLignes(newLignes);
-                              }} className="hover:text-emerald-300 ml-2"><X size={16} /></button>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input 
-                                  type="text" 
-                                  placeholder="Rechercher une référence..."
-                                  value={term}
-                                  onChange={e => setSearchTerms({...searchTerms, [index]: e.target.value})}
-                                  onFocus={() => setDropdownOpen({...dropdownOpen, [index]: true})}
-                                  className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
-                                />
-                              </div>
-                              {dropdownOpen[index] && (
-                                <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-xl">
-                                  {filteredCatalog.map(a => (
-                                    <button
-                                      key={a.id}
-                                      onClick={() => handleSelectArticle(index, a)}
-                                      className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
-                                    >
-                                      <span className="text-slate-200 text-xs font-semibold">
-                                        {a.designation} - [ {a.fournisseur || (a as any).marque || 'Fournisseur inconnu'} ]
-                                      </span>
-                                      <span className="text-slate-500 text-[10px] mt-1">
-                                        Réf: {a.reference} - {a.prix_ht}€ HT
-                                      </span>
-                                    </button>
-                                  ))}
-                                  {filteredCatalog.length === 0 && (
-                                    <div className="p-3 text-xs text-slate-500 text-center">Aucun résultat</div>
-                                  )}
+                            ) : (
+                              <div>
+                                <div className="relative">
+                                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                  <input 
+                                    type="text" 
+                                    placeholder="Rechercher une référence..."
+                                    value={term}
+                                    onChange={e => setSearchTerms({...searchTerms, [index]: e.target.value})}
+                                    onFocus={() => setDropdownOpen({...dropdownOpen, [index]: true})}
+                                    className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
+                                  />
                                 </div>
-                              )}
-                            </div>
-                          )}
+                                {dropdownOpen[index] && (
+                                  <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-xl">
+                                    {filteredCatalog.map(a => (
+                                      <button
+                                        key={a.id}
+                                        onClick={() => handleSelectArticle(index, a)}
+                                        className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
+                                      >
+                                        <span className="text-slate-200 text-xs font-semibold">{a.designation}</span>
+                                        <span className="text-slate-500 text-[10px] mt-1">Réf: {a.reference} - {a.prix_ht}€ HT</span>
+                                      </button>
+                                    ))}
+                                    {filteredCatalog.length === 0 && (
+                                      <div className="p-3 text-xs text-slate-500 text-center">Aucun résultat</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Menu déroulant du fournisseur (Indépendant de l'article) */}
+                          <select 
+                            value={ligne.fournisseurSelectionneId || ""}
+                            onChange={(e) => handleSelectFournisseur(index, e.target.value)}
+                            className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none appearance-none"
+                          >
+                            <option value="">-- Choisir un fournisseur --</option>
+                            {fournisseursList.map(f => (
+                              <option key={f.id} value={f.id}>{f.nom}</option>
+                            ))}
+                          </select>
                         </div>
                       </td>
                       <td className="p-3 text-right text-slate-300">
@@ -195,7 +218,7 @@ export default function CommandeModal({
 
         <div className="mt-6 border-t border-slate-800 pt-4 flex items-center justify-between">
           <p className="text-slate-400 text-sm">
-            Remplissez les correspondances catalogue pour obtenir le chiffrage.
+            Remplissez les correspondances catalogue et choisissez un fournisseur.
           </p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-4 border-r border-slate-700 pr-6">
