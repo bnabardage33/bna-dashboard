@@ -9,6 +9,20 @@ import {
 } from "@/lib/gaelLogic";
 import { validerPointageAvecMeteo, supprimerPointageGlob } from "@/app/actions/pointage";
 import { Trash2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+
+const MOCK_CATALOGUE = {
+  surface: 0.5,
+  coupe: 0.3,
+  singularite: 1.5
+};
+
+const METEO_ICONS: Record<string, string> = {
+  'Clément': '☀️',
+  'Pluie fine': '🌧️',
+  'Grosse averse': '⛈️',
+  'Non relevée': '➖'
+};
 
 /**
  * Vue 1 : Chantiers & Calepinage
