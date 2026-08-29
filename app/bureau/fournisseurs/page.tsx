@@ -587,15 +587,15 @@ export default function FournisseursPage() {
 
       {modalCommande && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-24 bg-black/80 backdrop-blur-sm"
           onClick={fermerModalCommande}
         >
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[80vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-24 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="bg-slate-800 w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">
                 {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
               </h2>
@@ -604,115 +604,119 @@ export default function FournisseursPage() {
               </button>
             </div>
 
-            {prefillInfo && (
-              <p className="rounded-xl border border-sky-500/30 bg-sky-950/40 px-3.5 py-2 text-xs font-semibold text-sky-300">
-                {prefillInfo.chantierNom} — {prefillInfo.zoneNom}
-              </p>
-            )}
-
-            {lignesMultiples ? (
-              <div className="space-y-2">
-                {lignesMultiples.map((l, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      value={l.designation}
-                      onChange={(e) => updateLigneMultiple(i, { designation: e.target.value })}
-                      className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                    />
-                    <input
-                      type="number"
-                      value={l.quantite}
-                      onChange={(e) => updateLigneMultiple(i, { quantite: parseFloat(e.target.value) || 0 })}
-                      className="w-20 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                    />
-                    <input
-                      value={l.unite}
-                      onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
-                      className="w-16 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => supprimerLigneMultiple(i)}
-                      className="text-xs text-slate-500 hover:text-red-400 font-bold"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                <p className="text-[11px] text-slate-400">
-                  Complète le fournisseur ci-dessous. Les prix sont à ajouter ensuite sur chaque commande.
+            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
+              {prefillInfo && (
+                <p className="rounded-xl border border-sky-500/30 bg-sky-950/40 px-3.5 py-2 text-xs font-semibold text-sky-300">
+                  {prefillInfo.chantierNom} — {prefillInfo.zoneNom}
                 </p>
+              )}
+
+              {lignesMultiples ? (
+                <div className="space-y-2">
+                  {lignesMultiples.map((l, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        value={l.designation}
+                        onChange={(e) => updateLigneMultiple(i, { designation: e.target.value })}
+                        className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                      />
+                      <input
+                        type="number"
+                        value={l.quantite}
+                        onChange={(e) => updateLigneMultiple(i, { quantite: parseFloat(e.target.value) || 0 })}
+                        className="w-20 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                      />
+                      <input
+                        value={l.unite}
+                        onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
+                        className="w-16 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => supprimerLigneMultiple(i)}
+                        className="text-xs text-slate-500 hover:text-red-400 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-slate-400">
+                    Complète le fournisseur ci-dessous. Les prix sont à ajouter ensuite sur chaque commande.
+                  </p>
+                </div>
+              ) : (
+                <input
+                  value={cDesignation}
+                  onChange={(e) => setCDesignation(e.target.value)}
+                  placeholder="Désignation (ex. Bardage Douglas claire-voie)"
+                  required
+                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                />
+              )}
+
+              <select
+                value={cFournisseurId}
+                onChange={(e) => setCFournisseurId(e.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+              >
+                <option value="">-- Fournisseur (optionnel) --</option>
+                {fournisseurs.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.nom}
+                  </option>
+                ))}
+              </select>
+              
+              <select
+                value={cChantierId}
+                onChange={(e) => setCChantierId(e.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+              >
+                <option value="">-- Chantier (optionnel) --</option>
+                {chantiers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nom || c.clients?.nom}
+                  </option>
+                ))}
+              </select>
+
+              {!lignesMultiples && (
+                <div className="grid grid-cols-3 gap-3">
+                  <input
+                    type="number"
+                    value={cQuantite}
+                    onChange={(e) => setCQuantite(e.target.value)}
+                    placeholder="Quantité"
+                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                  <input
+                    value={cUnite}
+                    onChange={(e) => setCUnite(e.target.value)}
+                    placeholder="Unité"
+                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    value={cMontant}
+                    onChange={(e) => setCMontant(e.target.value)}
+                    placeholder="Montant HT"
+                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-[11px] font-semibold uppercase text-slate-400">Date livraison prévue</label>
+                <input
+                  type="date"
+                  value={cDateLivraison}
+                  onChange={(e) => setCDateLivraison(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                />
               </div>
-            ) : (
-              <input
-                value={cDesignation}
-                onChange={(e) => setCDesignation(e.target.value)}
-                placeholder="Désignation (ex. Bardage Douglas claire-voie)"
-                required
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
-              />
-            )}
-
-            <select
-              value={cFournisseurId}
-              onChange={(e) => setCFournisseurId(e.target.value)}
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-            >
-              <option value="">-- Fournisseur (optionnel) --</option>
-              {fournisseurs.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.nom}
-                </option>
-              ))}
-            </select>
-            <select
-              value={cChantierId}
-              onChange={(e) => setCChantierId(e.target.value)}
-              className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-            >
-              <option value="">-- Chantier (optionnel) --</option>
-              {chantiers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nom || c.clients?.nom}
-                </option>
-              ))}
-            </select>
-
-            {!lignesMultiples && (
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="number"
-                  value={cQuantite}
-                  onChange={(e) => setCQuantite(e.target.value)}
-                  placeholder="Quantité"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-                <input
-                  value={cUnite}
-                  onChange={(e) => setCUnite(e.target.value)}
-                  placeholder="Unité"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-                <input
-                  type="number"
-                  value={cMontant}
-                  onChange={(e) => setCMontant(e.target.value)}
-                  placeholder="Montant HT"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="text-[11px] font-semibold uppercase text-slate-400">Date livraison prévue</label>
-              <input
-                type="date"
-                value={cDateLivraison}
-                onChange={(e) => setCDateLivraison(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
-              />
             </div>
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-24 sm:-mb-6 bg-slate-800 px-6 pt-3 pb-24 sm:pb-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+
+            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl">
               <button
                 type="button"
                 onClick={fermerModalCommande}
