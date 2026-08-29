@@ -31,7 +31,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     // Fetch real data on mount
     const fetchRealData = async () => {
       try {
-        const res = await fetch(`/api/espace-client/${codeAcces}`);
+        const res = await fetch(`/api/espace-client/${codeAcces}`, { cache: "no-store" });
 
         if (!res.ok) {
           setChatMessages([

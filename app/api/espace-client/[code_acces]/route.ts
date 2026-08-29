@@ -11,6 +11,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+// Force dynamic — never cache this route on Vercel/Next.js
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ code_acces: string }> }
@@ -97,5 +101,10 @@ export async function GET(
     avancement,
     devis: devisList,
     factures: facturesList,
+  }, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Pragma": "no-cache",
+    }
   });
 }
