@@ -1,5 +1,5 @@
 # 📋 Audit Complet — BNA Dashboard
-> Rapport généré le 23/08/2026 — Toutes les pages, onglets et fonctionnalités recensés
+> Rapport mis à jour le 29/08/2026 — Toutes les pages, onglets et fonctionnalités recensés
 
 ---
 
@@ -30,7 +30,7 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `commandes` | `id, fournisseur_id, chantier_id, reference_interne, objet, date_commande, date_livraison_prevue, lignes (JSONB), montant_ht, statut` | Bureau Fournisseurs |
 | `pointages` | `id, user_id, chantier_id, date, heures, type_heure, taux_horaire_charge` | Finance Saisie, Terrain |
 | `depenses_chantier` | `id, chantier_id, fournisseur_id, date, categorie, description, montant_ht, montant_tva, montant_ttc` | Finance Saisie |
-| `avancements_chantier` | `id, chantier_id, date, pourcentage, notes` | Finance Saisie |
+| `avancements_chantier` | `id, chantier_id, date, pourcentage, commentaire, details (JSONB), created_at` | Terrain Avancement Façades, Espace Client |
 | `pv_receptions` | `id, numero, chantier_id, client_id, devis_id, date_reception, statut, type_travaux, adresse_chantier, materiaux_utilises, zones_metres (JSONB), photos (JSONB), reserves (JSONB), observations, notice_entretien (JSONB), signature_client, signataire_client_nom, signature_entreprise, signataire_entreprise_nom, checklist_repli (JSONB)` | Bureau Fin de Chantier |
 | `rapports_intemperies` | `id, chantier_id, date_debut, date_fin, jours_arret...` | Bureau Intempéries |
 | `notes_patron` | `id, titre, contenu, epingle, created_at, updated_at` | Terrain Notes |
@@ -39,7 +39,21 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `zones_chantier` | `id, chantier_id, type, nom, largeur, hauteur_mur, hauteur_faite, materiau, ouvertures (JSONB), famille_pose...` | Terrain Métrés |
 | `photos_notes_chantier` | `id, chantier_id, url, legende, created_at` | Terrain Photos & Notes |
 | `parametres_finance` | `id, cle, valeur` | Finance (taux horaire, salaires...) |
-| `tickets_sav` | `id, chantier_id, client_id, titre, description, statut, priorite, created_at` | Bureau SAV |
+| `tickets_sav` | `id, chantier_id, statut, sous_garantie, type_sinistre, localisation, description, cause_probable, respect_dtu, diagnostic_dtu, materiel_prevu (JSONB), date_intervention, temps_estime, intervenant, moyen_acces, photos (JSONB), signature_technicien (text), signature_client (text)` | Bureau SAV |
+
+### ⚠️ Migrations SQL requises (nouvelles colonnes)
+
+```sql
+-- Avancement Façades : JSONB des cases cochées + timestamp
+ALTER TABLE public.avancements_chantier
+  ADD COLUMN IF NOT EXISTS details jsonb DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS commentaire text,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+
+-- SAV : Visa du technicien
+ALTER TABLE public.tickets_sav
+  ADD COLUMN IF NOT EXISTS signature_technicien text;
+```
 
 ---
 
@@ -47,311 +61,165 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 
 > **Redirection automatique** : `/` → `/terrain` → `/terrain/meteo`
 
-### Fonctionnalités :
-- **Widget IA Vocal Groq** : Gros bouton micro central. Appui → enregistrement audio → transcription Whisper → reformulation IA → **sauvegarde automatique** dans `notes_patron`
-- **Widget Météo du Jour** : Température matin/après-midi, vent, rafales, **niveau d'alerte coloré** (vert/jaune/orange/rouge)
-- **3 Dernières Notes** : Affichage des dernières notes du patron avec lien vers la page complète
-- **Chantiers Actifs & Météo** : Via composant `ChantiersMeteoCards` — liste des chantiers en cours avec leur alerte météo calculée en temps réel
+- **Widget IA Vocal Groq** : enregistrement audio → transcription Whisper → reformulation → `notes_patron`
+- **Widget Météo du Jour** : temp, vent, rafales, alerte colorée (vert/jaune/orange/rouge)
+- **3 Dernières Notes** + lien page complète
+- **Chantiers Actifs & Météo** : liste avec alerte météo calculée en temps réel
 
 ---
 
 ## 🧱 MODULE TERRAIN (`/terrain/*`)
 
-### Navigation : Accueil / Chantiers / Boîte à Outils / Notes Patron / Fiches DTU
-
----
-
 ### 1️⃣ Terrain → Chantiers (`/terrain/chantier`)
 
-#### Vue Liste :
-- Affiche toutes les cartes chantier (statut coloré : prévu/en cours/terminé)
-- **Filtre par recherche** (nom, client, adresse)
-- **Bouton GPS** : lien Google Maps direct depuis l'adresse
-- **Créer un chantier** : Bouton FAB `+` flottant → modal avec :
-  - Nom du chantier
-  - Client (select depuis `clients`)
-  - Adresse des travaux
-  - Matériau prédominant (Bois/HPL/Fibres-ciment/Métal)
-  - Date début & date fin prévues
-- **Supprimer** un chantier
-
-#### Vue Planning (Gantt) :
-- Basculer entre "Liste" et "Planning" via des boutons en haut
-- **Diagramme de Gantt sur 6 mois** : visualisation de tous les chantiers sur une timeline (couleurs : vert=en cours, orange=prévu, gris=terminé)
+- Vue Liste + Vue Planning (Gantt 6 mois)
+- Créer / Supprimer un chantier (modale responsive `pb-32 max-h-[80vh]`)
+- Filtres par recherche + Bouton GPS
 
 ---
 
 ### 2️⃣ Terrain → Chantier Détail (`/terrain/chantier/[id]`)
 
-6 onglets :
+**7 onglets** :
 
-#### Onglet 1 — Général :
-- **PPSPS Express (IA Groq)** : Bouton "✨ Générer" → l'IA analyse le matériau + le moyen d'accès + la zone de vent et génère **5 règles de sécurité concrètes**
-- Informations client, adresse
-- **Statut du chantier** (select) : prévu / en_cours / terminé / annulé → maj Supabase immédiate
-- **Checklist de fin de chantier** : liste de cases à cocher (JSONB dans `chantiers.checklist`)
-- **Matériau** et **Moyen d'accès** (modifiables inline → maj Supabase)
-- **Adresse** modifiable inline
-- **Zone de vent** (1 à 4) modifiable inline
+#### Onglet 1 — Général
+- PPSPS Express IA (sécurité Groq)
+- Infos client, adresse, statut, matériau, moyen d'accès, zone de vent
+- Checklist fin de chantier
 
-#### Onglet 2 — Temps Heures (ex-Équipe & Pointages) :
-- Application de l'algorithme de chiffrage **Gaël Logic** (`lib/gaelLogic.ts`)
-- **Vue Chantiers & Calepinage** : Saisie surface/coupes/singularités et calcul immédiat du "Temps Budget" et "Temps à Planifier". Les champs (Surface, Coupes ML, Singularités) sont **pré-remplis automatiquement** grâce aux calculs de l'onglet Métrés.
-- **Vue Pointage Équipe (Mode Confiance)** : Saisie globale d'un forfait d'heures. L'API **Visual Crossing** (Météo) est interrogée en temps réel via une Server Action pour détecter les précipitations du jour et attribuer un coefficient météo de pénalité (`coef_meteo`).
-- **Vue Tableau de Bord / Rentabilité** : Jauge de progression. Le "Temps Réel Consommé" est ajusté (divisé) par le coefficient météo, protégeant ainsi les statistiques de l'équipe en cas d'intempéries. Affichage des icônes météo des jours pointés.
+#### Onglet 2 — Avancement ⭐ NOUVEAU (logique métier "Façadier")
+- **4 accordéons** : Façade Nord / Sud / Est / Ouest
+- **4 cases par façade** : Pose ossature / Pose isolation / Pose bardage / Finitions
+- **Calcul automatique** du % global (16 cases = 100%). Aucune saisie manuelle.
+- Compteur par façade visible dans l'accordéon fermé (ex: "2 / 4")
+- Champ "Observations du jour"
+- Sauvegarde dans `avancements_chantier` (colonne `details` JSONB + `pourcentage` calculé)
+- Persistance : rechargement des cases lors de la prochaine ouverture
+- Enveloppé dans `ErrorBoundary` (affiche message d'erreur propre, ne crash pas la page)
 
-#### Onglet 3 — Métrés & Technique :
-- **Récapitulatif des totaux** : Brut façades, brut pignons, ouvertures, total net, total à commander
-- **Gestion multizone** : Création/suppression de sous-zones de calepinage (Façade/Pignon)
-- **Visualiseur 2D (Panneaux / Bardage)** : Dessin de la façade à l'échelle (SVG) avec optimisation des chutes, calcul de la quincaillerie (équerres, chevilles Spit MP3, tirefonds, perçages) selon le DTU 45.4.
-- **Calcul des Coupes (ML)** : Intégré au moteur de calepinage (Traits de scie guillotine) et remonté dans le bandeau de stats. Ce total ML est synchronisé automatiquement avec le budget (Gaël Logic).
-- **ZoneCard** pour chaque façade/pignon :
-  - Type : façade droite ou pignon triangulaire
-  - Dimensions : largeur, hauteur mur, hauteur faîte
-  - Matériau : lames bois ou plaques
-  - **Ouvertures** : ajout de fenêtres/portes avec déduction automatique de surface
-  - **Famille de pose** et paramètres (largeur visible, recouvrement, entraxes)
-  - **Calcul automatique** : surface nette, lames ou plaques à commander, quantités de fixations
-  - **Bouton "Plan de Découpe"** *(uniquement zones "Plaques")* : ouvre le **VisualiseurDebitPlaques** (Nesting/Calepinage SVG optimisé pour réduire les chutes HPL)
-  - **Bouton "Commander"** : pré-remplit le formulaire de commande fournisseur
-- **Ajouter une zone** : bouton "+" en bas
+#### Onglet 3 — Temps Heures
+- Gaël Logic : Calepinage / Pointage Mode Confiance / Tableau Rentabilité
 
-#### Onglet 4 — Météo & Intempéries :
-- **Météo en temps réel** pour le chantier (API Météo-France) : temp matin/après-midi, vent, rafales, alerte colorée
-- Détail heure par heure
-- **Liste des Rapports d'Intempéries** liés au chantier
-- **Créer un nouveau rapport** directement depuis cet onglet
+#### Onglet 4 — Métrés & Technique
+- Zones, ZoneCard, VisualiseurDebitPlaques, Calepinage SVG, Commander
 
-#### Onglet 5 — Photos & Notes :
-- **Galerie photo** : upload depuis l'appareil (compression automatique `lib/imageCompress.ts`)
-- Légende sur chaque photo
-- Visualisation en grille + suppression
-- **Notes texte** libres liées au chantier
-- Stocké dans `photos_notes_chantier`
+#### Onglet 5 — Météo & Intempéries
+- Météo temps réel Météo-France + Rapports Intempéries
 
-#### Onglet 6 — Documents :
-- Liste des Devis, Factures, Bons de Commande, PV de Réception liés au chantier
-- Liens rapides vers chaque document
+#### Onglet 6 — Photos & Notes
+- Galerie photo (compression auto) + Notes texte
+
+#### Onglet 7 — Documents
+- Synthèse financière + Devis / Factures / BdC / PV liés
 
 ---
 
 ### 3️⃣ Terrain → Notes Patron (`/terrain/notes`)
-
-- **Bouton Micro (IA Groq Whisper)** : dictée → transcription → reformulation → insertion dans `notes_patron`
-- **Filtre par chantier** ou toutes les notes
-- **Épingler** une note (remonte en haut de liste)
-- **Éditer** une note en inline
-- **Supprimer** une note
-- Date de dernière modification affichée
-
----
+- Dictée vocale IA, épingler, éditer, supprimer
 
 ### 4️⃣ Terrain → Boîte à Outils (`/terrain/outils`)
-
-Page hub avec liens rapides vers :
-- Météo & Vigilance Chantier
-- Notes Vocales
-- Fiches DTU
-- Rapports d'Intempéries
-
----
+- Hub de navigation vers Météo, Notes, DTU, Intempéries
 
 ### 5️⃣ Terrain → Fiches DTU (`/terrain/fiche-technique`)
-
-- **Recherche** par mot-clé
-- **Filtres par catégorie** : DTU / pose / ventilation / entraxes / sécurité / matériaux
-- Affichage du résumé de chaque fiche
-- Stocké dans `fiches_techniques`
+- Recherche, filtres catégorie, affichage résumé
+- Créer une fiche (titre, catégorie, référence, contenu, PDF joint)
+- Modale responsive mobile (footer statique)
 
 ---
 
 ## 🏢 MODULE BUREAU (`/bureau/*`)
 
-### Navigation : Dashboard / Clients / Devis / Factures / Fournisseurs / Fin de Chantier / Rapports Intempéries / Catalogue
-
----
-
 ### 1️⃣ Bureau → Dashboard (`/bureau`)
-
-- **4 KPIs en temps réel** : Devis en attente, Factures impayées en retard, Chantiers actifs, Fournisseurs principaux
-- Liens rapides vers chaque section
-
----
+- 4 KPIs temps réel + liens rapides
 
 ### 2️⃣ Bureau → Clients (`/bureau/clients`)
-
-- Liste des clients
-- **Créer un client** : nom, société, email, téléphone, adresse, CP, ville
-- **Fiche 360° Client** : tous ses chantiers + devis + factures avec montants
-- **Supprimer** un client
-
----
+- Créer / Supprimer client, Fiche 360°
+- Modale responsive mobile (`pb-32 max-h-[80vh]`)
 
 ### 3️⃣ Bureau → Devis (`/bureau/devis-factures`)
-
-- Liste des devis avec statut coloré
-- **Créer un devis** :
-  - Numérotation automatique (`DEV-YYYY-XXX`)
-  - Client, objet, adresse, date, validité, acompte %, TVA %
-  - Lignes : saisie manuelle + import catalogue + **✨ Génération IA** (Groq)
-  - Calculs HT/TVA/TTC automatiques
-- **Changer statut** : brouillon → envoyé → accepté/refusé
-- **Aperçu PDF** :
-  - Page 1 : document commercial complet avec zone de signature
-  - Page 2 : CGV complètes + formulaire de rétractation 14j
-  - **✍️ Signature électronique** client (SignaturePad intégré dans le PDF)
-  - **🖨️ Imprimer / PDF** toujours disponible
-- **Devis Accepté → Choix de facturation** :
-  - Facture Globale (100% des lignes)
-  - Facture d'Acompte (une ligne globale calculée)
-  - Situation d'Avancement (lignes avec % appliqué)
-- **Supprimer** un devis
-
----
+- Créer, changer statut, PDF + signature électronique
+- Génération IA Groq des lignes
+- Devis accepté → Facturation (Globale / Acompte / Situation)
+- Modale responsive mobile
 
 ### 4️⃣ Bureau → Factures (`/bureau/factures`)
-
-- Liste des factures, **mise en rouge automatique si échéance dépassée**
-- **Créer une facture** (manuelle ou depuis devis accepté)
-- **Changer statut** : brouillon / envoyée / payée
-- **Aperçu PDF** (complet avec mentions légales, RIB, signature)
-- **🖨️ Imprimer / PDF** toujours disponible
-- **⚠️ Lettre de Relance** (visible si facture envoyée + échéance dépassée) :
-  - Courrier formel avec en-têtes
-  - Option "Pénalités de retard 40€ loi LME"
-  - **🖨️ Imprimer / PDF**
-- **Supprimer** une facture
-
----
+- Créer, changer statut, Relance (pénalités LME 40€)
+- Mise en rouge auto si échéance dépassée
+- Modale responsive mobile
 
 ### 5️⃣ Bureau → Fournisseurs (`/bureau/fournisseurs`)
-
-- Liste des fournisseurs avec statut (principal/secondaire/inactif)
-- **Créer/Supprimer** un fournisseur
-- **Bons de Commande** :
-  - Créer (lignes, chantier lié, dates, référence)
-  - Génération depuis métré (via localStorage)
-  - Changer statut (en_attente/confirmée/livrée/annulée)
-  - **Aperçu PDF Bon de Commande** avec double zone de signature
-  - **✍️ Signature électronique** acheteur
-  - **🖨️ Imprimer / PDF** toujours disponible
-  - Supprimer une commande
-
----
+- Créer fournisseur, Bons de Commande (PDF + signature double)
 
 ### 6️⃣ Bureau → Fin de Chantier / PV Réception (`/bureau/fin-chantier`)
-
-- Liste des PV (statut : sans_reserve / avec_reserve / refusée)
-- **Créer un PV complet** :
-  - Chantier, client, devis associé, type de travaux, date
-  - Zones métrées (JSONB)
-  - Réserves (liste)
-  - Checklist de repli (nacelle, nettoyage, déchets...)
-  - Photos de fin de chantier
-  - Notice d'entretien pour le client
-  - Observations libres
-- **Aperçu PDF PV de Réception** :
-  - Document légal complet
-  - Photos intégrées
-  - **Double signature électronique** (client + représentant entreprise)
-  - **🖨️ Imprimer / PDF**
-- **Supprimer** un PV
-
----
+- PV complet (zones, réserves, checklist, photos, notice entretien)
+- PDF + double signature électronique
 
 ### 7️⃣ Bureau → Rapports d'Intempéries (`/bureau/rapports-intemperies`)
+- Génération auto depuis Météo-France + PDF
 
-- Liste des rapports par chantier et période
-- **Génération automatique** via API Météo-France
-- **PDF Rapport d'Intempéries** avec relevés officiels et décompte de jours
+### 8️⃣ Bureau → SAV (`/bureau/sav`) ⭐ MIS À JOUR
 
----
+**Fiche SAV Détaillée (`/bureau/sav/[id]`)** :
+- Formulaire complet (chantier, statut, garantie, sinistre, diagnostic, matériel...)
+- **Section Photos & Signatures** :
+  - Upload photo Avant / Après
+  - **2 pads de signature distincts** (grid responsive 1→2 colonnes) :
+    - **Visa du Technicien** (obligatoire pour clôturer)
+    - **Signature du Client** (obligatoire pour clôturer)
+  - Clôture bloquée si l'une des 2 signatures manque
+- **Rapport SAV PDF** (responsive mobile) :
+  - Layout fluide `w-full max-w-3xl` (plus de largeurs cm fixes)
+  - Grille `grid-cols-1 sm:grid-cols-2`
+  - Texte adaptatif `text-2xl md:text-4xl break-words`
+  - Visa technicien : affiche la vraie signature capturée
 
-### 8️⃣ Bureau → Catalogue d'Ouvrages (`/bureau/catalogue`)
-
-- Liste du catalogue interne
-- **Créer** : désignation, description, famille, unité, PU HT
-- **Modifier** en inline
-- **Supprimer**
-- Utilisé en select dynamique dans Devis et Factures
-
----
-
----
-
-### 9️⃣ Bureau → SAV (`/bureau/sav`)
-
-- Gestion du **Service Après-Vente** (tickets SAV)
-- Création de tickets liés à un chantier / client existant
-- Suivi du statut (en attente, en cours, résolu) et de la priorité
-
----
+### 9️⃣ Bureau → Catalogue (`/bureau/catalogue`)
+- Créer / Modifier / Supprimer ouvrages. Utilisé dans Devis & Factures.
 
 ### 🔟 Bureau → Portails Clients (`/bureau/portails-clients`)
+- Gestion Espaces Clients (code d'accès, URL unique)
 
-- Gestion des **Espaces Clients** sécurisés par code d'accès (`chantiers.code_acces`)
-- URL unique `/espace-client/[code_acces]` partageable au client
-- **Côté Client** : Suivi de chantier, téléchargement des documents (Devis/Factures), Messagerie/Chat intégrée avec l'entreprise
+---
+
+## 🌐 ESPACE CLIENT (`/espace-client/[code_acces]`) ⭐ MIS À JOUR
+
+- **Carte Avancement** :
+  - `{avancement}%` issu de `avancements_chantier` (tri `created_at` DESC)
+  - Barre de progression animée
+  - **Frise 3 étapes dynamique** :
+    - `0–15%` → 🔵 Préparation En cours
+    - `16–85%` → ✅ Préparation + 🔵 Pose En cours
+    - `86–100%` → ✅ Préparation + ✅ Pose + 🔵 Finitions En cours
+- **Mes Documents** : Devis + Factures + Signature électronique
+- **Chatbot IA** (Groq) flottant + résumé en arrière-plan
 
 ---
 
 ## 💰 MODULE FINANCE (`/(dashboard)/finance/*`)
 
----
-
 ### 1️⃣ Finance → Tableau de Bord
-
-- **Sélecteur de mois** : filtre global sur tout le dashboard
-- **KPIs** : CA Facturé HT, Dépenses, Marge Brute (€ + %), Reste à facturer
-- **Rentabilité par chantier** : tableau + barre d'avancement + formulaire d'avancement rapide
-- **Graphique Évolution CA** (12 mois, recharts)
-- **Camembert Répartition Coûts** (main d'œuvre / matériaux / autres)
-- **Widget TVA** : collectée (20%/10%/5.5%), déductible, solde à reverser
-- **Widget Trésorerie prévisionnelle** (30 jours)
-- **Widget URSSAF** : estimation cotisations du mois
-- **📄 Rapport Mensuel PDF** : document A4 complet
-- **📊 Export Comptable CSV** : compatible Excel/logiciels comptables
-- **Lien vers Historique** des saisies
-
----
+- KPIs, Rentabilité par chantier, Graphique CA, TVA, Trésorerie, URSSAF
+- Rapport PDF mensuel + Export CSV
 
 ### 2️⃣ Finance → Saisie Pointage
-
-- Formulaire : chantier, ouvrier, date, heures, taux horaire, type (normale/sup/intempérie)
-- Sauvegarde dans `pointages`
-
----
+- `pointages` table
 
 ### 3️⃣ Finance → Saisie Dépense
+- `depenses_chantier` table
 
-- Formulaire : chantier, fournisseur, date, catégorie, description, montant HT/TVA/TTC
-- Sauvegarde dans `depenses_chantier`
+> **La Saisie Avancement a été SUPPRIMÉE du module Finance.**
+> L'avancement est désormais géré dans l'onglet "Avancement" de chaque chantier (logique façades).
 
----
-
-### 4️⃣ Finance → Saisie Avancement
-
-- Formulaire : chantier, pourcentage (slider), date, notes
-- Sauvegarde dans `avancements_chantier`
-
----
-
-### 5️⃣ Finance → Historique
-
-- 30 derniers pointages + 30 dernières dépenses
-- Suppression d'une entrée erronée
+### 4️⃣ Finance → Historique
+- 30 derniers pointages + dépenses, suppression possible
 
 ---
 
 ## ⚙️ PARAMÈTRES (`/parametres`)
 
-- Raison sociale, SIRET, téléphone, email, adresse, CP, ville
-- IBAN, BIC
-- Mentions légales
-- Assurance décennale (nom, n° police, zone géo)
-- Médiateur consommation (nom, contact)
-- Seuil CA régime simplifié, taux cotisations sociales
-- Upload Logo (Supabase Storage)
+- Raison sociale, SIRET, coordonnées, IBAN/BIC, mentions légales
+- Assurance décennale, Médiateur, Seuil CA, Taux cotisations
+- **Upload Logo** (bucket `photos` Supabase Storage)
 
 ---
 
@@ -359,31 +227,50 @@ Page hub avec liens rapides vers :
 
 | Route | Rôle |
 |---|---|
-| `/api/meteo` | Données météo horaires Météo-France |
-| `/api/meteo-vigilance` | Alertes officielles DPVigilance |
+| `/api/meteo` | Météo horaires Météo-France |
+| `/api/meteo-vigilance` | Alertes DPVigilance |
 | `/api/transcrire-note` | Audio → Texte (Groq Whisper) |
-| `/api/reformuler-note` | Reformulation + anonymisation (Groq Compound Mini) |
-| `/api/ia-devis` | Génération ligne de devis structurée (Groq) |
-| `/api/ia-securite` | Génération consignes PPSPS (Groq) |
-| `/api/rapports-intemperies/generer` | Génération rapports depuis Météo-France |
-| `/api/chat-client` | Gestion de la messagerie dans l'Espace Client |
-| `/api/chat-client-summary` | IA (Groq) pour résumer les conversations avec les clients |
-| `/api/espace-client` | Récupération des données pour le portail client |
-| `/api/finance-pin` | Sécurisation du module Finance via un code PIN |
+| `/api/reformuler-note` | Reformulation IA (Groq Compound Mini) |
+| `/api/ia-devis` | Génération lignes devis (Groq) |
+| `/api/ia-securite` | Consignes PPSPS (Groq) |
+| `/api/rapports-intemperies/generer` | Génération rapports (try/catch global → JSON 500) |
+| `/api/chat-client` | Messagerie Espace Client |
+| `/api/chat-client-summary` | Résumé conversation (Groq) |
+| `/api/espace-client/[code_acces]` | Données portail client (avancement réel, tri `created_at` DESC) |
+| `/api/finance-pin` | Sécurisation module Finance via PIN |
 
 ---
 
-## ⚠️ POINTS D'ATTENTION — À VÉRIFIER CÔTÉ SUPABASE
+## 🎨 STANDARD MODALES MOBILES
 
-> [!IMPORTANT]
-> Ces éléments doivent exister dans ta base Supabase pour que l'application fonctionne complètement.
+Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Facture, Nouveau Chantier, Nouvelle Fiche Technique) :
 
-1. **`profiles` table** : colonne `role` avec valeurs : `admin`, `direction`, `chef`, `ouvrier`
-2. **`entreprise_settings` id=1** : une seule ligne avec `id = 1` doit exister (à créer si table vide)
-3. **`catalogue_ouvrages`** : créée via `catalogue.sql` → vérifier qu'elle est présente et peuplée
-4. **`avancements_chantier`** : colonnes `id, chantier_id, date, pourcentage, notes`
-5. **`pv_receptions`** : colonnes JSONB `zones_metres, photos, reserves, notice_entretien, checklist_repli` + colonnes `text` pour les signatures
-6. **`fiches_techniques`** : table à alimenter manuellement avec les fiches DTU
-7. **`parametres_finance`** : table clé-valeur pour les paramètres (taux horaire moyen, etc.)
-8. **Supabase Storage** : bucket pour logos (`entreprise_settings.logo_url`) et photos chantier (`photos_notes_chantier.url`)
-9. **Row Level Security (RLS)** : actuellement non configuré — à faire lors de l'étape Sécurité finale
+```jsx
+// Overlay — pb-32 pour dégager la barre de navigation
+<div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80">
+  // Conteneur flex colonne
+  <div className="bg-slate-900 w-full max-w-2xl max-h-[80vh] flex flex-col rounded-xl">
+    // Header statique
+    <div className="p-4 border-b border-gray-700 shrink-0">...</div>
+    // Formulaire scrollable
+    <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">...</div>
+    // Footer statique
+    <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">...</div>
+  </div>
+</div>
+```
+
+---
+
+## ⚠️ POINTS D'ATTENTION SUPABASE
+
+1. **`profiles`** : colonne `role` → `admin / direction / chef / ouvrier`
+2. **`entreprise_settings`** : ligne `id = 1` doit exister
+3. **`catalogue_ouvrages`** : créée via `catalogue.sql`
+4. **`avancements_chantier`** : ajouter `details (jsonb)`, `commentaire (text)`, `created_at (timestamptz)`
+5. **`tickets_sav`** : ajouter `signature_technicien (text)`
+6. **`pv_receptions`** : colonnes JSONB + colonnes texte signatures
+7. **`fiches_techniques`** : à alimenter manuellement avec les fiches DTU
+8. **`parametres_finance`** : table clé-valeur
+9. **Storage** : bucket `photos` (logos), bucket `sav_photos` (photos SAV)
+10. **RLS** : configuré sur `entreprise_settings` + Storage. À étendre globalement.
