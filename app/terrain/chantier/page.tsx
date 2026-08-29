@@ -299,14 +299,22 @@ export default function ChantiersPage() {
 
       {/* Bottom Sheet / Modal pour Nouveau Chantier */}
       {modalOuvert && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
+          onClick={() => setModalOuvert(false)}
+        >
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-800 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+          >
+            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
               <div>
                 <h2 className="text-base font-bold text-slate-100">Nouveau Chantier de Bardage</h2>
                 <p className="text-xs text-slate-400">Renseignez les détails du nouveau projet</p>
               </div>
               <button
+                type="button"
                 onClick={() => setModalOuvert(false)}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
               >
@@ -314,7 +322,7 @@ export default function ChantiersPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3.5 pb-20 sm:pb-6">
+            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               <div>
                 <label className="text-xs font-semibold text-slate-300">Nom du chantier</label>
                 <input
@@ -386,26 +394,26 @@ export default function ChantiersPage() {
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => setModalOuvert(false)}
-                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
-                >
-                  Annuler
-                </button>
+            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
+              <button
+                type="button"
+                onClick={() => setModalOuvert(false)}
+                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+              >
+                Annuler
+              </button>
 
-                <button
-                  type="submit"
-                  disabled={creationEnCours}
-                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
-                >
-                  {creationEnCours ? "Création..." : "Enregistrer le Chantier"}
-                </button>
-              </div>
-            </form>
-          </div>
+              <button
+                type="submit"
+                disabled={creationEnCours}
+                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
+              >
+                {creationEnCours ? "Création..." : "Enregistrer le Chantier"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
