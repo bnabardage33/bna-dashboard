@@ -77,7 +77,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
+const TABS = ["Général", "Avancement", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -444,7 +444,6 @@ function ChantierDetailContent() {
 
       {tab === "Général" && (
         <div className="space-y-4">
-          <AvancementFacades chantierId={id} />
 
           {/* Bloc Sécurité IA */}
           <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-slate-800 to-purple-950/20 p-4 shadow-lg">
@@ -633,6 +632,8 @@ function ChantierDetailContent() {
           </div>
         </div>
       )}
+
+      {tab === "Avancement" && <AvancementFacades chantierId={id} />}
 
       {tab === "Temps Heures" && (
         <div className="space-y-6">
