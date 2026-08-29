@@ -42,15 +42,15 @@ export async function GET(
 
   const chantier = chantiers[0];
 
-  // 3. Avancement le plus récent
+  // Use created_at ordering (most recent save) instead of date to get latest entry
   const { data: avancements } = await supabaseAdmin
     .from("avancements_chantier")
     .select("pourcentage")
     .eq("chantier_id", chantier.id)
-    .order("date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(1);
 
-  const avancement = avancements && avancements.length > 0 ? avancements[0].pourcentage : 45;
+  const avancement = avancements && avancements.length > 0 ? (avancements[0].pourcentage ?? 0) : 0;
 
   // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
   let devisList: any[] = [];

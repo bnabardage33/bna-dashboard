@@ -293,25 +293,55 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           </div>
           
           <div className="w-full bg-slate-100 rounded-full h-3 mb-6 overflow-hidden">
-            <div className="bg-blue-600 h-3 rounded-full relative transition-all duration-1000" style={{ width: `${avancement}%` }}>
-              <div className="absolute top-0 right-0 bottom-0 left-0 bg-white/20" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', animation: 'shimmer 2s infinite' }}></div>
+            <div className="bg-blue-600 h-3 rounded-full transition-all duration-1000" style={{ width: `${avancement}%` }}>
+              <div className="w-full h-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', animation: 'shimmer 2s infinite' }}></div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
-            <div className="flex flex-col items-center gap-1">
-              <CheckCircle2 className="text-green-500" size={20} />
-              <span>Préparation</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 font-semibold text-blue-700">
-              <Clock className="text-blue-500" size={20} />
-              <span>Pose ossature</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 opacity-50">
-              <AlertCircle size={20} />
-              <span>Finitions</span>
-            </div>
-          </div>
+
+          {/* Frise chronologique dynamique */}
+          {(() => {
+            // 0–15% : Préparation en cours
+            // 16–85% : Préparation ✅, Pose en cours
+            // 86–100% : Préparation ✅, Pose ✅, Finitions en cours
+            const etape1Done = avancement > 15;
+            const etape2Done = avancement > 85;
+            const etape1Active = avancement >= 0 && avancement <= 15;
+            const etape2Active = avancement >= 16 && avancement <= 85;
+            const etape3Active = avancement > 85;
+
+            const StepIcon = ({ done, active }: { done: boolean; active: boolean }) => {
+              if (done) return <CheckCircle2 className="text-emerald-500" size={20} />;
+              if (active) return <Clock className="text-blue-500" size={20} />;
+              return <AlertCircle className="text-slate-300" size={20} />;
+            };
+
+            return (
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                {/* Étape 1 : Préparation */}
+                <div className={`flex flex-col items-center gap-1 ${etape1Done ? "text-emerald-600 font-semibold" : etape1Active ? "text-blue-700 font-semibold" : "text-slate-400 opacity-50"}`}>
+                  <StepIcon done={etape1Done} active={etape1Active} />
+                  <span>Préparation</span>
+                  {etape1Active && <span className="text-[10px] text-blue-400 font-normal">En cours</span>}
+                  {etape1Done && <span className="text-[10px] text-emerald-400 font-normal">Terminé</span>}
+                </div>
+
+                {/* Séparateur */}
+                <div className={`flex flex-col items-center gap-1 ${etape2Done ? "text-emerald-600 font-semibold" : etape2Active ? "text-blue-700 font-semibold" : "text-slate-400 opacity-50"}`}>
+                  <StepIcon done={etape2Done} active={etape2Active} />
+                  <span>Pose</span>
+                  {etape2Active && <span className="text-[10px] text-blue-400 font-normal">En cours</span>}
+                  {etape2Done && <span className="text-[10px] text-emerald-400 font-normal">Terminé</span>}
+                </div>
+
+                {/* Étape 3 : Finitions */}
+                <div className={`flex flex-col items-center gap-1 ${etape3Active ? "text-blue-700 font-semibold" : "text-slate-400 opacity-50"}`}>
+                  <StepIcon done={false} active={etape3Active} />
+                  <span>Finitions</span>
+                  {etape3Active && <span className="text-[10px] text-blue-400 font-normal">En cours</span>}
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         {/* Documents Card */}
