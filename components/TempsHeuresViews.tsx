@@ -7,8 +7,8 @@ import {
   calculerBilanRentabilite,
   calculerTempsConsommeMeteo
 } from "@/lib/gaelLogic";
-import { validerPointageAvecMeteo, supprimerPointageGlob } from "@/app/actions/pointage";
-import { Trash2 } from "lucide-react";
+import { validerPointageAvecMeteo, supprimerPointageGlob, reinitialiserPointagesChantier } from "@/app/actions/pointage";
+import { Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const MOCK_CATALOGUE = {
@@ -102,7 +102,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
     if (!chantierId) return;
     const { data } = await supabase
       .from('pointages_globaux')
-      .select('id, date_saisie, volume_heures_declare, meteo_relevee, coef_meteo, equipe:equipe_id(nom, prenom)')
+      .select('id, date_saisie, volume_heures_declare, meteo_relevee, coef_meteo')
       .eq('chantier_id', chantierId)
       .order('date_saisie', { ascending: false })
       .order('created_at', { ascending: false });
@@ -143,6 +143,18 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
   const handleDelete = async (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer ce pointage ?")) return;
     const result = await supprimerPointageGlob(id);
+    if (result.success) {
+      window.dispatchEvent(new Event("pointageChanged"));
+    } else {
+      alert("Erreur: " + result.error);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm("Voulez-vous vraiment remettre à zéro toutes les saisies de ce chantier ?")) return;
+    setLoading(true);
+    const result = await reinitialiserPointagesChantier(chantierId);
+    setLoading(false);
     if (result.success) {
       window.dispatchEvent(new Event("pointageChanged"));
     } else {
@@ -211,7 +223,19 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
       </div>
 
       <div className="mt-8 border-t border-slate-700 pt-6">
-        <h4 className="text-sm font-bold text-slate-200 mb-4">Historique des saisies</h4>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-bold text-slate-200">Historique des saisies</h4>
+          {historique.length > 0 && (
+            <button 
+              onClick={handleReset}
+              disabled={loading}
+              className="flex items-center gap-2 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-lg"
+            >
+              <RotateCcw size={14} />
+              Remettre à zéro
+            </button>
+          )}
+        </div>
         {historique.length === 0 ? (
           <p className="text-xs text-slate-500 italic">Aucun pointage pour ce chantier.</p>
         ) : (
@@ -226,7 +250,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
                   <div>
                     <p className="text-sm font-semibold text-slate-200">{p.date_saisie}</p>
                     <p className="text-xs text-slate-400">
-                      {equipeName} · Météo : {p.meteo_relevee} {icon} (Coef: {p.coef_meteo})
+                      Météo : {p.meteo_relevee} {icon} (Coef: {p.coef_meteo})
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -286,8 +310,8 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
 
   React.useEffect(() => {
     fetchData();
-    window.addEventListener("pointageAdded", fetchData);
-    return () => window.removeEventListener("pointageAdded", fetchData);
+    window.addEventListener("pointageChanged", fetchData);
+    return () => window.removeEventListener("pointageChanged", fetchData);
   }, [chantierId]);
 
   if (!data) return null;

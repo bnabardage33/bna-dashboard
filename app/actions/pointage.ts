@@ -109,3 +109,14 @@ export async function supprimerPointageGlob(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function reinitialiserPointagesChantier(chantierId: string) {
+  try {
+    const { error } = await supabase.from('pointages_globaux').delete().eq('chantier_id', chantierId);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error("Erreur réinitialisation pointages chantier:", error);
+    return { success: false, error: error.message };
+  }
+}
