@@ -128,16 +128,18 @@ export default function CommandeModal({
                         <div className="relative">
                           {ligne.articleSelectionne ? (
                             <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-emerald-400">
-                              <div className="flex flex-col pr-2 truncate">
-                                <span className="truncate text-sm">{ligne.articleSelectionne.designation}</span>
-                                <span className="text-[10px] text-emerald-500/70 uppercase font-semibold mt-0.5">{ligne.articleSelectionne.fournisseur || "Fournisseur inconnu"}</span>
+                              <div className="flex flex-col pr-2">
+                                <span className="text-sm font-medium">{ligne.articleSelectionne.designation}</span>
+                                <span className="mt-1 text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded w-fit border border-gray-700">
+                                  {ligne.articleSelectionne.fournisseur || (ligne.articleSelectionne as any).marque || 'Inconnu'}
+                                </span>
                               </div>
                               <button onClick={() => {
                                 const newLignes = [...lignes];
                                 newLignes[index].articleSelectionne = null;
                                 newLignes[index].totalHT = 0;
                                 setLignes(newLignes);
-                              }} className="hover:text-emerald-300"><X size={14} /></button>
+                              }} className="hover:text-emerald-300 ml-2"><X size={16} /></button>
                             </div>
                           ) : (
                             <div>
@@ -160,10 +162,11 @@ export default function CommandeModal({
                                       onClick={() => handleSelectArticle(index, a)}
                                       className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
                                     >
-                                      <span className="text-slate-200 text-xs font-semibold">{a.designation}</span>
-                                      <span className="text-slate-500 text-[10px] flex items-center justify-between w-full mt-1">
-                                        <span>Réf: {a.reference} - {a.prix_ht}€ HT</span>
-                                        <span className="bg-slate-900 px-1.5 py-0.5 rounded text-[9px] uppercase">{a.fournisseur || "Inconnu"}</span>
+                                      <span className="text-slate-200 text-xs font-semibold">
+                                        {a.designation} - [ {a.fournisseur || (a as any).marque || 'Fournisseur inconnu'} ]
+                                      </span>
+                                      <span className="text-slate-500 text-[10px] mt-1">
+                                        Réf: {a.reference} - {a.prix_ht}€ HT
                                       </span>
                                     </button>
                                   ))}
