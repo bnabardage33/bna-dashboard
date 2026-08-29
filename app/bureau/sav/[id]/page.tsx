@@ -105,6 +105,7 @@ export default function FicheSAV() {
     intervenant: "",
     moyen_acces: "",
     photos: { client: null, avant: null, apres: null },
+    signature_technicien: null as string | null,
     signature_client: null as string | null,
     chantiers: null as any
   });
@@ -202,6 +203,7 @@ export default function FicheSAV() {
   };
 
   const handleCloture = async () => {
+    if (!ticket.signature_technicien) return alert("Le visa du technicien est requis pour clôturer.");
     if (!ticket.signature_client) return alert("La signature du client est requise pour clôturer.");
     setTicket(prev => ({ ...prev, statut: "cloture" }));
     
@@ -422,10 +424,10 @@ export default function FicheSAV() {
             <Camera size={18} /> 5. Photos & Signature Client
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div className="space-y-3">
               <p className="text-xs font-semibold text-slate-400">PHOTOS D'INTERVENTION</p>
-              <div className="flex gap-3">
+              <div className="flex gap-3 max-w-md">
                 <label className="flex-1 border border-dashed border-slate-600 bg-slate-900/50 hover:bg-slate-800 rounded-xl h-24 flex flex-col items-center justify-center text-slate-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
                   {uploading.avant ? (
@@ -454,24 +456,48 @@ export default function FicheSAV() {
 
             <div className="space-y-3">
               <p className="text-xs font-semibold text-slate-400">VALIDATION (FIN D'INTERVENTION)</p>
-              <div className="bg-slate-900 rounded-xl border border-slate-700 p-2 relative min-h-[120px]">
-                {ticket.signature_client ? (
-                  <div className="relative">
-                    <img src={ticket.signature_client} alt="Signature" className="h-20 w-auto mx-auto filter invert opacity-80" />
-                    <button 
-                      onClick={() => setTicket({...ticket, signature_client: null})}
-                      className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
-                    >
-                      Effacer
-                    </button>
-                  </div>
-                ) : (
-                  <SignaturePad 
-                    label=""
-                    signerName=""
-                    onChange={(img) => setTicket({...ticket, signature_client: img})}
-                  />
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-900 rounded-xl border border-slate-700 p-2 relative min-h-[120px]">
+                  <p className="text-[10px] uppercase text-slate-500 font-bold mb-2">Visa du Technicien</p>
+                  {ticket.signature_technicien ? (
+                    <div className="relative">
+                      <img src={ticket.signature_technicien} alt="Signature Technicien" className="h-20 w-auto mx-auto filter invert opacity-80" />
+                      <button 
+                        onClick={() => setTicket({...ticket, signature_technicien: null})}
+                        className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
+                      >
+                        Effacer
+                      </button>
+                    </div>
+                  ) : (
+                    <SignaturePad 
+                      label=""
+                      signerName=""
+                      onChange={(img) => setTicket({...ticket, signature_technicien: img})}
+                    />
+                  )}
+                </div>
+                
+                <div className="bg-slate-900 rounded-xl border border-slate-700 p-2 relative min-h-[120px]">
+                  <p className="text-[10px] uppercase text-slate-500 font-bold mb-2">Signature du Client</p>
+                  {ticket.signature_client ? (
+                    <div className="relative">
+                      <img src={ticket.signature_client} alt="Signature Client" className="h-20 w-auto mx-auto filter invert opacity-80" />
+                      <button 
+                        onClick={() => setTicket({...ticket, signature_client: null})}
+                        className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
+                      >
+                        Effacer
+                      </button>
+                    </div>
+                  ) : (
+                    <SignaturePad 
+                      label=""
+                      signerName=""
+                      onChange={(img) => setTicket({...ticket, signature_client: img})}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>

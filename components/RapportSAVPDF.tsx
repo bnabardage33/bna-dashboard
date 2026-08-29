@@ -124,8 +124,12 @@ export default function RapportSAVPDF({ ticket, entreprise }: { ticket: any; ent
         <div className="mt-12 flex flex-col sm:flex-row justify-between gap-6 sm:gap-8 break-inside-avoid">
           <div className="flex-1 w-full">
             <p className="text-sm font-bold text-slate-900 mb-1">Visa du technicien ({ticket.intervenant})</p>
-            <div className="h-32 border border-slate-300 rounded-lg bg-slate-50 flex items-center justify-center">
-              <p className="text-slate-400 text-xs italic">Signé électroniquement</p>
+            <div className="h-32 border border-slate-300 rounded-lg bg-slate-50 relative overflow-hidden">
+              {ticket.signature_technicien ? (
+                <img src={ticket.signature_technicien} alt="Visa Technicien" className="w-full h-full object-contain p-2" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs italic">Signé électroniquement</div>
+              )}
             </div>
           </div>
           <div className="flex-1 w-full">
