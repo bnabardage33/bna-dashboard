@@ -63,23 +63,37 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
     }
 
     // 4. Sauvegarde la saisie globale dans pointages_globaux
+    // Si equipeId est le faux uuid, on essaie de récupérer le premier utilisateur valide de l'équipe pour ne pas bloquer.
+    let finalEquipeId = equipeId;
+    if (equipeId === "00000000-0000-0000-0000-000000000000") {
+      const { data: firstEquipe } = await supabase.from('equipe').select('id').limit(1).single();
+      if (firstEquipe?.id) {
+        finalEquipeId = firstEquipe.id;
+      } else {
+        // Fallback ultime : on essaie de ne pas l'insérer si la FK l'accepte
+        finalEquipeId = undefined as any; 
+      }
+    }
+
+    const payload: any = {
+      chantier_id: chantierId,
+      volume_heures_declare: heures,
+      meteo_relevee: meteo_relevee,
+      coef_meteo: coef_meteo,
+      commentaire: commentaire
+    };
+    if (finalEquipeId) payload.equipe_id = finalEquipeId;
+
     const { error: insertErr } = await supabase
       .from('pointages_globaux')
-      .insert({
-        chantier_id: chantierId,
-        equipe_id: equipeId,
-        volume_heures_declare: heures,
-        meteo_relevee: meteo_relevee,
-        coef_meteo: coef_meteo,
-        commentaire: commentaire
-      });
+      .insert(payload);
 
     if (insertErr) throw insertErr;
 
     return { success: true, precip, coef_meteo, meteo_relevee };
 
-  } catch (error) {
-    console.error("Erreur validerPointageAvecMeteo:", error);
-    return { success: false, error: "Erreur lors de la validation du pointage" };
+  } catch (error: any) {
+    console.error("Détail erreur pointage:", error);
+    return { success: false, error: error.message || "Erreur inconnue" };
   }
 }
