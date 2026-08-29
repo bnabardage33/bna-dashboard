@@ -11,6 +11,7 @@ type Article = {
   designation: string;
   prix_ht: number;
   unite?: string;
+  fournisseur?: string;
 };
 
 type LigneDevis = LigneCommande & {
@@ -66,13 +67,26 @@ export default function CommandeModal({
     setDropdownOpen({ ...dropdownOpen, [index]: false });
   };
 
+  const handleEnregistrer = () => {
+    const selection = lignes.filter(l => l.articleSelectionne).map(l => ({
+      besoin: l.designation,
+      articleId: l.articleSelectionne!.id,
+      quantiteFinale: l.quantite,
+      prixUnitaire: l.articleSelectionne!.prix_ht,
+      totalHT: l.totalHT,
+      fournisseur: l.articleSelectionne!.fournisseur || "Inconnu"
+    }));
+    console.log("=== COMMANDE PRÊTE À L'ENREGISTREMENT ===", selection);
+    alert("Chiffrage prêt ! Les données ont été tracées dans la console (Préparation BDD).");
+  };
+
   const totalGeneralHT = lignes.reduce((acc, l) => acc + (l.totalHT || 0), 0);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-5xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+      <div className="relative w-full max-w-6xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
           <div>
             <h2 className="text-xl font-bold text-white">Chiffrage / Commande</h2>
@@ -102,7 +116,8 @@ export default function CommandeModal({
                   const term = searchTerms[index] || "";
                   const filteredCatalog = catalogue.filter(a => 
                     a.designation?.toLowerCase().includes(term.toLowerCase()) || 
-                    a.reference?.toLowerCase().includes(term.toLowerCase())
+                    a.reference?.toLowerCase().includes(term.toLowerCase()) ||
+                    a.fournisseur?.toLowerCase().includes(term.toLowerCase())
                   ).slice(0, 15);
 
                   return (
@@ -113,7 +128,10 @@ export default function CommandeModal({
                         <div className="relative">
                           {ligne.articleSelectionne ? (
                             <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-emerald-400">
-                              <span className="truncate pr-2">{ligne.articleSelectionne.designation}</span>
+                              <div className="flex flex-col pr-2 truncate">
+                                <span className="truncate text-sm">{ligne.articleSelectionne.designation}</span>
+                                <span className="text-[10px] text-emerald-500/70 uppercase font-semibold mt-0.5">{ligne.articleSelectionne.fournisseur || "Fournisseur inconnu"}</span>
+                              </div>
                               <button onClick={() => {
                                 const newLignes = [...lignes];
                                 newLignes[index].articleSelectionne = null;
@@ -143,7 +161,10 @@ export default function CommandeModal({
                                       className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
                                     >
                                       <span className="text-slate-200 text-xs font-semibold">{a.designation}</span>
-                                      <span className="text-slate-500 text-[10px]">Réf: {a.reference} - {a.prix_ht}€ HT</span>
+                                      <span className="text-slate-500 text-[10px] flex items-center justify-between w-full mt-1">
+                                        <span>Réf: {a.reference} - {a.prix_ht}€ HT</span>
+                                        <span className="bg-slate-900 px-1.5 py-0.5 rounded text-[9px] uppercase">{a.fournisseur || "Inconnu"}</span>
+                                      </span>
                                     </button>
                                   ))}
                                   {filteredCatalog.length === 0 && (
@@ -174,8 +195,13 @@ export default function CommandeModal({
             Remplissez les correspondances catalogue pour obtenir le chiffrage.
           </p>
           <div className="flex items-center gap-4">
-            <span className="text-sm uppercase tracking-wide text-slate-500">Total Général HT</span>
-            <span className="text-2xl font-black text-emerald-400">{totalGeneralHT.toFixed(2)} €</span>
+            <div className="flex items-center gap-4 border-r border-slate-700 pr-6">
+              <span className="text-sm uppercase tracking-wide text-slate-500">Total Général HT</span>
+              <span className="text-2xl font-black text-emerald-400">{totalGeneralHT.toFixed(2)} €</span>
+            </div>
+            <button onClick={handleEnregistrer} className="rounded-lg bg-sky-600 px-6 py-2.5 font-bold text-white hover:bg-sky-500 transition-colors">
+              Enregistrer le chiffrage
+            </button>
           </div>
         </div>
       </div>
