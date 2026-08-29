@@ -102,10 +102,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
     if (!chantierId) return;
     const { data } = await supabase
       .from('pointages_globaux')
-      .select('id, date_saisie, volume_heures_declare, meteo_relevee, coef_meteo')
-      .eq('chantier_id', chantierId)
-      .order('date_saisie', { ascending: false })
-      .order('created_at', { ascending: false });
+      .select('*')
+      .eq('chantier_id', chantierId);
     if (data) setHistorique(data);
   };
 
@@ -142,23 +140,23 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
 
   const handleDelete = async (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer ce pointage ?")) return;
-    const result = await supprimerPointageGlob(id);
-    if (result.success) {
+    const { error } = await supabase.from('pointages_globaux').delete().eq('id', id);
+    if (!error) {
       window.dispatchEvent(new Event("pointageChanged"));
     } else {
-      alert("Erreur: " + result.error);
+      alert("Erreur: " + error.message);
     }
   };
 
   const handleReset = async () => {
     if (!confirm("Voulez-vous vraiment remettre à zéro toutes les saisies de ce chantier ?")) return;
     setLoading(true);
-    const result = await reinitialiserPointagesChantier(chantierId);
+    const { error } = await supabase.from('pointages_globaux').delete().eq('chantier_id', chantierId);
     setLoading(false);
-    if (result.success) {
-      window.dispatchEvent(new Event("pointageChanged"));
+    if (!error) {
+      window.location.reload();
     } else {
-      alert("Erreur: " + result.error);
+      alert("Erreur: " + error.message);
     }
   };
 
@@ -223,34 +221,30 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
       </div>
 
       <div className="mt-8 border-t border-slate-700 pt-6">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-bold text-slate-200">Historique des saisies</h4>
-          {historique.length > 0 && (
-            <button 
-              onClick={handleReset}
-              disabled={loading}
-              className="flex items-center gap-2 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-lg"
-            >
-              <RotateCcw size={14} />
-              Remettre à zéro
-            </button>
-          )}
-        </div>
+        <button 
+          onClick={handleReset}
+          disabled={loading}
+          className="mb-4 flex items-center justify-center w-full gap-2 text-sm font-bold text-white bg-red-600 hover:bg-red-500 transition-colors px-4 py-3 rounded-lg"
+        >
+          🗑️ Remettre à zéro les heures
+        </button>
+        
+        <h4 className="text-sm font-bold text-slate-200 mb-4">Historique des saisies</h4>
+        
         {historique.length === 0 ? (
           <p className="text-xs text-slate-500 italic">Aucun pointage pour ce chantier.</p>
         ) : (
           <div className="space-y-2">
             {historique.map(p => {
-              const adjusted = p.volume_heures_declare / p.coef_meteo;
+              const adjusted = p.volume_heures_declare / (p.coef_meteo || 1.0);
               const icon = METEO_ICONS[p.meteo_relevee] || '➖';
-              const equipeName = p.equipe ? `${p.equipe.prenom} ${p.equipe.nom}` : 'Équipe inconnue';
               
               return (
                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700">
                   <div>
-                    <p className="text-sm font-semibold text-slate-200">{p.date_saisie}</p>
+                    <p className="text-sm font-semibold text-slate-200">{p.date_saisie || 'Sans date'}</p>
                     <p className="text-xs text-slate-400">
-                      Météo : {p.meteo_relevee} {icon} (Coef: {p.coef_meteo})
+                      Météo : {p.meteo_relevee || 'N/A'} {icon} (Coef: {p.coef_meteo || 1.0})
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
