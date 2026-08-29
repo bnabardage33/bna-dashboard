@@ -593,7 +593,7 @@ export default function FournisseursPage() {
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="max-h-[80vh] sm:max-h-[90dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-24 sm:pb-6 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-slate-700 pb-3">
               <h2 className="text-base font-bold text-white">
@@ -712,7 +712,7 @@ export default function FournisseursPage() {
                 className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
               />
             </div>
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-24 sm:-mb-6 bg-slate-800 px-6 pt-3 pb-24 sm:pb-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
               <button
                 type="button"
                 onClick={fermerModalCommande}
