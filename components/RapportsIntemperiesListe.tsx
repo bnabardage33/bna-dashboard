@@ -109,9 +109,8 @@ export default function RapportsIntemperiesListe({
         setMessageFeedback("✓ Rapport intempéries généré avec succès !");
         await charger();
       } else {
-        setMessageFeedback(
-          `❌ ${data.error || "Impossible de générer le rapport"}`
-        );
+        const message = data.resultats?.[0]?.erreur || data.error || "Impossible de générer le rapport";
+        setMessageFeedback(`❌ ${message}`);
       }
     } catch (err: unknown) {
       const message =
