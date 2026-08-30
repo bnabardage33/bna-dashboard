@@ -411,10 +411,10 @@ export default function CataloguePage() {
 
         {/* Modal Ajout/Edition */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col max-h-[80vh]">
               {/* Header fixe */}
-              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-700">
+              <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
                 <h2 className="text-xl font-bold text-slate-100">
                   {editingOuvrage ? "Modifier le matériau" : "Nouveau matériau"}
                 </h2>
@@ -423,8 +423,9 @@ export default function CataloguePage() {
                 </button>
               </div>
 
-              {/* Formulaire scrollable */}
-              <form onSubmit={handleSave} className="overflow-y-auto px-6 py-4 space-y-6">
+              {/* Formulaire avec scroll séparé et footer statique */}
+              <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-hidden">
+                <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-6">
 
                 {/* ── En-tête : Catégorie + Famille + Désignation ─────────── */}
                 <div className="grid grid-cols-2 gap-4">
@@ -653,8 +654,10 @@ export default function CataloguePage() {
                   </div>
                 </fieldset>
 
-                {/* ── Boutons ─────────────────────────────────────────────── */}
-                <div className="flex justify-end gap-3 pb-2">
+                </div> {/* Fin du contenu scrollable */}
+
+                {/* ── Boutons (Static Footer) ─────────────────────────────── */}
+                <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
@@ -666,13 +669,13 @@ export default function CataloguePage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
+                    className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 disabled:opacity-50 transition-colors"
                   >
                     {isSubmitting ? (
-                      <>
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span className="flex items-center gap-2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                         Enregistrement...
-                      </>
+                      </span>
                     ) : (
                       <>
                         <Save className="h-4 w-4" />
@@ -689,4 +692,3 @@ export default function CataloguePage() {
     </div>
   );
 }
-
