@@ -612,38 +612,40 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         </div>
       )}
 
-      {/* Bouton WhatsApp Flottant */}
+      {/* Bouton WhatsApp Flottant - Nouveau design */}
       <a 
-        id="bna-whatsapp" 
-        href="https://wa.me/33600000000?text=Bonjour%20Ga%C3%ABl%20BNA%20Bardage%20%2C%20je%20viens%20de%20l%27Espace%20Client"
+        id="bna-direct" 
+        href={`https://wa.me/33600000000?text=${encodeURIComponent("Bonjour Gaël, j'ai une question sur mon chantier " + (chantierData?.nom || ""))}`}
         target="_blank"
         rel="noopener noreferrer"
       >
-        <img src="/logo-bna.png" alt="BNA Bardage" />
+        <img src="/logo-bna.png" alt="BNA" />
+        <span id="bna-badge">💬</span>
       </a>
 
       <style dangerouslySetInnerHTML={{__html: `
-        #bna-whatsapp {
-          position: fixed; bottom: 25px; left: 25px;
-          width: 70px; height: 70px;
+        #bna-direct {
+          position: fixed; bottom: 25px; left: 20px;
+          width: 68px; height: 68px;
+          background: white;
+          border-radius: 50%;
+          border: 3px solid #25D366;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          z-index: 9999;
+        }
+        #bna-direct img {
+          width: 50px; height: 50px; 
+          object-fit: contain;
+        }
+        #bna-badge {
+          position: absolute; bottom: -2px; right: -2px;
+          width: 22px; height: 22px;
           background: #25D366;
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          z-index: 9999;
-          animation: pulse-bna 2s infinite;
-        }
-        #bna-whatsapp img {
-          width: 58px; height: 58px;
-          border-radius: 50%;
-          background: white;
-          padding: 4px;
-          object-fit: contain;
-        }
-        @keyframes pulse-bna {
-          0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.7) }
-          70% { box-shadow: 0 0 0 18px rgba(37,211,102,0) }
-          100% { box-shadow: 0 0 0 0 rgba(37,211,102,0) }
+          font-size: 13px; color: white;
+          border: 2px solid white;
         }
       `}} />
     </div>
