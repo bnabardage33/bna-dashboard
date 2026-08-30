@@ -233,7 +233,7 @@ export default function PhotosChantierAdmin() {
           <button
             onClick={handleUpload}
             disabled={uploading || !file || !chantier_id}
-            className="w-full h-[56px] bg-[#E30613] hover:bg-[#C00510] disabled:opacity-40 text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 transition-colors"
+            className="w-full h-[56px] bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 transition-colors shadow-md"
           >
             {uploading
               ? <><Loader2 size={20} className="animate-spin" /> Envoi en cours...</>
