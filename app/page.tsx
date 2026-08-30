@@ -19,8 +19,8 @@ export default function Home() {
       <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.28),transparent_60%)] pointer-events-none z-0" />
       
       {/* HEADER en z-10 par dessus */}
-      <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5">
-        <img src="/logo-bna.png" alt="BNA Bardage" className="h-[115px] w-auto object-contain" />
+      <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5 overflow-hidden">
+        <img src="/logo-bna.png" alt="BNA Bardage" className="w-[90%] h-auto max-h-[115px] object-contain scale-[1.15]" />
       </header>
 
       {/* TITRE & MAIN CONTENT */}
