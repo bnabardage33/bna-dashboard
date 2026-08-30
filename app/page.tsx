@@ -14,7 +14,7 @@ export default function Home() {
   const formattedDate = currentDate.charAt(0).toUpperCase() + currentDate.slice(1);
 
   return (
-    <div className="min-h-screen bg-[#080c18] relative overflow-hidden">
+    <div className="relative overflow-hidden w-full">
       {/* GLOW doit être en z-0 derrière tout */}
       <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.28),transparent_60%)] pointer-events-none z-0" />
       

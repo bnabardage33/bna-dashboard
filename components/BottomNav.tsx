@@ -43,7 +43,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-6 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50">
+    <nav className="fixed bottom-10 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50">
       {NAV_ITEMS.map((item) => {
         const active = item.isActive(pathname || "");
         const Icon = item.icon;
