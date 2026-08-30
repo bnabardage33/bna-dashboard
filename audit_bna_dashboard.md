@@ -104,7 +104,7 @@ ALTER TABLE public.tickets_sav
 - Zones, ZoneCard, VisualiseurDebitPlaques, Calepinage SVG, Commander
 
 #### Onglet 5 — Météo & Intempéries
-- Météo temps réel Météo-France + Rapports Intempéries
+- Météo temps réel Visual Crossing + Rapports Intempéries
 
 #### Onglet 6 — Photos & Notes
 - Galerie photo (compression auto) + Notes texte
@@ -227,7 +227,7 @@ ALTER TABLE public.tickets_sav
 
 | Route | Rôle |
 |---|---|
-| `/api/meteo` | Météo horaires Météo-France |
+| `/api/meteo` | Météo Visual Crossing (lang=fr) |
 | `/api/meteo-vigilance` | Alertes DPVigilance |
 | `/api/transcrire-note` | Audio → Texte (Groq Whisper) |
 | `/api/reformuler-note` | Reformulation IA (Groq Compound Mini) |
@@ -241,21 +241,34 @@ ALTER TABLE public.tickets_sav
 
 ---
 
+## 🎨 CHARTE GRAPHIQUE "DARK PREMIUM BNA" ⭐ NOUVEAU
+
+- **Fond d'application** : `bg-[#0B0F19]`
+- **Cartes et Modales** : `bg-[#1A1D24]` avec bordures `border-white/10`
+- **Header Global** : Défile avec la page (position relative, z-index 9999) pour libérer l'espace visuel sur tous les onglets.
+- **Onglets (Tabs) - "Pilule Rouge"** :
+  - **Actif** : `bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md`
+  - **Inactif** : `bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full border border-white/5`
+- **Boutons principaux** : `bg-red-600 text-white hover:bg-red-700`
+- *Règle stricte* : Éradication totale du bleu (`sky-500`, `blue-500`) remplacé par le rouge BNA et des gris neutres.
+
+---
+
 ## 🎨 STANDARD MODALES MOBILES
 
 Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Facture, Nouveau Chantier, Nouvelle Fiche Technique) :
 
 ```jsx
-// Overlay — pb-32 pour dégager la barre de navigation
-<div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80">
-  // Conteneur flex colonne
-  <div className="bg-slate-900 w-full max-w-2xl max-h-[80vh] flex flex-col rounded-xl">
+// Overlay — pt-48 et z-[210] pour s'assurer que la modale passe au-dessus du header
+<div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+  // Conteneur flex colonne - Charte Dark Premium
+  <div className="bg-[#1A1D24] border border-white/10 w-full max-w-2xl max-h-[80vh] flex flex-col rounded-xl shadow-2xl">
     // Header statique
-    <div className="p-4 border-b border-gray-700 shrink-0">...</div>
+    <div className="p-4 border-b border-white/10 shrink-0">...</div>
     // Formulaire scrollable
     <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">...</div>
     // Footer statique
-    <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">...</div>
+    <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">...</div>
   </div>
 </div>
 ```
