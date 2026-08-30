@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Building2, HardHat, CircleDollarSign, Users } from "lucide-react";
+import Drawer from "@/components/Drawer";
 
 export default function Home() {
   const currentDate = new Intl.DateTimeFormat('fr-FR', {
@@ -19,8 +20,11 @@ export default function Home() {
       <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.28),transparent_60%)] pointer-events-none z-0" />
       
       {/* HEADER en z-10 par dessus */}
-      <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5 overflow-hidden">
-        <img src="/logo-bna.png" alt="BNA Bardage" className="w-[90%] h-auto max-h-[115px] object-contain scale-[2.2]" />
+      <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-between px-5 border border-white/5 overflow-hidden">
+        <Drawer />
+        <img src="/logo-bna.png" alt="BNA Bardage" className="absolute left-1/2 -translate-x-1/2 h-auto max-h-[115px] w-[90%] object-contain scale-[2.2] pointer-events-none" />
+        {/* Spacer pour équilibrer le bouton de gauche */}
+        <div className="w-10" />
       </header>
 
       {/* TITRE & MAIN CONTENT */}
