@@ -496,25 +496,36 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-[9990]">
+      <div className="fixed bottom-[25px] right-[20px] flex flex-col items-end gap-3 z-[9990]">
         {!isChatOpen && (
           <div className="bg-white p-3 rounded-2xl rounded-br-sm shadow-lg border border-slate-100 max-w-[200px] animate-bounce pointer-events-none">
             <p className="text-xs text-slate-600 font-medium">Une question sur vos travaux ? L'assistant BNA est là ! 👋</p>
           </div>
         )}
-        <button 
-          onClick={() => {
-            if (isChatOpen) {
-              closeChat();
-            } else {
-              setIsChatOpen(true);
-              hasSummarized.current = false;
-            }
-          }}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-105 cursor-pointer ${isChatOpen ? 'bg-slate-200 text-slate-600' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-        >
-          {isChatOpen ? <X size={24} /> : <MessageSquare size={24} />}
-        </button>
+        <div className="flex flex-col items-center gap-1">
+          <button 
+            onClick={() => {
+              if (isChatOpen) {
+                closeChat();
+              } else {
+                setIsChatOpen(true);
+                hasSummarized.current = false;
+              }
+            }}
+            style={{ 
+              boxShadow: isChatOpen ? undefined : '0 4px 12px rgba(0,0,0,0.2)', 
+              borderColor: isChatOpen ? 'transparent' : '#2E7D32',
+              backgroundColor: isChatOpen ? '#e2e8f0' : '#FFFFFF',
+              color: isChatOpen ? '#475569' : '#2E7D32'
+            }}
+            className={`w-[68px] h-[68px] rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border-[3px]`}
+          >
+            {isChatOpen ? <X size={28} /> : <MessageSquare size={28} />}
+          </button>
+          {!isChatOpen && (
+            <span className="text-[12px] font-bold text-slate-700 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm shadow-sm mt-0.5 border border-slate-200/50 text-[#2E7D32]">Assistant IA</span>
+          )}
+        </div>
       </div>
 
       {/* Signature / Document Modal */}
