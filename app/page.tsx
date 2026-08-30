@@ -18,12 +18,12 @@ export default function Home() {
       <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.3),transparent_60%)] pointer-events-none" />
       
       {/* HEADER LOGO */}
-      <header className="relative bg-black rounded-[22px] mx-4 mt-4 h-[140px] flex items-center justify-center border border-white/5">
-        <img src="/logo-bna.png" alt="BNA Bardage" className="h-[105px] w-auto object-contain" style={{ maxWidth: '90%' }} />
+      <header className="bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5 overflow-hidden relative">
+        <img src="/logo-bna.png" alt="BNA Bardage" className="h-[115px] w-auto max-w-[85%] object-contain" />
       </header>
 
       {/* TITRE & MAIN CONTENT */}
-      <div className="relative px-4 pt-6">
+      <main className="relative px-4 pt-6 pb-[20px]">
         <h1 className="text-white text-[30px] font-black">Tableau de bord</h1>
         <p className="text-white/60 text-sm">Vue d'ensemble • {formattedDate}</p>
         
@@ -99,7 +99,7 @@ export default function Home() {
             </div>
           </Link>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
