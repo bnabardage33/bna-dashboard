@@ -495,37 +495,34 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         </form>
       </div>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-[25px] right-[20px] flex flex-col items-end gap-3 z-[9990]">
-        {!isChatOpen && (
-          <div className="bg-white p-3 rounded-2xl rounded-br-sm shadow-lg border border-slate-100 max-w-[200px] animate-bounce pointer-events-none">
-            <p className="text-xs text-slate-600 font-medium">Une question sur vos travaux ? L'assistant BNA est là ! 👋</p>
-          </div>
-        )}
-        <div className="flex flex-col items-center gap-1">
-          <button 
-            onClick={() => {
-              if (isChatOpen) {
-                closeChat();
-              } else {
-                setIsChatOpen(true);
-                hasSummarized.current = false;
-              }
-            }}
-            style={{ 
-              boxShadow: isChatOpen ? undefined : '0 4px 12px rgba(0,0,0,0.2)', 
-              borderColor: isChatOpen ? 'transparent' : '#2E7D32',
-              backgroundColor: isChatOpen ? '#e2e8f0' : '#FFFFFF',
-              color: isChatOpen ? '#475569' : '#2E7D32'
-            }}
-            className={`w-[68px] h-[68px] rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border-[3px]`}
-          >
-            {isChatOpen ? <X size={28} /> : <MessageSquare size={28} />}
-          </button>
-          {!isChatOpen && (
-            <span className="text-[12px] font-bold text-slate-700 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm shadow-sm mt-0.5 border border-slate-200/50 text-[#2E7D32]">Assistant IA</span>
-          )}
-        </div>
+      {/* Footer fixe (Jumeaux WhatsApp & IA) */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur p-4 flex gap-3 border-t z-[9990]">
+        {/* BOUTON WHATSAPP ROUGE */}
+        <a 
+          href={`https://wa.me/33600000000?text=${encodeURIComponent("Bonjour Gaël, j'ai une question sur mon chantier " + (chantierData?.nom || ""))}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 h-[56px] bg-[#E30613] hover:bg-[#C00510] text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
+        >
+          <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.512 5.836L0 24l6.335-1.662A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+          BNA Bardage
+        </a>
+
+        {/* BOUTON IA NOIR */}
+        <button 
+          onClick={() => {
+            if (isChatOpen) {
+              closeChat();
+            } else {
+              setIsChatOpen(true);
+              hasSummarized.current = false;
+            }
+          }}
+          className="flex-1 h-[56px] bg-[#111111] hover:bg-black text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
+        >
+          <span className="text-[#E30613] text-xl">✦</span>
+          {isChatOpen ? "Fermer IA" : "Assistant IA"}
+        </button>
       </div>
 
       {/* Signature / Document Modal */}
@@ -623,42 +620,6 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         </div>
       )}
 
-      {/* Bouton WhatsApp Flottant - Nouveau design */}
-      <a 
-        id="bna-direct" 
-        href={`https://wa.me/33600000000?text=${encodeURIComponent("Bonjour Gaël, j'ai une question sur mon chantier " + (chantierData?.nom || ""))}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <img src="/logo-bna.png" alt="BNA" />
-        <span id="bna-badge">💬</span>
-      </a>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        #bna-direct {
-          position: fixed; bottom: 25px; left: 20px;
-          width: 68px; height: 68px;
-          background: white;
-          border-radius: 50%;
-          border: 3px solid #25D366;
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-          z-index: 9999;
-        }
-        #bna-direct img {
-          width: 50px; height: 50px; 
-          object-fit: contain;
-        }
-        #bna-badge {
-          position: absolute; bottom: -2px; right: -2px;
-          width: 22px; height: 22px;
-          background: #25D366;
-          border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 13px; color: white;
-          border: 2px solid white;
-        }
-      `}} />
     </div>
   );
 }
