@@ -30,7 +30,7 @@ export default function RootLayout({
           <img
             src="/logo-bna.png"
             alt="BNA Bardage"
-            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '56px', width: 'auto', maxWidth: '200px', objectFit: 'contain', pointerEvents: 'none' }}
+            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '168px', width: 'auto', maxWidth: '400px', objectFit: 'contain', pointerEvents: 'none' }}
           />
           <div style={{ width: '40px' }} />
         </header>
