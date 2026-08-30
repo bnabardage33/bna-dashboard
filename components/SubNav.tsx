@@ -11,8 +11,8 @@ export default function SubNav({ items }: { items: Item[] }) {
   const pathname = usePathname();
 
   return (
-    <div className="border-b border-slate-700/80 bg-slate-900/90 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-5xl gap-1.5 overflow-x-auto px-4 py-2.5 scrollbar-none">
+    <div className="mb-4">
+      <div className="flex w-full overflow-x-auto gap-3 pb-2 scrollbar-hide">
         {items.map((item) => {
           const active = pathname === item.href || (item.href !== "/bureau" && item.href !== "/terrain" && pathname.startsWith(item.href));
           const Icon = item.icon;
@@ -20,13 +20,13 @@ export default function SubNav({ items }: { items: Item[] }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`${
                 active
-                  ? "border border-sky-500/50 bg-sky-500/15 text-sky-300 shadow-sm shadow-sky-500/10"
-                  : "border border-slate-700/60 bg-slate-800/80 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white"
+                  ? "px-4 py-2 rounded-full border border-red-500 bg-red-600/15 text-red-500 font-medium text-sm whitespace-nowrap shadow-[0_0_10px_rgba(220,38,38,0.2)]"
+                  : "px-4 py-2 rounded-full border border-white/5 bg-[#1A1D24]/50 text-gray-400 hover:text-gray-200 text-sm whitespace-nowrap transition-all"
               }`}
             >
-              {Icon && <Icon className="inline-block h-4 w-4 mr-1 align-middle" />}
+              {Icon && <Icon className="inline-block h-4 w-4 mr-1.5 align-middle" />}
               {item.label}
             </Link>
           );
