@@ -24,7 +24,7 @@ export default function RootLayout({
     <html lang="fr" className={`${inter.variable} h-full`}>
       <body className="bg-[#080c18] min-h-screen text-slate-100 antialiased selection:bg-[#ff5a5a]/30 selection:text-red-200">
         <TopNav />
-        <main className="pb-[110px] relative z-10">{children}</main>
+        <main className="pb-[160px] relative z-10">{children}</main>
         <Suspense fallback={null}>
           <BottomNav />
         </Suspense>
