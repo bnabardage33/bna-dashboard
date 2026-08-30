@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
     location
-  )}/${fmtDate(aujourdHui)}/${fmtDate(dans4Jours)}?unitGroup=metric&key=${key}&contentType=json&include=days,hours,current&elements=datetime,tempmax,tempmin,temp,windspeed,windgust,precip,icon,conditions`;
+  )}/${fmtDate(aujourdHui)}/${fmtDate(dans4Jours)}?unitGroup=metric&key=${key}&contentType=json&include=days,hours,current&elements=datetime,tempmax,tempmin,temp,windspeed,windgust,precip,icon,conditions&lang=fr`;
 
   const vcRes = await fetch(url, { next: { revalidate: 1800 } });
   if (!vcRes.ok) {
