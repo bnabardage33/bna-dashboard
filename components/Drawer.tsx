@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, Home, BookOpen, HardHat, Wrench, CircleDollarSign } from "lucide-react";
+import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, Camera } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Accueil", icon: Home },
-  { href: "/bureau-etudes", label: "Bureau d'études", icon: BookOpen },
-  { href: "/chantiers", label: "Chantiers", icon: HardHat },
-  { href: "/boite-a-outils", label: "Boîte à outils", icon: Wrench },
-  { href: "/finance", label: "Finance", icon: CircleDollarSign },
+  { href: "/bureau", label: "Bureau d'études", icon: FolderOpen },
+  { href: "/terrain/chantier", label: "Chantiers", icon: HardHat },
+  { href: "/terrain/outils", label: "Boîte à outils", icon: Wrench },
+  { href: "/finance", label: "Finance & Pilotage", icon: CircleDollarSign },
+  { href: "/bureau/portails-clients", label: "Espace Client", icon: Users },
+  { href: "/bureau/photos-chantier", label: "Photos Chantier", icon: Camera },
+  { href: "/parametres", label: "Paramètres", icon: Settings },
 ];
 
 export default function Drawer() {
@@ -19,6 +22,11 @@ export default function Drawer() {
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname?.startsWith(href);
+
+  // Masquer le drawer sur l'espace client
+  if (pathname?.startsWith("/espace-client") || pathname?.startsWith("/demo-client")) {
+    return null;
+  }
 
   return (
     <>
@@ -46,7 +54,7 @@ export default function Drawer() {
         }`}
       >
         {/* DRAWER HEADER */}
-        <div className="flex items-center justify-between px-5 pt-12 pb-6 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-5 pt-12 pb-5 border-b border-white/[0.06]">
           <div>
             <p className="text-white font-black text-[15px] tracking-tight">BNA Bardage</p>
             <p className="text-white/40 text-[11px] mt-0.5">Dashboard Pro</p>
@@ -76,7 +84,7 @@ export default function Drawer() {
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                     active ? "bg-[#E30613]/20" : "bg-white/[0.05]"
                   }`}
                 >
@@ -86,9 +94,9 @@ export default function Drawer() {
                     strokeWidth={active ? 2.5 : 1.8}
                   />
                 </div>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
                 {active && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#ff5a5a]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] shrink-0" />
                 )}
               </Link>
             );

@@ -35,7 +35,7 @@ export default function Home() {
         {/* LES 4 CARTES */}
         <div className="grid grid-cols-2 gap-4 mt-5">
           {/* CARTE 1 : Bureau d'études */}
-          <Link href="/bureau-etudes" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col items-center text-center min-h-[220px]">
+          <Link href="/bureau" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col items-center text-center min-h-[220px]">
             <div className="relative mb-3 shrink-0">
               <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
               <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
@@ -53,7 +53,7 @@ export default function Home() {
           </Link>
 
           {/* CARTE 2 : Terrain & Chantier */}
-          <Link href="/chantiers" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col items-center text-center min-h-[220px]">
+          <Link href="/terrain/chantier" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col items-center text-center min-h-[220px]">
             <div className="relative mb-3 shrink-0">
               <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
               <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
@@ -99,7 +99,7 @@ export default function Home() {
           </Link>
 
           {/* CARTE 4 : Espace Client */}
-          <Link href="/clients" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col items-center text-center min-h-[220px]">
+          <Link href="/bureau/portails-clients" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col items-center text-center min-h-[220px]">
             <div className="relative mb-3 shrink-0">
               <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
               <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
