@@ -253,7 +253,7 @@ export default function ClientsPage() {
       {/* Modal / Bottom Sheet Nouveau Client */}
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
@@ -509,7 +509,7 @@ export default function ClientsPage() {
       {/* Modal Fiche Client 360° */}
       {clientSelectionne && (
         <div
-          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/70 p-4"
           onClick={() => setClientSelectionne(null)}
         >
           <div

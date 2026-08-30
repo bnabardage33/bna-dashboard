@@ -300,7 +300,7 @@ export default function ChantiersPage() {
       {/* Bottom Sheet / Modal pour Nouveau Chantier */}
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form

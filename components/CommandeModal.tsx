@@ -160,7 +160,7 @@ export default function CommandeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[210] pt-36 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="relative w-full max-w-6xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
           <div>

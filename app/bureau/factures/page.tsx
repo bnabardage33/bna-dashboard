@@ -422,7 +422,7 @@ export default function FacturesPage() {
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
@@ -651,7 +651,7 @@ export default function FacturesPage() {
 
       {apercu && entreprise && (
         <div
-          className="fixed inset-0 z-[210] pt-36 overflow-y-auto bg-black/70 p-4"
+          className="fixed inset-0 z-[210] pt-48 overflow-y-auto bg-black/70 p-4"
           onClick={() => { setApercu(null); setModeSignature(false); setSignatureData(null); }}
         >
           <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>

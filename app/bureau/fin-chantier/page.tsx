@@ -808,7 +808,7 @@ export default function FinChantierPage() {
       {/* MODAL : CRÉATION & ÉDITION D'UN PV DE RÉCEPTION ENRICHI */}
       {/* ============================================================ */}
       {modalFormOuvert && (
-        <div className="fixed inset-0 z-[210] pt-36 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[210] pt-48 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-4xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-5 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
@@ -1374,7 +1374,7 @@ export default function FinChantierPage() {
       {/* MODAL : GESTION DE LA LEVÉE DES RÉSERVES */}
       {/* ============================================================ */}
       {modalReservesOuvert && pvSelectionne && (
-        <div className="fixed inset-0 z-[210] pt-36 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[210] pt-48 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 pb-20 sm:pb-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
@@ -1461,7 +1461,7 @@ export default function FinChantierPage() {
       {/* MODAL : APERÇU ET IMPRESSION DU PV ENRICHI EN PDF */}
       {/* ============================================================ */}
       {modalPdfOuvert && pvSelectionne && (
-        <div className="fixed inset-0 z-[210] pt-36 flex items-center justify-center bg-black/80 p-0 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/80 p-0 sm:p-4 overflow-y-auto">
           <div className="relative w-full max-w-4xl rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-4 my-auto max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-white/10 pb-3 print:hidden">
               <div className="flex items-center gap-3">

@@ -479,7 +479,7 @@ export default function CataloguePage() {
 
         {/* Modal Ajout/Edition */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm">
             <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-transparent shadow-2xl flex flex-col max-h-[80vh]">
               {/* Header fixe */}
               <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
