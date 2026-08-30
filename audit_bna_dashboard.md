@@ -35,7 +35,7 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `rapports_intemperies` | `id, chantier_id, date_debut, date_fin, jours_arret...` | Bureau Intempéries |
 | `notes_patron` | `id, titre, contenu, epingle, created_at, updated_at` | Terrain Notes |
 | `fiches_techniques` | `id, titre, categorie, reference, resume, contenu, fichier_url` | Terrain Fiches DTU |
-| `catalogue_ouvrages` | `id, designation, description, famille_label, unite, pu_ht` | Bureau Devis & Factures |
+| `catalogue_ouvrages` | `id, designation, description, famille_label, unite, pu_ht, dimensions_disponibles` | Bureau Devis & Factures |
 | `zones_chantier` | `id, chantier_id, type, nom, largeur, hauteur_mur, hauteur_faite, materiau, ouvertures (JSONB), famille_pose...` | Terrain Métrés |
 | `photos_notes_chantier` | `id, chantier_id, url, legende, created_at` | Terrain Photos & Notes |
 | `parametres_finance` | `id, cle, valeur` | Finance (taux horaire, salaires...) |
