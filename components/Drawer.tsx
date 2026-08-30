@@ -58,7 +58,7 @@ export default function Drawer() {
 
       {/* DRAWER */}
       <aside
-        className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] bg-[#0B0F19] border-r border-white/[0.08] z-[110] flex flex-col transition-transform duration-300 ${
+        className={`fixed top-0 left-0 bg-[#0B0F19] z-[110] h-full shadow-2xl w-[76vw] max-w-[300px] border-r border-white/[0.08] flex flex-col transition-transform duration-300 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
