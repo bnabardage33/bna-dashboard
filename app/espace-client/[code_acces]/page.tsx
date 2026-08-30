@@ -51,8 +51,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setFacturesData(data.factures || []);
 
         const clientName = data.client?.nom || "Client";
+        const chantierNom = data.chantier?.nom || "d'Arcachon";
         setChatMessages([
-          { role: 'assistant', content: `Bonjour ${clientName} ! Votre chantier avance bien. Avez-vous des questions sur les travaux en cours ?` }
+          { role: 'assistant', content: `Bonjour, je suis l'assistant BNA, comment puis-je vous aider sur votre chantier ${chantierNom} ?` }
         ]);
       } catch (e) {
         console.error("Failed to fetch real data", e);
@@ -422,19 +423,26 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         </section>
       </main>
 
-      {/* Chatbot Interface */}
-      <div className={`fixed bottom-24 right-6 w-[320px] max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 z-[9998] origin-bottom-right ${isChatOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
-        <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+      {/* Chatbot Interface - Bottom Sheet */}
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] transition-opacity duration-300 ${isChatOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+        onClick={closeChat}
+      />
+
+      {/* Drawer */}
+      <div className={`fixed bottom-0 left-0 right-0 h-[85vh] max-h-[800px] bg-white rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 z-[9999] ${isChatOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="bg-[#111111] text-white p-5 flex justify-between items-center rounded-t-[32px]">
           <div className="flex items-center gap-2">
-            <HardHat size={20} className="text-blue-400" />
-            <span className="font-semibold text-sm">Assistant BNA</span>
+            <span className="text-[#E30613] text-xl">✦</span>
+            <span className="font-bold text-lg">Assistant IA BNA</span>
           </div>
-          <button onClick={closeChat} className="text-slate-400 hover:text-white transition cursor-pointer">
+          <button onClick={closeChat} className="text-white/70 hover:text-white transition cursor-pointer w-8 h-8 flex items-center justify-center bg-white/10 rounded-full">
             <X size={20} />
           </button>
         </div>
         
-        <div className="flex-1 p-4 h-80 overflow-y-auto bg-slate-50 flex flex-col gap-3 custom-scrollbar" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f8fafc' }}>
+        <div className="flex-1 p-5 overflow-y-auto bg-slate-50 flex flex-col gap-4 custom-scrollbar" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f8fafc' }}>
           <style dangerouslySetInnerHTML={{__html: `
             .custom-scrollbar::-webkit-scrollbar { width: 6px; }
             .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
@@ -442,37 +450,37 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           `}} />
           {chatMessages.map((msg, idx) => (
             <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`px-4 py-2 rounded-2xl max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'}`}>
+              <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-[15px] ${msg.role === 'user' ? 'bg-[#111111] text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-sm'}`}>
                 {msg.content}
               </div>
             </div>
           ))}
           {isLoading && (
             <div className="flex flex-col items-start">
-              <div className="px-4 py-3 rounded-2xl bg-white border border-slate-200 text-slate-500 rounded-bl-sm flex gap-1">
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+              <div className="px-4 py-3 rounded-2xl bg-white border border-slate-200 text-slate-500 rounded-bl-sm flex gap-1 shadow-sm">
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-100 flex gap-2">
+        <form onSubmit={handleSendMessage} className="p-4 pb-6 bg-white border-t border-slate-100 flex gap-3">
           <input 
             type="text" 
             placeholder="Posez votre question..." 
-            className="flex-1 bg-slate-100 border-transparent focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl px-3 py-2 text-sm outline-none transition"
+            className="flex-1 bg-[#F2F2F2] border border-transparent focus:bg-white focus:border-[#111111] focus:ring-1 focus:ring-[#111111] rounded-full px-5 py-3 text-[15px] outline-none transition"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
           />
           <button 
             type="submit" 
             disabled={!inputValue.trim() || isLoading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2 rounded-xl flex items-center justify-center transition cursor-pointer"
+            className="bg-[#E30613] hover:bg-[#C00510] disabled:opacity-50 text-white w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer shadow-md shrink-0"
           >
-            <Send size={18} />
+            <Send size={20} />
           </button>
         </form>
       </div>
@@ -480,15 +488,13 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       {/* Footer fixe (Jumeaux WhatsApp & IA) */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur p-4 flex gap-3 border-t z-[9990]">
         {/* BOUTON WHATSAPP ROUGE */}
-        <a 
-          href={`https://wa.me/33600000000?text=${encodeURIComponent("Bonjour Gaël, j'ai une question sur mon chantier " + (chantierData?.nom || ""))}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button 
+          onClick={() => window.open(`https://wa.me/33600000000?text=${encodeURIComponent('Bonjour BNA Bardage Chantier ' + (chantierData?.id?.substring(0,6).toUpperCase() || 'F59932'))}`, '_blank')}
           className="flex-1 h-[56px] bg-[#E30613] hover:bg-[#C00510] text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
         >
           <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.512 5.836L0 24l6.335-1.662A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
           BNA Bardage
-        </a>
+        </button>
 
         {/* BOUTON IA NOIR */}
         <button 
@@ -503,7 +509,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           className="flex-1 h-[56px] bg-[#111111] hover:bg-black text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
         >
           <span className="text-[#E30613] text-xl">✦</span>
-          {isChatOpen ? "Fermer IA" : "Assistant IA"}
+          Assistant IA
         </button>
       </div>
 
