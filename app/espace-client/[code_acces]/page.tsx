@@ -271,7 +271,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 pb-[80px] font-sans relative">
+    <div className="min-h-screen bg-white text-slate-900 pb-[130px] font-sans relative">
+      <style dangerouslySetInnerHTML={{__html: `
+        html, body { background: white !important; }
+        div[class*="bg-slate-900"], div[class*="bg-[#0"] { display: none !important; }
+      `}} />
       {/* Header */}
       <header className="bg-black h-[88px] px-5 flex items-center justify-between rounded-b-[24px] w-full relative z-0">
         <img
@@ -546,10 +550,10 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       </div>
 
       {/* Footer fixe (Jumeaux WhatsApp & IA) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white px-4 pt-3 pb-6 flex gap-3 z-[9990]">
+      <div className="fixed bottom-0 left-0 right-0 bg-white h-[110px] px-4 flex items-center gap-3 z-50">
         <button 
           onClick={() => window.open(`https://wa.me/33600000000?text=${encodeURIComponent('Bonjour BNA Bardage Chantier ' + (chantierData?.id?.substring(0,6).toUpperCase() || 'F59932'))}`, '_blank')}
-          className="flex-1 bg-[#E30613] text-white rounded-full h-[52px] font-bold"
+          className="flex-1 bg-[#E30613] text-white rounded-full h-[60px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg"
         >
           💬 BNA Bardage
         </button>
@@ -558,7 +562,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             if (isChatOpen) closeChat();
             else { setIsChatOpen(true); hasSummarized.current = false; }
           }}
-          className="flex-1 bg-black text-white rounded-full h-[52px] font-bold"
+          className="flex-1 bg-black text-white rounded-full h-[60px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg"
         >
           ✦ Assistant IA
         </button>
@@ -566,11 +570,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
       {/* Signature / Document Modal */}
       {isDevisOpen && (
-        <div className="fixed inset-0 z-[9999] bg-slate-900/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] bg-[#111111]/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
           <div className="w-full max-w-4xl bg-white rounded-3xl overflow-y-auto shadow-2xl flex flex-col max-h-[90vh]">
 
             {/* En-tête */}
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+            <div className="p-4 bg-[#111111] text-white flex justify-between items-center">
               <h2 className="font-bold">{docEstSigne ? "Document Signé" : "Signature du document"}</h2>
               <button onClick={() => setIsDevisOpen(false)} className="text-slate-400 hover:text-white transition">
                 <X size={24} />
@@ -595,7 +599,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                     <CheckCircle2 size={22} className="text-emerald-500 mt-0.5 shrink-0" />
                     <p className="text-sm font-medium">Ce document a été validé. L'équipe BNA s'occupe de la suite !</p>
                   </div>
-                  <button className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">
+                  <button className="flex items-center justify-center gap-2 w-full py-3 bg-[#111111] text-white rounded-xl font-bold hover:bg-slate-800 transition">
                     <Download size={18} />
                     Télécharger le document signé (PDF)
                   </button>
