@@ -184,7 +184,7 @@ export default function FicheTechniquePage() {
 
       {fiche && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-36 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={() => setFiche(null)}
         >
           <div
@@ -251,7 +251,7 @@ export default function FicheTechniquePage() {
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form

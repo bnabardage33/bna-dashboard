@@ -1393,7 +1393,7 @@ export default function ZoneCard({
       {/* MODAL FICHE DÉBIT & OPTIMISEUR DE COUPE */}
       {modalDebitOuvert && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-36 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
           onClick={() => setModalDebitOuvert(false)}
         >
           <div className="relative w-full max-w-4xl space-y-3 rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-900 p-4 sm:p-6 pb-20 sm:pb-6 shadow-2xl max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in" onClick={(e) => e.stopPropagation()}>

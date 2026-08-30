@@ -480,7 +480,7 @@ export default function FournisseursPage() {
 
       {modalFournisseur && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalFournisseur(false)}
         >
           <form
@@ -591,7 +591,7 @@ export default function FournisseursPage() {
 
       {modalCommande && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-24 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] pt-36 flex items-center justify-center p-4 pb-24 bg-black/80 backdrop-blur-sm"
           onClick={fermerModalCommande}
         >
           <form
@@ -742,7 +742,7 @@ export default function FournisseursPage() {
       {/* MODAL APERÇU ET IMPRESSION BON DE COMMANDE PDF */}
       {apercuCommande && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4"
+          className="fixed inset-0 z-[210] pt-36 overflow-y-auto bg-black/70 p-4"
           onClick={() => setApercuCommande(null)}
         >
           <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>

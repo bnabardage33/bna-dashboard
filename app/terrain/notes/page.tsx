@@ -259,7 +259,7 @@ export default function NotesPage() {
 
       {/* Bottom Sheet / Modal Nouvelle Note */}
       {modalOuvert && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[210] pt-36 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
