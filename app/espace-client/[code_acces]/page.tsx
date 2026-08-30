@@ -27,6 +27,10 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [entreprise, setEntreprise] = useState<any>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
 
+  // Photos
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [lightboxPhoto, setLightboxPhoto] = useState<any>(null);
+
   useEffect(() => {
     // Fetch real data on mount
     const fetchRealData = async () => {
@@ -49,6 +53,13 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setAvancement(data.avancement);
         setDevisData(data.devis || []);
         setFacturesData(data.factures || []);
+
+        // Charger les photos du chantier
+        if (data.chantier?.id) {
+          const photosRes = await fetch(`/api/photos-chantier?chantier_id=${data.chantier.id}`);
+          const photosData = await photosRes.json();
+          setPhotos(photosData.photos || []);
+        }
 
         const clientName = data.client?.nom || "Client";
         const chantierNom = data.chantier?.nom || "d'Arcachon";
@@ -308,6 +319,58 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             </div>
           </div>
         </section>
+
+        {/* PHOTOS RÉCENTES - Carrousel */}
+        {photos.length > 0 && (
+          <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-[#111111]">📸 Photos récentes</h3>
+              <span className="text-xs text-gray-500 font-medium">{photos.length} photo{photos.length > 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <style dangerouslySetInnerHTML={{__html: `.photo-scroll::-webkit-scrollbar{display:none}`}} />
+              {photos.map((photo: any) => (
+                <div
+                  key={photo.id}
+                  className="shrink-0 w-[140px] cursor-pointer"
+                  onClick={() => setLightboxPhoto(photo)}
+                >
+                  <div className="w-[140px] h-[140px] rounded-xl overflow-hidden border border-[#111111] shadow-sm">
+                    <img src={photo.url_image} alt={photo.titre} className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-[10px] font-bold text-[#111111] mt-1.5 truncate text-center">{photo.titre}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* LIGHTBOX */}
+        {lightboxPhoto && (
+          <div
+            className="fixed inset-0 z-[10000] bg-black/95 flex flex-col items-center justify-center p-4"
+            onClick={() => setLightboxPhoto(null)}
+          >
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              className="absolute top-5 right-5 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition"
+            >
+              <X size={22} />
+            </button>
+            <img
+              src={lightboxPhoto.url_image}
+              alt={lightboxPhoto.titre}
+              className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            />
+            <div className="mt-4 text-center">
+              <p className="text-white font-bold text-base">{lightboxPhoto.titre}</p>
+              <p className="text-white/50 text-xs mt-1">
+                {new Date(lightboxPhoto.date_ajout).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* DOCUMENTS CARD (Détails du chantier) */}
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
