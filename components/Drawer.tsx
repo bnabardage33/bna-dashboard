@@ -51,14 +51,14 @@ export default function Drawer() {
       {/* OVERLAY */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
           onClick={() => setOpen(false)}
         />
       )}
 
       {/* DRAWER */}
       <aside
-        className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] bg-[#0B0F19] border-r border-white/[0.08] z-50 flex flex-col transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] bg-[#0B0F19] border-r border-white/[0.08] z-[110] flex flex-col transition-transform duration-300 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

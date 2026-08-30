@@ -49,7 +49,7 @@ export default function Home() {
     <div className="relative overflow-hidden w-full">
       <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.28),transparent_60%)] pointer-events-none z-0" />
 
-      <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-between px-5 border border-white/5 overflow-hidden">
+      <header className="relative z-50 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-between px-5 border border-white/5 overflow-hidden">
         <Drawer />
         <img src="/logo-bna.png" alt="BNA Bardage" className="absolute left-1/2 -translate-x-1/2 h-auto max-h-[115px] w-[90%] object-contain scale-[2.2] pointer-events-none" />
         <div className="w-10" />
