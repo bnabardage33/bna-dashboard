@@ -7,7 +7,7 @@ import { Home, FolderOpen, MessageSquare, User } from "lucide-react";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  if (pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
+  if (pathname === '/' || pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
     return null;
   }
 
@@ -43,26 +43,33 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-10 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50">
-      {NAV_ITEMS.map((item) => {
-        const active = item.isActive(pathname || "");
-        const Icon = item.icon;
+    <>
+      <style>{`
+        #main-content-wrapper {
+          padding-bottom: 9rem !important;
+        }
+      `}</style>
+      <nav className="fixed bottom-10 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50">
+        {NAV_ITEMS.map((item) => {
+          const active = item.isActive(pathname || "");
+          const Icon = item.icon;
 
-        return (
-          <Link
-            key={item.id}
-            href={item.href}
-            className={`flex flex-col items-center justify-center gap-1 transition-all ${
-              active ? "text-[#ff5a5a]" : "text-white/50 hover:text-white/80"
-            }`}
-          >
-            <div className="flex h-7 w-7 items-center justify-center">
-              <Icon size={24} strokeWidth={active ? 2.5 : 2} fill="currentColor" />
-            </div>
-            <span className="text-[10.5px] tracking-tight font-medium">{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className={`flex flex-col items-center justify-center gap-1 transition-all ${
+                active ? "text-[#ff5a5a]" : "text-white/50 hover:text-white/80"
+              }`}
+            >
+              <div className="flex h-7 w-7 items-center justify-center">
+                <Icon size={24} strokeWidth={active ? 2.5 : 2} fill="currentColor" />
+              </div>
+              <span className="text-[10.5px] tracking-tight font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }
