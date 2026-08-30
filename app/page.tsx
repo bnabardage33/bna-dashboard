@@ -14,16 +14,17 @@ export default function Home() {
   const formattedDate = currentDate.charAt(0).toUpperCase() + currentDate.slice(1);
 
   return (
-    <div className="min-h-screen bg-[#080c18] relative">
-      <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.3),transparent_60%)] pointer-events-none" />
+    <div className="min-h-screen bg-[#080c18] relative overflow-hidden">
+      {/* GLOW doit être en z-0 derrière tout */}
+      <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(120,20,20,0.28),transparent_60%)] pointer-events-none z-0" />
       
-      {/* HEADER LOGO */}
-      <header className="bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5 overflow-hidden relative">
-        <img src="/logo-bna.png" alt="BNA Bardage" className="h-[115px] w-auto max-w-[85%] object-contain" />
+      {/* HEADER en z-10 par dessus */}
+      <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5">
+        <img src="/logo-bna.png" alt="BNA Bardage" className="h-[115px] w-auto object-contain" />
       </header>
 
       {/* TITRE & MAIN CONTENT */}
-      <main className="relative px-4 pt-6 pb-[20px]">
+      <main className="relative z-10 px-4 pt-6 pb-[20px]">
         <h1 className="text-white text-[30px] font-black">Tableau de bord</h1>
         <p className="text-white/60 text-sm">Vue d'ensemble • {formattedDate}</p>
         
