@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, Camera } from "lucide-react";
+import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, Camera, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const NAV_ITEMS = [
   { href: "/", label: "Accueil", icon: Home },
@@ -13,12 +15,19 @@ const NAV_ITEMS = [
   { href: "/finance", label: "Finance & Pilotage", icon: CircleDollarSign },
   { href: "/bureau/portails-clients", label: "Espace Client", icon: Users },
   { href: "/bureau/photos-chantier", label: "Photos Chantier", icon: Camera },
-  { href: "/parametres", label: "Paramètres", icon: Settings },
 ];
 
 export default function Drawer() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname?.startsWith(href);
@@ -104,8 +113,31 @@ export default function Drawer() {
         </nav>
 
         {/* FOOTER */}
-        <div className="px-5 pb-10 pt-4 border-t border-white/[0.06]">
-          <p className="text-white/20 text-[10px] text-center">© 2026 BNA Bardage</p>
+        <div className="px-3 pb-10 pt-3 border-t border-white/[0.06] space-y-1">
+          <Link
+            href="/parametres"
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
+              isActive("/parametres")
+                ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
+                : "text-white/50 hover:text-white hover:bg-white/[0.06]"
+            }`}
+          >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
+              <Settings size={16} className={isActive("/parametres") ? "text-[#ff5a5a]" : "text-white/40"} strokeWidth={1.8} />
+            </div>
+            <span>Parametres</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/50 hover:text-white hover:bg-white/[0.06] transition-all font-medium text-[14px]"
+          >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
+              <LogOut size={16} className="text-white/40" strokeWidth={1.8} />
+            </div>
+            <span>Deconnexion</span>
+          </button>
+          <p className="text-white/20 text-[10px] text-center pt-3">© 2026 BNA Bardage</p>
         </div>
       </aside>
     </>
