@@ -386,10 +386,29 @@ export default function CataloguePage() {
                     </button>
                   </div>
                 </div>
-                <h3 className="font-bold text-slate-200 text-sm leading-tight mb-2">
+                <h3 className="font-bold text-slate-200 text-sm leading-tight mb-1">
                   {o.designation}
                 </h3>
-                <p className="text-xs text-slate-400 line-clamp-3 mb-4 flex-grow">
+                {(() => {
+                  const dims = [];
+                  if (o.longueur_mm) dims.push(o.longueur_mm);
+                  if (o.largeur_mm) dims.push(o.largeur_mm);
+                  
+                  let text = null;
+                  if (dims.length === 0 && o.epaisseur_mm) {
+                    text = `Ép : ${o.epaisseur_mm} mm`;
+                  } else if (dims.length > 0) {
+                    if (o.epaisseur_mm) dims.push(o.epaisseur_mm);
+                    text = `Dim : ${dims.join(" x ")} mm`;
+                  }
+
+                  return text ? (
+                    <p className="text-xs text-slate-400 font-medium mb-2 opacity-80">
+                      {text}
+                    </p>
+                  ) : null;
+                })()}
+                <p className="text-xs text-slate-500 line-clamp-3 mb-4 flex-grow">
                   {o.description}
                 </p>
                 <div className="mt-auto flex items-end justify-between border-t border-slate-700 pt-3">
