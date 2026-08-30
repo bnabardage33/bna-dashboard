@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   description: "Pilotage chantiers, devis et facturation — BNA Bardage",
 };
 
+export const viewport = {
+  themeColor: "#080c18",
+};
+
 export default function RootLayout({
   children,
 }: {
