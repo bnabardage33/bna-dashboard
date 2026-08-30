@@ -115,13 +115,15 @@ export default function CataloguePage() {
     setIsSubmitting(true);
 
     const numericHt = parseFloat(String(formData.pu_ht).replace(',', '.')) || 0;
-    const prixTtcDerived = parseFloat((numericHt * 1.2).toFixed(2));
-
+    // Si l'utilisateur a saisi un TTC précis manuellement, on le garde, sinon on le calcule
+    const numericTtc = formData.prix_ttc != null && String(formData.prix_ttc) !== "" 
+      ? parseFloat(String(formData.prix_ttc).replace(',', '.'))
+      : parseFloat((numericHt * 1.2).toFixed(2));
     // Coercition numérique stricte pour éviter tout rejet Supabase
     const rawPayload = {
       ...formData,
       pu_ht: numericHt,
-      prix_ttc: prixTtcDerived,
+      prix_ttc: numericTtc,
       longueur_mm: formData.longueur_mm != null ? Number(formData.longueur_mm) : null,
       largeur_mm: formData.largeur_mm != null ? Number(formData.largeur_mm) : null,
       epaisseur_mm: formData.epaisseur_mm != null ? Number(formData.epaisseur_mm) : null,
@@ -616,25 +618,36 @@ export default function CataloguePage() {
                         placeholder="0.00"
                         value={formData.pu_ht}
                         onChange={(e) => {
+                          const val = e.target.value;
+                          const numericHt = parseFloat(val.replace(',', '.')) || 0;
                           setFormData((prev) => ({
                             ...prev,
-                            pu_ht: e.target.value as any,
+                            pu_ht: val as any,
+                            prix_ttc: val === "" ? "" as any : parseFloat((numericHt * 1.2).toFixed(2))
                           }));
                         }}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1">
                         Prix TTC (€)
-                        <span className="ml-1 text-[10px] font-normal text-slate-500">(calculé auto à +20%)</span>
+                        <span className="ml-1 text-[10px] font-normal text-slate-500">(TVA 20%)</span>
                       </label>
                       <input
                         type="text"
-                        readOnly
-                        disabled
-                        value={((parseFloat(String(formData.pu_ht).replace(',', '.')) || 0) * 1.2).toFixed(2)}
-                        className="w-full rounded border border-slate-700 bg-slate-800 p-2 text-sm text-slate-400 cursor-not-allowed"
+                        placeholder="0.00"
+                        value={formData.prix_ttc ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const numericTtc = parseFloat(val.replace(',', '.')) || 0;
+                          setFormData((prev) => ({
+                            ...prev,
+                            prix_ttc: val as any,
+                            pu_ht: val === "" ? "" as any : parseFloat((numericTtc / 1.2).toFixed(2))
+                          }));
+                        }}
+                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                   </div>
