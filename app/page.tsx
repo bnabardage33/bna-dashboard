@@ -20,7 +20,7 @@ export default function Home() {
       
       {/* HEADER en z-10 par dessus */}
       <header className="relative z-10 bg-black rounded-[22px] mx-4 mt-4 h-[145px] flex items-center justify-center border border-white/5 overflow-hidden">
-        <img src="/logo-bna.png" alt="BNA Bardage" className="w-[90%] h-auto max-h-[115px] object-contain scale-[1.6]" />
+        <img src="/logo-bna.png" alt="BNA Bardage" className="w-[90%] h-auto max-h-[115px] object-contain scale-[2.2]" />
       </header>
 
       {/* TITRE & MAIN CONTENT */}
