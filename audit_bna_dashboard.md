@@ -274,16 +274,3 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 ```
 
 ---
-
-## ⚠️ POINTS D'ATTENTION SUPABASE
-
-1. **`profiles`** : colonne `role` → `admin / direction / chef / ouvrier`
-2. **`entreprise_settings`** : ligne `id = 1` doit exister
-3. **`catalogue_ouvrages`** : créée via `catalogue.sql`
-4. **`avancements_chantier`** : ajouter `details (jsonb)`, `commentaire (text)`, `created_at (timestamptz)`
-5. **`tickets_sav`** : ajouter `signature_technicien (text)`
-6. **`pv_receptions`** : colonnes JSONB + colonnes texte signatures
-7. **`fiches_techniques`** : à alimenter manuellement avec les fiches DTU
-8. **`parametres_finance`** : table clé-valeur
-9. **Storage** : bucket `photos` (logos), bucket `sav_photos` (photos SAV)
-10. **RLS** : configuré sur `entreprise_settings` + Storage. À étendre globalement.
