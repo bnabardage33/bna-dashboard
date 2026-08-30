@@ -18,7 +18,7 @@ export default function TopNav() {
     router.refresh();
   };
 
-  if (pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
+  if (pathname === '/' || pathname?.startsWith('/espace-client') || pathname?.startsWith('/demo-client')) {
     return null;
   }
 

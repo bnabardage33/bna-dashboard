@@ -1,89 +1,103 @@
+"use client";
+
 import Link from "next/link";
-import { Building2, HardHat, CircleDollarSign, Users, Settings } from "lucide-react";
+import { Building2, HardHat, CircleDollarSign, Users } from "lucide-react";
 
 export default function Home() {
-  const apps = [
-    {
-      name: "Bureau d'études",
-      description: "Devis, catalogue matériaux, facturation et suivi client",
-      href: "/bureau",
-      icon: Building2,
-      color: "text-blue-400",
-      bg: "bg-blue-400/10",
-      border: "hover:border-blue-500/50"
-    },
-    {
-      name: "Terrain & Chantier",
-      description: "Météo, pointages, rapports journaliers",
-      href: "/terrain",
-      icon: HardHat,
-      color: "text-amber-400",
-      bg: "bg-amber-400/10",
-      border: "hover:border-amber-500/50"
-    },
-    {
-      name: "Finance & Pilotage",
-      description: "Trésorerie, marges, export comptable",
-      href: "/finance",
-      icon: CircleDollarSign,
-      color: "text-emerald-400",
-      bg: "bg-emerald-400/10",
-      border: "hover:border-emerald-500/50"
-    },
-    {
-      name: "Espace Client",
-      description: "Portail partagé avec vos clients",
-      href: "/bureau/portails-clients",
-      icon: Users,
-      color: "text-purple-400",
-      bg: "bg-purple-400/10",
-      border: "hover:border-purple-500/50"
-    }
-  ];
+  const currentDate = new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date());
+
+  const formattedDate = currentDate.charAt(0).toUpperCase() + currentDate.slice(1);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-4xl space-y-8">
-        <div className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            BNA Dashboard
-          </h1>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            Bienvenue sur votre espace de gestion. Sélectionnez une application pour commencer.
-          </p>
-        </div>
+    <div className="min-h-screen">
+      {/* 2. HEADER - LOGO GEANT */}
+      <header className="bg-black mx-3 mt-3 rounded-[20px] h-[140px] flex items-center justify-center">
+        <img src="/logo-bna.png" alt="BNA Bardage Nouvelle-Aquitaine" className="h-[110px] w-auto object-contain" />
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {apps.map((app) => (
-            <Link 
-              key={app.name} 
-              href={app.href}
-              className={`group flex items-start gap-4 p-6 rounded-2xl bg-slate-800/50 border border-slate-700 transition-all ${app.border} hover:bg-slate-800`}
-            >
-              <div className={`p-4 rounded-xl ${app.bg} ${app.color}`}>
-                <app.icon className="h-8 w-8" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors">
-                  {app.name}
-                </h2>
-                <p className="text-slate-400 text-sm mt-1">
-                  {app.description}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+      {/* 3. TITRE */}
+      <div className="px-6 pt-6">
+        <h1 className="text-white text-[32px] font-black tracking-tight">Tableau de bord</h1>
+        <p className="text-white/60 text-[14px] mt-1">Vue d'ensemble • {formattedDate}</p>
+      </div>
 
-        <div className="flex justify-center pt-8">
-          <Link 
-            href="/parametres" 
-            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            Paramètres de l'application
-          </Link>
-        </div>
+      {/* 4. LES 4 CARTES - GLASSMORPHISM EXACT */}
+      <div className="grid grid-cols-2 gap-4 p-4 mt-2">
+        {/* CARTE 1 : Bureau d'études */}
+        <Link href="/bureau" className="bg-white/[0.08] backdrop-blur-xl border border-white/[0.12] rounded-[20px] p-5 relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.08),transparent_60%)] hover:bg-white/[0.12] transition-all hover:-translate-y-1 block">
+          <div className="w-14 h-14 bg-white/10 rounded-[14px] border border-white/10 flex items-center justify-center text-[#ff5a5a] text-2xl">
+            <Building2 size={28} />
+          </div>
+          <h2 className="font-bold text-white text-[18px] mt-4 leading-tight">Bureau d'études</h2>
+          <p className="text-white font-bold text-[15px] mt-2 leading-tight">12 Études actives</p>
+          <p className="text-white/60 text-[13px] mt-1 leading-tight mb-4">3 en revue • 5 à valider</p>
+          <span className="bg-[#22c55e]/20 border border-[#22c55e]/30 text-[#4ade80] rounded-full px-3 py-1 text-[11px] font-bold">
+            +2 cette semaine
+          </span>
+        </Link>
+
+        {/* CARTE 2 : Terrain & Chantier */}
+        <Link href="/terrain" className="bg-white/[0.08] backdrop-blur-xl border border-white/[0.12] rounded-[20px] p-5 relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.08),transparent_60%)] hover:bg-white/[0.12] transition-all hover:-translate-y-1 block">
+          <div className="w-14 h-14 bg-white/10 rounded-[14px] border border-white/10 flex items-center justify-center text-[#ff5a5a] text-2xl">
+            <HardHat size={28} />
+          </div>
+          <h2 className="font-bold text-white text-[18px] mt-4 leading-tight">Terrain & Chantier</h2>
+          <p className="text-white font-bold text-[15px] mt-2 leading-tight">8 Chantiers en cours</p>
+          
+          <div className="mt-2 mb-1">
+            <div className="flex justify-between text-[11px] text-white/80 font-bold mb-1">
+              <span>Avancement</span>
+              <span>76%</span>
+            </div>
+            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-[#E30613] rounded-full" style={{ width: '76%' }}></div>
+            </div>
+          </div>
+          
+          <p className="text-white/60 text-[11px] mt-2 leading-tight">7 ouvriers mobilisés</p>
+        </Link>
+
+        {/* CARTE 3 : Finance & Pilotage */}
+        <Link href="/finance" className="bg-white/[0.08] backdrop-blur-xl border border-white/[0.12] rounded-[20px] p-5 relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.08),transparent_60%)] hover:bg-white/[0.12] transition-all hover:-translate-y-1 block col-span-2">
+          <div className="flex justify-between items-start">
+            <div className="w-14 h-14 bg-white/10 rounded-[14px] border border-white/10 flex items-center justify-center text-[#ff5a5a] text-2xl">
+              <CircleDollarSign size={28} />
+            </div>
+            <span className="bg-[#22c55e]/20 border border-[#22c55e]/30 text-[#4ade80] rounded-full px-3 py-1 text-[11px] font-bold">
+              +8,2% vs prévisionnel
+            </span>
+          </div>
+          <h2 className="font-bold text-white text-[18px] mt-4 leading-tight">Finance & Pilotage</h2>
+          <p className="text-white font-bold text-[24px] mt-1 leading-tight">Budget 1,24 M€</p>
+          <div className="flex gap-4 mt-3">
+            <p className="text-white/60 text-[13px] leading-tight"><span className="text-white font-semibold">Dépensé:</span> 842 k€</p>
+            <p className="text-white/60 text-[13px] leading-tight"><span className="text-white font-semibold">Restant:</span> 398 k€</p>
+          </div>
+        </Link>
+
+        {/* CARTE 4 : Espace Client */}
+        <Link href="/bureau/portails-clients" className="bg-white/[0.08] backdrop-blur-xl border border-white/[0.12] rounded-[20px] p-5 relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.08),transparent_60%)] hover:bg-white/[0.12] transition-all hover:-translate-y-1 block col-span-2 mb-8">
+          <div className="flex justify-between items-start">
+            <div className="w-14 h-14 bg-white/10 rounded-[14px] border border-white/10 flex items-center justify-center text-[#ff5a5a] text-2xl">
+              <Users size={28} />
+            </div>
+            <span className="bg-[#E30613]/20 border border-[#E30613]/30 text-[#ff5a5a] rounded-full px-3 py-1 text-[11px] font-bold">
+              2 nouveaux
+            </span>
+          </div>
+          <h2 className="font-bold text-white text-[18px] mt-4 leading-tight">Espace Client</h2>
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-white font-bold text-[18px] mt-1 leading-tight">14 Clients actifs</p>
+              <p className="text-white/60 text-[13px] mt-1 leading-tight">4 demandes récentes</p>
+            </div>
+          </div>
+        </Link>
       </div>
     </div>
   );
