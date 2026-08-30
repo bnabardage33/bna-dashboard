@@ -32,10 +32,13 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4 mt-5">
           {/* CARTE 1 : Bureau d'études */}
           <Link href="/bureau" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col min-h-[220px]">
-            <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center shrink-0 mb-3">
-              <Building2 strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+            <div className="relative mb-3 shrink-0 self-start">
+              <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
+                <Building2 strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+              </div>
             </div>
-            <h2 className="font-bold text-white text-[16px] leading-tight">Bureau d'études</h2>
+            <h2 className="font-bold text-white text-[16px] leading-tight mt-1">Bureau d'études</h2>
             <p className="text-white font-bold text-[18px] mt-1 leading-tight">12 Études</p>
             <p className="text-white/60 text-[12px] mt-1 leading-tight flex-1">3 en revue • 5 valider</p>
             <div className="mt-auto">
@@ -47,10 +50,13 @@ export default function Home() {
 
           {/* CARTE 2 : Terrain & Chantier */}
           <Link href="/terrain" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col min-h-[220px]">
-            <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center shrink-0 mb-3">
-              <HardHat strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+            <div className="relative mb-3 shrink-0 self-start">
+              <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
+                <HardHat strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+              </div>
             </div>
-            <h2 className="font-bold text-white text-[16px] leading-tight">Terrain & Chantier</h2>
+            <h2 className="font-bold text-white text-[16px] leading-tight mt-1">Terrain & Chantier</h2>
             <p className="text-white font-bold text-[18px] mt-1 leading-tight">8 Chantiers</p>
             
             <div className="mt-auto pt-2">
@@ -67,10 +73,13 @@ export default function Home() {
 
           {/* CARTE 3 : Finance & Pilotage */}
           <Link href="/finance" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col min-h-[220px]">
-            <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center shrink-0 mb-3">
-              <CircleDollarSign strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+            <div className="relative mb-3 shrink-0 self-start">
+              <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
+                <CircleDollarSign strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+              </div>
             </div>
-            <h2 className="font-bold text-white text-[16px] leading-tight">Finance & Pilotage</h2>
+            <h2 className="font-bold text-white text-[16px] leading-tight mt-1">Finance & Pilotage</h2>
             <p className="text-white font-bold text-[18px] mt-1 leading-tight">Budget 1,24M€</p>
             
             <div className="flex flex-col gap-1 mt-1 mb-2">
@@ -87,10 +96,13 @@ export default function Home() {
 
           {/* CARTE 4 : Espace Client */}
           <Link href="/bureau/portails-clients" className="bg-[linear-gradient(145deg,_rgba(255,255,255,0.09),_rgba(255,255,255,0.03))] backdrop-blur-[20px] border border-white/[0.14] rounded-3xl p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),_0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all hover:bg-[rgba(255,255,255,0.12)] hover:-translate-y-1 flex flex-col min-h-[220px]">
-            <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center shrink-0 mb-3">
-              <Users strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+            <div className="relative mb-3 shrink-0 self-start">
+              <div className="absolute -inset-3 bg-[#ff5a5a]/30 blur-2xl rounded-full z-0" />
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-[rgba(255,255,255,0.07)] border border-white/10 flex items-center justify-center relative z-10">
+                <Users strokeWidth={1.5} size={28} className="text-[#ff5a5a]" />
+              </div>
             </div>
-            <h2 className="font-bold text-white text-[16px] leading-tight">Espace Client</h2>
+            <h2 className="font-bold text-white text-[16px] leading-tight mt-1">Espace Client</h2>
             <p className="text-white font-bold text-[18px] mt-1 leading-tight">14 Clients</p>
             <p className="text-white/60 text-[12px] mt-1 flex-1 leading-tight">4 demandes récentes</p>
             

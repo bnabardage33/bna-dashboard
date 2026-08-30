@@ -43,7 +43,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-5 left-4 right-4 h-[72px] bg-[#1c1f2e]/85 backdrop-blur-2xl border border-white/10 rounded-[20px] flex justify-around items-center z-50">
+    <nav className="fixed bottom-6 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50">
       {NAV_ITEMS.map((item) => {
         const active = item.isActive(pathname || "");
         const Icon = item.icon;
@@ -56,8 +56,8 @@ export default function BottomNav() {
               active ? "text-[#ff5a5a]" : "text-white/50 hover:text-white/80"
             }`}
           >
-            <div className="flex h-8 w-8 items-center justify-center">
-              <Icon size={24} strokeWidth={active ? 2.5 : 1.5} />
+            <div className="flex h-7 w-7 items-center justify-center">
+              <Icon size={24} strokeWidth={active ? 2.5 : 2} fill="currentColor" />
             </div>
             <span className="text-[10.5px] tracking-tight font-medium">{item.label}</span>
           </Link>
