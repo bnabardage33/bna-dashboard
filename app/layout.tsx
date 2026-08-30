@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} h-full`}>
       <body className="bg-[#0B0F19] min-h-screen text-gray-300 antialiased selection:bg-[#E30613]/30 selection:text-red-200 flex flex-col">
-        <header style={{ backgroundColor: '#1A1D24', position: 'relative', top: '16px', left: '16px', right: '16px', zIndex: 50, height: '120px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderRadius: '22px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)', margin: '16px 16px 0 16px' }}>
+        <header style={{ backgroundColor: '#1A1D24', margin: '16px 16px 0 16px', zIndex: 50, height: '120px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderRadius: '22px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
           <Drawer />
           <img
             src="/logo-bna.png"
