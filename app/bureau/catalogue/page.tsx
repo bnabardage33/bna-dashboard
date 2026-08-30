@@ -9,6 +9,12 @@ import Papa from "papaparse";
 
 type CategorieOuvrage = "bardage" | "etancheite" | "habillage" | "isolation" | "installation";
 
+type DimensionItem = {
+  longueur_mm?: number | null;
+  largeur_mm?: number | null;
+  epaisseur_mm?: number | null;
+};
+
 type Ouvrage = {
   id: string;
   // Identification
@@ -23,9 +29,10 @@ type Ouvrage = {
   couleur?: string;
   finition?: string;
   // Dimensions & Spécifications
-  longueur_mm?: number | null;
+  longueur_mm?: number | null; // Keep for backward compatibility / fallback
   largeur_mm?: number | null;
   epaisseur_mm?: number | null;
+  dimensions_disponibles?: DimensionItem[];
   // Fournisseur & Tarifs
   fournisseur?: string;
   unite: string;
@@ -48,6 +55,7 @@ const emptyForm: FormState = {
   longueur_mm: null,
   largeur_mm: null,
   epaisseur_mm: null,
+  dimensions_disponibles: [],
   fournisseur: "",
   unite: "m²",
   pu_ht: 0,
@@ -102,7 +110,18 @@ export default function CataloguePage() {
       setEditingOuvrage(ouvrage);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...rest } = ouvrage;
-      setFormData({ ...emptyForm, ...rest });
+      
+      // Migration à la volée des anciennes dimensions vers le tableau
+      const dims = rest.dimensions_disponibles ? [...rest.dimensions_disponibles] : [];
+      if (dims.length === 0 && (rest.longueur_mm || rest.largeur_mm || rest.epaisseur_mm)) {
+        dims.push({
+          longueur_mm: rest.longueur_mm,
+          largeur_mm: rest.largeur_mm,
+          epaisseur_mm: rest.epaisseur_mm
+        });
+      }
+      
+      setFormData({ ...emptyForm, ...rest, dimensions_disponibles: dims });
     } else {
       setEditingOuvrage(null);
       setFormData(emptyForm);
@@ -120,6 +139,12 @@ export default function CataloguePage() {
       ? parseFloat(String(formData.prix_ttc).replace(',', '.'))
       : parseFloat((numericHt * 1.2).toFixed(2));
     // Coercition numérique stricte pour éviter tout rejet Supabase
+    const dimensionsFormatted = (formData.dimensions_disponibles || []).map(d => ({
+      longueur_mm: d.longueur_mm != null && String(d.longueur_mm) !== "" ? Number(d.longueur_mm) : null,
+      largeur_mm: d.largeur_mm != null && String(d.largeur_mm) !== "" ? Number(d.largeur_mm) : null,
+      epaisseur_mm: d.epaisseur_mm != null && String(d.epaisseur_mm) !== "" ? Number(d.epaisseur_mm) : null,
+    }));
+
     const rawPayload = {
       ...formData,
       pu_ht: numericHt,
@@ -127,6 +152,7 @@ export default function CataloguePage() {
       longueur_mm: formData.longueur_mm != null ? Number(formData.longueur_mm) : null,
       largeur_mm: formData.largeur_mm != null ? Number(formData.largeur_mm) : null,
       epaisseur_mm: formData.epaisseur_mm != null ? Number(formData.epaisseur_mm) : null,
+      dimensions_disponibles: dimensionsFormatted,
       // Chaînes optionnelles : null plutôt que "" pour Supabase
       fabricant: formData.fabricant?.trim() || null,
       gamme: formData.gamme?.trim() || null,
@@ -390,23 +416,46 @@ export default function CataloguePage() {
                   {o.designation}
                 </h3>
                 {(() => {
-                  const dims = [];
-                  if (o.longueur_mm) dims.push(o.longueur_mm);
-                  if (o.largeur_mm) dims.push(o.largeur_mm);
-                  
                   let text = null;
-                  if (dims.length === 0 && o.epaisseur_mm) {
-                    text = `Ép : ${o.epaisseur_mm} mm`;
-                  } else if (dims.length > 0) {
-                    if (o.epaisseur_mm) dims.push(o.epaisseur_mm);
-                    text = `Dim : ${dims.join(" x ")} mm`;
+
+                  if (o.dimensions_disponibles && o.dimensions_disponibles.length > 0) {
+                    const eps = Array.from(new Set(o.dimensions_disponibles.map(d => d.epaisseur_mm).filter(Boolean)));
+                    const longs = Array.from(new Set(o.dimensions_disponibles.map(d => d.longueur_mm).filter(Boolean)));
+                    // Simple formatting for multiple lengths
+                    if (eps.length === 1 && longs.length > 1) {
+                      text = `Ép : ${eps[0]} mm | Longueurs dispo : ${longs.map(l => (l! / 1000) + 'm').join(', ')}`;
+                    } else if (o.dimensions_disponibles.length === 1) {
+                      const d = o.dimensions_disponibles[0];
+                      const dims = [];
+                      if (d.longueur_mm) dims.push(d.longueur_mm);
+                      if (d.largeur_mm) dims.push(d.largeur_mm);
+                      if (dims.length === 0 && d.epaisseur_mm) {
+                        text = `Ép : ${d.epaisseur_mm} mm`;
+                      } else if (dims.length > 0) {
+                        if (d.epaisseur_mm) dims.push(d.epaisseur_mm);
+                        text = `Dim : ${dims.join(" x ")} mm`;
+                      }
+                    } else {
+                      text = `${o.dimensions_disponibles.length} formats disponibles`;
+                    }
+                  } else {
+                    // Fallback to legacy
+                    const dims = [];
+                    if (o.longueur_mm) dims.push(o.longueur_mm);
+                    if (o.largeur_mm) dims.push(o.largeur_mm);
+                    if (dims.length === 0 && o.epaisseur_mm) {
+                      text = `Ép : ${o.epaisseur_mm} mm`;
+                    } else if (dims.length > 0) {
+                      if (o.epaisseur_mm) dims.push(o.epaisseur_mm);
+                      text = `Dim : ${dims.join(" x ")} mm`;
+                    }
                   }
 
                   return text ? (
-                    <p className="text-xs text-slate-400 font-medium mb-2 opacity-80">
+                    <p className="text-[11px] text-slate-400 font-mono mb-2 opacity-90">
                       {text}
                     </p>
-                  ) : null;
+                  ) : <div className="mb-2"></div>;
                 })()}
                 <p className="text-xs text-slate-500 line-clamp-3 mb-4 flex-grow">
                   {o.description}
@@ -556,43 +605,86 @@ export default function CataloguePage() {
                     2 · Dimensions &amp; Spécifications
                   </legend>
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Longueur (mm)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="3050"
-                        value={formData.longueur_mm ?? ""}
-                        onChange={(e) => set("longueur_mm", e.target.value === "" ? null : parseFloat(e.target.value))}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Largeur (mm)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        placeholder="1310"
-                        value={formData.largeur_mm ?? ""}
-                        onChange={(e) => set("largeur_mm", e.target.value === "" ? null : parseFloat(e.target.value))}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Épaisseur (mm)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        placeholder="6"
-                        value={formData.epaisseur_mm ?? ""}
-                        onChange={(e) => set("epaisseur_mm", e.target.value === "" ? null : parseFloat(e.target.value))}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    {(formData.dimensions_disponibles || []).map((dim, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                        <div className="flex-1 grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-[10px] uppercase text-slate-500 mb-1">Longueur (mm)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="ex: 3050"
+                              value={dim.longueur_mm ?? ""}
+                              onChange={(e) => {
+                                const newDims = [...(formData.dimensions_disponibles || [])];
+                                newDims[idx].longueur_mm = e.target.value === "" ? null : parseFloat(e.target.value);
+                                setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
+                              }}
+                              className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-slate-500 mb-1">Largeur (mm)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="ex: 1310"
+                              value={dim.largeur_mm ?? ""}
+                              onChange={(e) => {
+                                const newDims = [...(formData.dimensions_disponibles || [])];
+                                newDims[idx].largeur_mm = e.target.value === "" ? null : parseFloat(e.target.value);
+                                setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
+                              }}
+                              className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase text-slate-500 mb-1">Épaisseur (mm)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              placeholder="ex: 6"
+                              value={dim.epaisseur_mm ?? ""}
+                              onChange={(e) => {
+                                const newDims = [...(formData.dimensions_disponibles || [])];
+                                newDims[idx].epaisseur_mm = e.target.value === "" ? null : parseFloat(e.target.value);
+                                setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
+                              }}
+                              className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDims = [...(formData.dimensions_disponibles || [])];
+                            newDims.splice(idx, 1);
+                            setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
+                          }}
+                          className="mt-5 p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-md transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          dimensions_disponibles: [
+                            ...(prev.dimensions_disponibles || []),
+                            { longueur_mm: null, largeur_mm: null, epaisseur_mm: null }
+                          ]
+                        }));
+                      }}
+                      className="w-full py-2 border border-dashed border-slate-600 text-slate-400 rounded-lg text-sm hover:text-cyan-400 hover:border-cyan-500/50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" /> Ajouter une dimension
+                    </button>
                   </div>
                 </fieldset>
 
