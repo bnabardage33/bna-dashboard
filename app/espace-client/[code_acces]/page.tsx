@@ -271,7 +271,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans relative">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-[90px] font-sans relative">
       {/* Header */}
       <header className="bg-black h-[88px] px-5 flex items-center justify-between rounded-b-[24px] w-full relative z-0">
         <img
@@ -546,17 +546,14 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       </div>
 
       {/* Footer fixe (Jumeaux WhatsApp & IA) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur p-4 flex gap-3 border-t z-[9990]">
-        {/* BOUTON WHATSAPP ROUGE */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex gap-3 justify-center border-t border-gray-100 z-[9990]">
         <button 
           onClick={() => window.open(`https://wa.me/33600000000?text=${encodeURIComponent('Bonjour BNA Bardage Chantier ' + (chantierData?.id?.substring(0,6).toUpperCase() || 'F59932'))}`, '_blank')}
-          className="flex-1 h-[56px] bg-[#E30613] hover:bg-[#C00510] text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
+          className="flex-1 max-w-[200px] bg-[#E30613] text-white rounded-full h-[52px] font-bold text-[14px] flex items-center justify-center gap-2"
         >
-          <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.512 5.836L0 24l6.335-1.662A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+          <span className="bg-white text-[#E30613] w-5 h-5 rounded-full flex items-center justify-center text-[10px]">💬</span>
           BNA Bardage
         </button>
-
-        {/* BOUTON IA NOIR */}
         <button 
           onClick={() => {
             if (isChatOpen) {
@@ -566,9 +563,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               hasSummarized.current = false;
             }
           }}
-          className="flex-1 h-[56px] bg-[#111111] hover:bg-black text-white rounded-full font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
+          className="flex-1 max-w-[200px] bg-black text-white rounded-full h-[52px] font-bold text-[14px] flex items-center justify-center gap-2"
         >
-          <span className="text-[#E30613] text-xl">✦</span>
+          <span className="text-[#E30613]">✦</span>
           Assistant IA
         </button>
       </div>
