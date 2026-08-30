@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, FolderOpen, MessageSquare, User } from "lucide-react";
+import { Home, FolderOpen, User } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -25,13 +25,6 @@ export default function BottomNav() {
       href: "/terrain/chantier",
       icon: FolderOpen,
       isActive: (path: string) => path.startsWith("/terrain") || path.startsWith("/bureau"),
-    },
-    {
-      id: "messages",
-      label: "Messages",
-      href: "/messages",
-      icon: MessageSquare,
-      isActive: (path: string) => path.startsWith("/messages"),
     },
     {
       id: "profil",
