@@ -6,7 +6,16 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const chantier_id = request.nextUrl.searchParams.get('chantier_id');
-  if (!chantier_id) return NextResponse.json({ error: 'chantier_id requis' }, { status: 400 });
+
+  // Sans chantier_id => retourne la liste de tous les chantiers (pour le select admin)
+  if (!chantier_id) {
+    const { data, error } = await supabaseAdmin
+      .from('chantiers')
+      .select('id, nom, adresse_chantier, statut')
+      .order('created_at', { ascending: false });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ chantiers: data });
+  }
 
   const { data, error } = await supabaseAdmin
     .from('photos_chantier')
