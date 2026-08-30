@@ -35,7 +35,7 @@ export default function RootLayout({
           <div style={{ width: '40px' }} />
         </header>
         <main id="main-content-wrapper" className="flex-1 relative z-10 w-full overflow-x-hidden pb-12">
-          <div className="w-full h-full">
+          <div style={{ marginTop: '24px' }} className="w-full h-full">
             {children}
           </div>
         </main>
