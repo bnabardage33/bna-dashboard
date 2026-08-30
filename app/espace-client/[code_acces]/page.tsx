@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, use } from "react";
 import { 
   FileText, CheckCircle2, MessageSquare, Clock, Download,
-  AlertCircle, Camera, HardHat, Send, X, Check
+  AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard
 } from "lucide-react";
 import DocumentPDF from "@/components/DocumentPDF";
 
@@ -261,97 +261,65 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans relative">
       {/* Header */}
-      <header className="bg-slate-900 text-white p-6 shadow-md rounded-b-3xl">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <HardHat className="text-blue-400" size={28} />
-            <span className="text-xl font-bold tracking-tight">BNA Espace Client</span>
+      {/* Header */}
+      <header className="bg-[#111111] rounded-b-[24px] pt-12 pb-6 px-6 relative z-0">
+        <div className="flex justify-between items-center">
+          <img src="/logo-bna.png" alt="BNA Bardage Nouvelle-Aquitaine" className="h-12 object-contain" />
+          <div className="flex items-center gap-3">
+            <button className="text-white hover:text-gray-300 transition-colors">
+              <Bell size={24} />
+            </button>
+            <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+              <User size={20} className="text-white" />
+            </div>
           </div>
-          <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700">
-            <span className="font-semibold text-sm">{initials}</span>
-          </div>
-        </div>
-        
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Bonjour, {displayName}</h1>
-          <p className="text-slate-400 text-sm">Bienvenue sur votre espace de suivi de chantier.</p>
         </div>
       </header>
 
       <main className="p-4 max-w-3xl mx-auto space-y-6 -mt-4 relative z-10">
         
-        {/* Progress Card */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md mb-2 inline-block">Chantier en cours</span>
-              <h2 className="text-lg font-bold">{displayChantier}</h2>
-              <p className="text-sm text-slate-500">{displayAddress}</p>
-            </div>
-            <div className="text-right">
-              <span className="text-3xl font-black text-slate-800">{avancement}<span className="text-lg text-slate-400">%</span></span>
-            </div>
-          </div>
-          
-          <div className="w-full bg-slate-100 rounded-full h-3 mb-6 overflow-hidden">
-            <div className="bg-blue-600 h-3 rounded-full transition-all duration-1000" style={{ width: `${avancement}%` }}>
-              <div className="w-full h-full" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', animation: 'shimmer 2s infinite' }}></div>
-            </div>
-          </div>
-
-          {/* Frise chronologique dynamique */}
-          {(() => {
-            // 0–15% : Préparation en cours
-            // 16–85% : Préparation ✅, Pose en cours
-            // 86–100% : Préparation ✅, Pose ✅, Finitions en cours
-            const etape1Done = avancement > 15;
-            const etape2Done = avancement > 85;
-            const etape1Active = avancement >= 0 && avancement <= 15;
-            const etape2Active = avancement >= 16 && avancement <= 85;
-            const etape3Active = avancement > 85;
-
-            const StepIcon = ({ done, active }: { done: boolean; active: boolean }) => {
-              if (done) return <CheckCircle2 className="text-emerald-500" size={20} />;
-              if (active) return <Clock className="text-blue-500" size={20} />;
-              return <AlertCircle className="text-slate-300" size={20} />;
-            };
-
-            return (
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                {/* Étape 1 : Préparation */}
-                <div className={`flex flex-col items-center gap-1 ${etape1Done ? "text-emerald-600 font-semibold" : etape1Active ? "text-blue-700 font-semibold" : "text-slate-400 opacity-50"}`}>
-                  <StepIcon done={etape1Done} active={etape1Active} />
-                  <span>Préparation</span>
-                  {etape1Active && <span className="text-[10px] text-blue-400 font-normal">En cours</span>}
-                  {etape1Done && <span className="text-[10px] text-emerald-400 font-normal">Terminé</span>}
-                </div>
-
-                {/* Séparateur */}
-                <div className={`flex flex-col items-center gap-1 ${etape2Done ? "text-emerald-600 font-semibold" : etape2Active ? "text-blue-700 font-semibold" : "text-slate-400 opacity-50"}`}>
-                  <StepIcon done={etape2Done} active={etape2Active} />
-                  <span>Pose</span>
-                  {etape2Active && <span className="text-[10px] text-blue-400 font-normal">En cours</span>}
-                  {etape2Done && <span className="text-[10px] text-emerald-400 font-normal">Terminé</span>}
-                </div>
-
-                {/* Étape 3 : Finitions */}
-                <div className={`flex flex-col items-center gap-1 ${etape3Active ? "text-blue-700 font-semibold" : "text-slate-400 opacity-50"}`}>
-                  <StepIcon done={false} active={etape3Active} />
-                  <span>Finitions</span>
-                  {etape3Active && <span className="text-[10px] text-blue-400 font-normal">En cours</span>}
-                </div>
-              </div>
-            );
-          })()}
+        {/* CARTE TITRE */}
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <span className="bg-[#E30613] text-[#FFFFFF] px-3 py-1 rounded-full text-xs font-bold inline-block mb-3">★ CLIENT PREMIUM</span>
+          <h1 className="font-black text-2xl text-[#111111] mb-1 leading-tight">Bardage métallique — {chantierData?.nom || "Villa Arcachon"}</h1>
+          <p className="text-xs text-gray-500 font-medium">Résidence privée • {chantierData?.adresse || "33380 Arcachon"} • Chantier #{chantierData?.id?.substring(0,6).toUpperCase() || 'BNA-7429'}</p>
         </section>
 
-        {/* Documents Card */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-          <h3 className="font-bold mb-4 text-slate-800">Mes Documents</h3>
-          <div className="space-y-3">
+        {/* CARTE PROGRESSION */}
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-bold text-[#111111]">Progression du chantier</h2>
+            <span className="bg-[#E30613] text-white text-sm font-bold px-3 py-1 rounded-full">{avancement}%</span>
+          </div>
+          
+          <div className="w-full bg-[#F2F2F2] h-3 rounded-full mb-2 overflow-hidden">
+            <div className="bg-[#E30613] h-3 rounded-full transition-all duration-1000" style={{ width: `${avancement}%` }}></div>
+          </div>
+          
+          <p className="text-xs text-gray-500 mb-5">{avancement}% terminé • Estimation fin: 15 déc. 2024</p>
+          
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
+              <Check className="text-[#111111]" size={20} />
+              <span className="text-[10px] font-bold text-[#111111] leading-tight">Façade Nord Terminée</span>
+            </div>
+            <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
+              <Wrench className="text-[#E30613]" size={20} />
+              <span className="text-[10px] font-bold text-[#111111] leading-tight">Façade Sud En cours</span>
+            </div>
+            <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
+              <Clipboard className="text-[#E30613]" size={20} />
+              <span className="text-[10px] font-bold text-[#111111] leading-tight">Contrôle qualité Prévu</span>
+            </div>
+          </div>
+        </section>
 
+        {/* DOCUMENTS CARD (Détails du chantier) */}
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <h3 className="font-bold mb-4 text-[#111111]">Détails du chantier</h3>
+          <div className="space-y-3">
             {devisData.length === 0 && facturesData.length === 0 ? (
-              <p className="text-sm text-slate-400 italic text-center py-4">Aucun document à signer pour l'instant.</p>
+              <p className="text-sm text-gray-500 italic text-center py-4">Aucun document à signer pour l'instant.</p>
             ) : (
               <>
                 {devisData.map((devis: any) => {
@@ -362,26 +330,26 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                     <div
                       key={`devis-${devis.id}`}
                       onClick={() => { setActiveDoc({ ...devis, kind: 'devis' }); setIsDevisOpen(true); }}
-                      className="p-4 flex items-center justify-between group hover:bg-slate-50 transition cursor-pointer border border-slate-100 rounded-xl bg-slate-50"
+                      className="p-4 flex items-center justify-between group cursor-pointer border border-[#111111] rounded-xl bg-[#F2F2F2]"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`${estSigne ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} p-2 rounded-lg`}>
-                          {estSigne ? <CheckCircle2 size={18} /> : <FileText size={18} />}
+                        <div className={`p-2 rounded-lg bg-white border border-[#111111]`}>
+                          {estSigne ? <CheckCircle2 size={18} className="text-[#111111]" /> : <FileText size={18} className="text-[#111111]" />}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-800">{devis.numero} – {devis.objet || 'Devis'}</p>
+                          <p className="text-sm font-bold text-[#111111]">{devis.numero} – {devis.objet || 'Devis'}</p>
                           {estSigne ? (
-                            <p className="text-xs font-semibold text-emerald-600">Statut : Validé et Signé</p>
+                            <p className="text-xs font-semibold text-[#111111]">Statut : Validé et Signé</p>
                           ) : (
-                            <p className="text-xs font-semibold text-amber-600">Action requise : En attente de signature</p>
+                            <p className="text-xs font-semibold text-[#E30613]">Action requise : En attente de signature</p>
                           )}
-                          <p className="text-xs text-slate-400 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
                         </div>
                       </div>
                       {estSigne ? (
-                        <button className="text-blue-600 text-xs font-bold px-3 py-1.5 transition">Consulter</button>
+                        <button className="text-[#111111] text-xs font-bold px-3 py-1.5 transition">Consulter</button>
                       ) : (
-                        <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Signer</button>
+                        <button className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Signer</button>
                       )}
                     </div>
                   );
@@ -395,49 +363,66 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                     <div
                       key={`facture-${facture.id}`}
                       onClick={() => { setActiveDoc({ ...facture, kind: 'facture' }); setIsDevisOpen(true); }}
-                      className="p-4 flex items-center justify-between group hover:bg-slate-50 transition cursor-pointer border border-slate-100 rounded-xl bg-slate-50"
+                      className="p-4 flex items-center justify-between group cursor-pointer border border-[#111111] rounded-xl bg-[#F2F2F2]"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`${estPayee ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} p-2 rounded-lg`}>
-                          {estPayee ? <CheckCircle2 size={18} /> : <FileText size={18} />}
+                        <div className={`p-2 rounded-lg bg-white border border-[#111111]`}>
+                          {estPayee ? <CheckCircle2 size={18} className="text-[#111111]" /> : <FileText size={18} className="text-[#111111]" />}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-800">{facture.numero} – {facture.objet || 'Facture'}</p>
+                          <p className="text-sm font-bold text-[#111111]">{facture.numero} – {facture.objet || 'Facture'}</p>
                           {estPayee ? (
-                            <p className="text-xs font-semibold text-emerald-600">Statut : Réglée / Complétée</p>
+                            <p className="text-xs font-semibold text-[#111111]">Statut : Réglée / Complétée</p>
                           ) : (
-                            <p className="text-xs font-semibold text-amber-600">Action requise : À régler</p>
+                            <p className="text-xs font-semibold text-[#E30613]">Action requise : À régler</p>
                           )}
-                          <p className="text-xs text-slate-400 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
                         </div>
                       </div>
                       {estPayee ? (
-                        <button className="text-blue-600 text-xs font-bold px-3 py-1.5 transition">Consulter</button>
+                        <button className="text-[#111111] text-xs font-bold px-3 py-1.5 transition">Consulter</button>
                       ) : (
-                        <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Action</button>
+                        <button className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Action</button>
                       )}
                     </div>
                   );
                 })}
               </>
             )}
-
             
-            <div className="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50 opacity-70">
+            <div className="flex items-center justify-between p-3 border border-[#111111] rounded-xl bg-[#F2F2F2] opacity-70">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-white text-[#111111] border border-[#111111] rounded-lg flex items-center justify-center">
                   <CheckCircle2 size={20} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">Attestation d'Assurance</p>
-                  <p className="text-xs text-slate-500">Téléchargé le 12/08/2026</p>
+                  <p className="text-sm font-semibold text-[#111111]">Attestation d'Assurance</p>
+                  <p className="text-xs text-gray-500">Téléchargé le 12/08/2026</p>
                 </div>
               </div>
-              <button className="text-blue-600 text-xs font-semibold px-2 py-1">Voir</button>
+              <button className="text-[#111111] text-xs font-semibold px-2 py-1">Voir</button>
             </div>
           </div>
         </section>
 
+        {/* PROCHAINES ETAPES */}
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <h3 className="font-bold mb-4 text-[#111111]">Prochaines étapes</h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-[#F2F2F2] rounded-xl border border-[#111111]">
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-bold text-[#111111] text-xs border border-[#111111]">1</div>
+              <p className="text-sm font-bold text-[#111111]">Livraison des matériaux complémentaires</p>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-[#F2F2F2] rounded-xl border border-[#111111]">
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-bold text-[#111111] text-xs border border-[#111111]">2</div>
+              <p className="text-sm font-bold text-[#111111]">Pose de la Façade Ouest</p>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-dashed border-[#111111] opacity-50">
+              <div className="w-8 h-8 rounded-full bg-[#F2F2F2] flex items-center justify-center font-bold text-gray-400 text-xs border border-gray-300">3</div>
+              <p className="text-sm font-bold text-gray-500">Nettoyage du chantier et réception</p>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Chatbot Interface */}
