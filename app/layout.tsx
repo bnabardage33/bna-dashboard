@@ -25,12 +25,12 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} h-full`}>
       <body className="bg-[#0B0F19] min-h-screen text-gray-300 antialiased selection:bg-[#E30613]/30 selection:text-red-200 flex flex-col">
-        <header style={{ backgroundColor: '#1A1D24', position: 'fixed', top: '16px', left: '16px', right: '16px', zIndex: 50, height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderRadius: '22px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+        <header style={{ backgroundColor: '#1A1D24', position: 'fixed', top: '16px', left: '16px', right: '16px', zIndex: 50, height: '88px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderRadius: '22px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
           <Drawer />
           <img
             src="/logo-bna.png"
             alt="BNA Bardage"
-            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '48px', width: 'auto', maxWidth: '180px', objectFit: 'contain', pointerEvents: 'none' }}
+            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '56px', width: 'auto', maxWidth: '200px', objectFit: 'contain', pointerEvents: 'none' }}
           />
           <div style={{ width: '40px' }} />
         </header>
