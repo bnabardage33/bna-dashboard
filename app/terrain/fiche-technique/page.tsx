@@ -117,13 +117,13 @@ export default function FicheTechniquePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Espace technique</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-gray-400">
             DTU, préconisations de pose, entraxes et ventilation
           </p>
         </div>
         <button
           onClick={() => setModalOuvert(true)}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-900/200"
         >
           + Nouvelle fiche
         </button>
@@ -133,7 +133,7 @@ export default function FicheTechniquePage() {
         value={recherche}
         onChange={(e) => setRecherche(e.target.value)}
         placeholder="Rechercher une info technique..."
-        className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100"
+        className="w-full rounded-lg border border-slate-600 bg-[#1A1D24] px-3 py-2 text-sm text-white"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -144,7 +144,7 @@ export default function FicheTechniquePage() {
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               categorie === c.value
                 ? "bg-red-600 text-white"
-                : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                : "border border-slate-600 text-gray-300 hover:bg-[#1A1D24]"
             }`}
           >
             {c.label}
@@ -152,10 +152,10 @@ export default function FicheTechniquePage() {
         ))}
       </div>
 
-      {loading && <p className="text-sm text-slate-400">Chargement…</p>}
+      {loading && <p className="text-sm text-gray-400">Chargement…</p>}
 
       {!loading && filtrees.length === 0 && (
-        <p className="text-sm text-slate-500">Aucune fiche trouvée.</p>
+        <p className="text-sm text-gray-500">Aucune fiche trouvée.</p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -163,17 +163,17 @@ export default function FicheTechniquePage() {
           <button
             key={f.id}
             onClick={() => setFiche(f)}
-            className="rounded-xl border border-slate-700 bg-slate-800 p-4 text-left hover:border-red-600/40"
+            className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 text-left hover:border-red-600/40"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-red-400">
               {f.categorie}
             </p>
             <h3 className="mt-1 font-semibold text-white">{f.titre}</h3>
             {f.reference && (
-              <p className="text-xs text-slate-500">{f.reference}</p>
+              <p className="text-xs text-gray-500">{f.reference}</p>
             )}
             {f.resume && (
-              <p className="mt-2 text-sm text-slate-400">{f.resume}</p>
+              <p className="mt-2 text-sm text-gray-400">{f.resume}</p>
             )}
             {f.fichier_url && (
               <p className="mt-2 text-xs font-medium text-sky-400">📄 PDF joint</p>
@@ -188,32 +188,32 @@ export default function FicheTechniquePage() {
           onClick={() => setFiche(null)}
         >
           <div
-            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-700 pb-3">
+            <div className="flex items-start justify-between border-b border-white/10 pb-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-sky-400">
                   {fiche.categorie}
                 </p>
                 <h2 className="text-base font-bold text-white">{fiche.titre}</h2>
                 {fiche.reference && (
-                  <p className="text-xs text-slate-400">{fiche.reference}</p>
+                  <p className="text-xs text-gray-400">{fiche.reference}</p>
                 )}
               </div>
               <button
                 onClick={() => setFiche(null)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
               >
                 ✕
               </button>
             </div>
 
             {fiche.resume && (
-              <p className="mt-3 text-xs text-slate-300 leading-relaxed">{fiche.resume}</p>
+              <p className="mt-3 text-xs text-gray-300 leading-relaxed">{fiche.resume}</p>
             )}
             {fiche.contenu && (
-              <p className="mt-3 whitespace-pre-wrap text-xs text-slate-400 leading-relaxed">
+              <p className="mt-3 whitespace-pre-wrap text-xs text-gray-400 leading-relaxed">
                 {fiche.contenu}
               </p>
             )}
@@ -230,17 +230,17 @@ export default function FicheTechniquePage() {
                 </a>
                 <iframe
                   src={fiche.fichier_url}
-                  className="h-80 w-full rounded-xl border border-slate-700 bg-slate-900"
+                  className="h-80 w-full rounded-xl border border-white/10 bg-transparent"
                   title={fiche.titre}
                 />
               </div>
             )}
 
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end shadow-lg">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-end shadow-lg">
               <button
                 type="button"
                 onClick={() => setFiche(null)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Fermer
               </button>
@@ -257,11 +257,11 @@ export default function FicheTechniquePage() {
           <form
             onSubmit={onSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-800 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouvelle Fiche Technique</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
                 ✕
               </button>
             </div>
@@ -272,14 +272,14 @@ export default function FicheTechniquePage() {
                 onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
                 placeholder="Titre de la fiche"
                 required
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
 
               <div className="grid grid-cols-2 gap-3">
                 <select
                   value={form.categorie}
                   onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 >
                   {CATEGORIES.filter((c) => c.value !== "toutes").map((c) => (
                     <option key={c.value} value={c.value}>
@@ -291,7 +291,7 @@ export default function FicheTechniquePage() {
                   value={form.reference}
                   onChange={(e) => setForm((p) => ({ ...p, reference: e.target.value }))}
                   placeholder="Référence (ex. DTU 41.2)"
-                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -300,7 +300,7 @@ export default function FicheTechniquePage() {
                 onChange={(e) => setForm((p) => ({ ...p, resume: e.target.value }))}
                 placeholder="Résumé explicatif"
                 rows={2}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
 
               <textarea
@@ -308,34 +308,34 @@ export default function FicheTechniquePage() {
                 onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
                 placeholder="Contenu détaillé ou prescriptions techniques"
                 rows={4}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
 
               <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400 block mb-1">
+                <label className="text-[11px] font-semibold uppercase text-gray-400 block mb-1">
                   Joindre un fichier PDF (optionnel)
                 </label>
                 <input
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-700 file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-slate-200"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white file:mr-3 file:rounded-lg file:border-0 file:bg-[#1A1D24] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-gray-200"
                 />
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={uploading}
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 disabled:opacity-50 shadow-md"
               >
                 {uploading ? "Envoi du PDF…" : "Enregistrer"}
               </button>

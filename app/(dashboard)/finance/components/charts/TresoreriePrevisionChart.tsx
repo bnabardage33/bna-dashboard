@@ -18,16 +18,16 @@ export default function TresoreriePrevisionChart() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800/50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"></div>
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent"></div>
       </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800/50">
-        <span className="text-slate-500">Aucune donnée prévisionnelle</span>
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+        <span className="text-gray-500">Aucune donnée prévisionnelle</span>
       </div>
     );
   }
@@ -40,8 +40,8 @@ export default function TresoreriePrevisionChart() {
   const zeroOffset = max <= 0 ? 0 : min >= 0 ? 1 : max / (max - min);
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
-      <h3 className="mb-4 text-sm font-semibold text-slate-300">
+    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+      <h3 className="mb-4 text-sm font-semibold text-gray-300">
         Trésorerie prévisionnelle (90 jours)
       </h3>
       <div className="h-[300px] w-full">
@@ -78,7 +78,7 @@ export default function TresoreriePrevisionChart() {
                 color: "#f1f5f9",
               }}
               formatter={(value: any) => [
-                <span key="solde" className={Number(value) >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                <span key="solde" className={Number(value) >= 0 ? "text-gray-400" : "text-rose-400"}>
                   {fmtEuro(Number(value))}
                 </span>,
                 "Solde",

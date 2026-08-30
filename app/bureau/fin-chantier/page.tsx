@@ -557,15 +557,15 @@ export default function FinChantierPage() {
       {/* En-tête de la page */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Fin de chantier &amp; Réceptions</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-xl font-bold text-white">Fin de chantier &amp; Réceptions</h1>
+          <p className="text-xs text-gray-400">
             Procès-verbaux de réception (Art. 1792-6), métrés détaillés, annexes photos, notices d&apos;entretien et garanties décennales.
           </p>
         </div>
 
         <button
           onClick={() => ouvrirNouveauPV()}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <span>+</span> Nouveau PV de Réception
         </button>
@@ -573,22 +573,22 @@ export default function FinChantierPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total PV Émis</p>
-          <p className="mt-0.5 text-2xl font-black text-slate-100 font-mono">{totalPV}</p>
-          <p className="text-[11px] text-slate-500">Chantiers clôturés</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total PV Émis</p>
+          <p className="mt-0.5 text-2xl font-black text-white font-mono">{totalPV}</p>
+          <p className="text-[11px] text-gray-500">Chantiers clôturés</p>
         </div>
 
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Sans Réserve</p>
-          <p className="mt-0.5 text-2xl font-black text-emerald-300 font-mono">{nbSansReserve}</p>
-          <p className="text-[11px] text-emerald-500/80">GPA &amp; Décennale actives</p>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Sans Réserve</p>
+          <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbSansReserve}</p>
+          <p className="text-[11px] text-gray-400/80">GPA &amp; Décennale actives</p>
         </div>
 
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Avec Réserves</p>
-          <p className="mt-0.5 text-2xl font-black text-amber-300 font-mono">{nbAvecReserves}</p>
-          <p className="text-[11px] text-amber-500/80">En cours de levée</p>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avec Réserves</p>
+          <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbAvecReserves}</p>
+          <p className="text-[11px] text-gray-400/80">En cours de levée</p>
         </div>
 
         <div className="rounded-2xl border border-sky-500/30 bg-sky-950/20 p-4 shadow-sm">
@@ -606,7 +606,7 @@ export default function FinChantierPage() {
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               filtre === "tous"
                 ? "bg-sky-500 text-slate-950 font-bold"
-                : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
             }`}
           >
             Tous ({pvs.length})
@@ -615,8 +615,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("sans_reserve")}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               filtre === "sans_reserve"
-                ? "bg-emerald-500 text-slate-950 font-bold"
-                : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                ? "bg-red-600 text-slate-950 font-bold"
+                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
             }`}
           >
             Sans réserve ({nbSansReserve})
@@ -625,8 +625,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("avec_reserves")}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               filtre === "avec_reserves"
-                ? "bg-amber-500 text-slate-950 font-bold"
-                : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                ? "bg-red-600 text-slate-950 font-bold"
+                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
             }`}
           >
             Avec réserves ({nbAvecReserves})
@@ -636,7 +636,7 @@ export default function FinChantierPage() {
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               filtre === "reserves_levees"
                 ? "bg-sky-400 text-slate-950 font-bold"
-                : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
             }`}
           >
             Réserves levées ({nbReservesLevees})
@@ -649,22 +649,22 @@ export default function FinChantierPage() {
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             placeholder="Rechercher par n°, chantier, client…"
-            className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+            className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
           />
         </div>
       </div>
 
       {/* Liste des PV en Cartes Mobiles */}
       {loading ? (
-        <div className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-12 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des procès-verbaux…
         </div>
       ) : pvsFiltres.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
-          <p className="text-sm font-medium text-slate-400">Aucun procès-verbal de réception pour ce filtre.</p>
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+          <p className="text-sm font-medium text-gray-400">Aucun procès-verbal de réception pour ce filtre.</p>
           <button
             onClick={() => ouvrirNouveauPV()}
-            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
           >
             + Rédiger un premier PV de réception
           </button>
@@ -683,28 +683,28 @@ export default function FinChantierPage() {
             return (
               <div
                 key={pv.id}
-                className="flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-slate-750"
+                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-[#1A1D24]"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-sky-400">{pv.numero}</span>
-                        <span className="text-xs text-slate-500">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
+                        <span className="text-xs text-gray-500">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
                       </div>
-                      <h2 className="text-base font-bold text-slate-100 mt-0.5">{pv.chantiers?.nom || "Chantier"}</h2>
-                      <p className="text-xs text-slate-400">{pv.clients?.nom || "Client direct"}</p>
+                      <h2 className="text-base font-bold text-white mt-0.5">{pv.chantiers?.nom || "Chantier"}</h2>
+                      <p className="text-xs text-gray-400">{pv.clients?.nom || "Client direct"}</p>
                     </div>
 
                     <span
                       className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
                         pv.statut === "sans_reserve"
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          ? "bg-red-600/20 text-gray-400 border border-white/10"
                           : pv.statut === "reserves_levees"
                           ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
                           : pv.statut === "refuse"
-                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          ? "bg-red-900/200/20 text-red-400 border border-red-500/30"
+                          : "bg-red-600/20 text-gray-400 border border-white/10"
                       }`}
                     >
                       {pv.statut === "sans_reserve"
@@ -717,43 +717,43 @@ export default function FinChantierPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-900/60 p-2.5 border border-slate-700/60 text-center">
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent/60 p-2.5 border border-white/10/60 text-center">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Surface</p>
-                      <p className="text-xs font-bold text-slate-200 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Surface</p>
+                      <p className="text-xs font-bold text-gray-200 mt-0.5">
                         {surfaceTotale > 0 ? `${surfaceTotale.toFixed(1)} m²` : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Réserves</p>
-                      <p className="text-xs font-bold text-slate-200 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Réserves</p>
+                      <p className="text-xs font-bold text-gray-200 mt-0.5">
                         {nbRes === 0 ? "0" : `${nbLevees}/${nbRes}`}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Photos</p>
-                      <p className="text-xs font-bold text-slate-200 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Photos</p>
+                      <p className="text-xs font-bold text-gray-200 mt-0.5">
                         {nbPhotos > 0 ? `📷 ${nbPhotos}` : "0"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-700/60 pt-3">
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10/60 pt-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
                       onClick={() => {
                         setPvSelectionne(pv);
                         setModalPdfOuvert(true);
                       }}
-                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-slate-700 flex items-center gap-1"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-[#1A1D24] flex items-center gap-1"
                     >
                       📄 PDF
                     </button>
 
                     <button
                       onClick={() => handleCreerFactureSolde(pv)}
-                      className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/40 flex items-center gap-1"
+                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40 flex items-center gap-1"
                     >
                       🧾 Solde
                     </button>
@@ -764,7 +764,7 @@ export default function FinChantierPage() {
                           setPvSelectionne(pv);
                           setModalReservesOuvert(true);
                         }}
-                        className="rounded-xl border border-amber-500/40 bg-amber-950/30 px-2.5 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-900/40"
+                        className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40"
                       >
                         🔧 Réserves
                       </button>
@@ -774,7 +774,7 @@ export default function FinChantierPage() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => ouvrirEditionPV(pv)}
-                      className="rounded-xl border border-slate-700 bg-slate-900 p-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                      className="rounded-xl border border-white/10 bg-transparent p-1.5 text-xs text-gray-300 hover:bg-[#1A1D24]"
                       title="Modifier le PV"
                     >
                       ✏️
@@ -782,7 +782,7 @@ export default function FinChantierPage() {
 
                     <button
                       onClick={() => handleSupprimerPV(pv.id, pv.numero)}
-                      className="text-xs text-slate-500 hover:text-red-400 p-1.5 transition-colors"
+                      className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
                       title="Supprimer le PV"
                     >
                       🗑️
@@ -799,7 +799,7 @@ export default function FinChantierPage() {
       <button
         onClick={() => ouvrirNouveauPV()}
         aria-label="Créer un PV de réception"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
@@ -809,19 +809,19 @@ export default function FinChantierPage() {
       {/* ============================================================ */}
       {modalFormOuvert && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-5 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+          <div className="relative w-full max-w-4xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-5 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white">
                   {formId ? "Modifier le Procès-Verbal de Réception" : "Nouveau Procès-Verbal de Réception de Chantier"}
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-gray-400">
                   Article 1792-6 du Code Civil · Surfaces, Réserves, Notice d&apos;Entretien &amp; Annexes Photos
                 </p>
               </div>
               <button
                 onClick={() => setModalFormOuvert(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
               >
                 ✕
               </button>
@@ -831,12 +831,12 @@ export default function FinChantierPage() {
               {/* SECTION 1 : CHANTIER & CLIENT */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Chantier concerné *</label>
+                  <label className="text-xs font-semibold text-gray-300">Chantier concerné *</label>
                   <select
                     value={formChantierId}
                     onChange={(e) => handleChantierChange(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-xs text-white"
                   >
                     <option value="">— Sélectionner un chantier —</option>
                     {chantiers.map((ch) => (
@@ -848,13 +848,13 @@ export default function FinChantierPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Date de réception *</label>
+                  <label className="text-xs font-semibold text-gray-300">Date de réception *</label>
                   <input
                     type="date"
                     value={formDateReception}
                     onChange={(e) => setFormDateReception(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-xs text-white"
                   />
                 </div>
               </div>
@@ -862,31 +862,31 @@ export default function FinChantierPage() {
               {/* SECTION 2 : ADRESSE & MATÉRIAUX */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Adresse d&apos;exécution du chantier</label>
+                  <label className="text-xs font-semibold text-gray-300">Adresse d&apos;exécution du chantier</label>
                   <input
                     type="text"
                     value={formAdresseChantier}
                     onChange={(e) => setFormAdresseChantier(e.target.value)}
                     placeholder="Ex. 12 rue des Pins, 33000 Bordeaux"
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-xs text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Matériaux &amp; Systèmes posés</label>
+                  <label className="text-xs font-semibold text-gray-300">Matériaux &amp; Systèmes posés</label>
                   <input
                     type="text"
                     value={formMateriauxUtilises}
                     onChange={(e) => setFormMateriauxUtilises(e.target.value)}
                     placeholder="Ex. Panneaux Trespa HPL 8mm / Équerres Isolco 140mm / Laine de roche 120mm"
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-white"
+                    className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-xs text-white"
                   />
                 </div>
               </div>
 
               {/* SECTION 3 : PRONONCIATION DE LA RÉCEPTION */}
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5 space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wide text-slate-300">
+              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-gray-300">
                   Type de Réception prononcée
                 </label>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -895,12 +895,12 @@ export default function FinChantierPage() {
                     onClick={() => setFormStatut("sans_reserve")}
                     className={`rounded-lg border p-2.5 text-left text-xs transition-colors ${
                       formStatut === "sans_reserve"
-                        ? "border-emerald-500 bg-emerald-950/40 text-emerald-300"
-                        : "border-slate-700 bg-slate-900 text-slate-400"
+                        ? "border-white/10 bg-white/5 text-gray-400"
+                        : "border-white/10 bg-transparent text-gray-400"
                     }`}
                   >
                     <p className="font-bold">✓ Sans Réserve</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Ouvrage 100% conforme</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Ouvrage 100% conforme</p>
                   </button>
 
                   <button
@@ -908,12 +908,12 @@ export default function FinChantierPage() {
                     onClick={() => setFormStatut("avec_reserves")}
                     className={`rounded-lg border p-2.5 text-left text-xs transition-colors ${
                       formStatut === "avec_reserves"
-                        ? "border-amber-500 bg-amber-950/40 text-amber-300"
-                        : "border-slate-700 bg-slate-900 text-slate-400"
+                        ? "border-white/10 bg-white/5 text-gray-400"
+                        : "border-white/10 bg-transparent text-gray-400"
                     }`}
                   >
                     <p className="font-bold">⚠️ Avec Réserves</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Retouches consignées</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Retouches consignées</p>
                   </button>
 
                   <button
@@ -922,23 +922,23 @@ export default function FinChantierPage() {
                     className={`rounded-lg border p-2.5 text-left text-xs transition-colors ${
                       formStatut === "reserves_levees"
                         ? "border-sky-500 bg-sky-950/40 text-sky-300"
-                        : "border-slate-700 bg-slate-900 text-slate-400"
+                        : "border-white/10 bg-transparent text-gray-400"
                     }`}
                   >
                     <p className="font-bold">✓ Réserves Levées</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Travaux repris et validés</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Travaux repris et validés</p>
                   </button>
                 </div>
               </div>
 
               {/* SECTION 4 : TABLEAU DES SURFACES & MÉTRÉS EXÉCUTÉS */}
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5 space-y-3">
+              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-300 flex items-center gap-1.5">
+                    <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
                       <span>📐</span> Métrés &amp; Surfaces Posées ({formZonesMetres.length} zone(s))
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-gray-400">
                       Surfaces nettes exécutées et réceptionnées sur ce chantier
                     </p>
                   </div>
@@ -958,21 +958,21 @@ export default function FinChantierPage() {
                       };
                       setFormZonesMetres([...formZonesMetres, nouvelleZone]);
                     }}
-                    className="rounded bg-slate-700 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-600"
+                    className="rounded bg-[#1A1D24] px-2.5 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
                   >
                     + Ajouter une zone
                   </button>
                 </div>
 
                 {formZonesMetres.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">
+                  <p className="text-xs text-gray-500 italic">
                     Aucune zone trouvée pour ce chantier. Cliquez sur « + Ajouter une zone » pour saisir les métrés.
                   </p>
                 ) : (
-                  <div className="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900">
+                  <div className="overflow-x-auto rounded-lg border border-white/10 bg-transparent">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-700 text-slate-400 font-semibold uppercase text-[10px]">
+                        <tr className="border-b border-white/10 text-gray-400 font-semibold uppercase text-[10px]">
                           <th className="p-2">Zone</th>
                           <th className="p-2">Type</th>
                           <th className="p-2">Largeur (m)</th>
@@ -981,7 +981,7 @@ export default function FinChantierPage() {
                           <th className="p-2 text-right">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800 text-slate-200">
+                      <tbody className="divide-y divide-slate-800 text-gray-200">
                         {formZonesMetres.map((z, idx) => (
                           <tr key={z.id || idx}>
                             <td className="p-2">
@@ -996,10 +996,10 @@ export default function FinChantierPage() {
                                     )
                                   );
                                 }}
-                                className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-white"
+                                className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
                               />
                             </td>
-                            <td className="p-2 capitalize text-slate-400">{z.type}</td>
+                            <td className="p-2 capitalize text-gray-400">{z.type}</td>
                             <td className="p-2">
                               <input
                                 type="number"
@@ -1016,7 +1016,7 @@ export default function FinChantierPage() {
                                     )
                                   );
                                 }}
-                                className="w-16 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-white"
+                                className="w-16 rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
                               />
                             </td>
                             <td className="p-2">
@@ -1035,10 +1035,10 @@ export default function FinChantierPage() {
                                     )
                                   );
                                 }}
-                                className="w-16 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-white"
+                                className="w-16 rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
                               />
                             </td>
-                            <td className="p-2 text-right font-bold text-emerald-400">
+                            <td className="p-2 text-right font-bold text-gray-400">
                               {z.surfaceNette.toFixed(2)} m²
                             </td>
                             <td className="p-2 text-right">
@@ -1062,27 +1062,27 @@ export default function FinChantierPage() {
 
               {/* SECTION 5 : TABLEAU COMPLET DES RÉSERVES */}
               {(formStatut === "avec_reserves" || formReserves.length > 0) && (
-                <div className="space-y-3 rounded-xl border border-amber-500/30 bg-amber-950/10 p-3.5">
+                <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-3.5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
                         <span>📝</span> Tableau des Réserves Constatées ({formReserves.length})
                       </p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-gray-400">
                         Désignation, emplacement précis et date limite convenue de levée
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={ajouterReserve}
-                      className="rounded bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-500"
+                      className="rounded bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-600"
                     >
                       + Ajouter une réserve
                     </button>
                   </div>
 
                   {formReserves.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">
+                    <p className="text-xs text-gray-400 italic">
                       Aucune réserve ajoutée. Cliquez sur « + Ajouter une réserve » pour consigner une retouche.
                     </p>
                   ) : (
@@ -1090,7 +1090,7 @@ export default function FinChantierPage() {
                       {formReserves.map((r, index) => (
                         <div
                           key={r.id}
-                          className="grid grid-cols-1 gap-2 rounded-lg border border-slate-700 bg-slate-900 p-2.5 sm:grid-cols-12 items-center"
+                          className="grid grid-cols-1 gap-2 rounded-lg border border-white/10 bg-transparent p-2.5 sm:grid-cols-12 items-center"
                         >
                           <div className="sm:col-span-5">
                             <input
@@ -1099,7 +1099,7 @@ export default function FinChantierPage() {
                               onChange={(e) => updateReserve(r.id, { designation: e.target.value })}
                               placeholder={`Réserve #${index + 1} (ex: Retouche joint d'angle)`}
                               required
-                              className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-white"
+                              className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -1108,7 +1108,7 @@ export default function FinChantierPage() {
                               value={r.localisation}
                               onChange={(e) => updateReserve(r.id, { localisation: e.target.value })}
                               placeholder="Emplacement (ex: Façade Sud - Angle haut)"
-                              className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-white"
+                              className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -1116,7 +1116,7 @@ export default function FinChantierPage() {
                               type="date"
                               value={r.date_limite}
                               onChange={(e) => updateReserve(r.id, { date_limite: e.target.value })}
-                              className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-white"
+                              className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
                             />
                           </div>
                           <div className="sm:col-span-1 text-right">
@@ -1136,12 +1136,12 @@ export default function FinChantierPage() {
               )}
 
               {/* SECTION 6 : NOTICE, FICHES TECHNIQUES & ENTRETIEN */}
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5 space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-300 flex items-center gap-1.5">
+              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
                   <span>📚</span> Notice, Fiches Techniques &amp; Entretien
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <label className="flex items-center gap-2 text-slate-300 bg-slate-800/80 p-2.5 rounded-lg border border-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-2 text-gray-300 bg-[#1A1D24]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formNoticeEntretien.remise_fiches_techniques}
@@ -1155,7 +1155,7 @@ export default function FinChantierPage() {
                     <span>Fiches techniques fabricants remises</span>
                   </label>
 
-                  <label className="flex items-center gap-2 text-slate-300 bg-slate-800/80 p-2.5 rounded-lg border border-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-2 text-gray-300 bg-[#1A1D24]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formNoticeEntretien.remise_guide_entretien}
@@ -1169,7 +1169,7 @@ export default function FinChantierPage() {
                     <span>Guide d&apos;entretien remis</span>
                   </label>
 
-                  <label className="flex items-center gap-2 text-slate-300 bg-slate-800/80 p-2.5 rounded-lg border border-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-2 text-gray-300 bg-[#1A1D24]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formNoticeEntretien.remise_attestation_decennale}
@@ -1186,13 +1186,13 @@ export default function FinChantierPage() {
               </div>
 
               {/* SECTION 7 : ANNEXES PHOTOS (2 À 4 CLICHÉS) */}
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5 space-y-3">
+              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-slate-300 flex items-center gap-1.5">
+                    <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
                       <span>📷</span> Annexes Photographiques ({formPhotos.length}/4 clichés)
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-gray-400">
                       Photos contradictoires de l&apos;ouvrage achevé pour l&apos;annexe au PV
                     </p>
                   </div>
@@ -1218,7 +1218,7 @@ export default function FinChantierPage() {
                 </div>
 
                 {formPhotos.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-slate-700 p-4 text-center text-xs text-slate-500">
+                  <div className="rounded-lg border border-dashed border-white/10 p-4 text-center text-xs text-gray-500">
                     Aucune photo ajoutée. Vous pouvez joindre 2 à 4 photos de l&apos;ouvrage fini (façades, angles, finitions).
                   </div>
                 ) : (
@@ -1226,9 +1226,9 @@ export default function FinChantierPage() {
                     {formPhotos.map((p, idx) => (
                       <div
                         key={p.id || idx}
-                        className="relative rounded-lg border border-slate-700 bg-slate-800 p-2 space-y-1.5"
+                        className="relative rounded-lg border border-white/10 bg-[#1A1D24] p-2 space-y-1.5"
                       >
-                        <div className="aspect-[4/3] w-full overflow-hidden rounded bg-slate-900">
+                        <div className="aspect-[4/3] w-full overflow-hidden rounded bg-transparent">
                           <img src={p.url} alt="Aperçu" className="h-full w-full object-cover" />
                         </div>
                         <input
@@ -1236,12 +1236,12 @@ export default function FinChantierPage() {
                           value={p.titre || ""}
                           onChange={(e) => modifierTitrePhoto(p.id, e.target.value)}
                           placeholder="Légende photo"
-                          className="w-full rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px] text-white"
+                          className="w-full rounded border border-white/10 bg-transparent px-1.5 py-1 text-[11px] text-white"
                         />
                         <button
                           type="button"
                           onClick={() => supprimerPhoto(p.id)}
-                          className="absolute -top-1.5 -right-1.5 rounded-full bg-red-600 p-1 text-white shadow hover:bg-red-500 text-[10px]"
+                          className="absolute -top-1.5 -right-1.5 rounded-full bg-red-600 p-1 text-white shadow hover:bg-red-900/200 text-[10px]"
                         >
                           ✕
                         </button>
@@ -1252,12 +1252,12 @@ export default function FinChantierPage() {
               </div>
 
               {/* SECTION 8 : CHECKLIST REPLI DE CHANTIER */}
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3.5 space-y-2">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
+              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-300">
                   🧹 Checklist Propreté &amp; Repli du Chantier
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 text-xs">
-                  <label className="flex items-center gap-2 text-slate-300">
+                  <label className="flex items-center gap-2 text-gray-300">
                     <input
                       type="checkbox"
                       checked={formChecklistRepli.nettoyage}
@@ -1267,7 +1267,7 @@ export default function FinChantierPage() {
                     />
                     Nettoyage du site
                   </label>
-                  <label className="flex items-center gap-2 text-slate-300">
+                  <label className="flex items-center gap-2 text-gray-300">
                     <input
                       type="checkbox"
                       checked={formChecklistRepli.dechets_evacues}
@@ -1277,7 +1277,7 @@ export default function FinChantierPage() {
                     />
                     Déchets évacués
                   </label>
-                  <label className="flex items-center gap-2 text-slate-300">
+                  <label className="flex items-center gap-2 text-gray-300">
                     <input
                       type="checkbox"
                       checked={formChecklistRepli.echafaudage_demonte}
@@ -1287,7 +1287,7 @@ export default function FinChantierPage() {
                     />
                     Échafaudage démonté
                   </label>
-                  <label className="flex items-center gap-2 text-slate-300">
+                  <label className="flex items-center gap-2 text-gray-300">
                     <input
                       type="checkbox"
                       checked={formChecklistRepli.fiches_techniques_remises}
@@ -1302,18 +1302,18 @@ export default function FinChantierPage() {
 
               {/* SECTION 9 : OBSERVATIONS */}
               <div>
-                <label className="text-xs font-semibold text-slate-300">Observations Particulières</label>
+                <label className="text-xs font-semibold text-gray-300">Observations Particulières</label>
                 <textarea
                   value={formObservations}
                   onChange={(e) => setFormObservations(e.target.value)}
                   rows={2}
                   placeholder="Observations éventuelles sur le déroulement ou les accès..."
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 p-2.5 text-xs text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent p-2.5 text-xs text-white"
                 />
               </div>
 
               {/* SECTION 10 : SIGNATURES TACTILES */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-slate-700">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-white/10">
                 <div className="space-y-2">
                   <SignaturePad
                     label="Signature Client / Maître d'Ouvrage"
@@ -1326,7 +1326,7 @@ export default function FinChantierPage() {
                     value={formSignClientNom}
                     onChange={(e) => setFormSignClientNom(e.target.value)}
                     placeholder="Nom du signataire client"
-                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white"
+                    className="w-full rounded border border-white/10 bg-transparent px-2 py-1.5 text-xs text-white"
                   />
                 </div>
 
@@ -1342,17 +1342,17 @@ export default function FinChantierPage() {
                     value={formSignEntrepriseNom}
                     onChange={(e) => setFormSignEntrepriseNom(e.target.value)}
                     placeholder="Nom du chef de chantier"
-                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white"
+                    className="w-full rounded border border-white/10 bg-transparent px-2 py-1.5 text-xs text-white"
                   />
                 </div>
               </div>
 
               {/* BOUTONS D'ACTION */}
-              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-end gap-3 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setModalFormOuvert(false)}
-                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                  className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
                 >
                   Annuler
                 </button>
@@ -1360,7 +1360,7 @@ export default function FinChantierPage() {
                 <button
                   type="submit"
                   disabled={sauvegardeEnCours}
-                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
+                  className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 disabled:opacity-50 shadow-md"
                 >
                   {sauvegardeEnCours ? "Enregistrement..." : formId ? "Mettre à jour le PV" : "Créer le PV de Réception"}
                 </button>
@@ -1375,25 +1375,25 @@ export default function FinChantierPage() {
       {/* ============================================================ */}
       {modalReservesOuvert && pvSelectionne && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 pb-20 sm:pb-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+          <div className="relative w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 pb-20 sm:pb-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white">
                   Gestion des Réserves · {pvSelectionne.numero}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-gray-400">
                   {pvSelectionne.chantiers?.nom} ({pvSelectionne.clients?.nom})
                 </p>
               </div>
               <button
                 onClick={() => setModalReservesOuvert(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-gray-300">
               Cochez les réserves effectuées pour constater leur levée. Dès que toutes les réserves sont levées, le statut passe automatiquement à <strong className="text-sky-400">« Réserves Levées »</strong>.
             </p>
 
@@ -1404,8 +1404,8 @@ export default function FinChantierPage() {
                   onClick={() => toggleLeverReserve(pvSelectionne, r.id)}
                   className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-colors ${
                     r.levee
-                      ? "border-emerald-500/40 bg-emerald-950/20 text-emerald-300"
-                      : "border-slate-700 bg-slate-900/60 text-slate-200 hover:border-amber-500/40"
+                      ? "border-white/10 bg-white/5 text-gray-400"
+                      : "border-white/10 bg-transparent/60 text-gray-200 hover:border-white/10"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1413,13 +1413,13 @@ export default function FinChantierPage() {
                       type="checkbox"
                       checked={r.levee}
                       onChange={() => {}}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-600"
+                      className="h-4 w-4 rounded border-slate-600 bg-[#1A1D24] text-red-400"
                     />
                     <div>
-                      <p className={`text-xs font-semibold ${r.levee ? "line-through text-slate-400" : "text-white"}`}>
+                      <p className={`text-xs font-semibold ${r.levee ? "line-through text-gray-400" : "text-white"}`}>
                         {r.designation}
                       </p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-gray-500">
                         {r.localisation} · Échéance : {r.date_limite ? new Date(r.date_limite).toLocaleDateString("fr-FR") : "—"}
                       </p>
                     </div>
@@ -1427,28 +1427,28 @@ export default function FinChantierPage() {
 
                   <span className="text-[11px] font-semibold">
                     {r.levee ? (
-                      <span className="text-emerald-400">
+                      <span className="text-gray-400">
                         ✓ Levée {r.date_levee ? `(${new Date(r.date_levee).toLocaleDateString("fr-FR")})` : ""}
                       </span>
                     ) : (
-                      <span className="text-amber-400">À lever</span>
+                      <span className="text-gray-400">À lever</span>
                     )}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-between shadow-lg">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-between shadow-lg">
               <button
                 onClick={() => handleCreerFactureSolde(pvSelectionne)}
-                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+                className="text-xs font-semibold text-gray-400 hover:text-gray-400"
               >
                 🧾 Facture de Solde →
               </button>
 
               <button
                 onClick={() => setModalReservesOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Fermer
               </button>
@@ -1462,8 +1462,8 @@ export default function FinChantierPage() {
       {/* ============================================================ */}
       {modalPdfOuvert && pvSelectionne && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-0 sm:p-4 overflow-y-auto">
-          <div className="relative w-full max-w-4xl rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4 my-auto max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3 print:hidden">
+          <div className="relative w-full max-w-4xl rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-4 my-auto max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 print:hidden">
               <div className="flex items-center gap-3">
                 <h3 className="text-base font-bold text-white">
                   Procès-Verbal Officiel {pvSelectionne.numero}
@@ -1471,10 +1471,10 @@ export default function FinChantierPage() {
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
                     pvSelectionne.statut === "sans_reserve"
-                      ? "bg-emerald-500/20 text-emerald-400"
+                      ? "bg-red-600/20 text-gray-400"
                       : pvSelectionne.statut === "reserves_levees"
                       ? "bg-sky-500/20 text-sky-400"
-                      : "bg-amber-500/20 text-amber-400"
+                      : "bg-red-600/20 text-gray-400"
                   }`}
                 >
                   {pvSelectionne.statut}
@@ -1484,13 +1484,13 @@ export default function FinChantierPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+                  className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
                 >
                   <span>🖨️</span> Imprimer / Exporter PDF
                 </button>
                 <button
                   onClick={() => setModalPdfOuvert(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                  className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
                 >
                   ✕
                 </button>
@@ -1498,7 +1498,7 @@ export default function FinChantierPage() {
             </div>
 
             {/* Document PDF rendu */}
-            <div className="rounded-xl border border-slate-700 bg-white p-2 shadow-2xl print:border-none print:p-0">
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-2 shadow-2xl print:border-none print:p-0">
               <PVReceptionPDF
                 pv={pvSelectionne}
                 entreprise={DEFAULT_ENTREPRISE}

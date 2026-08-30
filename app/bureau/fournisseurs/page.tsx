@@ -45,17 +45,17 @@ const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
 const SPECIALITES = ["Bois", "Métal / Bac acier", "Composite", "Quincaillerie / Visserie", "Isolation", "Autre"];
 
 const STATUTS = [
-  { value: "a_commander", label: "À commander", emoji: "⚪", couleur: "border-slate-600 text-slate-300" },
+  { value: "a_commander", label: "À commander", emoji: "⚪", couleur: "border-slate-600 text-gray-300" },
   { value: "commandee", label: "Commandée", emoji: "🔵", couleur: "border-sky-500/40 text-sky-400" },
-  { value: "partiellement_livree", label: "Partiellement livrée", emoji: "🟠", couleur: "border-amber-500/40 text-amber-400" },
-  { value: "livree", label: "Livrée", emoji: "🟢", couleur: "border-emerald-500/40 text-emerald-400" },
+  { value: "partiellement_livree", label: "Partiellement livrée", emoji: "🟠", couleur: "border-white/10 text-gray-400" },
+  { value: "livree", label: "Livrée", emoji: "🟢", couleur: "border-white/10 text-gray-400" },
   { value: "annulee", label: "Annulée", emoji: "🔴", couleur: "border-red-500/40 text-red-400" },
 ];
 
 const RELATIONS: { value: StatutRelation; label: string; couleurActif: string }[] = [
-  { value: "principal", label: "⭐ Principal", couleurActif: "border-red-500 bg-red-500/10 text-red-400" },
+  { value: "principal", label: "⭐ Principal", couleurActif: "border-red-500 bg-red-900/200/10 text-red-400" },
   { value: "regulier", label: "Régulier", couleurActif: "border-sky-500 bg-sky-500/10 text-sky-400" },
-  { value: "remplacant", label: "Remplaçant", couleurActif: "border-slate-500 bg-slate-500/10 text-slate-300" },
+  { value: "remplacant", label: "Remplaçant", couleurActif: "border-slate-500 bg-transparent0/10 text-gray-300" },
 ];
 
 function estMemeMois(dateStr: string | null, ref: Date) {
@@ -291,29 +291,29 @@ export default function FournisseursPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-white">Fournisseurs & Achats</h1>
-        <p className="text-sm text-slate-400">Répertoire fournisseurs et suivi des commandes</p>
+        <p className="text-sm text-gray-400">Répertoire fournisseurs et suivi des commandes</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-xs text-slate-400">🏢 Fournisseurs actifs</p>
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+          <p className="text-xs text-gray-400">🏢 Fournisseurs actifs</p>
           <p className="mt-1 text-xl font-semibold text-white">{kpis.fournisseursActifs}</p>
         </div>
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-xs text-slate-400">📦 Commandes en cours</p>
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+          <p className="text-xs text-gray-400">📦 Commandes en cours</p>
           <p className="mt-1 text-xl font-semibold text-white">{kpis.commandesEnCours}</p>
         </div>
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-xs text-slate-400">🚚 Livraisons attendues</p>
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+          <p className="text-xs text-gray-400">🚚 Livraisons attendues</p>
           <p className="mt-1 text-xl font-semibold text-white">{kpis.livraisonsAttendues}</p>
         </div>
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-xs text-slate-400">💰 Achats du mois</p>
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+          <p className="text-xs text-gray-400">💰 Achats du mois</p>
           <p className="mt-1 text-sm text-white">
             Engagé : <span className="font-semibold">{kpis.achatsEngages.toFixed(0)} €</span>
           </p>
-          <p className="text-sm text-slate-400">
-            Reçu : <span className="font-semibold text-emerald-400">{kpis.achatsRecus.toFixed(0)} €</span>
+          <p className="text-sm text-gray-400">
+            Reçu : <span className="font-semibold text-gray-400">{kpis.achatsRecus.toFixed(0)} €</span>
           </p>
         </div>
       </div>
@@ -321,19 +321,19 @@ export default function FournisseursPage() {
       <div className="flex flex-wrap gap-2.5">
         <button
           onClick={() => setModalFournisseur(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+          className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <span>+</span> Nouveau Fournisseur
         </button>
         <button
           onClick={() => setModalCommande(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-750"
+          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-200 hover:bg-[#1A1D24]"
         >
           <span>📦</span> Nouvelle Commande
         </button>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-700/80">
+      <div className="flex gap-2 border-b border-white/10/80">
         {(["fournisseurs", "commandes"] as const).map((t) => (
           <button
             key={t}
@@ -341,7 +341,7 @@ export default function FournisseursPage() {
             className={`px-4 py-2 text-xs font-bold transition-all ${
               tab === t
                 ? "border-b-2 border-sky-400 text-sky-400"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-gray-400 hover:text-gray-200"
             }`}
           >
             {t === "fournisseurs" ? "🏢 Fournisseurs" : "📦 Commandes Matériaux"}
@@ -352,21 +352,21 @@ export default function FournisseursPage() {
       {tab === "fournisseurs" && (
         <div className="space-y-4">
           {loading ? (
-            <p className="text-sm text-slate-400">Chargement…</p>
+            <p className="text-sm text-gray-400">Chargement…</p>
           ) : fournisseurs.length === 0 ? (
-            <p className="text-sm text-slate-500">Aucun fournisseur pour l&apos;instant.</p>
+            <p className="text-sm text-gray-500">Aucun fournisseur pour l&apos;instant.</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {fournisseurs.map((f) => {
                 const relation = RELATIONS.find((r) => r.value === f.statut_relation) ?? RELATIONS[1];
                 return (
-                  <div key={f.id} className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+                  <div key={f.id} className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-semibold text-white">{f.nom}</p>
                         <div className="mt-1 flex flex-wrap gap-1.5">
                           {f.specialite && (
-                            <span className="inline-block rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-400">
+                            <span className="inline-block rounded-full border border-slate-600 px-2 py-0.5 text-xs text-gray-400">
                               {f.specialite}
                             </span>
                           )}
@@ -379,12 +379,12 @@ export default function FournisseursPage() {
                       </div>
                       <button
                         onClick={() => supprimerFournisseur(f)}
-                        className="text-xs text-slate-500 hover:text-red-400"
+                        className="text-xs text-gray-500 hover:text-red-400"
                       >
                         🗑️
                       </button>
                     </div>
-                    {f.contact && <p className="mt-2 text-sm text-slate-400">{f.contact}</p>}
+                    {f.contact && <p className="mt-2 text-sm text-gray-400">{f.contact}</p>}
                     <div className="mt-2 flex flex-wrap gap-3 text-sm">
                       {f.telephone && (
                         <a href={`tel:${f.telephone}`} className="font-medium text-red-400 hover:text-red-300">
@@ -398,9 +398,9 @@ export default function FournisseursPage() {
                       )}
                     </div>
                     {f.conditions_paiement && (
-                      <p className="mt-2 text-xs text-slate-500">Paiement : {f.conditions_paiement}</p>
+                      <p className="mt-2 text-xs text-gray-500">Paiement : {f.conditions_paiement}</p>
                     )}
-                    {f.notes && <p className="mt-1 text-xs text-slate-500">{f.notes}</p>}
+                    {f.notes && <p className="mt-1 text-xs text-gray-500">{f.notes}</p>}
                   </div>
                 );
               })}
@@ -412,9 +412,9 @@ export default function FournisseursPage() {
       {tab === "commandes" && (
         <div className="space-y-4">
           {loading ? (
-            <p className="text-sm text-slate-400">Chargement…</p>
+            <p className="text-sm text-gray-400">Chargement…</p>
           ) : commandes.length === 0 ? (
-            <p className="text-sm text-slate-500">Aucune commande pour l&apos;instant.</p>
+            <p className="text-sm text-gray-500">Aucune commande pour l&apos;instant.</p>
           ) : (
             <div className="space-y-2">
               {commandes.map((c) => {
@@ -422,23 +422,23 @@ export default function FournisseursPage() {
                 return (
                   <div
                     key={c.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-800 p-4"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#1A1D24] p-4"
                   >
                     <div>
                       <p className="font-medium text-white">{c.designation}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-gray-500">
                         {c.fournisseurs?.nom ?? "—"} ·{" "}
                         {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
                         {c.quantite ? ` · ${c.quantite} ${c.unite}` : ""}
                         {c.montant_ht ? ` · ${c.montant_ht.toFixed(2)} € HT` : ""}
                       </p>
                       {c.date_livraison_prevue && (
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-gray-500">
                           Livraison prévue : {new Date(c.date_livraison_prevue).toLocaleDateString("fr-FR")}
                         </p>
                       )}
                       {c.date_livraison_reelle && (
-                        <p className="text-xs text-emerald-500">
+                        <p className="text-xs text-gray-400">
                           Livré le : {new Date(c.date_livraison_reelle).toLocaleDateString("fr-FR")}
                         </p>
                       )}
@@ -447,7 +447,7 @@ export default function FournisseursPage() {
                       <button
                         type="button"
                         onClick={() => setApercuCommande(c)}
-                        className="rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1 text-xs text-sky-400 hover:bg-slate-700 hover:text-sky-300"
+                        className="rounded-lg border border-slate-600 bg-transparent px-2.5 py-1 text-xs text-sky-400 hover:bg-[#1A1D24] hover:text-sky-300"
                         title="Voir et imprimer le bon de commande officiel"
                       >
                         📄 Bon de commande
@@ -455,7 +455,7 @@ export default function FournisseursPage() {
                       <select
                         value={c.statut}
                         onChange={(e) => changerStatutCommande(c, e.target.value)}
-                        className={`rounded-lg border bg-slate-900 px-2 py-1 text-xs ${statutInfo.couleur}`}
+                        className={`rounded-lg border bg-transparent px-2 py-1 text-xs ${statutInfo.couleur}`}
                       >
                         {STATUTS.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -465,7 +465,7 @@ export default function FournisseursPage() {
                       </select>
                       <button
                         onClick={() => supprimerCommande(c)}
-                        className="text-xs text-slate-500 hover:text-red-400"
+                        className="text-xs text-gray-500 hover:text-red-400"
                       >
                         🗑️
                       </button>
@@ -486,11 +486,11 @@ export default function FournisseursPage() {
           <form
             onSubmit={creerFournisseur}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-800 w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouveau Fournisseur</h2>
-              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
                 ✕
               </button>
             </div>
@@ -501,12 +501,12 @@ export default function FournisseursPage() {
                 onChange={(e) => setFNom(e.target.value)}
                 placeholder="Nom de l'entreprise"
                 required
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <select
                 value={fSpecialite}
                 onChange={(e) => setFSpecialite(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
               >
                 {SPECIALITES.map((s) => (
                   <option key={s} value={s}>
@@ -516,7 +516,7 @@ export default function FournisseursPage() {
               </select>
 
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase text-slate-400">Statut du fournisseur</label>
+                <label className="mb-1 block text-[11px] font-semibold uppercase text-gray-400">Statut du fournisseur</label>
                 <div className="grid grid-cols-3 gap-2">
                   {RELATIONS.map((r) => (
                     <button
@@ -526,7 +526,7 @@ export default function FournisseursPage() {
                       className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
                         fStatutRelation === r.value
                           ? r.couleurActif
-                          : "border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-700"
+                          : "border-white/10 bg-transparent text-gray-400 hover:bg-[#1A1D24]"
                       }`}
                     >
                       {r.label}
@@ -539,48 +539,48 @@ export default function FournisseursPage() {
                 value={fContact}
                 onChange={(e) => setFContact(e.target.value)}
                 placeholder="Nom du contact"
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={fTel}
                   onChange={(e) => setFTel(e.target.value)}
                   placeholder="Téléphone"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
                 <input
                   value={fEmail}
                   onChange={(e) => setFEmail(e.target.value)}
                   placeholder="Email"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
               </div>
               <input
                 value={fConditions}
                 onChange={(e) => setFConditions(e.target.value)}
                 placeholder="Conditions de paiement (ex. 30j fin de mois)"
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <textarea
                 value={fNotes}
                 onChange={(e) => setFNotes(e.target.value)}
                 placeholder="Notes et commentaires"
                 rows={2}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl">
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
               >
                 Enregistrer le Fournisseur
               </button>
@@ -597,13 +597,13 @@ export default function FournisseursPage() {
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-800 w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">
                 {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
               </h2>
-              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
                 ✕
               </button>
             </div>
@@ -622,29 +622,29 @@ export default function FournisseursPage() {
                       <input
                         value={l.designation}
                         onChange={(e) => updateLigneMultiple(i, { designation: e.target.value })}
-                        className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                        className="flex-1 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
                       />
                       <input
                         type="number"
                         value={l.quantite}
                         onChange={(e) => updateLigneMultiple(i, { quantite: parseFloat(e.target.value) || 0 })}
-                        className="w-20 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                        className="w-20 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
                       />
                       <input
                         value={l.unite}
                         onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
-                        className="w-16 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                        className="w-16 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
                       />
                       <button
                         type="button"
                         onClick={() => supprimerLigneMultiple(i)}
-                        className="text-xs text-slate-500 hover:text-red-400 font-bold"
+                        className="text-xs text-gray-500 hover:text-red-400 font-bold"
                       >
                         ✕
                       </button>
                     </div>
                   ))}
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-gray-400">
                     Complète le fournisseur ci-dessous. Les prix sont à ajouter ensuite sur chaque commande.
                   </p>
                 </div>
@@ -654,14 +654,14 @@ export default function FournisseursPage() {
                   onChange={(e) => setCDesignation(e.target.value)}
                   placeholder="Désignation (ex. Bardage Douglas claire-voie)"
                   required
-                  className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
               )}
 
               <select
                 value={cFournisseurId}
                 onChange={(e) => setCFournisseurId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
               >
                 <option value="">-- Fournisseur (optionnel) --</option>
                 {fournisseurs.map((f) => (
@@ -674,7 +674,7 @@ export default function FournisseursPage() {
               <select
                 value={cChantierId}
                 onChange={(e) => setCChantierId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
               >
                 <option value="">-- Chantier (optionnel) --</option>
                 {chantiers.map((c) => (
@@ -691,46 +691,46 @@ export default function FournisseursPage() {
                     value={cQuantite}
                     onChange={(e) => setCQuantite(e.target.value)}
                     placeholder="Quantité"
-                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                   <input
                     value={cUnite}
                     onChange={(e) => setCUnite(e.target.value)}
                     placeholder="Unité"
-                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                   <input
                     type="number"
                     value={cMontant}
                     onChange={(e) => setCMontant(e.target.value)}
                     placeholder="Montant HT"
-                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
               )}
 
               <div>
-                <label className="text-[11px] font-semibold uppercase text-slate-400">Date livraison prévue</label>
+                <label className="text-[11px] font-semibold uppercase text-gray-400">Date livraison prévue</label>
                 <input
                   type="date"
                   value={cDateLivraison}
                   onChange={(e) => setCDateLivraison(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl">
               <button
                 type="button"
                 onClick={fermerModalCommande}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
               >
                 Enregistrer la Commande
               </button>
@@ -750,14 +750,14 @@ export default function FournisseursPage() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
               >
                 <span>🖨️</span> Imprimer / Exporter PDF
               </button>
               <button
                 type="button"
                 onClick={() => setApercuCommande(null)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Fermer
               </button>
@@ -805,7 +805,7 @@ export default function FournisseursPage() {
       <button
         onClick={() => (tab === "fournisseurs" ? setModalFournisseur(true) : setModalCommande(true))}
         aria-label="Ajouter fournisseur ou commande"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>

@@ -123,13 +123,13 @@ export default function NotesPage() {
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Notes du Patron</h1>
-          <p className="text-xs text-slate-400">Bloc-notes vocal &amp; synthèses techniques IA</p>
+          <h1 className="text-xl font-bold text-white">Notes du Patron</h1>
+          <p className="text-xs text-gray-400">Bloc-notes vocal &amp; synthèses techniques IA</p>
         </div>
 
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <Plus className="h-4 w-4 stroke-[3]" />
           <span>Nouvelle Note</span>
@@ -138,16 +138,16 @@ export default function NotesPage() {
 
       {/* Liste des Notes */}
       {loading ? (
-        <div className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-12 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des notes…
         </div>
       ) : notes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
-          <Mic className="mx-auto h-10 w-10 text-slate-500" />
-          <p className="text-sm font-medium text-slate-400">Aucune note pour l&apos;instant.</p>
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+          <Mic className="mx-auto h-10 w-10 text-gray-500" />
+          <p className="text-sm font-medium text-gray-400">Aucune note pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
           >
             + Rédiger ou dicter une note
           </button>
@@ -159,12 +159,12 @@ export default function NotesPage() {
               key={note.id}
               className={`flex flex-col justify-between rounded-2xl border p-4.5 shadow-md transition-all ${
                 note.titre?.includes('🟢')
-                  ? "border-emerald-500/80 bg-slate-800/90 shadow-emerald-500/10"
+                  ? "border-white/10 bg-[#1A1D24]/90 shadow-red-600/10"
                   : note.titre?.includes('🔴')
-                  ? "border-red-500/80 bg-slate-800/90 shadow-red-500/10"
+                  ? "border-red-500/80 bg-[#1A1D24]/90 shadow-red-500/10"
                   : note.epingle
-                  ? "border-sky-500/50 bg-slate-800 shadow-sky-500/5"
-                  : "border-slate-700 bg-slate-800 hover:border-slate-600"
+                  ? "border-sky-500/50 bg-[#1A1D24] shadow-sky-500/5"
+                  : "border-white/10 bg-[#1A1D24] hover:border-slate-600"
               }`}
             >
               {editId === note.id ? (
@@ -173,24 +173,24 @@ export default function NotesPage() {
                     value={editTitre}
                     onChange={(e) => setEditTitre(e.target.value)}
                     placeholder="Titre"
-                    className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                   <textarea
                     value={editContenu}
                     onChange={(e) => setEditContenu(e.target.value)}
                     rows={4}
-                    className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => setEditId(null)}
-                      className="rounded-xl border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                      className="rounded-xl border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-xs text-gray-300 hover:bg-[#1A1D24]"
                     >
                       Annuler
                     </button>
                     <button
                       onClick={() => enregistrerEdition(note.id)}
-                      className="flex items-center gap-1 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400"
+                      className="flex items-center gap-1 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-red-700"
                     >
                       <Check className="h-3.5 w-3.5" />
                       <span>Enregistrer</span>
@@ -201,7 +201,7 @@ export default function NotesPage() {
                 <div className="flex flex-col justify-between h-full space-y-3">
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h2 className="text-sm font-bold text-slate-100 flex-1">
+                      <h2 className="text-sm font-bold text-white flex-1">
                         {note.titre || "Note libre"}
                       </h2>
                       <button
@@ -209,7 +209,7 @@ export default function NotesPage() {
                         className={`rounded-lg p-1.5 transition-colors ${
                           note.epingle
                             ? "text-sky-400 bg-sky-950/40"
-                            : "text-slate-500 hover:text-slate-300 hover:bg-slate-700"
+                            : "text-gray-500 hover:text-gray-300 hover:bg-[#1A1D24]"
                         }`}
                         title={note.epingle ? "Désépingler" : "Épingler en haut"}
                       >
@@ -217,24 +217,24 @@ export default function NotesPage() {
                       </button>
                     </div>
 
-                    <p className="whitespace-pre-wrap text-xs text-slate-300 leading-relaxed">
+                    <p className="whitespace-pre-wrap text-xs text-gray-300 leading-relaxed">
                       {note.contenu}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-700/60 pt-3 text-[11px] text-slate-500">
+                  <div className="flex items-center justify-between border-t border-white/10/60 pt-3 text-[11px] text-gray-500">
                     <span>{new Date(note.updated_at).toLocaleDateString("fr-FR")}</span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => commencerEdition(note)}
-                        className="p-1.5 text-slate-400 hover:text-sky-400 transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-sky-400 transition-colors"
                         title="Modifier la note"
                       >
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => supprimerNote(note.id)}
-                        className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                        className="p-1.5 text-gray-500 hover:text-red-400 transition-colors"
                         title="Supprimer la note"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -252,7 +252,7 @@ export default function NotesPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Créer une note"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <Plus className="h-7 w-7 stroke-[2.5]" />
       </button>
@@ -260,15 +260,15 @@ export default function NotesPage() {
       {/* Bottom Sheet / Modal Nouvelle Note */}
       {modalOuvert && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+          <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h2 className="text-base font-bold text-slate-100">Nouvelle Note Patron</h2>
-                <p className="text-xs text-slate-400">Écrivez ou dictez avec le micro Whisper IA</p>
+                <h2 className="text-base font-bold text-white">Nouvelle Note Patron</h2>
+                <p className="text-xs text-gray-400">Écrivez ou dictez avec le micro Whisper IA</p>
               </div>
               <button
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -276,11 +276,11 @@ export default function NotesPage() {
 
             <form onSubmit={ajouterNote} className="space-y-3.5 pb-20 sm:pb-6">
               <div>
-                <label className="text-xs font-semibold text-slate-300">Chantier lié (optionnel)</label>
+                <label className="text-xs font-semibold text-gray-300">Chantier lié (optionnel)</label>
                 <select
                   value={chantierId}
                   onChange={(e) => setChantierId(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 >
                   <option value="">🏢 Note générale libre</option>
                   {chantiers.map((c) => (
@@ -292,28 +292,28 @@ export default function NotesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Titre</label>
+                <label className="text-xs font-semibold text-gray-300">Titre</label>
                 <input
                   value={titre}
                   onChange={(e) => setTitre(e.target.value)}
                   placeholder="Ex. Réunion pose ossature bois"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Contenu de la note *</label>
+                <label className="text-xs font-semibold text-gray-300">Contenu de la note *</label>
                 <textarea
                   value={contenu}
                   onChange={(e) => setContenu(e.target.value)}
                   placeholder="Tapez votre note ou utilisez le dictaphone ci-dessous…"
                   rows={4}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
-              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3">
+              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3">
                 <BoutonMicroNote
                   onTexteReformule={(texte) =>
                     setContenu((prev) => (prev.trim() ? prev.trim() + " " + texte : texte))
@@ -322,17 +322,17 @@ export default function NotesPage() {
                 />
               </div>
 
-              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-slate-800 px-6 py-3 border-t border-slate-700 flex items-center justify-end gap-3 shadow-lg">
+              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-end gap-3 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setModalOuvert(false)}
-                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                  className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
+                  className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
                 >
                   Enregistrer la note
                 </button>

@@ -134,18 +134,18 @@ export default function FeuilleHeuresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4 lg:p-8 text-slate-100">
+    <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
       <div className="mx-auto max-w-3xl space-y-6">
-        <h1 className="text-2xl font-bold text-slate-100">Feuille d'heures</h1>
+        <h1 className="text-2xl font-bold text-white">Feuille d'heures</h1>
 
         {/* Paramètres du jour */}
-        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Chantier</label>
+            <label className="block text-sm text-gray-400 mb-1">Chantier</label>
             <select
               value={chantierId}
               onChange={(e) => setChantierId(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none"
+              className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             >
               {chantiers.map((c) => (
                 <option key={c.id} value={c.id}>{c.nom}</option>
@@ -153,31 +153,31 @@ export default function FeuilleHeuresPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Date</label>
+            <label className="block text-sm text-gray-400 mb-1">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none"
+              className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Taux horaire chargé (€)</label>
+            <label className="block text-sm text-gray-400 mb-1">Taux horaire chargé (€)</label>
             <input
               type="number"
               step="0.01"
               value={tauxHoraire}
               onChange={(e) => setTauxHoraire(parseFloat(e.target.value) || 0)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none"
+              className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
         </div>
 
         {/* Formulaire ajout ouvrier (dépliable) */}
-        <div className="rounded-xl border border-slate-700 bg-slate-800/50 overflow-hidden">
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 overflow-hidden">
           <button
             onClick={() => setFormOuvrierOuvert(!formOuvrierOuvert)}
-            className="w-full flex items-center justify-between p-4 text-sm font-semibold text-cyan-400 hover:bg-slate-700/30 transition-colors"
+            className="w-full flex items-center justify-between p-4 text-sm font-semibold text-gray-400 hover:bg-[#1A1D24]/30 transition-colors"
           >
             <span className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
@@ -187,7 +187,7 @@ export default function FeuilleHeuresPage() {
           </button>
 
           {formOuvrierOuvert && (
-            <form onSubmit={handleAjouterOuvrier} className="p-4 pt-0 space-y-3 border-t border-slate-700">
+            <form onSubmit={handleAjouterOuvrier} className="p-4 pt-0 space-y-3 border-t border-white/10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input
                   type="text"
@@ -195,19 +195,19 @@ export default function FeuilleHeuresPage() {
                   required
                   value={nouveauNom}
                   onChange={(e) => setNouveauNom(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-md p-2 text-sm focus:border-cyan-400 outline-none"
+                  className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 />
                 <input
                   type="text"
                   placeholder="Qualification (ex: bardeur confirmé)"
                   value={nouvelleQualif}
                   onChange={(e) => setNouvelleQualif(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-md p-2 text-sm focus:border-cyan-400 outline-none"
+                  className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 />
                 <select
                   value={nouveauStatut}
                   onChange={(e) => setNouveauStatut(e.target.value as any)}
-                  className="bg-slate-900 border border-slate-700 rounded-md p-2 text-sm focus:border-cyan-400 outline-none"
+                  className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 >
                   <option value="embauche">Embauché</option>
                   <option value="interimaire">Intérimaire</option>
@@ -216,7 +216,7 @@ export default function FeuilleHeuresPage() {
               <button
                 type="submit"
                 disabled={ajoutEnCours}
-                className="rounded-md bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-colors"
+                className="rounded-md bg-red-600 hover:bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-colors"
               >
                 {ajoutEnCours ? "Ajout..." : "Ajouter"}
               </button>
@@ -225,15 +225,15 @@ export default function FeuilleHeuresPage() {
         </div>
 
         {/* Tableau des ouvriers */}
-        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
-          <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wide mb-3">
+        <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wide mb-3">
             Équipe ({ouvriers.length})
           </h2>
 
           {isLoading ? (
-            <p className="text-sm text-slate-500 text-center py-6">Chargement...</p>
+            <p className="text-sm text-gray-500 text-center py-6">Chargement...</p>
           ) : ouvriers.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-6">Aucun ouvrier enregistré. Ajoute-en un ci-dessus.</p>
+            <p className="text-sm text-gray-500 text-center py-6">Aucun ouvrier enregistré. Ajoute-en un ci-dessus.</p>
           ) : (
             <div className="space-y-2">
               {ouvriers.map((o) => {
@@ -243,7 +243,7 @@ export default function FeuilleHeuresPage() {
                   <div
                     key={o.id}
                     className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-colors ${
-                      ligne.coche ? "border-cyan-500/50 bg-cyan-500/5" : "border-slate-700 bg-slate-900/30"
+                      ligne.coche ? "border-white/10 bg-red-600/5" : "border-white/10 bg-transparent/30"
                     }`}
                   >
                     <input
@@ -253,11 +253,11 @@ export default function FeuilleHeuresPage() {
                       className="h-5 w-5 accent-cyan-500"
                     />
                     <div className="flex-1 min-w-[120px]">
-                      <p className="font-semibold text-slate-200 text-sm">{o.full_name}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="font-semibold text-gray-200 text-sm">{o.full_name}</p>
+                      <p className="text-[11px] text-gray-500">
                         {o.qualification || "—"}
                         {o.statut_emploi === "interimaire" && (
-                          <span className="ml-1.5 rounded bg-amber-500/20 text-amber-400 px-1.5 py-0.5 text-[10px] font-bold uppercase">
+                          <span className="ml-1.5 rounded bg-red-600/20 text-gray-400 px-1.5 py-0.5 text-[10px] font-bold uppercase">
                             Intérim
                           </span>
                         )}
@@ -271,14 +271,14 @@ export default function FeuilleHeuresPage() {
                       value={ligne.heures}
                       onChange={(e) => majLigne(o.id, "heures", parseFloat(e.target.value) || 0)}
                       disabled={!ligne.coche}
-                      className="w-20 bg-slate-900 border border-slate-700 rounded-md p-1.5 text-sm text-center focus:border-cyan-400 outline-none disabled:opacity-40"
+                      className="w-20 bg-transparent border border-white/10 rounded-md p-1.5 text-sm text-center focus:border-white/10 outline-none disabled:opacity-40"
                     />
-                    <span className="text-xs text-slate-500">h</span>
+                    <span className="text-xs text-gray-500">h</span>
                     <select
                       value={ligne.type_heure}
                       onChange={(e) => majLigne(o.id, "type_heure", e.target.value)}
                       disabled={!ligne.coche}
-                      className="bg-slate-900 border border-slate-700 rounded-md p-1.5 text-xs focus:border-cyan-400 outline-none disabled:opacity-40"
+                      className="bg-transparent border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
                     >
                       <option value="normale">Normale</option>
                       <option value="supplementaire">Supplémentaire</option>
@@ -292,7 +292,7 @@ export default function FeuilleHeuresPage() {
         </div>
 
         {message && (
-          <div className={`rounded-lg border p-3 text-sm ${message.startsWith("✓") ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : "border-rose-500/40 bg-rose-500/10 text-rose-400"}`}>
+          <div className={`rounded-lg border p-3 text-sm ${message.startsWith("✓") ? "border-white/10 bg-red-600/10 text-gray-400" : "border-rose-500/40 bg-rose-500/10 text-rose-400"}`}>
             {message}
           </div>
         )}
@@ -300,7 +300,7 @@ export default function FeuilleHeuresPage() {
         <button
           onClick={handleEnregistrer}
           disabled={isSaving}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 py-3 font-bold text-white disabled:opacity-50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-600 py-3 font-bold text-white disabled:opacity-50 transition-colors"
         >
           <Save className="h-5 w-5" />
           {isSaving ? "Enregistrement..." : "Enregistrer la feuille d'heures"}

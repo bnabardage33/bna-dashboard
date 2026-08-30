@@ -40,7 +40,7 @@ export default function FinanceDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4 lg:p-8 text-slate-100">
+    <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
       {printingRapport && (
         <div className="hidden print:block">
           <RapportMensuelPDF onReady={() => {
@@ -53,7 +53,7 @@ export default function FinanceDashboard() {
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold text-slate-100">
+            <h1 className="text-3xl font-bold text-white">
               Finance & Pilotage
             </h1>
             <div className="flex items-center gap-4 mt-2">
@@ -61,12 +61,12 @@ export default function FinanceDashboard() {
                 type="month"
                 value={selectedMois}
                 onChange={(e) => setSelectedMois(e.target.value)}
-                className="rounded-md border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 outline-none focus:border-cyan-400"
+                className="rounded-md border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-sm font-medium text-gray-200 outline-none focus:border-white/10"
               />
               <button
                 onClick={() => setPrintingRapport(true)}
                 disabled={printingRapport}
-                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
               >
                 <FileText className="h-4 w-4" />
                 Rapport mensuel
@@ -74,7 +74,7 @@ export default function FinanceDashboard() {
               <button
                 onClick={handleExportCsv}
                 disabled={exportingCsv}
-                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
                 title="Export Tableur pour le Comptable"
               >
                 <Download className="h-4 w-4" />
@@ -86,7 +86,7 @@ export default function FinanceDashboard() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/finance/historique"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-700"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1A1D24]"
               title="Historique & Corrections"
             >
               <History className="h-4 w-4" />
@@ -94,14 +94,14 @@ export default function FinanceDashboard() {
             </Link>
             <Link
               href="/finance/saisie/frais-interim"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-cyan-600/10 px-4 py-2 text-sm font-medium text-cyan-400 transition-colors hover:bg-cyan-600/20"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-red-600/10 px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-red-600/20"
             >
               <Clock className="h-4 w-4" />
               Frais Intérim
             </Link>
             <Link
               href="/finance/saisie/feuille-heures"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-emerald-600/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-600/20"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-red-600/10 px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-red-600/20"
             >
               <Users className="h-4 w-4" />
               Feuille d'heures
@@ -133,7 +133,7 @@ export default function FinanceDashboard() {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-100 mb-4">Analyses & Tendances</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Analyses & Tendances</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <CaEvolutionChart endMois={selectedMois} />
             <CoutRepartitionChart mois={selectedMois} />

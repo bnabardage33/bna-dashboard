@@ -282,19 +282,19 @@ export default function CataloguePage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4 lg:p-8 text-slate-100">
+    <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
       <div className="mx-auto max-w-7xl space-y-6">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <Link
               href="/bureau"
-              className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-400 transition-colors mb-2"
+              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-400 transition-colors mb-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Retour au Bureau
             </Link>
-            <h1 className="text-3xl font-bold text-slate-100">Catalogue des Ouvrages</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-3xl font-bold text-white">Catalogue des Ouvrages</h1>
+            <p className="text-sm text-gray-400 mt-1">
               Gérez votre bibliothèque de prix pour la création des devis.
             </p>
           </div>
@@ -309,7 +309,7 @@ export default function CataloguePage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting}
-              className="flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-bold text-white hover:bg-slate-600 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-[#1A1D24] px-4 py-2 text-sm font-bold text-white hover:bg-[#1A1D24] transition-colors disabled:opacity-50"
             >
               {isImporting ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -320,7 +320,7 @@ export default function CataloguePage() {
             </button>
             <button
               onClick={() => handleOpenModal()}
-              className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-600 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Nouvel Ouvrage
@@ -329,7 +329,7 @@ export default function CataloguePage() {
         </header>
 
         {/* Filtres */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1A1D24]/50 p-4 rounded-xl border border-white/10">
           {/* Catégorie */}
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
@@ -338,8 +338,8 @@ export default function CataloguePage() {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
                   activeCategory === cat
-                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-                    : "bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-500"
+                    ? "bg-red-600/20 text-gray-400 border border-white/10"
+                    : "bg-[#1A1D24] text-gray-400 border border-white/10 hover:border-slate-500"
                 }`}
               >
                 {cat}
@@ -348,11 +348,11 @@ export default function CataloguePage() {
           </div>
           {/* Fabricant */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-400">Fabricant</label>
+            <label className="text-xs text-gray-400">Fabricant</label>
             <select
               value={activeFabricant}
               onChange={(e) => setActiveFabricant(e.target.value)}
-              className="rounded border border-slate-600 bg-slate-900 p-1 text-xs text-slate-200"
+              className="rounded border border-slate-600 bg-transparent p-1 text-xs text-gray-200"
             >
               <option value="All">Tous</option>
               {Array.from(new Set(ouvrages.map((o) => o.fabricant).filter(Boolean)))
@@ -366,13 +366,13 @@ export default function CataloguePage() {
           </div>
           {/* Recherche texte */}
           <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
               placeholder="Rechercher (couleur / code décor)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 py-2 pl-9 pr-4 text-sm text-slate-200 outline-none focus:border-cyan-400"
+              className="w-full rounded-lg border border-slate-600 bg-transparent py-2 pl-9 pr-4 text-sm text-gray-200 outline-none focus:border-white/10"
             />
           </div>
 
@@ -384,7 +384,7 @@ export default function CataloguePage() {
               setActiveFabricant('All');
               setActiveCategory('Toutes');
             }}
-            className="ml-2 rounded bg-slate-700 px-3 py-1 text-xs text-slate-200 hover:bg-slate-600"
+            className="ml-2 rounded bg-[#1A1D24] px-3 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
           >
             Réinitialiser
           </button>
@@ -393,26 +393,26 @@ export default function CataloguePage() {
         {/* Liste */}
         {isLoading ? (
           <div className="flex h-32 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredOuvrages.map((o) => (
-              <div key={o.id} className="flex flex-col rounded-xl border border-slate-700 bg-slate-800/50 p-5 hover:border-cyan-500/50 transition-colors">
+              <div key={o.id} className="flex flex-col rounded-xl border border-white/10 bg-[#1A1D24]/50 p-5 hover:border-white/10 transition-colors">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="inline-block px-2 py-1 bg-slate-700 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded">
+                  <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded">
                     {o.famille_label}
                   </span>
                   <div className="flex gap-2">
-                    <button onClick={() => handleOpenModal(o)} className="text-slate-500 hover:text-cyan-400">
+                    <button onClick={() => handleOpenModal(o)} className="text-gray-500 hover:text-gray-400">
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(o.id)} className="text-slate-500 hover:text-rose-400">
+                    <button onClick={() => handleDelete(o.id)} className="text-gray-500 hover:text-rose-400">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                <h3 className="font-bold text-slate-200 text-sm leading-tight mb-1">
+                <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
                   {o.designation}
                 </h3>
                 {(() => {
@@ -452,25 +452,25 @@ export default function CataloguePage() {
                   }
 
                   return text ? (
-                    <p className="text-[11px] text-slate-400 font-mono mb-2 opacity-90">
+                    <p className="text-[11px] text-gray-400 font-mono mb-2 opacity-90">
                       {text}
                     </p>
                   ) : <div className="mb-2"></div>;
                 })()}
-                <p className="text-xs text-slate-500 line-clamp-3 mb-4 flex-grow">
+                <p className="text-xs text-gray-500 line-clamp-3 mb-4 flex-grow">
                   {o.description}
                 </p>
-                <div className="mt-auto flex items-end justify-between border-t border-slate-700 pt-3">
-                  <span className="text-xs font-medium text-slate-500">Unité : {o.unite}</span>
-                  <span className="text-lg font-black text-cyan-400">{fmtEuro(o.pu_ht)} HT</span>
+                <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
+                  <span className="text-xs font-medium text-gray-500">Unité : {o.unite}</span>
+                  <span className="text-lg font-black text-gray-400">{fmtEuro(o.pu_ht)} HT</span>
                   {o.prix_ttc !== undefined && (
-                    <span className="text-sm font-medium text-slate-400">{fmtEuro(o.prix_ttc)} TTC</span>
+                    <span className="text-sm font-medium text-gray-400">{fmtEuro(o.prix_ttc)} TTC</span>
                   )}
                 </div>
               </div>
             ))}
             {filteredOuvrages.length === 0 && (
-              <div className="col-span-full py-12 text-center text-slate-500">
+              <div className="col-span-full py-12 text-center text-gray-500">
                 Aucun ouvrage trouvé pour cette recherche.
               </div>
             )}
@@ -480,13 +480,13 @@ export default function CataloguePage() {
         {/* Modal Ajout/Edition */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col max-h-[80vh]">
+            <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-transparent shadow-2xl flex flex-col max-h-[80vh]">
               {/* Header fixe */}
               <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
-                <h2 className="text-xl font-bold text-slate-100">
+                <h2 className="text-xl font-bold text-white">
                   {editingOuvrage ? "Modifier le matériau" : "Nouveau matériau"}
                 </h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -498,12 +498,12 @@ export default function CataloguePage() {
                 {/* ── En-tête : Catégorie + Famille + Désignation ─────────── */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Catégorie</label>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Catégorie</label>
                     <select
                       required
                       value={formData.categorie}
                       onChange={(e) => set("categorie", e.target.value)}
-                      className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                     >
                       {categories.filter((c) => c !== "Toutes").map((c) => (
                         <option key={c} value={c}>{c}</option>
@@ -511,106 +511,106 @@ export default function CataloguePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Famille (ex&nbsp;: Bardage HPL)</label>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Famille (ex&nbsp;: Bardage HPL)</label>
                     <input
                       required
                       type="text"
                       placeholder="Bardage HPL"
                       value={formData.famille_label ?? ""}
                       onChange={(e) => set("famille_label", e.target.value)}
-                      className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Désignation (titre de la fiche)</label>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
                   <input
                     required
                     type="text"
                     placeholder="ex&nbsp;: Trespa Meteon – Blanc Ménuires B015"
                     value={formData.designation ?? ""}
                     onChange={(e) => set("designation", e.target.value)}
-                    className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                    className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                   />
                 </div>
 
                 {/* ── Section 1 : Marque & Décor ─────────────────────────── */}
                 <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
-                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     1 · Marque &amp; Décor
                   </legend>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Fabricant</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Fabricant</label>
                       <input
                         type="text"
                         placeholder="ex&nbsp;: Polyrey, Trespa"
                         value={formData.fabricant ?? ""}
                         onChange={(e) => set("fabricant", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Gamme</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Gamme</label>
                       <input
                         type="text"
                         placeholder="ex&nbsp;: Reysipur"
                         value={formData.gamme ?? ""}
                         onChange={(e) => set("gamme", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Code Décor</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Code Décor</label>
                       <input
                         type="text"
                         placeholder="ex&nbsp;: B015"
                         value={formData.code_decor ?? ""}
                         onChange={(e) => set("code_decor", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Nom / Couleur du Décor</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Nom / Couleur du Décor</label>
                       <input
                         type="text"
                         placeholder="ex&nbsp;: Blanc Ménuires"
                         value={formData.couleur ?? ""}
                         onChange={(e) => set("couleur", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Finition</label>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Finition</label>
                     <input
                       type="text"
                       placeholder="ex&nbsp;: FA Satin"
                       value={formData.finition ?? ""}
                       onChange={(e) => set("finition", e.target.value)}
-                      className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                     />
                   </div>
                 </fieldset>
 
                 {/* ── Section 2 : Dimensions & Spécifications ────────────── */}
                 <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
-                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     2 · Dimensions &amp; Spécifications
                   </legend>
 
                   <div className="space-y-3">
                     {(formData.dimensions_disponibles || []).map((dim, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                      <div key={idx} className="flex items-center gap-3 bg-[#1A1D24]/50 p-3 rounded-lg border border-white/10">
                         <div className="flex-1 grid grid-cols-3 gap-3">
                           <div>
-                            <label className="block text-[10px] uppercase text-slate-500 mb-1">Longueur (mm)</label>
+                            <label className="block text-[10px] uppercase text-gray-500 mb-1">Longueur (mm)</label>
                             <input
                               type="number"
                               min="0"
@@ -621,11 +621,11 @@ export default function CataloguePage() {
                                 newDims[idx].longueur_mm = e.target.value === "" ? null : parseFloat(e.target.value);
                                 setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
                               }}
-                              className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                              className="w-full rounded border border-slate-600 bg-transparent px-2 py-1.5 text-sm text-white"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase text-slate-500 mb-1">Largeur (mm)</label>
+                            <label className="block text-[10px] uppercase text-gray-500 mb-1">Largeur (mm)</label>
                             <input
                               type="number"
                               min="0"
@@ -636,11 +636,11 @@ export default function CataloguePage() {
                                 newDims[idx].largeur_mm = e.target.value === "" ? null : parseFloat(e.target.value);
                                 setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
                               }}
-                              className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                              className="w-full rounded border border-slate-600 bg-transparent px-2 py-1.5 text-sm text-white"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase text-slate-500 mb-1">Épaisseur (mm)</label>
+                            <label className="block text-[10px] uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
                             <input
                               type="number"
                               min="0"
@@ -652,7 +652,7 @@ export default function CataloguePage() {
                                 newDims[idx].epaisseur_mm = e.target.value === "" ? null : parseFloat(e.target.value);
                                 setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
                               }}
-                              className="w-full rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+                              className="w-full rounded border border-slate-600 bg-transparent px-2 py-1.5 text-sm text-white"
                             />
                           </div>
                         </div>
@@ -663,7 +663,7 @@ export default function CataloguePage() {
                             newDims.splice(idx, 1);
                             setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
                           }}
-                          className="mt-5 p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-md transition-colors"
+                          className="mt-5 p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-md transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -681,7 +681,7 @@ export default function CataloguePage() {
                           ]
                         }));
                       }}
-                      className="w-full py-2 border border-dashed border-slate-600 text-slate-400 rounded-lg text-sm hover:text-cyan-400 hover:border-cyan-500/50 transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-2 border border-dashed border-slate-600 text-gray-400 rounded-lg text-sm hover:text-gray-400 hover:border-white/10 transition-colors flex items-center justify-center gap-2"
                     >
                       <Plus className="h-4 w-4" /> Ajouter une dimension
                     </button>
@@ -690,28 +690,28 @@ export default function CataloguePage() {
 
                 {/* ── Section 3 : Fournisseur & Tarifs ──────────────────── */}
                 <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
-                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     3 · Fournisseur &amp; Tarifs
                   </legend>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Fournisseur</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Fournisseur</label>
                       <input
                         type="text"
                         placeholder="ex&nbsp;: Dispano, Barillet"
                         value={formData.fournisseur ?? ""}
                         onChange={(e) => set("fournisseur", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Unité de vente</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
                       <select
                         required
                         value={formData.unite}
                         onChange={(e) => set("unite", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       >
                         <option value="m²">m²</option>
                         <option value="U">U (Unité)</option>
@@ -723,7 +723,7 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">Prix Unitaire HT (€)</label>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Prix Unitaire HT (€)</label>
                       <input
                         required
                         type="text"
@@ -738,13 +738,13 @@ export default function CataloguePage() {
                             prix_ttc: val === "" ? "" as any : parseFloat((numericHt * 1.2).toFixed(2))
                           }));
                         }}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Prix TTC (€)
-                        <span className="ml-1 text-[10px] font-normal text-slate-500">(TVA 20%)</span>
+                        <span className="ml-1 text-[10px] font-normal text-gray-500">(TVA 20%)</span>
                       </label>
                       <input
                         type="text"
@@ -759,7 +759,7 @@ export default function CataloguePage() {
                             pu_ht: val === "" ? "" as any : parseFloat((numericTtc / 1.2).toFixed(2))
                           }));
                         }}
-                        className="w-full rounded border border-slate-600 bg-slate-900 p-2 text-sm text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
                   </div>
@@ -768,11 +768,11 @@ export default function CataloguePage() {
                 </div> {/* Fin du contenu scrollable */}
 
                 {/* ── Boutons (Static Footer) ─────────────────────────────── */}
-                <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
+                <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
                     disabled={isSubmitting}
                   >
                     Annuler
@@ -780,7 +780,7 @@ export default function CataloguePage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-500 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">

@@ -77,16 +77,16 @@ export default function SaisiePointage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-slate-800/50 rounded-xl border border-slate-700 mt-8 text-slate-100">
+    <div className="max-w-xl mx-auto p-6 bg-[#1A1D24]/50 rounded-xl border border-white/10 mt-8 text-white">
       <h1 className="text-2xl font-bold mb-6">Saisie Pointage</h1>
       
       {error && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md text-sm">{error}</div>}
-      {success && <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md text-sm font-medium">Pointage enregistré avec succès !</div>}
+      {success && <div className="mb-4 p-3 bg-red-600/10 border border-white/10 text-gray-400 rounded-md text-sm font-medium">Pointage enregistré avec succès !</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Chantier</label>
-          <select required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
+          <label className="block text-sm text-gray-400 mb-1">Chantier</label>
+          <select required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
             <option value="">Sélectionner un chantier</option>
             {chantiers.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
           </select>
@@ -94,12 +94,12 @@ export default function SaisiePointage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Date</label>
-            <input type="date" required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            <label className="block text-sm text-gray-400 mb-1">Date</label>
+            <input type="date" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Ouvrier</label>
-            <select required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.ouvrier_id} onChange={e => setFormData({...formData, ouvrier_id: e.target.value})}>
+            <label className="block text-sm text-gray-400 mb-1">Ouvrier</label>
+            <select required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.ouvrier_id} onChange={e => setFormData({...formData, ouvrier_id: e.target.value})}>
               <option value="">Sélectionner</option>
               {ouvriers.map(o => <option key={o.id} value={o.id}>{o.full_name || o.id}</option>)}
             </select>
@@ -108,24 +108,24 @@ export default function SaisiePointage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Heures</label>
-            <input type="number" step="0.5" min="0.5" max="24" required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.heures} onChange={e => setFormData({...formData, heures: parseFloat(e.target.value)})} />
+            <label className="block text-sm text-gray-400 mb-1">Heures</label>
+            <input type="number" step="0.5" min="0.5" max="24" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.heures} onChange={e => setFormData({...formData, heures: parseFloat(e.target.value)})} />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Taux horaire chargé (€)</label>
-            <input type="number" step="0.01" min="0" required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.taux_horaire_charge} onChange={e => setFormData({...formData, taux_horaire_charge: parseFloat(e.target.value)})} />
+            <label className="block text-sm text-gray-400 mb-1">Taux horaire chargé (€)</label>
+            <input type="number" step="0.01" min="0" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_horaire_charge} onChange={e => setFormData({...formData, taux_horaire_charge: parseFloat(e.target.value)})} />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Type d'heure</label>
+          <label className="block text-sm text-gray-400 mb-1">Type d'heure</label>
           <div className="flex gap-2">
             {["Normale", "Supplémentaire", "Intempéries"].map(type => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setFormData({...formData, type_heure: type})}
-                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.type_heure === type ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' : 'border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-700'}`}
+                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.type_heure === type ? 'bg-red-600/20 border-white/10 text-gray-400' : 'border-white/10 bg-transparent text-gray-400 hover:bg-[#1A1D24]'}`}
               >
                 {type}
               </button>
@@ -134,8 +134,8 @@ export default function SaisiePointage() {
         </div>
 
         <div className="pt-4 flex justify-between items-center">
-          <button type="button" onClick={() => router.back()} className="text-sm font-medium text-slate-400 hover:text-slate-200">Retour</button>
-          <button type="submit" disabled={loading} className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-md font-medium disabled:opacity-50 transition-colors">
+          <button type="button" onClick={() => router.back()} className="text-sm font-medium text-gray-400 hover:text-gray-200">Retour</button>
+          <button type="submit" disabled={loading} className="px-6 py-2 bg-red-600 hover:bg-red-600 text-white rounded-md font-medium disabled:opacity-50 transition-colors">
             {loading ? "Enregistrement..." : "Enregistrer le pointage"}
           </button>
         </div>

@@ -25,9 +25,9 @@ const EMOJI_VIGILANCE: Record<string, string> = {
 };
 
 const COULEUR_BORDURE: Record<string, string> = {
-  vert: "border-emerald-500/40",
-  jaune: "border-amber-500/40",
-  orange: "border-orange-500/40",
+  vert: "border-white/10",
+  jaune: "border-white/10",
+  orange: "border-white/10",
   rouge: "border-red-500/40",
 };
 
@@ -132,7 +132,7 @@ export default function BureauRapportsIntemperiesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-white">Rapports Intempéries</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-gray-400">
             Tous les rapports générés automatiquement ou manuellement, tous chantiers confondus.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function BureauRapportsIntemperiesPage() {
         <button
           onClick={genererRapportsActifs}
           disabled={generationEnCours}
-          className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-red-900/200 disabled:opacity-50"
         >
           {generationEnCours ? "⏳ Analyse Météo..." : "⚡ Vérifier & Générer pour les chantiers"}
         </button>
@@ -150,8 +150,8 @@ export default function BureauRapportsIntemperiesPage() {
         <div
           className={`rounded-lg p-3 text-xs font-medium ${
             messageFeedback.startsWith("✓")
-              ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-              : "border border-red-500/30 bg-red-500/10 text-red-300"
+              ? "border border-white/10 bg-red-600/10 text-gray-400"
+              : "border border-red-500/30 bg-red-900/200/10 text-red-300"
           }`}
         >
           {messageFeedback}
@@ -162,7 +162,7 @@ export default function BureauRapportsIntemperiesPage() {
         <button
           onClick={() => setFiltre("tous")}
           className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-            filtre === "tous" ? "bg-red-600 text-white" : "border border-slate-600 text-slate-300"
+            filtre === "tous" ? "bg-red-600 text-white" : "border border-slate-600 text-gray-300"
           }`}
         >
           Tous ({rapports.length})
@@ -170,7 +170,7 @@ export default function BureauRapportsIntemperiesPage() {
         <button
           onClick={() => setFiltre("a_valider")}
           className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-            filtre === "a_valider" ? "bg-amber-500 text-slate-950" : "border border-slate-600 text-slate-300"
+            filtre === "a_valider" ? "bg-red-600 text-slate-950" : "border border-slate-600 text-gray-300"
           }`}
         >
           À valider ({aValiderCount})
@@ -178,7 +178,7 @@ export default function BureauRapportsIntemperiesPage() {
         <button
           onClick={() => setFiltre("arretes")}
           className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-            filtre === "arretes" ? "bg-slate-600 text-white" : "border border-slate-600 text-slate-300"
+            filtre === "arretes" ? "bg-[#1A1D24] text-white" : "border border-slate-600 text-gray-300"
           }`}
         >
           Journées arrêtées
@@ -186,40 +186,40 @@ export default function BureauRapportsIntemperiesPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-slate-400">Chargement…</p>
+        <p className="text-sm text-gray-400">Chargement…</p>
       ) : rapportsFiltres.length === 0 ? (
-        <p className="text-sm text-slate-500">Aucun rapport pour ce filtre.</p>
+        <p className="text-sm text-gray-500">Aucun rapport pour ce filtre.</p>
       ) : (
         <div className="space-y-2">
           {rapportsFiltres.map((r) => (
             <Link
               key={r.id}
               href={`/rapports-intemperies/${r.id}`}
-              className={`block rounded-xl border bg-slate-800 p-4 hover:border-red-600/40 ${
-                COULEUR_BORDURE[r.vigilance_officielle] ?? "border-slate-700"
+              className={`block rounded-xl border bg-[#1A1D24] p-4 hover:border-red-600/40 ${
+                COULEUR_BORDURE[r.vigilance_officielle] ?? "border-white/10"
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span>{EMOJI_VIGILANCE[r.vigilance_officielle] ?? "⚪"}</span>
                   <span className="font-semibold text-white">{r.numero}</span>
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm text-gray-400">
                     {r.chantiers?.nom || "Chantier"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {r.a_valider && (
-                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-400">
+                    <span className="rounded-full bg-red-600/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-400">
                       À valider
                     </span>
                   )}
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-gray-500">
                     {new Date(r.cree_le).toLocaleDateString("fr-FR")}
                   </span>
                 </div>
               </div>
-              <p className="mt-1 text-xs text-slate-400">{labelStatut(r)}</p>
-              <p className="mt-1 line-clamp-2 text-xs text-slate-500">{r.motif}</p>
+              <p className="mt-1 text-xs text-gray-400">{labelStatut(r)}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-gray-500">{r.motif}</p>
             </Link>
           ))}
         </div>

@@ -216,13 +216,13 @@ export default function FicheSAV() {
     await supabase.from("tickets_sav").update(payload).eq("id", id);
   };
 
-  if (loading) return <div className="p-12 text-center text-slate-400">Chargement de la fiche...</div>;
+  if (loading) return <div className="p-12 text-center text-gray-400">Chargement de la fiche...</div>;
 
   return (
     <div className="p-4 sm:p-8 space-y-6 pb-32">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/bureau/sav" className="p-2 bg-slate-800 rounded-xl hover:bg-slate-700 text-slate-300">
+          <Link href="/bureau/sav" className="p-2 bg-[#1A1D24] rounded-xl hover:bg-[#1A1D24] text-gray-300">
             <ArrowLeft size={20} />
           </Link>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -239,11 +239,11 @@ export default function FicheSAV() {
         </button>
       </div>
 
-      <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="bg-[#1A1D24] p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex-1 w-full">
-          <label className="text-xs uppercase tracking-wide text-slate-400 mb-1 block">Chantier concerné</label>
+          <label className="text-xs uppercase tracking-wide text-gray-400 mb-1 block">Chantier concerné</label>
           <select 
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-sky-500"
+            className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-sky-500"
             value={ticket.chantier_id}
             onChange={(e) => setTicket({...ticket, chantier_id: e.target.value})}
           >
@@ -254,12 +254,12 @@ export default function FicheSAV() {
           </select>
         </div>
         <div className="w-full sm:w-48">
-          <label className="text-xs uppercase tracking-wide text-slate-400 mb-1 block">Couverture</label>
+          <label className="text-xs uppercase tracking-wide text-gray-400 mb-1 block">Couverture</label>
           <button
             onClick={() => setTicket({...ticket, sous_garantie: !ticket.sous_garantie})}
             className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
               ticket.sous_garantie 
-                ? "bg-emerald-950/30 text-emerald-400 border border-emerald-500/30" 
+                ? "bg-white/5 text-gray-400 border border-white/10" 
                 : "bg-red-950/30 text-red-400 border border-red-500/30"
             }`}
           >
@@ -272,17 +272,17 @@ export default function FicheSAV() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* TUILE 1 : FICHE SINISTRE */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <AlertTriangle size={18} /> 1. Fiche Sinistre
           </h2>
           
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Type de problème</label>
+              <label className="text-xs text-gray-400 block mb-1">Type de problème</label>
               <select 
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.type_sinistre}
                 onChange={(e) => setTicket({...ticket, type_sinistre: e.target.value})}
               >
@@ -297,10 +297,10 @@ export default function FicheSAV() {
             </div>
             
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Localisation (Façade, Pignon...)</label>
+              <label className="text-xs text-gray-400 block mb-1">Localisation (Façade, Pignon...)</label>
               <input 
                 type="text" 
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 placeholder="Ex: Façade Sud, entre M-12 et M-14"
                 value={ticket.localisation}
                 onChange={(e) => setTicket({...ticket, localisation: e.target.value})}
@@ -310,7 +310,7 @@ export default function FicheSAV() {
         </div>
 
         {/* TUILE 2 : DIAGNOSTIC DTU */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-sky-500" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
             <FileCheck size={18} /> 2. Diagnostic DTU 41.2
@@ -318,17 +318,17 @@ export default function FicheSAV() {
 
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Diagnostic & Cause probable</label>
+              <label className="text-xs text-gray-400 block mb-1">Diagnostic & Cause probable</label>
               <textarea 
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white h-20 resize-none"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white h-20 resize-none"
                 placeholder="Ex: Entraxe 400mm OK. Cause: choc mécanique client."
                 value={ticket.diagnostic_dtu}
                 onChange={(e) => setTicket({...ticket, diagnostic_dtu: e.target.value})}
               />
             </div>
 
-            <div className="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-700">
-              <span className="text-sm font-semibold text-slate-300">Respect des normes DTU 41.2</span>
+            <div className="flex items-center justify-between bg-transparent p-3 rounded-xl border border-white/10">
+              <span className="text-sm font-semibold text-gray-300">Respect des normes DTU 41.2</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 
                   type="checkbox" 
@@ -336,74 +336,74 @@ export default function FicheSAV() {
                   checked={ticket.respect_dtu}
                   onChange={(e) => setTicket({...ticket, respect_dtu: e.target.checked})}
                 />
-                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <div className="w-11 h-6 bg-[#1A1D24] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1A1D24] after:border-white/20 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
               </label>
             </div>
             {ticket.respect_dtu && (
-              <p className="text-[10px] text-emerald-500 font-medium">✅ Ce diagnostic protège juridiquement l'entreprise.</p>
+              <p className="text-[10px] text-gray-400 font-medium">✅ Ce diagnostic protège juridiquement l'entreprise.</p>
             )}
           </div>
         </div>
 
         {/* TUILE 3 : MATÉRIEL */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Wrench size={18} /> 3. Matériel à prévoir
           </h2>
-          <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 text-sm text-slate-400 italic text-center">
+          <div className="bg-transparent p-3 rounded-xl border border-white/10 text-sm text-gray-400 italic text-center">
             <textarea 
-              className="w-full bg-transparent border-none outline-none text-sm text-slate-300 h-20 resize-none"
+              className="w-full bg-transparent border-none outline-none text-sm text-gray-300 h-20 resize-none"
               placeholder="Ex: 3x lames Red Cedar 3600, 2 tasseaux 22x45, 1 boîte vis Inox A2..."
               value={ticket.description}
               onChange={(e) => setTicket({...ticket, description: e.target.value})}
             />
           </div>
-          <button className="w-full bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 py-2 rounded-lg text-xs font-bold transition-all">
+          <button className="w-full bg-red-600/20 text-gray-400 hover:bg-red-600/30 border border-white/10 py-2 rounded-lg text-xs font-bold transition-all">
             Ajouter au débit atelier (Prochainement)
           </button>
         </div>
 
         {/* TUILE 4 : INTERVENTION */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-purple-500" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Calendar size={18} /> 4. Intervention
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Date prévue</label>
+              <label className="text-xs text-gray-400 block mb-1">Date prévue</label>
               <input 
                 type="date" 
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.date_intervention}
                 onChange={(e) => setTicket({...ticket, date_intervention: e.target.value})}
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Temps estimé</label>
+              <label className="text-xs text-gray-400 block mb-1">Temps estimé</label>
               <input 
                 type="text" 
                 placeholder="Ex: 1h30"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.temps_estime}
                 onChange={(e) => setTicket({...ticket, temps_estime: e.target.value})}
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Équipe</label>
+              <label className="text-xs text-gray-400 block mb-1">Équipe</label>
               <input 
                 type="text" 
                 placeholder="Ex: Gaël"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.intervenant}
                 onChange={(e) => setTicket({...ticket, intervenant: e.target.value})}
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Accès</label>
+              <label className="text-xs text-gray-400 block mb-1">Accès</label>
               <select 
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.moyen_acces}
                 onChange={(e) => setTicket({...ticket, moyen_acces: e.target.value})}
               >
@@ -418,17 +418,17 @@ export default function FicheSAV() {
         </div>
 
         {/* TUILE 5 : PHOTOS ET SIGNATURE */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2">
-          <div className="absolute top-0 left-0 w-1 h-full bg-pink-500" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-pink-400 flex items-center gap-2">
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Camera size={18} /> 5. Photos & Signature Client
           </h2>
           
           <div className="space-y-6">
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-slate-400">PHOTOS D'INTERVENTION</p>
+              <p className="text-xs font-semibold text-gray-400">PHOTOS D'INTERVENTION</p>
               <div className="flex gap-3 max-w-md">
-                <label className="flex-1 border border-dashed border-slate-600 bg-slate-900/50 hover:bg-slate-800 rounded-xl h-24 flex flex-col items-center justify-center text-slate-400 transition-all cursor-pointer relative overflow-hidden">
+                <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
                   {uploading.avant ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-sky-400" />
@@ -440,7 +440,7 @@ export default function FicheSAV() {
                   <span className="text-[10px] font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Avant</span>
                 </label>
                 
-                <label className="flex-1 border border-dashed border-slate-600 bg-slate-900/50 hover:bg-slate-800 rounded-xl h-24 flex flex-col items-center justify-center text-slate-400 transition-all cursor-pointer relative overflow-hidden">
+                <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'apres')} disabled={uploading.apres} />
                   {uploading.apres ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-sky-400" />
@@ -455,10 +455,10 @@ export default function FicheSAV() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-slate-400">VALIDATION (FIN D'INTERVENTION)</p>
+              <p className="text-xs font-semibold text-gray-400">VALIDATION (FIN D'INTERVENTION)</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-900 rounded-xl border border-slate-700 p-2 relative min-h-[120px]">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold mb-2">Visa du Technicien</p>
+                <div className="bg-transparent rounded-xl border border-white/10 p-2 relative min-h-[120px]">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold mb-2">Visa du Technicien</p>
                   {ticket.signature_technicien ? (
                     <div className="relative">
                       <img src={ticket.signature_technicien} alt="Signature Technicien" className="h-20 w-auto mx-auto filter invert opacity-80" />
@@ -478,8 +478,8 @@ export default function FicheSAV() {
                   )}
                 </div>
                 
-                <div className="bg-slate-900 rounded-xl border border-slate-700 p-2 relative min-h-[120px]">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold mb-2">Signature du Client</p>
+                <div className="bg-transparent rounded-xl border border-white/10 p-2 relative min-h-[120px]">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold mb-2">Signature du Client</p>
                   {ticket.signature_client ? (
                     <div className="relative">
                       <img src={ticket.signature_client} alt="Signature Client" className="h-20 w-auto mx-auto filter invert opacity-80" />
@@ -504,21 +504,21 @@ export default function FicheSAV() {
         </div>
 
         {/* TUILE 6 : CLOTURE */}
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
               <CheckCircle size={18} /> 6. Clôture du Ticket
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-gray-400 mt-1">
               La clôture génère automatiquement le rapport PDF classé dans le dossier du chantier.
             </p>
           </div>
 
           <div className="flex gap-3">
             {!ticket.sous_garantie && (
-              <button onClick={handleGenerateDevis} disabled={saving} className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 disabled:opacity-50">
+              <button onClick={handleGenerateDevis} disabled={saving} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-red-600/10 transition-all flex items-center gap-2 disabled:opacity-50">
                 {saving ? <Loader2 size={18} className="animate-spin" /> : <FileCheck size={18} />} Générer Devis (+37%)
               </button>
             )}
@@ -526,12 +526,12 @@ export default function FicheSAV() {
             <button 
               onClick={handleCloture}
               disabled={ticket.statut === "cloture"}
-              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
+              className="bg-red-600 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-red-600/10 transition-all flex items-center gap-2"
             >
               <Save size={18} /> {ticket.statut === "cloture" ? "Ticket Clôturé" : "Clôturer le SAV"}
             </button>
             {ticket.statut === "cloture" && (
-              <button onClick={() => setShowPDF(true)} className="bg-slate-700 hover:bg-slate-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center gap-2">
+              <button onClick={() => setShowPDF(true)} className="bg-[#1A1D24] hover:bg-[#1A1D24] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center gap-2">
                 <FileCheck size={18} /> Voir le Rapport
               </button>
             )}
@@ -542,19 +542,19 @@ export default function FicheSAV() {
       </div>
 
       {showPDF && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/90 flex flex-col backdrop-blur-sm">
-          <div className="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 print:hidden">
+        <div className="fixed inset-0 z-[100] bg-transparent/90 flex flex-col backdrop-blur-sm">
+          <div className="flex justify-between items-center p-4 bg-transparent border-b border-slate-800 print:hidden">
             <h2 className="text-xl font-bold text-white">Rapport SAV</h2>
             <div className="flex gap-4">
               <button onClick={() => window.print()} className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl font-bold">
                 <Printer size={18} /> Imprimer / PDF
               </button>
-              <button onClick={() => setShowPDF(false)} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300">
+              <button onClick={() => setShowPDF(false)} className="p-2 bg-[#1A1D24] hover:bg-[#1A1D24] rounded-xl text-gray-300">
                 <X size={20} />
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950/50 flex justify-center print:bg-white print:p-0 print:block">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#1A1D24]/50 flex justify-center print:bg-[#1A1D24] print:p-0 print:block">
             <RapportSAVPDF ticket={ticket} entreprise={entreprise} />
           </div>
         </div>

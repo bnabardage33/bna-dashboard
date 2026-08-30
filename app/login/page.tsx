@@ -41,28 +41,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <form onSubmit={handleLogin} className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-        <h1 className="text-xl font-bold text-slate-800">Connexion BNA</h1>
+    <div className="min-h-screen flex items-center justify-center bg-transparent">
+      <form onSubmit={handleLogin} className="w-full max-w-sm bg-[#1A1D24] p-8 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+        <h1 className="text-xl font-bold text-gray-300">Connexion BNA</h1>
         <input
           type="email" placeholder="Email" value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
+          className="w-full px-3 py-2 text-white placeholder:text-gray-400 border border-white/10 rounded-xl outline-none focus:border-white/10"
           required
         />
         <input
           type="password" placeholder="Mot de passe" value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 text-slate-900 placeholder:text-slate-400 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
+          className="w-full px-3 py-2 text-white placeholder:text-gray-400 border border-white/10 rounded-xl outline-none focus:border-white/10"
           required
         />
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+          <div className="bg-red-900/20 border border-red-200 rounded-xl p-3">
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
         <button type="submit" disabled={loading}
-          className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold disabled:opacity-50">
+          className="w-full py-3 bg-transparent text-white rounded-xl font-bold disabled:opacity-50">
           {loading ? 'Connexion...' : error ? 'Reessayer' : 'Se connecter'}
         </button>
       </form>

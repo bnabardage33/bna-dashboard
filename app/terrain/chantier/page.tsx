@@ -127,15 +127,15 @@ export default function ChantiersPage() {
       {/* En-tête principal */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Hub Chantiers</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-xl font-bold text-white">Hub Chantiers</h1>
+          <p className="text-xs text-gray-400">
             Suivi des chantiers, métrés de bardage, calepinage &amp; avancement
           </p>
         </div>
 
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <Plus className="h-4 w-4 stroke-[3]" />
           <span>Nouveau Chantier</span>
@@ -149,37 +149,37 @@ export default function ChantiersPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom de chantier, client, adresse..."
-          className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
         />
       </div>
 
       {/* Liste des Chantiers en Cartes Mobiles Modernes */}
       {loading ? (
-        <div className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-12 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des chantiers en cours…
         </div>
       ) : chantiersFiltres.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
-          <HardHat className="mx-auto h-10 w-10 text-slate-500" />
-          <p className="text-sm font-medium text-slate-400">Aucun chantier trouvé.</p>
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+          <HardHat className="mx-auto h-10 w-10 text-gray-500" />
+          <p className="text-sm font-medium text-gray-400">Aucun chantier trouvé.</p>
           
-          <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+          <div className="flex items-center gap-2 bg-[#1A1D24] p-1 rounded-lg border border-white/10">
             <button
               onClick={() => setVue("liste")}
-              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "liste" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-slate-200"}`}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "liste" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
             >
               <List className="h-4 w-4" /> Liste
             </button>
             <button
               onClick={() => setVue("planning")}
-              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "planning" ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-slate-200"}`}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "planning" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
             >
               <Calendar className="h-4 w-4" /> Planning
             </button>
           </div>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
           >
             + Créer un premier chantier
           </button>
@@ -191,16 +191,16 @@ export default function ChantiersPage() {
             return (
               <div
                 key={ch.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-slate-750 hover:shadow-sky-500/5"
+                className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-[#1A1D24] hover:shadow-sky-500/5"
               >
                 <Link href={`/terrain/chantier/${ch.id}`} className="block space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h2 className="text-base font-bold text-slate-100 group-hover:text-sky-400 transition-colors">
+                      <h2 className="text-base font-bold text-white group-hover:text-sky-400 transition-colors">
                         {ch.nom || nomClient}
                       </h2>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
-                        <Building className="h-3.5 w-3.5 text-slate-500" />
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5">
+                        <Building className="h-3.5 w-3.5 text-gray-500" />
                         <span>{nomClient}</span>
                       </div>
                     </div>
@@ -210,8 +210,8 @@ export default function ChantiersPage() {
                         ch.statut === "en_cours"
                           ? "border border-sky-500/40 bg-sky-950/40 text-sky-300"
                           : ch.statut === "termine"
-                          ? "border border-emerald-500/40 bg-emerald-950/40 text-emerald-300"
-                          : "border border-slate-600 bg-slate-900 text-slate-300"
+                          ? "border border-white/10 bg-white/5 text-gray-400"
+                          : "border border-slate-600 bg-transparent text-gray-300"
                       }`}
                     >
                       {ch.statut.replace("_", " ")}
@@ -219,15 +219,15 @@ export default function ChantiersPage() {
                   </div>
 
                   {ch.adresse_chantier && (
-                    <p className="flex items-center gap-1.5 text-xs text-slate-400 truncate">
-                      <MapPin className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
+                    <p className="flex items-center gap-1.5 text-xs text-gray-400 truncate">
+                      <MapPin className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
                       <span className="truncate">{ch.adresse_chantier}</span>
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-700/60 text-xs text-slate-400">
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10/60 text-xs text-gray-400">
                     <div className="flex items-center gap-1.5 text-[11px]">
-                      <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                      <Calendar className="h-3.5 w-3.5 text-gray-500" />
                       <span>
                         {ch.date_debut ? new Date(ch.date_debut).toLocaleDateString("fr-FR") : "Début non fixé"}
                       </span>
@@ -250,14 +250,14 @@ export default function ChantiersPage() {
                       setCopiedId(ch.id);
                       setTimeout(() => setCopiedId(null), 2000);
                     }}
-                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-slate-700/80 px-2 py-1 text-[10px] font-bold text-slate-300 hover:bg-sky-600 hover:text-white transition-all backdrop-blur-sm"
+                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1A1D24]/80 px-2 py-1 text-[10px] font-bold text-gray-300 hover:bg-sky-600 hover:text-white transition-all backdrop-blur-sm"
                   >
                     {copiedId === ch.id ? <Check size={12} /> : <Copy size={12} />}
                     {copiedId === ch.id ? "Copié" : "Lien client"}
                   </button>
                 )}
 
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-700/40">
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-white/10/40">
                   {ch.adresse_chantier ? (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -276,7 +276,7 @@ export default function ChantiersPage() {
                   <button
                     onClick={(e) => supprimerChantier(e, ch)}
                     disabled={deleting === ch.id}
-                    className="text-[11px] font-medium text-slate-500 hover:text-red-400 flex items-center gap-1 transition-colors"
+                    className="text-[11px] font-medium text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors"
                   >
                     <Trash2 className="h-3 w-3" />
                     <span>{deleting === ch.id ? "Suppression…" : "Supprimer"}</span>
@@ -292,7 +292,7 @@ export default function ChantiersPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Ajouter un chantier"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <Plus className="h-7 w-7 stroke-[2.5]" />
       </button>
@@ -306,17 +306,17 @@ export default function ChantiersPage() {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-800 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <div>
-                <h2 className="text-base font-bold text-slate-100">Nouveau Chantier de Bardage</h2>
-                <p className="text-xs text-slate-400">Renseignez les détails du nouveau projet</p>
+                <h2 className="text-base font-bold text-white">Nouveau Chantier de Bardage</h2>
+                <p className="text-xs text-gray-400">Renseignez les détails du nouveau projet</p>
               </div>
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -324,22 +324,22 @@ export default function ChantiersPage() {
 
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300">Nom du chantier</label>
+                <label className="text-xs font-semibold text-gray-300">Nom du chantier</label>
                 <input
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Client associé *</label>
+                <label className="text-xs font-semibold text-gray-300">Client associé *</label>
                 <select
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 >
                   <option value="">— Sélectionner un client —</option>
                   {clients.map((c) => (
@@ -351,21 +351,21 @@ export default function ChantiersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Adresse du site des travaux</label>
+                <label className="text-xs font-semibold text-gray-300">Adresse du site des travaux</label>
                 <input
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   placeholder="Ex. 14 Route des Plages, 33120 Arcachon"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Matériau prédominant</label>
+                <label className="text-xs font-semibold text-gray-300">Matériau prédominant</label>
                 <select
                   value={materiauStructurel}
                   onChange={(e) => setMateriauStructurel(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 >
                   <option value="Bois / Mélèze">Bois Naturel / Mélèze</option>
                   <option value="Panneaux HPL Trespa">Panneaux HPL (Trespa / Fundermax)</option>
@@ -376,31 +376,31 @@ export default function ChantiersPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Date début prévue</label>
+                  <label className="text-xs font-semibold text-gray-300">Date début prévue</label>
                   <input
                     type="date"
                     value={dateDebut}
                     onChange={(e) => setDateDebut(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Date fin estimée</label>
+                  <label className="text-xs font-semibold text-gray-300">Date fin estimée</label>
                   <input
                     type="date"
                     value={dateFin}
                     onChange={(e) => setDateFin(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
@@ -408,7 +408,7 @@ export default function ChantiersPage() {
               <button
                 type="submit"
                 disabled={creationEnCours}
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 disabled:opacity-50 shadow-md"
               >
                 {creationEnCours ? "Création..." : "Enregistrer le Chantier"}
               </button>

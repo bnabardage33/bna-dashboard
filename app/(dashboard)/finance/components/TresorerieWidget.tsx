@@ -15,7 +15,7 @@ export default function TresorerieWidget() {
   const isLoading = tresoLoading || paramLoading;
 
   if (isLoading) {
-    return <div className="animate-pulse h-64 rounded-xl border border-slate-700 bg-slate-800/50"></div>;
+    return <div className="animate-pulse h-64 rounded-xl border border-white/10 bg-[#1A1D24]/50"></div>;
   }
 
   const handleSave = async () => {
@@ -36,12 +36,12 @@ export default function TresorerieWidget() {
   const enDecouvert = soldePrevisionnel < 0;
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800/50 flex flex-col h-full">
-      <div className="flex items-center gap-3 border-b border-slate-700 p-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-400">
+    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 flex flex-col h-full">
+      <div className="flex items-center gap-3 border-b border-white/10 p-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-gray-400">
           <Landmark className="h-5 w-5" />
         </div>
-        <h2 className="text-lg font-bold text-slate-100">
+        <h2 className="text-lg font-bold text-white">
           Trésorerie prévisionnelle
         </h2>
       </div>
@@ -49,13 +49,13 @@ export default function TresorerieWidget() {
       <div className="flex flex-col gap-4 p-5 flex-1">
         {/* Solde actuel */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-slate-400">Solde actuel</span>
+          <span className="text-sm text-gray-400">Solde actuel</span>
           <div className="flex items-center gap-2">
             {isEditing ? (
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  className="w-24 rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100 outline-none focus:border-cyan-400"
+                  className="w-24 rounded-md border border-slate-600 bg-transparent px-2 py-1 text-sm text-white outline-none focus:border-white/10"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -63,14 +63,14 @@ export default function TresorerieWidget() {
                 />
                 <button
                   onClick={handleSave}
-                  className="text-xs rounded-md bg-cyan-500/20 text-cyan-400 px-2 py-1 font-medium hover:bg-cyan-500/30"
+                  className="text-xs rounded-md bg-red-600/20 text-gray-400 px-2 py-1 font-medium hover:bg-red-600/30"
                 >
                   OK
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-slate-100">
+                <span className="text-xl font-bold text-white">
                   {soldeBancaire === null ? "—" : fmtEuro(soldeBancaire)}
                 </span>
                 <button
@@ -78,11 +78,11 @@ export default function TresorerieWidget() {
                     setInputValue(soldeBancaire === null ? "" : soldeBancaire.toString());
                     setIsEditing(true);
                   }}
-                  className="text-slate-500 hover:text-cyan-400 transition-colors"
+                  className="text-gray-500 hover:text-gray-400 transition-colors"
                   title="Saisir le solde"
                 >
                   {soldeBancaire === null ? (
-                    <span className="text-xs rounded-md bg-slate-700 px-2 py-1 text-slate-300 hover:bg-slate-600">Saisir</span>
+                    <span className="text-xs rounded-md bg-[#1A1D24] px-2 py-1 text-gray-300 hover:bg-[#1A1D24]">Saisir</span>
                   ) : (
                     <PenLine className="h-4 w-4" />
                   )}
@@ -93,20 +93,20 @@ export default function TresorerieWidget() {
         </div>
 
         {/* Flux 30j */}
-        <div className="rounded-lg bg-slate-900/50 p-3 space-y-3">
-          <h3 className="text-xs font-semibold uppercase text-slate-500">Flux à 30 jours</h3>
+        <div className="rounded-lg bg-transparent/50 p-3 space-y-3">
+          <h3 className="text-xs font-semibold uppercase text-gray-500">Flux à 30 jours</h3>
           
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-300">Entrées (Factures)</span>
-              <span className="text-emerald-400 font-medium">+{fmtEuro(totalEntrees)}</span>
+              <span className="text-gray-300">Entrées (Factures)</span>
+              <span className="text-gray-400 font-medium">+{fmtEuro(totalEntrees)}</span>
             </div>
             {factures.slice(0, 3).map((f) => (
-              <div key={f.id} className="flex justify-between text-xs text-slate-500 pl-2 gap-2">
+              <div key={f.id} className="flex justify-between text-xs text-gray-500 pl-2 gap-2">
                 <span className="truncate max-w-[110px]">{f.client_nom}</span>
                 <span className="flex items-center gap-1.5 shrink-0">
                   {f.statut === "payee" && (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-red-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       Payée
                     </span>
@@ -120,22 +120,22 @@ export default function TresorerieWidget() {
             )}
           </div>
 
-          <div className="space-y-1 pt-2 border-t border-slate-700/50">
+          <div className="space-y-1 pt-2 border-t border-white/10/50">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-300">Sorties (Achats + URSSAF)</span>
+              <span className="text-gray-300">Sorties (Achats + URSSAF)</span>
               <span className="text-rose-400 font-medium">-{fmtEuro(totalSorties)}</span>
             </div>
           </div>
         </div>
 
-        <div className="my-1 border-t border-slate-700"></div>
+        <div className="my-1 border-t border-white/10"></div>
 
         {/* Solde prévisionnel */}
         <div className="flex items-end justify-between">
-          <span className="text-sm font-semibold uppercase text-slate-400">
+          <span className="text-sm font-semibold uppercase text-gray-400">
             Solde prévisionnel
           </span>
-          <span className={`text-2xl font-bold ${enDecouvert ? 'text-rose-400' : 'text-emerald-400'}`}>
+          <span className={`text-2xl font-bold ${enDecouvert ? 'text-rose-400' : 'text-gray-400'}`}>
             {fmtEuro(soldePrevisionnel)}
           </span>
         </div>

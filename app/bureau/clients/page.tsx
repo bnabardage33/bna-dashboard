@@ -219,13 +219,13 @@ export default function ClientsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Répertoire Clients</h1>
-          <p className="text-xs text-slate-400">Gestion des particuliers, professionnels et fiches 360°</p>
+          <h1 className="text-xl font-bold text-white">Répertoire Clients</h1>
+          <p className="text-xs text-gray-400">Gestion des particuliers, professionnels et fiches 360°</p>
         </div>
 
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <span>+</span> Nouveau Client
         </button>
@@ -237,7 +237,7 @@ export default function ClientsPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom, société, ville, téléphone..."
-          className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
         />
       </div>
 
@@ -245,7 +245,7 @@ export default function ClientsPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Ajouter un client"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
@@ -259,17 +259,17 @@ export default function ClientsPage() {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-800 w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <div>
-                <h2 className="text-base font-bold text-slate-100">Nouveau Client</h2>
-                <p className="text-xs text-slate-400">Renseignez les coordonnées ou recherchez le SIRET</p>
+                <h2 className="text-base font-bold text-white">Nouveau Client</h2>
+                <p className="text-xs text-gray-400">Renseignez les coordonnées ou recherchez le SIRET</p>
               </div>
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
               >
                 ✕
               </button>
@@ -285,7 +285,7 @@ export default function ClientsPage() {
                     className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
                       type === t
                         ? "bg-sky-500 text-slate-950 font-bold"
-                        : "border border-slate-600 bg-slate-900 text-slate-300 hover:bg-slate-700"
+                        : "border border-slate-600 bg-transparent text-gray-300 hover:bg-[#1A1D24]"
                     }`}
                   >
                     {t === "particulier" ? "👤 Particulier" : "🏢 Professionnel"}
@@ -294,32 +294,32 @@ export default function ClientsPage() {
               </div>
 
               {type === "professionnel" && (
-                <div className="space-y-2 rounded-xl border border-slate-700 bg-slate-900/80 p-3">
+                <div className="space-y-2 rounded-xl border border-white/10 bg-transparent/80 p-3">
                   <div className="relative">
-                    <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                       🔍 Recherche SIRET (API Officielle)
                     </label>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                       placeholder="Tapez un nom de société ou numéro SIRET..."
                       value={rechercheGouv}
                       onChange={(e) => setRechercheGouv(e.target.value)}
                     />
                     {rechercheGouvLoading && (
-                      <span className="absolute right-3 top-7 text-xs text-slate-400">Recherche...</span>
+                      <span className="absolute right-3 top-7 text-xs text-gray-400">Recherche...</span>
                     )}
 
                     {resultatsGouv.length > 0 && (
-                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-slate-900 shadow-2xl">
+                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-transparent shadow-2xl">
                         {resultatsGouv.map((item, idx) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => appliquerEntrepriseGouv(item)}
-                            className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-slate-800"
+                            className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-[#1A1D24]"
                           >
                             <p className="font-bold text-white">{item.nom_complet}</p>
-                            <p className="text-slate-400 text-[11px]">
+                            <p className="text-gray-400 text-[11px]">
                               SIRET : {item.siege?.siret || item.siren} · {item.siege?.commune} (
                               {item.siege?.code_postal})
                             </p>
@@ -331,13 +331,13 @@ export default function ClientsPage() {
 
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <input
-                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white"
                       placeholder="Raison sociale"
                       value={societe}
                       onChange={(e) => setSociete(e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white"
                       placeholder="Numéro SIRET"
                       value={siret}
                       onChange={(e) => setSiret(e.target.value)}
@@ -347,11 +347,11 @@ export default function ClientsPage() {
               )}
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">
+                <label className="text-xs font-semibold text-gray-300">
                   {type === "professionnel" ? "Nom du contact principal *" : "Nom et prénom *"}
                 </label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   placeholder={type === "professionnel" ? "Ex: Jean Dupont" : "Ex: M. et Mme Martin"}
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
@@ -360,9 +360,9 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Adresse de facturation</label>
+                <label className="text-xs font-semibold text-gray-300">Adresse de facturation</label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   placeholder="Ex: 12 Rue des Chênes"
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
@@ -371,18 +371,18 @@ export default function ClientsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Code postal</label>
+                  <label className="text-xs font-semibold text-gray-300">Code postal</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                     placeholder="33000"
                     value={codePostal}
                     onChange={(e) => setCodePostal(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Ville</label>
+                  <label className="text-xs font-semibold text-gray-300">Ville</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                     placeholder="Bordeaux"
                     value={ville}
                     onChange={(e) => setVille(e.target.value)}
@@ -392,18 +392,18 @@ export default function ClientsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Téléphone</label>
+                  <label className="text-xs font-semibold text-gray-300">Téléphone</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                     placeholder="06 00 00 00 00"
                     value={tel}
                     onChange={(e) => setTel(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Email</label>
+                  <label className="text-xs font-semibold text-gray-300">Email</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                     placeholder="contact@exemple.fr"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -412,17 +412,17 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
               >
                 Enregistrer le client
               </button>
@@ -432,33 +432,33 @@ export default function ClientsPage() {
       )}
 
       {loading ? (
-        <p className="text-sm text-slate-400">Chargement des clients…</p>
+        <p className="text-sm text-gray-400">Chargement des clients…</p>
       ) : filtres.length === 0 ? (
-        <p className="text-sm text-slate-500">Aucun client trouvé.</p>
+        <p className="text-sm text-gray-500">Aucun client trouvé.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {filtres.map((c) => (
             <div
               key={c.id}
-              className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition-colors hover:border-slate-600"
+              className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 transition-colors hover:border-slate-600"
             >
               <div className="flex items-start justify-between">
                 <div>
                   {c.type === "professionnel" && c.societe && (
                     <p className="font-bold text-white">{c.societe}</p>
                   )}
-                  <p className={c.societe ? "text-sm text-slate-300" : "font-bold text-white"}>
+                  <p className={c.societe ? "text-sm text-gray-300" : "font-bold text-white"}>
                     {c.nom}
                   </p>
-                  {c.siret && <p className="text-xs text-slate-500">SIRET {c.siret}</p>}
+                  {c.siret && <p className="text-xs text-gray-500">SIRET {c.siret}</p>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full border border-slate-600 px-2 py-0.5 text-xs text-slate-400">
+                  <span className="rounded-full border border-slate-600 px-2 py-0.5 text-xs text-gray-400">
                     {c.type === "professionnel" ? "Pro" : "Particulier"}
                   </span>
                   <button
                     onClick={() => ouvrirFiche360(c)}
-                    className="rounded-lg bg-slate-700 px-2 py-1 text-xs text-slate-200 hover:bg-slate-600"
+                    className="rounded-lg bg-[#1A1D24] px-2 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
                     title="Voir l'historique 360°"
                   >
                     👁️ Fiche
@@ -466,7 +466,7 @@ export default function ClientsPage() {
                   <button
                     onClick={() => supprimerClient(c)}
                     disabled={deleting === c.id}
-                    className="text-xs font-medium text-slate-500 hover:text-red-400"
+                    className="text-xs font-medium text-gray-500 hover:text-red-400"
                     title="Supprimer"
                   >
                     {deleting === c.id ? "…" : "🗑️"}
@@ -475,10 +475,10 @@ export default function ClientsPage() {
               </div>
 
               {c.adresse_facturation && (
-                <p className="mt-2 text-sm text-slate-400">{c.adresse_facturation}</p>
+                <p className="mt-2 text-sm text-gray-400">{c.adresse_facturation}</p>
               )}
               {(c.code_postal || c.ville) && (
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-gray-400">
                   {c.code_postal} {c.ville}
                 </p>
               )}
@@ -513,10 +513,10 @@ export default function ClientsPage() {
           onClick={() => setClientSelectionne(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-2xl"
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-700 pb-3">
+            <div className="flex items-start justify-between border-b border-white/10 pb-3">
               <div>
                 <span className="rounded bg-red-600/20 px-2 py-0.5 text-xs font-semibold uppercase text-red-400">
                   {clientSelectionne.type}
@@ -525,37 +525,37 @@ export default function ClientsPage() {
                   {clientSelectionne.societe || clientSelectionne.nom}
                 </h2>
                 {clientSelectionne.societe && (
-                  <p className="text-xs text-slate-400">Contact : {clientSelectionne.nom}</p>
+                  <p className="text-xs text-gray-400">Contact : {clientSelectionne.nom}</p>
                 )}
                 {clientSelectionne.siret && (
-                  <p className="text-xs text-slate-500">SIRET {clientSelectionne.siret}</p>
+                  <p className="text-xs text-gray-500">SIRET {clientSelectionne.siret}</p>
                 )}
               </div>
               <button
                 onClick={() => setClientSelectionne(null)}
-                className="rounded-lg border border-slate-600 px-3 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                className="rounded-lg border border-slate-600 px-3 py-1 text-xs text-gray-300 hover:bg-[#1A1D24]"
               >
                 Fermer
               </button>
             </div>
 
             {loading360 ? (
-              <p className="py-6 text-center text-sm text-slate-400">Chargement de l&apos;historique 360°…</p>
+              <p className="py-6 text-center text-sm text-gray-400">Chargement de l&apos;historique 360°…</p>
             ) : (
               <div className="mt-4 space-y-5 text-sm">
                 {/* Coordonnées */}
-                <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-700 bg-slate-900/50 p-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/10 bg-transparent/50 p-3 text-xs">
                   <div>
-                    <p className="text-slate-500">Adresse</p>
-                    <p className="font-medium text-slate-200">
+                    <p className="text-gray-500">Adresse</p>
+                    <p className="font-medium text-gray-200">
                       {clientSelectionne.adresse_facturation || "—"}
                     </p>
-                    <p className="text-slate-200">
+                    <p className="text-gray-200">
                       {clientSelectionne.code_postal} {clientSelectionne.ville}
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Contact direct</p>
+                    <p className="text-gray-500">Contact direct</p>
                     <p className="text-red-400">{clientSelectionne.tel || "—"}</p>
                     <p className="text-sky-400">{clientSelectionne.email || "—"}</p>
                   </div>
@@ -563,24 +563,24 @@ export default function ClientsPage() {
 
                 {/* Chantiers rattachés */}
                 <div>
-                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
                     🏗️ Chantiers ({chantiers360.length})
                   </h3>
                   {chantiers360.length === 0 ? (
-                    <p className="text-xs text-slate-500">Aucun chantier enregistré pour ce client.</p>
+                    <p className="text-xs text-gray-500">Aucun chantier enregistré pour ce client.</p>
                   ) : (
                     <div className="space-y-2">
                       {chantiers360.map((ch) => (
                         <Link
                           key={ch.id}
                           href={`/terrain/chantier/${ch.id}`}
-                          className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-900 p-2.5 hover:border-red-500"
+                          className="flex items-center justify-between rounded-lg border border-white/10 bg-transparent p-2.5 hover:border-red-500"
                         >
                           <div>
                             <p className="font-semibold text-white">{ch.nom || "Chantier"}</p>
-                            <p className="text-xs text-slate-400">{ch.adresse_chantier || "—"}</p>
+                            <p className="text-xs text-gray-400">{ch.adresse_chantier || "—"}</p>
                           </div>
-                          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
+                          <span className="rounded-full bg-[#1A1D24] px-2 py-0.5 text-xs text-gray-300">
                             {ch.statut} →
                           </span>
                         </Link>
@@ -591,15 +591,15 @@ export default function ClientsPage() {
 
                 {/* Devis */}
                 <div>
-                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
                     📝 Devis ({devis360.length})
                   </h3>
                   {devis360.length === 0 ? (
-                    <p className="text-xs text-slate-500">Aucun devis émis.</p>
+                    <p className="text-xs text-gray-500">Aucun devis émis.</p>
                   ) : (
-                    <div className="overflow-hidden rounded-lg border border-slate-700">
+                    <div className="overflow-hidden rounded-lg border border-white/10">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400">
+                        <thead className="bg-transparent text-gray-400">
                           <tr>
                             <th className="p-2">Numéro</th>
                             <th className="p-2">Objet</th>
@@ -607,7 +607,7 @@ export default function ClientsPage() {
                             <th className="p-2">Statut</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-slate-300">
+                        <tbody className="divide-y divide-slate-800 text-gray-300">
                           {devis360.map((d) => {
                             const ht = (d.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                             return (
@@ -616,7 +616,7 @@ export default function ClientsPage() {
                                 <td className="p-2">{d.objet || "—"}</td>
                                 <td className="p-2 text-right">{ht.toFixed(2)} €</td>
                                 <td className="p-2">
-                                  <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase">
+                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase">
                                     {d.statut}
                                   </span>
                                 </td>
@@ -631,33 +631,33 @@ export default function ClientsPage() {
 
                 {/* Factures */}
                 <div>
-                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">
                     🧾 Factures ({factures360.length})
                   </h3>
                   {factures360.length === 0 ? (
-                    <p className="text-xs text-slate-500">Aucune facture enregistrée.</p>
+                    <p className="text-xs text-gray-500">Aucune facture enregistrée.</p>
                   ) : (
-                    <div className="overflow-hidden rounded-lg border border-slate-700">
+                    <div className="overflow-hidden rounded-lg border border-white/10">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900 text-slate-400">
+                        <thead className="bg-transparent text-gray-400">
                           <tr>
                             <th className="p-2">Numéro</th>
                             <th className="p-2 text-right">Total TTC</th>
                             <th className="p-2">Statut</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800 text-slate-300">
+                        <tbody className="divide-y divide-slate-800 text-gray-300">
                           {factures360.map((f) => {
                             const ht = (f.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                             const ttc = ht * (1 + (f.tva_pct || 10) / 100);
                             return (
                               <tr key={f.id}>
                                 <td className="p-2 font-medium text-white">{f.numero}</td>
-                                <td className="p-2 text-right font-semibold text-emerald-400">
+                                <td className="p-2 text-right font-semibold text-gray-400">
                                   {ttc.toFixed(2)} €
                                 </td>
                                 <td className="p-2">
-                                  <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase">
+                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase">
                                     {f.statut}
                                   </span>
                                 </td>

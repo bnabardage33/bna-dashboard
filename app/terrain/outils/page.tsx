@@ -23,7 +23,7 @@ export default function OutilsPage() {
         "Dictaphone intelligent avec transcription automatique Whisper et synthèse IA des comptes-rendus de chantier.",
       href: "/terrain/notes",
       icon: Mic,
-      couleur: "border-amber-500/40 bg-amber-950/20 text-amber-400",
+      couleur: "border-white/10 bg-white/5 text-gray-400",
       badge: "IA Whisper",
     },
     {
@@ -33,7 +33,7 @@ export default function OutilsPage() {
         "Guides de pose certifiés, règles professionnelles DTU 41.2 / DTU 31.2, avis techniques CSTB et notices d'entretien des fabricants.",
       href: "/terrain/fiche-technique",
       icon: BookOpen,
-      couleur: "border-emerald-500/40 bg-emerald-950/20 text-emerald-400",
+      couleur: "border-white/10 bg-white/5 text-gray-400",
       badge: "DTU & Normes",
     },
     {
@@ -43,7 +43,7 @@ export default function OutilsPage() {
         "Génération des procès-verbaux d'arrêt intempéries avec justificatifs Météo-France officiels et décompte des jours d'arrêt.",
       href: "/bureau/rapports-intemperies",
       icon: AlertTriangle,
-      couleur: "border-orange-500/40 bg-orange-950/20 text-orange-400",
+      couleur: "border-white/10 bg-white/5 text-gray-400",
       badge: "Arrêts Justifiés",
     },
   ];
@@ -52,8 +52,8 @@ export default function OutilsPage() {
     <div className="space-y-6">
       {/* En-tête de la section */}
       <div>
-        <h1 className="text-xl font-bold text-slate-100">Boîte à Outils Professionnelle</h1>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <h1 className="text-xl font-bold text-white">Boîte à Outils Professionnelle</h1>
+        <p className="text-xs text-gray-400 mt-0.5">
           Outils d&apos;aide à la décision, météo réglementaire, notes vocales et documentation technique BTP.
         </p>
       </div>
@@ -66,7 +66,7 @@ export default function OutilsPage() {
             <Link
               key={outil.id}
               href={outil.href}
-              className="group relative flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-5 shadow-lg transition-all hover:border-sky-500 hover:bg-slate-750 hover:shadow-sky-500/10"
+              className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-lg transition-all hover:border-sky-500 hover:bg-[#1A1D24] hover:shadow-sky-500/10"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -75,16 +75,16 @@ export default function OutilsPage() {
                   >
                     <Icon className="h-6 w-6" />
                   </div>
-                  <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                  <span className="rounded-full border border-white/10 bg-transparent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-300">
                     {outil.badge}
                   </span>
                 </div>
 
                 <div>
-                  <h2 className="text-base font-bold text-slate-100 group-hover:text-sky-400 transition-colors">
+                  <h2 className="text-base font-bold text-white group-hover:text-sky-400 transition-colors">
                     {outil.titre}
                   </h2>
-                  <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                  <p className="mt-1 text-xs text-gray-400 leading-relaxed">
                     {outil.description}
                   </p>
                 </div>

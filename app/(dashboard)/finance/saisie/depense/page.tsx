@@ -95,21 +95,21 @@ export default function SaisieDepense() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-slate-800/50 rounded-xl border border-slate-700 mt-8 text-slate-100">
+    <div className="max-w-xl mx-auto p-6 bg-[#1A1D24]/50 rounded-xl border border-white/10 mt-8 text-white">
       <h1 className="text-2xl font-bold mb-6">Saisie Dépense</h1>
       
       {error && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md text-sm">{error}</div>}
-      {success && <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md text-sm font-medium">Dépense enregistrée avec succès !</div>}
+      {success && <div className="mb-4 p-3 bg-red-600/10 border border-white/10 text-gray-400 rounded-md text-sm font-medium">Dépense enregistrée avec succès !</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Date</label>
-            <input type="date" required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            <label className="block text-sm text-gray-400 mb-1">Date</label>
+            <input type="date" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Chantier <span className="text-xs text-slate-500">(Optionnel)</span></label>
-            <select className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
+            <label className="block text-sm text-gray-400 mb-1">Chantier <span className="text-xs text-gray-500">(Optionnel)</span></label>
+            <select className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
               <option value="">-- Sans affectation --</option>
               {chantiers.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
             </select>
@@ -118,8 +118,8 @@ export default function SaisieDepense() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Nature</label>
-            <select required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.nature} onChange={e => setFormData({...formData, nature: e.target.value})}>
+            <label className="block text-sm text-gray-400 mb-1">Nature</label>
+            <select required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.nature} onChange={e => setFormData({...formData, nature: e.target.value})}>
               <option value="materiaux">Matériaux</option>
               <option value="quincaillerie">Quincaillerie</option>
               <option value="sous_traitance">Sous-traitance</option>
@@ -128,8 +128,8 @@ export default function SaisieDepense() {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Fournisseur <span className="text-xs text-slate-500">(Optionnel)</span></label>
-            <select className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.fournisseur_id} onChange={e => setFormData({...formData, fournisseur_id: e.target.value})}>
+            <label className="block text-sm text-gray-400 mb-1">Fournisseur <span className="text-xs text-gray-500">(Optionnel)</span></label>
+            <select className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.fournisseur_id} onChange={e => setFormData({...formData, fournisseur_id: e.target.value})}>
               <option value="">Sélectionner</option>
               {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}</option>)}
             </select>
@@ -138,13 +138,13 @@ export default function SaisieDepense() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-1">Montant HT (€)</label>
-            <input type="number" step="0.01" min="0" required className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.montant_ht} onChange={handleMontantChange} />
+            <label className="block text-sm text-gray-400 mb-1">Montant HT (€)</label>
+            <input type="number" step="0.01" min="0" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.montant_ht} onChange={handleMontantChange} />
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="block text-sm text-slate-400 mb-1">TVA (%)</label>
-              <select className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.taux_tva} onChange={e => handleTvaChange(e.target.value)}>
+              <label className="block text-sm text-gray-400 mb-1">TVA (%)</label>
+              <select className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_tva} onChange={e => handleTvaChange(e.target.value)}>
                 <option value="20">20%</option>
                 <option value="10">10%</option>
                 <option value="5.5">5.5%</option>
@@ -152,21 +152,21 @@ export default function SaisieDepense() {
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-sm text-slate-400 mb-1">Montant TVA</label>
-              <input type="number" step="0.01" className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 focus:border-cyan-400 outline-none" value={formData.montant_tva} onChange={e => setFormData({...formData, montant_tva: e.target.value})} />
+              <label className="block text-sm text-gray-400 mb-1">Montant TVA</label>
+              <input type="number" step="0.01" className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.montant_tva} onChange={e => setFormData({...formData, montant_tva: e.target.value})} />
             </div>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Statut</label>
+          <label className="block text-sm text-gray-400 mb-1">Statut</label>
           <div className="flex gap-2">
             {["Prévu", "Engagé", "Payé"].map(statut => (
               <button
                 key={statut}
                 type="button"
                 onClick={() => setFormData({...formData, statut})}
-                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.statut === statut ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' : 'border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-700'}`}
+                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.statut === statut ? 'bg-red-600/20 border-white/10 text-gray-400' : 'border-white/10 bg-transparent text-gray-400 hover:bg-[#1A1D24]'}`}
               >
                 {statut}
               </button>
@@ -175,8 +175,8 @@ export default function SaisieDepense() {
         </div>
 
         <div className="pt-4 flex justify-between items-center">
-          <button type="button" onClick={() => router.back()} className="text-sm font-medium text-slate-400 hover:text-slate-200">Retour</button>
-          <button type="submit" disabled={loading} className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-md font-medium disabled:opacity-50 transition-colors">
+          <button type="button" onClick={() => router.back()} className="text-sm font-medium text-gray-400 hover:text-gray-200">Retour</button>
+          <button type="submit" disabled={loading} className="px-6 py-2 bg-red-600 hover:bg-red-600 text-white rounded-md font-medium disabled:opacity-50 transition-colors">
             {loading ? "Enregistrement..." : "Enregistrer la dépense"}
           </button>
         </div>

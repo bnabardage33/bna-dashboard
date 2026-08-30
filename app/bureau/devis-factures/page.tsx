@@ -371,27 +371,27 @@ export default function DevisPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Devis Commerciaux</h1>
-          <p className="text-xs text-slate-400">Édition des devis, acomptes automatiques et transformation en chantiers</p>
+          <h1 className="text-xl font-bold text-white">Devis Commerciaux</h1>
+          <p className="text-xs text-gray-400">Édition des devis, acomptes automatiques et transformation en chantiers</p>
         </div>
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <span>+</span> Nouveau Devis
         </button>
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-700/60 bg-slate-800/40 p-12 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des devis…
         </div>
       ) : devis.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 p-12 text-center space-y-3">
-          <p className="text-sm font-medium text-slate-400">Aucun devis pour l&apos;instant.</p>
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+          <p className="text-sm font-medium text-gray-400">Aucun devis pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
           >
             + Créer un premier devis
           </button>
@@ -406,17 +406,17 @@ export default function DevisPage() {
             return (
               <div
                 key={d.id}
-                className="flex flex-col justify-between rounded-2xl border border-slate-700 bg-slate-800 p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-slate-750"
+                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-[#1A1D24]"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-sky-400">{d.numero}</span>
-                        <span className="text-xs text-slate-500">· {new Date(d.date_emission).toLocaleDateString("fr-FR")}</span>
+                        <span className="text-xs text-gray-500">· {new Date(d.date_emission).toLocaleDateString("fr-FR")}</span>
                       </div>
-                      <h2 className="text-base font-bold text-slate-100 mt-0.5">{nomClient}</h2>
-                      {d.objet && <p className="text-xs text-slate-400 line-clamp-1">{d.objet}</p>}
+                      <h2 className="text-base font-bold text-white mt-0.5">{nomClient}</h2>
+                      {d.objet && <p className="text-xs text-gray-400 line-clamp-1">{d.objet}</p>}
                     </div>
 
                     <select
@@ -424,45 +424,45 @@ export default function DevisPage() {
                       onChange={(e) => changerStatut(d, e.target.value)}
                       className={`rounded-xl border px-2.5 py-1 text-xs font-bold uppercase tracking-wider focus:outline-none ${
                         d.statut === "accepte"
-                          ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"
+                          ? "border-white/10 bg-white/5 text-gray-400"
                           : d.statut === "refuse"
                           ? "border-red-500/40 bg-red-950/40 text-red-300"
                           : d.statut === "envoye"
                           ? "border-sky-500/40 bg-sky-950/40 text-sky-300"
-                          : "border-slate-600 bg-slate-900 text-slate-300"
+                          : "border-slate-600 bg-transparent text-gray-300"
                       }`}
                     >
-                      <option value="brouillon" className="bg-slate-900 text-slate-100">Brouillon</option>
-                      <option value="envoye" className="bg-slate-900 text-slate-100">Envoyé</option>
-                      <option value="accepte" className="bg-slate-900 text-slate-100">Accepté</option>
-                      <option value="refuse" className="bg-slate-900 text-slate-100">Refusé</option>
+                      <option value="brouillon" className="bg-transparent text-white">Brouillon</option>
+                      <option value="envoye" className="bg-transparent text-white">Envoyé</option>
+                      <option value="accepte" className="bg-transparent text-white">Accepté</option>
+                      <option value="refuse" className="bg-transparent text-white">Refusé</option>
                     </select>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl bg-slate-900/60 p-2.5 border border-slate-700/60">
+                  <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Montant HT</p>
-                      <p className="text-xs font-semibold text-slate-300">{totalHT.toFixed(2)} €</p>
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Montant HT</p>
+                      <p className="text-xs font-semibold text-gray-300">{totalHT.toFixed(2)} €</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-500">Total TTC ({d.tva_pct}%)</p>
+                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Total TTC ({d.tva_pct}%)</p>
                       <p className="text-sm font-bold text-sky-400 font-mono">{totalTTC.toFixed(2)} €</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex items-center justify-between border-t border-slate-700/60 pt-3">
+                <div className="mt-3.5 flex items-center justify-between border-t border-white/10/60 pt-3">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setApercu(d)}
-                      className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-slate-700 flex items-center gap-1"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-[#1A1D24] flex items-center gap-1"
                     >
                       👁️ Aperçu PDF
                     </button>
                     {d.statut !== "accepte" && (
                       <button
                         onClick={() => transformerEnChantier(d)}
-                        className="rounded-xl border border-emerald-500/40 bg-emerald-950/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/40"
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40"
                         title="Valider et transformer en chantier"
                       >
                         ⚡ En chantier
@@ -472,7 +472,7 @@ export default function DevisPage() {
 
                   <button
                     onClick={() => supprimerDevis(d)}
-                    className="text-xs text-slate-500 hover:text-red-400 p-1.5 transition-colors"
+                    className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
                     title="Supprimer le devis"
                   >
                     🗑️
@@ -488,7 +488,7 @@ export default function DevisPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Créer un devis"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 transition-transform active:scale-95 hover:scale-105 hover:bg-amber-400"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
@@ -501,11 +501,11 @@ export default function DevisPage() {
           <form
             onSubmit={creerDevis}
             onClick={(e) => e.stopPropagation()}
-            className="bg-slate-800 w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-slate-700 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 p-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouveau Devis</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white">
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
                 ✕
               </button>
             </div>
@@ -528,7 +528,7 @@ export default function DevisPage() {
                   }
                 }}
                 required
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
               >
                 <option value="">-- Choisir un client --</option>
                 {clients.map((c) => (
@@ -548,7 +548,7 @@ export default function DevisPage() {
                     const ch = chantiersClient.find(c => c.id === id);
                     if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
                   }}
-                  className="w-full rounded-xl border border-sky-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-sky-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                 >
                   <option value="">-- Lier à un chantier (optionnel) --</option>
                   {chantiersClient.map((c) => (
@@ -563,97 +563,97 @@ export default function DevisPage() {
                 value={objet}
                 onChange={(e) => setObjet(e.target.value)}
                 placeholder="Objet (ex. Bardage bois claire-voie)"
-                className="w-full rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={adresseChantier}
                   onChange={(e) => setAdresseChantier(e.target.value)}
                   placeholder="Adresse du chantier"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
                 <input
                   value={typeTravaux}
                   onChange={(e) => setTypeTravaux(e.target.value)}
                   placeholder="Type de travaux"
-                  className="rounded-xl border border-slate-600 bg-slate-900 px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-4 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-slate-400">Validité (j)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400">Validité (j)</label>
                   <input
                     type="number"
                     value={validite}
                     onChange={(e) => setValidite(parseInt(e.target.value) || 0)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-slate-400">Délai (j)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400">Délai (j)</label>
                   <input
                     type="number"
                     value={delai}
                     onChange={(e) => setDelai(parseInt(e.target.value) || 0)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-slate-400">Acompte (%)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400">Acompte (%)</label>
                   <input
                     type="number"
                     value={acompte}
                     onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-slate-400">TVA (%)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400">TVA (%)</label>
                   <input
                     type="number"
                     step="0.1"
                     value={tva}
                     onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-slate-100 focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Lignes de prestation</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Lignes de prestation</p>
                 {lignes.map((l, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2">
                     <input
                       value={l.designation}
                       onChange={(e) => updateLigne(i, { designation: e.target.value })}
                       placeholder="Désignation"
-                      className="col-span-4 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                      className="col-span-4 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <input
                       type="number"
                       value={l.qte}
                       onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
                       placeholder="Qté"
-                      className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                      className="col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <input
                       value={l.unite}
                       onChange={(e) => updateLigne(i, { unite: e.target.value })}
                       placeholder="Unité"
-                      className="col-span-2 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                      className="col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <input
                       type="number"
                       value={l.pu_ht}
                       onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
                       placeholder="PU HT"
-                      className="col-span-3 rounded-xl border border-slate-600 bg-slate-900 px-2.5 py-2 text-xs text-slate-100"
+                      className="col-span-3 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <button
                       type="button"
                       onClick={() => supprimerLigne(i)}
-                      className="col-span-1 text-slate-500 hover:text-red-400 font-bold"
+                      className="col-span-1 text-gray-500 hover:text-red-400 font-bold"
                     >
                       ✕
                     </button>
@@ -671,7 +671,7 @@ export default function DevisPage() {
                     }}
                     placeholder="✨ Décris la prestation (ex: bardage bois 50m² façade nord)..."
                     disabled={genererIAEnCours}
-                    className="flex-1 rounded-lg border border-violet-500/40 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 disabled:opacity-50"
+                    className="flex-1 rounded-lg border border-violet-500/40 bg-transparent px-3 py-1.5 text-xs text-white placeholder:text-gray-500 disabled:opacity-50"
                   />
                   <button
                     type="button"
@@ -687,7 +687,7 @@ export default function DevisPage() {
                   <button
                     type="button"
                     onClick={ajouterLigne}
-                    className="rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-200 hover:bg-[#1A1D24]"
                   >
                     + Ajouter une ligne vierge
                   </button>
@@ -697,7 +697,7 @@ export default function DevisPage() {
                       insererDepuisCatalogue(e.target.value);
                       e.target.value = "";
                     }}
-                    className="flex-1 rounded-xl border border-sky-500/50 bg-slate-900 px-3 py-1.5 text-xs text-sky-300 font-medium hover:border-sky-400"
+                    className="flex-1 rounded-xl border border-sky-500/50 bg-transparent px-3 py-1.5 text-xs text-sky-300 font-medium hover:border-sky-400"
                   >
                     <option value="" disabled>
                       📦 + Insérer un ouvrage depuis le catalogue standard...
@@ -712,21 +712,21 @@ export default function DevisPage() {
               </div>
 
               <p className="text-right text-sm font-bold text-white pt-2">
-                Total HT : <span className="font-mono text-amber-400">{totalHT.toFixed(2)} €</span>
+                Total HT : <span className="font-mono text-gray-400">{totalHT.toFixed(2)} €</span>
               </p>
             </div>
 
-            <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-slate-800 rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
               >
                 Enregistrer le Devis
               </button>
@@ -745,20 +745,20 @@ export default function DevisPage() {
             <div className="mb-3 flex justify-end gap-2 print:hidden">
               <button
                 onClick={() => setModeSignature(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-600 transition-all"
               >
                 <PenTool className="h-4 w-4" /> Faire signer
               </button>
               <button
                 onClick={imprimer}
-                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
               >
                 <span>🖨️</span> Imprimer / Exporter PDF
               </button>
 
               <button
                 onClick={() => { setApercu(null); setSignatureData(null); setModeSignature(false); }}
-                className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Fermer
               </button>
@@ -793,8 +793,8 @@ export default function DevisPage() {
             />
 
             {modeSignature && (
-              <div className="mt-4 bg-slate-800 border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
-                <h3 className="text-sm font-bold text-slate-200">✍️ Signature du client</h3>
+              <div className="mt-4 bg-[#1A1D24] border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
+                <h3 className="text-sm font-bold text-gray-200">✍️ Signature du client</h3>
                 <SignaturePad
                   label="Signature"
                   signerName={apercu.clients?.nom || ""}
@@ -815,13 +815,13 @@ export default function DevisPage() {
                       setSignatureData(null);
                       fetchTout();
                     }}
-                    className="rounded-xl bg-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-600/20 hover:bg-cyan-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Valider la signature
                   </button>
                   <button
                     onClick={() => setModeSignature(false)}
-                    className="rounded-xl border border-slate-600 bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition-all"
+                    className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] transition-all"
                   >
                     Annuler
                   </button>

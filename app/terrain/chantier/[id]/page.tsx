@@ -391,12 +391,12 @@ function ChantierDetailContent() {
     { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0, totalCoupesML: 0 }
   );
 
-  if (loading) return <p className="text-sm text-slate-400">Chargement…</p>;
+  if (loading) return <p className="text-sm text-gray-400">Chargement…</p>;
   if (!chantier) return <p className="text-sm text-red-400">Chantier introuvable.</p>;
 
   return (
     <div className="space-y-4">
-      <Link href="/terrain/chantier" className="text-sm text-slate-400 hover:text-white">
+      <Link href="/terrain/chantier" className="text-sm text-gray-400 hover:text-white">
         ← Chantiers
       </Link>
 
@@ -405,7 +405,7 @@ function ChantierDetailContent() {
           <h1 className="text-xl font-semibold text-white">
             {chantier.nom || chantier.clients?.nom || "Chantier"}
           </h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-gray-400">
             {chantier.clients?.nom} · {chantier.date_debut || "?"} → {chantier.date_fin || "?"}
           </p>
         </div>
@@ -418,7 +418,7 @@ function ChantierDetailContent() {
               setCopiedLink(true);
               setTimeout(() => setCopiedLink(false), 2000);
             }}
-            className="flex items-center gap-1.5 rounded-xl bg-cyan-600/20 px-3 py-1.5 text-xs font-semibold text-cyan-400 hover:bg-cyan-600/30 transition-all border border-cyan-500/20"
+            className="flex items-center gap-1.5 rounded-xl bg-red-600/20 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-red-600/30 transition-all border border-white/10"
           >
             {copiedLink ? <Check size={14} /> : <Copy size={14} />}
             {copiedLink ? "Lien copié" : "Lien Espace Client"}
@@ -426,7 +426,7 @@ function ChantierDetailContent() {
         )}
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-700">
+      <div className="flex gap-1 overflow-x-auto border-b border-white/10">
         {TABS.map((t) => (
           <button
             key={t}
@@ -434,7 +434,7 @@ function ChantierDetailContent() {
             className={`whitespace-nowrap px-3 py-2 text-sm font-medium ${
               tab === t
                 ? "border-b-2 border-red-500 text-white"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-gray-400 hover:text-gray-200"
             }`}
           >
             {t}
@@ -446,17 +446,17 @@ function ChantierDetailContent() {
         <div className="space-y-4">
 
           {/* Bloc Sécurité IA */}
-          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-slate-800 to-purple-950/20 p-4 shadow-lg">
+          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-800 to-[#0B0F19] p-4 shadow-lg">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-400" />
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-gray-400" />
                 PPSPS Express (Consignes de Sécurité IA)
               </h3>
               {!consignesSecurite && (
                 <button
                   onClick={genererSecuriteIA}
                   disabled={isGeneratingSecurite}
-                  className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
                 >
                   {isGeneratingSecurite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                   {isGeneratingSecurite ? "Génération..." : "Générer"}
@@ -464,28 +464,28 @@ function ChantierDetailContent() {
               )}
             </div>
             {consignesSecurite ? (
-              <div className="mt-4 space-y-2 text-sm text-slate-300 bg-slate-900/50 p-4 rounded-lg border border-slate-700 whitespace-pre-wrap">
+              <div className="mt-4 space-y-2 text-sm text-gray-300 bg-transparent/50 p-4 rounded-lg border border-white/10 whitespace-pre-wrap">
                 {consignesSecurite}
                 <div className="mt-4 flex justify-end">
-                  <button onClick={() => setConsignesSecurite(null)} className="text-xs text-slate-500 hover:text-slate-300 underline">
+                  <button onClick={() => setConsignesSecurite(null)} className="text-xs text-gray-500 hover:text-gray-300 underline">
                     Fermer
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-gray-400">
                 L'IA analyse le matériel (nacelle, échafaudage) et le matériau (HPL, bois) pour générer les 5 règles d'or de sécurité du jour.
               </p>
             )}
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Client</p>
+          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Client</p>
             <p className="text-white">{chantier.clients?.nom}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
+          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
               Adresse du chantier
             </p>
             <input
@@ -496,7 +496,7 @@ function ChantierDetailContent() {
                 }
               }}
               placeholder="Ex. 12 rue des Vignes, 33000 Bordeaux"
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
             />
             {chantier.adresse_chantier && (
               <a
@@ -512,12 +512,12 @@ function ChantierDetailContent() {
             )}
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Statut</p>
+          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Statut</p>
             <select
               value={chantier.statut}
               onChange={(e) => changerStatut(e.target.value)}
-              className="mt-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
             >
               <option value="prevu">Prévu</option>
               <option value="en_cours">En cours</option>
@@ -525,15 +525,15 @@ function ChantierDetailContent() {
             </select>
           </div>
 
-          <div className="grid gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:grid-cols-2">
+          <div className="grid gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs uppercase tracking-wide text-slate-500">
+              <label className="text-xs uppercase tracking-wide text-gray-500">
                 Matériau structurel
               </label>
               <select
                 value={chantier.materiau_structurel}
                 onChange={(e) => changerMateriau(e.target.value as Materiau)}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
               >
                 {Object.entries(LABELS_MATERIAU).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -543,13 +543,13 @@ function ChantierDetailContent() {
               </select>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wide text-slate-500">
+              <label className="text-xs uppercase tracking-wide text-gray-500">
                 Moyen d&apos;accès
               </label>
               <select
                 value={chantier.moyen_acces}
                 onChange={(e) => changerAcces(e.target.value as Acces)}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
               >
                 {Object.entries(LABELS_ACCES).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -559,7 +559,7 @@ function ChantierDetailContent() {
               </select>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wide text-slate-500">
+              <label className="text-xs uppercase tracking-wide text-gray-500">
                 Zone de vent
               </label>
               <div className="mt-1 flex gap-2">
@@ -569,7 +569,7 @@ function ChantierDetailContent() {
                   className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
                     chantier.zone_vent < 3
                       ? "bg-red-600 text-white"
-                      : "border border-slate-600 text-slate-300"
+                      : "border border-slate-600 text-gray-300"
                   }`}
                 >
                   Zone 1/2
@@ -580,27 +580,27 @@ function ChantierDetailContent() {
                   className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
                     chantier.zone_vent >= 3
                       ? "bg-red-600 text-white"
-                      : "border border-slate-600 text-slate-300"
+                      : "border border-slate-600 text-gray-300"
                   }`}
                 >
                   Zone 3/4
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-gray-500">
                 Sert au calcul météo/sécurité uniquement (n&apos;influence plus l&apos;entraxe de pose — voir guide 2026.1)
               </p>
             </div>
-            <p className="text-xs text-slate-500 sm:col-span-2">
+            <p className="text-xs text-gray-500 sm:col-span-2">
               Utilisés pour calculer l&apos;alerte météo/sécurité dans l&apos;onglet Météo &amp;
               Alertes.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Checklist</p>
+          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Checklist</p>
             <div className="mt-2 space-y-2">
               {["tasseaux", "pare_pluie", "pose", "finition"].map((tache) => (
-                <label key={tache} className="flex items-center gap-2 text-sm text-slate-300">
+                <label key={tache} className="flex items-center gap-2 text-sm text-gray-300">
                   <input
                     type="checkbox"
                     checked={!!chantier.checklist?.[tache]}
@@ -618,14 +618,14 @@ function ChantierDetailContent() {
               <p className="text-xs font-bold uppercase tracking-wide text-red-400">
                 🏁 Fin de Chantier &amp; PV de Réception
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-gray-400 mt-0.5">
                 Rédiger le procès-verbal, consigner les réserves éventuelles, faire signer le client et déclencher la garantie décennale.
               </p>
             </div>
 
             <Link
               href={`/bureau/fin-chantier?chantierId=${id}`}
-              className="rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white shadow-md hover:bg-red-500 transition-colors"
+              className="rounded-lg bg-red-600 px-3.5 py-2 text-xs font-semibold text-white shadow-md hover:bg-red-900/200 transition-colors"
             >
               Établir le PV de Réception →
             </Link>
@@ -655,7 +655,7 @@ function ChantierDetailContent() {
 
       {tab === "Métrés & Technique" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-5">
             <Resume label="Brut façades" value={totaux.bruteFacade} />
             <Resume label="Brut pignons" value={totaux.brutePignon} />
             <Resume label="Ouvertures" value={totaux.ouvertures} />
@@ -678,7 +678,7 @@ function ChantierDetailContent() {
 
           <button
             onClick={ajouterZone}
-            className="w-full rounded-xl border border-dashed border-slate-600 py-3 text-sm font-medium text-slate-400 hover:border-red-600/40 hover:text-red-400"
+            className="w-full rounded-xl border border-dashed border-slate-600 py-3 text-sm font-medium text-gray-400 hover:border-red-600/40 hover:text-red-400"
           >
             + Ajouter une zone
           </button>
@@ -688,13 +688,13 @@ function ChantierDetailContent() {
       {tab === "Météo & Intempéries" && (
         <div className="space-y-6">
           {/* Météo en direct pour le chantier */}
-          <div className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <div className="space-y-4 rounded-xl border border-white/10 bg-[#1A1D24] p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wide text-slate-300">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-gray-300">
                   🌤️ Météo en direct · {chantier.adresse_chantier || chantier.nom || "Ajaccio"}
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-gray-500">
                   Relevé en temps réel · Matériau : {LABELS_MATERIAU[chantier.materiau_structurel]} · Accès : {LABELS_ACCES[chantier.moyen_acces]}
                 </p>
               </div>
@@ -703,12 +703,12 @@ function ChantierDetailContent() {
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${
                     meteo.alerte.niveau === "rouge"
-                      ? "bg-red-500/20 text-red-400"
+                      ? "bg-red-900/200/20 text-red-400"
                       : meteo.alerte.niveau === "orange"
-                      ? "bg-orange-500/20 text-orange-400"
+                      ? "bg-red-600/20 text-gray-400"
                       : meteo.alerte.niveau === "jaune"
-                      ? "bg-amber-500/20 text-amber-400"
-                      : "bg-emerald-500/20 text-emerald-400"
+                      ? "bg-red-600/20 text-gray-400"
+                      : "bg-red-600/20 text-gray-400"
                   }`}
                 >
                   {meteo.alerte.niveau === "rouge" ? "🔴 " : meteo.alerte.niveau === "orange" ? "🟠 " : meteo.alerte.niveau === "jaune" ? "🟡 " : "🟢 "}
@@ -718,54 +718,54 @@ function ChantierDetailContent() {
             </div>
 
             {loadingMeteo ? (
-              <p className="text-sm text-slate-400">Chargement de la météo en direct…</p>
+              <p className="text-sm text-gray-400">Chargement de la météo en direct…</p>
             ) : meteo ? (
               <>
                 <div
                   className={`rounded-lg border p-3 ${
                     meteo.alerte.niveau === "rouge"
-                      ? "border-red-500/40 bg-red-500/10 text-red-300"
+                      ? "border-red-500/40 bg-red-900/200/10 text-red-300"
                       : meteo.alerte.niveau === "orange"
-                      ? "border-orange-500/40 bg-orange-500/10 text-orange-300"
+                      ? "border-white/10 bg-red-600/10 text-gray-400"
                       : meteo.alerte.niveau === "jaune"
-                      ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                      : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                      ? "border-white/10 bg-red-600/10 text-gray-400"
+                      : "border-white/10 bg-red-600/10 text-gray-400"
                   }`}
                 >
                   <p className="text-xs font-semibold">{meteo.alerte.motif}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                    <p className="text-xs text-slate-500">Matin</p>
+                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                    <p className="text-xs text-gray-500">Matin</p>
                     <p className="text-lg font-bold text-white">{meteo.matin.temp}°C</p>
-                    <p className="text-[11px] text-slate-400">Rafales {meteo.matin.rafales} km/h</p>
+                    <p className="text-[11px] text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                    <p className="text-xs text-slate-500">Après-midi</p>
+                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                    <p className="text-xs text-gray-500">Après-midi</p>
                     <p className="text-lg font-bold text-white">{meteo.apresMidi.temp}°C</p>
-                    <p className="text-[11px] text-slate-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                    <p className="text-[11px] text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                    <p className="text-xs text-slate-500">Rafales Max</p>
+                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                    <p className="text-xs text-gray-500">Rafales Max</p>
                     <p className="text-lg font-bold text-sky-400">
                       {Math.max(meteo.matin.rafales, meteo.apresMidi.rafales)} km/h
                     </p>
-                    <p className="text-[11px] text-slate-400">Sur la journée</p>
+                    <p className="text-[11px] text-gray-400">Sur la journée</p>
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
-                    <p className="text-xs text-slate-500">Précipitations</p>
-                    <p className="text-lg font-bold text-emerald-400">
+                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                    <p className="text-xs text-gray-500">Précipitations</p>
+                    <p className="text-lg font-bold text-gray-400">
                       {meteo.heures.reduce((s, h) => s + h.pluie, 0).toFixed(1)} mm
                     </p>
-                    <p className="text-[11px] text-slate-400">Cumul journalier</p>
+                    <p className="text-[11px] text-gray-400">Cumul journalier</p>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setDetailMeteoOuvert((v) => !v)}
-                  className="text-xs font-medium text-slate-400 hover:text-slate-200"
+                  className="text-xs font-medium text-gray-400 hover:text-gray-200"
                 >
                   {detailMeteoOuvert ? "▲ Masquer le détail heure par heure" : "▼ Afficher le détail heure par heure"}
                 </button>
@@ -775,11 +775,11 @@ function ChantierDetailContent() {
                     {meteo.heures.map((h) => (
                       <div
                         key={h.heure}
-                        className="rounded-lg border border-slate-700 bg-slate-900/60 p-2 text-center"
+                        className="rounded-lg border border-white/10 bg-transparent/60 p-2 text-center"
                       >
-                        <p className="text-[10px] text-slate-500">{h.heure}</p>
+                        <p className="text-[10px] text-gray-500">{h.heure}</p>
                         <p className="text-xs font-bold text-white">{h.temp}°C</p>
-                        <p className="text-[10px] text-slate-400">{h.vent}·{h.rafales} km/h</p>
+                        <p className="text-[10px] text-gray-400">{h.vent}·{h.rafales} km/h</p>
                         {h.pluie > 0 && <p className="text-[10px] text-sky-400">{h.pluie} mm</p>}
                       </div>
                     ))}
@@ -787,14 +787,14 @@ function ChantierDetailContent() {
                 )}
               </>
             ) : (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-gray-400">
                 Impossible de charger la météo en direct pour cette adresse.
               </p>
             )}
           </div>
 
           {/* Liste et génération des Rapports Intempéries */}
-          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
             <RapportsIntemperiesListe chantierId={id} />
           </div>
         </div>
@@ -806,8 +806,8 @@ function ChantierDetailContent() {
         <div className="space-y-6">
           {/* Synthèse financière du chantier */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Total Devisé HT</p>
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-400">Total Devisé HT</p>
               <p className="mt-1 text-xl font-bold text-white">
                 {devisLies
                   .reduce(
@@ -817,12 +817,12 @@ function ChantierDetailContent() {
                   .toFixed(2)}{" "}
                 €
               </p>
-              <p className="text-xs text-slate-500">{devisLies.length} devis rattaché(s)</p>
+              <p className="text-xs text-gray-500">{devisLies.length} devis rattaché(s)</p>
             </div>
 
-            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Total Facturé TTC</p>
-              <p className="mt-1 text-xl font-bold text-emerald-400">
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-400">Total Facturé TTC</p>
+              <p className="mt-1 text-xl font-bold text-gray-400">
                 {facturesLiees
                   .reduce((s, f) => {
                     const ht = (f.lignes || []).reduce((acc, l) => acc + l.qte * l.pu_ht, 0);
@@ -831,29 +831,29 @@ function ChantierDetailContent() {
                   .toFixed(2)}{" "}
                 €
               </p>
-              <p className="text-xs text-slate-500">{facturesLiees.length} facture(s)</p>
+              <p className="text-xs text-gray-500">{facturesLiees.length} facture(s)</p>
             </div>
 
-            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Achats Matériaux HT</p>
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-400">Achats Matériaux HT</p>
               <p className="mt-1 text-xl font-bold text-sky-400">
                 {commandesLiees
                   .reduce((s, c) => s + (c.montant_ht || 0), 0)
                   .toFixed(2)}{" "}
                 €
               </p>
-              <p className="text-xs text-slate-500">{commandesLiees.length} commande(s) fournisseur</p>
+              <p className="text-xs text-gray-500">{commandesLiees.length} commande(s) fournisseur</p>
             </div>
           </div>
 
           {loadingDocs ? (
-            <p className="text-sm text-slate-400">Chargement des documents…</p>
+            <p className="text-sm text-gray-400">Chargement des documents…</p>
           ) : (
             <div className="space-y-6">
               {/* Devis */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
                     Devis Client
                   </h3>
                   <Link
@@ -864,12 +864,12 @@ function ChantierDetailContent() {
                   </Link>
                 </div>
                 {devisLies.length === 0 ? (
-                  <p className="text-xs text-slate-500">Aucun devis lié pour ce client.</p>
+                  <p className="text-xs text-gray-500">Aucun devis lié pour ce client.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-700 text-slate-400">
+                        <tr className="border-b border-white/10 text-gray-400">
                           <th className="p-3">Numéro</th>
                           <th className="p-3">Objet</th>
                           <th className="p-3">Date</th>
@@ -877,14 +877,14 @@ function ChantierDetailContent() {
                           <th className="p-3">Statut</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                      <tbody className="divide-y divide-slate-700 text-gray-200">
                         {devisLies.map((d) => {
                           const ht = (d.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                           return (
                             <tr key={d.id}>
                               <td className="p-3 font-semibold text-white">{d.numero}</td>
-                              <td className="p-3 text-slate-300">{d.objet || "—"}</td>
-                              <td className="p-3 text-slate-400">
+                              <td className="p-3 text-gray-300">{d.objet || "—"}</td>
+                              <td className="p-3 text-gray-400">
                                 {new Date(d.date_emission).toLocaleDateString("fr-FR")}
                               </td>
                               <td className="p-3 text-right font-medium">{ht.toFixed(2)} €</td>
@@ -892,10 +892,10 @@ function ChantierDetailContent() {
                                 <span
                                   className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
                                     d.statut === "accepte"
-                                      ? "bg-emerald-500/20 text-emerald-400"
+                                      ? "bg-red-600/20 text-gray-400"
                                       : d.statut === "refuse"
-                                      ? "bg-red-500/20 text-red-400"
-                                      : "bg-slate-700 text-slate-300"
+                                      ? "bg-red-900/200/20 text-red-400"
+                                      : "bg-[#1A1D24] text-gray-300"
                                   }`}
                                 >
                                   {d.statut}
@@ -913,7 +913,7 @@ function ChantierDetailContent() {
               {/* Factures */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
                     Factures & Acomptes
                   </h3>
                   <Link
@@ -924,12 +924,12 @@ function ChantierDetailContent() {
                   </Link>
                 </div>
                 {facturesLiees.length === 0 ? (
-                  <p className="text-xs text-slate-500">Aucune facture pour ce client.</p>
+                  <p className="text-xs text-gray-500">Aucune facture pour ce client.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-700 text-slate-400">
+                        <tr className="border-b border-white/10 text-gray-400">
                           <th className="p-3">Numéro</th>
                           <th className="p-3">Type</th>
                           <th className="p-3">Objet</th>
@@ -938,7 +938,7 @@ function ChantierDetailContent() {
                           <th className="p-3">Statut</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                      <tbody className="divide-y divide-slate-700 text-gray-200">
                         {facturesLiees.map((f) => {
                           const ht = (f.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                           const ttc = ht * (1 + (f.tva_pct || 10) / 100);
@@ -946,25 +946,25 @@ function ChantierDetailContent() {
                             <tr key={f.id}>
                               <td className="p-3 font-semibold text-white">{f.numero}</td>
                               <td className="p-3">
-                                <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] uppercase text-slate-300">
+                                <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase text-gray-300">
                                   {f.type_facture || "totale"}
                                 </span>
                               </td>
-                              <td className="p-3 text-slate-300">{f.objet || "—"}</td>
-                              <td className="p-3 text-slate-400">
+                              <td className="p-3 text-gray-300">{f.objet || "—"}</td>
+                              <td className="p-3 text-gray-400">
                                 {new Date(f.date_emission).toLocaleDateString("fr-FR")}
                               </td>
-                              <td className="p-3 text-right font-medium text-emerald-400">
+                              <td className="p-3 text-right font-medium text-gray-400">
                                 {ttc.toFixed(2)} €
                               </td>
                               <td className="p-3">
                                 <span
                                   className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
                                     f.statut === "payee"
-                                      ? "bg-emerald-500/20 text-emerald-400"
+                                      ? "bg-red-600/20 text-gray-400"
                                       : f.statut === "envoyee"
-                                      ? "bg-amber-500/20 text-amber-400"
-                                      : "bg-slate-700 text-slate-300"
+                                      ? "bg-red-600/20 text-gray-400"
+                                      : "bg-[#1A1D24] text-gray-300"
                                   }`}
                                 >
                                   {f.statut}
@@ -981,7 +981,7 @@ function ChantierDetailContent() {
               {/* Procès-Verbaux de Réception (Fin de chantier) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
                     Procès-Verbaux de Réception (Fin de chantier)
                   </h3>
                   <Link
@@ -993,7 +993,7 @@ function ChantierDetailContent() {
                 </div>
 
                 {pvsLies.length === 0 ? (
-                  <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 text-xs text-slate-400 flex items-center justify-between">
+                  <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 text-xs text-gray-400 flex items-center justify-between">
                     <span>Aucun PV de réception émis pour ce chantier.</span>
                     <Link
                       href={`/bureau/fin-chantier?chantierId=${id}`}
@@ -1003,10 +1003,10 @@ function ChantierDetailContent() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-700 text-slate-400">
+                        <tr className="border-b border-white/10 text-gray-400">
                           <th className="p-3">Numéro</th>
                           <th className="p-3">Date</th>
                           <th className="p-3">Statut</th>
@@ -1014,24 +1014,24 @@ function ChantierDetailContent() {
                           <th className="p-3 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                      <tbody className="divide-y divide-slate-700 text-gray-200">
                         {pvsLies.map((p) => {
                           const nbRes = (p.reserves || []).length;
                           const nbLevees = (p.reserves || []).filter((r: any) => r.levee).length;
                           return (
                             <tr key={p.id}>
                               <td className="p-3 font-semibold text-white font-mono">{p.numero}</td>
-                              <td className="p-3 text-slate-400">
+                              <td className="p-3 text-gray-400">
                                 {new Date(p.date_reception).toLocaleDateString("fr-FR")}
                               </td>
                               <td className="p-3">
                                 <span
                                   className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
                                     p.statut === "sans_reserve"
-                                      ? "bg-emerald-500/20 text-emerald-400"
+                                      ? "bg-red-600/20 text-gray-400"
                                       : p.statut === "reserves_levees"
                                       ? "bg-sky-500/20 text-sky-400"
-                                      : "bg-amber-500/20 text-amber-400"
+                                      : "bg-red-600/20 text-gray-400"
                                   }`}
                                 >
                                   {p.statut === "sans_reserve"
@@ -1041,13 +1041,13 @@ function ChantierDetailContent() {
                                     : "Avec réserves"}
                                 </span>
                               </td>
-                              <td className="p-3 text-center text-slate-400">
+                              <td className="p-3 text-center text-gray-400">
                                 {nbRes === 0 ? "—" : `${nbLevees}/${nbRes} levée(s)`}
                               </td>
                               <td className="p-3 text-right">
                                 <Link
                                   href={`/bureau/fin-chantier`}
-                                  className="rounded bg-slate-700 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-600"
+                                  className="rounded bg-[#1A1D24] px-2.5 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
                                 >
                                   Gérer / PDF →
                                 </Link>
@@ -1063,7 +1063,7 @@ function ChantierDetailContent() {
 
               {/* Rapports Intempéries */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
                   Rapports Intempéries
                 </h3>
                 <RapportsIntemperiesListe chantierId={id} />
@@ -1071,7 +1071,7 @@ function ChantierDetailContent() {
               {/* Commandes Fournisseurs */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
                     Commandes Fournisseurs & Matériaux
                   </h3>
                   <Link
@@ -1082,12 +1082,12 @@ function ChantierDetailContent() {
                   </Link>
                 </div>
                 {commandesLiees.length === 0 ? (
-                  <p className="text-xs text-slate-500">Aucune commande fournisseur pour ce chantier.</p>
+                  <p className="text-xs text-gray-500">Aucune commande fournisseur pour ce chantier.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-800">
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-slate-700 text-slate-400">
+                        <tr className="border-b border-white/10 text-gray-400">
                           <th className="p-3">Fournisseur</th>
                           <th className="p-3">Désignation</th>
                           <th className="p-3">Quantité</th>
@@ -1096,20 +1096,20 @@ function ChantierDetailContent() {
                           <th className="p-3">Statut</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-slate-200">
+                      <tbody className="divide-y divide-slate-700 text-gray-200">
                         {commandesLiees.map((c) => (
                           <tr key={c.id}>
                             <td className="p-3 font-semibold text-white">
                               {c.fournisseurs?.nom || "Fournisseur"}
                             </td>
-                            <td className="p-3 text-slate-300">{c.designation}</td>
-                            <td className="p-3 text-slate-400">
+                            <td className="p-3 text-gray-300">{c.designation}</td>
+                            <td className="p-3 text-gray-400">
                               {c.quantite ? `${c.quantite} ${c.unite || ""}` : "—"}
                             </td>
                             <td className="p-3 text-right font-medium">
                               {c.montant_ht ? `${c.montant_ht.toFixed(2)} €` : "—"}
                             </td>
-                            <td className="p-3 text-slate-400">
+                            <td className="p-3 text-gray-400">
                               {c.date_livraison_prevue
                                 ? new Date(c.date_livraison_prevue).toLocaleDateString("fr-FR")
                                 : "—"}
@@ -1118,10 +1118,10 @@ function ChantierDetailContent() {
                               <span
                                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
                                   c.statut === "livree"
-                                    ? "bg-emerald-500/20 text-emerald-400"
+                                    ? "bg-red-600/20 text-gray-400"
                                     : c.statut === "commandee"
                                     ? "bg-sky-500/20 text-sky-400"
-                                    : "bg-slate-700 text-slate-300"
+                                    : "bg-[#1A1D24] text-gray-300"
                                 }`}
                               >
                                 {c.statut}
@@ -1163,7 +1163,7 @@ function Resume({
 }) {
   return (
     <div>
-      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-xs text-gray-500">{label}</p>
       <p className={`text-lg font-semibold ${highlight ? "text-red-400" : "text-white"}`}>
         {value.toFixed(1)} m²
       </p>
@@ -1173,7 +1173,7 @@ function Resume({
 
 export default function ChantierDetailPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-sm text-slate-400">Chargement du chantier…</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-sm text-gray-400">Chargement du chantier…</div>}>
       <ChantierDetailContent />
     </Suspense>
   );

@@ -114,14 +114,14 @@ function RapportDetailContent() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-sm text-slate-400">Chargement du rapport…</div>;
+    return <div className="p-8 text-center text-sm text-gray-400">Chargement du rapport…</div>;
   }
 
   if (!rapport) {
     return (
       <div className="p-8 text-center">
         <p className="text-red-400">Rapport intempéries introuvable.</p>
-        <Link href="/bureau/rapports-intemperies" className="mt-4 inline-block text-xs text-slate-400 hover:text-white">
+        <Link href="/bureau/rapports-intemperies" className="mt-4 inline-block text-xs text-gray-400 hover:text-white">
           ← Retour aux rapports
         </Link>
       </div>
@@ -131,10 +131,10 @@ function RapportDetailContent() {
   return (
     <div className="space-y-4">
       {/* Barre d'action supérieure */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 pb-3 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3 print:hidden">
         <button
           onClick={() => router.back()}
-          className="text-xs text-slate-400 hover:text-white"
+          className="text-xs text-gray-400 hover:text-white"
         >
           ← Retour
         </button>
@@ -145,14 +145,14 @@ function RapportDetailContent() {
               <button
                 onClick={() => validerArretChantier(true)}
                 disabled={validentEnCours}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-900/200 disabled:opacity-50"
               >
                 ✓ Valider l&apos;Arrêt de Chantier
               </button>
               <button
                 onClick={() => validerArretChantier(false)}
                 disabled={validentEnCours}
-                className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                className="rounded-lg border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
               >
                 Travail maintenu
               </button>
@@ -161,7 +161,7 @@ function RapportDetailContent() {
 
           <button
             onClick={imprimer}
-            className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+            className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
           >
             <span>🖨️</span> Imprimer / Exporter PDF
           </button>
@@ -169,7 +169,7 @@ function RapportDetailContent() {
       </div>
 
       {/* Rendu PDF A4 */}
-      <div className="rounded-xl border border-slate-700 bg-slate-800 p-2 shadow-2xl print:border-none print:bg-white print:p-0">
+      <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-2 shadow-2xl print:border-none print:bg-[#1A1D24] print:p-0">
         <RapportIntemperiesPDF
           rapport={rapport}
           entreprise={entreprise}
@@ -184,7 +184,7 @@ export default function RapportDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-center text-sm text-slate-400">
+        <div className="p-8 text-center text-sm text-gray-400">
           Chargement du rapport…
         </div>
       }
