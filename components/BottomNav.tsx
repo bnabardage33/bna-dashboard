@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HardHat, Building2, ShoppingCart, Wrench, TrendingUp, Home } from "lucide-react";
+import { Home, FolderOpen, MessageSquare, User } from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -20,53 +20,30 @@ export default function BottomNav() {
       isActive: (path: string) => path === "/",
     },
     {
-      id: "chantiers",
-      label: "Chantiers",
+      id: "projets",
+      label: "Projets",
       href: "/terrain/chantier",
-      icon: HardHat,
-      isActive: (path: string) =>
-        path.startsWith("/terrain/chantier") ||
-        (path.startsWith("/terrain") &&
-          !path.startsWith("/terrain/outils") &&
-          !path.startsWith("/terrain/meteo") &&
-          !path.startsWith("/terrain/notes") &&
-          !path.startsWith("/terrain/fiche-technique")),
+      icon: FolderOpen,
+      isActive: (path: string) => path.startsWith("/terrain") || path.startsWith("/bureau"),
     },
     {
-      id: "bureau",
-      label: "Bureau",
-      href: "/bureau",
-      icon: Building2,
-      isActive: (path: string) =>
-        path.startsWith("/bureau") && !path.startsWith("/bureau/fournisseurs"),
+      id: "messages",
+      label: "Messages",
+      href: "/messages",
+      icon: MessageSquare,
+      isActive: (path: string) => path.startsWith("/messages"),
     },
     {
-      id: "outils",
-      label: "Outils",
-      href: "/terrain/outils",
-      icon: Wrench,
-      isActive: (path: string) =>
-        path.startsWith("/terrain/outils") ||
-        path.startsWith("/terrain/meteo") ||
-        path.startsWith("/terrain/notes") ||
-        path.startsWith("/terrain/fiche-technique") ||
-        path.startsWith("/rapports-intemperies") ||
-        path.startsWith("/bureau/rapports-intemperies"),
-    },
-    {
-      id: "finance",
-      label: "Finance",
-      href: "/finance",
-      icon: TrendingUp,
-      isActive: (path: string) => path.startsWith("/finance"),
+      id: "profil",
+      label: "Profil",
+      href: "/parametres",
+      icon: User,
+      isActive: (path: string) => path.startsWith("/parametres"),
     },
   ];
 
   return (
-    <nav
-      aria-label="Navigation principale"
-      className="fixed bottom-4 left-4 right-4 bg-[#1c1e26]/80 backdrop-blur-2xl border border-white/10 rounded-[20px] h-[72px] flex items-center justify-around px-2 z-50 safe-area-inset-bottom"
-    >
+    <nav className="fixed bottom-4 left-4 right-4 h-[68px] bg-[#1a1d2b]/80 backdrop-blur-2xl border border-white/10 rounded-[20px] flex items-center justify-around z-50 safe-area-inset-bottom">
       {NAV_ITEMS.map((item) => {
         const active = item.isActive(pathname || "");
         const Icon = item.icon;
@@ -79,14 +56,10 @@ export default function BottomNav() {
               active ? "text-[#ff5a5a]" : "text-white/50 hover:text-white/80"
             }`}
           >
-            <div
-              className={`flex h-10 w-10 items-center justify-center transition-all ${
-                active ? "bg-[#ff5a5a]/15 rounded-full" : ""
-              }`}
-            >
-              <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.5 : 2} />
+            <div className="flex h-8 w-8 items-center justify-center">
+              <Icon size={24} strokeWidth={active ? 2.5 : 1.5} />
             </div>
-            <span className="text-[10px] tracking-tight font-medium">{item.label}</span>
+            <span className="text-[10.5px] tracking-tight font-medium">{item.label}</span>
           </Link>
         );
       })}
