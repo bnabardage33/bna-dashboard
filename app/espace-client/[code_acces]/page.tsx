@@ -262,16 +262,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans relative">
       {/* Header */}
-      <header className="bg-black px-5 pt-14 pb-8 rounded-b-[32px] flex justify-between items-center relative z-0">
-        <img src="/logo-bna.png" className="h-[88px] w-auto bg-black object-contain border-0 outline-none shadow-none" alt="BNA Bardage Nouvelle-Aquitaine" />
-        <div className="flex gap-3">
-          <button className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer">
-            <Bell size={22} />
-          </button>
-          <div className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center text-white">
-            <User size={22} />
-          </div>
-        </div>
+      <header className="bg-black h-[68px] px-4 flex items-center justify-between rounded-b-[22px] relative z-0">
+        <img src="/logo-bna.png" alt="BNA" className="h-[42px] w-auto object-contain" />
+        <span className="text-white font-bold text-[14px] tracking-wide">BNA - Service Client</span>
       </header>
 
       <main className="p-4 max-w-3xl mx-auto space-y-6 -mt-4 relative z-10">
