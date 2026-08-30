@@ -48,7 +48,7 @@ export default function Home() {
     <div className="relative overflow-hidden w-full">
       <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(227,6,19,0.15),transparent_60%)] pointer-events-none z-0" />
 
-      <main className="relative z-10 px-4 pt-6 pb-[20px] space-y-6">
+      <main className="relative z-10 px-4 pt-6 pb-[20px] flex flex-col gap-8">
         <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
             <Mic className="w-48 h-48 text-white" />
