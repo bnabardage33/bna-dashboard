@@ -262,9 +262,13 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 font-sans relative">
       {/* Header */}
-      <header className="bg-black h-[68px] px-4 flex items-center justify-between rounded-b-[22px] relative z-0">
-        <img src="/logo-bna.png" alt="BNA" className="h-[42px] w-auto object-contain" />
-        <span className="text-white font-bold text-[14px] tracking-wide">BNA - Service Client</span>
+      <header className="bg-black h-[88px] px-5 flex items-center justify-between rounded-b-[24px] w-full relative z-0">
+        <img
+          src="/logo-bna-hd.png"
+          alt="BNA Bardage"
+          className="h-[62px] w-auto object-contain"
+        />
+        <span className="text-white font-bold text-[14px] tracking-wide whitespace-nowrap">BNA - Service Client</span>
       </header>
 
       <main className="p-4 max-w-3xl mx-auto space-y-6 -mt-4 relative z-10">
