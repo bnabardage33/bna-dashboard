@@ -172,7 +172,7 @@ export default function ParametresPage() {
       {/* 1. Bloc : Coordonnées de l'entreprise */}
       <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-md space-y-4">
         <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-400">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-300">
             <Building2 className="h-4 w-4" />
           </div>
           <div>
@@ -224,7 +224,7 @@ export default function ParametresPage() {
                 accept="image/*"
                 onChange={(e) => handleLogoUpload(e.target.files?.[0])}
                 disabled={uploadingLogo}
-                className="w-full text-xs text-gray-400 file:mr-3 file:rounded-xl file:border-0 file:bg-sky-600 file:px-3.5 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-sky-500 cursor-pointer"
+                className="w-full text-xs text-gray-400 file:mr-3 file:rounded-xl file:border-0 file:bg-red-700 file:px-3.5 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-red-600 cursor-pointer"
               />
               {uploadingLogo && <p className="mt-1 text-xs text-gray-400 font-semibold">Téléversement du logo…</p>}
             </div>
@@ -313,7 +313,7 @@ export default function ParametresPage() {
       {/* 4. Bloc : Mentions Légales */}
       <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-md space-y-3">
         <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-400">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-300">
             <FileText className="h-4 w-4" />
           </div>
           <div>
@@ -323,7 +323,7 @@ export default function ParametresPage() {
         </div>
 
         <textarea
-          className="w-full rounded-xl border border-slate-600 bg-transparent p-3.5 text-xs text-white focus:border-sky-500 focus:outline-none leading-relaxed"
+          className="w-full rounded-xl border border-slate-600 bg-transparent p-3.5 text-xs text-white focus:border-red-600 focus:outline-none leading-relaxed"
           rows={3}
           value={form.mentions_legales ?? ""}
           onChange={(e) => update("mentions_legales", e.target.value)}
@@ -351,7 +351,7 @@ function Field({
     <div className={full ? "sm:col-span-2" : ""}>
       <label className="text-xs font-semibold text-gray-300">{label}</label>
       <input
-        className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent p-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+        className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent p-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

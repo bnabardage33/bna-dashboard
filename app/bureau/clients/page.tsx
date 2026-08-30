@@ -237,7 +237,7 @@ export default function ClientsPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom, société, ville, téléphone..."
-          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
         />
       </div>
 
@@ -282,10 +282,10 @@ export default function ClientsPage() {
                     key={t}
                     type="button"
                     onClick={() => setType(t)}
-                    className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
+                    className={`flex-1 transition-colors ${
                       type === t
-                        ? "bg-sky-500 text-slate-950 font-bold"
-                        : "border border-slate-600 bg-transparent text-gray-300 hover:bg-[#1A1D24]"
+                        ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                        : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
                     }`}
                   >
                     {t === "particulier" ? "👤 Particulier" : "🏢 Professionnel"}
@@ -300,7 +300,7 @@ export default function ClientsPage() {
                       🔍 Recherche SIRET (API Officielle)
                     </label>
                     <input
-                      className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                       placeholder="Tapez un nom de société ou numéro SIRET..."
                       value={rechercheGouv}
                       onChange={(e) => setRechercheGouv(e.target.value)}
@@ -351,7 +351,7 @@ export default function ClientsPage() {
                   {type === "professionnel" ? "Nom du contact principal *" : "Nom et prénom *"}
                 </label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   placeholder={type === "professionnel" ? "Ex: Jean Dupont" : "Ex: M. et Mme Martin"}
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
@@ -362,7 +362,7 @@ export default function ClientsPage() {
               <div>
                 <label className="text-xs font-semibold text-gray-300">Adresse de facturation</label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   placeholder="Ex: 12 Rue des Chênes"
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
@@ -373,7 +373,7 @@ export default function ClientsPage() {
                 <div>
                   <label className="text-xs font-semibold text-gray-300">Code postal</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="33000"
                     value={codePostal}
                     onChange={(e) => setCodePostal(e.target.value)}
@@ -382,7 +382,7 @@ export default function ClientsPage() {
                 <div>
                   <label className="text-xs font-semibold text-gray-300">Ville</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="Bordeaux"
                     value={ville}
                     onChange={(e) => setVille(e.target.value)}
@@ -394,7 +394,7 @@ export default function ClientsPage() {
                 <div>
                   <label className="text-xs font-semibold text-gray-300">Téléphone</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="06 00 00 00 00"
                     value={tel}
                     onChange={(e) => setTel(e.target.value)}
@@ -403,7 +403,7 @@ export default function ClientsPage() {
                 <div>
                   <label className="text-xs font-semibold text-gray-300">Email</label>
                   <input
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="contact@exemple.fr"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -495,7 +495,7 @@ export default function ClientsPage() {
                 {c.email && (
                   <a
                     href={`mailto:${c.email}`}
-                    className="font-medium text-sky-400 hover:text-sky-300"
+                    className="font-medium text-gray-300 hover:text-gray-400"
                   >
                     ✉️ {c.email}
                   </a>
@@ -557,7 +557,7 @@ export default function ClientsPage() {
                   <div>
                     <p className="text-gray-500">Contact direct</p>
                     <p className="text-red-400">{clientSelectionne.tel || "—"}</p>
-                    <p className="text-sky-400">{clientSelectionne.email || "—"}</p>
+                    <p className="text-gray-300">{clientSelectionne.email || "—"}</p>
                   </div>
                 </div>
 

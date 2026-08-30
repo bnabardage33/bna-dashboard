@@ -20,10 +20,10 @@ export default function SubNav({ items }: { items: Item[] }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`${
+              className={`text-sm whitespace-nowrap ${
                 active
-                  ? "px-4 py-2 rounded-full border border-red-500 bg-red-600/15 text-red-500 font-medium text-sm whitespace-nowrap shadow-[0_0_10px_rgba(220,38,38,0.2)]"
-                  : "px-4 py-2 rounded-full border border-white/5 bg-[#1A1D24]/50 text-gray-400 hover:text-gray-200 text-sm whitespace-nowrap transition-all"
+                  ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                  : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
               }`}
             >
               {Icon && <Icon className="inline-block h-4 w-4 mr-1.5 align-middle" />}

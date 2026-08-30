@@ -132,7 +132,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
         <h2 className="text-lg font-bold text-white">Avancement du Chantier</h2>
         <div className="flex items-center gap-3 bg-slate-900 px-4 py-2 rounded-lg border border-slate-700">
           <span className="text-sm text-slate-400 uppercase tracking-wider font-bold">Global</span>
-          <span className={`text-2xl font-black ${pct === 100 ? 'text-emerald-400' : 'text-sky-400'}`}>{pct}%</span>
+          <span className={`text-2xl font-black ${pct === 100 ? 'text-emerald-400' : 'text-gray-300'}`}>{pct}%</span>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           onChange={(e) => setObservations(e.target.value)}
           placeholder="Ex: Tempête de vent, impossible de poser le bardage sur la façade Nord..."
           rows={3}
-          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-600"
         />
       </div>
 
@@ -197,7 +197,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-900 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-sky-500/20 transition-all"
+          className="flex items-center gap-2 bg-red-600 hover:bg-gray-300 disabled:opacity-50 text-slate-900 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-red-600/20 transition-all"
         >
           {saving && <Loader2 size={16} className="animate-spin" />}
           Enregistrer l'avancement

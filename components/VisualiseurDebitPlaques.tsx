@@ -50,7 +50,7 @@ export default function VisualiseurDebitPlaques({
 
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modules Posés</p>
-          <p className="mt-0.5 text-lg font-black text-sky-400">{calepinage.nbPiecesPosees} modules</p>
+          <p className="mt-0.5 text-lg font-black text-gray-300">{calepinage.nbPiecesPosees} modules</p>
           <p className="text-[10px] text-slate-400 font-mono">
             Net: {calepinage.surfaceZoneM2.toFixed(2)} m²
           </p>
@@ -140,7 +140,7 @@ export default function VisualiseurDebitPlaques({
       <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-sky-500/20 text-xs font-bold text-sky-400">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-600/20 text-xs font-bold text-gray-300">
               #{plaqueActive.index}
             </span>
             <p className="text-xs font-bold text-slate-100">
@@ -314,11 +314,11 @@ export default function VisualiseurDebitPlaques({
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3 text-[11px]">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="h-3.5 w-3.5 rounded bg-sky-600 border border-sky-400" />
+              <div className="h-3.5 w-3.5 rounded bg-red-700 border border-gray-300" />
               <span className="text-slate-300">Modules pleins (M)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-3.5 w-3.5 rounded bg-sky-400 border border-sky-200" />
+              <div className="h-3.5 w-3.5 rounded bg-gray-300 border border-sky-200" />
               <span className="text-slate-300">Rives ajustées (R)</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -373,7 +373,7 @@ export default function VisualiseurDebitPlaques({
                         p.type === "pignon"
                           ? "bg-amber-500/20 text-amber-400"
                           : p.type === "coupe"
-                          ? "bg-sky-500/20 text-sky-400"
+                          ? "bg-red-600/20 text-gray-300"
                           : "bg-slate-700 text-slate-200"
                       }`}
                     >

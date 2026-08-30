@@ -211,7 +211,7 @@ export default function CommandeModal({
                     return (
                       <tr key={index} className="hover:bg-slate-800/30 transition-colors">
                         <td className="p-3 font-medium text-slate-200">{ligne.designation}</td>
-                        <td className="p-3 text-sky-400 font-bold">{ligne.quantite} {ligne.unite}</td>
+                        <td className="p-3 text-gray-300 font-bold">{ligne.quantite} {ligne.unite}</td>
                         <td className="p-3">
                           <div className="flex flex-col gap-2 min-w-[300px]">
                             <div className="relative">
@@ -240,7 +240,7 @@ export default function CommandeModal({
                                             setDropdownOpen({ ...dropdownOpen, [index]: true });
                                           }}
                                           className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${
-                                            isActive ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700"
+                                            isActive ? "bg-red-700 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700"
                                           }`}
                                         >
                                           {cat}
@@ -256,7 +256,7 @@ export default function CommandeModal({
                                       value={term}
                                       onChange={e => setSearchTerms({...searchTerms, [index]: e.target.value})}
                                       onFocus={() => setDropdownOpen({...dropdownOpen, [index]: true})}
-                                      className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
+                                      className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none"
                                     />
                                   </div>
                                   {dropdownOpen[index] && (
@@ -286,7 +286,7 @@ export default function CommandeModal({
                             <select 
                               value={ligne.fournisseurSelectionneId || ""}
                               onChange={(e) => handleSelectFournisseur(index, e.target.value)}
-                              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none appearance-none"
+                              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none appearance-none"
                             >
                               <option value="">-- Choisir un fournisseur --</option>
                               {fournisseursList.map(f => (
@@ -322,7 +322,7 @@ export default function CommandeModal({
             <button 
               onClick={handleEnregistrer} 
               disabled={isSubmitting}
-              className="w-full sm:w-auto rounded-lg bg-sky-600 px-6 py-2.5 font-bold text-white hover:bg-sky-500 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto rounded-lg bg-red-700 px-6 py-2.5 font-bold text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

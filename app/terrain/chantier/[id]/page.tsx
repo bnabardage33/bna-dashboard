@@ -426,15 +426,15 @@ function ChantierDetailContent() {
         )}
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-white/10">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`whitespace-nowrap px-3 py-2 text-sm font-medium ${
+            className={`whitespace-nowrap transition-all ${
               tab === t
-                ? "border-b-2 border-red-500 text-white"
-                : "text-gray-400 hover:text-gray-200"
+                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             {t}
@@ -505,7 +505,7 @@ function ChantierDetailContent() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-block text-xs font-medium text-sky-400 hover:text-sky-300"
+                className="mt-2 inline-block text-xs font-medium text-gray-300 hover:text-gray-400"
               >
                 📍 Ouvrir dans Maps / Waze
               </a>
@@ -748,7 +748,7 @@ function ChantierDetailContent() {
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
                     <p className="text-xs text-gray-500">Rafales Max</p>
-                    <p className="text-lg font-bold text-sky-400">
+                    <p className="text-lg font-bold text-gray-300">
                       {Math.max(meteo.matin.rafales, meteo.apresMidi.rafales)} km/h
                     </p>
                     <p className="text-[11px] text-gray-400">Sur la journée</p>
@@ -780,7 +780,7 @@ function ChantierDetailContent() {
                         <p className="text-[10px] text-gray-500">{h.heure}</p>
                         <p className="text-xs font-bold text-white">{h.temp}°C</p>
                         <p className="text-[10px] text-gray-400">{h.vent}·{h.rafales} km/h</p>
-                        {h.pluie > 0 && <p className="text-[10px] text-sky-400">{h.pluie} mm</p>}
+                        {h.pluie > 0 && <p className="text-[10px] text-gray-300">{h.pluie} mm</p>}
                       </div>
                     ))}
                   </div>
@@ -836,7 +836,7 @@ function ChantierDetailContent() {
 
             <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Achats Matériaux HT</p>
-              <p className="mt-1 text-xl font-bold text-sky-400">
+              <p className="mt-1 text-xl font-bold text-gray-300">
                 {commandesLiees
                   .reduce((s, c) => s + (c.montant_ht || 0), 0)
                   .toFixed(2)}{" "}
@@ -1030,7 +1030,7 @@ function ChantierDetailContent() {
                                     p.statut === "sans_reserve"
                                       ? "bg-red-600/20 text-gray-400"
                                       : p.statut === "reserves_levees"
-                                      ? "bg-sky-500/20 text-sky-400"
+                                      ? "bg-red-600/20 text-gray-300"
                                       : "bg-red-600/20 text-gray-400"
                                   }`}
                                 >
@@ -1120,7 +1120,7 @@ function ChantierDetailContent() {
                                   c.statut === "livree"
                                     ? "bg-red-600/20 text-gray-400"
                                     : c.statut === "commandee"
-                                    ? "bg-sky-500/20 text-sky-400"
+                                    ? "bg-red-600/20 text-gray-300"
                                     : "bg-[#1A1D24] text-gray-300"
                                 }`}
                               >

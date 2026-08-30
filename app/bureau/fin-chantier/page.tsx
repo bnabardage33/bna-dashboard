@@ -591,42 +591,42 @@ export default function FinChantierPage() {
           <p className="text-[11px] text-gray-400/80">En cours de levée</p>
         </div>
 
-        <div className="rounded-2xl border border-sky-500/30 bg-sky-950/20 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-sky-400">Réserves Levées</p>
-          <p className="mt-0.5 text-2xl font-black text-sky-300 font-mono">{nbReservesLevees}</p>
-          <p className="text-[11px] text-sky-500/80">Solde déblocable</p>
+        <div className="rounded-2xl border border-red-600/30 bg-sky-950/20 p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Réserves Levées</p>
+          <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbReservesLevees}</p>
+          <p className="text-[11px] text-red-600/80">Solde déblocable</p>
         </div>
       </div>
 
       {/* Barre de Filtres & Recherche */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFiltre("tous")}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`text-xs whitespace-nowrap transition-all ${
               filtre === "tous"
-                ? "bg-sky-500 text-slate-950 font-bold"
-                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
+                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             Tous ({pvs.length})
           </button>
           <button
             onClick={() => setFiltre("sans_reserve")}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`text-xs whitespace-nowrap transition-all ${
               filtre === "sans_reserve"
-                ? "bg-red-600 text-slate-950 font-bold"
-                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
+                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             Sans réserve ({nbSansReserve})
           </button>
           <button
             onClick={() => setFiltre("avec_reserves")}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`text-xs whitespace-nowrap transition-all ${
               filtre === "avec_reserves"
-                ? "bg-red-600 text-slate-950 font-bold"
-                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
+                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             Avec réserves ({nbAvecReserves})
@@ -635,7 +635,7 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("reserves_levees")}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               filtre === "reserves_levees"
-                ? "bg-sky-400 text-slate-950 font-bold"
+                ? "bg-gray-300 text-slate-950 font-bold"
                 : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
             }`}
           >
@@ -649,7 +649,7 @@ export default function FinChantierPage() {
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             placeholder="Rechercher par n°, chantier, client…"
-            className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+            className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
           />
         </div>
       </div>
@@ -683,13 +683,13 @@ export default function FinChantierPage() {
             return (
               <div
                 key={pv.id}
-                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-[#1A1D24]"
+                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-sky-400">{pv.numero}</span>
+                        <span className="font-mono text-xs font-bold text-gray-300">{pv.numero}</span>
                         <span className="text-xs text-gray-500">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
                       </div>
                       <h2 className="text-base font-bold text-white mt-0.5">{pv.chantiers?.nom || "Chantier"}</h2>
@@ -701,7 +701,7 @@ export default function FinChantierPage() {
                         pv.statut === "sans_reserve"
                           ? "bg-red-600/20 text-gray-400 border border-white/10"
                           : pv.statut === "reserves_levees"
-                          ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                          ? "bg-red-600/20 text-gray-300 border border-red-600/30"
                           : pv.statut === "refuse"
                           ? "bg-red-900/200/20 text-red-400 border border-red-500/30"
                           : "bg-red-600/20 text-gray-400 border border-white/10"
@@ -746,7 +746,7 @@ export default function FinChantierPage() {
                         setPvSelectionne(pv);
                         setModalPdfOuvert(true);
                       }}
-                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-[#1A1D24] flex items-center gap-1"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] flex items-center gap-1"
                     >
                       📄 PDF
                     </button>
@@ -921,7 +921,7 @@ export default function FinChantierPage() {
                     onClick={() => setFormStatut("reserves_levees")}
                     className={`rounded-lg border p-2.5 text-left text-xs transition-colors ${
                       formStatut === "reserves_levees"
-                        ? "border-sky-500 bg-sky-950/40 text-sky-300"
+                        ? "border-red-600 bg-sky-950/40 text-gray-400"
                         : "border-white/10 bg-transparent text-gray-400"
                     }`}
                   >
@@ -1209,7 +1209,7 @@ export default function FinChantierPage() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-500"
+                        className="flex items-center gap-1.5 rounded-lg bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600"
                       >
                         <span>📷</span> + Ajouter une photo
                       </button>
@@ -1394,7 +1394,7 @@ export default function FinChantierPage() {
             </div>
 
             <p className="text-xs text-gray-300">
-              Cochez les réserves effectuées pour constater leur levée. Dès que toutes les réserves sont levées, le statut passe automatiquement à <strong className="text-sky-400">« Réserves Levées »</strong>.
+              Cochez les réserves effectuées pour constater leur levée. Dès que toutes les réserves sont levées, le statut passe automatiquement à <strong className="text-gray-300">« Réserves Levées »</strong>.
             </p>
 
             <div className="space-y-2.5 max-h-72 overflow-y-auto">
@@ -1473,7 +1473,7 @@ export default function FinChantierPage() {
                     pvSelectionne.statut === "sans_reserve"
                       ? "bg-red-600/20 text-gray-400"
                       : pvSelectionne.statut === "reserves_levees"
-                      ? "bg-sky-500/20 text-sky-400"
+                      ? "bg-red-600/20 text-gray-300"
                       : "bg-red-600/20 text-gray-400"
                   }`}
                 >

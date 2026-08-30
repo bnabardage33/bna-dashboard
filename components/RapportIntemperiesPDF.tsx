@@ -109,7 +109,7 @@ export default function RapportIntemperiesPDF({
 
   return (
     <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-6 text-slate-900 shadow-xl text-sm leading-relaxed">
-      <div className="mb-2 h-1.5 w-full rounded-full bg-sky-600" />
+      <div className="mb-2 h-1.5 w-full rounded-full bg-red-700" />
 
       {/* En-tête */}
       <div className="flex items-start justify-between pt-3">
@@ -130,7 +130,7 @@ export default function RapportIntemperiesPDF({
             <br />
             pour intempéries
           </p>
-          <p className="font-mono text-sm font-bold text-sky-600 mt-1">N° {rapport.numero}</p>
+          <p className="font-mono text-sm font-bold text-red-700 mt-1">N° {rapport.numero}</p>
           <p className="mt-0.5 text-xs text-slate-500">
             Rédigé le {new Date(rapport.cree_le).toLocaleDateString("fr-FR")}
           </p>

@@ -48,7 +48,7 @@ export default function SAVPage() {
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Wrench className="h-6 w-6 text-sky-400" />
+            <Wrench className="h-6 w-6 text-gray-300" />
             SAV & Garantie
           </h1>
           <p className="text-gray-400 text-sm mt-1">Gérez vos interventions SAV et protégez-vous juridiquement.</p>
@@ -56,7 +56,7 @@ export default function SAVPage() {
 
         <Link
           href="/bureau/sav/nouveau"
-          className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-sky-600/20 transition-all"
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow-lg shadow-red-600/20 transition-all"
         >
           <Plus size={18} />
           Nouveau Ticket SAV
@@ -73,7 +73,7 @@ export default function SAVPage() {
             onChange={(e) => setRecherche(e.target.value)}
             onBlur={fetchTickets}
             onKeyDown={(e) => e.key === 'Enter' && fetchTickets()}
-            className="w-full bg-transparent border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
+            className="w-full bg-transparent border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all"
           />
         </div>
 
@@ -118,7 +118,7 @@ export default function SAVPage() {
             <Link
               href={`/bureau/sav/${ticket.id}`}
               key={ticket.id}
-              className="group bg-[#1A1D24] border border-white/10 rounded-2xl p-5 hover:border-sky-500/50 hover:shadow-lg hover:shadow-sky-500/10 transition-all flex flex-col justify-between h-48"
+              className="group bg-[#1A1D24] border border-white/10 rounded-2xl p-5 hover:border-red-600/50 hover:shadow-lg hover:shadow-red-600/10 transition-all flex flex-col justify-between h-48"
             >
               <div>
                 <div className="flex justify-between items-start mb-3">

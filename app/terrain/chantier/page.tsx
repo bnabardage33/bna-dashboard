@@ -149,7 +149,7 @@ export default function ChantiersPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom de chantier, client, adresse..."
-          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
         />
       </div>
 
@@ -191,12 +191,12 @@ export default function ChantiersPage() {
             return (
               <div
                 key={ch.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-sky-500/60 hover:bg-[#1A1D24] hover:shadow-sky-500/5"
+                className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24] hover:shadow-red-600/5"
               >
                 <Link href={`/terrain/chantier/${ch.id}`} className="block space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h2 className="text-base font-bold text-white group-hover:text-sky-400 transition-colors">
+                      <h2 className="text-base font-bold text-white group-hover:text-gray-300 transition-colors">
                         {ch.nom || nomClient}
                       </h2>
                       <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5">
@@ -208,7 +208,7 @@ export default function ChantiersPage() {
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                         ch.statut === "en_cours"
-                          ? "border border-sky-500/40 bg-sky-950/40 text-sky-300"
+                          ? "border border-red-600/40 bg-sky-950/40 text-gray-400"
                           : ch.statut === "termine"
                           ? "border border-white/10 bg-white/5 text-gray-400"
                           : "border border-slate-600 bg-transparent text-gray-300"
@@ -233,7 +233,7 @@ export default function ChantiersPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 font-semibold text-sky-400 group-hover:translate-x-0.5 transition-transform text-xs">
+                    <div className="flex items-center gap-1 font-semibold text-gray-300 group-hover:translate-x-0.5 transition-transform text-xs">
                       <span>Ouvrir</span>
                       <ArrowRight className="h-3 w-3" />
                     </div>
@@ -250,7 +250,7 @@ export default function ChantiersPage() {
                       setCopiedId(ch.id);
                       setTimeout(() => setCopiedId(null), 2000);
                     }}
-                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1A1D24]/80 px-2 py-1 text-[10px] font-bold text-gray-300 hover:bg-sky-600 hover:text-white transition-all backdrop-blur-sm"
+                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1A1D24]/80 px-2 py-1 text-[10px] font-bold text-gray-300 hover:bg-red-700 hover:text-white transition-all backdrop-blur-sm"
                   >
                     {copiedId === ch.id ? <Check size={12} /> : <Copy size={12} />}
                     {copiedId === ch.id ? "Copié" : "Lien client"}
@@ -265,7 +265,7 @@ export default function ChantiersPage() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] font-medium text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                      className="text-[11px] font-medium text-gray-300 hover:text-gray-400 flex items-center gap-1"
                     >
                       🗺️ GPS Itinéraire
                     </a>
@@ -329,7 +329,7 @@ export default function ChantiersPage() {
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -339,7 +339,7 @@ export default function ChantiersPage() {
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="">— Sélectionner un client —</option>
                   {clients.map((c) => (
@@ -356,7 +356,7 @@ export default function ChantiersPage() {
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   placeholder="Ex. 14 Route des Plages, 33120 Arcachon"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -365,7 +365,7 @@ export default function ChantiersPage() {
                 <select
                   value={materiauStructurel}
                   onChange={(e) => setMateriauStructurel(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="Bois / Mélèze">Bois Naturel / Mélèze</option>
                   <option value="Panneaux HPL Trespa">Panneaux HPL (Trespa / Fundermax)</option>
@@ -381,7 +381,7 @@ export default function ChantiersPage() {
                     type="date"
                     value={dateDebut}
                     onChange={(e) => setDateDebut(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -390,7 +390,7 @@ export default function ChantiersPage() {
                     type="date"
                     value={dateFin}
                     onChange={(e) => setDateFin(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>

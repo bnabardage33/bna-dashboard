@@ -163,7 +163,7 @@ export default function NotesPage() {
                   : note.titre?.includes('🔴')
                   ? "border-red-500/80 bg-[#1A1D24]/90 shadow-red-500/10"
                   : note.epingle
-                  ? "border-sky-500/50 bg-[#1A1D24] shadow-sky-500/5"
+                  ? "border-red-600/50 bg-[#1A1D24] shadow-red-600/5"
                   : "border-white/10 bg-[#1A1D24] hover:border-slate-600"
               }`}
             >
@@ -173,13 +173,13 @@ export default function NotesPage() {
                     value={editTitre}
                     onChange={(e) => setEditTitre(e.target.value)}
                     placeholder="Titre"
-                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                   <textarea
                     value={editContenu}
                     onChange={(e) => setEditContenu(e.target.value)}
                     rows={4}
-                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                   <div className="flex justify-end gap-2">
                     <button
@@ -208,7 +208,7 @@ export default function NotesPage() {
                         onClick={() => togglePin(note)}
                         className={`rounded-lg p-1.5 transition-colors ${
                           note.epingle
-                            ? "text-sky-400 bg-sky-950/40"
+                            ? "text-gray-300 bg-sky-950/40"
                             : "text-gray-500 hover:text-gray-300 hover:bg-[#1A1D24]"
                         }`}
                         title={note.epingle ? "Désépingler" : "Épingler en haut"}
@@ -227,7 +227,7 @@ export default function NotesPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => commencerEdition(note)}
-                        className="p-1.5 text-gray-400 hover:text-sky-400 transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-gray-300 transition-colors"
                         title="Modifier la note"
                       >
                         <Edit3 className="h-3.5 w-3.5" />
@@ -280,7 +280,7 @@ export default function NotesPage() {
                 <select
                   value={chantierId}
                   onChange={(e) => setChantierId(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="">🏢 Note générale libre</option>
                   {chantiers.map((c) => (
@@ -297,7 +297,7 @@ export default function NotesPage() {
                   value={titre}
                   onChange={(e) => setTitre(e.target.value)}
                   placeholder="Ex. Réunion pose ossature bois"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -309,7 +309,7 @@ export default function NotesPage() {
                   placeholder="Tapez votre note ou utilisez le dictaphone ci-dessous…"
                   rows={4}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 />
               </div>
 

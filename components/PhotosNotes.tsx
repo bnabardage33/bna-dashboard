@@ -165,7 +165,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
                       onChange={(e) => handleUpload(col.type, e.target.files?.[0])}
                     />
                   </label>
-                  <label className="cursor-pointer text-xs font-medium text-sky-400 hover:text-sky-300">
+                  <label className="cursor-pointer text-xs font-medium text-gray-300 hover:text-gray-400">
                     {busy ? "…" : "🖼️ Importer"}
                     <input
                       type="file"

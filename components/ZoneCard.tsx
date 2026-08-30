@@ -528,7 +528,7 @@ export default function ZoneCard({
           <button
             type="button"
             onClick={() => setReplie(!replie)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-sky-400 hover:bg-slate-750 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-gray-300 hover:bg-slate-750 transition-colors"
             title={replie ? "Déplier la zone" : "Replier la zone"}
           >
             <span className="text-xs">{replie ? "▶" : "▼"}</span>
@@ -538,7 +538,7 @@ export default function ZoneCard({
             value={zone.nom}
             onChange={(e) => update({ nom: e.target.value })}
             placeholder="Nom de la zone (ex. Façade Nord)"
-            className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm font-bold text-white focus:border-sky-500 focus:outline-none"
+            className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm font-bold text-white focus:border-red-600 focus:outline-none"
           />
         </div>
 
@@ -811,14 +811,14 @@ export default function ZoneCard({
                   onClick={() => update({ zone_vent_rive: !(zone.zone_vent_rive ?? zone.angle) })}
                   className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                     (zone.zone_vent_rive ?? zone.angle)
-                      ? "border-sky-500 bg-sky-950/40 text-sky-300"
+                      ? "border-red-600 bg-sky-950/40 text-gray-400"
                       : "border-slate-600 bg-slate-900 text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   <span>💨 Rives renforcées (40cm)</span>
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      (zone.zone_vent_rive ?? zone.angle) ? "bg-sky-400" : "bg-slate-600"
+                      (zone.zone_vent_rive ?? zone.angle) ? "bg-gray-300" : "bg-slate-600"
                     }`}
                   />
                 </button>
@@ -830,7 +830,7 @@ export default function ZoneCard({
               <div className="rounded-md border border-slate-700 bg-slate-900/80 p-2 text-[11px] text-slate-300 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Modèle d'équerre auto :</span>
-                  <span className="font-semibold text-sky-400">{pose.isolant.modeleEquerreIsolco}</span>
+                  <span className="font-semibold text-gray-300">{pose.isolant.modeleEquerreIsolco}</span>
                 </div>
                 {pose.isolant.actif && (
                   <div className="flex items-center justify-between">
@@ -1065,7 +1065,7 @@ export default function ZoneCard({
             o.type === "porte" ? "Porte" :
             o.type === "baie" ? "Baie" : "Pte-Fen.";
           const typeColor =
-            o.type === "fenetre" ? "text-sky-300" :
+            o.type === "fenetre" ? "text-gray-400" :
             o.type === "porte" ? "text-amber-300" : "text-violet-300";
 
           return (
@@ -1139,7 +1139,7 @@ export default function ZoneCard({
                     })
                   }
                   placeholder="Allège (mm)"
-                  className="rounded-lg border border-sky-600/50 bg-slate-900 px-2 py-1 text-sm text-sky-200 w-full"
+                  className="rounded-lg border border-red-700/50 bg-slate-900 px-2 py-1 text-sm text-sky-200 w-full"
                   title="Hauteur d'allège : distance du sol au bas de la fenêtre (mm)"
                 />
               )}
@@ -1230,9 +1230,9 @@ export default function ZoneCard({
       {/* ====================================================== */}
 
       {pose && (
-        <div className="space-y-2 rounded-lg border border-sky-600/30 bg-sky-600/5 p-3">
+        <div className="space-y-2 rounded-lg border border-red-700/30 bg-red-700/5 p-3">
 
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-400">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-300">
             Calcul technique —{" "}
             {
               LABELS_FAMILLE[
@@ -1404,7 +1404,7 @@ export default function ZoneCard({
                   onClick={() => setOngletDebit("nesting")}
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "nesting"
-                      ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
+                      ? "bg-red-600 text-slate-950 shadow-md shadow-red-600/20"
                       : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
@@ -1415,7 +1415,7 @@ export default function ZoneCard({
                   onClick={() => setOngletDebit("fiche_a4")}
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "fiche_a4"
-                      ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
+                      ? "bg-red-600 text-slate-950 shadow-md shadow-red-600/20"
                       : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >

@@ -80,7 +80,7 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
         </div>
         <div>
           <p className="text-xs text-slate-500">Temps à Planifier (Réalité)</p>
-          <p className="text-xl font-bold text-sky-400">{tempsPlanification.toFixed(2)} h</p>
+          <p className="text-xl font-bold text-gray-300">{tempsPlanification.toFixed(2)} h</p>
         </div>
       </div>
     </div>
@@ -214,7 +214,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         <button 
           onClick={validerPointage}
           disabled={loading || heures <= 0 || !dateSaisie}
-          className="w-full rounded-lg bg-sky-600 py-3 font-bold text-white hover:bg-sky-500 transition-colors disabled:opacity-50"
+          className="w-full rounded-lg bg-red-700 py-3 font-bold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
         >
           {loading ? "Validation en cours..." : "Valider le Pointage"}
         </button>
@@ -250,7 +250,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-sm text-slate-300">Brut : {p.volume_heures_declare}h</p>
-                      <p className="text-xs text-sky-400">Ajusté : {adjusted.toFixed(1)}h</p>
+                      <p className="text-xs text-gray-300">Ajusté : {adjusted.toFixed(1)}h</p>
                     </div>
                     <button onClick={() => handleDelete(p.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-md transition-colors" title="Supprimer">
                       <Trash2 size={16} />
@@ -346,7 +346,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
             <div>
               <span>Pointé brut : {totalPointesBrut}h</span>
               <span className="mx-2">|</span>
-              <span className="text-sky-300">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
+              <span className="text-gray-400">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
             </div>
             <span>Budget : {data.budget.toFixed(1)}h</span>
           </div>

@@ -60,7 +60,7 @@ export default function BonCommandePDF({
   return (
     <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl">
       {/* Bandeau supérieur bleu acier */}
-      <div className="mb-2 h-1.5 w-full bg-sky-600 rounded-full" />
+      <div className="mb-2 h-1.5 w-full bg-red-700 rounded-full" />
 
       {/* En-tête */}
       <div className="flex items-start justify-between pt-3">
@@ -79,7 +79,7 @@ export default function BonCommandePDF({
           <p className="text-3xl font-black tracking-tight text-slate-900">
             BON DE COMMANDE
           </p>
-          <p className="text-sm font-bold text-sky-600 font-mono">
+          <p className="text-sm font-bold text-red-700 font-mono">
             RÉF #{commande.id.slice(0, 8).toUpperCase()}
           </p>
           <p className="text-xs text-slate-500 mt-0.5">Date d&apos;émission : {dateEmission}</p>

@@ -42,7 +42,7 @@ export default function FicheDebitPDF({
   return (
     <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-8 text-slate-900 shadow-xl text-xs font-sans">
       {/* Bandeau supérieur bleu acier */}
-      <div className="mb-2 h-1.5 w-full bg-sky-600 rounded-full" />
+      <div className="mb-2 h-1.5 w-full bg-red-700 rounded-full" />
 
       {/* En-tête */}
       <div className="flex items-start justify-between pt-3">
@@ -61,7 +61,7 @@ export default function FicheDebitPDF({
           <p className="text-2xl font-black tracking-tight text-slate-900">
             FICHE DÉBIT &amp; ATELIER
           </p>
-          <p className="text-sm font-bold text-sky-600 font-mono">{zone.nom}</p>
+          <p className="text-sm font-bold text-red-700 font-mono">{zone.nom}</p>
           <p className="text-xs text-slate-500">{dateStr}</p>
         </div>
       </div>

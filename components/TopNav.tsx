@@ -38,7 +38,7 @@ export default function TopNav() {
             <span className="text-lg font-bold tracking-tight text-slate-100 leading-tight">
               BNA BARDAGE
             </span>
-            <span className="text-xs font-semibold text-sky-400 tracking-wide">
+            <span className="text-xs font-semibold text-gray-300 tracking-wide">
               Gestion Chantier
             </span>
           </div>
@@ -53,7 +53,7 @@ export default function TopNav() {
 
           <Link
             href="/parametres"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-300 transition-colors hover:border-sky-500 hover:text-sky-400"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-300 transition-colors hover:border-red-600 hover:text-gray-300"
             title="Paramètres & Configuration"
           >
             <Settings className="h-4 w-4" />

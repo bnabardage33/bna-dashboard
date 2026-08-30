@@ -88,7 +88,7 @@ export default function DocumentPDF({
       {/* ============================================================ */}
       <div className="space-y-4">
         {/* Liseré supérieur bleu acier */}
-        <div className="h-2 w-full bg-sky-600 rounded-full" />
+        <div className="h-2 w-full bg-red-700 rounded-full" />
 
         {/* En-tête avec Logo imposant */}
         <div className="flex items-start justify-between pt-2">
@@ -109,7 +109,7 @@ export default function DocumentPDF({
 
           <div className="text-right">
             <p className="text-3xl font-black tracking-tight text-slate-900">{titre}</p>
-            <p className="text-sm font-bold text-sky-600 font-mono">N° {doc.numero}</p>
+            <p className="text-sm font-bold text-red-700 font-mono">N° {doc.numero}</p>
             <p className="text-xs text-slate-500 mt-0.5">
               Émis le {new Date(doc.date_emission).toLocaleDateString("fr-FR")}
               {doc.kind === "devis" && doc.validite_jours
@@ -121,7 +121,7 @@ export default function DocumentPDF({
                 {doc.statut}
               </span>
               {doc.kind === "facture" && doc.type_facture && doc.type_facture !== "totale" && (
-                <span className="inline-block rounded-full bg-sky-600 px-3 py-0.5 text-[10px] font-bold uppercase text-white">
+                <span className="inline-block rounded-full bg-red-700 px-3 py-0.5 text-[10px] font-bold uppercase text-white">
                   {doc.type_facture}
                 </span>
               )}

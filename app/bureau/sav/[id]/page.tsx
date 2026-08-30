@@ -232,7 +232,7 @@ export default function FicheSAV() {
         <button 
           onClick={saveTicket}
           disabled={saving}
-          className="bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-sky-600/20"
+          className="bg-red-600 text-white hover:bg-red-700 w-full sm:w-auto rounded-xl py-3 px-5 font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all"
         >
           {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
           Enregistrer
@@ -243,7 +243,7 @@ export default function FicheSAV() {
         <div className="flex-1 w-full">
           <label className="text-xs uppercase tracking-wide text-gray-400 mb-1 block">Chantier concerné</label>
           <select 
-            className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-sky-500"
+            className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-red-600"
             value={ticket.chantier_id}
             onChange={(e) => setTicket({...ticket, chantier_id: e.target.value})}
           >
@@ -311,8 +311,8 @@ export default function FicheSAV() {
 
         {/* TUILE 2 : DIAGNOSTIC DTU */}
         <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-sky-500" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
+          <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">
             <FileCheck size={18} /> 2. Diagnostic DTU 41.2
           </h2>
 
@@ -431,7 +431,7 @@ export default function FicheSAV() {
                 <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
                   {uploading.avant ? (
-                    <Loader2 size={24} className="animate-spin mb-1 text-sky-400" />
+                    <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
                   ) : ticket.photos.avant ? (
                     <img src={ticket.photos.avant} className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-40 transition-opacity" />
                   ) : (
@@ -443,7 +443,7 @@ export default function FicheSAV() {
                 <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'apres')} disabled={uploading.apres} />
                   {uploading.apres ? (
-                    <Loader2 size={24} className="animate-spin mb-1 text-sky-400" />
+                    <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
                   ) : ticket.photos.apres ? (
                     <img src={ticket.photos.apres} className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-40 transition-opacity" />
                   ) : (
@@ -546,7 +546,7 @@ export default function FicheSAV() {
           <div className="flex justify-between items-center p-4 bg-transparent border-b border-slate-800 print:hidden">
             <h2 className="text-xl font-bold text-white">Rapport SAV</h2>
             <div className="flex gap-4">
-              <button onClick={() => window.print()} className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl font-bold">
+              <button onClick={() => window.print()} className="flex items-center gap-2 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold">
                 <Printer size={18} /> Imprimer / PDF
               </button>
               <button onClick={() => setShowPDF(false)} className="p-2 bg-[#1A1D24] hover:bg-[#1A1D24] rounded-xl text-gray-300">

@@ -106,7 +106,7 @@ const LABELS_STATUT: Record<StatutPV, { label: string; bg: string; text: string;
   },
   reserves_levees: {
     label: "RÉSERVES INTÉGRALEMENT LEVÉES",
-    bg: "bg-sky-100 border-sky-500",
+    bg: "bg-sky-100 border-red-600",
     text: "text-sky-900",
     desc: "L'ensemble des désordres ou finitions précédemment signalés a été valablement repris et formellement validé par le Maître d'Ouvrage. L'ouvrage est purgé de toute réserve.",
   },
@@ -150,7 +150,7 @@ export default function PVReceptionPDF({
       {/* ============================================================ */}
       {/* 1. EN-TÊTE OFFICIEL BNA */}
       {/* ============================================================ */}
-      <div className="mb-2 h-1.5 w-full bg-sky-600 rounded-full" />
+      <div className="mb-2 h-1.5 w-full bg-red-700 rounded-full" />
 
       <div className="flex items-start justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3.5">

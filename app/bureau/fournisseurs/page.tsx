@@ -46,7 +46,7 @@ const SPECIALITES = ["Bois", "Métal / Bac acier", "Composite", "Quincaillerie /
 
 const STATUTS = [
   { value: "a_commander", label: "À commander", emoji: "⚪", couleur: "border-slate-600 text-gray-300" },
-  { value: "commandee", label: "Commandée", emoji: "🔵", couleur: "border-sky-500/40 text-sky-400" },
+  { value: "commandee", label: "Commandée", emoji: "🔴", couleur: "border-red-500/40 text-red-400" },
   { value: "partiellement_livree", label: "Partiellement livrée", emoji: "🟠", couleur: "border-white/10 text-gray-400" },
   { value: "livree", label: "Livrée", emoji: "🟢", couleur: "border-white/10 text-gray-400" },
   { value: "annulee", label: "Annulée", emoji: "🔴", couleur: "border-red-500/40 text-red-400" },
@@ -54,7 +54,7 @@ const STATUTS = [
 
 const RELATIONS: { value: StatutRelation; label: string; couleurActif: string }[] = [
   { value: "principal", label: "⭐ Principal", couleurActif: "border-red-500 bg-red-900/200/10 text-red-400" },
-  { value: "regulier", label: "Régulier", couleurActif: "border-sky-500 bg-sky-500/10 text-sky-400" },
+  { value: "regulier", label: "Régulier", couleurActif: "border-gray-500 bg-gray-500/10 text-gray-300" },
   { value: "remplacant", label: "Remplaçant", couleurActif: "border-slate-500 bg-transparent0/10 text-gray-300" },
 ];
 
@@ -333,15 +333,15 @@ export default function FournisseursPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 border-b border-white/10/80">
+      <div className="flex gap-2 mb-4">
         {(["fournisseurs", "commandes"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-xs font-bold transition-all ${
+            className={`text-sm whitespace-nowrap transition-all ${
               tab === t
-                ? "border-b-2 border-sky-400 text-sky-400"
-                : "text-gray-400 hover:text-gray-200"
+                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             {t === "fournisseurs" ? "🏢 Fournisseurs" : "📦 Commandes Matériaux"}
@@ -392,7 +392,7 @@ export default function FournisseursPage() {
                         </a>
                       )}
                       {f.email && (
-                        <a href={`mailto:${f.email}`} className="font-medium text-sky-400 hover:text-sky-300">
+                        <a href={`mailto:${f.email}`} className="font-medium text-gray-300 hover:text-gray-400">
                           ✉️ {f.email}
                         </a>
                       )}
@@ -447,7 +447,7 @@ export default function FournisseursPage() {
                       <button
                         type="button"
                         onClick={() => setApercuCommande(c)}
-                        className="rounded-lg border border-slate-600 bg-transparent px-2.5 py-1 text-xs text-sky-400 hover:bg-[#1A1D24] hover:text-sky-300"
+                        className="rounded-lg border border-slate-600 bg-transparent px-2.5 py-1 text-xs text-gray-300 hover:bg-[#1A1D24] hover:text-gray-400"
                         title="Voir et imprimer le bon de commande officiel"
                       >
                         📄 Bon de commande
@@ -501,12 +501,12 @@ export default function FournisseursPage() {
                 onChange={(e) => setFNom(e.target.value)}
                 placeholder="Nom de l'entreprise"
                 required
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
               <select
                 value={fSpecialite}
                 onChange={(e) => setFSpecialite(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
               >
                 {SPECIALITES.map((s) => (
                   <option key={s} value={s}>
@@ -539,34 +539,34 @@ export default function FournisseursPage() {
                 value={fContact}
                 onChange={(e) => setFContact(e.target.value)}
                 placeholder="Nom du contact"
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={fTel}
                   onChange={(e) => setFTel(e.target.value)}
                   placeholder="Téléphone"
-                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
                 <input
                   value={fEmail}
                   onChange={(e) => setFEmail(e.target.value)}
                   placeholder="Email"
-                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
               <input
                 value={fConditions}
                 onChange={(e) => setFConditions(e.target.value)}
                 placeholder="Conditions de paiement (ex. 30j fin de mois)"
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
               <textarea
                 value={fNotes}
                 onChange={(e) => setFNotes(e.target.value)}
                 placeholder="Notes et commentaires"
                 rows={2}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
             </div>
 
@@ -610,7 +610,7 @@ export default function FournisseursPage() {
 
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               {prefillInfo && (
-                <p className="rounded-xl border border-sky-500/30 bg-sky-950/40 px-3.5 py-2 text-xs font-semibold text-sky-300">
+                <p className="rounded-xl border border-red-600/30 bg-sky-950/40 px-3.5 py-2 text-xs font-semibold text-gray-400">
                   {prefillInfo.chantierNom} — {prefillInfo.zoneNom}
                 </p>
               )}
@@ -654,14 +654,14 @@ export default function FournisseursPage() {
                   onChange={(e) => setCDesignation(e.target.value)}
                   placeholder="Désignation (ex. Bardage Douglas claire-voie)"
                   required
-                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
               )}
 
               <select
                 value={cFournisseurId}
                 onChange={(e) => setCFournisseurId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
               >
                 <option value="">-- Fournisseur (optionnel) --</option>
                 {fournisseurs.map((f) => (
@@ -674,7 +674,7 @@ export default function FournisseursPage() {
               <select
                 value={cChantierId}
                 onChange={(e) => setCChantierId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
               >
                 <option value="">-- Chantier (optionnel) --</option>
                 {chantiers.map((c) => (
@@ -691,20 +691,20 @@ export default function FournisseursPage() {
                     value={cQuantite}
                     onChange={(e) => setCQuantite(e.target.value)}
                     placeholder="Quantité"
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                   <input
                     value={cUnite}
                     onChange={(e) => setCUnite(e.target.value)}
                     placeholder="Unité"
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                   <input
                     type="number"
                     value={cMontant}
                     onChange={(e) => setCMontant(e.target.value)}
                     placeholder="Montant HT"
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
               )}
@@ -715,7 +715,7 @@ export default function FournisseursPage() {
                   type="date"
                   value={cDateLivraison}
                   onChange={(e) => setCDateLivraison(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                 />
               </div>
             </div>

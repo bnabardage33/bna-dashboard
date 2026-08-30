@@ -13,7 +13,7 @@ export default function OutilsPage() {
         "Vigilance officielle Météo-France DPVigilance, vitesse du vent, rafales max, pluie horaire et alertes sécurité travail en hauteur.",
       href: "/terrain/meteo",
       icon: CloudSun,
-      couleur: "border-sky-500/40 bg-sky-950/20 text-sky-400",
+      couleur: "border-red-600/40 bg-sky-950/20 text-gray-300",
       badge: "Météo-France",
     },
     {
@@ -66,7 +66,7 @@ export default function OutilsPage() {
             <Link
               key={outil.id}
               href={outil.href}
-              className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-lg transition-all hover:border-sky-500 hover:bg-[#1A1D24] hover:shadow-sky-500/10"
+              className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-lg transition-all hover:border-red-600 hover:bg-[#1A1D24] hover:shadow-red-600/10"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -81,7 +81,7 @@ export default function OutilsPage() {
                 </div>
 
                 <div>
-                  <h2 className="text-base font-bold text-white group-hover:text-sky-400 transition-colors">
+                  <h2 className="text-base font-bold text-white group-hover:text-gray-300 transition-colors">
                     {outil.titre}
                   </h2>
                   <p className="mt-1 text-xs text-gray-400 leading-relaxed">
@@ -90,7 +90,7 @@ export default function OutilsPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-end gap-1.5 text-xs font-semibold text-sky-400 group-hover:translate-x-1 transition-transform">
+              <div className="mt-4 flex items-center justify-end gap-1.5 text-xs font-semibold text-gray-300 group-hover:translate-x-1 transition-transform">
                 <span>Accéder</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </div>

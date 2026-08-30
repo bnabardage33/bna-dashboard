@@ -342,15 +342,15 @@ export default function FacturesPage() {
             return (
               <div
                 key={f.id}
-                className={`flex flex-col justify-between rounded-2xl border bg-[#1A1D24] p-4.5 shadow-md transition-all ${f.statut === "envoyee" && f.echeance && new Date(f.echeance) < new Date() ? "border-rose-500/60 hover:border-rose-400 bg-rose-950/10" : "border-white/10 hover:border-sky-500/60 hover:bg-[#1A1D24]"}`}
+                className={`flex flex-col justify-between rounded-2xl border bg-[#1A1D24] p-4.5 shadow-md transition-all ${f.statut === "envoyee" && f.echeance && new Date(f.echeance) < new Date() ? "border-rose-500/60 hover:border-rose-400 bg-rose-950/10" : "border-white/10 hover:border-red-600/60 hover:bg-[#1A1D24]"}`}
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-sky-400">{f.numero}</span>
+                        <span className="font-mono text-xs font-bold text-gray-300">{f.numero}</span>
                         {f.type_facture !== "totale" && (
-                          <span className="rounded-full bg-sky-500/15 border border-sky-500/40 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-300">
+                          <span className="rounded-full bg-red-600/15 border border-red-600/40 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-400">
                             {f.type_facture}
                           </span>
                         )}
@@ -384,7 +384,7 @@ export default function FacturesPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-wide text-gray-500">Total TTC ({f.tva_pct}%)</p>
-                      <p className="text-sm font-bold text-sky-400 font-mono">{ttc.toFixed(2)} €</p>
+                      <p className="text-sm font-bold text-gray-300 font-mono">{ttc.toFixed(2)} €</p>
                     </div>
                   </div>
                 </div>
@@ -392,7 +392,7 @@ export default function FacturesPage() {
                 <div className="mt-3.5 flex items-center justify-between border-t border-white/10/60 pt-3">
                   <button
                     onClick={() => setApercu(f)}
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-[#1A1D24] flex items-center gap-1"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] flex items-center gap-1"
                   >
                     👁️ Aperçu Facture
                   </button>
@@ -442,7 +442,7 @@ export default function FacturesPage() {
                 <select
                   value={depuisDevis}
                   onChange={(e) => chargerDepuisDevis(e.target.value)}
-                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="">-- Créer depuis un devis accepté (optionnel) --</option>
                   {devisAcceptes.map((d) => (
@@ -454,7 +454,7 @@ export default function FacturesPage() {
               )}
 
               {totalDevisHT !== null && dejaFactureHT !== null && (
-                <div className="flex items-center justify-between rounded-xl border border-sky-600/30 bg-sky-600/10 p-3 text-xs">
+                <div className="flex items-center justify-between rounded-xl border border-red-700/30 bg-red-700/10 p-3 text-xs">
                   <div>
                     <p className="text-gray-300">
                       Total devis HT : <span className="font-semibold text-white">{totalDevisHT.toFixed(2)} €</span>
@@ -473,7 +473,7 @@ export default function FacturesPage() {
                     <button
                       type="button"
                       onClick={() => remplirAcompte(30)}
-                      className="rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-500"
+                      className="rounded-xl bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-600"
                     >
                       ⚡ Acompte 30%
                     </button>
@@ -492,7 +492,7 @@ export default function FacturesPage() {
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
               >
                 <option value="">-- Choisir un client --</option>
                 {clients.map((c) => (
@@ -506,20 +506,20 @@ export default function FacturesPage() {
                 value={objet}
                 onChange={(e) => setObjet(e.target.value)}
                 placeholder="Objet"
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={adresseChantier}
                   onChange={(e) => setAdresseChantier(e.target.value)}
                   placeholder="Adresse du chantier"
-                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
                 <input
                   value={typeTravaux}
                   onChange={(e) => setTypeTravaux(e.target.value)}
                   placeholder="Type de travaux"
-                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -530,7 +530,7 @@ export default function FacturesPage() {
                     type="date"
                     value={echeance}
                     onChange={(e) => setEcheance(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -540,7 +540,7 @@ export default function FacturesPage() {
                     step="0.1"
                     value={tva}
                     onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -550,7 +550,7 @@ export default function FacturesPage() {
                 <select
                   value={typeFacture}
                   onChange={(e) => setTypeFacture(e.target.value as typeof typeFacture)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="totale">Totale</option>
                   <option value="acompte">Acompte</option>
@@ -611,7 +611,7 @@ export default function FacturesPage() {
                       insererDepuisCatalogue(e.target.value);
                       e.target.value = "";
                     }}
-                    className="flex-1 rounded-xl border border-sky-500/50 bg-transparent px-3 py-1.5 text-xs text-sky-300 font-medium hover:border-sky-400"
+                    className="flex-1 rounded-xl border border-red-600/50 bg-transparent px-3 py-1.5 text-xs text-gray-400 font-medium hover:border-gray-300"
                   >
                     <option value="" disabled>
                       📦 + Insérer un ouvrage depuis le catalogue standard...

@@ -176,7 +176,7 @@ export default function FicheTechniquePage() {
               <p className="mt-2 text-sm text-gray-400">{f.resume}</p>
             )}
             {f.fichier_url && (
-              <p className="mt-2 text-xs font-medium text-sky-400">📄 PDF joint</p>
+              <p className="mt-2 text-xs font-medium text-gray-300">📄 PDF joint</p>
             )}
           </button>
         ))}
@@ -193,7 +193,7 @@ export default function FicheTechniquePage() {
           >
             <div className="flex items-start justify-between border-b border-white/10 pb-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-sky-400">
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-300">
                   {fiche.categorie}
                 </p>
                 <h2 className="text-base font-bold text-white">{fiche.titre}</h2>
@@ -224,7 +224,7 @@ export default function FicheTechniquePage() {
                   href={fiche.fichier_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-500 shadow-md"
+                  className="inline-block rounded-xl bg-red-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-red-600 shadow-md"
                 >
                   Ouvrir le PDF dans un nouvel onglet
                 </a>
@@ -272,14 +272,14 @@ export default function FicheTechniquePage() {
                 onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
                 placeholder="Titre de la fiche"
                 required
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
 
               <div className="grid grid-cols-2 gap-3">
                 <select
                   value={form.categorie}
                   onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   {CATEGORIES.filter((c) => c.value !== "toutes").map((c) => (
                     <option key={c.value} value={c.value}>
@@ -291,7 +291,7 @@ export default function FicheTechniquePage() {
                   value={form.reference}
                   onChange={(e) => setForm((p) => ({ ...p, reference: e.target.value }))}
                   placeholder="Référence (ex. DTU 41.2)"
-                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -300,7 +300,7 @@ export default function FicheTechniquePage() {
                 onChange={(e) => setForm((p) => ({ ...p, resume: e.target.value }))}
                 placeholder="Résumé explicatif"
                 rows={2}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
 
               <textarea
@@ -308,7 +308,7 @@ export default function FicheTechniquePage() {
                 onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
                 placeholder="Contenu détaillé ou prescriptions techniques"
                 rows={4}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
               />
 
               <div>
