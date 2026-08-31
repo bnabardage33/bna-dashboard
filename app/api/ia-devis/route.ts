@@ -11,8 +11,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt manquant' }, { status: 400 });
     }
 
-    const catalogueString = catalogueContext && catalogueContext.length > 0
-      ? "\n\nVOICI LE CATALOGUE DE L'ENTREPRISE :\n" + JSON.stringify(catalogueContext.map((c: any) => ({
+    let filteredCatalog: any[] = [];
+    if (catalogueContext && catalogueContext.length > 0) {
+      const keywords = prompt.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+      filteredCatalog = catalogueContext.filter((c: any) => {
+        const text = `${c.designation} ${c.description}`.toLowerCase();
+        return keywords.some((kw: string) => text.includes(kw));
+      });
+      // Garder les 30 plus pertinents max pour éviter d'exploser la limite Groq
+      if (filteredCatalog.length > 30) {
+        filteredCatalog = filteredCatalog.slice(0, 30);
+      }
+    }
+
+    const catalogueString = filteredCatalog.length > 0
+      ? "\n\nVOICI LE CATALOGUE DE L'ENTREPRISE (Extrait pertinent) :\n" + JSON.stringify(filteredCatalog.map((c: any) => ({
           designation: c.designation,
           description: c.description,
           unite: c.unite,
