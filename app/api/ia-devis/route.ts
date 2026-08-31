@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           {
             role: 'system',
             content:
-              "Tu es un expert métreur en bâtiment (spécialisé en bardage, isolation thermique par l'extérieur, menuiserie). Le client va te donner une instruction courte et brouillonne. Tu dois générer une désignation technique et professionnelle pour une ligne de devis. \nFormat attendu STRICTEMENT en JSON : { \"designation\": \"Titre court\", \"description\": \"Description détaillée technique, DTU...\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }. Renvoie UNIQUEMENT le JSON valide, sans markdown, sans rien avant ni après."
+              "Tu es un expert métreur en bâtiment (spécialisé en bardage, isolation thermique par l'extérieur, menuiserie). Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes (ex: séparer le bardage, l'échafaudage, la nacelle, etc.). \nFormat attendu STRICTEMENT : un TABLEAU JSON contenant les lignes : [{ \"designation\": \"Titre court\", \"description\": \"Détail technique\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }]. Renvoie UNIQUEMENT le tableau JSON valide, sans markdown, sans explication."
           },
           { role: 'user', content: prompt },
         ],

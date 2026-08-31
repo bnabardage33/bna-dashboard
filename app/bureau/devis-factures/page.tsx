@@ -159,15 +159,16 @@ export default function DevisPage() {
       }
       setLignes((prev) => {
         const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
+        const newLignes = Array.isArray(data) ? data : [data];
         return [
           ...nettes,
-          {
-            designation: data.designation || "",
-            description: data.description || "",
-            qte: Number(data.qte) || 1,
-            unite: data.unite || "forfait",
-            pu_ht: Number(data.pu_ht) || 0,
-          },
+          ...newLignes.map((l: any) => ({
+            designation: l.designation || "",
+            description: l.description || "",
+            qte: l.qte || 1,
+            unite: l.unite || "forfait",
+            pu_ht: l.pu_ht || 0,
+          }))
         ];
       });
       setPromptIA("");
