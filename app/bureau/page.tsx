@@ -13,7 +13,8 @@ import {
   Clock, 
   HardHat,
   ArrowRight,
-  Truck
+  Truck,
+  Wand2
 } from "lucide-react";
 import { fmtEuro } from "@/lib/financeCalculs";
 
@@ -158,6 +159,14 @@ export default function BureauDashboard() {
         <section className="mt-12">
           <h2 className="text-xl font-bold text-white mb-6">Accès Rapides</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Nouveau Super Pouvoir : Métré IA */}
+            <Link href="/bureau/metre-ia" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-cyan-500/50 bg-cyan-900/20 p-6 hover:bg-cyan-900/40 transition-all text-center group">
+              <div className="rounded-full bg-cyan-500/20 p-3 group-hover:scale-110 transition-transform">
+                <Wand2 className="h-8 w-8 text-cyan-400" />
+              </div>
+              <span className="font-bold text-cyan-100">Métré IA</span>
+            </Link>
+
             <Link href="/bureau/clients" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 hover:bg-[#1A1D24] hover:border-slate-500 transition-all text-center">
               <Users className="h-8 w-8 text-gray-400" />
               <span className="font-semibold text-gray-200">Clients & Prospects</span>
