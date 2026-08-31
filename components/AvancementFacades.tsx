@@ -124,14 +124,14 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
     setSaving(false);
   };
 
-  if (loading) return <div className="text-sm text-slate-400">Chargement de l'avancement...</div>;
+  if (loading) return <div className="text-sm text-gray-400">Chargement de l'avancement...</div>;
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg max-w-2xl">
+    <div className="bg-[#1A1D24] border border-white/10 rounded-xl p-5 shadow-lg max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-white">Avancement du Chantier</h2>
-        <div className="flex items-center gap-3 bg-slate-900 px-4 py-2 rounded-lg border border-slate-700">
-          <span className="text-sm text-slate-400 uppercase tracking-wider font-bold">Global</span>
+        <div className="flex items-center gap-3 bg-[#0B0F19] px-4 py-2 rounded-lg border border-white/10">
+          <span className="text-sm text-gray-400 uppercase tracking-wider font-bold">Global</span>
           <span className={`text-2xl font-black ${pct === 100 ? 'text-emerald-400' : 'text-gray-300'}`}>{pct}%</span>
         </div>
       </div>
@@ -142,22 +142,22 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           const etapesCochees = ETAPES.filter(e => etat[facade.id][e.id]).length;
           
           return (
-            <div key={facade.id} className="border border-slate-700 rounded-lg overflow-hidden bg-slate-900/50">
+            <div key={facade.id} className="border border-white/10 rounded-lg overflow-hidden bg-[#0B0F19]/50">
               <button 
                 onClick={() => toggleFacade(facade.id)}
-                className="w-full flex items-center justify-between p-4 bg-slate-800/80 hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-[#1A1D24]/80 hover:bg-slate-700 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-slate-200">{facade.label}</span>
-                  <span className="text-xs px-2 py-1 bg-slate-900 rounded-md text-slate-400 font-medium">
+                  <span className="font-bold text-white">{facade.label}</span>
+                  <span className="text-xs px-2 py-1 bg-[#0B0F19] rounded-md text-gray-400 font-medium">
                     {etapesCochees} / 4
                   </span>
                 </div>
-                {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                {isExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
               </button>
               
               {isExpanded && (
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/30">
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#0B0F19]/30">
                   {ETAPES.map((etape) => {
                     const isChecked = etat[facade.id][etape.id];
                     return (
@@ -167,10 +167,10 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
                         className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
                           isChecked 
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300" 
-                            : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
+                            : "bg-[#1A1D24] border-white/10 text-gray-400 hover:bg-slate-700"
                         }`}
                       >
-                        {isChecked ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> : <Circle size={18} className="text-slate-500 shrink-0" />}
+                        {isChecked ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> : <Circle size={18} className="text-gray-500 shrink-0" />}
                         <span className="text-sm font-medium">{etape.label}</span>
                       </button>
                     );
@@ -183,13 +183,13 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
       </div>
 
       <div className="space-y-2 mb-6">
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Observations du jour</label>
+        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Observations du jour</label>
         <textarea
           value={observations}
           onChange={(e) => setObservations(e.target.value)}
           placeholder="Ex: Tempête de vent, impossible de poser le bardage sur la façade Nord..."
           rows={3}
-          className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-600"
+          className="w-full bg-[#0B0F19] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-600"
         />
       </div>
 

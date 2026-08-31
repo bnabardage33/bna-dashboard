@@ -19,9 +19,9 @@ class AvancementErrorBoundary extends React.Component<{ chantierId: string }, St
   render() {
     if (this.state.hasError) {
       return (
-        <div className="bg-slate-800 border border-rose-500/30 rounded-xl p-4 text-sm text-rose-400">
+        <div className="bg-[#1A1D24] border border-rose-500/30 rounded-xl p-4 text-sm text-rose-400">
           ⚠️ Le module d&apos;avancement n&apos;a pas pu se charger.
-          <span className="block text-xs text-slate-500 mt-1">{this.state.message}</span>
+          <span className="block text-xs text-gray-500 mt-1">{this.state.message}</span>
         </div>
       );
     }

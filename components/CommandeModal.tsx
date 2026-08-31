@@ -161,24 +161,24 @@ export default function CommandeModal({
 
   return (
     <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-6xl rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+      <div className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-[#0B0F19] p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
           <div>
             <h2 className="text-xl font-bold text-white">Chiffrage / Commande</h2>
-            <p className="text-sm text-slate-400">{chantierNom} — {zoneNom}</p>
+            <p className="text-sm text-gray-400">{chantierNom} — {zoneNom}</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+          <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-[#1A1D24] hover:text-white transition-colors">
             <X size={20} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-6">
           {loading ? (
-            <div className="text-center py-10 text-slate-400">Chargement des catalogues et fournisseurs...</div>
+            <div className="text-center py-10 text-gray-400">Chargement des catalogues et fournisseurs...</div>
           ) : (
             <div className="w-full overflow-x-auto pb-4">
-              <table className="w-full text-left text-sm text-slate-300 min-w-[700px]">
-                <thead className="bg-slate-800/50 text-slate-400 sticky top-0 z-10">
+              <table className="w-full text-left text-sm text-gray-300 min-w-[700px]">
+                <thead className="bg-[#1A1D24]/50 text-gray-400 sticky top-0 z-10">
                   <tr>
                     <th className="p-3 font-medium rounded-tl-lg whitespace-nowrap">Besoin (Calepinage)</th>
                     <th className="p-3 font-medium w-32 whitespace-nowrap">Quantité</th>
@@ -209,8 +209,8 @@ export default function CommandeModal({
                     }).slice(0, 15);
 
                     return (
-                      <tr key={index} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="p-3 font-medium text-slate-200">{ligne.designation}</td>
+                      <tr key={index} className="hover:bg-[#1A1D24]/30 transition-colors">
+                        <td className="p-3 font-medium text-white">{ligne.designation}</td>
                         <td className="p-3 text-gray-300 font-bold">{ligne.quantite} {ligne.unite}</td>
                         <td className="p-3">
                           <div className="flex flex-col gap-2 min-w-[300px]">
@@ -240,7 +240,7 @@ export default function CommandeModal({
                                             setDropdownOpen({ ...dropdownOpen, [index]: true });
                                           }}
                                           className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${
-                                            isActive ? "bg-red-700 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700"
+                                            isActive ? "bg-red-700 text-white" : "bg-[#1A1D24] text-gray-400 hover:bg-slate-700 border border-white/10"
                                           }`}
                                         >
                                           {cat}
@@ -249,32 +249,32 @@ export default function CommandeModal({
                                     })}
                                   </div>
                                   <div className="relative">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                                     <input 
                                       type="text" 
                                       placeholder="Rechercher (désignation, couleur, code)..."
                                       value={term}
                                       onChange={e => setSearchTerms({...searchTerms, [index]: e.target.value})}
                                       onFocus={() => setDropdownOpen({...dropdownOpen, [index]: true})}
-                                      className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-sm text-slate-200 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none"
+                                      className="w-full rounded-lg border border-white/10 bg-[#0B0F19] pl-9 pr-3 py-2 text-sm text-white focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none"
                                     />
                                   </div>
                                   {dropdownOpen[index] && (
-                                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-xl">
+                                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-[#1A1D24] shadow-xl">
                                       {filteredCatalog.map(a => (
                                         <button
                                           key={a.id}
                                           onClick={() => handleSelectArticle(index, a)}
-                                          className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-slate-700/50 last:border-0"
+                                          className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-white/10/50 last:border-0"
                                         >
-                                          <span className="text-slate-200 text-xs font-semibold">{a.designation}</span>
-                                          <span className="text-slate-500 text-[10px] mt-1">
+                                          <span className="text-white text-xs font-semibold">{a.designation}</span>
+                                          <span className="text-gray-500 text-[10px] mt-1">
                                             Réf: {getRef(a)} - {getPrix(a).toFixed(2)}€ HT
                                           </span>
                                         </button>
                                       ))}
                                       {filteredCatalog.length === 0 && (
-                                        <div className="p-3 text-xs text-slate-500 text-center">Aucun résultat dans cette catégorie.</div>
+                                        <div className="p-3 text-xs text-gray-500 text-center">Aucun résultat dans cette catégorie.</div>
                                       )}
                                     </div>
                                   )}
@@ -286,7 +286,7 @@ export default function CommandeModal({
                             <select 
                               value={ligne.fournisseurSelectionneId || ""}
                               onChange={(e) => handleSelectFournisseur(index, e.target.value)}
-                              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none appearance-none"
+                              className="w-full rounded-lg border border-white/10 bg-[#1A1D24] px-3 py-1.5 text-xs text-gray-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none appearance-none"
                             >
                               <option value="">-- Choisir un fournisseur --</option>
                               {fournisseursList.map(f => (
@@ -295,7 +295,7 @@ export default function CommandeModal({
                             </select>
                           </div>
                         </td>
-                        <td className="p-3 text-right text-slate-300 whitespace-nowrap">
+                        <td className="p-3 text-right text-gray-300 whitespace-nowrap">
                           {ligne.articleSelectionne ? `${getPrix(ligne.articleSelectionne).toFixed(2)} €` : "—"}
                         </td>
                         <td className="p-3 text-right font-bold text-white whitespace-nowrap">
@@ -310,13 +310,13 @@ export default function CommandeModal({
           )}
         </div>
 
-        <div className="mt-6 border-t border-slate-800 pt-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 w-full">
-          <p className="text-slate-400 text-sm hidden sm:block">
+        <div className="mt-6 border-t border-white/10 pt-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 w-full">
+          <p className="text-gray-400 text-sm hidden sm:block">
             Remplissez les correspondances catalogue et choisissez un fournisseur.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-4 sm:border-r border-slate-700 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">
-              <span className="text-sm uppercase tracking-wide text-slate-500">Total Général HT</span>
+            <div className="flex items-center gap-4 sm:border-r border-white/10 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">
+              <span className="text-sm uppercase tracking-wide text-gray-500">Total Général HT</span>
               <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">{totalGeneralHT.toFixed(2)} €</span>
             </div>
             <button 

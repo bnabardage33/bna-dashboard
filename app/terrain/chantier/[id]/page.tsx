@@ -395,7 +395,7 @@ function ChantierDetailContent() {
   if (!chantier) return <p className="text-sm text-red-400">Chantier introuvable.</p>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-44">
       <Link href="/terrain/chantier" className="text-sm text-gray-400 hover:text-white">
         ← Chantiers
       </Link>
@@ -446,7 +446,7 @@ function ChantierDetailContent() {
         <div className="space-y-4">
 
           {/* Bloc Sécurité IA */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-800 to-[#0B0F19] p-4 shadow-lg">
+          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-[#1A1D24] to-[#0B0F19] p-4 shadow-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-gray-400" />
@@ -496,7 +496,7 @@ function ChantierDetailContent() {
                 }
               }}
               placeholder="Ex. 12 rue des Vignes, 33000 Bordeaux"
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
             />
             {chantier.adresse_chantier && (
               <a
@@ -517,7 +517,7 @@ function ChantierDetailContent() {
             <select
               value={chantier.statut}
               onChange={(e) => changerStatut(e.target.value)}
-              className="mt-1 rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
+              className="mt-1 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
             >
               <option value="prevu">Prévu</option>
               <option value="en_cours">En cours</option>
@@ -533,7 +533,7 @@ function ChantierDetailContent() {
               <select
                 value={chantier.materiau_structurel}
                 onChange={(e) => changerMateriau(e.target.value as Materiau)}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
               >
                 {Object.entries(LABELS_MATERIAU).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -549,7 +549,7 @@ function ChantierDetailContent() {
               <select
                 value={chantier.moyen_acces}
                 onChange={(e) => changerAcces(e.target.value as Acces)}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
               >
                 {Object.entries(LABELS_ACCES).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -569,7 +569,7 @@ function ChantierDetailContent() {
                   className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
                     chantier.zone_vent < 3
                       ? "bg-red-600 text-white"
-                      : "border border-slate-600 text-gray-300"
+                      : "border border-white/10 text-gray-300"
                   }`}
                 >
                   Zone 1/2
@@ -580,7 +580,7 @@ function ChantierDetailContent() {
                   className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
                     chantier.zone_vent >= 3
                       ? "bg-red-600 text-white"
-                      : "border border-slate-600 text-gray-300"
+                      : "border border-white/10 text-gray-300"
                   }`}
                 >
                   Zone 3/4
@@ -678,7 +678,7 @@ function ChantierDetailContent() {
 
           <button
             onClick={ajouterZone}
-            className="w-full rounded-xl border border-dashed border-slate-600 py-3 text-sm font-medium text-gray-400 hover:border-red-600/40 hover:text-red-400"
+            className="w-full rounded-xl border border-dashed border-white/10 py-3 text-sm font-medium text-gray-400 hover:border-red-600/40 hover:text-red-400"
           >
             + Ajouter une zone
           </button>
@@ -877,7 +877,7 @@ function ChantierDetailContent() {
                           <th className="p-3">Statut</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-gray-200">
+                      <tbody className="divide-y divide-white/10 text-gray-200">
                         {devisLies.map((d) => {
                           const ht = (d.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                           return (
@@ -938,7 +938,7 @@ function ChantierDetailContent() {
                           <th className="p-3">Statut</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-gray-200">
+                      <tbody className="divide-y divide-white/10 text-gray-200">
                         {facturesLiees.map((f) => {
                           const ht = (f.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                           const ttc = ht * (1 + (f.tva_pct || 10) / 100);
@@ -1014,7 +1014,7 @@ function ChantierDetailContent() {
                           <th className="p-3 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-gray-200">
+                      <tbody className="divide-y divide-white/10 text-gray-200">
                         {pvsLies.map((p) => {
                           const nbRes = (p.reserves || []).length;
                           const nbLevees = (p.reserves || []).filter((r: any) => r.levee).length;
@@ -1096,7 +1096,7 @@ function ChantierDetailContent() {
                           <th className="p-3">Statut</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-700 text-gray-200">
+                      <tbody className="divide-y divide-white/10 text-gray-200">
                         {commandesLiees.map((c) => (
                           <tr key={c.id}>
                             <td className="p-3 font-semibold text-white">

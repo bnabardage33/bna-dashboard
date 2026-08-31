@@ -48,38 +48,38 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
   const tempsPlanification = calculerTempsPlanification(tempsBudget, coef);
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 space-y-4">
-      <h3 className="text-lg font-bold text-slate-100">Chantiers & Calepinage</h3>
-      <p className="text-sm text-slate-400">
+    <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
+      <h3 className="text-lg font-bold text-white">Chantiers & Calepinage</h3>
+      <p className="text-sm text-gray-400">
         Entrez les données du calepinage pour calculer le temps budget.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Surface (m²)</label>
-          <input type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100" />
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Surface (m²)</label>
+          <input type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Coupes (ml)</label>
-          <input type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100" />
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coupes (ml)</label>
+          <input type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Singularités (nb)</label>
-          <input type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100" />
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Singularités (nb)</label>
+          <input type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Coef. de perte de rendement</label>
-          <input type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100" />
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coef. de perte de rendement</label>
+          <input type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
       </div>
 
-      <div className="mt-4 p-4 rounded-lg bg-slate-900 border border-slate-700 grid grid-cols-2 gap-4">
+      <div className="mt-4 p-4 rounded-lg bg-[#0B0F19] border border-white/10 grid grid-cols-2 gap-4">
         <div>
-          <p className="text-xs text-slate-500">Temps Budget (Vente)</p>
+          <p className="text-xs text-gray-500">Temps Budget (Vente)</p>
           <p className="text-xl font-bold text-emerald-400">{tempsBudget.toFixed(2)} h</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Temps à Planifier (Réalité)</p>
+          <p className="text-xs text-gray-500">Temps à Planifier (Réalité)</p>
           <p className="text-xl font-bold text-gray-300">{tempsPlanification.toFixed(2)} h</p>
         </div>
       </div>
@@ -161,27 +161,27 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
   };
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 space-y-4">
-      <h3 className="text-lg font-bold text-slate-100">Pointage Équipe (Mode Confiance)</h3>
-      <p className="text-sm text-slate-400">
+    <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
+      <h3 className="text-lg font-bold text-white">Pointage Équipe (Mode Confiance)</h3>
+      <p className="text-sm text-gray-400">
         Saisissez le volume d&apos;heures global passé sans chronomètre.
       </p>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Chantier</label>
-          <div className="w-full rounded-lg border border-slate-600 bg-slate-700/50 px-3 py-2 text-sm text-slate-300">
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Chantier</label>
+          <div className="w-full rounded-lg border border-white/10 bg-slate-700/50 px-3 py-2 text-sm text-gray-300">
             {chantierNom}
           </div>
         </div>
 
         {equipes.length > 0 && (
           <div>
-            <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Équipe / Ouvrier</label>
+            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Équipe / Ouvrier</label>
             <select 
               value={equipeId} 
               onChange={(e) => setEquipeId(e.target.value)} 
-              className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             >
               {equipes.map(eq => (
                 <option key={eq.id} value={eq.id}>{eq.prenom} {eq.nom}</option>
@@ -191,23 +191,23 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         )}
         
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Date du pointage</label>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Date du pointage</label>
           <input 
             type="date" 
             value={dateSaisie} 
             onChange={(e) => setDateSaisie(e.target.value)} 
-            className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100" 
+            className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" 
           />
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-wide text-slate-500 mb-1">Heures globales (Forfait)</label>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Heures globales (Forfait)</label>
           <input 
             type="number" 
             placeholder="Ex: 35"
             value={heures || ""} 
             onChange={(e) => setHeures(Number(e.target.value))} 
-            className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 text-center text-2xl font-bold" 
+            className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white text-center text-2xl font-bold" 
           />
         </div>
 
@@ -220,7 +220,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         </button>
       </div>
 
-      <div className="mt-8 border-t border-slate-700 pt-6">
+      <div className="mt-8 border-t border-white/10 pt-6">
         <button 
           onClick={handleReset}
           disabled={loading}
@@ -229,10 +229,10 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
           🗑️ Remettre à zéro les heures
         </button>
         
-        <h4 className="text-sm font-bold text-slate-200 mb-4">Historique des saisies</h4>
+        <h4 className="text-sm font-bold text-white mb-4">Historique des saisies</h4>
         
         {historique.length === 0 ? (
-          <p className="text-xs text-slate-500 italic">Aucun pointage pour ce chantier.</p>
+          <p className="text-xs text-gray-500 italic">Aucun pointage pour ce chantier.</p>
         ) : (
           <div className="space-y-2">
             {historique.map(p => {
@@ -240,16 +240,16 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
               const icon = METEO_ICONS[p.meteo_relevee] || '➖';
               
               return (
-                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-700">
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0B0F19]/50 border border-white/10">
                   <div>
-                    <p className="text-sm font-semibold text-slate-200">{p.date_saisie || 'Sans date'}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-sm font-semibold text-white">{p.date_saisie || 'Sans date'}</p>
+                    <p className="text-xs text-gray-400">
                       Météo : {p.meteo_relevee || 'N/A'} {icon} (Coef: {p.coef_meteo || 1.0})
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm text-slate-300">Brut : {p.volume_heures_declare}h</p>
+                      <p className="text-sm text-gray-300">Brut : {p.volume_heures_declare}h</p>
                       <p className="text-xs text-gray-300">Ajusté : {adjusted.toFixed(1)}h</p>
                     </div>
                     <button onClick={() => handleDelete(p.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-md transition-colors" title="Supprimer">
@@ -320,29 +320,29 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
   const icones = Array.from(new Set(data.pointages.map((p: any) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 space-y-4">
-      <h3 className="text-lg font-bold text-slate-100">Tableau de Bord / Rentabilité</h3>
-      <p className="text-sm text-slate-400">
+    <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
+      <h3 className="text-lg font-bold text-white">Tableau de Bord / Rentabilité</h3>
+      <p className="text-sm text-gray-400">
         Analyse du "Temps Budget" vs "Temps Réel Consommé" (ajusté selon la météo).
       </p>
 
       <div className="space-y-6 mt-4">
-        <div className="p-4 rounded-lg bg-slate-900 border border-slate-700">
+        <div className="p-4 rounded-lg bg-[#0B0F19] border border-white/10">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-bold text-slate-200">{data.nom} {icones}</span>
+            <span className="font-bold text-white">{data.nom} {icones}</span>
             <span className={`font-bold ${estPositif ? 'text-emerald-400' : 'text-red-400'}`}>
               Écart : {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} h
             </span>
           </div>
           
-          <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden flex">
+          <div className="h-4 w-full bg-[#1A1D24] rounded-full overflow-hidden flex">
             <div 
               className={`h-full ${estPositif ? 'bg-emerald-500' : 'bg-red-500'}`} 
               style={{ width: `${pct}%` }}
             />
           </div>
           
-          <div className="flex justify-between text-xs text-slate-500 mt-2">
+          <div className="flex justify-between text-xs text-gray-500 mt-2">
             <div>
               <span>Pointé brut : {totalPointesBrut}h</span>
               <span className="mx-2">|</span>

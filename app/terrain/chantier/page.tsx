@@ -123,7 +123,7 @@ export default function ChantiersPage() {
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pt-44">
       {/* En-tête principal */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -135,7 +135,7 @@ export default function ChantiersPage() {
 
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <Plus className="h-4 w-4 stroke-[3]" />
           <span>Nouveau Chantier</span>
@@ -149,7 +149,7 @@ export default function ChantiersPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom de chantier, client, adresse..."
-          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:border-red-600 focus:outline-none shadow-sm"
         />
       </div>
 
@@ -179,7 +179,7 @@ export default function ChantiersPage() {
           </div>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
           >
             + Créer un premier chantier
           </button>
@@ -211,7 +211,7 @@ export default function ChantiersPage() {
                           ? "border border-red-600/40 bg-sky-950/40 text-gray-400"
                           : ch.statut === "termine"
                           ? "border border-white/10 bg-white/5 text-gray-400"
-                          : "border border-slate-600 bg-transparent text-gray-300"
+                          : "border border-white/10 bg-transparent text-gray-300"
                       }`}
                     >
                       {ch.statut.replace("_", " ")}
@@ -292,7 +292,7 @@ export default function ChantiersPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Ajouter un chantier"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <Plus className="h-7 w-7 stroke-[2.5]" />
       </button>
@@ -329,7 +329,7 @@ export default function ChantiersPage() {
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -339,7 +339,7 @@ export default function ChantiersPage() {
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="">— Sélectionner un client —</option>
                   {clients.map((c) => (
@@ -356,7 +356,7 @@ export default function ChantiersPage() {
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   placeholder="Ex. 14 Route des Plages, 33120 Arcachon"
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
 
@@ -365,7 +365,7 @@ export default function ChantiersPage() {
                 <select
                   value={materiauStructurel}
                   onChange={(e) => setMateriauStructurel(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="Bois / Mélèze">Bois Naturel / Mélèze</option>
                   <option value="Panneaux HPL Trespa">Panneaux HPL (Trespa / Fundermax)</option>
@@ -381,7 +381,7 @@ export default function ChantiersPage() {
                     type="date"
                     value={dateDebut}
                     onChange={(e) => setDateDebut(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -390,7 +390,7 @@ export default function ChantiersPage() {
                     type="date"
                     value={dateFin}
                     onChange={(e) => setDateFin(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -400,7 +400,7 @@ export default function ChantiersPage() {
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
               >
                 Annuler
               </button>
@@ -408,7 +408,7 @@ export default function ChantiersPage() {
               <button
                 type="submit"
                 disabled={creationEnCours}
-                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 disabled:opacity-50 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 shadow-md"
               >
                 {creationEnCours ? "Création..." : "Enregistrer le Chantier"}
               </button>

@@ -259,23 +259,23 @@ export default function PlanCalepinage({
     <div
       className={
         pleinEcran
-          ? "fixed inset-0 z-50 flex flex-col bg-slate-950/98 p-3 sm:p-6 backdrop-blur-md animate-in fade-in"
-          : "space-y-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-3.5 shadow-xl"
+          ? "fixed inset-0 z-50 flex flex-col bg-[#0B0F19]/98 p-3 sm:p-6 backdrop-blur-md animate-in fade-in"
+          : "space-y-3 rounded-2xl border border-white/10 bg-[#0B0F19]/80 p-3.5 shadow-xl"
       }
     >
       {/* ====================================================== */}
       {/* BARRE D'OUTILS & CONTRÔLES INTERACTIFS */}
       {/* ====================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2.5">
         <div className="flex items-center gap-2">
           <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-600/20 text-xs font-bold text-gray-300">
             2D
           </span>
           <div>
-            <p className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+            <p className="text-xs font-bold text-white uppercase tracking-wide">
               Élévation de Façade &amp; Calepinage
             </p>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[10px] text-gray-400">
               Joint 8 mm DTU 41.2 · {largeurM.toFixed(2)} × {hauteurPlanM.toFixed(2)} m
             </p>
           </div>
@@ -283,14 +283,14 @@ export default function PlanCalepinage({
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Bascule Vue Ossature / Plaques */}
-          <div className="flex overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-0.5">
+          <div className="flex overflow-hidden rounded-xl border border-white/10 bg-[#0B0F19] p-0.5">
             <button
               type="button"
               onClick={() => setVue("plaques")}
               className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${
                 vue === "plaques"
-                  ? "bg-red-600 text-slate-950 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               Panneaux &amp; Joints
@@ -300,8 +300,8 @@ export default function PlanCalepinage({
               onClick={() => setVue("ossature")}
               className={`rounded-lg px-3 py-1 text-xs font-bold transition-all ${
                 vue === "ossature"
-                  ? "bg-red-600 text-slate-950 shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-gray-400 hover:text-white"
               }`}
             >
               Ossature &amp; Équerres
@@ -309,11 +309,11 @@ export default function PlanCalepinage({
           </div>
 
           {/* Contrôles de Zoom */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-900 p-0.5">
+          <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0B0F19] p-0.5">
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(0.7, Number((z - 0.15).toFixed(2))))}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              className="rounded-lg p-1 text-gray-400 hover:bg-[#1A1D24] hover:text-white transition-colors"
               title="Zoom arrière"
             >
               <ZoomOut className="h-3.5 w-3.5" />
@@ -321,7 +321,7 @@ export default function PlanCalepinage({
             <button
               type="button"
               onClick={() => setZoom(1)}
-              className="rounded-lg px-2 py-0.5 text-[10px] font-bold text-slate-300 hover:bg-slate-800"
+              className="rounded-lg px-2 py-0.5 text-[10px] font-bold text-gray-300 hover:bg-[#1A1D24]"
               title="Réinitialiser zoom"
             >
               {Math.round(zoom * 100)}%
@@ -329,7 +329,7 @@ export default function PlanCalepinage({
             <button
               type="button"
               onClick={() => setZoom((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              className="rounded-lg p-1 text-gray-400 hover:bg-[#1A1D24] hover:text-white transition-colors"
               title="Zoom avant"
             >
               <ZoomIn className="h-3.5 w-3.5" />
@@ -338,7 +338,7 @@ export default function PlanCalepinage({
               <button
                 type="button"
                 onClick={() => setZoom(1)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-1 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
                 title="Reset zoom"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -350,7 +350,7 @@ export default function PlanCalepinage({
           <button
             type="button"
             onClick={() => setPleinEcran(!pleinEcran)}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0B0F19] px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-[#1A1D24] transition-colors shadow-sm"
           >
             {pleinEcran ? (
               <>
@@ -374,10 +374,10 @@ export default function PlanCalepinage({
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-600/40 bg-sky-950/30 p-2.5 text-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <span className="rounded-lg bg-red-600 px-2 py-0.5 text-xs font-black text-slate-950">
+              <span className="rounded-lg bg-red-600 px-2 py-0.5 text-xs font-black text-white">
                 {panneauSelectionne.repere}
               </span>
-              <span className="font-bold text-slate-100">
+              <span className="font-bold text-white">
                 {panneauSelectionne.type === "pignon"
                   ? "Rampant pignon"
                   : panneauSelectionne.type === "coupe"
@@ -386,7 +386,7 @@ export default function PlanCalepinage({
               </span>
             </div>
 
-            <div className="text-slate-300">
+            <div className="text-gray-300">
               Cote nette débitée :{" "}
               <strong className="text-amber-400 font-mono">
                 {panneauSelectionne.largeurNetteMm || Math.round(panneauSelectionne.largeurM * 1000)} ×{" "}
@@ -394,15 +394,15 @@ export default function PlanCalepinage({
               </strong>
             </div>
 
-            <div className="text-slate-400 hidden sm:inline">
+            <div className="text-gray-400 hidden sm:inline">
               Trame : {(panneauSelectionne.largeurM * 1000).toFixed(0)} × {(panneauSelectionne.hauteurM * 1000).toFixed(0)} mm
             </div>
 
-            <div className="text-slate-400">
+            <div className="text-gray-400">
               Pos. : Rangée {panneauSelectionne.rangee + 1}, Col. {panneauSelectionne.colonne + 1}
             </div>
 
-            <div className="text-slate-400 font-mono">
+            <div className="text-gray-400 font-mono">
               Surface : {panneauSelectionne.surfaceM2.toFixed(2)} m²
             </div>
           </div>
@@ -410,7 +410,7 @@ export default function PlanCalepinage({
           <button
             type="button"
             onClick={() => setPanneauSelectionne(null)}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="rounded-lg p-1 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
             title="Fermer"
           >
             ✕
@@ -422,7 +422,7 @@ export default function PlanCalepinage({
       {/* ZONE DE DESSIN SVG AVEC ZOOM INTERACTIF */}
       {/* ====================================================== */}
       <div
-        className={`overflow-auto rounded-2xl bg-slate-950 p-2 sm:p-4 shadow-inner border border-slate-800/80 ${
+        className={`overflow-auto rounded-2xl bg-[#0B0F19] p-2 sm:p-4 shadow-inner border border-white/10/80 ${
           pleinEcran ? "flex-1 min-h-0 flex items-center justify-center" : ""
         }`}
       >
@@ -823,14 +823,14 @@ export default function PlanCalepinage({
       {/* ====================================================== */}
       {/* LÉGENDE DU PLAN & ASTUCE TACTILE */}
       {/* ====================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-2 text-[11px]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-[11px]">
         {vue === "plaques" ? (
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded bg-red-700/40 border border-gray-300" />
-              <span className="text-slate-300">Panneaux de façade (M / Rives R)</span>
+              <span className="text-gray-300">Panneaux de façade (M / Rives R)</span>
             </div>
-            <span className="text-slate-500 italic hidden sm:inline">
+            <span className="text-gray-500 italic hidden sm:inline">
               👉 Cliquez sur un panneau pour afficher ses cotes d&apos;atelier
             </span>
           </div>
@@ -838,20 +838,20 @@ export default function PlanCalepinage({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="h-3 w-3 bg-amber-400" />
-              <span className="text-slate-300">Chevrons (max 3m)</span>
+              <span className="text-gray-300">Chevrons (max 3m)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-full bg-red-500 border border-white" />
-              <span className="text-slate-300">Équerres porteuses</span>
+              <span className="text-gray-300">Équerres porteuses</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-full bg-gray-300 border border-white" />
-              <span className="text-slate-300">Équerres guides</span>
+              <span className="text-gray-300">Équerres guides</span>
             </div>
           </div>
         )}
 
-        <div className="text-[10px] text-slate-500 font-mono">
+        <div className="text-[10px] text-gray-500 font-mono">
           Joint de dilatation : <strong>{calepinage?.jointMm ?? 8} mm</strong> (DTU 41.2)
         </div>
       </div>
@@ -860,24 +860,24 @@ export default function PlanCalepinage({
       {/* SYNTHÈSE TECHNIQUE & BILAN MATIÈRE */}
       {/* ====================================================== */}
       {vue === "plaques" && calepinage && (
-        <div className="space-y-2.5 border-t border-slate-800 pt-3">
+        <div className="space-y-2.5 border-t border-white/10 pt-3">
           <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3 md:grid-cols-6">
-            <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5">
-              <p className="text-[10px] uppercase text-slate-400 font-bold">Plaques Mères</p>
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-2.5">
+              <p className="text-[10px] uppercase text-gray-400 font-bold">Plaques Mères</p>
               <p className="text-base font-extrabold text-white">
-                {calepinage.nbPlaquesNecessaires} <span className="text-xs font-normal text-slate-400">pcs</span>
+                {calepinage.nbPlaquesNecessaires} <span className="text-xs font-normal text-gray-400">pcs</span>
               </p>
-              <p className="text-[10px] text-slate-500 font-mono">
+              <p className="text-[10px] text-gray-500 font-mono">
                 {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5">
-              <p className="text-[10px] uppercase text-slate-400 font-bold">Modules Posés</p>
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-2.5">
+              <p className="text-[10px] uppercase text-gray-400 font-bold">Modules Posés</p>
               <p className="text-base font-extrabold text-gray-300">
-                {calepinage.nbPiecesPosees} <span className="text-xs font-normal text-slate-400">pcs</span>
+                {calepinage.nbPiecesPosees} <span className="text-xs font-normal text-gray-400">pcs</span>
               </p>
-              <p className="text-[10px] text-slate-500 font-mono">
+              <p className="text-[10px] text-gray-500 font-mono">
                 Trame {calepinage.moduleCibleLargeurMm}×{calepinage.moduleCibleHauteurMm} mm
               </p>
             </div>
@@ -904,8 +904,8 @@ export default function PlanCalepinage({
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5">
-              <p className="text-[10px] uppercase text-slate-400 font-bold">Taux Chute Réel</p>
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-2.5">
+              <p className="text-[10px] uppercase text-gray-400 font-bold">Taux Chute Réel</p>
               <p
                 className={`text-base font-extrabold ${
                   calepinage.tauxChuteBrutePct <= 20 ? "text-emerald-400" : "text-amber-400"
@@ -913,7 +913,7 @@ export default function PlanCalepinage({
               >
                 {calepinage.tauxChuteBrutePct.toFixed(1)} %
               </p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-gray-500">
                 {(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chute
                 {calepinage.totalChutesReutilisablesM2 > 0 && (
                   <span className="text-emerald-400/80"> · {calepinage.totalChutesReutilisablesM2.toFixed(2)} réutilis.</span>
@@ -921,25 +921,25 @@ export default function PlanCalepinage({
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5 col-span-2 sm:col-span-1">
-              <p className="text-[10px] uppercase text-slate-400 font-bold">Rendement Débit</p>
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-2.5 col-span-2 sm:col-span-1">
+              <p className="text-[10px] uppercase text-gray-400 font-bold">Rendement Débit</p>
               <p className="text-base font-extrabold text-white">
-                ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-slate-400">mod./plaque</span>
+                ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-gray-400">mod./plaque</span>
               </p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-gray-500">
                 {calepinage.nbJoints} joints ({calepinage.nbJointsVerticaux}V + {calepinage.nbJointsHorizontaux}H)
               </p>
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-400 italic">
+          <p className="text-[11px] text-gray-400 italic">
             💡 Imbrication 2D : {calepinage.nbPiecesPosees} modules débités dans {calepinage.nbPlaquesNecessaires} plaques brutes ({calepinage.surfacePlaquesAchetesM2.toFixed(1)} m² bruts pour {calepinage.surfaceZoneM2.toFixed(1)} m² nets posés avec joint creux de {calepinage.jointMm ?? 8} mm).
           </p>
         </div>
       )}
 
       {/* Règle DTU */}
-      <p className="text-[11px] text-slate-500">
+      <p className="text-[11px] text-gray-500">
         Chevron limité à 3,00 m selon DTU 41.2. Chaque segment possède ses propres équerres porteuses et guides.
       </p>
     </div>

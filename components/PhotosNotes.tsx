@@ -150,7 +150,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
           const photosColonne = photos.filter((p) => p.type === col.type);
           const busy = uploading === col.type;
           return (
-            <div key={col.type} className="rounded-xl border border-slate-700 bg-slate-800 p-3">
+            <div key={col.type} className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-medium text-white">{col.label}</p>
                 <div className="flex gap-2">
@@ -179,7 +179,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
               </div>
 
               {photosColonne.length === 0 ? (
-                <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-slate-600 text-xs text-slate-500">
+                <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-white/10 text-xs text-gray-500">
                   Aucune photo
                 </div>
               ) : (
@@ -210,52 +210,52 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
         })}
       </div>
 
-      {loading && <p className="text-sm text-slate-400">Chargement des photos…</p>}
+      {loading && <p className="text-sm text-gray-400">Chargement des photos…</p>}
 
       <form
         onSubmit={enregistrerNotes}
-        className="space-y-3 rounded-xl border border-slate-700 bg-slate-800 p-4"
+        className="space-y-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4"
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="text-xs uppercase tracking-wide text-slate-500">
+            <label className="text-xs uppercase tracking-wide text-gray-500">
               Code d&apos;accès
             </label>
             <input
               value={notes.code_acces ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, code_acces: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wide text-slate-500">
+            <label className="text-xs uppercase tracking-wide text-gray-500">
               Contact sur place
             </label>
             <input
               value={notes.contact_chantier ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, contact_chantier: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wide text-slate-500">Horaires</label>
+            <label className="text-xs uppercase tracking-wide text-gray-500">Horaires</label>
             <input
               value={notes.horaires ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, horaires: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs uppercase tracking-wide text-slate-500">
+          <label className="text-xs uppercase tracking-wide text-gray-500">
             Bloc-notes terrain
           </label>
           <textarea
             value={notes.notes_terrain ?? ""}
             onChange={(e) => setNotes((n) => ({ ...n, notes_terrain: e.target.value }))}
             rows={4}
-            className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
           />
         </div>
 

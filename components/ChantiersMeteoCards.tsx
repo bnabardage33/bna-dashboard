@@ -30,7 +30,7 @@ const COULEURS: Record<string, string> = {
   jaune: "border-amber-500/40 bg-amber-500/10",
   orange: "border-orange-500/40 bg-orange-500/10",
   rouge: "border-red-500/40 bg-red-500/10",
-  inconnu: "border-slate-600 bg-slate-800",
+  inconnu: "border-white/10 bg-[#1A1D24]",
 };
 
 const EMOJIS: Record<string, string> = {
@@ -133,11 +133,11 @@ export default function ChantiersMeteoCards() {
   }, []);
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Chargement des chantiers…</p>;
+    return <p className="text-sm text-gray-400">Chargement des chantiers…</p>;
   }
 
   if (chantiers.length === 0) {
-    return <p className="text-sm text-slate-500">Aucun chantier actif pour l&apos;instant.</p>;
+    return <p className="text-sm text-gray-500">Aucun chantier actif pour l&apos;instant.</p>;
   }
 
   return (
@@ -152,15 +152,15 @@ export default function ChantiersMeteoCards() {
             <p className="font-medium text-white">{ch.nom || "Chantier"}</p>
             <span>{EMOJIS[ch.niveau]}</span>
           </div>
-          {ch.adresse && <p className="text-xs text-slate-400">{ch.adresse}</p>}
-          <p className="mt-2 text-sm text-slate-300">{ch.motif}</p>
-          <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+          {ch.adresse && <p className="text-xs text-gray-400">{ch.adresse}</p>}
+          <p className="mt-2 text-sm text-gray-300">{ch.motif}</p>
+          <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
             {ch.rafales !== null && (
               <span>
                 Rafales {ch.rafales} km/h · {ch.temp}°C max
               </span>
             )}
-            <span className="rounded bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-400">
+            <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 font-semibold text-gray-400">
               Zone {ch.zoneVent}
             </span>
           </div>
