@@ -689,9 +689,13 @@ export default function DevisPage() {
                         recognition.onresult = (event: any) => {
                           setPromptIA(event.results[0][0].transcript);
                         };
-                        recognition.onerror = () => {
+                        recognition.onerror = (event: any) => {
                           setPromptIA("");
-                          alert("Erreur micro.");
+                          let msg = "Erreur micro (" + event.error + "). ";
+                          if (event.error === 'not-allowed') {
+                            msg += "Veuillez autoriser l'accès au micro dans les paramètres de votre navigateur.";
+                          }
+                          alert(msg);
                         };
                       }}
                       className="absolute right-2 text-violet-400 hover:text-violet-300 transition-colors p-1"
