@@ -160,7 +160,7 @@ export default function BureauDashboard() {
           <h2 className="text-xl font-bold text-white mb-6">Accès Rapides</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Nouveau Super Pouvoir : Métré IA */}
-            <Link href="/bureau/metre-ia" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-cyan-500/50 bg-cyan-900/20 p-6 hover:bg-cyan-900/40 transition-all text-center group">
+            <Link href="/terrain/metre-ia" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-cyan-500/50 bg-cyan-900/20 p-6 hover:bg-cyan-900/40 transition-all text-center group">
               <div className="rounded-full bg-cyan-500/20 p-3 group-hover:scale-110 transition-transform">
                 <Wand2 className="h-8 w-8 text-cyan-400" />
               </div>

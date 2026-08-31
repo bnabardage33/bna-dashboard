@@ -52,11 +52,11 @@ export default function MetreIAPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="flex flex-col gap-2">
           <Link
-            href="/bureau"
+            href="/terrain/chantier"
             className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour au Bureau
+            Retour aux Chantiers
           </Link>
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-cyan-500/20 p-2">
