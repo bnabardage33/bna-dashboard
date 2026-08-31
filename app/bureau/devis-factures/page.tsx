@@ -159,7 +159,22 @@ export default function DevisPage() {
       }
       setLignes((prev) => {
         const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
-        const newLignes = Array.isArray(data) ? data : [data];
+        
+        let newLignes = [];
+        if (Array.isArray(data)) {
+          newLignes = data;
+        } else if (data && Array.isArray(data.lignes)) {
+          newLignes = data.lignes;
+        } else if (data && typeof data === 'object') {
+          // If it's a single object (e.g. from the old prompt behavior)
+          newLignes = [data];
+        }
+
+        if (newLignes.length === 0) {
+          alert("L'IA n'a pas renvoyé de données valides. Réessayez.");
+          return prev;
+        }
+
         return [
           ...nettes,
           ...newLignes.map((l: any) => ({

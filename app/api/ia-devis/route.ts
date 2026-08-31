@@ -40,9 +40,18 @@ export async function POST(req: NextRequest) {
     const groqData = await groqResponse.json();
     const texte = groqData.choices?.[0]?.message?.content ?? "";
     
-    // Nettoyage au cas où l'IA renvoie du markdown
-    const cleaned = texte.replace(/```json/g, "").replace(/```/g, "").trim();
-    const result = JSON.parse(cleaned);
+    // Extraction robuste du JSON (tableau ou objet) peu importe le texte autour
+    let jsonString = texte;
+    const matchArray = texte.match(/\[[\s\S]*\]/);
+    const matchObject = texte.match(/\{[\s\S]*\}/);
+    
+    if (matchArray) {
+      jsonString = matchArray[0];
+    } else if (matchObject) {
+      jsonString = matchObject[0];
+    }
+
+    const result = JSON.parse(jsonString);
 
     return NextResponse.json(result);
   } catch (err) {
