@@ -8,6 +8,8 @@ const PUBLIC_PATHS = [
   '/api/chat-client',
   '/api/chat-client-summary',
   '/api/meteo-vigilance',
+  '/manifest.json',
+  '/sw.js',
 ]
 
 export async function updateSession(request: NextRequest) {
