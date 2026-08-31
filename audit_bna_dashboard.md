@@ -316,10 +316,36 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
     <div className="p-4 border-b border-white/10 shrink-0">...</div>
     // Formulaire scrollable
     <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">...</div>
-    // Footer statique
+// Footer statique
     <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">...</div>
   </div>
 </div>
 ```
+
+---
+
+## 🤖 FONCTIONNALITÉS IA & OUTILS AVANCÉS — Session 31/08/2026
+
+### 1️⃣ Métré IA (`/terrain/metre-ia`)
+- **Outil de photogrammétrie sur mobile** (HTML5 Canvas)
+- **3 Modes** :
+  - `Étalonnage` : Tracé d'un trait de référence (au doigt/souris) + saisie de la dimension réelle (mètres). Calcule dynamiquement le ratio pixels/mètre.
+  - `Façades` (Addition) : Dessin de polygones libres par tapotements (fermeture auto ou manuelle). Calcule la surface brute selon le théorème de Gauss (Shoelace formula).
+  - `Vides` (Déduction) : Dessin de polygones libres pour déduire les fenêtres/portes.
+- **Résultat temps réel** : Surface Nette à poser calculée instantanément pendant le dessin.
+- Accessibilité : "Accès Rapides" depuis le Bureau + Menu Navigation `SubNav` de la section Terrain.
+
+### 2️⃣ Devis IA Vocal (`/bureau/devis-factures`)
+- **Reconnaissance Vocale (Web Speech API)** intégrée au champ "Générer avec l'IA" dans les Devis.
+- Utilise le micro natif du navigateur (`SpeechRecognition`).
+- **Anticipation de bugs mobile** :
+  - Bouton désactivé pendant l'écoute (évite le double-tap qui déclenche un plantage `aborted` sur Chrome Android).
+  - Gestion claire des erreurs d'autorisation (cadenas URL) via un message explicite `event.error`.
+- Traitement de l'audio transcrit envoyé au backend `/api/ia-devis` (Groq) pour créer une ligne de devis structurée.
+
+### 3️⃣ Import Bookmarklet (Passe-muraille Sécurité)
+- Contournement des sécurités Cloudflare / Datadome de fournisseurs (Leroy Merlin, Point.P, Castorama) par un script exécuté côté client.
+- Injection de `?importUrl=...&importTitle=...&importPrice=...` dans `/bureau/catalogue`.
+- Le `useEffect` intercepte ces paramètres, parse le titre pour extraire les dimensions L x l x Ep (calcul en mm) et ouvre le formulaire pré-rempli.
 
 ---
