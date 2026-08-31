@@ -93,6 +93,7 @@ export default function DevisPage() {
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
   const [promptIA, setPromptIA] = useState("");
   const [genererIAEnCours, setGenererIAEnCours] = useState(false);
+  const [ecouteEnCours, setEcouteEnCours] = useState(false);
 
   async function fetchTout() {
     setLoading(true);
@@ -676,7 +677,9 @@ export default function DevisPage() {
                     />
                     <button
                       type="button"
+                      disabled={ecouteEnCours}
                       onClick={() => {
+                        if (ecouteEnCours) return;
                         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                           alert("Votre navigateur ne supporte pas la dictée vocale.");
                           return;
@@ -684,22 +687,32 @@ export default function DevisPage() {
                         const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                         const recognition = new SpeechRec();
                         recognition.lang = 'fr-FR';
-                        recognition.start();
+                        setEcouteEnCours(true);
                         setPromptIA("Écoute en cours...");
                         recognition.onresult = (event: any) => {
                           setPromptIA(event.results[0][0].transcript);
                         };
                         recognition.onerror = (event: any) => {
                           setPromptIA("");
+                          if (event.error === 'aborted') return;
                           let msg = "Erreur micro (" + event.error + "). ";
                           if (event.error === 'not-allowed') {
                             msg += "Veuillez autoriser l'accès au micro dans les paramètres de votre navigateur.";
                           }
                           alert(msg);
                         };
+                        recognition.onend = () => {
+                          setEcouteEnCours(false);
+                        };
+                        try {
+                          recognition.start();
+                        } catch (err) {
+                          setEcouteEnCours(false);
+                          setPromptIA("");
+                        }
                       }}
-                      className="absolute right-2 text-violet-400 hover:text-violet-300 transition-colors p-1"
-                      title="Dicter avec le micro"
+                      className="absolute right-2 text-violet-400 hover:text-violet-300 transition-colors p-1 disabled:opacity-40"
+                      title={ecouteEnCours ? "Ecoute en cours..." : "Dicter avec le micro"}
                     >
                       🎙️
                     </button>
