@@ -151,7 +151,10 @@ export default function DevisPage() {
       const res = await fetch("/api/ia-devis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptIA }),
+        body: JSON.stringify({ 
+          prompt: promptIA,
+          catalogueContext: catalogue 
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {

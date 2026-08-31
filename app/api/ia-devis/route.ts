@@ -5,11 +5,20 @@ const GROQ_MODEL = 'groq/compound-mini';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, catalogueContext } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt manquant' }, { status: 400 });
     }
+
+    const catalogueString = catalogueContext && catalogueContext.length > 0
+      ? "\n\nVOICI LE CATALOGUE DE L'ENTREPRISE :\n" + JSON.stringify(catalogueContext.map((c: any) => ({
+          designation: c.designation,
+          description: c.description,
+          unite: c.unite,
+          pu_ht: c.pu_ht
+        }))) + "\n\nConsigne IMPORTANTE : Si la demande correspond à un article du catalogue, utilise EXACTEMENT les prix, désignations et descriptions du catalogue. Si la demande ne correspond à aucun article, invente une ligne cohérente avec un prix réaliste."
+      : "";
 
     const groqResponse = await fetch(GROQ_URL, {
       method: 'POST',
@@ -23,7 +32,9 @@ export async function POST(req: NextRequest) {
           {
             role: 'system',
             content:
-              "Tu es un expert métreur en bâtiment (spécialisé en bardage, isolation thermique par l'extérieur, menuiserie). Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes (ex: séparer le bardage, l'échafaudage, la nacelle, etc.). \nFormat attendu STRICTEMENT : un TABLEAU JSON contenant les lignes : [{ \"designation\": \"Titre court\", \"description\": \"Détail technique\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }]. Renvoie UNIQUEMENT le tableau JSON valide, sans markdown, sans explication."
+              "Tu es un expert métreur en bâtiment. Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes." +
+              catalogueString +
+              "\nFormat attendu STRICTEMENT : un TABLEAU JSON contenant les lignes : [{ \"designation\": \"Titre court\", \"description\": \"Détail technique\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }]. Renvoie UNIQUEMENT le tableau JSON valide, sans markdown, sans explication."
           },
           { role: 'user', content: prompt },
         ],
