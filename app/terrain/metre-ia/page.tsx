@@ -190,11 +190,13 @@ export default function MetreIAPage() {
   };
 
   // ---------------- CALCUL DES SURFACES ----------------
-  // Calcule l'aire d'un polygone (formule du lacet) en pixels carrés
+  // Calcule l'aire d'un polygone (formule classique de Gauss) en pixels carrés
   const getPolyAreaPx = (poly: Point[]) => {
+    if (poly.length < 3) return 0;
     let area = 0;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      area += (poly[j].x + poly[i].x) * (poly[j].y - poly[i].y);
+    for (let i = 0; i < poly.length; i++) {
+      let j = (i + 1) % poly.length;
+      area += poly[i].x * poly[j].y - poly[j].x * poly[i].y;
     }
     return Math.abs(area / 2);
   };
@@ -212,8 +214,11 @@ export default function MetreIAPage() {
     return areaPx / (pixelsPerMeter * pixelsPerMeter);
   };
 
-  const totalFacade = facades.reduce((sum, p) => sum + getAreaM2(p), 0);
-  const totalDeduction = deductions.reduce((sum, p) => sum + getAreaM2(p), 0);
+  let currentFacade = mode === "facade" ? getAreaM2(currentPoly) : 0;
+  let currentDeduction = mode === "deduction" ? getAreaM2(currentPoly) : 0;
+
+  const totalFacade = facades.reduce((sum, p) => sum + getAreaM2(p), 0) + currentFacade;
+  const totalDeduction = deductions.reduce((sum, p) => sum + getAreaM2(p), 0) + currentDeduction;
   const surfaceNette = Math.max(0, totalFacade - totalDeduction);
 
   return (
