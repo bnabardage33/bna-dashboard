@@ -76,11 +76,39 @@ export default function CataloguePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormState>(emptyForm);
+  const [importUrl, setImportUrl] = useState("");
+  const [isScraping, setIsScraping] = useState(false);
 
   const set = (field: keyof FormState, value: FormState[keyof FormState]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
   const categories = ["Toutes", "bardage", "etancheite", "habillage", "isolation", "installation"];
+
+  const handleScrapeUrl = async () => {
+    if (!importUrl) return;
+    setIsScraping(true);
+    try {
+      const res = await fetch(`/api/scrape?url=${encodeURIComponent(importUrl)}`);
+      if (!res.ok) throw new Error("Erreur de scraping");
+      const data = await res.json();
+      
+      setFormData(prev => ({
+        ...prev,
+        designation: data.designation || prev.designation,
+        fabricant: data.fabricant || prev.fabricant,
+        fournisseur: data.fournisseur || prev.fournisseur,
+        // On suppose que le prix trouvé est un TTC public
+        prix_ttc: data.prix_ttc ? data.prix_ttc : prev.prix_ttc,
+        pu_ht: data.prix_ttc ? parseFloat((data.prix_ttc / 1.2).toFixed(2)) : prev.pu_ht,
+      }));
+      alert("✅ Données importées ! Vérifiez et ajustez si besoin.");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Impossible de lire cette page. Certains sites bloquent l'accès automatique.");
+    } finally {
+      setIsScraping(false);
+    }
+  };
 
   const fetchCatalogue = async () => {
     setIsLoading(true);
@@ -494,6 +522,33 @@ export default function CataloguePage() {
               {/* Formulaire avec scroll séparé et footer statique */}
               <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-hidden">
                 <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-6">
+                
+                {/* ── Auto-remplissage ─────────── */}
+                <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
+                  <label className="block text-xs font-semibold text-cyan-400 mb-2">
+                    ⚡ Auto-remplir via une adresse Web (Optionnel)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="Collez l'URL d'un produit (Leroy Merlin, Point.P...)"
+                      value={importUrl}
+                      onChange={(e) => setImportUrl(e.target.value)}
+                      className="flex-1 rounded border border-cyan-500/50 bg-transparent p-2 text-sm text-white focus:border-cyan-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleScrapeUrl}
+                      disabled={isScraping || !importUrl}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-sm font-bold disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isScraping ? "Recherche..." : "Importer"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-cyan-300 mt-2 opacity-70">
+                    Copiez le lien depuis votre navigateur mobile et collez-le ici.
+                  </p>
+                </div>
 
                 {/* ── En-tête : Catégorie + Famille + Désignation ─────────── */}
                 <div className="grid grid-cols-2 gap-4">
