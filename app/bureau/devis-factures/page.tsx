@@ -660,23 +660,50 @@ export default function DevisPage() {
                   </div>
                 ))}
                 <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-xl border border-violet-500/40 bg-violet-500/5 p-2">
-                  <input
-                    value={promptIA}
-                    onChange={(e) => setPromptIA(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        genererLigneIA();
-                      }
-                    }}
-                    placeholder="✨ Décris la prestation (ex: bardage bois 50m² façade nord)..."
-                    disabled={genererIAEnCours}
-                    className="flex-1 rounded-lg border border-violet-500/40 bg-transparent px-3 py-1.5 text-xs text-white placeholder:text-gray-500 disabled:opacity-50"
-                  />
+                  <div className="flex flex-1 items-center bg-transparent relative">
+                    <input
+                      value={promptIA}
+                      onChange={(e) => setPromptIA(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          genererLigneIA();
+                        }
+                      }}
+                      placeholder="✨ Décris la prestation ou dicte-la au micro..."
+                      disabled={genererIAEnCours}
+                      className="w-full rounded-lg border border-violet-500/40 bg-transparent pl-3 pr-10 py-1.5 text-xs text-white placeholder:text-gray-500 disabled:opacity-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                          alert("Votre navigateur ne supporte pas la dictée vocale.");
+                          return;
+                        }
+                        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                        const recognition = new SpeechRec();
+                        recognition.lang = 'fr-FR';
+                        recognition.start();
+                        setPromptIA("Écoute en cours...");
+                        recognition.onresult = (event: any) => {
+                          setPromptIA(event.results[0][0].transcript);
+                        };
+                        recognition.onerror = () => {
+                          setPromptIA("");
+                          alert("Erreur micro.");
+                        };
+                      }}
+                      className="absolute right-2 text-violet-400 hover:text-violet-300 transition-colors p-1"
+                      title="Dicter avec le micro"
+                    >
+                      🎙️
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={genererLigneIA}
-                    disabled={genererIAEnCours || !promptIA.trim()}
+                    disabled={genererIAEnCours || !promptIA.trim() || promptIA === "Écoute en cours..."}
                     className="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-50 transition-colors whitespace-nowrap"
                   >
                     {genererIAEnCours ? "Génération..." : "✨ Générer avec l'IA"}
