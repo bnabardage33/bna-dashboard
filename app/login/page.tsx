@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,9 +10,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const autoSubmitted = useRef(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = useCallback(async () => {
     setError('')
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -38,7 +38,25 @@ export default function LoginPage() {
       setError("Connexion impossible. Verifie ton reseau et reessaie.")
       setLoading(false)
     }
+  }, [email, password, router])
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    submit()
   }
+
+  // Auto-connexion quand les 2 champs sont remplis d'un coup (autofill Bitwarden)
+  useEffect(() => {
+    if (autoSubmitted.current) return
+    if (!email || !password) return
+
+    autoSubmitted.current = true
+    const timer = setTimeout(() => {
+      submit()
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [email, password, submit])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">

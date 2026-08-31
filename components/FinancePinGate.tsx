@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Lock } from "lucide-react";
 
-const DUREE_INACTIVITE_MS = 15 * 1000; // TEST — 15 secondes
+const DUREE_INACTIVITE_MS = 15 * 60 * 1000; // 15 minutes
 
 export default function FinancePinGate({ children }: { children: React.ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);

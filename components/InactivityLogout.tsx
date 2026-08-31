@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const DUREE_INACTIVITE_MS = 15 * 1000; // TEST — 15 secondes
+const DUREE_INACTIVITE_MS = 15 * 60 * 1000; // 15 minutes
 
 const CHEMINS_EXCLUS = ["/login", "/espace-client", "/demo-client"];
 
