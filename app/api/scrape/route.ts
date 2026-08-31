@@ -39,20 +39,62 @@ export async function GET(request: Request) {
     }
 
     // 3. Prix
-    // Recherche heuristique d'un prix dans la page (très basique)
     let price: number | null = null;
     
-    // On cherche d'abord dans les balises meta de type produit
-    const metaPrice = $('meta[property="product:price:amount"]').attr('content');
-    if (metaPrice) {
-      price = parseFloat(metaPrice.replace(',', '.'));
-    } else {
-      // Sinon on cherche dans le texte visible
-      const bodyText = $('body').text();
-      // Cherche par ex: " 15,99 €" ou " 15.99€"
-      const priceMatch = bodyText.match(/(\d+[.,]\d{2})\s*€/);
-      if (priceMatch) {
-        price = parseFloat(priceMatch[1].replace(',', '.'));
+    // A) Chercher dans les données structurées JSON-LD (Standard E-commerce SEO)
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const json = JSON.parse($(el).html() || '{}');
+        // Parfois c'est un tableau de JSON-LD
+        const items = Array.isArray(json) ? json : [json];
+        for (const item of items) {
+          if (item['@type'] === 'Product' && item.offers) {
+            if (item.offers.price) {
+              price = parseFloat(item.offers.price);
+              break;
+            } else if (item.offers[0] && item.offers[0].price) {
+              price = parseFloat(item.offers[0].price);
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignorer les erreurs de parse JSON
+      }
+    });
+
+    // B) Si pas trouvé, chercher dans les meta balises standard
+    if (!price) {
+      const metaPrice = $('meta[property="product:price:amount"]').attr('content');
+      if (metaPrice) price = parseFloat(metaPrice.replace(',', '.'));
+    }
+    
+    // C) Si toujours pas, chercher dans d'autres meta courantes
+    if (!price) {
+      const metaPrice2 = $('meta[itemprop="price"]').attr('content');
+      if (metaPrice2) price = parseFloat(metaPrice2.replace(',', '.'));
+    }
+
+    // D) Fallback heuristique avancé (Leroy Merlin, Casto, etc...)
+    if (!price) {
+      // Cherche dans des classes de prix typiques (ex: 'price', 'prix', 'amount')
+      const priceTexts: string[] = [];
+      $('[class*="price"], [class*="prix"], [data-price]').each((_, el) => {
+        const text = $(el).text().trim();
+        const dataPrice = $(el).attr('data-price');
+        if (dataPrice) priceTexts.push(dataPrice);
+        if (text) priceTexts.push(text);
+      });
+      
+      // On fouille les textes trouvés pour un format de prix avec euro
+      for (const text of priceTexts) {
+        // Ex: 15,99 € ou 15.99 ou 15€99
+        const match = text.match(/(\d+)\s*[.,€]\s*(\d{2})/);
+        if (match) {
+           // Reconstruit le nombre
+           price = parseFloat(`${match[1]}.${match[2]}`);
+           break;
+        }
       }
     }
 
