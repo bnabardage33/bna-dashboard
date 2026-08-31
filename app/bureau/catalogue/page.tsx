@@ -152,6 +152,75 @@ export default function CataloguePage() {
 
   useEffect(() => {
     fetchCatalogue();
+
+    // Vérifier s'il y a un import via le Favori (Bookmarklet)
+    if (typeof window !== "undefined" && window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      const url = params.get('importUrl');
+      const title = params.get('importTitle');
+      const price = params.get('importPrice');
+
+      if (url || title) {
+        const textToSearch = `${url || ''} ${title || ''}`.toLowerCase();
+        let epaisseur_mm = null;
+        let largeur_mm = null;
+        let longueur_mm = null;
+
+        const dim3 = textToSearch.match(/(\d+[.,]?\d*)\s*[x*-]\s*(\d+[.,]?\d*)\s*[x*-]\s*(\d+[.,]?\d*)/);
+        if (dim3) {
+          const v1 = parseFloat(dim3[1].replace(',', '.'));
+          const v2 = parseFloat(dim3[2].replace(',', '.'));
+          const v3 = parseFloat(dim3[3].replace(',', '.'));
+          const sorted = [v1, v2, v3].sort((a, b) => a - b);
+          epaisseur_mm = sorted[0];
+          largeur_mm = sorted[1];
+          longueur_mm = sorted[2];
+        } else {
+          const dim2 = textToSearch.match(/(\d+[.,]?\d*)\s*[x*]\s*(\d+[.,]?\d*)/);
+          if (dim2) {
+            const v1 = parseFloat(dim2[1].replace(',', '.'));
+            const v2 = parseFloat(dim2[2].replace(',', '.'));
+            longueur_mm = Math.max(v1, v2);
+            largeur_mm = Math.min(v1, v2);
+          }
+          const epMatch = textToSearch.match(/(?:ep|epaisseur|ép|épaisseur)\s*[-_:]?\s*(\d+[.,]?\d*)/);
+          if (epMatch) {
+            epaisseur_mm = parseFloat(epMatch[1].replace(',', '.'));
+          } else {
+            const mmMatch = textToSearch.match(/(?<![x*\d])(\d+[.,]?\d*)\s*mm/);
+            if (mmMatch) epaisseur_mm = parseFloat(mmMatch[1].replace(',', '.'));
+          }
+        }
+        if (longueur_mm !== null && longueur_mm > 0 && longueur_mm < 10) longueur_mm *= 1000;
+        if (largeur_mm !== null && largeur_mm > 0 && largeur_mm < 10) largeur_mm *= 1000;
+        if (longueur_mm !== null && longueur_mm >= 10 && longueur_mm <= 100) longueur_mm *= 10;
+        if (largeur_mm !== null && largeur_mm >= 10 && largeur_mm <= 100) largeur_mm *= 10;
+
+        let fournisseur = '';
+        const lowerUrl = (url || '').toLowerCase();
+        if (lowerUrl.includes('leroymerlin')) fournisseur = 'Leroy Merlin';
+        else if (lowerUrl.includes('castorama')) fournisseur = 'Castorama';
+        else if (lowerUrl.includes('bricoman')) fournisseur = 'Bricoman';
+        else if (lowerUrl.includes('pointp')) fournisseur = 'Point.P';
+        else if (lowerUrl.includes('dispano')) fournisseur = 'Dispano';
+        else if (lowerUrl.includes('manomano')) fournisseur = 'ManoMano';
+
+        const parsedPriceTtc = price ? parseFloat(price.replace(',', '.')) : null;
+
+        setFormData(prev => ({
+            ...prev,
+            designation: title || "",
+            fournisseur: fournisseur,
+            prix_ttc: parsedPriceTtc,
+            pu_ht: parsedPriceTtc ? parseFloat((parsedPriceTtc / 1.2).toFixed(2)) : 0,
+            dimensions_disponibles: (longueur_mm || largeur_mm || epaisseur_mm) ? [{ longueur_mm, largeur_mm, epaisseur_mm }] : []
+        }));
+        
+        setIsModalOpen(true);
+        // Nettoyer l'URL pour éviter que ça se rouvre au rafraîchissement
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
   }, []);
 
   const handleOpenModal = (ouvrage?: Ouvrage) => {
