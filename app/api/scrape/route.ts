@@ -108,11 +108,60 @@ export async function GET(request: Request) {
     else if (lowerUrl.includes('dispano')) fournisseur = 'Dispano';
     else if (lowerUrl.includes('manomano')) fournisseur = 'ManoMano';
 
+    // 5. Déduire les dimensions (depuis l'URL ou le Titre)
+    let longueur_mm: number | null = null;
+    let largeur_mm: number | null = null;
+    let epaisseur_mm: number | null = null;
+
+    const textToSearch = `${lowerUrl} ${title.toLowerCase()}`;
+    
+    // Pattern 1: L x W x Epaisseur (ex: 2500x1250x12 ou 2500 x 1250 x 12)
+    const dim3 = textToSearch.match(/(\d+[.,]?\d*)\s*[x*-]\s*(\d+[.,]?\d*)\s*[x*-]\s*(\d+[.,]?\d*)/);
+    if (dim3) {
+      const v1 = parseFloat(dim3[1].replace(',', '.'));
+      const v2 = parseFloat(dim3[2].replace(',', '.'));
+      const v3 = parseFloat(dim3[3].replace(',', '.'));
+      // On trie pour deviner: la plus petite est l'épaisseur, la plus grande la longueur
+      const sorted = [v1, v2, v3].sort((a, b) => a - b);
+      epaisseur_mm = sorted[0];
+      largeur_mm = sorted[1];
+      longueur_mm = sorted[2];
+    } else {
+      // Pattern 2: L x W (ex: 2500x1250)
+      const dim2 = textToSearch.match(/(\d+[.,]?\d*)\s*[x*]\s*(\d+[.,]?\d*)/);
+      if (dim2) {
+        const v1 = parseFloat(dim2[1].replace(',', '.'));
+        const v2 = parseFloat(dim2[2].replace(',', '.'));
+        longueur_mm = Math.max(v1, v2);
+        largeur_mm = Math.min(v1, v2);
+      }
+      
+      // Pattern 3: Epaisseur seule (ex: ep-12mm, epaisseur 12, 12mm)
+      const epMatch = textToSearch.match(/(?:ep|epaisseur|ép|épaisseur)\s*[-_:]?\s*(\d+[.,]?\d*)/);
+      if (epMatch) {
+        epaisseur_mm = parseFloat(epMatch[1].replace(',', '.'));
+      } else if (!epaisseur_mm) {
+         // Si on voit "12mm" tout seul qui n'est pas dans un LxW
+         const mmMatch = textToSearch.match(/(?<![x*\d])(\d+[.,]?\d*)\s*mm/);
+         if (mmMatch) epaisseur_mm = parseFloat(mmMatch[1].replace(',', '.'));
+      }
+    }
+
+    // Normalisation basique (si on lit "2.5x1.25", ce sont des mètres -> mm)
+    if (longueur_mm !== null && longueur_mm > 0 && longueur_mm < 10) longueur_mm *= 1000;
+    if (largeur_mm !== null && largeur_mm > 0 && largeur_mm < 10) largeur_mm *= 1000;
+    // Si c'est en cm (entre 10 et 100) -> mm
+    if (longueur_mm !== null && longueur_mm >= 10 && longueur_mm <= 100) longueur_mm *= 10;
+    if (largeur_mm !== null && largeur_mm >= 10 && largeur_mm <= 100) largeur_mm *= 10;
+
     return NextResponse.json({
       designation: title,
       fabricant: brand,
       fournisseur: fournisseur,
-      prix_ttc: price, // On suppose souvent que les prix publics sont TTC
+      prix_ttc: price,
+      longueur_mm,
+      largeur_mm,
+      epaisseur_mm
     });
 
   } catch (error) {

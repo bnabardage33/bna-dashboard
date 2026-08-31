@@ -92,15 +92,36 @@ export default function CataloguePage() {
       if (!res.ok) throw new Error("Erreur de scraping");
       const data = await res.json();
       
-      setFormData(prev => ({
-        ...prev,
-        designation: data.designation || prev.designation,
-        fabricant: data.fabricant || prev.fabricant,
-        fournisseur: data.fournisseur || prev.fournisseur,
-        // On suppose que le prix trouvé est un TTC public
-        prix_ttc: data.prix_ttc ? data.prix_ttc : prev.prix_ttc,
-        pu_ht: data.prix_ttc ? parseFloat((data.prix_ttc / 1.2).toFixed(2)) : prev.pu_ht,
-      }));
+      setFormData(prev => {
+        // Préparation des dimensions
+        let newDims = prev.dimensions_disponibles ? [...prev.dimensions_disponibles] : [];
+        if (data.longueur_mm || data.largeur_mm || data.epaisseur_mm) {
+          if (newDims.length === 0) {
+            newDims.push({
+              longueur_mm: data.longueur_mm,
+              largeur_mm: data.largeur_mm,
+              epaisseur_mm: data.epaisseur_mm
+            });
+          } else {
+            // Remplace la première dimension si elle était vide
+            newDims[0] = {
+              longueur_mm: data.longueur_mm || newDims[0].longueur_mm,
+              largeur_mm: data.largeur_mm || newDims[0].largeur_mm,
+              epaisseur_mm: data.epaisseur_mm || newDims[0].epaisseur_mm,
+            };
+          }
+        }
+
+        return {
+          ...prev,
+          designation: data.designation || prev.designation,
+          fabricant: data.fabricant || prev.fabricant,
+          fournisseur: data.fournisseur || prev.fournisseur,
+          prix_ttc: data.prix_ttc ? data.prix_ttc : prev.prix_ttc,
+          pu_ht: data.prix_ttc ? parseFloat((data.prix_ttc / 1.2).toFixed(2)) : prev.pu_ht,
+          dimensions_disponibles: newDims
+        };
+      });
       alert("✅ Données importées ! Vérifiez et ajustez si besoin.");
     } catch (err) {
       console.error(err);
