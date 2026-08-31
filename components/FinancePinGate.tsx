@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Lock } from "lucide-react";
+
+const DUREE_INACTIVITE_MS = 15 * 60 * 1000; // 15 minutes
 
 export default function FinancePinGate({ children }: { children: React.ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
@@ -9,6 +11,17 @@ export default function FinancePinGate({ children }: { children: React.ReactNode
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const verrouiller = useCallback(() => {
+    sessionStorage.removeItem("finance_unlocked");
+    setUnlocked(false);
+  }, []);
+
+  const reinitialiserTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(verrouiller, DUREE_INACTIVITE_MS);
+  }, [verrouiller]);
 
   useEffect(() => {
     if (sessionStorage.getItem("finance_unlocked") === "true") {
@@ -16,6 +29,23 @@ export default function FinancePinGate({ children }: { children: React.ReactNode
     }
     setChecking(false);
   }, []);
+
+  useEffect(() => {
+    if (!unlocked) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+
+    reinitialiserTimer();
+
+    const evenements = ["mousedown", "touchstart", "keydown", "scroll"];
+    evenements.forEach((evt) => window.addEventListener(evt, reinitialiserTimer));
+
+    return () => {
+      evenements.forEach((evt) => window.removeEventListener(evt, reinitialiserTimer));
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [unlocked, reinitialiserTimer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +61,7 @@ export default function FinancePinGate({ children }: { children: React.ReactNode
     if (data.ok) {
       sessionStorage.setItem("finance_unlocked", "true");
       setUnlocked(true);
+      setPin("");
     } else {
       setError("Code incorrect.");
       setPin("");
