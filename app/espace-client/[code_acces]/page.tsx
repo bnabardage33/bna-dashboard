@@ -262,6 +262,36 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
   const docEstSigne = isSigned || (activeDoc && (activeDoc.statut === 'accepte' || activeDoc.statut === 'payee'));
 
+  const calculateEstimatedEndDate = () => {
+    let endDateStr = chantierData?.date_fin_estimee;
+    let endDate;
+    
+    if (endDateStr) {
+      endDate = new Date(endDateStr);
+    } else if (chantierData?.created_at) {
+      // Fallback : +2 mois après la création si pas de date de fin
+      endDate = new Date(chantierData.created_at);
+      endDate.setMonth(endDate.getMonth() + 2);
+    } else {
+      // Fallback sécurité : +2 mois après aujourd'hui
+      endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 2);
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (endDate < today) {
+      return "Date à redéfinir";
+    }
+
+    return endDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   if (isPageLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -306,7 +336,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             <div className="bg-[#E30613] h-3 rounded-full transition-all duration-1000" style={{ width: `${avancement}%` }}></div>
           </div>
           
-          <p className="text-xs text-gray-500 mb-5">{avancement}% terminé • Estimation fin: 15 déc. 2024</p>
+          <p className="text-xs text-gray-500 mb-5">{avancement}% terminé • Estimation fin: {calculateEstimatedEndDate()}</p>
           
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
