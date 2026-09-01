@@ -47,7 +47,9 @@ export default function BureauDashboard() {
       const [devisRes, facturesRes, chantiersRes, fournRes] = await Promise.all([
         supabase.from("devis").select("id").in("statut", ["brouillon", "envoye"]),
         supabase.from("factures").select("lignes, tva_pct").eq("statut", "envoyee").lt("echeance", today),
-        supabase.from("chantiers").select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee, created_at, date_saisie), avancements_chantier(pourcentage, date, created_at)").eq("statut", "en_cours"),
+        supabase.from("chantiers")
+          .select("id, nom, created_at, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee, created_at, date_saisie), avancements_chantier(pourcentage, date, created_at)")
+          .in("statut", ["en_cours", "En cours", "prevu", "Actif", "Préparation", "preparation", "nouveau"]),
         supabase.from("fournisseurs").select("id").eq("statut_relation", "principal")
       ]);
 
@@ -86,11 +88,13 @@ export default function BureauDashboard() {
         const heuresConsommeesPct = budget > 0 ? (tempsConsomme / budget) * 100 : 0;
         
         // Days calculation
-        const lastPointageDate = pointages[0] ? new Date(pointages[0].date_saisie || pointages[0].created_at || 0).getTime() : now;
-        const joursSansPointage = pointages.length > 0 ? Math.floor((now - lastPointageDate) / (1000 * 3600 * 24)) : 0;
+        const chantierCreatedAt = c.created_at ? new Date(c.created_at).getTime() : now;
         
-        const lastAvancementDate = avancements[0] ? new Date(avancements[0].date || avancements[0].created_at || 0).getTime() : now;
-        const joursSansAvancement = avancements.length > 0 ? Math.floor((now - lastAvancementDate) / (1000 * 3600 * 24)) : 0;
+        const lastPointageDate = pointages[0] ? new Date(pointages[0].date_saisie || pointages[0].created_at || 0).getTime() : chantierCreatedAt;
+        const joursSansPointage = Math.floor((now - lastPointageDate) / (1000 * 3600 * 24));
+        
+        const lastAvancementDate = avancements[0] ? new Date(avancements[0].date || avancements[0].created_at || 0).getTime() : chantierCreatedAt;
+        const joursSansAvancement = Math.floor((now - lastAvancementDate) / (1000 * 3600 * 24));
 
         // Intemperies count
         const joursIntemperies = pointages.filter(p => p.coef_meteo && Number(p.coef_meteo) > 1.0).length;
