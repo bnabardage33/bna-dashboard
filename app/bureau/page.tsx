@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { fmtEuro } from "@/lib/financeCalculs";
 import ChantierHealthCard from "@/components/ChantierHealthCard";
+import { calculerTempsBudget, calculerTempsConsommeMeteo } from "@/lib/gaelLogic";
 
 type DashboardStats = {
   devisEnAttente: number;
@@ -35,6 +36,7 @@ export default function BureauDashboard() {
     chantiersEnCours: 0,
     fournisseursActifs: 0,
   });
+  const [healthCards, setHealthCards] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function BureauDashboard() {
       const [devisRes, facturesRes, chantiersRes, fournRes] = await Promise.all([
         supabase.from("devis").select("id").in("statut", ["brouillon", "envoye"]),
         supabase.from("factures").select("lignes, tva_pct").eq("statut", "envoyee").lt("echeance", today),
-        supabase.from("chantiers").select("id").eq("statut", "en_cours"),
+        supabase.from("chantiers").select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee, created_at, date_saisie), avancements_chantier(pourcentage, date, created_at)").eq("statut", "en_cours"),
         supabase.from("fournisseurs").select("id").eq("statut_relation", "principal")
       ]);
 
@@ -55,6 +57,59 @@ export default function BureauDashboard() {
       const chantiersEnCours = chantiersRes.data?.length || 0;
       const fournisseursActifs = fournRes.data?.length || 0;
 
+      const newHealthCards = [];
+      const now = new Date().getTime();
+      
+      for (const c of (chantiersRes.data || [])) {
+        // Avancement
+        const avancements = (c.avancements_chantier || []) as any[];
+        avancements.sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime());
+        const latestAvancement = avancements[0]?.pourcentage != null ? Number(avancements[0].pourcentage) : 0;
+        
+        // Pointages
+        const pointages = (c.pointages_globaux || []) as any[];
+        pointages.sort((a, b) => new Date(b.date_saisie || b.created_at || 0).getTime() - new Date(a.date_saisie || a.created_at || 0).getTime());
+        
+        // Budget calculation (Gaël Logic)
+        const budget = calculerTempsBudget(
+          c.surface_m2 || 0, 0.5,
+          c.quantite_coupes_ml || 0, 0.3,
+          c.singularites_nb || 0, 1.5
+        );
+
+        // Temps consommé (Gaël Logic)
+        const formattedPointages = pointages.map(p => ({
+          volumeHeures: Number(p.volume_heures_declare) || 0,
+          coefMeteo: Number(p.coef_meteo) || 1.0,
+        }));
+        const tempsConsomme = calculerTempsConsommeMeteo(formattedPointages);
+        const heuresConsommeesPct = budget > 0 ? (tempsConsomme / budget) * 100 : 0;
+        
+        // Days calculation
+        const lastPointageDate = pointages[0] ? new Date(pointages[0].date_saisie || pointages[0].created_at || 0).getTime() : now;
+        const joursSansPointage = pointages.length > 0 ? Math.floor((now - lastPointageDate) / (1000 * 3600 * 24)) : 0;
+        
+        const lastAvancementDate = avancements[0] ? new Date(avancements[0].date || avancements[0].created_at || 0).getTime() : now;
+        const joursSansAvancement = avancements.length > 0 ? Math.floor((now - lastAvancementDate) / (1000 * 3600 * 24)) : 0;
+
+        // Intemperies count
+        const joursIntemperies = pointages.filter(p => p.coef_meteo && Number(p.coef_meteo) > 1.0).length;
+
+        newHealthCards.push({
+          id: c.id,
+          chantierName: c.nom || "Chantier sans nom",
+          chantierData: {
+            avancementPct: latestAvancement,
+            heuresConsommeesPct,
+            joursSansPointage,
+            joursSansAvancement,
+            joursIntemperies,
+            margeActuellePct: 20, // Default mock for now
+            margePrevuePct: 20   // Default mock for now
+          }
+        });
+      }
+
       setStats({
         devisEnAttente,
         facturesRetard,
@@ -62,6 +117,7 @@ export default function BureauDashboard() {
         chantiersEnCours,
         fournisseursActifs
       });
+      setHealthCards(newHealthCards);
       setIsLoading(false);
     }
 
@@ -165,42 +221,19 @@ export default function BureauDashboard() {
             <h2 className="text-xl font-bold text-white">Détecteur d'Anomalies BNA</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ChantierHealthCard
-              chantierName="Villa Arcachon"
-              chantierData={{
-                avancementPct: 80,
-                heuresConsommeesPct: 105,
-                joursSansPointage: 0,
-                joursSansAvancement: 2,
-                joursIntemperies: 1,
-                margeActuellePct: 15,
-                margePrevuePct: 22
-              }}
-            />
-            <ChantierHealthCard
-              chantierName="Résidence Les Pins"
-              chantierData={{
-                avancementPct: 35,
-                heuresConsommeesPct: 20,
-                joursSansPointage: 0,
-                joursSansAvancement: 1,
-                joursIntemperies: 0,
-                margeActuellePct: 25,
-                margePrevuePct: 25
-              }}
-            />
-            <ChantierHealthCard
-              chantierName="Entrepôt Logistique"
-              chantierData={{
-                avancementPct: 100,
-                heuresConsommeesPct: 80,
-                joursSansPointage: 5,
-                joursSansAvancement: 1,
-                joursIntemperies: 0,
-                margeActuellePct: 30,
-                margePrevuePct: 28
-              }}
-            />
+            {healthCards.length > 0 ? (
+              healthCards.map((card) => (
+                <ChantierHealthCard
+                  key={card.id}
+                  chantierName={card.chantierName}
+                  chantierData={card.chantierData}
+                />
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm italic col-span-full">
+                Aucun chantier actif à analyser pour le moment.
+              </p>
+            )}
           </div>
         </section>
 
