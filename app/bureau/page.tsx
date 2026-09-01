@@ -17,6 +17,7 @@ import {
   Wand2
 } from "lucide-react";
 import { fmtEuro } from "@/lib/financeCalculs";
+import ChantierHealthCard from "@/components/ChantierHealthCard";
 
 type DashboardStats = {
   devisEnAttente: number;
@@ -154,6 +155,54 @@ export default function BureauDashboard() {
 
           </div>
         )}
+
+        {/* DETECTEUR D'ANOMALIES IA */}
+        <section className="mt-8">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="bg-[#1A1D24] border border-red-500/30 p-2 rounded-lg">
+              <Wand2 className="h-5 w-5 text-red-500" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Détecteur d'Anomalies BNA</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <ChantierHealthCard
+              chantierName="Villa Arcachon"
+              chantierData={{
+                avancementPct: 80,
+                heuresConsommeesPct: 105,
+                joursSansPointage: 0,
+                joursSansAvancement: 2,
+                joursIntemperies: 1,
+                margeActuellePct: 15,
+                margePrevuePct: 22
+              }}
+            />
+            <ChantierHealthCard
+              chantierName="Résidence Les Pins"
+              chantierData={{
+                avancementPct: 35,
+                heuresConsommeesPct: 20,
+                joursSansPointage: 0,
+                joursSansAvancement: 1,
+                joursIntemperies: 0,
+                margeActuellePct: 25,
+                margePrevuePct: 25
+              }}
+            />
+            <ChantierHealthCard
+              chantierName="Entrepôt Logistique"
+              chantierData={{
+                avancementPct: 100,
+                heuresConsommeesPct: 80,
+                joursSansPointage: 5,
+                joursSansAvancement: 1,
+                joursIntemperies: 0,
+                margeActuellePct: 30,
+                margePrevuePct: 28
+              }}
+            />
+          </div>
+        </section>
 
         {/* Accès rapides */}
         <section className="mt-12">
