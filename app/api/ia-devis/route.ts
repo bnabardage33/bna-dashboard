@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // Force le modèle pour ignorer la variable Vercel
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,22 +24,22 @@ export async function POST(req: NextRequest) {
       }
 
       filteredCatalog = catalogueContext.filter((c: any) => {
-        const text = `${c.designation} ${c.description}`.toLowerCase();
+        const text = `${c.designation} ${c.description || ''}`.toLowerCase();
         return keywords.some((kw: string) => text.includes(kw));
       });
-      // Garder les 30 plus pertinents max pour éviter d'exploser la limite Groq
-      if (filteredCatalog.length > 30) {
-        filteredCatalog = filteredCatalog.slice(0, 30);
+      // Garder les 15 plus pertinents max pour éviter d'exploser la limite Groq
+      if (filteredCatalog.length > 15) {
+        filteredCatalog = filteredCatalog.slice(0, 15);
       }
     }
 
     const catalogueString = filteredCatalog.length > 0
       ? "\n\nVOICI LE CATALOGUE DE L'ENTREPRISE (Extrait pertinent) :\n" + JSON.stringify(filteredCatalog.map((c: any) => ({
           designation: c.designation,
-          description: c.description,
           unite: c.unite,
           pu_ht: c.pu_ht
-        }))) + "\n\nConsigne IMPORTANTE : Si la demande correspond à un article du catalogue, utilise EXACTEMENT les prix, désignations et descriptions du catalogue. Si la demande ne correspond à aucun article, invente une ligne cohérente avec un prix réaliste."
+          // On retire 'description' qui est très lourd en tokens
+        }))) + "\n\nConsigne IMPORTANTE : Si la demande correspond à un article du catalogue, utilise EXACTEMENT les prix, désignations du catalogue. Si la demande ne correspond à aucun article, invente une ligne cohérente avec un prix réaliste."
       : "";
 
     let reglesMetier = "";
@@ -72,12 +72,12 @@ export async function POST(req: NextRequest) {
               "\n\nTU DOIS RÉPONDRE UNIQUEMENT AVEC UN OBJET JSON. AUCUN TEXTE AVANT, AUCUN TEXTE APRÈS, AUCUN FORMATAGE MARKDOWN.\n" +
               "L'objet JSON doit contenir EXACTEMENT ces deux clés :\n" +
               "1. \"brouillon_calculs\" : (String) Un espace où tu réfléchis. Sois EXTRÊMEMENT BREF, style télégramme. Fais tes calculs rapidement sans faire de phrases longues.\n" +
-              "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }."
+              "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }."
           },
           { role: 'user', content: prompt },
         ],
         temperature: 0.2,
-        max_tokens: 8192,
+        max_tokens: 2500,
       }),
     });
 
