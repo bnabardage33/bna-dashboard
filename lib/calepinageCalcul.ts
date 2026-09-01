@@ -784,8 +784,18 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const hauteurTotale = estPignon ? hauteurFaite : hauteurMur;
 
   // Module dimensions sur l'axe selon le sens de pose
-  const dimModuleLargeurAxeMm = sens === "horizontal" ? modLargeurMm : modHauteurMm;
-  const dimModuleHauteurAxeMm = sens === "horizontal" ? modHauteurMm : modLargeurMm;
+  let dimModuleLargeurAxeMm = modLargeurMm;
+  let dimModuleHauteurAxeMm = modHauteurMm;
+  
+  if (sens === "vertical") {
+    // Vertical : la hauteur doit être la plus grande dimension
+    dimModuleLargeurAxeMm = Math.min(modLargeurMm, modHauteurMm);
+    dimModuleHauteurAxeMm = Math.max(modLargeurMm, modHauteurMm);
+  } else {
+    // Horizontal : la largeur doit être la plus grande dimension
+    dimModuleLargeurAxeMm = Math.max(modLargeurMm, modHauteurMm);
+    dimModuleHauteurAxeMm = Math.min(modLargeurMm, modHauteurMm);
+  }
 
   // ================================================================
   // 3. DTU 45.4 HPL — CALEPINAGE HORIZONTAL (COLONNES / LARGEUR)
