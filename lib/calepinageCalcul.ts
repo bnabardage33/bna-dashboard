@@ -1061,6 +1061,5 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     modulesParPlaqueBrute,
     plaquesDebit,
     quincaillerie,
-    antiFiletApplique,
   };
 }
