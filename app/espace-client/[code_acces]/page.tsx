@@ -21,6 +21,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [chantierData, setChantierData] = useState<any>(null);
   const [clientData, setClientData] = useState<any>(null);
   const [avancement, setAvancement] = useState<number>(0);
+  const [avancementDetails, setAvancementDetails] = useState<any>(null);
   const [devisData, setDevisData] = useState<any[]>([]);
   const [facturesData, setFacturesData] = useState<any[]>([]);
   const [activeDoc, setActiveDoc] = useState<any>(null);
@@ -51,6 +52,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setChantierData(data.chantier);
         setClientData(data.client);
         setAvancement(data.avancement);
+        if (data.avancementDetails) setAvancementDetails(data.avancementDetails);
         setDevisData(data.devis || []);
         setFacturesData(data.factures || []);
 
@@ -292,6 +294,65 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     });
   };
 
+  const TASKS_CATEGORIES = [
+    { id: "nord", label: "Façade Nord", tasks: ["ossature", "isolation", "bardage", "finitions"] },
+    { id: "sud", label: "Façade Sud", tasks: ["ossature", "isolation", "bardage", "finitions"] },
+    { id: "est", label: "Façade Est", tasks: ["ossature", "isolation", "bardage", "finitions"] },
+    { id: "ouest", label: "Façade Ouest", tasks: ["ossature", "isolation", "bardage", "finitions"] }
+  ];
+
+  const calculateProgression = () => {
+    if (!avancementDetails) return avancement;
+    let total = 0;
+    let checked = 0;
+    
+    for (const cat of TASKS_CATEGORIES) {
+      for (const t of cat.tasks) {
+        total++;
+        if (avancementDetails[cat.id]?.[t] === true) {
+          checked++;
+        }
+      }
+    }
+    return total === 0 ? 0 : Math.round((checked / total) * 100);
+  };
+
+  const avancementDynamique = avancementDetails ? calculateProgression() : avancement;
+
+  const renderBadges = () => {
+    return TASKS_CATEGORIES.map(cat => {
+      let catTotal = cat.tasks.length;
+      let catChecked = 0;
+      cat.tasks.forEach(t => {
+        if (avancementDetails?.[cat.id]?.[t] === true) {
+          catChecked++;
+        }
+      });
+      
+      let status = "À commencer";
+      let colorClass = "text-gray-400";
+      let Icon = Clipboard;
+
+      if (catChecked === catTotal && catTotal > 0) {
+        status = "Terminée";
+        colorClass = "text-[#10B981]"; // Vert
+        Icon = Check;
+      } else if (catChecked > 0) {
+        status = "En cours";
+        colorClass = "text-[#F59E0B]"; // Orange
+        Icon = Wrench;
+      }
+
+      // Si non commencé, on peut garder un style plus effacé
+      return (
+        <div key={cat.id} className={`rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center ${catChecked > 0 ? 'bg-[#F2F2F2]' : 'bg-gray-50 border border-gray-100'}`}>
+          <Icon className={colorClass} size={20} />
+          <span className="text-[10px] font-bold text-[#111111] leading-tight">{cat.label}<br/>{status}</span>
+        </div>
+      );
+    });
+  };
+
   if (isPageLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -319,28 +380,17 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-[#111111]">Progression du chantier</h2>
-            <span className="bg-[#E30613] text-white text-sm font-bold px-3 py-1 rounded-full">{avancement}%</span>
+            <span className="bg-[#E30613] text-white text-sm font-bold px-3 py-1 rounded-full">{avancementDynamique}%</span>
           </div>
           
           <div className="w-full bg-[#F2F2F2] h-3 rounded-full mb-2 overflow-hidden">
-            <div className="bg-[#E30613] h-3 rounded-full transition-all duration-1000" style={{ width: `${avancement}%` }}></div>
+            <div className="bg-[#E30613] h-3 rounded-full transition-all duration-1000" style={{ width: `${avancementDynamique}%` }}></div>
           </div>
           
-          <p className="text-xs text-gray-500 mb-5">{avancement}% terminé • Estimation fin: {calculateEstimatedEndDate()}</p>
+          <p className="text-xs text-gray-500 mb-5">{avancementDynamique}% terminé • Estimation fin: {calculateEstimatedEndDate()}</p>
           
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
-              <Check className="text-[#111111]" size={20} />
-              <span className="text-[10px] font-bold text-[#111111] leading-tight">Façade Nord Terminée</span>
-            </div>
-            <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
-              <Wrench className="text-[#E30613]" size={20} />
-              <span className="text-[10px] font-bold text-[#111111] leading-tight">Façade Sud En cours</span>
-            </div>
-            <div className="bg-[#F2F2F2] rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center">
-              <Clipboard className="text-[#E30613]" size={20} />
-              <span className="text-[10px] font-bold text-[#111111] leading-tight">Contrôle qualité Prévu</span>
-            </div>
+          <div className="grid grid-cols-2 gap-2">
+            {renderBadges()}
           </div>
         </section>
 

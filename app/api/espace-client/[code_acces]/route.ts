@@ -50,10 +50,11 @@ export async function GET(
   // (pour éviter tout bug lié aux colonnes de tri absentes ou mal indexées)
   const { data: avancements, error: avError } = await supabaseAdmin
     .from("avancements_chantier")
-    .select("id, pourcentage, date, created_at")
+    .select("id, pourcentage, date, created_at, details")
     .eq("chantier_id", chantier.id);
 
   let avancement = 0;
+  let avancementDetails = null;
 
   if (avError) {
     console.error("Erreur lecture avancements_chantier :", avError);
@@ -72,6 +73,7 @@ export async function GET(
     // Récupérer le pourcentage de la toute dernière entrée
     const latest = sorted[0];
     avancement = latest.pourcentage != null ? Number(latest.pourcentage) : 0;
+    avancementDetails = latest.details;
   }
 
   // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
@@ -117,6 +119,7 @@ export async function GET(
     chantier,
     client: chantier.clients,
     avancement,
+    avancementDetails,
     debug_avancements: avancements, // ADDED FOR DEBUGGING
     debug_avError: avError,
     devis: devisList,
