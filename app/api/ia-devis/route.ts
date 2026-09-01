@@ -91,7 +91,18 @@ export async function POST(req: NextRequest) {
       throw new Error("L'IA n'a pas renvoyé le tableau 'lignes_prestation'.");
     }
 
-    return NextResponse.json(result.lignes_prestation);
+    // Arrondi à l'entier supérieur pour les unités discrètes (pièces, unités)
+    const formattedLignes = result.lignes_prestation.map((ligne: any) => {
+      const unitLower = (ligne.unite || "").toLowerCase();
+      if (unitLower.includes("unit") || unitLower.includes("pièce") || unitLower.includes("piece") || unitLower === "u") {
+        if (typeof ligne.qte === 'number') {
+          ligne.qte = Math.ceil(ligne.qte);
+        }
+      }
+      return ligne;
+    });
+
+    return NextResponse.json(formattedLignes);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Erreur IA Devis:', message);
