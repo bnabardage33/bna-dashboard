@@ -1,3 +1,4 @@
+import { trouverMeilleureGrilleSymetrique } from "./gridOptimizer";
 // lib/calepinageCalcul.ts
 // Moteur DTU 45.4 HPL — Optimisation de Calepinage, Découpe & Nesting 2D (Panneaux HPL / Bardage)
 //
@@ -833,68 +834,28 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
   
-  // 5.1 Calepinage centré : Calcul de la rive initiale pour la première rangée
-  const nFullFirst = Math.floor((largeur + jointM) / (dimModuleLargeurAxeM + jointM));
-  let resteM = (largeur + jointM) - nFullFirst * (dimModuleLargeurAxeM + jointM);
-  let riveInitialeM = resteM / 2;
+  // 5.1 Calepinage Adaptatif Symétrique : Optimisation de la largeur des colonnes
+  const traitDeScieM = (traitDeScieMm ?? 3) / 1000;
+  const opt = trouverMeilleureGrilleSymetrique(
+    largeur,
+    hauteurMur,
+    hauteurFaite,
+    jointM,
+    rangeesHauteursM[0] || dimModuleHauteurAxeMm / 1000,
+    rawLongueurMm / 1000,
+    rawLargeurMm / 1000,
+    traitDeScieM
+  );
   
-  // Anti-filet : Si la rive est trop petite (ex: < 150mm), on l'agrandit
+  const colonnesLargeursM = opt.largeurs;
+  
+  // Anti-filet n'est techniquement plus un hack fixe, l'optimiseur ne sort pas de pièces < 150mm.
   let antiFiletApplique = false;
-  if (riveInitialeM < 0.15) {
-    if (nFullFirst >= 1) {
-      riveInitialeM += (dimModuleLargeurAxeM + jointM) / 2;
-      antiFiletApplique = true;
-    } else {
-      riveInitialeM = largeur;
-      antiFiletApplique = true;
-    }
-  }
-
-  let chuteDisponibleM = 0; // Chute récupérée en bout de ligne
 
   rangeesHauteursM.forEach((hauteurPiece, rangee) => {
     let xCumul = 0;
-    let colonne = 0;
 
-    while (xCumul < largeur - EPSILON_M) {
-      const spaceLeftM = largeur - xCumul;
-      
-      // 5.2 Détermination de la largeur théorique de la pièce
-      let theoreticalPieceM = dimModuleLargeurAxeM;
-      
-      if (rangee === 0 && colonne === 0) {
-        theoreticalPieceM = riveInitialeM; // Rive symétrique pour démarrer la façade
-      } else if (colonne === 0 && chuteDisponibleM >= 0.15) {
-        theoreticalPieceM = chuteDisponibleM; // Pose à l'avancement : réutilisation de la chute
-        chuteDisponibleM = 0; // Consommée
-      }
-
-      let largeurPiece = theoreticalPieceM;
-      let isLastPiece = false;
-
-      // Si la pièce dépasse le mur, on la coupe à la dimension restante
-      if (theoreticalPieceM > spaceLeftM - EPSILON_M) {
-        largeurPiece = spaceLeftM;
-        isLastPiece = true;
-        
-        // Calcul de la chute générée
-        const leftoverM = theoreticalPieceM - spaceLeftM - jointM;
-        if (leftoverM >= 0.15) {
-          chuteDisponibleM = leftoverM;
-        }
-      } else if (spaceLeftM - theoreticalPieceM < EPSILON_M) {
-        largeurPiece = spaceLeftM;
-        isLastPiece = true;
-      }
-
-      // Si c'est la dernière pièce et qu'on utilise un panneau entier
-      if (isLastPiece && theoreticalPieceM === dimModuleLargeurAxeM) {
-        const leftoverM = dimModuleLargeurAxeM - spaceLeftM - jointM;
-        if (leftoverM >= 0.15) {
-          chuteDisponibleM = leftoverM;
-        }
-      }
-
+    colonnesLargeursM.forEach((largeurPiece, colonne) => {
       const pieceX = xCumul;
       const rectangle: PointCalepinage[] = [
         { xM: pieceX, yM: yCumul },
@@ -910,8 +871,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       const surfaceM2 = airePolygone(points);
 
       if (surfaceM2 > EPSILON_M * EPSILON_M) {
+        const estRive = colonne === 0 || colonne === colonnesLargeursM.length - 1;
         const estCoupePignon = estPignon && points.length !== 4;
-        const estRiveOuCoupe = isLastPiece || colonne === 0 || Math.abs(largeurPiece - dimModuleLargeurAxeM) > EPSILON_M;
 
         let type: PieceCalepinage["type"] = "pleine";
         let repere = `M-${String(compteurPieces++).padStart(2, "0")}`;
@@ -919,13 +880,13 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
         if (estCoupePignon) {
           type = "pignon";
           repere = `P-${String(compteurPignons++).padStart(2, "0")}`;
-        } else if (estRiveOuCoupe) {
+        } else if (estRive) {
           type = "coupe";
           repere = `R-${String(compteurRives++).padStart(2, "0")}`;
         }
 
-        const largeurNetteMm = Math.max(50, Math.round(largeurPiece * 1000 - epaisseurJointMm));
-        const hauteurNetteMm = Math.max(50, Math.round(hauteurPiece * 1000 - epaisseurJointMm));
+        const largeurNetteMm = Math.max(50, Math.round(largeurPiece * 1000)); // L'optimiseur renvoie déjà la cote nette !
+        const hauteurNetteMm = Math.max(50, Math.round(hauteurPiece * 1000 - epaisseurJointMm)); // Hauteur est toujours en entraxe
 
         pieces.push({
           id: `piece-r${rangee}-c${colonne}`,
@@ -934,7 +895,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
           rangee,
           xM: pieceX,
           yM: yCumul,
-          largeurM: largeurPiece,
+          largeurM: largeurPiece, // C'est la cote nette, mais pour l'affichage SVG ça dessine les blocs
           hauteurM: hauteurPiece,
           largeurNetteMm,
           hauteurNetteMm,
@@ -944,12 +905,10 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
         });
       }
 
-      xCumul += largeurPiece;
-      if (!isLastPiece) xCumul += jointM; // Le joint est intégré sauf à la fin
-      colonne++;
-    }
+      xCumul += largeurPiece + jointM; // largeurPiece est nette, on ajoute le joint pour décaler le X de la pièce suivante
+    });
 
-    yCumul += hauteurPiece;
+    yCumul += hauteurPiece; // hauteurPiece est une cote Axe, donc elle inclut déjà l'espace du joint
   });
 
   const surfaceZoneM2 = pieces.reduce((s, p) => s + p.surfaceM2, 0);
