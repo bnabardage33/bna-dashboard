@@ -832,7 +832,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   let compteurPignons = 1;
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
-  const jointM = epaisseurJointMm / 1000;
   
   // 5.1 Calepinage centré : Calcul de la rive initiale pour la première rangée
   const nFullFirst = Math.floor((largeur + jointM) / (dimModuleLargeurAxeM + jointM));
