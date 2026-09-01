@@ -233,7 +233,7 @@ function ChantierDetailContent() {
         return {
           nette: acc.nette + c.surfaceNette,
           totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
-          ouvertures: acc.ouvertures + c.totalOuvertures,
+          ouvertures: acc.ouvertures + c.nombreOuvertures,
         };
       },
       { nette: 0, totalCoupesML: 0, ouvertures: 0 }
@@ -249,13 +249,16 @@ function ChantierDetailContent() {
       (chantier.singularites_nb ?? 0) !== singularites_nb;
 
     if (needsUpdate) {
+      // Mise à jour optimiste (immédiate) pour la réactivité entre onglets
+      setChantier(prev => prev ? { ...prev, surface_m2, quantite_coupes_ml, singularites_nb } : null);
+
       supabase
         .from("chantiers")
         .update({ surface_m2, quantite_coupes_ml, singularites_nb })
         .eq("id", chantier.id)
         .then(({ error }) => {
-          if (!error) {
-            setChantier(prev => prev ? { ...prev, surface_m2, quantite_coupes_ml, singularites_nb } : null);
+          if (error) {
+            console.error("Erreur sync calepinage -> chantier:", error);
           }
         });
     }

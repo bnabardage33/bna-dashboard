@@ -101,6 +101,8 @@ export function calculerZone(zone: Zone) {
       0
     );
 
+  const nombreOuvertures = zone.ouvertures.length;
+
   const surfaceNette = Math.max(
     0,
     bruteFacade +
@@ -117,7 +119,7 @@ export function calculerZone(zone: Zone) {
     surfaceNette * marge;
 
   let totalCoupesML = 0;
-  if (zone.materiau === "plaques_hpl" || zone.materiau === "fibres_ciment") {
+  if (zone.famille_pose === "hpl" || zone.materiau === "plaques_hpl" || zone.materiau === "fibres_ciment") {
     // Appel du calepinage pour obtenir les coupes
     const rawLongueurMm = zone.plaque_longueur_mm && zone.plaque_longueur_mm > 0 ? (zone.plaque_longueur_mm < 20 ? zone.plaque_longueur_mm * 1000 : zone.plaque_longueur_mm) : 3050;
     const rawLargeurMm = zone.plaque_largeur_mm && zone.plaque_largeur_mm > 0 ? (zone.plaque_largeur_mm < 20 ? zone.plaque_largeur_mm * 1000 : zone.plaque_largeur_mm) : 1300;
@@ -131,12 +133,14 @@ export function calculerZone(zone: Zone) {
       plaqueLargeurMm: rawLargeurMm,
       moduleLargeurMm: modLargeurMm,
       moduleHauteurMm: modHauteurMm,
-      sensPose: zone.sens_pose ?? "horizontal",
+      sensPose: zone.sens_pose,
+      typePose: "pose_droite",
       estPignon: zone.type === "pignon",
       hauteurFaiteM: zone.hauteur_faite,
-      ouvertures: zone.ouvertures.length > 0 ? zone.ouvertures.map(o => ({
-        id: o.id,
-        type: o.type === "fenetre" ? "fenetre" : "porte",
+      traitDeScieMm: 3,
+      jointMm: 8,
+      ouvertures: zone.ouvertures ? zone.ouvertures.map(o => ({
+        type: o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type,
         largeur: o.largeur,
         hauteur: o.hauteur,
         hauteurLinteauM: ((o.hauteurAllegeMm ?? 0) / 1000) + o.hauteur
@@ -150,6 +154,7 @@ export function calculerZone(zone: Zone) {
     brutePignon,
     pente,
     totalOuvertures,
+    nombreOuvertures,
     surfaceNette,
     surfaceACommander,
     totalCoupesML,
