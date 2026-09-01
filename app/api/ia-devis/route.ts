@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama3-70b-8192'; // On force la valeur pour ignorer la variable d'environnement Vercel (openai/gpt-oss-20b)
+const FALLBACK_MODEL = 'mixtral-8x7b-32768';
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,38 +54,57 @@ export async function POST(req: NextRequest) {
         "Applique ces mathématiques pour renseigner la clé 'qte' de ces lignes.";
     }
 
-    const groqResponse = await fetch(GROQ_URL, {
+    const requestPayload = {
+      model: GROQ_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: 'system',
+          content:
+            "Tu es un expert métreur en bâtiment. Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes." +
+            catalogueString +
+            reglesMetier +
+            "\n\nTU DOIS RÉPONDRE UNIQUEMENT AVEC UN OBJET JSON. AUCUN TEXTE AVANT, AUCUN TEXTE APRÈS, AUCUN FORMATAGE MARKDOWN.\n" +
+            "L'objet JSON doit contenir EXACTEMENT ces deux clés :\n" +
+            "1. \"brouillon_calculs\" : (String) Un espace où tu réfléchis. Sois EXTRÊMEMENT BREF, style télégramme. Fais tes calculs rapidement sans faire de phrases longues.\n" +
+            "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }."
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.2,
+      max_tokens: 2500,
+    };
+
+    let groqResponse = await fetch(GROQ_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: "Bearer " + process.env.GROQ_API_KEY,
       },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: 'system',
-            content:
-              "Tu es un expert métreur en bâtiment. Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes." +
-              catalogueString +
-              reglesMetier +
-              "\n\nTU DOIS RÉPONDRE UNIQUEMENT AVEC UN OBJET JSON. AUCUN TEXTE AVANT, AUCUN TEXTE APRÈS, AUCUN FORMATAGE MARKDOWN.\n" +
-              "L'objet JSON doit contenir EXACTEMENT ces deux clés :\n" +
-              "1. \"brouillon_calculs\" : (String) Un espace où tu réfléchis. Sois EXTRÊMEMENT BREF, style télégramme. Fais tes calculs rapidement sans faire de phrases longues.\n" +
-              "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }."
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.2,
-        max_tokens: 2500,
-      }),
+      body: JSON.stringify(requestPayload),
     });
 
     if (!groqResponse.ok) {
       const errText = await groqResponse.text();
-      console.error('Erreur Groq:', errText);
-      return NextResponse.json({ error: 'Erreur Groq: ' + errText }, { status: 502 });
+      // Auto-fallback si le modèle primaire n'est pas dispo
+      if (errText.includes("model_not_found") || errText.includes("does not exist")) {
+        console.log("Modèle principal introuvable, passage au fallback:", FALLBACK_MODEL);
+        requestPayload.model = FALLBACK_MODEL;
+        groqResponse = await fetch(GROQ_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: "Bearer " + process.env.GROQ_API_KEY,
+          },
+          body: JSON.stringify(requestPayload),
+        });
+      }
+      
+      if (!groqResponse.ok) {
+        const finalErrText = await groqResponse.text();
+        console.error('Erreur Groq:', finalErrText);
+        return NextResponse.json({ error: 'Erreur Groq: ' + finalErrText }, { status: 502 });
+      }
     }
 
     const groqData = await groqResponse.json();
