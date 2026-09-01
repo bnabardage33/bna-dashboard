@@ -49,21 +49,26 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           .order("id", { ascending: false })
           .limit(1);
 
-        if (data && data.length > 0 && data[0].details && typeof data[0].details === "object") {
-          const raw = data[0].details as Record<string, unknown>;
-          // Merge defensif : on ne prend que les valeurs connues, en fallback sur ETAT_INITIAL
-          const merged: EtatAvancement = { ...ETAT_INITIAL };
-          for (const f of FACADES) {
-            const facadeData = raw[f.id];
-            if (facadeData && typeof facadeData === "object") {
-              merged[f.id] = { ...ETAT_INITIAL[f.id] };
-              for (const e of ETAPES) {
-                const val = (facadeData as Record<string, unknown>)[e.id];
-                merged[f.id][e.id] = val === true;
+        if (data && data.length > 0) {
+          if (data[0].commentaire) {
+            setObservations(data[0].commentaire);
+          }
+          if (data[0].details && typeof data[0].details === "object") {
+            const raw = data[0].details as Record<string, unknown>;
+            // Merge defensif : on ne prend que les valeurs connues, en fallback sur ETAT_INITIAL
+            const merged: EtatAvancement = { ...ETAT_INITIAL };
+            for (const f of FACADES) {
+              const facadeData = raw[f.id];
+              if (facadeData && typeof facadeData === "object") {
+                merged[f.id] = { ...ETAT_INITIAL[f.id] };
+                for (const e of ETAPES) {
+                  const val = (facadeData as Record<string, unknown>)[e.id];
+                  merged[f.id][e.id] = val === true;
+                }
               }
             }
+            setEtat(merged);
           }
-          setEtat(merged);
         }
       } catch (err) {
         console.error("Erreur chargement avancement:", err);
@@ -119,7 +124,6 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
       alert("Erreur lors de l'enregistrement de l'avancement : " + error.message + "\nAssurez-vous d'avoir ajouté la colonne 'details' (jsonb) à la table avancements_chantier !");
     } else {
       alert("Avancement enregistré avec succès !");
-      setObservations("");
     }
     setSaving(false);
   };
