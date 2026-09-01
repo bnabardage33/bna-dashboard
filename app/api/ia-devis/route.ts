@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'mixtral-8x7b-32768'; // On force la valeur pour ignorer la variable d'environnement Vercel
-const FALLBACK_MODEL = 'mixtral-8x7b-32768';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_MODEL = 'claude-3-5-sonnet-20240620';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
         const text = `${c.designation} ${c.description || ''}`.toLowerCase();
         return keywords.some((kw: string) => text.includes(kw));
       });
-      // Garder les 15 plus pertinents max pour éviter d'exploser la limite Groq
+      // Garder les 15 plus pertinents max
       if (filteredCatalog.length > 15) {
         filteredCatalog = filteredCatalog.slice(0, 15);
       }
@@ -39,7 +38,6 @@ export async function POST(req: NextRequest) {
           designation: c.designation,
           unite: c.unite,
           pu_ht: c.pu_ht
-          // On retire 'description' qui est très lourd en tokens
         }))) + "\n\nConsigne IMPORTANTE : Si la demande correspond à un article du catalogue, utilise EXACTEMENT les prix, désignations du catalogue. Si la demande ne correspond à aucun article, invente une ligne cohérente avec un prix réaliste."
       : "";
 
@@ -54,73 +52,60 @@ export async function POST(req: NextRequest) {
         "Applique ces mathématiques pour renseigner la clé 'qte' de ces lignes.";
     }
 
+    const systemPrompt = 
+      "Tu es un expert métreur en bâtiment. Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes." +
+      catalogueString +
+      reglesMetier +
+      "\n\nTU DOIS RÉPONDRE UNIQUEMENT AVEC UN OBJET JSON. AUCUN TEXTE AVANT, AUCUN TEXTE APRÈS, AUCUN FORMATAGE MARKDOWN.\n" +
+      "L'objet JSON doit contenir EXACTEMENT ces deux clés :\n" +
+      "1. \"brouillon_calculs\" : (String) Un espace où tu réfléchis. Sois EXTRÊMEMENT BREF, style télégramme. Fais tes calculs rapidement sans faire de phrases longues.\n" +
+      "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }.";
+
     const requestPayload = {
-      model: GROQ_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: 'system',
-          content:
-            "Tu es un expert métreur en bâtiment. Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes." +
-            catalogueString +
-            reglesMetier +
-            "\n\nTU DOIS RÉPONDRE UNIQUEMENT AVEC UN OBJET JSON. AUCUN TEXTE AVANT, AUCUN TEXTE APRÈS, AUCUN FORMATAGE MARKDOWN.\n" +
-            "L'objet JSON doit contenir EXACTEMENT ces deux clés :\n" +
-            "1. \"brouillon_calculs\" : (String) Un espace où tu réfléchis. Sois EXTRÊMEMENT BREF, style télégramme. Fais tes calculs rapidement sans faire de phrases longues.\n" +
-            "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }."
-        },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.2,
+      model: ANTHROPIC_MODEL,
       max_tokens: 2500,
+      temperature: 0.2,
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: prompt }
+      ]
     };
 
-    let groqResponse = await fetch(GROQ_URL, {
+    const anthropicResponse = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: "Bearer " + process.env.GROQ_API_KEY,
+        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify(requestPayload),
     });
 
-    if (!groqResponse.ok) {
-      let errText = await groqResponse.text();
-      // Auto-fallback si le modèle primaire n'est pas dispo
-      if (errText.includes("model_not_found") || errText.includes("does not exist")) {
-        console.log("Modèle principal introuvable, passage au fallback:", FALLBACK_MODEL);
-        requestPayload.model = FALLBACK_MODEL;
-        groqResponse = await fetch(GROQ_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: "Bearer " + process.env.GROQ_API_KEY,
-          },
-          body: JSON.stringify(requestPayload),
-        });
-        
-        if (!groqResponse.ok) {
-          errText = await groqResponse.text();
-        }
-      }
-      
-      if (!groqResponse.ok) {
-        console.error('Erreur Groq:', errText);
-        return NextResponse.json({ error: 'Erreur Groq: ' + errText }, { status: 502 });
-      }
+    if (!anthropicResponse.ok) {
+      const errText = await anthropicResponse.text();
+      console.error('Erreur Anthropic:', errText);
+      return NextResponse.json({ error: 'Erreur Anthropic: ' + errText }, { status: 502 });
     }
 
-    const groqData = await groqResponse.json();
-    const texte = groqData.choices?.[0]?.message?.content ?? "";
+    const anthropicData = await anthropicResponse.json();
+    const texte = anthropicData.content?.[0]?.text ?? "";
     
-    // Avec response_format: json_object, on devrait recevoir un JSON valide directement
+    // Nettoyage au cas où Claude ajouterait du markdown
     let jsonString = texte.trim();
-    // Par sécurité supplémentaire au cas où le modèle renverrait quand même du markdown
     if (jsonString.startsWith("```json")) {
       jsonString = jsonString.replace(/```json/g, "").replace(/```/g, "").trim();
+    } else if (jsonString.startsWith("```")) {
+      jsonString = jsonString.replace(/```/g, "").trim();
     }
     
-    const result = JSON.parse(jsonString);
+    let result;
+    try {
+      result = JSON.parse(jsonString);
+    } catch (parseError) {
+      // En cas d'erreur de parsing, on log le texte brut pour débugger
+      console.error("Erreur de parsing JSON. Texte reçu :", jsonString);
+      throw new Error("Impossible de parser le JSON d'Anthropic.");
+    }
 
     if (!result.lignes_prestation || !Array.isArray(result.lignes_prestation)) {
       throw new Error("L'IA n'a pas renvoyé le tableau 'lignes_prestation'.");
