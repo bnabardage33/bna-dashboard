@@ -839,11 +839,14 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   let riveInitialeM = resteM / 2;
   
   // Anti-filet : Si la rive est trop petite (ex: < 150mm), on l'agrandit
+  let antiFiletApplique = false;
   if (riveInitialeM < 0.15) {
     if (nFullFirst >= 1) {
       riveInitialeM += (dimModuleLargeurAxeM + jointM) / 2;
+      antiFiletApplique = true;
     } else {
       riveInitialeM = largeur;
+      antiFiletApplique = true;
     }
   }
 
@@ -1058,5 +1061,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     modulesParPlaqueBrute,
     plaquesDebit,
     quincaillerie,
+    antiFiletApplique,
   };
 }
