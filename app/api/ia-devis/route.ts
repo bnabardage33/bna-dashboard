@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const ANTHROPIC_MODEL = 'claude-3-5-sonnet-20240620';
+import { generateText } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,36 +60,14 @@ export async function POST(req: NextRequest) {
       "1. \"brouillon_calculs\" : (String) Un espace où tu réfléchis. Sois EXTRÊMEMENT BREF, style télégramme. Fais tes calculs rapidement sans faire de phrases longues.\n" +
       "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }.";
 
-    const requestPayload = {
-      model: ANTHROPIC_MODEL,
-      max_tokens: 2500,
-      temperature: 0.2,
+    const { text: texte } = await generateText({
+      model: google('gemini-1.5-pro'),
       system: systemPrompt,
-      messages: [
-        { role: 'user', content: prompt }
-      ]
-    };
-
-    const anthropicResponse = await fetch(ANTHROPIC_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify(requestPayload),
+      prompt: prompt,
+      temperature: 0.2,
     });
-
-    if (!anthropicResponse.ok) {
-      const errText = await anthropicResponse.text();
-      console.error('Erreur Anthropic:', errText);
-      return NextResponse.json({ error: 'Erreur Anthropic: ' + errText }, { status: 502 });
-    }
-
-    const anthropicData = await anthropicResponse.json();
-    const texte = anthropicData.content?.[0]?.text ?? "";
     
-    // Nettoyage au cas où Claude ajouterait du markdown
+    // Nettoyage au cas où Gemini ajouterait du markdown
     let jsonString = texte.trim();
     if (jsonString.startsWith("```json")) {
       jsonString = jsonString.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -102,9 +79,8 @@ export async function POST(req: NextRequest) {
     try {
       result = JSON.parse(jsonString);
     } catch (parseError) {
-      // En cas d'erreur de parsing, on log le texte brut pour débugger
       console.error("Erreur de parsing JSON. Texte reçu :", jsonString);
-      throw new Error("Impossible de parser le JSON d'Anthropic.");
+      throw new Error("Impossible de parser le JSON de Gemini.");
     }
 
     if (!result.lignes_prestation || !Array.isArray(result.lignes_prestation)) {

@@ -9,8 +9,10 @@
     "lint": "eslint app components lib"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.59",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "ai": "^7.0.87",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "groq-sdk": "^1.5.0",
