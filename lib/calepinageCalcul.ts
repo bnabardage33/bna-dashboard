@@ -160,7 +160,6 @@ export interface QuincaillerieHPL {
 }
 
 export interface ResultatCalepinage {
-  colonnesLargeursM: number[];
   rangeesHauteursM: number[];
   pieces: PieceCalepinage[];
   nbPlaquesNecessaires: number;     // Nombre de plaques brutes à commander
@@ -799,13 +798,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
 
   // ================================================================
   // 3. DTU 45.4 HPL — CALEPINAGE HORIZONTAL (COLONNES / LARGEUR)
-  //    Mode B : Répartition symétrique avec règle anti-filet ≥ 300 mm
+  //    Remplacé par la Pose à l'Avancement (Calculé dans la boucle de génération)
   // ================================================================
-  const { largeurs: colonnesLargeursM, antiFiletApplique } = axeSymetriqueHPL(
-    largeur,
-    dimModuleLargeurAxeMm,
-    epaisseurJointMm
-  );
 
   // ================================================================
   // 4. DTU 45.4 HPL — CALEPINAGE VERTICAL (RANGÉES / HAUTEUR)
@@ -838,16 +832,67 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   let compteurPignons = 1;
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
+  const jointM = epaisseurJointMm / 1000;
+  
+  // 5.1 Calepinage centré : Calcul de la rive initiale pour la première rangée
+  const nFullFirst = Math.floor((largeur + jointM) / (dimModuleLargeurAxeM + jointM));
+  let resteM = (largeur + jointM) - nFullFirst * (dimModuleLargeurAxeM + jointM);
+  let riveInitialeM = resteM / 2;
+  
+  // Anti-filet : Si la rive est trop petite (ex: < 150mm), on l'agrandit
+  if (riveInitialeM < 0.15) {
+    if (nFullFirst >= 1) {
+      riveInitialeM += (dimModuleLargeurAxeM + jointM) / 2;
+    } else {
+      riveInitialeM = largeur;
+    }
+  }
+
+  let chuteDisponibleM = 0; // Chute récupérée en bout de ligne
 
   rangeesHauteursM.forEach((hauteurPiece, rangee) => {
     let xCumul = 0;
+    let colonne = 0;
 
-    // Décalage pour pose à joints croisés (rectangulaire 1/2)
-    if (modePose === "joints_croises" && rangee % 2 === 1) {
-      xCumul = dimModuleLargeurAxeM / 2;
-    }
+    while (xCumul < largeur - EPSILON_M) {
+      const spaceLeftM = largeur - xCumul;
+      
+      // 5.2 Détermination de la largeur théorique de la pièce
+      let theoreticalPieceM = dimModuleLargeurAxeM;
+      
+      if (rangee === 0 && colonne === 0) {
+        theoreticalPieceM = riveInitialeM; // Rive symétrique pour démarrer la façade
+      } else if (colonne === 0 && chuteDisponibleM >= 0.15) {
+        theoreticalPieceM = chuteDisponibleM; // Pose à l'avancement : réutilisation de la chute
+        chuteDisponibleM = 0; // Consommée
+      }
 
-    colonnesLargeursM.forEach((largeurPiece, colonne) => {
+      let largeurPiece = theoreticalPieceM;
+      let isLastPiece = false;
+
+      // Si la pièce dépasse le mur, on la coupe à la dimension restante
+      if (theoreticalPieceM > spaceLeftM - EPSILON_M) {
+        largeurPiece = spaceLeftM;
+        isLastPiece = true;
+        
+        // Calcul de la chute générée
+        const leftoverM = theoreticalPieceM - spaceLeftM - jointM;
+        if (leftoverM >= 0.15) {
+          chuteDisponibleM = leftoverM;
+        }
+      } else if (spaceLeftM - theoreticalPieceM < EPSILON_M) {
+        largeurPiece = spaceLeftM;
+        isLastPiece = true;
+      }
+
+      // Si c'est la dernière pièce et qu'on utilise un panneau entier
+      if (isLastPiece && theoreticalPieceM === dimModuleLargeurAxeM) {
+        const leftoverM = dimModuleLargeurAxeM - spaceLeftM - jointM;
+        if (leftoverM >= 0.15) {
+          chuteDisponibleM = leftoverM;
+        }
+      }
+
       const pieceX = xCumul;
       const rectangle: PointCalepinage[] = [
         { xM: pieceX, yM: yCumul },
@@ -863,8 +908,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       const surfaceM2 = airePolygone(points);
 
       if (surfaceM2 > EPSILON_M * EPSILON_M) {
-        const estRive = colonne === 0 || colonne === colonnesLargeursM.length - 1;
         const estCoupePignon = estPignon && points.length !== 4;
+        const estRiveOuCoupe = isLastPiece || colonne === 0 || Math.abs(largeurPiece - dimModuleLargeurAxeM) > EPSILON_M;
 
         let type: PieceCalepinage["type"] = "pleine";
         let repere = `M-${String(compteurPieces++).padStart(2, "0")}`;
@@ -872,12 +917,11 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
         if (estCoupePignon) {
           type = "pignon";
           repere = `P-${String(compteurPignons++).padStart(2, "0")}`;
-        } else if (estRive || Math.abs(largeurPiece - dimModuleLargeurAxeM) > EPSILON_M) {
+        } else if (estRiveOuCoupe) {
           type = "coupe";
           repere = `R-${String(compteurRives++).padStart(2, "0")}`;
         }
 
-        // Cote nette débitée : la plaque réelle est déduite du joint de 8 mm
         const largeurNetteMm = Math.max(50, Math.round(largeurPiece * 1000 - epaisseurJointMm));
         const hauteurNetteMm = Math.max(50, Math.round(hauteurPiece * 1000 - epaisseurJointMm));
 
@@ -894,12 +938,14 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
           hauteurNetteMm,
           type,
           surfaceM2,
-          points: estCoupePignon ? points : undefined, // Ne conserve points que si pignon coupé
+          points: estCoupePignon ? points : undefined,
         });
       }
 
       xCumul += largeurPiece;
-    });
+      if (!isLastPiece) xCumul += jointM; // Le joint est intégré sauf à la fin
+      colonne++;
+    }
 
     yCumul += hauteurPiece;
   });
@@ -943,12 +989,16 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       ? (totalDechetsPerteM2 / surfacePlaquesAchetesM2) * 100
       : 0;
 
-  // 8. CALCULS DES JOINTS DE DILATATION (8 MM DTU 45.4)
-  const nbJointsVerticaux = Math.max(0, colonnesLargeursM.length - 1) * rangeesHauteursM.length;
-  const nbJointsHorizontaux =
-    Math.max(0, rangeesHauteursM.length - 1) * colonnesLargeursM.length;
-
-  const lineaireJointsVerticauxM = Math.max(0, colonnesLargeursM.length - 1) * hauteurTotale;
+  // 8. RÉSUMÉ ET MÉTADONNÉES DE POSE
+  // ================================================================
+  
+  // Total vertical joints = total pieces minus the first piece of each row
+  const nbJointsVerticaux = pieces.length - rangeesHauteursM.length;
+  // Total horizontal joints = one per row transition
+  const nbJointsHorizontaux = Math.max(0, rangeesHauteursM.length - 1);
+  
+  // Le linéaire des joints verticaux est la somme des hauteurs de toutes les pièces (sauf la première de chaque rangée)
+  const lineaireJointsVerticauxM = pieces.reduce((s, p) => p.colonne > 0 ? s + p.hauteurM : s, 0);
   const lineaireJointsHorizontauxM = Math.max(0, rangeesHauteursM.length - 1) * largeur;
   const lineaireJointsM = lineaireJointsVerticauxM + lineaireJointsHorizontauxM;
   const surfaceJointsM2 = lineaireJointsM * jointM;
@@ -980,7 +1030,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   );
 
   return {
-    colonnesLargeursM,
     rangeesHauteursM,
     pieces,
     nbPlaquesNecessaires,
