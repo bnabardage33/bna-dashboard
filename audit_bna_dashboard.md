@@ -349,3 +349,18 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 - Le `useEffect` intercepte ces paramètres, parse le titre pour extraire les dimensions L x l x Ep (calcul en mm) et ouvre le formulaire pré-rempli.
 
 ---
+
+### Migration & Sécurisation de l'API IA (01 Septembre)
+- **Migration vers Anthropic (Claude 3.5 Sonnet)** : Suite à une forte instabilité de l'API Groq (limites TPM trop basses, décommissionnement imprévisible des modèles), le backend d'intelligence artificielle (`app/api/ia-devis/route.ts`) a été entièrement réécrit pour se connecter à l'API d'Anthropic.
+- **Résolution du Double-Read de Stream** : Correction d'un bug bloquant (`Body has already been read`) qui faisait planter l'API lors de l'interception d'une erreur (le buffer n'est désormais lu qu'une seule fois).
+- **Optimisation du Context Window** : La taille du payload envoyé à l'IA a été drastiquement réduite : les descriptions de produits ne sont plus injectées, et le nombre maximal d'articles de contexte a été plafonné à 15 (sélectionnés par pertinence de mots-clés) pour garantir un chiffrage rapide sans exploser les limites.
+- **Pivot vers Vercel AI SDK & Gemini 1.5 Pro (01 Septembre)** : Remplacement définitif de l'API Anthropic et Groq par le SDK officiel de Vercel (`@ai-sdk/google`) couplé à Gemini 1.5 Pro. La logique de parsing strict (Chain of Thought + Tableau final) et les règles de calcul DTU sont préservées, offrant ainsi une architecture d'entreprise robuste, native à Next.js, et insensible aux changements brusques de modèles des petits providers.
+
+### Synchronisation Dashboard Pro / Portail Client (01 Septembre)
+- **Nettoyage UI Mobile** : Suppression du double "header" noir (`<header>` redondant dans `page.tsx`) et nettoyage des règles CSS forcées qui cassaient la mise en page sous l'enveloppe du Layout principal (`app/layout.tsx`).
+- **Date de fin estimée dynamique** : Correction de la date "15 déc. 2024" qui était écrite en dur. Le code lit désormais `date_fin_estimee` dans la table `chantiers` (via API). S'il n'y a pas de date ou si la date est dépassée, un fallback intelligent (`"Date à redéfinir"`) ou recalculé (`created_at + 2 mois`) s'affiche via `toLocaleDateString`.
+- **Refonte logique d'Avancement (Tâches & Façades)** :
+  - **Unification du calcul** : Le pourcentage global n'est plus une simple donnée copiée (risquant des désynchronisations) mais est désormais calculé dynamiquement *à la volée* côté client (`(Total tâches cochées / Total tâches globales) * 100`) en se basant strictement sur le JSON détaillé de l'avancement.
+  - **API enrichie** : Ajout du champ JSON `details` dans la sélection Supabase de l'API `/api/espace-client/[code_acces]/route.ts`.
+  - **Badges d'avancement dynamiques** : Le portail client affiche maintenant une grille dynamique (`grid-cols-2`) pour les 4 façades, basculant entre "Terminée" (vert), "En cours" (orange) et "À commencer" (gris) en fonction du nombre précis de sous-tâches validées pour chaque façade.
+  - **Correction des Observations** : Résolution du bug qui vidait la zone de texte du commentaire/observation lors de l'enregistrement de l'avancement sur le dashboard pro. Ajout de l'extraction de la colonne `commentaire` depuis la base de données (`fetchAvancement` dans `AvancementFacades.tsx`) afin que la dernière note saisie se recharge correctement au démarrage du composant.
