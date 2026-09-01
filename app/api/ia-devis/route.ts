@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       "2. \"lignes_prestation\" : (Tableau d'objets) Le tableau final contenant uniquement les lignes du devis avec EXACTEMENT cette structure : { \"designation\": \"Titre court\", \"description\": \"Détail technique (à générer toi-même)\", \"qte\": 1, \"unite\": \"forfait\", \"pu_ht\": 100 }.";
 
     const { text: texte } = await generateText({
-      model: googleProvider('gemini-1.5-pro'),
+      model: googleProvider('gemini-1.5-pro-latest'),
       system: systemPrompt,
       prompt: prompt,
       temperature: 0.2,
