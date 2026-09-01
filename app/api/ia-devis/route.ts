@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama3-70b-8192'; // On force la valeur pour ignorer la variable d'environnement Vercel (openai/gpt-oss-20b)
+const GROQ_MODEL = 'mixtral-8x7b-32768'; // On force la valeur pour ignorer la variable d'environnement Vercel
 const FALLBACK_MODEL = 'mixtral-8x7b-32768';
 
 export async function POST(req: NextRequest) {
