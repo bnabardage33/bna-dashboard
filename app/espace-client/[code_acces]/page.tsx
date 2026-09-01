@@ -304,19 +304,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     <div className="min-h-screen bg-white text-slate-900 pb-[130px] font-sans relative">
       <style dangerouslySetInnerHTML={{__html: `
         html, body { background: white !important; }
-        div[class*="bg-slate-900"], div[class*="bg-[#0"] { display: none !important; }
       `}} />
-      {/* Header */}
-      <header className="bg-black h-[88px] px-4 flex items-center justify-between rounded-b-[28px] relative z-0">
-        <img
-          src="/logo-bna.png"
-          alt="BNA Bardage"
-          className="h-[74px] w-auto object-contain"
-        />
-        <span className="text-white font-bold text-[13.5px] tracking-wide whitespace-nowrap">BNA - Service Client</span>
-      </header>
 
-      <main className="p-4 max-w-3xl mx-auto space-y-6 -mt-4 relative z-10">
+      <main className="p-4 pt-2 max-w-3xl mx-auto space-y-6 relative z-10">
         
         {/* CARTE TITRE */}
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
