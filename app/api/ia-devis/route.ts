@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!groqResponse.ok) {
-      const errText = await groqResponse.text();
+      let errText = await groqResponse.text();
       // Auto-fallback si le modèle primaire n'est pas dispo
       if (errText.includes("model_not_found") || errText.includes("does not exist")) {
         console.log("Modèle principal introuvable, passage au fallback:", FALLBACK_MODEL);
@@ -98,12 +98,15 @@ export async function POST(req: NextRequest) {
           },
           body: JSON.stringify(requestPayload),
         });
+        
+        if (!groqResponse.ok) {
+          errText = await groqResponse.text();
+        }
       }
       
       if (!groqResponse.ok) {
-        const finalErrText = await groqResponse.text();
-        console.error('Erreur Groq:', finalErrText);
-        return NextResponse.json({ error: 'Erreur Groq: ' + finalErrText }, { status: 502 });
+        console.error('Erreur Groq:', errText);
+        return NextResponse.json({ error: 'Erreur Groq: ' + errText }, { status: 502 });
       }
     }
 
