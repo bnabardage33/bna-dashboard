@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
           { role: 'user', content: prompt },
         ],
         temperature: 0.2,
+        max_tokens: 8192,
       }),
     });
 
@@ -106,6 +107,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Erreur IA Devis:', message);
-    return NextResponse.json({ error: "L'IA n'a pas pu générer une ligne de devis valide pour cette demande. Reformule ta demande." }, { status: 500 });
+    return NextResponse.json({ error: "L'IA a échoué: " + message }, { status: 500 });
   }
 }
