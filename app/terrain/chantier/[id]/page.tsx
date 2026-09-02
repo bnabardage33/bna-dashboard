@@ -726,7 +726,7 @@ function ChantierDetailContent() {
 
           
         {/* ==================== CONFIGURATION GLOBALE ==================== */}
-        {zones.some(z => z.famille_pose === "hpl" || (z.materiau as string) === "plaques_hpl") && (
+        {true && (
           <div className="mb-6 rounded-xl border border-white/10 bg-[#11141D] p-5 shadow-xl relative overflow-hidden">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
               <span className="text-red-500">⚙️</span> Configuration Matérielle Globale
@@ -812,7 +812,7 @@ setIsGlobalCalculated(false);
                 key={zone.id}
                 zone={zone}
                 globalCalepinage={calepinageGlobalResult?.resultatsMur?.[zone.id]}
-                mode={isGlobalCalculated ? "resultat" : "saisie"}
+                mode={(isGlobalCalculated || (zone.famille_pose !== "hpl" && zone.materiau !== "plaques_hpl" && zone.materiau !== "fibres_ciment")) ? "resultat" : "saisie"}
                 zoneVent={chantier.zone_vent}
                 onChange={updateZone}
                 onDelete={supprimerZone}
