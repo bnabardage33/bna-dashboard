@@ -259,7 +259,7 @@ export default function VisualiseurDebitPlaques({
                 const isRive = piece.type === "coupe";
                 const isPignon = piece.type === "pignon";
 
-                const couleurFond = isPignon ? "#f59e0b" : isRive ? "#38bdf8" : "#0284c7";
+                const couleurFond = isPignon ? "#f59e0b" : isRive ? "#ef4444" : "#dc2626";
                 const strokeCouleur = isPignon ? "#fbbf24" : isRive ? "#7dd3fc" : "#38bdf8";
 
                 return (
@@ -318,7 +318,7 @@ export default function VisualiseurDebitPlaques({
               <span className="text-gray-300">Modules pleins (M)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-3.5 w-3.5 rounded bg-gray-300 border border-sky-200" />
+              <div className="h-3.5 w-3.5 rounded bg-gray-300 border border-red-200" />
               <span className="text-gray-300">Rives ajustées (R)</span>
             </div>
             <div className="flex items-center gap-1.5">
