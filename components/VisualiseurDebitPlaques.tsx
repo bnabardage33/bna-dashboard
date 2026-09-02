@@ -9,7 +9,7 @@ export default function VisualiseurDebitPlaques({
   calepinage,
   titreZone,
 }: {
-  calepinage: ResultatCalepinage;
+  calepinage: any;
   titreZone?: string;
 }) {
   const [plaqueIndex, setPlaqueIndex] = useState<number>(0);
@@ -44,15 +44,15 @@ export default function VisualiseurDebitPlaques({
           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Plaques Mères</p>
           <p className="mt-0.5 text-lg font-black text-white">{calepinage.nbPlaquesNecessaires} pcs</p>
           <p className="text-[10px] text-gray-400 font-mono">
-            {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
+            {(calepinage.plaqueBruteLongueurMm || calepinage.plaquesDebit?.[0]?.longueurMm || 0)}×{(calepinage.plaqueBruteLargeurMm || calepinage.plaquesDebit?.[0]?.largeurMm || 0)} mm
           </p>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Modules Posés</p>
-          <p className="mt-0.5 text-lg font-black text-gray-300">{calepinage.nbPiecesPosees} modules</p>
+          <p className="mt-0.5 text-lg font-black text-gray-300">{(calepinage.nbPiecesPosees || calepinage.pieces?.length || 0)} modules</p>
           <p className="text-[10px] text-gray-400 font-mono">
-            Net: {calepinage.surfaceZoneM2.toFixed(2)} m²
+            Net: {(calepinage.surfaceZoneM2 || calepinage.pieces?.reduce((s: number, p: any) => s + p.surfaceM2, 0) || 0).toFixed(2)} m²
           </p>
         </div>
 
@@ -60,7 +60,7 @@ export default function VisualiseurDebitPlaques({
           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Rendement Moyen</p>
           <p className="mt-0.5 text-lg font-black text-white">
             {(
-              plaques.reduce((s, p) => s + p.tauxRendementPct, 0) / plaques.length
+              plaques.reduce((s: number, p: any) => s + p.tauxRendementPct, 0) / plaques.length
             ).toFixed(1)}{" "}
             %
           </p>
@@ -89,7 +89,7 @@ export default function VisualiseurDebitPlaques({
       {/* 2. Barre de Navigation entre les Plaques */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          {plaques.map((plaque, idx) => (
+          {plaques.map((plaque: any, idx: number) => (
             <button
               key={plaque.index}
               onClick={() => setPlaqueIndex(idx)}
