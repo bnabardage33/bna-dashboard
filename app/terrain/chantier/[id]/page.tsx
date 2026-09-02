@@ -145,7 +145,7 @@ function ChantierDetailContent() {
         traitDeScieMm: globalConfigHPL.traitDeScieMm,
         sensPose: globalConfigHPL.sensPose as "horizontal" | "vertical",
         estPignon: z.type === "pignon",
-        typePose: "pose_droite", // default
+        typePose: "pose_droite" as const, // default
         ouvertures: z.ouvertures ? z.ouvertures.map(o => ({
           type: (o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type) as "porte"|"fenetre",
           largeur: o.largeur,
