@@ -412,7 +412,7 @@ function decouperParPignon(
 /**
  * Moteur d'imbrication 2D (Nesting 2D Guillotine) & Générateur de Plan de Découpe Plaque par Plaque
  */
-function genererPlanDebitNesting(
+export function genererPlanDebitNesting(
   pieces: PieceCalepinage[],
   plaqueBruteLongueurMm: number,
   plaqueBruteLargeurMm: number,

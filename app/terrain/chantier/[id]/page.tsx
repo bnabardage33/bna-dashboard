@@ -1,12 +1,15 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
+import SaisieGlobaleCalepinage from "@/components/SaisieGlobaleCalepinage";
+import { genererCalepinageGlobal } from "@/lib/calepinageEngine";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import CommandeModal from "@/components/CommandeModal";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
+import PlanCalepinage from "@/components/PlanCalepinage";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
 import AvancementFacades from "@/components/AvancementFacadesWrapper";
@@ -127,6 +130,7 @@ function ChantierDetailContent() {
   
   const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any>(null);
   const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
+  const [activeMurs, setActiveMurs] = useState<any[]>([]);
   
   function lancerCalepinageGlobal() {
     if (zones.length === 0) return;
@@ -725,108 +729,37 @@ function ChantierDetailContent() {
           )}
 
           
-        {/* ==================== CONFIGURATION GLOBALE ==================== */}
-        {true && (
-          <div className="mb-6 rounded-xl border border-white/10 bg-[#11141D] p-5 shadow-xl relative overflow-hidden">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-              <span className="text-red-500">⚙️</span> Configuration Matérielle Globale
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5 relative z-10">
-              <div>
-                <label className="block text-[11px] uppercase text-gray-400 font-bold mb-1">Taille Plaque Brute (mm)</label>
-                <select 
-                  value={`${globalConfigHPL.plaqueLongueurMm}x${globalConfigHPL.plaqueLargeurMm}`}
-                  onChange={(e) => {
-                    const [l, w] = e.target.value.split('x');
-                    setGlobalConfigHPL(p => ({...p, plaqueLongueurMm: parseInt(l), plaqueLargeurMm: parseInt(w)}));
-                    setCalepinageGlobalResult(null);
-setIsGlobalCalculated(false);
-                  }}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
-                >
-                  <option value="3050x1300">Trespa (3050 × 1300)</option>
-                  <option value="2550x1860">Fundermax M (2550 × 1860)</option>
-                  <option value="4100x1854">Fundermax XL (4100 × 1854)</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-[11px] uppercase text-gray-400 font-bold mb-1">Largeur Cible (mm)</label>
-                <input 
-                  type="number" 
-                  value={globalConfigHPL.moduleLargeurMm}
-                  onChange={(e) => {
-                    setGlobalConfigHPL(p => ({...p, moduleLargeurMm: parseInt(e.target.value) || 1000}));
-                    setCalepinageGlobalResult(null);
-setIsGlobalCalculated(false);
-                  }}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[11px] uppercase text-gray-400 font-bold mb-1">Hauteur de ligne (mm)</label>
-                <input 
-                  type="number" 
-                  value={globalConfigHPL.moduleHauteurMm}
-                  onChange={(e) => {
-                    setGlobalConfigHPL(p => ({...p, moduleHauteurMm: parseInt(e.target.value) || 600}));
-                    setCalepinageGlobalResult(null);
-setIsGlobalCalculated(false);
-                  }}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[11px] uppercase text-gray-400 font-bold mb-1">Sens de pose</label>
-                <select 
-                  value={globalConfigHPL.sensPose}
-                  onChange={(e) => {
-                    setGlobalConfigHPL(p => ({...p, sensPose: e.target.value as "horizontal"|"vertical"}));
-                    setCalepinageGlobalResult(null);
-setIsGlobalCalculated(false);
-                  }}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
-                >
-                  <option value="horizontal">Horizontal</option>
-                  <option value="vertical">Vertical</option>
-                </select>
-              </div>
-            </div>
-            
-            <button
-              onClick={lancerCalepinageGlobal}
-              className="w-full md:w-auto bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-            >
-              Générer le Débit Global du Chantier
-            </button>
-          </div>
-        )}
         
-        <div className="space-y-4">
-            {zones.map((zone) => (
-
-              <ZoneCard
-                key={zone.id}
-                zone={zone}
-                globalCalepinage={calepinageGlobalResult?.resultatsMur?.[zone.id]}
-                mode={(isGlobalCalculated || (zone.famille_pose !== "hpl" && zone.materiau !== "plaques_hpl" && zone.materiau !== "fibres_ciment")) ? "resultat" : "saisie"}
-                zoneVent={chantier.zone_vent}
-                onChange={updateZone}
-                onDelete={supprimerZone}
-                onCreerCommande={handleCreerCommande}
-              />
+        {/* ==================== CONFIGURATION GLOBALE ==================== */}
+        <SaisieGlobaleCalepinage 
+          zonesExistantes={zones} 
+          onValider={(input) => {
+            const res = genererCalepinageGlobal(input);
+            setCalepinageGlobalResult(res.calepinageGlobal as any);
+            setActiveMurs(input.murs);
+            setIsGlobalCalculated(true);
+            console.log("Ossatures générées :", res.ossatures);
+          }} 
+        />
+        
+<div className="space-y-4">
+            {isGlobalCalculated && activeMurs.map((mur) => (
+              <div key={mur.id} className="mb-4">
+                <h3 className="text-xl font-bold text-white mb-2">{mur.nom}</h3>
+                <PlanCalepinage 
+                  calepinage={calepinageGlobalResult?.resultatsMur?.[mur.id] || null} 
+                  largeurM={mur.largeurM}
+                  hauteurM={mur.hauteurM}
+                  hauteurFaiteReelleM={mur.hauteurFaiteM || null}
+                  pose={null}
+                  estPignon={mur.estPignon || false}
+                />
+              </div>
             ))}
+            
           </div>
 
-          <button
-            onClick={ajouterZone}
-            className="w-full rounded-xl border border-dashed border-white/10 py-3 text-sm font-medium text-gray-400 hover:border-red-600/40 hover:text-red-400"
-          >
-            + Ajouter une zone
-          </button>
+{/* Add zone hidden by new engine */}
         </div>
       )}
 
