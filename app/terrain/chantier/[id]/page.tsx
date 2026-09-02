@@ -130,6 +130,7 @@ function ChantierDetailContent() {
   
   const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any>(null);
   const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
+  const [savedGlobalInput, setSavedGlobalInput] = useState<any>(null);
   const [modalGlobalDebitOuvert, setModalGlobalDebitOuvert] = useState(false);
   const [activeMurs, setActiveMurs] = useState<any[]>([]);
   
@@ -263,6 +264,22 @@ function ChantierDetailContent() {
     }
     setLoadingDocs(false);
   }, [id, chantier?.client_id]);
+
+  
+  useEffect(() => {
+    if (chantier?.id) {
+      const saved = localStorage.getItem('calepinage_' + chantier.id);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          if (data.input) setSavedGlobalInput(data.input);
+          if (data.result) setCalepinageGlobalResult(data.result);
+          if (data.activeMurs) setActiveMurs(data.activeMurs);
+          if (data.isCalculated) setIsGlobalCalculated(true);
+        } catch (e) {}
+      }
+    }
+  }, [chantier?.id]);
 
   useEffect(() => {
     setLoading(true);
@@ -733,13 +750,23 @@ function ChantierDetailContent() {
         
         {/* ==================== CONFIGURATION GLOBALE ==================== */}
         <SaisieGlobaleCalepinage 
-          zonesExistantes={zones} 
+          zonesExistantes={zones} savedInput={savedGlobalInput} 
           onValider={(input) => {
             const res = genererCalepinageGlobal(input);
             setCalepinageGlobalResult(res.calepinageGlobal as any);
             setActiveMurs(input.murs);
             setIsGlobalCalculated(true);
-            console.log("Ossatures générées :", res.ossatures);
+            setSavedGlobalInput(input);
+            
+            // Sauvegarder dans le navigateur
+            if (chantier?.id) {
+              localStorage.setItem('calepinage_' + chantier.id, JSON.stringify({
+                input: input,
+                result: res.calepinageGlobal,
+                activeMurs: input.murs,
+                isCalculated: true
+              }));
+            }
           }} 
         />
         

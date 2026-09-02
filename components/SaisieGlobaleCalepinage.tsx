@@ -3,13 +3,14 @@ import { MurInput, OuvertureDetail, ProjetCalepinageInput } from '../lib/calepin
 
 interface SaisieGlobaleCalepinageProps {
   onValider: (input: ProjetCalepinageInput) => void;
-  zonesExistantes: any[]; // On peut pré-remplir avec les zones déjà créées
+  zonesExistantes: any[];
+  savedInput?: any; // On peut pré-remplir avec les zones déjà créées
 }
 
-export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: SaisieGlobaleCalepinageProps) {
-  const [murDeplie, setMurDeplie] = useState<string | null>(zonesExistantes[0]?.id || null);
+export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, savedInput }: SaisieGlobaleCalepinageProps) {
+  const [murDeplie, setMurDeplie] = useState<string | null>(savedInput?.murs?.[0]?.id || zonesExistantes[0]?.id || null);
   const [murs, setMurs] = useState<MurInput[]>(
-    zonesExistantes.map(z => ({
+    savedInput?.murs || zonesExistantes.map(z => ({
       id: z.id,
       nom: z.nom || 'Façade',
       largeurM: z.largeur,
@@ -20,10 +21,10 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
     }))
   );
 
-  const [plaque, setPlaque] = useState({ longueurMm: 3050, largeurMm: 1300 });
-  const [moduleCible, setModuleCible] = useState({ largeurMm: 1000, hauteurMm: 600 });
-  const [sensPose, setSensPose] = useState<"horizontal" | "vertical">("horizontal");
-  const [isolant, setIsolant] = useState({
+  const [plaque, setPlaque] = useState(savedInput?.plaqueBrute || { longueurMm: 3050, largeurMm: 1300 });
+  const [moduleCible, setModuleCible] = useState(savedInput?.moduleCible || { largeurMm: 1000, hauteurMm: 600 });
+  const [sensPose, setSensPose] = useState<"horizontal" | "vertical">(savedInput?.sensPose || "horizontal");
+  const [isolant, setIsolant] = useState(savedInput?.isolant || {
     actif: true,
     type: "laine_roche",
     epaisseurMm: 120,
