@@ -836,16 +836,18 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   
   // 5.1 Calepinage Adaptatif Symétrique : Optimisation de la largeur des colonnes
   const traitDeScieM = (traitDeScieMm ?? 3) / 1000;
+  const plaqueL_M = (sens === "vertical" ? rawLargeurMm : rawLongueurMm) / 1000;
+  const plaqueH_M = (sens === "vertical" ? rawLongueurMm : rawLargeurMm) / 1000;
+
   const opt = trouverMeilleureGrilleSymetrique(
     largeur,
     hauteurMur,
     hauteurFaite,
     jointM,
     rangeesHauteursM[0] || dimModuleHauteurAxeMm / 1000,
-    rawLongueurMm / 1000,
-    rawLargeurMm / 1000,
-    traitDeScieM,
-    sens
+    plaqueL_M,
+    plaqueH_M,
+    traitDeScieM
   );
   
   const colonnesLargeursM = opt.largeurs;
