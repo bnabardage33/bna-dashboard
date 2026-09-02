@@ -1333,9 +1333,9 @@ export default function ZoneCard({
         </div>
       )}
 
-        </div>
-      )}
       </>
+      )}
+        </div>
       )}
     </div>
   );
