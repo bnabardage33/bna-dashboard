@@ -92,7 +92,7 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
                 <option value="laine_roche">Roche</option>
                 <option value="laine_verre">Verre</option>
               </select>
-              <select value={isolant.epaisseurMm} onChange={e => setIsolant({...isolant, epaisseurMm: +e.target.value})} className="bg-gray-900 text-xs text-white p-2 rounded border border-gray-600">
+              <select value={isolant.epaisseurMm} onChange={e => setIsolant({...isolant, epaisseurMm: e.target.value})} className="bg-gray-900 text-xs text-white p-2 rounded border border-gray-600">
                 <option value={80}>80 mm</option>
                 <option value={100}>100 mm</option>
                 <option value={120}>120 mm</option>
@@ -102,7 +102,7 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
               </select>
               <div className="flex flex-col">
                 <span className="text-[10px] text-gray-400">m²/paquet</span>
-                <input type="number" step="0.1" value={isolant.surfacePaquetM2} onChange={e => setIsolant({...isolant, surfacePaquetM2: +e.target.value})} className="bg-gray-900 text-xs text-white p-1 rounded border border-gray-600" />
+                <input type="number" step="0.1" value={isolant.surfacePaquetM2} onChange={e => setIsolant({...isolant, surfacePaquetM2: e.target.value})} className="bg-gray-900 text-xs text-white p-1 rounded border border-gray-600" />
               </div>
             </div>
           )}
@@ -110,15 +110,15 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
         <div>
           <label className="block text-xs uppercase text-gray-400 font-bold mb-1">Plaque Brute (L x l mm)</label>
           <div className="flex gap-2">
-            <input type="number" value={plaque.longueurMm} onChange={e => setPlaque({...plaque, longueurMm: +e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
-            <input type="number" value={plaque.largeurMm} onChange={e => setPlaque({...plaque, largeurMm: +e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
+            <input type="number" value={plaque.longueurMm} onChange={e => setPlaque({...plaque, longueurMm: e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
+            <input type="number" value={plaque.largeurMm} onChange={e => setPlaque({...plaque, largeurMm: e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
           </div>
         </div>
         <div>
           <label className="block text-xs uppercase text-gray-400 font-bold mb-1">Module Cible (L x H mm)</label>
           <div className="flex gap-2">
-            <input type="number" value={moduleCible.largeurMm} onChange={e => setModuleCible({...moduleCible, largeurMm: +e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
-            <input type="number" value={moduleCible.hauteurMm} onChange={e => setModuleCible({...moduleCible, hauteurMm: +e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
+            <input type="number" value={moduleCible.largeurMm} onChange={e => setModuleCible({...moduleCible, largeurMm: e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
+            <input type="number" value={moduleCible.hauteurMm} onChange={e => setModuleCible({...moduleCible, hauteurMm: e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
           </div>
         </div>
       </div>
@@ -148,10 +148,10 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
               <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col text-xs text-gray-400 font-semibold">Largeur (m) 
-                    <input type="number" step="0.1" value={mur.largeurM || ""} onChange={e => updateMur(mur.id, 'largeurM', +e.target.value)} className="bg-black p-2.5 rounded text-white mt-1 border border-white/10" />
+                    <input type="number" step="0.1" value={mur.largeurM ?? ""} onChange={e => updateMur(mur.id, 'largeurM', e.target.value)} className="bg-black p-2.5 rounded text-white mt-1 border border-white/10" />
                   </label>
                   <label className="flex flex-col text-xs text-gray-400 font-semibold">Hauteur (m) 
-                    <input type="number" step="0.1" value={mur.hauteurM || ""} onChange={e => updateMur(mur.id, 'hauteurM', +e.target.value)} className="bg-black p-2.5 rounded text-white mt-1 border border-white/10" />
+                    <input type="number" step="0.1" value={mur.hauteurM ?? ""} onChange={e => updateMur(mur.id, 'hauteurM', e.target.value)} className="bg-black p-2.5 rounded text-white mt-1 border border-white/10" />
                   </label>
                 </div>
                 
@@ -162,7 +162,7 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
                   </label>
                   {mur.estPignon && (
                     <label className="flex flex-col text-xs text-yellow-400 mt-1">Hauteur Pointe Faîte (m) 
-                      <input type="number" step="0.1" value={mur.hauteurFaiteM || ""} onChange={e => updateMur(mur.id, 'hauteurFaiteM', +e.target.value)} className="bg-black text-white p-2.5 rounded border border-yellow-500/50 mt-1" />
+                      <input type="number" step="0.1" value={mur.hauteurFaiteM ?? ""} onChange={e => updateMur(mur.id, 'hauteurFaiteM', e.target.value)} className="bg-black text-white p-2.5 rounded border border-yellow-500/50 mt-1" />
                     </label>
                   )}
                 </div>
@@ -182,10 +182,10 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
                         </select>
                         <button onClick={() => updateMur(mur.id, 'ouvertures', mur.ouvertures.filter(o => o.id !== ouv.id))} className="text-red-500 text-xs hover:text-red-400">✕ Retirer</button>
                       </div>
-                      <label className="text-xs text-gray-400 flex flex-col">X (m) <input type="number" step="0.1" value={ouv.xM === 0 ? "0" : (ouv.xM || "")} onChange={e => updateOuverture(mur.id, ouv.id, 'xM', +e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
-                      <label className="text-xs text-gray-400 flex flex-col">Y Allège (m) <input type="number" step="0.1" value={ouv.yM === 0 ? "0" : (ouv.yM || "")} onChange={e => updateOuverture(mur.id, ouv.id, 'yM', +e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
-                      <label className="text-xs text-gray-400 flex flex-col">Largeur (m) <input type="number" step="0.1" value={ouv.largeurM || ""} onChange={e => updateOuverture(mur.id, ouv.id, 'largeurM', +e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
-                      <label className="text-xs text-gray-400 flex flex-col">Hauteur (m) <input type="number" step="0.1" value={ouv.hauteurM || ""} onChange={e => updateOuverture(mur.id, ouv.id, 'hauteurM', +e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
+                      <label className="text-xs text-gray-400 flex flex-col">X (m) <input type="number" step="0.1" value={ouv.xM === 0 ? "0" : (ouv.xM ?? "")} onChange={e => updateOuverture(mur.id, ouv.id, 'xM', e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
+                      <label className="text-xs text-gray-400 flex flex-col">Y Allège (m) <input type="number" step="0.1" value={ouv.yM === 0 ? "0" : (ouv.yM ?? "")} onChange={e => updateOuverture(mur.id, ouv.id, 'yM', e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
+                      <label className="text-xs text-gray-400 flex flex-col">Largeur (m) <input type="number" step="0.1" value={ouv.largeurM ?? ""} onChange={e => updateOuverture(mur.id, ouv.id, 'largeurM', e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
+                      <label className="text-xs text-gray-400 flex flex-col">Hauteur (m) <input type="number" step="0.1" value={ouv.hauteurM ?? ""} onChange={e => updateOuverture(mur.id, ouv.id, 'hauteurM', e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded mt-1" /></label>
                     </div>
                   ))}
                 </div>
@@ -200,7 +200,25 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes, sa
       </div>
 
       <button
-        onClick={() => onValider({ murs, plaqueBrute: plaque, moduleCible, sensPose, isolant } as any)}
+        onClick={() => onValider({ 
+          murs: murs.map(m => ({
+            ...m,
+            largeurM: Number(m.largeurM),
+            hauteurM: Number(m.hauteurM),
+            hauteurFaiteM: m.hauteurFaiteM ? Number(m.hauteurFaiteM) : undefined,
+            ouvertures: m.ouvertures.map(o => ({
+              ...o,
+              xM: Number(o.xM),
+              yM: Number(o.yM),
+              largeurM: Number(o.largeurM),
+              hauteurM: Number(o.hauteurM)
+            }))
+          })), 
+          plaqueBrute: { longueurMm: Number(plaque.longueurMm), largeurMm: Number(plaque.largeurMm) }, 
+          moduleCible: { largeurMm: Number(moduleCible.largeurMm), hauteurMm: Number(moduleCible.hauteurMm) }, 
+          sensPose, 
+          isolant: { ...isolant, epaisseurMm: Number(isolant.epaisseurMm), surfacePaquetM2: Number(isolant.surfacePaquetM2) } 
+        } as any)}
         className="w-full mt-6 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 text-lg"
       >
         Valider le plan et Générer le Calepinage
