@@ -85,7 +85,14 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
             <div className="flex flex-wrap gap-4 mb-4">
               <input type="text" value={mur.nom} onChange={e => updateMur(mur.id, 'nom', e.target.value)} className="bg-black text-white p-2 rounded font-bold" />
               <label className="flex items-center gap-2 text-white">Largeur (m) <input type="number" step="0.1" value={mur.largeurM} onChange={e => updateMur(mur.id, 'largeurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
-              <label className="flex items-center gap-2 text-white">Hauteur (m) <input type="number" step="0.1" value={mur.hauteurM} onChange={e => updateMur(mur.id, 'hauteurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
+              <label className="flex items-center gap-2 text-white">Hauteur Mur (m) <input type="number" step="0.1" value={mur.hauteurM} onChange={e => updateMur(mur.id, 'hauteurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
+              <label className="flex items-center gap-2 text-white ml-4">
+                <input type="checkbox" checked={mur.estPignon || false} onChange={e => updateMur(mur.id, 'estPignon', e.target.checked)} className="rounded" />
+                Est un Pignon
+              </label>
+              {mur.estPignon && (
+                <label className="flex items-center gap-2 text-yellow-400">Hauteur Pointe Faîte (m) <input type="number" step="0.1" value={mur.hauteurFaiteM || mur.hauteurM} onChange={e => updateMur(mur.id, 'hauteurFaiteM', +e.target.value)} className="w-20 bg-black text-white p-1 rounded border border-yellow-500/50" /></label>
+              )}
             </div>
             
             <div className="pl-4 border-l-2 border-red-500/30 space-y-3">
