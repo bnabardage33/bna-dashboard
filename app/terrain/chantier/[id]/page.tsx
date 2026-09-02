@@ -126,6 +126,7 @@ function ChantierDetailContent() {
   });
   
   const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any>(null);
+  const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
   
   function lancerCalepinageGlobal() {
     if (zones.length === 0) return;
@@ -166,6 +167,7 @@ function ChantierDetailContent() {
     import('@/lib/calepinageCalcul').then(m => {
       const res = m.calculerCalepinageGlobal(input);
       setCalepinageGlobalResult(res);
+      setIsGlobalCalculated(true);
     });
   }
 
@@ -712,6 +714,7 @@ function ChantierDetailContent() {
 
       {tab === "Métrés & Technique" && (
         <div className="space-y-4">
+          {isGlobalCalculated && (
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-5">
             <Resume label="Brut façades" value={totaux.bruteFacade} />
             <Resume label="Brut pignons" value={totaux.brutePignon} />
@@ -719,6 +722,7 @@ function ChantierDetailContent() {
             <Resume label="Total net" value={totaux.nette} />
             <Resume label="À commander" value={totaux.aCommander} highlight />
           </div>
+          )}
 
           
         {/* ==================== CONFIGURATION GLOBALE ==================== */}
@@ -737,6 +741,7 @@ function ChantierDetailContent() {
                     const [l, w] = e.target.value.split('x');
                     setGlobalConfigHPL(p => ({...p, plaqueLongueurMm: parseInt(l), plaqueLargeurMm: parseInt(w)}));
                     setCalepinageGlobalResult(null);
+setIsGlobalCalculated(false);
                   }}
                   className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
                 >
@@ -754,6 +759,7 @@ function ChantierDetailContent() {
                   onChange={(e) => {
                     setGlobalConfigHPL(p => ({...p, moduleLargeurMm: parseInt(e.target.value) || 1000}));
                     setCalepinageGlobalResult(null);
+setIsGlobalCalculated(false);
                   }}
                   className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
                 />
@@ -767,6 +773,7 @@ function ChantierDetailContent() {
                   onChange={(e) => {
                     setGlobalConfigHPL(p => ({...p, moduleHauteurMm: parseInt(e.target.value) || 600}));
                     setCalepinageGlobalResult(null);
+setIsGlobalCalculated(false);
                   }}
                   className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
                 />
@@ -779,6 +786,7 @@ function ChantierDetailContent() {
                   onChange={(e) => {
                     setGlobalConfigHPL(p => ({...p, sensPose: e.target.value as "horizontal"|"vertical"}));
                     setCalepinageGlobalResult(null);
+setIsGlobalCalculated(false);
                   }}
                   className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-red-500"
                 >
@@ -804,6 +812,7 @@ function ChantierDetailContent() {
                 key={zone.id}
                 zone={zone}
                 globalCalepinage={calepinageGlobalResult?.resultatsMur?.[zone.id]}
+                mode={isGlobalCalculated ? "resultat" : "saisie"}
                 zoneVent={chantier.zone_vent}
                 onChange={updateZone}
                 onDelete={supprimerZone}

@@ -212,8 +212,10 @@ export default function ZoneCard({
   onDelete,
   onCreerCommande,
   globalCalepinage,
+  mode = "resultat",
 }: {
   globalCalepinage?: any;
+  mode?: "saisie" | "resultat";
   zone: Zone;
   zoneVent: number;
   onChange: (zone: Zone) => void;
@@ -1037,6 +1039,8 @@ export default function ZoneCard({
         )}
       </div>
 
+      {mode === "resultat" && (
+      <>
       {/* ====================================================== */}
       {/* RÉSULTATS MÉTRÉS */}
       {/* ====================================================== */}
@@ -1330,6 +1334,8 @@ export default function ZoneCard({
       )}
 
         </div>
+      )}
+      </>
       )}
     </div>
   );
