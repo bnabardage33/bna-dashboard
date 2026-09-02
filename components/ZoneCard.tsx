@@ -126,7 +126,7 @@ export function calculerZone(zone: Zone) {
     const modLargeurMm = zone.module_largeur_mm && zone.module_largeur_mm > 0 ? (zone.module_largeur_mm < 20 ? zone.module_largeur_mm * 1000 : zone.module_largeur_mm) : 1000;
     const modHauteurMm = zone.module_hauteur_mm && zone.module_hauteur_mm > 0 ? (zone.module_hauteur_mm < 20 ? zone.module_hauteur_mm * 1000 : zone.module_hauteur_mm) : 600;
 
-    const calep = calculerCalepinage({
+    const calep = globalCalepinage || calculerCalepinage({
       zoneLargeurM: zone.largeur,
       zoneHauteurM: zone.hauteur_mur,
       plaqueLongueurMm: rawLongueurMm,
@@ -211,7 +211,9 @@ export default function ZoneCard({
   onChange,
   onDelete,
   onCreerCommande,
+  globalCalepinage,
 }: {
+  globalCalepinage?: any;
   zone: Zone;
   zoneVent: number;
   onChange: (zone: Zone) => void;
