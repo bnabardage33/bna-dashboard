@@ -905,13 +905,13 @@ export default function PlanCalepinage({
             </div>
 
             <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-2.5">
-              <p className="text-[10px] uppercase text-gray-400 font-bold">Taux Chute Réel</p>
+              <p className="text-[10px] uppercase text-gray-400 font-bold">Taux Chute Nette</p>
               <p
                 className={`text-base font-extrabold ${
-                  calepinage.tauxChuteBrutePct <= 20 ? "text-emerald-400" : "text-amber-400"
+                  calepinage.tauxChuteNettePct <= 15 ? "text-emerald-400" : "text-amber-400"
                 }`}
               >
-                {calepinage.tauxChuteBrutePct.toFixed(1)} %
+                {calepinage.tauxChuteNettePct.toFixed(1)} %
               </p>
               <p className="text-[10px] text-gray-500">
                 {(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chute
