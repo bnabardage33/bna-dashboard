@@ -22,6 +22,12 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
   const [plaque, setPlaque] = useState({ longueurMm: 3050, largeurMm: 1300 });
   const [moduleCible, setModuleCible] = useState({ largeurMm: 1000, hauteurMm: 600 });
   const [sensPose, setSensPose] = useState<"horizontal" | "vertical">("horizontal");
+  const [isolant, setIsolant] = useState({
+    actif: true,
+    type: "laine_roche",
+    epaisseurMm: 120,
+    surfacePaquetM2: 4.8
+  });
   
   const ajouterMur = () => {
     setMurs([...murs, { id: Date.now().toString(), nom: `Façade ${murs.length + 1}`, largeurM: 5, hauteurM: 3, ouvertures: [] }]);
@@ -63,13 +69,39 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-black/40 rounded-lg border border-white/5">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-black/40 rounded-lg border border-white/5">
         <div>
           <label className="block text-xs uppercase text-gray-400 font-bold mb-1">Sens de pose</label>
           <select value={sensPose} onChange={e => setSensPose(e.target.value as any)} className="w-full bg-gray-800 text-white p-2 rounded">
             <option value="horizontal">Horizontal</option>
             <option value="vertical">Vertical</option>
           </select>
+        </div>
+        <div className="col-span-2 md:col-span-2 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+          <label className="flex items-center gap-2 text-xs uppercase text-white font-bold mb-2">
+            <input type="checkbox" checked={isolant.actif} onChange={e => setIsolant({...isolant, actif: e.target.checked})} />
+            Isolant (Laine ITE)
+          </label>
+          {isolant.actif && (
+            <div className="grid grid-cols-3 gap-2">
+              <select value={isolant.type} onChange={e => setIsolant({...isolant, type: e.target.value})} className="bg-gray-900 text-xs text-white p-2 rounded border border-gray-600">
+                <option value="laine_roche">Roche</option>
+                <option value="laine_verre">Verre</option>
+              </select>
+              <select value={isolant.epaisseurMm} onChange={e => setIsolant({...isolant, epaisseurMm: +e.target.value})} className="bg-gray-900 text-xs text-white p-2 rounded border border-gray-600">
+                <option value={80}>80 mm</option>
+                <option value={100}>100 mm</option>
+                <option value={120}>120 mm</option>
+                <option value={140}>140 mm</option>
+                <option value={160}>160 mm</option>
+                <option value={200}>200 mm</option>
+              </select>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400">m²/paquet</span>
+                <input type="number" step="0.1" value={isolant.surfacePaquetM2} onChange={e => setIsolant({...isolant, surfacePaquetM2: +e.target.value})} className="bg-gray-900 text-xs text-white p-1 rounded border border-gray-600" />
+              </div>
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-xs uppercase text-gray-400 font-bold mb-1">Plaque Brute (L x l mm)</label>
@@ -132,7 +164,7 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
       </div>
 
       <button
-        onClick={() => onValider({ murs, plaqueBrute: plaque, moduleCible, sensPose } as any)}
+        onClick={() => onValider({ murs, plaqueBrute: plaque, moduleCible, sensPose, isolant } as any)}
         className="w-full mt-6 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 text-lg"
       >
         Valider le plan et Générer le Calepinage

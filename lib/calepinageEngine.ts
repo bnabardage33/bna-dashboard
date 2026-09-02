@@ -37,6 +37,7 @@ export interface ProjetCalepinageInput {
   };
   jointMm?: number;
   sensPose?: "horizontal" | "vertical";
+  isolant?: { actif: boolean; type: string; epaisseurMm: number; surfacePaquetM2: number; };
 }
 
 export interface OssatureBois {
@@ -54,7 +55,7 @@ export interface ProjetCalepinageResultat {
 }
 
 export function genererCalepinageGlobal(input: ProjetCalepinageInput): ProjetCalepinageResultat {
-  const { murs, plaqueBrute, moduleCible, jointMm = 8, sensPose = "horizontal" } = input;
+  const { murs, plaqueBrute, moduleCible, jointMm = 8, sensPose = "horizontal", isolant } = input;
   
   let allPieces: PieceCalepinage[] = [];
   const resultatsMur: Record<string, any> = {};
@@ -96,7 +97,11 @@ export function genererCalepinageGlobal(input: ProjetCalepinageInput): ProjetCal
       false, // angle
       1, // vent
       100, // largeurLame par défaut
-      {}
+      {
+        epaisseurIsolantMm: isolant?.actif ? isolant.epaisseurMm : 0,
+        typeIsolant: (isolant?.type as any) || "laine_roche",
+        surfacePaquetM2: isolant?.surfacePaquetM2 || 4.8
+      }
     );
     resultatsMur[mur.id] = { calepinage: resultatMur, pose };
     
