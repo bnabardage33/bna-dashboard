@@ -6,7 +6,8 @@ export function trouverMeilleureGrilleSymetrique(
   hauteurPieceM: number,
   rawPlaqueL_M: number,
   rawPlaqueH_M: number,
-  epaisseurTraitScieM: number
+  epaisseurTraitScieM: number,
+  sensPose: "horizontal" | "vertical" = "horizontal"
 ): { largeurs: number[], rendement: number } {
   const hTotale = hauteurFaiteM ?? hauteurMurM;
   const nbRows = Math.max(1, Math.ceil(hTotale / (hauteurPieceM + epaisseurJointM)));
@@ -37,17 +38,18 @@ export function trouverMeilleureGrilleSymetrique(
     }
   }
 
-  // 3. Random sampling of aesthetic and optimized grids
-  const possibleWidths: number[] = [];
-  for (let w = minW_Mm; w <= maxW_Mm; w += 50) {
-    possibleWidths.push(w);
-  }
-
-  const maxN = Math.floor(targetMm / minW_Mm);
-  let attempts = 0;
-  let randomAdded = 0;
+  // 3. Random sampling of aesthetic and optimized grids (SEULEMENT EN HORIZONTAL)
+  if (sensPose === "horizontal") {
+    const possibleWidths: number[] = [];
+    for (let w = minW_Mm; w <= maxW_Mm; w += 50) {
+      possibleWidths.push(w);
+    }
   
-  while (randomAdded < 1000 && attempts < 10000) {
+    const maxN = Math.floor(targetMm / minW_Mm);
+    let attempts = 0;
+    let randomAdded = 0;
+    
+    while (randomAdded < 1000 && attempts < 10000) {
     attempts++;
     const n = Math.floor(Math.random() * (maxN - 1)) + 2;
     const spaceToFill = targetMm - (n - 1) * jMm;
@@ -92,6 +94,7 @@ export function trouverMeilleureGrilleSymetrique(
         randomAdded++;
       }
     }
+  }
   }
 
   // Fallback
@@ -147,12 +150,14 @@ export function trouverMeilleureGrilleSymetrique(
     const ratioChangements = grid.length > 1 ? nbChangements / (grid.length - 1) : 1;
     
     let finalScore = yieldPct;
-    // Règle d'or de l'architecte : on pénalise sévèrement un code barre monotone (ex: -15% sur la note)
-    if (ratioChangements < 0.3 && grid.length > 3) {
-      finalScore -= 0.15; 
-    } else {
-      // Bonus léger (2% max) pour les façades très bien rythmées
-      finalScore += ratioChangements * 0.02; 
+    // Règle d'or de l'architecte (Seulement en HORIZONTAL) : on pénalise sévèrement un code barre monotone
+    if (sensPose === "horizontal") {
+      if (ratioChangements < 0.3 && grid.length > 3) {
+        finalScore -= 0.15; 
+      } else {
+        // Bonus léger (2% max) pour les façades très bien rythmées
+        finalScore += ratioChangements * 0.02; 
+      }
     }
 
     if (finalScore > bestYield) {

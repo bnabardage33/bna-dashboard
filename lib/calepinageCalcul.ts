@@ -844,7 +844,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     rangeesHauteursM[0] || dimModuleHauteurAxeMm / 1000,
     rawLongueurMm / 1000,
     rawLargeurMm / 1000,
-    traitDeScieM
+    traitDeScieM,
+    sens
   );
   
   const colonnesLargeursM = opt.largeurs;
