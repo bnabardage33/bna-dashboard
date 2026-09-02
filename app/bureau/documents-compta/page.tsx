@@ -254,7 +254,11 @@ export default function DocumentsComptaPage() {
           ) : (
             <div className="space-y-2">
               {documents.map((d) => (
-                <div key={d.id} className="flex items-center gap-3 rounded-xl border border-white/10 p-2">
+                <div
+                  key={d.id}
+                  onClick={() => window.open(d.url_image, '_blank')}
+                  className="flex items-center gap-3 rounded-xl border border-white/10 p-2 cursor-pointer active:bg-white/5"
+                >
                   <img src={d.url_image} alt={d.type} className="w-14 h-14 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -267,7 +271,7 @@ export default function DocumentsComptaPage() {
                     <p className="text-sm font-bold text-white mt-0.5">{d.montant_ttc.toFixed(2)} EUR TTC</p>
                   </div>
                   <button
-                    onClick={() => handleDelete(d.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
                     className="w-8 h-8 shrink-0 bg-[#E30613] rounded-full flex items-center justify-center"
                   >
                     <Trash2 size={14} className="text-white" />
