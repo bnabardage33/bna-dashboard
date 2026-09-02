@@ -210,7 +210,6 @@ export default function DocumentsComptaPage() {
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleFileChange}
             />
