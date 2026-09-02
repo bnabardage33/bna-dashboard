@@ -115,6 +115,61 @@ function ChantierDetailContent() {
   const [calepinageOuvert, setCalepinageOuvert] = useState<{zone: Zone, resultat: ResultatCalepinage} | null>(null);
   const [consignesSecurite, setConsignesSecurite] = useState<string | null>(null);
   const [isGeneratingSecurite, setIsGeneratingSecurite] = useState(false);
+  
+  const [globalConfigHPL, setGlobalConfigHPL] = useState({
+    plaqueLongueurMm: 3050,
+    plaqueLargeurMm: 1300,
+    moduleLargeurMm: 1000,
+    moduleHauteurMm: 600,
+    traitDeScieMm: 3,
+    sensPose: "horizontal"
+  });
+  
+  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState(null);
+  
+  function lancerCalepinageGlobal() {
+    if (zones.length === 0) return;
+    
+    // We import dynamically or just assume it's imported
+    // Wait, is it imported?
+    // Let's add it to imports later
+    const input = {
+      zones: zones.map(z => ({
+        zoneLargeurM: z.largeur,
+        zoneHauteurM: z.hauteur_mur,
+        hauteurFaiteM: z.hauteur_faite,
+        plaqueLongueurMm: globalConfigHPL.plaqueLongueurMm,
+        plaqueLargeurMm: globalConfigHPL.plaqueLargeurMm,
+        moduleLargeurMm: globalConfigHPL.moduleLargeurMm,
+        moduleHauteurMm: globalConfigHPL.moduleHauteurMm,
+        traitDeScieMm: globalConfigHPL.traitDeScieMm,
+        sensPose: globalConfigHPL.sensPose,
+        estPignon: z.type === "pignon",
+        typePose: "pose_droite", // default
+        ouvertures: z.ouvertures ? z.ouvertures.map(o => ({
+          type: o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type,
+          largeur: o.largeur,
+          hauteur: o.hauteur,
+          distanceAngleGaucheM: o.distanceAngleGaucheM || 0,
+          hauteurSolM: o.hauteurSolM || 0
+        })) : [],
+        zoneId: z.id,
+        zoneNom: z.nom
+      })),
+      plaqueLongueurMm: globalConfigHPL.plaqueLongueurMm,
+      plaqueLargeurMm: globalConfigHPL.plaqueLargeurMm,
+      moduleLargeurMm: globalConfigHPL.moduleLargeurMm,
+      moduleHauteurMm: globalConfigHPL.moduleHauteurMm,
+      traitDeScieMm: globalConfigHPL.traitDeScieMm
+    };
+    
+    // Call the global function
+    import('@/lib/calepinageCalcul').then(m => {
+      const res = m.calculerCalepinageGlobal(input);
+      setCalepinageGlobalResult(res);
+    });
+  }
+
 
 
   async function genererSecuriteIA() {
