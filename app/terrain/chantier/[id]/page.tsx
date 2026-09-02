@@ -125,7 +125,7 @@ function ChantierDetailContent() {
     sensPose: "horizontal"
   });
   
-  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState(null);
+  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any>(null);
   
   function lancerCalepinageGlobal() {
     if (zones.length === 0) return;
@@ -143,15 +143,14 @@ function ChantierDetailContent() {
         moduleLargeurMm: globalConfigHPL.moduleLargeurMm,
         moduleHauteurMm: globalConfigHPL.moduleHauteurMm,
         traitDeScieMm: globalConfigHPL.traitDeScieMm,
-        sensPose: globalConfigHPL.sensPose,
+        sensPose: globalConfigHPL.sensPose as "horizontal" | "vertical",
         estPignon: z.type === "pignon",
         typePose: "pose_droite", // default
         ouvertures: z.ouvertures ? z.ouvertures.map(o => ({
-          type: o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type,
+          type: (o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type) as "porte"|"fenetre",
           largeur: o.largeur,
           hauteur: o.hauteur,
-          distanceAngleGaucheM: o.distanceAngleGaucheM || 0,
-          hauteurSolM: o.hauteurSolM || 0
+          hauteurLinteauM: (o as any).hauteurAllegeMm ? ((o as any).hauteurAllegeMm / 1000) + o.hauteur : null
         })) : [],
         zoneId: z.id,
         zoneNom: z.nom
