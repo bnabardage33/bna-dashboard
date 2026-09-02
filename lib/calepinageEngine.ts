@@ -93,14 +93,10 @@ export function genererCalepinageGlobal(input: ProjetCalepinageInput): ProjetCal
       "hpl",
       mur.largeurM,
       mur.estPignon && mur.hauteurFaiteM ? mur.hauteurFaiteM : mur.hauteurM,
-      0, // angle
+      false, // angle
       1, // vent
       100, // largeurLame par défaut
-      {
-        resultats: resultatMur,
-        estPignon: mur.estPignon || false,
-        pentePct: resultatMur.pentePct || 0
-      }
+      {}
     );
     resultatsMur[mur.id] = { calepinage: resultatMur, pose };
     
