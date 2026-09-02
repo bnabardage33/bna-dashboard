@@ -1,3 +1,4 @@
+import { calculerPose } from "./poseCalcul";
 import { 
   calculerCalepinage, 
   PieceCalepinage, 
@@ -35,6 +36,7 @@ export interface ProjetCalepinageInput {
     hauteurMm: number;
   };
   jointMm?: number;
+  sensPose?: "horizontal" | "vertical";
 }
 
 export interface OssatureBois {
@@ -52,7 +54,7 @@ export interface ProjetCalepinageResultat {
 }
 
 export function genererCalepinageGlobal(input: ProjetCalepinageInput): ProjetCalepinageResultat {
-  const { murs, plaqueBrute, moduleCible, jointMm = 8 } = input;
+  const { murs, plaqueBrute, moduleCible, jointMm = 8, sensPose = "horizontal" } = input;
   
   let allPieces: PieceCalepinage[] = [];
   const resultatsMur: Record<string, any> = {};
@@ -82,10 +84,25 @@ export function genererCalepinageGlobal(input: ProjetCalepinageInput): ProjetCal
       moduleLargeurMm: moduleCible.largeurMm,
       moduleHauteurMm: moduleCible.hauteurMm,
       jointMm: jointMm,
+      sensPose: sensPose,
       ouvertures: ouverturesCalepinage
     });
 
-    resultatsMur[mur.id] = resultatMur;
+    
+    const pose = calculerPose(
+      "hpl",
+      mur.largeurM,
+      mur.estPignon && mur.hauteurFaiteM ? mur.hauteurFaiteM : mur.hauteurM,
+      0, // angle
+      1, // vent
+      100, // largeurLame par défaut
+      {
+        resultats: resultatMur,
+        estPignon: mur.estPignon || false,
+        pentePct: resultatMur.pentePct || 0
+      }
+    );
+    resultatsMur[mur.id] = { calepinage: resultatMur, pose };
     
     for (const p of resultatMur.pieces) {
       allPieces.push({

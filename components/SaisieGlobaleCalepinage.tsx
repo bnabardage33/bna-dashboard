@@ -21,6 +21,7 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
 
   const [plaque, setPlaque] = useState({ longueurMm: 3050, largeurMm: 1300 });
   const [moduleCible, setModuleCible] = useState({ largeurMm: 1000, hauteurMm: 600 });
+  const [sensPose, setSensPose] = useState<"horizontal" | "vertical">("horizontal");
   
   const ajouterMur = () => {
     setMurs([...murs, { id: Date.now().toString(), nom: `Façade ${murs.length + 1}`, largeurM: 5, hauteurM: 3, ouvertures: [] }]);
@@ -64,6 +65,13 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-black/40 rounded-lg border border-white/5">
         <div>
+          <label className="block text-xs uppercase text-gray-400 font-bold mb-1">Sens de pose</label>
+          <select value={sensPose} onChange={e => setSensPose(e.target.value as any)} className="w-full bg-gray-800 text-white p-2 rounded">
+            <option value="horizontal">Horizontal</option>
+            <option value="vertical">Vertical</option>
+          </select>
+        </div>
+        <div>
           <label className="block text-xs uppercase text-gray-400 font-bold mb-1">Plaque Brute (L x l mm)</label>
           <div className="flex gap-2">
             <input type="number" value={plaque.longueurMm} onChange={e => setPlaque({...plaque, longueurMm: +e.target.value})} className="w-1/2 bg-gray-800 text-white p-2 rounded" />
@@ -84,14 +92,14 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
           <div key={mur.id} className="p-4 bg-gray-900 rounded-lg border border-gray-700">
             <div className="flex flex-wrap gap-4 mb-4">
               <input type="text" value={mur.nom} onChange={e => updateMur(mur.id, 'nom', e.target.value)} className="bg-black text-white p-2 rounded font-bold" />
-              <label className="flex items-center gap-2 text-white">Largeur (m) <input type="number" step="0.1" value={mur.largeurM} onChange={e => updateMur(mur.id, 'largeurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
-              <label className="flex items-center gap-2 text-white">Hauteur Mur (m) <input type="number" step="0.1" value={mur.hauteurM} onChange={e => updateMur(mur.id, 'hauteurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
+              <label className="flex items-center gap-2 text-white">Largeur (m) <input type="number" step="0.1" value={mur.largeurM || ""} onChange={e => updateMur(mur.id, 'largeurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
+              <label className="flex items-center gap-2 text-white">Hauteur Mur (m) <input type="number" step="0.1" value={mur.hauteurM || ""} onChange={e => updateMur(mur.id, 'hauteurM', +e.target.value)} className="w-20 bg-black p-1 rounded" /></label>
               <label className="flex items-center gap-2 text-white ml-4">
                 <input type="checkbox" checked={mur.estPignon || false} onChange={e => updateMur(mur.id, 'estPignon', e.target.checked)} className="rounded" />
                 Est un Pignon
               </label>
               {mur.estPignon && (
-                <label className="flex items-center gap-2 text-yellow-400">Hauteur Pointe Faîte (m) <input type="number" step="0.1" value={mur.hauteurFaiteM || mur.hauteurM} onChange={e => updateMur(mur.id, 'hauteurFaiteM', +e.target.value)} className="w-20 bg-black text-white p-1 rounded border border-yellow-500/50" /></label>
+                <label className="flex items-center gap-2 text-yellow-400">Hauteur Pointe Faîte (m) <input type="number" step="0.1" value={mur.hauteurFaiteM || ""} onChange={e => updateMur(mur.id, 'hauteurFaiteM', +e.target.value)} className="w-20 bg-black text-white p-1 rounded border border-yellow-500/50" /></label>
               )}
             </div>
             
@@ -108,10 +116,10 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
                     <option value="porte">Porte</option>
                     <option value="baie">Baie</option>
                   </select>
-                  <label className="text-xs text-gray-400">X (m) <input type="number" step="0.1" value={ouv.xM} onChange={e => updateOuverture(mur.id, ouv.id, 'xM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
-                  <label className="text-xs text-gray-400">Y Allège (m) <input type="number" step="0.1" value={ouv.yM} onChange={e => updateOuverture(mur.id, ouv.id, 'yM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
-                  <label className="text-xs text-gray-400">Largeur (m) <input type="number" step="0.1" value={ouv.largeurM} onChange={e => updateOuverture(mur.id, ouv.id, 'largeurM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
-                  <label className="text-xs text-gray-400">Hauteur (m) <input type="number" step="0.1" value={ouv.hauteurM} onChange={e => updateOuverture(mur.id, ouv.id, 'hauteurM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
+                  <label className="text-xs text-gray-400">X (m) <input type="number" step="0.1" value={ouv.xM === 0 ? "0" : (ouv.xM || "")} onChange={e => updateOuverture(mur.id, ouv.id, 'xM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
+                  <label className="text-xs text-gray-400">Y Allège (m) <input type="number" step="0.1" value={ouv.yM === 0 ? "0" : (ouv.yM || "")} onChange={e => updateOuverture(mur.id, ouv.id, 'yM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
+                  <label className="text-xs text-gray-400">Largeur (m) <input type="number" step="0.1" value={ouv.largeurM || ""} onChange={e => updateOuverture(mur.id, ouv.id, 'largeurM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
+                  <label className="text-xs text-gray-400">Hauteur (m) <input type="number" step="0.1" value={ouv.hauteurM || ""} onChange={e => updateOuverture(mur.id, ouv.id, 'hauteurM', +e.target.value)} className="w-16 bg-gray-800 text-white p-1 rounded ml-1" /></label>
                 </div>
               ))}
             </div>
@@ -124,7 +132,7 @@ export default function SaisieGlobaleCalepinage({ onValider, zonesExistantes }: 
       </div>
 
       <button
-        onClick={() => onValider({ murs, plaqueBrute: plaque, moduleCible })}
+        onClick={() => onValider({ murs, plaqueBrute: plaque, moduleCible, sensPose } as any)}
         className="w-full mt-6 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 text-lg"
       >
         Valider le plan et Générer le Calepinage

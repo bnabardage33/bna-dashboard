@@ -747,11 +747,11 @@ function ChantierDetailContent() {
               <div key={mur.id} className="mb-4">
                 <h3 className="text-xl font-bold text-white mb-2">{mur.nom}</h3>
                 <PlanCalepinage 
-                  calepinage={calepinageGlobalResult?.resultatsMur?.[mur.id] || null} 
+                  calepinage={calepinageGlobalResult?.resultatsMur?.[mur.id]?.calepinage || null} 
                   largeurM={mur.largeurM}
                   hauteurM={mur.hauteurM}
                   hauteurFaiteReelleM={mur.hauteurFaiteM || null}
-                  pose={null}
+                  pose={calepinageGlobalResult?.resultatsMur?.[mur.id]?.pose || null}
                   estPignon={mur.estPignon || false}
                 />
               </div>
