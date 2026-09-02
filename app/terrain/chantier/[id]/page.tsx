@@ -722,7 +722,7 @@ function ChantierDetailContent() {
 
           
         {/* ==================== CONFIGURATION GLOBALE ==================== */}
-        {chantier.materiau_structurel === "plaques_hpl" && (
+        {(chantier.materiau_structurel as string) === "plaques_hpl" && (
           <div className="mb-6 rounded-xl border border-white/10 bg-[#11141D] p-5 shadow-xl relative overflow-hidden">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
               <span className="text-red-500">⚙️</span> Configuration Matérielle Globale
