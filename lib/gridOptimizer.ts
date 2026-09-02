@@ -138,8 +138,25 @@ export function trouverMeilleureGrilleSymetrique(
     const materialNeeded = pieces1D.reduce((s, x) => s + x * hauteurPieceM, 0);
     const yieldPct = materialNeeded / materialUsed;
 
-    if (yieldPct > bestYield) {
-      bestYield = yieldPct;
+    // Calcul de l'esthétique (Rythme)
+    let nbChangements = 0;
+    for (let i = 0; i < grid.length - 1; i++) {
+      if (Math.abs(grid[i] - grid[i+1]) > 0.05) nbChangements++;
+    }
+    
+    const ratioChangements = grid.length > 1 ? nbChangements / (grid.length - 1) : 1;
+    
+    let finalScore = yieldPct;
+    // Règle d'or de l'architecte : on pénalise sévèrement un code barre monotone (ex: -15% sur la note)
+    if (ratioChangements < 0.3 && grid.length > 3) {
+      finalScore -= 0.15; 
+    } else {
+      // Bonus léger (2% max) pour les façades très bien rythmées
+      finalScore += ratioChangements * 0.02; 
+    }
+
+    if (finalScore > bestYield) {
+      bestYield = finalScore;
       bestGrid = grid;
     }
   }
