@@ -757,7 +757,17 @@ function ChantierDetailContent() {
             setActiveMurs(input.murs);
             setIsGlobalCalculated(true);
             setSavedGlobalInput(input);
-            
+
+            // Applique le sens de pose et la plaque brute globale a toutes les zones existantes
+            zones.forEach((z) => {
+              updateZone({
+                ...z,
+                sens_pose: input.sensPose,
+                plaque_longueur_mm: input.plaqueBrute.longueurMm,
+                plaque_largeur_mm: input.plaqueBrute.largeurMm,
+              });
+            });
+
             // Sauvegarder dans le navigateur
             if (chantier?.id) {
               localStorage.setItem('calepinage_' + chantier.id, JSON.stringify({
