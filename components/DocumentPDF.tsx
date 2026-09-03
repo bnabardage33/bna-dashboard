@@ -25,7 +25,7 @@ export type Entreprise = {
   logo_url: string | null;
 };
 
-type Client = {
+export type Client = {
   nom: string;
   societe: string | null;
   adresse_facturation: string | null;

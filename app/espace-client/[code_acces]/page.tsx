@@ -5,35 +5,84 @@ import {
   FileText, CheckCircle2, MessageSquare, Clock, Download,
   AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard
 } from "lucide-react";
-import DocumentPDF from "@/components/DocumentPDF";
+import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ChantierData {
+  id: string;
+  nom: string;
+  adresse_chantier: string;
+  date_fin_estimee?: string;
+  created_at?: string;
+  client_id?: string;
+}
+
+interface ClientData extends Client {}
+
+interface AvancementDetails {
+  nord?: Record<string, boolean>;
+  sud?: Record<string, boolean>;
+  est?: Record<string, boolean>;
+  ouest?: Record<string, boolean>;
+}
+
+interface DevisLigne {
+  qte: number;
+  pu_ht: number;
+}
+
+interface DevisRow extends DocumentData {
+  id: string;
+}
+
+interface FactureRow extends DocumentData {
+  id: string;
+}
+
+type ActiveDoc = DocumentData & { id: string };
+
+interface PhotoData {
+  id: string;
+  url_image: string;
+  titre: string;
+  date_ajout: string;
+}
+
+const TASKS_CATEGORIES = [
+  { id: "nord", label: "Façade Nord", tasks: ["ossature", "isolation", "bardage", "finitions"] },
+  { id: "sud", label: "Façade Sud", tasks: ["ossature", "isolation", "bardage", "finitions"] },
+  { id: "est", label: "Façade Est", tasks: ["ossature", "isolation", "bardage", "finitions"] },
+  { id: "ouest", label: "Façade Ouest", tasks: ["ossature", "isolation", "bardage", "finitions"] }
+] as const;
 
 export default function ClientPortalPrototype({ params }: { params: Promise<{ code_acces: string }> }) {
   const unwrappedParams = use(params);
   const codeAcces = unwrappedParams.code_acces;
   
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Real data states
-  const [chantierData, setChantierData] = useState<any>(null);
-  const [clientData, setClientData] = useState<any>(null);
+  const [chantierData, setChantierData] = useState<ChantierData | null>(null);
+  const [clientData, setClientData] = useState<ClientData | null>(null);
   const [avancement, setAvancement] = useState<number>(0);
-  const [avancementDetails, setAvancementDetails] = useState<any>(null);
-  const [devisData, setDevisData] = useState<any[]>([]);
-  const [facturesData, setFacturesData] = useState<any[]>([]);
-  const [activeDoc, setActiveDoc] = useState<any>(null);
-  const [entreprise, setEntreprise] = useState<any>(null);
+  const [avancementDetails, setAvancementDetails] = useState<AvancementDetails | null>(null);
+  const [devisData, setDevisData] = useState<DevisRow[]>([]);
+  const [facturesData, setFacturesData] = useState<FactureRow[]>([]);
+  const [activeDoc, setActiveDoc] = useState<ActiveDoc | null>(null);
+  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
 
-  // Photos
-  const [photos, setPhotos] = useState<any[]>([]);
-  const [lightboxPhoto, setLightboxPhoto] = useState<any>(null);
+  const [photos, setPhotos] = useState<PhotoData[]>([]);
+  const [lightboxPhoto, setLightboxPhoto] = useState<PhotoData | null>(null);
 
   useEffect(() => {
-    // Fetch real data on mount
     const fetchRealData = async () => {
       try {
         const res = await fetch(`/api/espace-client/${codeAcces}`, { cache: "no-store" });
@@ -45,21 +94,27 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           return;
         }
 
-        const data = await res.json();
-        console.log("=== DATA REÇUE CLIENT ===", data);
+        const data: {
+          entreprise?: Entreprise;
+          chantier?: ChantierData;
+          client?: ClientData;
+          avancement: number;
+          avancementDetails?: AvancementDetails;
+          devis?: DevisRow[];
+          factures?: FactureRow[];
+        } = await res.json();
 
         if (data.entreprise) setEntreprise(data.entreprise);
-        setChantierData(data.chantier);
-        setClientData(data.client);
+        if (data.chantier) setChantierData(data.chantier);
+        if (data.client) setClientData(data.client);
         setAvancement(data.avancement);
         if (data.avancementDetails) setAvancementDetails(data.avancementDetails);
         setDevisData(data.devis || []);
         setFacturesData(data.factures || []);
 
-        // Charger les photos du chantier
         if (data.chantier?.id) {
           const photosRes = await fetch(`/api/photos-chantier?chantier_id=${data.chantier.id}`);
-          const photosData = await photosRes.json();
+          const photosData: { photos?: PhotoData[] } = await photosRes.json();
           setPhotos(photosData.photos || []);
         }
 
@@ -68,8 +123,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setChatMessages([
           { role: 'assistant', content: `Bonjour, je suis l'assistant BNA, comment puis-je vous aider sur votre chantier ${chantierNom} ?` }
         ]);
-      } catch (e) {
-        console.error("Failed to fetch real data", e);
+      } catch {
+        console.error("Failed to fetch real data");
       } finally {
         setIsPageLoading(false);
       }
@@ -90,7 +145,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
   const hasSummarized = useRef(false);
 
-  const endConversationAndSummarize = async (finalMessages: any[]) => {
+  const endConversationAndSummarize = async (finalMessages: ChatMessage[]) => {
     if (hasSummarized.current) return;
     hasSummarized.current = true;
     
@@ -103,14 +158,13 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           clientName: clientData?.nom || "Client"
         })
       });
-    } catch (e) {
-      console.error("Failed to summarize", e);
+    } catch {
+      console.error("Failed to summarize");
     }
   };
 
   const closeChat = () => {
     setIsChatOpen(false);
-    // Send background request to summarize when the user manually closes the chat
     if (chatMessages.length > 1 && !hasSummarized.current) {
       endConversationAndSummarize(chatMessages);
     }
@@ -120,7 +174,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    const userMsg = { role: 'user', content: inputValue };
+    const userMsg: ChatMessage = { role: 'user', content: inputValue };
     const newMessages = [...chatMessages, userMsg];
     setChatMessages(newMessages);
     setInputValue("");
@@ -155,7 +209,6 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         
         if (isFin) {
           endConversationAndSummarize(finalMessages);
-          // Auto close the chat after 3 seconds
           setTimeout(() => {
             setIsChatOpen(false);
           }, 3000);
@@ -163,41 +216,45 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       } else {
         setChatMessages(prev => [...prev, { role: 'assistant', content: "Désolé, je rencontre un problème de connexion. Je laisse un message au patron." }]);
       }
-    } catch (error) {
+    } catch {
       setChatMessages(prev => [...prev, { role: 'assistant', content: "Erreur de réseau." }]);
     }
     setIsLoading(false);
   };
 
-  // Variables d'affichage dynamique
   const displayName = clientData?.nom || "Jean Dupont";
   const initials = displayName.substring(0, 2).toUpperCase();
   const displayChantier = chantierData?.nom || "Rénovation Façade HPL";
   const displayAddress = chantierData?.adresse_chantier || "12 Rue des Lilas, Lyon";
 
-  // Signature states
   const [isDevisOpen, setIsDevisOpen] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [isSigned, setIsSigned] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  const startDrawing = (e: any) => {
+  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, rect: DOMRect) => {
+    const touch = (e as React.TouchEvent<HTMLCanvasElement>).touches?.[0];
+    const clientX = touch ? touch.clientX : (e as React.MouseEvent<HTMLCanvasElement>).clientX;
+    const clientY = touch ? touch.clientY : (e as React.MouseEvent<HTMLCanvasElement>).clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const { x, y } = getCanvasCoords(e, rect);
     
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
   };
 
-  const draw = (e: any) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -205,8 +262,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const { x, y } = getCanvasCoords(e, rect);
     
     ctx.lineTo(x, y);
     ctx.strokeStyle = '#0f172a';
@@ -250,8 +306,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           console.error("Erreur signature", data.error || res.status);
           return;
         }
-      } catch (e) {
-        console.error("Erreur signature", e);
+      } catch {
+        console.error("Erreur signature");
         return;
       }
     }
@@ -266,16 +322,14 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
   const calculateEstimatedEndDate = () => {
     let endDateStr = chantierData?.date_fin_estimee;
-    let endDate;
+    let endDate: Date;
     
     if (endDateStr) {
       endDate = new Date(endDateStr);
     } else if (chantierData?.created_at) {
-      // Fallback : +2 mois après la création si pas de date de fin
       endDate = new Date(chantierData.created_at);
       endDate.setMonth(endDate.getMonth() + 2);
     } else {
-      // Fallback sécurité : +2 mois après aujourd'hui
       endDate = new Date();
       endDate.setMonth(endDate.getMonth() + 2);
     }
@@ -293,13 +347,6 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       year: 'numeric'
     });
   };
-
-  const TASKS_CATEGORIES = [
-    { id: "nord", label: "Façade Nord", tasks: ["ossature", "isolation", "bardage", "finitions"] },
-    { id: "sud", label: "Façade Sud", tasks: ["ossature", "isolation", "bardage", "finitions"] },
-    { id: "est", label: "Façade Est", tasks: ["ossature", "isolation", "bardage", "finitions"] },
-    { id: "ouest", label: "Façade Ouest", tasks: ["ossature", "isolation", "bardage", "finitions"] }
-  ];
 
   const calculateProgression = () => {
     if (!avancementDetails) return avancement;
@@ -335,15 +382,14 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
       if (catChecked === catTotal && catTotal > 0) {
         status = "Terminée";
-        colorClass = "text-[#10B981]"; // Vert
+        colorClass = "text-[#10B981]";
         Icon = Check;
       } else if (catChecked > 0) {
         status = "En cours";
-        colorClass = "text-[#F59E0B]"; // Orange
+        colorClass = "text-[#F59E0B]";
         Icon = Wrench;
       }
 
-      // Si non commencé, on peut garder un style plus effacé
       return (
         <div key={cat.id} className={`rounded-xl p-3 flex flex-col items-center justify-center gap-2 text-center ${catChecked > 0 ? 'bg-[#F2F2F2]' : 'bg-gray-50 border border-gray-100'}`}>
           <Icon className={colorClass} size={20} />
@@ -364,7 +410,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   return (
     <div className="min-h-screen bg-white text-slate-900 pb-[130px] font-sans relative">
       <style dangerouslySetInnerHTML={{__html: `
-        html, body { background: white !important; }
+        html, body { background: white !important;
       `}} />
 
       <main className="p-4 pt-2 max-w-3xl mx-auto space-y-6 relative z-10">
@@ -373,7 +419,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
           <span className="bg-[#E30613] text-[#FFFFFF] px-3 py-1 rounded-full text-xs font-bold inline-block mb-3">★ CLIENT PREMIUM</span>
           <h1 className="font-black text-2xl text-[#111111] mb-1 leading-tight">Bardage métallique — {chantierData?.nom || "Villa Arcachon"}</h1>
-          <p className="text-xs text-gray-500 font-medium">Résidence privée • {chantierData?.adresse || "33380 Arcachon"} • Chantier #{chantierData?.id?.substring(0,6).toUpperCase() || 'BNA-7429'}</p>
+          <p className="text-xs text-gray-500 font-medium">Résidence privée • {chantierData?.adresse_chantier || "33380 Arcachon"} • Chantier #{chantierData?.id?.substring(0,6).toUpperCase() || 'BNA-7429'}</p>
         </section>
 
         {/* CARTE PROGRESSION */}
@@ -403,7 +449,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <style dangerouslySetInnerHTML={{__html: `.photo-scroll::-webkit-scrollbar{display:none}`}} />
-              {photos.map((photo: any) => (
+              {photos.map((photo) => (
                 <div
                   key={photo.id}
                   className="shrink-0 w-[140px] cursor-pointer"
@@ -454,9 +500,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               <p className="text-sm text-gray-500 italic text-center py-4">Aucun document à signer pour l'instant.</p>
             ) : (
               <>
-                {devisData.map((devis: any) => {
+                {devisData.map((devis) => {
                   const estSigne = isSigned || devis.statut === 'accepte';
-                  const totalHT = (devis.lignes || []).reduce((s: number, l: any) => s + l.qte * l.pu_ht, 0);
+                  const totalHT = (devis.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                   const totalTTC = totalHT * (1 + (devis.tva_pct || 20) / 100);
                   return (
                     <div
@@ -487,9 +533,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                   );
                 })}
                 
-                {facturesData.map((facture: any) => {
+                {facturesData.map((facture) => {
                   const estPayee = isSigned || facture.statut === 'payee';
-                  const totalHT = (facture.lignes || []).reduce((s: number, l: any) => s + l.qte * l.pu_ht, 0);
+                  const totalHT = (facture.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                   const totalTTC = totalHT * (1 + (facture.tva_pct || 20) / 100);
                   return (
                     <div
@@ -644,7 +690,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           <div className="w-full max-w-4xl bg-white rounded-3xl overflow-y-auto shadow-2xl flex flex-col max-h-[90vh]">
 
             {/* En-tête */}
-            <div className="p-4 bg-[#111111] text-white flex justify-between items-center">
+            <div className="p-4 bg-[#111111] text-white flex justify-between items-center rounded-t-[32px]">
               <h2 className="font-bold">{docEstSigne ? "Document Signé" : "Signature du document"}</h2>
               <button onClick={() => setIsDevisOpen(false)} className="text-slate-400 hover:text-white transition">
                 <X size={24} />
@@ -658,7 +704,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                   <DocumentPDF 
                     doc={activeDoc} 
                     entreprise={entreprise} 
-                    client={clientData || { nom: 'Client' }} 
+                    client={clientData || { nom: 'Client', societe: null, adresse_facturation: null, code_postal: null, ville: null, tel: null, email: null }} 
                   />
                 </div>
               )}
