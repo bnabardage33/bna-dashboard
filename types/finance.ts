@@ -82,3 +82,35 @@ export interface ChargesSocialesResult {
   total_charges: number;
   taux_global_pct: number;
 }
+
+// --- Types pour jointures Supabase (select avec relations) ---
+
+export interface ChantierRow {
+  id: string;
+  nom: string;
+  client_nom: string;
+  prix_vente_ht: number;
+  statut: string;
+}
+
+export interface AvancementRow {
+  id: string;
+  chantier_id: string;
+  date: string;
+  pourcentage?: number;
+  chantiers?: { nom: string };
+}
+
+export interface PointageRow extends PointageFinance {
+  chantiers: { nom: string };
+  profiles: { full_name: string };
+}
+
+export interface DepenseRow extends DepenseFinance {
+  chantiers: { nom: string };
+  fournisseurs: { nom: string };
+}
+
+export interface FactureWithClient extends FactureFinance {
+  clients: { nom: string };
+}
