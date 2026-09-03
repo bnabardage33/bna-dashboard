@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool } from "lucide-react";
@@ -92,7 +93,7 @@ export default function FournisseursPage() {
   const [cDateLivraison, setCDateLivraison] = useState("");
 
   const [apercuCommande, setApercuCommande] = useState<Commande | null>(null);
-  const [entreprise, setEntreprise] = useState<any>(null);
+  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
 
   // Mode "plusieurs lignes" — utilisé quand la commande arrive pré-remplie depuis un métré
   const [lignesMultiples, setLignesMultiples] = useState<LigneMultiple[] | null>(null);
@@ -773,16 +774,16 @@ export default function FournisseursPage() {
                 date_livraison_prevue: apercuCommande.date_livraison_prevue,
               }}
               fournisseur={{
-                nom: (apercuCommande.fournisseurs as any)?.nom || "Fournisseur",
-                contact: (apercuCommande.fournisseurs as any)?.contact || null,
-                telephone: (apercuCommande.fournisseurs as any)?.telephone || null,
-                email: (apercuCommande.fournisseurs as any)?.email || null,
-                conditions_paiement: (apercuCommande.fournisseurs as any)?.conditions_paiement || null,
+                nom: apercuCommande.fournisseurs?.nom ?? "Fournisseur",
+                contact: null,
+                telephone: null,
+                email: null,
+                conditions_paiement: null,
               }}
               chantier={{
-                nom: (apercuCommande.chantiers as any)?.nom || "Chantier BNA",
-                adresse: (apercuCommande.chantiers as any)?.adresse_chantier || null,
-                clientNom: (apercuCommande.chantiers as any)?.clients?.nom || null,
+                nom: apercuCommande.chantiers?.nom ?? "Chantier BNA",
+                adresse: null,
+                clientNom: null,
               }}
               entreprise={
                 entreprise || {
@@ -793,6 +794,10 @@ export default function FournisseursPage() {
                   adresse: null,
                   code_postal: null,
                   ville: null,
+                  assurance: null,
+                  iban: null,
+                  bic: null,
+                  mentions_legales: null,
                   logo_url: "/logo-bna.png",
                 }
               }

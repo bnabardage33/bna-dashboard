@@ -13,7 +13,6 @@ import { adresseVersDepartement } from "@/lib/meteoDepartements";
 const URL_VIGILANCE =
   "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
 
-// Couleur Météo-France : 1=vert 2=jaune 3=orange 4=rouge
 const COULEUR_PAR_ID: Record<number, "vert" | "jaune" | "orange" | "rouge"> = {
   1: "vert",
   2: "jaune",
@@ -21,7 +20,6 @@ const COULEUR_PAR_ID: Record<number, "vert" | "jaune" | "orange" | "rouge"> = {
   4: "rouge",
 };
 
-// Phénomènes qui nous intéressent pour le bardage / la pose extérieure.
 const PHENOMENE_PAR_ID: Record<number, string> = {
   1: "vent",
   2: "pluie-inondation",
@@ -47,6 +45,45 @@ export interface VigilanceDepartement {
   misAJourLe: string | null;
 }
 
+interface PhenomeneMaxColor {
+  phenomenon_id: number;
+  color_id?: number;
+}
+
+interface PhenomeneItem {
+  phenomenon_id: number;
+  phenomenon_max_color_id?: PhenomeneMaxColor;
+  color_id?: number;
+  max_color_id?: number;
+}
+
+interface Domaine {
+  domain_id?: string;
+  max_color_id?: number;
+  phenomenon_items?: PhenomeneItem[];
+  phenomenon_max_colors?: PhenomeneItem[];
+}
+
+interface Timelaps {
+  domain_ids?: string[];
+}
+
+interface Periode {
+  timelaps?: Timelaps;
+  domain_ids?: string[];
+  phenomenon_items?: PhenomeneItem[];
+  phenomenon_max_colors?: PhenomeneItem[];
+}
+
+interface MeteoFranceData {
+  product?: {
+    periods?: Periode[];
+    domain_ids?: string[];
+    update_time?: string;
+  };
+  periods?: Periode[];
+}
+
 export async function GET(request: NextRequest) {
   const rawParam = request.nextUrl.searchParams.get("departement") || request.nextUrl.searchParams.get("location");
   const demain = request.nextUrl.searchParams.get("demain") === "true";
@@ -58,7 +95,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Résolution automatique si l'utilisateur envoie "Ajaccio", "20000", "Bordeaux", "2A", etc.
   const departement = adresseVersDepartement(rawParam) || rawParam.trim().toUpperCase();
 
   let apiKey: string;
@@ -72,14 +108,14 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-  
+
   try {
     const res = await fetch(URL_VIGILANCE, {
       headers: { Authorization: `Bearer ${apiKey}` },
       next: { revalidate: 600 },
     });
-      
-      if (!res.ok) {
+
+    if (!res.ok) {
       const texte = await res.text();
       console.error("Erreur API Vigilance Météo-France:", res.status, texte);
 
@@ -92,8 +128,8 @@ export async function GET(request: NextRequest) {
         { status: 502 }
       );
     }
-      
-    const data = await res.json();
+
+    const data: MeteoFranceData = await res.json();
 
     const resultat = extraireDepartement(data, departement, demain);
 
@@ -120,14 +156,13 @@ export async function GET(request: NextRequest) {
  * viser un chemin fixe.
  */
 function extraireDepartement(
-  data: any,
+  data: MeteoFranceData,
   departement: string,
-  demain: boolean = false
+  demain = false
 ): VigilanceDepartement | null {
   const periodes = data?.product?.periods ?? data?.periods ?? [];
   if (!Array.isArray(periodes) || periodes.length === 0) return null;
 
-  // periods[0] = échéance J (aujourd'hui), periods[1] = échéance J+1 (demain).
   const index = demain ? 1 : 0;
   const periodeEnCours = periodes[index] ?? periodes[0];
 
@@ -136,13 +171,13 @@ function extraireDepartement(
     periodeEnCours?.domain_ids ??
     [];
 
-  const domaineArray: any[] = Array.isArray(domaines)
-    ? domaines
-    : Object.values(domaines ?? {});
+  const domaineArray: Domaine[] = Array.isArray(domaines)
+    ? (domaines as Domaine[])
+    : Object.values(domaines ?? {}) as Domaine[];
 
   const deptNormalized = departement.toString().trim().toUpperCase();
 
-  const domaineDept = domaineArray.find((d: any) => {
+  const domaineDept = domaineArray.find((d) => {
     const dId = d?.domain_id?.toString().trim().toUpperCase();
     if (!dId) return false;
     if (dId === deptNormalized) return true;
@@ -154,22 +189,22 @@ function extraireDepartement(
   if (!domaineDept) return null;
 
   const couleurMax =
-    COULEUR_PAR_ID[domaineDept.max_color_id] ?? "vert";
+    COULEUR_PAR_ID[domaineDept.max_color_id ?? 0] ?? "vert";
 
-  const phenomenesBrut: any[] =
+  const phenomenesBrut: PhenomeneItem[] =
     domaineDept.phenomenon_items ??
     domaineDept.phenomenon_max_colors ??
     [];
 
   const phenomenes: VigilancePhenomene[] = phenomenesBrut
-    .map((p: any) => {
+    .map((p) => {
       const id = p.phenomenon_id ?? p.phenomenon_max_color_id?.phenomenon_id;
-      const couleurId = p.phenomenon_max_color_id ?? p.color_id ?? p.max_color_id;
+      const couleurId = p.phenomenon_max_color_id?.color_id ?? p.color_id ?? p.max_color_id;
       if (!id || !PHENOMENE_PAR_ID[id]) return null;
       return {
         id,
         nom: PHENOMENE_PAR_ID[id],
-        couleur: COULEUR_PAR_ID[couleurId] ?? "vert",
+        couleur: COULEUR_PAR_ID[couleurId ?? 0] ?? "vert",
       };
     })
     .filter(Boolean) as VigilancePhenomene[];

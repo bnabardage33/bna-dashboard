@@ -1,5 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
 
+interface RawHeure {
+  datetime: string;
+  temp: number;
+  windspeed: number;
+  windgust: number;
+  precip: number;
+}
+
+interface RawJour {
+  datetime: string;
+  tempmax: number;
+  tempmin: number;
+  temp: number;
+  windspeed: number;
+  windgust: number;
+  precip: number;
+  icon: string;
+  conditions: string;
+  hours?: RawHeure[];
+}
+
+interface DonneesMeteo {
+  days: RawJour[];
+  currentConditions?: { temp: number; icon: string };
+}
+
+interface Heure {
+  heure: string;
+  temp: number;
+  vent: number;
+  rafales: number;
+  pluie: number;
+}
+
+interface Jour {
+  date: string;
+  tempMax: number;
+  tempMin: number;
+  icon: string;
+  conditions: string;
+}
+
+interface MatinApresMidi {
+  temp: number;
+  vent: number;
+  rafales: number;
+}
+
+const toHeures = (raw: RawHeure[]): Heure[] =>
+  raw.map((h) => ({
+    heure: h.datetime.slice(0, 5),
+    temp: Math.round(h.temp),
+    vent: Math.round(h.windspeed),
+    rafales: Math.round(h.windgust ?? h.windspeed),
+    pluie: h.precip ?? 0,
+  }));
+
+const toJours = (raw: RawJour[]): Jour[] =>
+  raw.slice(1, 5).map((j) => ({
+    date: j.datetime,
+    tempMax: Math.round(j.tempmax),
+    tempMin: Math.round(j.tempmin),
+    icon: j.icon,
+    conditions: j.conditions,
+  }));
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const location = searchParams.get("location") || "Bordeaux,FR";
@@ -9,7 +75,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
   }
 
-  // Plage : aujourd'hui + 4 jours suivants (5 jours au total)
   const aujourdHui = new Date();
   const dans4Jours = new Date();
   dans4Jours.setDate(aujourdHui.getDate() + 4);
@@ -25,7 +90,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Ville introuvable ou erreur API" }, { status: 502 });
   }
 
-  const data = await vcRes.json();
+  const data: DonneesMeteo = await vcRes.json();
   const jours = data.days || [];
   const today = jours[0];
 
@@ -33,36 +98,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Pas de données pour cette ville" }, { status: 502 });
   }
 
-  // --- Détail du jour (heures, matin/après-midi, alerte) ---
-  const heures = (today.hours || []).map((h: any) => ({
-    heure: h.datetime.slice(0, 5),
-    temp: Math.round(h.temp),
-    vent: Math.round(h.windspeed),
-    rafales: Math.round(h.windgust ?? h.windspeed),
-    pluie: h.precip ?? 0,
-  }));
+  const heures: Heure[] = toHeures(today.hours || []);
 
-  const matinHeures = heures.filter((h: any) => {
+  const matinHeures = heures.filter((h) => {
     const hh = parseInt(h.heure);
     return hh >= 6 && hh < 13;
   });
-  const apremHeures = heures.filter((h: any) => {
+  const apremHeures = heures.filter((h) => {
     const hh = parseInt(h.heure);
     return hh >= 13 && hh < 19;
   });
 
-  const avg = (arr: any[], k: string) =>
+  const avg = (arr: Heure[], k: "temp" | "vent" | "rafales" | "pluie") =>
     arr.length ? Math.round(arr.reduce((s, h) => s + h[k], 0) / arr.length) : 0;
-  const max = (arr: any[], k: string) =>
+  const max = (arr: Heure[], k: "temp" | "vent" | "rafales" | "pluie") =>
     arr.length ? Math.max(...arr.map((h) => h[k])) : 0;
 
-  const matin = { temp: avg(matinHeures, "temp"), vent: avg(matinHeures, "vent"), rafales: max(matinHeures, "rafales") };
-  const apresMidi = { temp: avg(apremHeures, "temp"), vent: avg(apremHeures, "vent"), rafales: max(apremHeures, "rafales") };
+  const matin: MatinApresMidi = { temp: avg(matinHeures, "temp"), vent: avg(matinHeures, "vent"), rafales: max(matinHeures, "rafales") };
+  const apresMidi: MatinApresMidi = { temp: avg(apremHeures, "temp"), vent: avg(apremHeures, "vent"), rafales: max(apremHeures, "rafales") };
 
   const rafalesMax = Math.max(matin.rafales, apresMidi.rafales);
   const tempMax = Math.round(today.tempmax);
-  const heuresPluie = heures.filter((h: any) => h.pluie > 0.2).length;
-  const cumulPluie = heures.reduce((s: number, h: any) => s + h.pluie, 0);
+  const heuresPluie = heures.filter((h) => h.pluie > 0.2).length;
+  const cumulPluie = heures.reduce((s, h) => s + h.pluie, 0);
 
   let niveau: "vert" | "jaune" | "orange" | "rouge" = "vert";
   let motif = "Conditions normales de pose";
@@ -87,14 +145,7 @@ export async function GET(req: NextRequest) {
     motif = `Chaleur (${tempMax}°C) — vigilance renforcée`;
   }
 
-  // --- Prévisions des jours suivants (style JT) ---
-  const prochainsJours = jours.slice(1, 5).map((j: any) => ({
-    date: j.datetime,
-    tempMax: Math.round(j.tempmax),
-    tempMin: Math.round(j.tempmin),
-    icon: j.icon,
-    conditions: j.conditions,
-  }));
+  const prochainsJours = toJours(jours);
 
   const tempActuelle = data.currentConditions?.temp !== undefined
     ? Math.round(data.currentConditions.temp)
