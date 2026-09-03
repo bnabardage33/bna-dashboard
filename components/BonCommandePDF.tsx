@@ -1,5 +1,3 @@
-"use client";
-
 import { Entreprise } from "@/types/entreprise";
 
 type FournisseurInfo = {

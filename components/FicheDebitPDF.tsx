@@ -1,5 +1,4 @@
 // components/FicheDebitPDF.tsx
-"use client";
 
 import { Zone, calculerZone } from "@/components/ZoneCard";
 import { ResultatPose, LABELS_FAMILLE } from "@/lib/poseCalcul";

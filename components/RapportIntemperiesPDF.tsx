@@ -1,4 +1,4 @@
-"use client";
+// components/RapportIntemperiesPDF.tsx
 
 export type NiveauVigilance = "vert" | "jaune" | "orange" | "rouge";
 

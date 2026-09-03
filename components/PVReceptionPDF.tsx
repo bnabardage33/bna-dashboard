@@ -1,5 +1,4 @@
 // components/PVReceptionPDF.tsx
-"use client";
 
 export type StatutPV = "sans_reserve" | "avec_reserves" | "reserves_levees" | "refuse";
 
