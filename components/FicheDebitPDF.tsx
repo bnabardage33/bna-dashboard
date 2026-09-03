@@ -4,14 +4,8 @@
 import { Zone, calculerZone } from "@/components/ZoneCard";
 import { ResultatPose, LABELS_FAMILLE } from "@/lib/poseCalcul";
 import { ResultatCalepinage } from "@/lib/calepinageCalcul";
+import { Entreprise } from "@/types/entreprise";
 import PlanCalepinage from "@/components/PlanCalepinage";
-
-type Entreprise = {
-  raison_sociale: string;
-  telephone: string | null;
-  email: string | null;
-  logo_url: string | null;
-};
 
 type ChantierInfo = {
   nom: string | null;

@@ -1,15 +1,6 @@
 "use client";
 
-type Entreprise = {
-  raison_sociale: string;
-  siret: string | null;
-  telephone: string | null;
-  email: string | null;
-  adresse: string | null;
-  code_postal: string | null;
-  ville: string | null;
-  logo_url: string | null;
-};
+import { Entreprise } from "@/types/entreprise";
 
 type FournisseurInfo = {
   nom: string;

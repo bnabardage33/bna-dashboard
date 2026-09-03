@@ -1321,8 +1321,16 @@ export default function ZoneCard({
                 chantier={{ nom: "Chantier BNA", adresse: null }}
                 entreprise={{
                   raison_sociale: "BNA Bardage",
+                  siret: null,
                   telephone: null,
                   email: null,
+                  adresse: null,
+                  code_postal: null,
+                  ville: null,
+                  assurance: null,
+                  iban: null,
+                  bic: null,
+                  mentions_legales: null,
                   logo_url: "/logo-bna.png",
                 }}
                 pose={pose}
