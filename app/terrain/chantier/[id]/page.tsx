@@ -762,7 +762,7 @@ function ChantierDetailContent() {
             zones.forEach((z) => {
               updateZone({
                 ...z,
-                sens_pose: input.sensPose,
+                sens_pose: input.sensPose ?? null,
                 plaque_longueur_mm: input.plaqueBrute.longueurMm,
                 plaque_largeur_mm: input.plaqueBrute.largeurMm,
               });
