@@ -748,108 +748,29 @@ function ChantierDetailContent() {
 
           
         
-        {/* ==================== CONFIGURATION GLOBALE ==================== */}
-        <SaisieGlobaleCalepinage 
-          zonesExistantes={zones} savedInput={savedGlobalInput} 
-          onValider={(input) => {
-            const res = genererCalepinageGlobal(input);
-            setCalepinageGlobalResult(res.calepinageGlobal as any);
-            setActiveMurs(input.murs);
-            setIsGlobalCalculated(true);
-            setSavedGlobalInput(input);
-
-            // Applique le sens de pose et la plaque brute globale a toutes les zones existantes
-            zones.forEach((z) => {
-              updateZone({
-                ...z,
-                sens_pose: input.sensPose ?? null,
-                plaque_longueur_mm: input.plaqueBrute.longueurMm,
-                plaque_largeur_mm: input.plaqueBrute.largeurMm,
-              });
-            });
-
-            // Sauvegarder dans le navigateur
-            if (chantier?.id) {
-              localStorage.setItem('calepinage_' + chantier.id, JSON.stringify({
-                input: input,
-                result: res.calepinageGlobal,
-                activeMurs: input.murs,
-                isCalculated: true
-              }));
-            }
-          }} 
-        />
-        
-<div className="space-y-4">
-            
-          {isGlobalCalculated && (
-            <div className="mb-6 flex gap-4">
-              <button
-                onClick={() => setModalGlobalDebitOuvert(true)}
-                className="flex-1 rounded-xl border border-white/10 bg-[#1A1D24] text-gray-300 font-bold py-3 hover:bg-slate-800 transition shadow-sm"
-              >
-                📄 Ouvrir le Plan de Débit Global (Atelier)
-              </button>
-              <button
-                onClick={() => {
-                  if (calepinageGlobalResult) {
-                    const lignes = [{
-                      id: Date.now().toString(),
-                      nom_produit: "Plaques HPL",
-                      designation: "Plaques HPL (Calepinage Global)",
-                      quantite: calepinageGlobalResult.nbPlaquesNecessaires,
-                      unite: "pcs",
-                      prix_unitaire: 0,
-                      total: 0,
-                      is_custom: true
-                    }];
-                    // Appel global
-                    handleCreerCommande(lignes, "Chantier Global");
-                  }
-                }}
-                className="flex-1 rounded-xl bg-red-600/20 border border-red-500 text-red-400 font-bold py-3 hover:bg-red-600/40 transition"
-              >
-                ➕ Créer une Commande Globale
-              </button>
-            </div>
-          )}
-          
-          {modalGlobalDebitOuvert && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-              <div className="relative w-full max-w-5xl rounded-2xl bg-[#11141D] border border-white/10 shadow-2xl overflow-hidden flex flex-col h-[90vh]">
-                <div className="flex items-center justify-between border-b border-white/10 p-4 bg-[#1A1D24]">
-                  <h3 className="text-lg font-bold text-white">Plan de Débit Global (Toutes Façades)</h3>
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => window.print()} className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all">
-                      🖨️ Imprimer le Plan
-                    </button>
-                    <button onClick={() => setModalGlobalDebitOuvert(false)} className="text-gray-400 hover:text-white p-2">✕</button>
-                  </div>
-                </div>
-                <div className="p-4 overflow-y-auto flex-1">
-                  <VisualiseurDebitPlaques calepinage={calepinageGlobalResult} titreZone="Projet Global" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isGlobalCalculated && activeMurs.map((mur) => (
-              <div key={mur.id} className="mb-4">
-                <h3 className="text-xl font-bold text-white mb-2">{mur.nom}</h3>
-                <PlanCalepinage 
-                  calepinage={calepinageGlobalResult?.resultatsMur?.[mur.id]?.calepinage || null} 
-                  largeurM={mur.largeurM}
-                  hauteurM={mur.hauteurM}
-                  hauteurFaiteReelleM={mur.hauteurFaiteM || null}
-                  pose={calepinageGlobalResult?.resultatsMur?.[mur.id]?.pose || null}
-                  estPignon={mur.estPignon || false}
-                />
-              </div>
+        <div className="space-y-4">
+          <div className="space-y-4">
+            {zones.map((zone) => (
+              <ZoneCard
+                key={zone.id}
+                zone={zone}
+                zoneVent={chantier.zone_vent}
+                onChange={updateZone}
+                onDelete={supprimerZone}
+                onCreerCommande={handleCreerCommande}
+              />
             ))}
-            
+
+            <button
+              type="button"
+              onClick={ajouterZone}
+              className="w-full rounded-xl border border-dashed border-white/20 py-3 text-sm font-bold text-gray-300 hover:border-white/40 hover:bg-white/5 transition"
+            >
+              + Ajouter une zone
+            </button>
           </div>
 
-{/* Add zone hidden by new engine */}
+          </div>
         </div>
       )}
 

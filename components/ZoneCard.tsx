@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   calculerPose,
   FamillePose,
@@ -16,17 +16,9 @@ import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 
 type Ouverture = {
   id: string;
-  type: "fenetre" | "porte" | "baie" | "porte_fenetre";
-  largeur: number;      // m
-  hauteur: number;      // m
-  /** X : distance depuis l'angle gauche du mur jusqu'au bord gauche de l'ouverture (en m) */
-  distanceAngleGaucheM: number;
-  /**
-   * Y : hauteur d'allège — distance du sol au bas de l'ouverture (en m).
-   * Porte / Baie vitrée / Porte-fenêtre = 0 (allège = sol).
-   * Fenêtre = saisie libre.
-   */
-  hauteurAllegeMm: number; // stocké en mm, affiché en mm
+  type: "fenetre" | "porte";
+  largeur: number;
+  hauteur: number;
 };
 
 export type Zone = {
@@ -37,7 +29,7 @@ export type Zone = {
   largeur: number;
   hauteur_mur: number;
   hauteur_faite: number | null;
-  materiau: "lames" | "plaques" | "plaques_hpl" | "fibres_ciment" | string;
+  materiau: "lames" | "plaques";
   ouvertures: Ouverture[];
   famille_pose: FamillePose | null;
   angle: boolean;
@@ -101,8 +93,6 @@ export function calculerZone(zone: Zone) {
       0
     );
 
-  const nombreOuvertures = zone.ouvertures.length;
-
   const surfaceNette = Math.max(
     0,
     bruteFacade +
@@ -118,64 +108,13 @@ export function calculerZone(zone: Zone) {
   const surfaceACommander =
     surfaceNette * marge;
 
-  let totalCoupesML = 0;
-  if (zone.famille_pose === "hpl" || zone.materiau === "plaques_hpl" || zone.materiau === "fibres_ciment") {
-    // Appel du calepinage pour obtenir les coupes
-    const rawLongueurMm = zone.plaque_longueur_mm && zone.plaque_longueur_mm > 0 ? (zone.plaque_longueur_mm < 20 ? zone.plaque_longueur_mm * 1000 : zone.plaque_longueur_mm) : 3050;
-    const rawLargeurMm = zone.plaque_largeur_mm && zone.plaque_largeur_mm > 0 ? (zone.plaque_largeur_mm < 20 ? zone.plaque_largeur_mm * 1000 : zone.plaque_largeur_mm) : 1300;
-    const modLargeurMm = zone.module_largeur_mm && zone.module_largeur_mm > 0 ? (zone.module_largeur_mm < 20 ? zone.module_largeur_mm * 1000 : zone.module_largeur_mm) : 1000;
-    const modHauteurMm = zone.module_hauteur_mm && zone.module_hauteur_mm > 0 ? (zone.module_hauteur_mm < 20 ? zone.module_hauteur_mm * 1000 : zone.module_hauteur_mm) : 600;
-
-    const calep = calculerCalepinage({
-      zoneLargeurM: zone.largeur,
-      zoneHauteurM: zone.hauteur_mur,
-      plaqueLongueurMm: rawLongueurMm,
-      plaqueLargeurMm: rawLargeurMm,
-      moduleLargeurMm: modLargeurMm,
-      moduleHauteurMm: modHauteurMm,
-      sensPose: zone.sens_pose,
-      typePose: "pose_droite",
-      estPignon: zone.type === "pignon",
-      hauteurFaiteM: zone.hauteur_faite,
-      traitDeScieMm: 3,
-      jointMm: 8,
-      ouvertures: zone.ouvertures ? zone.ouvertures.map(o => ({
-        type: o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type,
-        largeur: o.largeur,
-        hauteur: o.hauteur,
-        hauteurLinteauM: ((o.hauteurAllegeMm ?? 0) / 1000) + o.hauteur
-      })) : null
-    });
-    totalCoupesML = calep.totalCoupesML || 0;
-  } else {
-    // Calcul des mètres linéaires de coupe pour les LAMES (Bois, Composite)
-    if (zone.sens_pose === "vertical") {
-      const coupesBords = 2 * zone.largeur;
-      const coupesOuvertures = zone.ouvertures ? zone.ouvertures.reduce((s, o) => s + (2 * o.largeur), 0) : 0;
-      totalCoupesML = coupesBords + coupesOuvertures;
-    } else {
-      const coupesBords = 2 * zone.hauteur_mur;
-      const coupesOuvertures = zone.ouvertures ? zone.ouvertures.reduce((s, o) => s + (2 * o.hauteur), 0) : 0;
-      totalCoupesML = coupesBords + coupesOuvertures;
-    }
-
-    if (zone.type === "pignon" && zone.largeur > 0 && zone.hauteur_faite && zone.hauteur_faite > zone.hauteur_mur) {
-      const demiLargeur = zone.largeur / 2;
-      const deltaH = zone.hauteur_faite - zone.hauteur_mur;
-      const longueurRampant = Math.sqrt(demiLargeur * demiLargeur + deltaH * deltaH);
-      totalCoupesML += 2 * longueurRampant;
-    }
-  }
-
   return {
     bruteFacade,
     brutePignon,
     pente,
     totalOuvertures,
-    nombreOuvertures,
     surfaceNette,
     surfaceACommander,
-    totalCoupesML,
   };
 }
 
@@ -211,11 +150,7 @@ export default function ZoneCard({
   onChange,
   onDelete,
   onCreerCommande,
-  globalCalepinage,
-  mode = "resultat",
 }: {
-  globalCalepinage?: any;
-  mode?: "saisie" | "resultat";
   zone: Zone;
   zoneVent: number;
   onChange: (zone: Zone) => void;
@@ -228,25 +163,6 @@ export default function ZoneCard({
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
   const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
   const [replie, setReplie] = useState(false);
-
-  const formatPlaquesStd = ["3050x1300", "3650x1860", "2550x1860", "2800x1300", "4100x1300"];
-  const currentPlaque = `${zone.plaque_longueur_mm ?? 3050}x${zone.plaque_largeur_mm ?? 1300}`;
-  const [isPlaqueCustom, setIsPlaqueCustom] = useState(!formatPlaquesStd.includes(currentPlaque));
-
-  const formatModulesStd = ["1000x600", "1200x800", "1500x450", "600x1200"];
-  const currentModule = `${zone.module_largeur_mm ?? 1000}x${zone.module_hauteur_mm ?? 600}`;
-  const [isModuleCustom, setIsModuleCustom] = useState(!formatModulesStd.includes(currentModule));
-
-  useEffect(() => {
-    const isCustom = !formatPlaquesStd.includes(`${zone.plaque_longueur_mm ?? 3050}x${zone.plaque_largeur_mm ?? 1300}`);
-    if (!isCustom && isPlaqueCustom) setIsPlaqueCustom(false);
-  }, [zone.plaque_longueur_mm, zone.plaque_largeur_mm]);
-
-  useEffect(() => {
-    const isCustom = !formatModulesStd.includes(`${zone.module_largeur_mm ?? 1000}x${zone.module_hauteur_mm ?? 600}`);
-    if (!isCustom && isModuleCustom) setIsModuleCustom(false);
-  }, [zone.module_largeur_mm, zone.module_hauteur_mm]);
-
   const calc = calculerZone(zone);
 
   /*
@@ -343,20 +259,6 @@ export default function ZoneCard({
           sensPose: sensPoseActif,
           estPignon: zone.type === "pignon",
           hauteurFaiteM: zone.hauteur_faite,
-          // DTU 45.4 Mode A : ouvertures avec position absolue (X, Y) pour alignement joint sur linteau
-          ouvertures: zone.ouvertures.length > 0
-            ? zone.ouvertures.map((o) => {
-                const allegeM = (o.hauteurAllegeMm ?? 0) / 1000;
-                return {
-                  id: o.id,
-                  type: o.type === "fenetre" ? "fenetre" as const : "porte" as const,
-                  largeur: o.largeur,
-                  hauteur: o.hauteur,
-                  // Hauteur du bas du linteau = allège + hauteur de l'ouverture
-                  hauteurLinteauM: allegeM + o.hauteur,
-                };
-              })
-            : null,
         })
       : null;
 
@@ -378,10 +280,8 @@ export default function ZoneCard({
      ============================================================ */
 
   function ajouterOuverture(
-    type: Ouverture["type"]
+    type: "fenetre" | "porte"
   ) {
-    const allegeParDefautMm =
-      type === "fenetre" ? 900 : 0; // fenêtre : 90 cm d'allège standard ; porte/baie/pf : sol
     update({
       ouvertures: [
         ...zone.ouvertures,
@@ -390,8 +290,6 @@ export default function ZoneCard({
           type,
           largeur: 0,
           hauteur: 0,
-          distanceAngleGaucheM: 0,
-          hauteurAllegeMm: allegeParDefautMm,
         },
       ],
     });
@@ -544,7 +442,7 @@ export default function ZoneCard({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-md transition-all">
+    <div className="space-y-4 rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-md transition-all">
 
       {/* ====================================================== */}
       {/* EN-TÊTE ACCORDÉON */}
@@ -555,7 +453,7 @@ export default function ZoneCard({
           <button
             type="button"
             onClick={() => setReplie(!replie)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-[#0B0F19] text-gray-300 hover:bg-slate-750 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-sky-400 hover:bg-slate-750 transition-colors"
             title={replie ? "Déplier la zone" : "Replier la zone"}
           >
             <span className="text-xs">{replie ? "▶" : "▼"}</span>
@@ -565,12 +463,12 @@ export default function ZoneCard({
             value={zone.nom}
             onChange={(e) => update({ nom: e.target.value })}
             placeholder="Nom de la zone (ex. Façade Nord)"
-            className="flex-1 rounded-xl border border-white/10 bg-[#0B0F19] px-3 py-1.5 text-sm font-bold text-white focus:border-red-600 focus:outline-none"
+            className="flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm font-bold text-white focus:border-sky-500 focus:outline-none"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#0B0F19] border border-white/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
+          <span className="rounded-full bg-slate-900 border border-slate-700 px-2.5 py-1 text-xs font-bold text-emerald-400">
             {calc.surfaceNette.toFixed(1)} m² net
           </span>
 
@@ -606,7 +504,7 @@ export default function ZoneCard({
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               zone.type === t
                 ? "bg-red-600 text-white"
-                : "border border-white/10 text-gray-300"
+                : "border border-slate-600 text-slate-300"
             }`}
           >
             {t === "facade"
@@ -615,7 +513,7 @@ export default function ZoneCard({
           </button>
         ))}
 
-        <label className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-gray-300">
+        <label className="flex items-center gap-2 rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300">
           <input
             type="checkbox"
             checked={zone.angle}
@@ -681,7 +579,7 @@ export default function ZoneCard({
         )}
 
         <div>
-          <label className="text-xs uppercase tracking-wide text-gray-500">
+          <label className="text-xs uppercase tracking-wide text-slate-500">
             Matériau (marge commande)
           </label>
 
@@ -693,7 +591,7 @@ export default function ZoneCard({
                   e.target.value as Zone["materiau"],
               })
             }
-            className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+            className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
           >
             <option value="lames">
               Lames (+10%)
@@ -710,9 +608,9 @@ export default function ZoneCard({
       {/* FAMILLE DE POSE */}
       {/* ====================================================== */}
 
-      <div className="space-y-2 border-t border-white/10 pt-3">
+      <div className="space-y-2 border-t border-slate-700 pt-3">
 
-        <label className="text-xs uppercase tracking-wide text-gray-500">
+        <label className="text-xs uppercase tracking-wide text-slate-500">
           Famille de pose (calcul technique)
         </label>
 
@@ -730,7 +628,7 @@ export default function ZoneCard({
                   | null,
             })
           }
-          className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+          className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
         >
           <option value="">
             — Aucun calcul —
@@ -792,11 +690,11 @@ export default function ZoneCard({
             <div className="grid grid-cols-2 gap-3">
               {/* Épaisseur Isolant */}
               <div>
-                <label className="text-[11px] text-gray-400">Épaisseur Isolant</label>
+                <label className="text-[11px] text-slate-400">Épaisseur Isolant</label>
                 <select
                   value={zone.epaisseur_isolant_mm ?? 120}
                   onChange={(e) => update({ epaisseur_isolant_mm: parseInt(e.target.value, 10) })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-2.5 py-1.5 text-xs text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                 >
                   <option value={0}>0 mm (Sans isolant / Lame d'air seule)</option>
                   <option value={80}>80 mm (R = 2.25)</option>
@@ -811,11 +709,11 @@ export default function ZoneCard({
 
               {/* Type d'isolant */}
               <div>
-                <label className="text-[11px] text-gray-400">Type d'isolant</label>
+                <label className="text-[11px] text-slate-400">Type d'isolant</label>
                 <select
                   value={zone.type_isolant ?? "laine_roche"}
                   onChange={(e) => update({ type_isolant: e.target.value as any })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-2.5 py-1.5 text-xs text-white"
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                 >
                   <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>
                   <option value="laine_verre">Laine de verre (ISOVER / Knauf)</option>
@@ -838,14 +736,14 @@ export default function ZoneCard({
                   onClick={() => update({ zone_vent_rive: !(zone.zone_vent_rive ?? zone.angle) })}
                   className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                     (zone.zone_vent_rive ?? zone.angle)
-                      ? "border-red-600 bg-sky-950/40 text-gray-400"
-                      : "border-white/10 bg-[#0B0F19] text-gray-400 hover:text-white"
+                      ? "border-sky-500 bg-sky-950/40 text-sky-300"
+                      : "border-slate-600 bg-slate-900 text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   <span>💨 Rives renforcées (40cm)</span>
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      (zone.zone_vent_rive ?? zone.angle) ? "bg-gray-300" : "bg-slate-600"
+                      (zone.zone_vent_rive ?? zone.angle) ? "bg-sky-400" : "bg-slate-600"
                     }`}
                   />
                 </button>
@@ -854,19 +752,19 @@ export default function ZoneCard({
 
             {/* Badge de synthèse technique */}
             {pose && (
-              <div className="rounded-md border border-white/10 bg-[#0B0F19]/80 p-2 text-[11px] text-gray-300 space-y-1">
+              <div className="rounded-md border border-slate-700 bg-slate-900/80 p-2 text-[11px] text-slate-300 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Modèle d'équerre auto :</span>
-                  <span className="font-semibold text-gray-300">{pose.isolant.modeleEquerreIsolco}</span>
+                  <span className="text-slate-400">Modèle d'équerre auto :</span>
+                  <span className="font-semibold text-sky-400">{pose.isolant.modeleEquerreIsolco}</span>
                 </div>
                 {pose.isolant.actif && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Chevilles rosaces isolant (5/m²) :</span>
+                    <span className="text-slate-400">Chevilles rosaces isolant (5/m²) :</span>
                     <span className="font-semibold text-emerald-400">{pose.isolant.nbChevillesRosaces} chevilles à frapper</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Vis Inox chevron/équerre :</span>
+                  <span className="text-slate-400">Vis Inox chevron/équerre :</span>
                   <span className="font-semibold text-amber-400">{pose.nbVisChevronEquerre} vis (4/porteuse, 2/guide)</span>
                 </div>
               </div>
@@ -878,174 +776,271 @@ export default function ZoneCard({
         {/* PARAMÈTRES HPL */}
         {/* ==================================================== */}
 
-        {/* PARAMETRES HPL DEPLACES AU CHANTIER */}
+        {zone.famille_pose ===
+          "hpl" && (
+          <div className="space-y-4 rounded-lg border border-slate-600 bg-slate-900/60 p-3.5">
+            {/* PARTIE 1 : PLAQUE BRUTE MATIÈRE PREMIÈRE */}
+            <div className="space-y-2 rounded-lg border border-slate-700 bg-slate-800/60 p-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
+                  📦 Plaque brute (Approvisionnement / Stock)
+                </p>
+                <span className="text-[10px] text-slate-400">Matière première</span>
+              </div>
+
+              <div>
+                <label className="text-[11px] text-slate-400">Format standard fabricant</label>
+                <select
+                  value={
+                    zone.plaque_longueur_mm && zone.plaque_largeur_mm
+                      ? `${zone.plaque_longueur_mm}x${zone.plaque_largeur_mm}`
+                      : "3050x1300"
+                  }
+                  onChange={(e) => {
+                    const [lStr, wStr] = e.target.value.split("x");
+                    if (lStr && wStr) {
+                      update({
+                        plaque_longueur_mm: parseInt(lStr, 10),
+                        plaque_largeur_mm: parseInt(wStr, 10),
+                      });
+                    }
+                  }}
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                >
+                  <option value="3050x1300">Trespa Meteon Standard (3050 × 1300 mm)</option>
+                  <option value="3650x1860">Trespa Meteon Grand Format (3650 × 1860 mm)</option>
+                  <option value="2550x1860">Trespa Meteon Moyen (2550 × 1860 mm)</option>
+                  <option value="2800x1300">Fundermax Standard (2800 × 1300 mm)</option>
+                  <option value="4100x1300">Fundermax Max Compact (4100 × 1300 mm)</option>
+                  <option value="custom">Format personnalisé...</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Field
+                  label="Longueur brute (mm)"
+                  value={zone.plaque_longueur_mm ?? 3050}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ plaque_longueur_mm: mm || null });
+                  }}
+                />
+                <Field
+                  label="Largeur brute (mm)"
+                  value={zone.plaque_largeur_mm ?? 1300}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ plaque_largeur_mm: mm || null });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* PARTIE 2 : MODULES POSÉS EN FAÇADE */}
+            <div className="space-y-2 rounded-lg border border-red-500/30 bg-red-950/10 p-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wide text-red-300">
+                  🧱 Modules posés en façade (Trame esthétique)
+                </p>
+                <span className="text-[10px] text-red-400">Dimensions maniables</span>
+              </div>
+
+              <div>
+                <label className="text-[11px] text-slate-400">Trame cible des modules</label>
+                <select
+                  value={
+                    zone.module_largeur_mm && zone.module_hauteur_mm
+                      ? `${zone.module_largeur_mm}x${zone.module_hauteur_mm}`
+                      : "1000x600"
+                  }
+                  onChange={(e) => {
+                    const [wStr, hStr] = e.target.value.split("x");
+                    if (wStr && hStr) {
+                      update({
+                        module_largeur_mm: parseInt(wStr, 10),
+                        module_hauteur_mm: parseInt(hStr, 10),
+                      });
+                    }
+                  }}
+                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
+                >
+                  <option value="1000x600">Standard maniable (1000 × 600 mm)</option>
+                  <option value="1200x800">Grand format architectural (1200 × 800 mm)</option>
+                  <option value="1500x450">Bandeau horizontal élancé (1500 × 450 mm)</option>
+                  <option value="600x1200">Module vertical (600 × 1200 mm)</option>
+                  <option value="custom">Trame personnalisée...</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Field
+                  label="Largeur module (mm)"
+                  value={zone.module_largeur_mm ?? 1000}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ module_largeur_mm: mm || null });
+                  }}
+                />
+                <Field
+                  label="Hauteur module (mm)"
+                  value={zone.module_hauteur_mm ?? 600}
+                  onChange={(v) => {
+                    const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
+                    update({ module_hauteur_mm: mm || null });
+                  }}
+                />
+              </div>
+
+              {/* SENS DE POSE */}
+              <div className="pt-1">
+                <label className="text-xs uppercase tracking-wide text-slate-400">
+                  Orientation de pose
+                </label>
+                <div className="mt-1 flex gap-2">
+                  {(["horizontal", "vertical"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => update({ sens_pose: s })}
+                      className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        (zone.sens_pose ?? "horizontal") === s
+                          ? "bg-red-600 text-white"
+                          : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                      }`}
+                    >
+                      {s === "horizontal" ? "↔ Horizontal" : "↕ Vertical"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ====================================================== */}
       {/* OUVERTURES */}
       {/* ====================================================== */}
 
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs uppercase tracking-wide text-gray-500">
-            Ouvertures — Position (X, Y) depuis angle bas-gauche
+      <div className="space-y-2">
+
+        <div className="flex items-center justify-between">
+
+          <p className="text-xs uppercase tracking-wide text-slate-500">
+            Ouvertures
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {(
-              [
-                { type: "fenetre" as const, label: "🪟 Fenêtre" },
-                { type: "porte" as const, label: "🚪 Porte" },
-                { type: "baie" as const, label: "🪟 Baie vitrée" },
-                { type: "porte_fenetre" as const, label: "🚪 Porte-fenêtre" },
-              ] as { type: Ouverture["type"]; label: string }[]
-            ).map(({ type, label }) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => ajouterOuverture(type)}
-                className="rounded-lg border border-white/10 px-2 py-1 text-xs text-gray-300 hover:bg-slate-700"
-              >
-                + {label}
-              </button>
-            ))}
+
+          <div className="flex gap-2">
+
+            <button
+              type="button"
+              onClick={() =>
+                ajouterOuverture(
+                  "fenetre"
+                )
+              }
+              className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+            >
+              + Fenêtre
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                ajouterOuverture(
+                  "porte"
+                )
+              }
+              className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+            >
+              + Porte
+            </button>
+
           </div>
         </div>
 
-        {/* En-tête colonnes */}
-        {zone.ouvertures.length > 0 && (
-          <div className="grid grid-cols-[80px_68px_68px_72px_72px_1fr_28px] gap-1.5 text-[10px] uppercase font-bold text-gray-500 px-1">
-            <span>Type</span>
-            <span>L (m)</span>
-            <span>H (m)</span>
-            <span>X depuis ←</span>
-            <span>Allège Y</span>
-            <span>Linteau</span>
-            <span></span>
-          </div>
-        )}
-
-        {zone.ouvertures.map((o) => {
-          const estPorte = o.type === "porte" || o.type === "baie" || o.type === "porte_fenetre";
-          const allegeM = (o.hauteurAllegeMm || 0) / 1000;
-          const linteauM = allegeM + (o.hauteur || 0);
-          const typeLabel =
-            o.type === "fenetre" ? "Fenêtre" :
-            o.type === "porte" ? "Porte" :
-            o.type === "baie" ? "Baie" : "Pte-Fen.";
-          const typeColor =
-            o.type === "fenetre" ? "text-gray-400" :
-            o.type === "porte" ? "text-amber-300" : "text-violet-300";
-
-          return (
+        {zone.ouvertures.map(
+          (o) => (
             <div
               key={o.id}
-              className="grid grid-cols-[80px_68px_68px_72px_72px_1fr_28px] gap-1.5 items-center"
+              className="flex items-center gap-2"
             >
-              {/* Type */}
-              <span className={`text-xs font-bold truncate ${typeColor}`}>
-                {typeLabel}
+
+              <span className="w-16 text-xs text-slate-400">
+                {o.type ===
+                "fenetre"
+                  ? "Fenêtre"
+                  : "Porte"}
               </span>
 
-              {/* Largeur */}
               <input
                 type="number"
-                step="0.01"
-                min="0"
-                value={o.largeur || ""}
+                value={o.largeur}
                 onChange={(e) =>
-                  updateOuverture(o.id, { largeur: parseFloat(e.target.value) || 0 })
+                  updateOuverture(
+                    o.id,
+                    {
+                      largeur:
+                        parseFloat(
+                          e.target
+                            .value
+                        ) || 0,
+                    }
+                  )
                 }
                 placeholder="L (m)"
-                className="rounded-lg border border-white/10 bg-[#0B0F19] px-2 py-1 text-sm text-white w-full"
+                className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
               />
 
-              {/* Hauteur */}
               <input
                 type="number"
-                step="0.01"
-                min="0"
-                value={o.hauteur || ""}
+                value={o.hauteur}
                 onChange={(e) =>
-                  updateOuverture(o.id, { hauteur: parseFloat(e.target.value) || 0 })
+                  updateOuverture(
+                    o.id,
+                    {
+                      hauteur:
+                        parseFloat(
+                          e.target
+                            .value
+                        ) || 0,
+                    }
+                  )
                 }
                 placeholder="H (m)"
-                className="rounded-lg border border-white/10 bg-[#0B0F19] px-2 py-1 text-sm text-white w-full"
+                className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
               />
 
-              {/* X — distance de l'angle gauche (en mm) */}
-              <div className="relative">
-                <input
-                  type="number"
-                  step="10"
-                  min="0"
-                  value={Math.round((o.distanceAngleGaucheM || 0) * 1000) || ""}
-                  onChange={(e) =>
-                    updateOuverture(o.id, {
-                      distanceAngleGaucheM: (parseFloat(e.target.value) || 0) / 1000,
-                    })
-                  }
-                  placeholder="X (mm)"
-                  className="rounded-lg border border-amber-600/50 bg-[#0B0F19] px-2 py-1 text-sm text-amber-200 w-full"
-                  title="Distance depuis l'angle gauche du mur jusqu'au bord gauche de l'ouverture (mm)"
-                />
-              </div>
+              <span className="text-xs text-slate-500">
+                {(
+                  o.largeur *
+                  o.hauteur
+                ).toFixed(2)}{" "}
+                m²
+              </span>
 
-              {/* Y — hauteur d'allège (en mm), fixée à 0 pour les portes */}
-              {estPorte ? (
-                <div className="flex items-center px-2 py-1 text-xs text-gray-400 rounded-lg border border-white/10 bg-[#0B0F19]/50">
-                  Y = 0 mm (sol)
-                </div>
-              ) : (
-                <input
-                  type="number"
-                  step="10"
-                  min="0"
-                  value={o.hauteurAllegeMm || ""}
-                  onChange={(e) =>
-                    updateOuverture(o.id, {
-                      hauteurAllegeMm: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  placeholder="Allège (mm)"
-                  className="rounded-lg border border-red-700/50 bg-[#0B0F19] px-2 py-1 text-sm text-sky-200 w-full"
-                  title="Hauteur d'allège : distance du sol au bas de la fenêtre (mm)"
-                />
-              )}
-
-              {/* Linteau calculé automatiquement */}
-              <div className="text-[10px] text-emerald-400 font-mono px-1">
-                {o.hauteur > 0
-                  ? `⬆ ${Math.round(linteauM * 1000)} mm`
-                  : <span className="text-slate-600">—</span>
-                }
-              </div>
-
-              {/* Supprimer */}
               <button
                 type="button"
-                onClick={() => supprimerOuverture(o.id)}
-                className="rounded-lg p-1 text-red-400 hover:text-red-300 hover:bg-[#1A1D24]"
+                onClick={() =>
+                  supprimerOuverture(
+                    o.id
+                  )
+                }
+                className="ml-auto text-xs text-red-400 hover:text-red-300"
               >
                 ✕
               </button>
-            </div>
-          );
-        })}
 
-        {zone.ouvertures.length === 0 && (
-          <p className="text-xs text-slate-600 italic">
-            Aucune ouverture — le calepinage utilisera le Mode B (symétrique depuis le centre).
-          </p>
+            </div>
+          )
         )}
       </div>
 
-      {mode === "resultat" && (
-      <>
       {/* ====================================================== */}
       {/* RÉSULTATS MÉTRÉS */}
       {/* ====================================================== */}
 
-      <div className="grid grid-cols-2 gap-3 border-t border-white/10 pt-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 border-t border-slate-700 pt-3 sm:grid-cols-3">
 
         <Resultat
           label="Brute façade"
@@ -1100,9 +1095,9 @@ export default function ZoneCard({
       {/* ====================================================== */}
 
       {pose && (
-        <div className="space-y-2 rounded-lg border border-red-700/30 bg-red-700/5 p-3">
+        <div className="space-y-2 rounded-lg border border-sky-600/30 bg-sky-600/5 p-3">
 
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-300">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-400">
             Calcul technique —{" "}
             {
               LABELS_FAMILLE[
@@ -1160,13 +1155,13 @@ export default function ZoneCard({
 
           </div>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-400">
             {pose.joint}
           </p>
 
           {pose.remarques.length >
             0 && (
-            <ul className="list-inside list-disc text-xs text-gray-500">
+            <ul className="list-inside list-disc text-xs text-slate-500">
               {pose.remarques.map(
                 (r, i) => (
                   <li key={i}>
@@ -1221,7 +1216,7 @@ export default function ZoneCard({
       {zone.famille_pose ===
         "hpl" &&
         !peutCalepiner && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-slate-500">
             Renseigne la longueur, la
             largeur de plaque et le sens
             de pose ci-dessus pour voir le
@@ -1238,7 +1233,7 @@ export default function ZoneCard({
           <button
             type="button"
             onClick={() => setModalDebitOuvert(true)}
-            className="flex-1 rounded-lg border border-white/10 bg-[#1A1D24] py-2 text-sm font-medium text-white hover:border-slate-500 hover:bg-slate-700 transition-colors text-center"
+            className="flex-1 rounded-lg border border-slate-600 bg-slate-800 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-700 transition-colors text-center"
           >
             📄 Fiche Débit & Atelier
           </button>
@@ -1263,19 +1258,19 @@ export default function ZoneCard({
       {/* MODAL FICHE DÉBIT & OPTIMISEUR DE COUPE */}
       {modalDebitOuvert && (
         <div
-          className="fixed inset-0 z-[210] pt-48 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/75 p-3 sm:p-5 backdrop-blur-sm"
           onClick={() => setModalDebitOuvert(false)}
         >
-          <div className="relative w-full max-w-4xl space-y-3 rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0B0F19] p-4 sm:p-6 pb-20 sm:pb-6 shadow-2xl max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[#0B0F19]/90 pb-3 rounded-2xl print:hidden">
+          <div className="mx-auto max-w-4xl space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/90 p-3 rounded-2xl print:hidden">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setOngletDebit("nesting")}
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "nesting"
-                      ? "bg-red-600 text-white shadow-md shadow-red-600/20"
-                      : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-slate-700"
+                      ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
+                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   <span>📐</span> Plan de Découpe &amp; Nesting
@@ -1285,8 +1280,8 @@ export default function ZoneCard({
                   onClick={() => setOngletDebit("fiche_a4")}
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "fiche_a4"
-                      ? "bg-red-600 text-white shadow-md shadow-red-600/20"
-                      : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-slate-700"
+                      ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
+                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   <span>📑</span> Fiche Débit Atelier A4
@@ -1297,14 +1292,14 @@ export default function ZoneCard({
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all"
                 >
                   <span>🖨️</span> Imprimer / Exporter PDF
                 </button>
                 <button
                   type="button"
                   onClick={() => setModalDebitOuvert(false)}
-                  className="rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-slate-700"
+                  className="rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700"
                 >
                   Fermer
                 </button>
@@ -1312,7 +1307,7 @@ export default function ZoneCard({
             </div>
 
             {ongletDebit === "nesting" && calepinage ? (
-              <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/90 p-4 shadow-2xl">
+              <div className="rounded-2xl border border-slate-700 bg-slate-800/90 p-4 shadow-2xl">
                 <VisualiseurDebitPlaques calepinage={calepinage} titreZone={zone.nom} />
               </div>
             ) : (
@@ -1321,16 +1316,8 @@ export default function ZoneCard({
                 chantier={{ nom: "Chantier BNA", adresse: null }}
                 entreprise={{
                   raison_sociale: "BNA Bardage",
-                  siret: null,
                   telephone: null,
                   email: null,
-                  adresse: null,
-                  code_postal: null,
-                  ville: null,
-                  assurance: null,
-                  iban: null,
-                  bic: null,
-                  mentions_legales: null,
                   logo_url: "/logo-bna.png",
                 }}
                 pose={pose}
@@ -1341,8 +1328,6 @@ export default function ZoneCard({
         </div>
       )}
 
-      </>
-      )}
         </div>
       )}
     </div>
@@ -1357,23 +1342,20 @@ function Field({
   label,
   value,
   onChange,
-  disabled = false,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
-  disabled?: boolean;
 }) {
   return (
     <div>
-      <label className="text-xs uppercase tracking-wide text-gray-500">
+      <label className="text-xs uppercase tracking-wide text-slate-500">
         {label}
       </label>
 
       <input
         type="number"
         value={value}
-        disabled={disabled}
         onChange={(e) =>
           onChange(
             parseFloat(
@@ -1381,9 +1363,7 @@ function Field({
             ) || 0
           )
         }
-        className={`mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white ${
-          disabled ? "opacity-50 cursor-not-allowed" : ""
-        }`}
+        className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
       />
     </div>
   );
@@ -1406,7 +1386,7 @@ function Resultat({
 }) {
   return (
     <div>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-slate-500">
         {label}
       </p>
 
@@ -1437,7 +1417,7 @@ function Chiffre({
 }) {
   return (
     <div>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-slate-500">
         {label}
       </p>
 

@@ -9,7 +9,7 @@ export default function VisualiseurDebitPlaques({
   calepinage,
   titreZone,
 }: {
-  calepinage: any;
+  calepinage: ResultatCalepinage;
   titreZone?: string;
 }) {
   const [plaqueIndex, setPlaqueIndex] = useState<number>(0);
@@ -18,7 +18,7 @@ export default function VisualiseurDebitPlaques({
   const plaques = calepinage.plaquesDebit;
   if (!plaques || plaques.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/60 p-8 text-center text-xs text-gray-400">
+      <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-8 text-center text-xs text-slate-400">
         Aucune donnée de débit disponible pour cette zone.
       </div>
     );
@@ -40,31 +40,31 @@ export default function VisualiseurDebitPlaques({
     <div className="space-y-4">
       {/* 1. KPIs & Bilan Matière Débit */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Plaques Mères</p>
-          <p className="mt-0.5 text-lg font-black text-white">{calepinage.nbPlaquesNecessaires} pcs</p>
-          <p className="text-[10px] text-gray-400 font-mono">
-            {(calepinage.plaqueBruteLongueurMm || calepinage.plaquesDebit?.[0]?.longueurMm || 0)}×{(calepinage.plaqueBruteLargeurMm || calepinage.plaquesDebit?.[0]?.largeurMm || 0)} mm
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plaques Mères</p>
+          <p className="mt-0.5 text-lg font-black text-slate-100">{calepinage.nbPlaquesNecessaires} pcs</p>
+          <p className="text-[10px] text-slate-400 font-mono">
+            {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
           </p>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Modules Posés</p>
-          <p className="mt-0.5 text-lg font-black text-gray-300">{(calepinage.nbPiecesPosees || calepinage.pieces?.length || 0)} modules</p>
-          <p className="text-[10px] text-gray-400 font-mono">
-            Net: {(calepinage.surfaceZoneM2 || calepinage.pieces?.reduce((s: number, p: any) => s + p.surfaceM2, 0) || 0).toFixed(2)} m²
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modules Posés</p>
+          <p className="mt-0.5 text-lg font-black text-sky-400">{calepinage.nbPiecesPosees} modules</p>
+          <p className="text-[10px] text-slate-400 font-mono">
+            Net: {calepinage.surfaceZoneM2.toFixed(2)} m²
           </p>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Rendement Moyen</p>
-          <p className="mt-0.5 text-lg font-black text-white">
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rendement Moyen</p>
+          <p className="mt-0.5 text-lg font-black text-slate-100">
             {(
-              plaques.reduce((s: number, p: any) => s + p.tauxRendementPct, 0) / plaques.length
+              plaques.reduce((s, p) => s + p.tauxRendementPct, 0) / plaques.length
             ).toFixed(1)}{" "}
             %
           </p>
-          <p className="text-[10px] text-gray-400">Surface brute: {calepinage.surfacePlaquesAchetesM2.toFixed(2)} m²</p>
+          <p className="text-[10px] text-slate-400">Surface brute: {calepinage.surfacePlaquesAchetesM2.toFixed(2)} m²</p>
         </div>
 
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3">
@@ -87,23 +87,23 @@ export default function VisualiseurDebitPlaques({
       </div>
 
       {/* 2. Barre de Navigation entre les Plaques */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 pb-2">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          {plaques.map((plaque: any, idx: number) => (
+          {plaques.map((plaque, idx) => (
             <button
               key={plaque.index}
               onClick={() => setPlaqueIndex(idx)}
               className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
                 plaqueIndex === idx
-                  ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
-                  : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-slate-700"
+                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                  : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
               }`}
             >
               <Layers className="h-3.5 w-3.5" />
               <span>Plaque #{plaque.index}</span>
               <span
                 className={`rounded-full px-1.5 py-0.2 text-[9px] ${
-                  plaqueIndex === idx ? "bg-[#0B0F19] text-amber-400" : "bg-[#0B0F19] text-gray-400"
+                  plaqueIndex === idx ? "bg-slate-950 text-amber-400" : "bg-slate-900 text-slate-400"
                 }`}
               >
                 {plaque.pieces.length} pcs
@@ -115,20 +115,20 @@ export default function VisualiseurDebitPlaques({
         <div className="flex items-center gap-1">
           <button
             onClick={() => setZoom((z) => Math.max(0.8, z - 0.1))}
-            className="rounded-lg border border-white/10 bg-[#1A1D24] p-1.5 text-gray-400 hover:text-white"
+            className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-400 hover:text-white"
             title="Zoom arrière"
           >
             <ZoomOut className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => setZoom(1)}
-            className="rounded-lg border border-white/10 bg-[#1A1D24] px-2 py-1 text-[10px] font-bold text-gray-400 hover:text-white"
+            className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-white"
           >
             100%
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(1.5, z + 0.1))}
-            className="rounded-lg border border-white/10 bg-[#1A1D24] p-1.5 text-gray-400 hover:text-white"
+            className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-400 hover:text-white"
             title="Zoom avant"
           >
             <ZoomIn className="h-3.5 w-3.5" />
@@ -137,22 +137,22 @@ export default function VisualiseurDebitPlaques({
       </div>
 
       {/* 3. Visualisation Interactive SVG du Plan de Coupe de la Plaque */}
-      <div className="rounded-2xl border border-white/10 bg-[#0B0F19] p-4 shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+      <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-red-600/20 text-xs font-bold text-gray-300">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-sky-500/20 text-xs font-bold text-sky-400">
               #{plaqueActive.index}
             </span>
-            <p className="text-xs font-bold text-white">
+            <p className="text-xs font-bold text-slate-100">
               Plan de Découpe — Plaque Brute {rawL} × {rawH} mm
             </p>
           </div>
           <div className="flex items-center gap-3 text-[11px]">
-            <span className="text-gray-400">
+            <span className="text-slate-400">
               Rendement : <strong className="text-emerald-400">{plaqueActive.tauxRendementPct.toFixed(1)} %</strong>
             </span>
-            <span className="text-gray-400">
-              Découpes : <strong className="text-white">{plaqueActive.pieces.length} modules</strong>
+            <span className="text-slate-400">
+              Découpes : <strong className="text-slate-100">{plaqueActive.pieces.length} modules</strong>
             </span>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function VisualiseurDebitPlaques({
                 const isRive = piece.type === "coupe";
                 const isPignon = piece.type === "pignon";
 
-                const couleurFond = isPignon ? "#f59e0b" : isRive ? "#ef4444" : "#dc2626";
+                const couleurFond = isPignon ? "#f59e0b" : isRive ? "#38bdf8" : "#0284c7";
                 const strokeCouleur = isPignon ? "#fbbf24" : isRive ? "#7dd3fc" : "#38bdf8";
 
                 return (
@@ -311,19 +311,19 @@ export default function VisualiseurDebitPlaques({
         </div>
 
         {/* Légende du plan de coupe */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3 text-[11px]">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3 text-[11px]">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="h-3.5 w-3.5 rounded bg-red-700 border border-gray-300" />
-              <span className="text-gray-300">Modules pleins (M)</span>
+              <div className="h-3.5 w-3.5 rounded bg-sky-600 border border-sky-400" />
+              <span className="text-slate-300">Modules pleins (M)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-3.5 w-3.5 rounded bg-gray-300 border border-red-200" />
-              <span className="text-gray-300">Rives ajustées (R)</span>
+              <div className="h-3.5 w-3.5 rounded bg-sky-400 border border-sky-200" />
+              <span className="text-slate-300">Rives ajustées (R)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3.5 w-3.5 rounded bg-amber-500 border border-amber-300" />
-              <span className="text-gray-300">Coupes pignon (P)</span>
+              <span className="text-slate-300">Coupes pignon (P)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-3.5 w-3.5 rounded border border-emerald-500 bg-emerald-900/40" />
@@ -331,22 +331,20 @@ export default function VisualiseurDebitPlaques({
             </div>
           </div>
 
-          <p className="text-[10px] text-gray-400 italic font-mono">
-            Trait de scie : 3 mm inclus · Joint de dilatation façade : {calepinage.jointMm ?? 8} mm décompté (DTU 41.2)
-          </p>
+          <p className="text-[10px] text-slate-500 italic">Épaisseur trait de scie : 3 mm inclus</p>
         </div>
       </div>
 
       {/* 4. Tableau de Débit Pas-à-Pas pour l'Atelier */}
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-md space-y-3">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+      <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-md space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
           <div className="flex items-center gap-2">
             <Scissors className="h-4 w-4 text-amber-400" />
-            <h3 className="text-xs font-bold text-white uppercase tracking-wide">
+            <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wide">
               Tableau des Découpes — Plaque #{plaqueActive.index}
             </h3>
           </div>
-          <span className="text-[11px] text-gray-400 font-mono">
+          <span className="text-[11px] text-slate-400 font-mono">
             {plaqueActive.pieces.length} coupes à effectuer
           </span>
         </div>
@@ -354,7 +352,7 @@ export default function VisualiseurDebitPlaques({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-white/10 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              <tr className="border-b border-slate-700 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 <th className="pb-2">Repère Pièce</th>
                 <th className="pb-2">Type</th>
                 <th className="pb-2 text-right">Longueur</th>
@@ -363,7 +361,7 @@ export default function VisualiseurDebitPlaques({
                 <th className="pb-2 text-right">Destination Façade</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10/60">
+            <tbody className="divide-y divide-slate-700/60">
               {plaqueActive.pieces.map((p, i) => (
                 <tr key={i} className="hover:bg-slate-750/50">
                   <td className="py-2 font-mono font-bold text-amber-400">{p.repere}</td>
@@ -373,19 +371,19 @@ export default function VisualiseurDebitPlaques({
                         p.type === "pignon"
                           ? "bg-amber-500/20 text-amber-400"
                           : p.type === "coupe"
-                          ? "bg-red-600/20 text-gray-300"
-                          : "bg-slate-700 text-white"
+                          ? "bg-sky-500/20 text-sky-400"
+                          : "bg-slate-700 text-slate-200"
                       }`}
                     >
                       {p.type === "pignon" ? "Rampant pignon" : p.type === "coupe" ? "Rive ajustée" : "Module plein"}
                     </span>
                   </td>
-                  <td className="py-2 text-right font-mono font-semibold text-white">{p.largeurMm} mm</td>
-                  <td className="py-2 text-right font-mono font-semibold text-white">{p.hauteurMm} mm</td>
-                  <td className="py-2 text-right font-mono text-gray-400">
+                  <td className="py-2 text-right font-mono font-semibold text-slate-100">{p.largeurMm} mm</td>
+                  <td className="py-2 text-right font-mono font-semibold text-slate-100">{p.hauteurMm} mm</td>
+                  <td className="py-2 text-right font-mono text-slate-400">
                     X={p.xMm} mm, Y={p.yMm} mm
                   </td>
-                  <td className="py-2 text-right text-gray-300">
+                  <td className="py-2 text-right text-slate-300">
                     Rangée {p.rangee + 1}, Col. {p.colonne + 1}
                   </td>
                 </tr>
