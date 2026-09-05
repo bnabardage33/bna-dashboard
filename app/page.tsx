@@ -18,27 +18,47 @@ export default function Home() {
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({ notes: 0, chantiers: 0, devis: 0 });
+
+  async function chargerStats() {
+    try {
+      const [notesRes, chantiersRes, devisRes] = await Promise.all([
+        supabase.from("notes_patron").select("*", { count: "exact", head: true }),
+        supabase.from("chantiers").select("*", { count: "exact", head: true }).in("statut", ["en_cours", "En cours", "prevu", "Actif", "Préparation", "preparation", "nouveau"]),
+        supabase.from("devis").select("*", { count: "exact", head: true }),
+      ]);
+      setStats({
+        notes: notesRes.count || 0,
+        chantiers: chantiersRes.count || 0,
+        devis: devisRes.count || 0,
+      });
+    } catch {
+      // stats restent à 0 si erreur
+    }
+  }
+
+  async function chargerNotes() {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const { data, error: err } = await supabase
+        .from("notes_patron")
+        .select("id, titre, contenu, created_at")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (err) throw err;
+      if (data) setDernieresNotes(data);
+    } catch (err: any) {
+      setError(err.message || "Erreur lors du chargement des notes");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function chargerNotes() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const { data, error: err } = await supabase
-          .from("notes_patron")
-          .select("id, titre, contenu, created_at")
-          .order("created_at", { ascending: false })
-          .limit(3);
-        if (err) throw err;
-        if (data) setDernieresNotes(data);
-      } catch (err: any) {
-        setError(err.message || "Erreur lors du chargement des notes");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
     chargerNotes();
+    chargerStats();
   }, []);
 
   async function handleTexteReformule(texte: string) {
@@ -54,6 +74,7 @@ export default function Home() {
       if (!error && data) {
         setDernieresNotes((prev) => [data[0], ...prev].slice(0, 3));
       }
+      await chargerStats();
     } catch (err: any) {
       setError(err.message || "Erreur lors de la sauvegarde");
       console.error(err);
@@ -70,19 +91,19 @@ export default function Home() {
         {/* Stats rapides */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
-            <p className="text-2xl font-black text-white">3</p>
+            <p className="text-2xl font-black text-white">{stats.notes}</p>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Notes récentes</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
-            <p className="text-2xl font-black text-[#E30613]">1</p>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Micro actif</p>
+            <p className={`text-2xl font-black ${isSavingNote ? "text-[#E30613]" : "text-gray-500"}`}>{isSavingNote ? "✓" : "○"}</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Micro</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
-            <p className="text-2xl font-black text-white">6</p>
+            <p className="text-2xl font-black text-white">{stats.chantiers}</p>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Chantiers</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
-            <p className="text-2xl font-black text-white">12</p>
+            <p className="text-2xl font-black text-white">{stats.devis}</p>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Devis</p>
           </div>
         </div>
