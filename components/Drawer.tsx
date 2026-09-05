@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, Camera, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const NAV_ITEMS = [
   { href: "/", label: "Accueil", icon: Home },
@@ -23,7 +23,6 @@ export default function Drawer() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
@@ -57,11 +56,8 @@ export default function Drawer() {
       )}
 
       {/* DRAWER */}
-      <aside
-        style={{ backgroundColor: '#0B0F19', zIndex: 110 }}
-        className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] border-r border-white/[0.08] flex flex-col shadow-2xl transition-transform duration-300 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
+        <aside
+        className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] border-r border-white/[0.08] bg-[#0B0F19] flex flex-col shadow-2xl transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* DRAWER HEADER */}
         <div className="flex items-center justify-between px-5 pt-12 pb-5 border-b border-white/[0.06]">

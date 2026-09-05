@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -34,16 +35,18 @@ export default function RootLayout({
       <body className="bg-[#0B0F19] min-h-screen text-gray-300 antialiased selection:bg-[#E30613]/30 selection:text-red-200 flex flex-col">
         <RegisterSW />
         <InactivityLogout />
-        <header style={{ backgroundColor: '#1A1D24', position: 'relative', margin: '16px 16px 0 16px', zIndex: 9999, height: '120px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderRadius: '22px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+        <header className="bg-[#1A1D24] relative z-[9999] h-[120px] overflow-hidden flex items-center justify-between px-5 border-b border-white/5 shadow-lg m-4 rounded-[22px]">
           <Drawer />
-          <img
+          <Image
             src="/logo-bna.png"
             alt="BNA Bardage"
-            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', height: '200px', width: 'auto', maxWidth: '400px', objectFit: 'contain', pointerEvents: 'none' }}
+            width={400}
+            height={200}
+            className="absolute left-1/2 -translate-x-1/2 h-[200px] w-auto max-w-[400px] object-contain pointer-events-none"
           />
-          <div style={{ width: '40px' }} />
+          <div className="w-10" />
         </header>
-        <main id="main-content-wrapper" style={{ marginTop: '16px' }} className="flex-1 relative z-10 w-full overflow-x-hidden pb-12">
+        <main id="main-content-wrapper" className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12">
           {children}
         </main>
       </body>

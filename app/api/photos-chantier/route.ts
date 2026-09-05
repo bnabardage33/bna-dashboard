@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${chantier_id}/${Date.now()}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = new Uint8Array(arrayBuffer);
 
     const { error: storageError } = await supabaseAdmin.storage
       .from('chantiers-photos')

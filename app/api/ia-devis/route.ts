@@ -3,11 +3,19 @@ import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 const googleProvider = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || ''
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
 });
+
+if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  console.warn('GOOGLE_GENERATIVE_AI_API_KEY manquante. L\'API ia-devis sera indisponible.');
+}
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      return NextResponse.json({ error: 'Clé API Google AI manquante dans la configuration.' }, { status: 503 });
+    }
+
     const { prompt, catalogueContext } = await req.json();
 
     if (!prompt) {
@@ -20,8 +28,7 @@ export async function POST(req: NextRequest) {
 
     if (catalogueContext && catalogueContext.length > 0) {
       const keywords = promptLower.split(/\s+/).filter((w: string) => w.length > 3);
-      
-      // Force hardware/framing items into the filter if siding is requested
+
       if (needsOssature) {
         keywords.push("chevron", "équerre", "equerre", "cheville", "vis", "ossature");
       }
@@ -30,7 +37,6 @@ export async function POST(req: NextRequest) {
         const text = `${c.designation} ${c.description || ''}`.toLowerCase();
         return keywords.some((kw: string) => text.includes(kw));
       });
-      // Garder les 15 plus pertinents max
       if (filteredCatalog.length > 15) {
         filteredCatalog = filteredCatalog.slice(0, 15);
       }
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest) {
         "Applique ces mathématiques pour renseigner la clé 'qte' de ces lignes.";
     }
 
-    const systemPrompt = 
+    const systemPrompt =
       "Tu es un expert métreur en bâtiment. Le client va dicter un besoin de chantier. Tu dois décomposer sa demande en PLUSIEURS lignes de devis distinctes." +
       catalogueString +
       reglesMetier +
@@ -70,15 +76,14 @@ export async function POST(req: NextRequest) {
       prompt: prompt,
       temperature: 0.2,
     });
-    
-    // Nettoyage au cas où Gemini ajouterait du markdown
+
     let jsonString = texte.trim();
     if (jsonString.startsWith("```json")) {
       jsonString = jsonString.replace(/```json/g, "").replace(/```/g, "").trim();
     } else if (jsonString.startsWith("```")) {
       jsonString = jsonString.replace(/```/g, "").trim();
     }
-    
+
     let result;
     try {
       result = JSON.parse(jsonString);
@@ -91,7 +96,6 @@ export async function POST(req: NextRequest) {
       throw new Error("L'IA n'a pas renvoyé le tableau 'lignes_prestation'.");
     }
 
-    // Arrondi à l'entier supérieur pour les unités discrètes (pièces, unités)
     const formattedLignes = result.lignes_prestation.map((ligne: any) => {
       const unitLower = (ligne.unite || "").toLowerCase();
       if (unitLower.includes("unit") || unitLower.includes("pièce") || unitLower.includes("piece") || unitLower === "u") {

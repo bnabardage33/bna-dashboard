@@ -14,17 +14,29 @@ type Note = {
 };
 
 export default function Home() {
-  const [dernieresNotes, setDernieresNotes] = useState<Note[]>([]);
+  const [dernieieresNotes, setDernieresNotes] = useState<Note[]>([]);
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function chargerNotes() {
-      const { data } = await supabase
-        .from("notes_patron")
-        .select("id, titre, contenu, created_at")
-        .order("created_at", { ascending: false })
-        .limit(3);
-      if (data) setDernieresNotes(data);
+      try {
+        setIsLoading(true);
+        setError(null);
+        const { data, error: err } = await supabase
+          .from("notes_patron")
+          .select("id, titre, contenu, created_at")
+          .order("created_at", { ascending: false })
+          .limit(3);
+        if (err) throw err;
+        if (data) setDernieresNotes(data);
+      } catch (err: any) {
+        setError(err.message || "Erreur lors du chargement des notes");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     }
     chargerNotes();
   }, []);
@@ -33,15 +45,21 @@ export default function Home() {
     setIsSavingNote(true);
     const titreExtrait = texte.split(".")[0].slice(0, 40) + "...";
 
-    const { data, error } = await supabase.from("notes_patron").insert({
-      titre: titreExtrait,
-      contenu: texte,
-    }).select();
+    try {
+      const { data, error } = await supabase.from("notes_patron").insert({
+        titre: titreExtrait,
+        contenu: texte,
+      }).select();
 
-    if (!error && data) {
-      setDernieresNotes((prev) => [data[0], ...prev].slice(0, 3));
+      if (!error && data) {
+        setDernieresNotes((prev) => [data[0], ...prev].slice(0, 3));
+      }
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la sauvegarde");
+      console.error(err);
+    } finally {
+      setIsSavingNote(false);
     }
-    setIsSavingNote(false);
   }
 
   return (
@@ -84,22 +102,36 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {dernieresNotes.map(n => (
-              <Link key={n.id} href="/terrain/notes" className="group rounded-xl border border-white/10 bg-[#1A1D24] p-4 hover:border-[#E30613]/50 transition-colors flex flex-col h-32">
-                <h4 className="font-semibold text-white text-sm mb-2 truncate group-hover:text-[#E30613]">{n.titre || "Note sans titre"}</h4>
-                <p className="text-xs text-gray-400 line-clamp-3">{n.contenu}</p>
-                <span className="mt-auto pt-2 text-[10px] text-gray-500 font-medium">
-                  {new Date(n.created_at).toLocaleDateString("fr-FR")}
-                </span>
-              </Link>
-            ))}
-            {dernieresNotes.length === 0 && (
-              <div className="col-span-3 rounded-xl border border-dashed border-white/10 bg-[#1A1D24] p-8 text-center text-gray-500 text-sm">
-                Aucune note récente. Utilisez le micro ci-dessus !
+          {error && (
+            <div className="col-span-3 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-center text-red-300 text-sm">
+              {error}
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="col-span-3 rounded-xl border border-white/10 bg-[#1A1D24] p-8 text-center text-gray-500 text-sm">
+              Chargement des notes...
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {dernieieresNotes.map(n => (
+                  <Link key={n.id} href="/terrain/notes" className="group rounded-xl border border-white/10 bg-[#1A1D24] p-4 hover:border-[#E30613]/50 transition-colors flex flex-col h-32">
+                    <h4 className="font-semibold text-white text-sm mb-2 truncate group-hover:text-[#E30613]">{n.titre || "Note sans titre"}</h4>
+                    <p className="text-xs text-gray-400 line-clamp-3">{n.contenu}</p>
+                    <span className="mt-auto pt-2 text-[10px] text-gray-500 font-medium">
+                      {new Date(n.created_at).toLocaleDateString("fr-FR")}
+                    </span>
+                  </Link>
+                ))}
+                {dernieieresNotes.length === 0 && !error && (
+                  <div className="col-span-3 rounded-xl border border-dashed border-white/10 bg-[#1A1D24] p-8 text-center text-gray-500 text-sm">
+                    Aucune note récente. Utilisez le micro ci-dessus !
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </main>
     </div>

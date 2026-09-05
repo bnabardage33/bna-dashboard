@@ -177,11 +177,11 @@ export default function FinChantierPage() {
       console.error("Erreur chargement chantiers:", chantiersRes.error);
     }
 
-    const clientsMap = new Map((clientsRes.data || []).map((cl: any) => [cl.id, cl]));
-    const devisMap = new Map((devisRes.data || []).map((d: any) => [d.id, d]));
+    const clientsMap = new Map((clientsRes.data || []).map((cl: any) => [cl.id, cl as any]));
+    const devisMap = new Map((devisRes.data || []).map((d: any) => [d.id, d as any]));
 
     const chantiersFormatted: ChantierOption[] = (chantiersRes.data || []).map((c: any) => {
-      const client = clientsMap.get(c.client_id);
+      const client = clientsMap.get(c.client_id) as any;
       return {
         id: c.id,
         nom: c.nom || "Chantier sans nom",
@@ -215,9 +215,9 @@ export default function FinChantierPage() {
           notice_entretien: r.notice_entretien || DEFAULT_NOTICE,
           reserves: Array.isArray(r.reserves) ? r.reserves : [],
           checklist_repli: r.checklist_repli || DEFAULT_REPLI,
-          chantiers: ch ? { nom: ch.nom, adresse_chantier: ch.adresse_chantier } : null,
-          clients: cl ? { nom: cl.nom, email: cl.email, telephone: cl.tel || cl.telephone } : null,
-          devis: d ? { numero: d.numero } : null,
+          chantiers: ch ? { nom: (ch as any).nom, adresse_chantier: (ch as any).adresse_chantier } : null,
+          clients: cl ? { nom: (cl as any).nom, email: (cl as any).email, telephone: (cl as any).tel || (cl as any).telephone } : null,
+          devis: d ? { numero: (d as any).numero } : null,
         };
       });
       setPvs(enrichis);

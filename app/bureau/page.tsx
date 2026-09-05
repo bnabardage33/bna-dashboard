@@ -55,7 +55,7 @@ export default function BureauDashboard() {
 
       const devisEnAttente = devisRes.data?.length || 0;
       const facturesRetard = facturesRes.data?.length || 0;
-      const montantRetard = facturesRes.data?.reduce((sum, f) => sum + calculerMontantTTCFacture(f), 0) || 0;
+      const montantRetard = facturesRes.data?.reduce((sum: number, f: any) => sum + calculerMontantTTCFacture(f), 0) || 0;
       const chantiersEnCours = chantiersRes.data?.length || 0;
       const fournisseursActifs = fournRes.data?.length || 0;
 

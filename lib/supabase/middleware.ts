@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   '/api/espace-client',
   '/api/chat-client',
   '/api/chat-client-summary',
+  '/api/meteo',
   '/api/meteo-vigilance',
   '/manifest.json',
   '/sw.js',

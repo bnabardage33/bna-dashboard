@@ -1,30 +1,42 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
-// Mock Supabase Server Client setup for the action
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+async function getSupabase() {
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+}
 
 export async function validerPointageAvecMeteo(chantierId: string, equipeId: string, heures: number, dateSaisie: string, commentaire: string = "") {
+  const supabase = await getSupabase();
   try {
-    // 1. Récupérer l'adresse du chantier
     const { data: chantier, error: chantierErr } = await supabase
       .from('chantiers')
       .select('adresse_chantier')
       .eq('id', chantierId)
       .single();
-      
-    if (chantierErr) throw chantierErr;
 
-    const adresse = chantier?.adresse_chantier || 'Paris, France'; // fallback par défaut
-    
-    // 2. Fetch de l'API Météo (Visual Crossing) pour la date du jour
-    const apiKey = process.env.VISUAL_CROSSING_API_KEY;
+    if (chantierErr) throw chantierErr;
+    const adresse = chantier?.adresse_chantier || 'Paris, France';
+
+    const apiKey = process.env.VISUALCROSSING_API_KEY;
     let precip = 0;
     let apiSuccess = false;
-    
+
     if (apiKey) {
       try {
         const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/${dateSaisie}?unitGroup=metric&key=${apiKey}&contentType=json`;
@@ -41,37 +53,29 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
       }
     }
 
-    // 3. Barème de pénalité (Logique)
     let coef_meteo = 1.0;
     let meteo_relevee = 'Non relevée';
 
     if (apiSuccess) {
       if (precip < 1) {
         coef_meteo = 1.0;
-        meteo_relevee = 'Clément'; // ☀️ Beau temps
+        meteo_relevee = 'Clément';
       } else if (precip >= 1 && precip <= 3) {
         coef_meteo = 1.15;
-        meteo_relevee = 'Pluie fine'; // 🌧️ Baisse de rendement
+        meteo_relevee = 'Pluie fine';
       } else if (precip > 3) {
         coef_meteo = 1.30;
-        meteo_relevee = 'Grosse averse'; // ⛈️ Forte baisse
+        meteo_relevee = 'Grosse averse';
       }
-    } else {
-      // Fallback
-      coef_meteo = 1.0;
-      meteo_relevee = 'Non relevée';
     }
 
-    // 4. Sauvegarde la saisie globale dans pointages_globaux
-    // Si equipeId est le faux uuid, on essaie de récupérer le premier utilisateur valide de l'équipe pour ne pas bloquer.
     let finalEquipeId = equipeId;
     if (equipeId === "00000000-0000-0000-0000-000000000000") {
       const { data: firstEquipe } = await supabase.from('equipe').select('id').limit(1).single();
       if (firstEquipe?.id) {
         finalEquipeId = firstEquipe.id;
       } else {
-        // Fallback ultime : on essaie de ne pas l'insérer si la FK l'accepte
-        finalEquipeId = undefined as any; 
+        finalEquipeId = undefined as any;
       }
     }
 
@@ -100,6 +104,7 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
 }
 
 export async function supprimerPointageGlob(id: string) {
+  const supabase = await getSupabase();
   try {
     const { error } = await supabase.from('pointages_globaux').delete().eq('id', id);
     if (error) throw error;
@@ -111,6 +116,7 @@ export async function supprimerPointageGlob(id: string) {
 }
 
 export async function reinitialiserPointagesChantier(chantierId: string) {
+  const supabase = await getSupabase();
   try {
     const { error } = await supabase.from('pointages_globaux').delete().eq('chantier_id', chantierId);
     if (error) throw error;

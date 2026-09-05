@@ -40,3 +40,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# dev scripts (one-off patches, do not commit)
+patch_*.js
+fix_*.js
+inject_ui.js
+check_*.js
+count_*.js
+find_*.js
+trace_*.js
+print_*.js
+globalCalepinage.js

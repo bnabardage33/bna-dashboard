@@ -13,9 +13,8 @@ export default [
       parser: tsParser,
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@next/next/no-img-element": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@next/next/no-img-element": "warn",
     },
   },
 ];
-

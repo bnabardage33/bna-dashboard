@@ -164,7 +164,7 @@ export default function FacturesPage() {
       .eq("devis_id", devisId);
 
     const deja = (facturesExistantes ?? []).reduce(
-      (s, f: any) => s + f.lignes.reduce((t: number, l: Ligne) => t + l.qte * l.pu_ht, 0),
+      (s: number, f: any) => s + f.lignes.reduce((t: number, l: any) => t + l.qte * l.pu_ht, 0),
       0
     );
     setDejaFactureHT(deja);

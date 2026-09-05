@@ -15,7 +15,7 @@ export async function prochainNumero(
     return `${prefix}-${annee}-001`;
   }
 
-  const nums = (data ?? []).map((d) => parseInt(d.numero.split("-")[2]) || 0);
+  const nums = (data ?? []).map((d: any) => parseInt(d.numero.split("-")[2]) || 0);
   const suivant = (nums.length ? Math.max(...nums) : 0) + 1;
   return `${prefix}-${annee}-${String(suivant).padStart(3, "0")}`;
 }

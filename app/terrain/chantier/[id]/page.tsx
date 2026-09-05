@@ -290,7 +290,7 @@ function ChantierDetailContent() {
         .from("chantiers")
         .update({ surface_m2, quantite_coupes_ml, singularites_nb })
         .eq("id", chantier.id)
-        .then(({ error }) => {
+        .then(({ error }: { error: any }) => {
           if (error) {
             console.error("Erreur sync calepinage -> chantier:", error);
           }

@@ -55,7 +55,7 @@ export async function genererExportComptaCSV(mois: string) {
   ]);
 
   if (factures) {
-    factures.forEach(f => {
+    factures.forEach((f: any) => {
       rows.push([
         new Date(f.date_emission).toLocaleDateString("fr-FR"),
         "VENTES",
@@ -71,7 +71,7 @@ export async function genererExportComptaCSV(mois: string) {
   }
 
   if (achats) {
-    achats.forEach(a => {
+    achats.forEach((a: any) => {
       rows.push([
         new Date(a.date).toLocaleDateString("fr-FR"),
         "ACHATS",
@@ -87,7 +87,7 @@ export async function genererExportComptaCSV(mois: string) {
   }
   
   if (depenses) {
-    depenses.forEach(d => {
+    depenses.forEach((d: any) => {
       const ht = d.montant_ht || 0;
       const tvaPct = d.taux_tva || 20;
       const tva = ht * (tvaPct / 100);

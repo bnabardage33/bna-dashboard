@@ -28,7 +28,7 @@ export default function SAVPage() {
     if (data) {
       let filtered = data;
       if (recherche) {
-        filtered = data.filter(t => 
+        filtered = data.filter((t: any) => 
           t.chantiers?.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
           t.chantiers?.clients?.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
           t.type_sinistre?.toLowerCase().includes(recherche.toLowerCase())

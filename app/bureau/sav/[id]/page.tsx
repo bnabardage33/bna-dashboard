@@ -111,13 +111,12 @@ export default function FicheSAV() {
   });
 
   useEffect(() => {
-    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({data}) => { if (data) setEntreprise(data) });
-    // Load chantiers for the dropdown
+    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }: { data: any }) => { if (data) setEntreprise(data) });
     supabase.from("chantiers").select("id, nom, client_id, adresse_chantier, clients(id, nom, societe)").order("created_at", { ascending: false })
-      .then(({ data }) => { if (data) setChantiers(data); });
+      .then(({ data }: { data: any[] }) => { if (data) setChantiers(data); });
 
     if (!isNew) {
-      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }) => {
+      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }: { data: any }) => {
         if (data) {
           setTicket({
             ...data,

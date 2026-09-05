@@ -120,8 +120,6 @@ export async function GET(
     client: chantier.clients,
     avancement,
     avancementDetails,
-    debug_avancements: avancements, // ADDED FOR DEBUGGING
-    debug_avError: avError,
     devis: devisList,
     factures: facturesList,
   }, {
