@@ -20,16 +20,18 @@ body {
 }
 
 body::-webkit-scrollbar {
-  width: 8px;
+  width: 14px;
 }
 
 body::-webkit-scrollbar-track {
   background: #1A1D24;
+  border-left: 2px solid #E30613;
 }
 
 body::-webkit-scrollbar-thumb {
   background: #E30613;
-  border-radius: 4px;
+  border-radius: 7px;
+  border: 2px solid #1A1D24;
 }
 
 body::-webkit-scrollbar-thumb:hover {
