@@ -71,10 +71,7 @@ export default function CommandeModal({
     // 1. Fetch catalogue
     let { data: catData, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
     
-    // Log for debugging
-    if (catData && catData.length > 0) {
-      console.log("TEST ARTICLE:", catData[0]);
-    }
+
 
     if (catError || !catData || catData.length === 0) {
       const res = await supabase.from("articles").select("*");
