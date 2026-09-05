@@ -41,7 +41,7 @@ export default function Drawer() {
       {/* HAMBURGER BUTTON */}
       <button
         onClick={() => setOpen(true)}
-        className="relative z-20 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 transition-all"
+        className="relative z-[200] w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 border border-white/15 hover:bg-white/25 transition-all"
         aria-label="Ouvrir le menu"
       >
         <Menu size={20} className="text-white" />
