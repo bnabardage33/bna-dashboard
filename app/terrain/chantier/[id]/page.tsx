@@ -1,8 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
-import SaisieGlobaleCalepinage from "@/components/SaisieGlobaleCalepinage";
-import { genererCalepinageGlobal } from "@/lib/calepinageEngine";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import CommandeModal from "@/components/CommandeModal";
@@ -134,48 +132,6 @@ function ChantierDetailContent() {
   const [modalGlobalDebitOuvert, setModalGlobalDebitOuvert] = useState(false);
   const [activeMurs, setActiveMurs] = useState<any[]>([]);
   
-  function lancerCalepinageGlobal() {
-    if (zones.length === 0) return;
-    
-    // We import dynamically or just assume it's imported
-    // Wait, is it imported?
-    // Let's add it to imports later
-    const input = {
-      zones: zones.map(z => ({
-        zoneLargeurM: z.largeur,
-        zoneHauteurM: z.hauteur_mur,
-        hauteurFaiteM: z.hauteur_faite,
-        plaqueLongueurMm: globalConfigHPL.plaqueLongueurMm,
-        plaqueLargeurMm: globalConfigHPL.plaqueLargeurMm,
-        moduleLargeurMm: globalConfigHPL.moduleLargeurMm,
-        moduleHauteurMm: globalConfigHPL.moduleHauteurMm,
-        traitDeScieMm: globalConfigHPL.traitDeScieMm,
-        sensPose: globalConfigHPL.sensPose as "horizontal" | "vertical",
-        estPignon: z.type === "pignon",
-        typePose: "pose_droite" as const, // default
-        ouvertures: z.ouvertures ? z.ouvertures.map(o => ({
-          type: (o.type === "baie" || o.type === "porte_fenetre" ? "porte" : o.type) as "porte"|"fenetre",
-          largeur: o.largeur,
-          hauteur: o.hauteur,
-          hauteurLinteauM: (o as any).hauteurAllegeMm ? ((o as any).hauteurAllegeMm / 1000) + o.hauteur : null
-        })) : [],
-        zoneId: z.id,
-        zoneNom: z.nom
-      })),
-      plaqueLongueurMm: globalConfigHPL.plaqueLongueurMm,
-      plaqueLargeurMm: globalConfigHPL.plaqueLargeurMm,
-      moduleLargeurMm: globalConfigHPL.moduleLargeurMm,
-      moduleHauteurMm: globalConfigHPL.moduleHauteurMm,
-      traitDeScieMm: globalConfigHPL.traitDeScieMm
-    };
-    
-    // Call the global function
-    import('@/lib/calepinageCalcul').then(m => {
-      const res = m.calculerCalepinageGlobal(input);
-      setCalepinageGlobalResult(res);
-      setIsGlobalCalculated(true);
-    });
-  }
 
 
 
@@ -736,7 +692,6 @@ function ChantierDetailContent() {
 
       {tab === "Métrés & Technique" && (
         <div className="space-y-4">
-          {isGlobalCalculated && (
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-5">
             <Resume label="Brut façades" value={totaux.bruteFacade} />
             <Resume label="Brut pignons" value={totaux.brutePignon} />
@@ -744,7 +699,6 @@ function ChantierDetailContent() {
             <Resume label="Total net" value={totaux.nette} />
             <Resume label="À commander" value={totaux.aCommander} highlight />
           </div>
-          )}
 
           
         

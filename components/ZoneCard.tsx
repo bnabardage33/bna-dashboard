@@ -108,6 +108,25 @@ export function calculerZone(zone: Zone) {
   const surfaceACommander =
     surfaceNette * marge;
 
+  const nombreOuvertures = zone.ouvertures.length;
+
+  let totalCoupesML = 0;
+  if (zone.sens_pose === "vertical") {
+    const coupesBords = 2 * zone.largeur;
+    const coupesOuvertures = zone.ouvertures.reduce((s, o) => s + 2 * o.largeur, 0);
+    totalCoupesML = coupesBords + coupesOuvertures;
+  } else {
+    const coupesBords = 2 * zone.hauteur_mur;
+    const coupesOuvertures = zone.ouvertures.reduce((s, o) => s + 2 * o.hauteur, 0);
+    totalCoupesML = coupesBords + coupesOuvertures;
+  }
+  if (zone.type === "pignon" && zone.largeur > 0 && hFaite > zone.hauteur_mur) {
+    const demiLargeur = zone.largeur / 2;
+    const deltaH = hFaite - zone.hauteur_mur;
+    const longueurRampant = Math.sqrt(demiLargeur * demiLargeur + deltaH * deltaH);
+    totalCoupesML += 2 * longueurRampant;
+  }
+
   return {
     bruteFacade,
     brutePignon,
@@ -115,6 +134,8 @@ export function calculerZone(zone: Zone) {
     totalOuvertures,
     surfaceNette,
     surfaceACommander,
+    nombreOuvertures,
+    totalCoupesML,
   };
 }
 
