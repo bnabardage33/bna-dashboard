@@ -50,7 +50,7 @@ export default function Drawer() {
       {/* OVERLAY */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+          className="fixed inset-0 bg-black/60 z-[100]"
           onClick={() => setOpen(false)}
         />
       )}
