@@ -14,7 +14,10 @@ import {
   HardHat,
   ArrowRight,
   Truck,
-  Wand2
+  Wand2,
+  Package,
+  MapPin,
+  ShieldCheck
 } from "lucide-react";
 import { fmtEuro } from "@/lib/financeCalculs";
 import ChantierHealthCard from "@/components/ChantierHealthCard";
@@ -163,52 +166,52 @@ export default function BureauDashboard() {
             </div>
 
             {/* Devis en attente */}
-            <div className="rounded-xl border border-white/10 bg-red-600/10 p-6 flex flex-col">
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-6 flex flex-col hover:border-white/20 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <div className="rounded-full bg-red-600/20 p-2">
-                  <Clock className="h-5 w-5 text-gray-400" />
+                <div className="rounded-full bg-[#E30613]/20 p-2">
+                  <Clock className="h-5 w-5 text-[#E30613]" />
                 </div>
-                <h3 className="font-bold text-gray-400">Devis en attente</h3>
+                <h3 className="font-bold text-white">Devis en attente</h3>
               </div>
               <div className="mt-2 flex-grow">
                 <p className="text-3xl font-black text-white">{stats.devisEnAttente}</p>
                 <p className="text-sm font-semibold text-gray-400 mt-1">À relancer ou valider</p>
               </div>
-              <Link href="/bureau/devis-factures" className="mt-4 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-gray-400">
+              <Link href="/bureau/devis-factures" className="mt-4 flex items-center justify-between text-xs font-bold text-[#E30613] hover:text-red-400 transition-colors">
                 Gérer les devis <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
             {/* Chantiers en cours */}
-            <div className="rounded-xl border border-white/10 bg-red-600/10 p-6 flex flex-col">
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-6 flex flex-col hover:border-white/20 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <div className="rounded-full bg-red-600/20 p-2">
-                  <HardHat className="h-5 w-5 text-gray-400" />
+                <div className="rounded-full bg-[#E30613]/20 p-2">
+                  <HardHat className="h-5 w-5 text-[#E30613]" />
                 </div>
-                <h3 className="font-bold text-gray-400">Chantiers Actifs</h3>
+                <h3 className="font-bold text-white">Chantiers Actifs</h3>
               </div>
               <div className="mt-2 flex-grow">
                 <p className="text-3xl font-black text-white">{stats.chantiersEnCours}</p>
                 <p className="text-sm font-semibold text-gray-400 mt-1">En cours de production</p>
               </div>
-              <Link href="/bureau/fin-chantier" className="mt-4 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-gray-400">
+              <Link href="/bureau/fin-chantier" className="mt-4 flex items-center justify-between text-xs font-bold text-[#E30613] hover:text-red-400 transition-colors">
                 PV de Réceptions <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
             {/* Fournisseurs */}
-            <div className="rounded-xl border border-white/10 bg-red-600/10 p-6 flex flex-col">
+            <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-6 flex flex-col hover:border-white/20 transition-colors">
               <div className="flex items-center gap-3 mb-2">
-                <div className="rounded-full bg-red-600/20 p-2">
-                  <Truck className="h-5 w-5 text-gray-400" />
+                <div className="rounded-full bg-[#E30613]/20 p-2">
+                  <Truck className="h-5 w-5 text-[#E30613]" />
                 </div>
-                <h3 className="font-bold text-gray-400">Fournisseurs Actifs</h3>
+                <h3 className="font-bold text-white">Fournisseurs Actifs</h3>
               </div>
               <div className="mt-2 flex-grow">
                 <p className="text-3xl font-black text-white">{stats.fournisseursActifs}</p>
                 <p className="text-sm font-semibold text-gray-400 mt-1">Fournisseurs réguliers</p>
               </div>
-              <Link href="/bureau/fournisseurs" className="mt-4 flex items-center justify-between text-xs font-bold text-gray-400 hover:text-gray-400">
+              <Link href="/bureau/fournisseurs" className="mt-4 flex items-center justify-between text-xs font-bold text-[#E30613] hover:text-red-400 transition-colors">
                 Bons de commandes <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -244,34 +247,56 @@ export default function BureauDashboard() {
         {/* Accès rapides */}
         <section className="mt-12">
           <h2 className="text-xl font-bold text-white mb-6">Accès Rapides</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {/* Nouveau Super Pouvoir : Métré IA */}
-            <Link href="/terrain/metre-ia" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-cyan-500/50 bg-cyan-900/20 p-6 hover:bg-cyan-900/40 transition-all text-center group">
+            <Link href="/terrain/metre-ia" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-cyan-500/30 bg-cyan-950/30 p-6 hover:bg-cyan-950/50 hover:border-cyan-500/50 transition-all text-center group">
               <div className="rounded-full bg-cyan-500/20 p-3 group-hover:scale-110 transition-transform">
                 <Wand2 className="h-8 w-8 text-cyan-400" />
               </div>
-              <span className="font-bold text-cyan-100">Métré IA</span>
+              <span className="font-bold text-cyan-100 text-sm">Métré IA</span>
             </Link>
 
-            <Link href="/bureau/clients" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 hover:bg-[#1A1D24] hover:border-slate-500 transition-all text-center">
-              <Users className="h-8 w-8 text-gray-400" />
-              <span className="font-semibold text-gray-200">Clients & Prospects</span>
+            <Link href="/bureau/clients" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-blue-500/20 p-3 group-hover:scale-110 transition-transform">
+                <Users className="h-8 w-8 text-blue-400" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Clients</span>
             </Link>
-            <Link href="/bureau/devis-factures" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 hover:bg-[#1A1D24] hover:border-slate-500 transition-all text-center">
-              <FileText className="h-8 w-8 text-gray-400" />
-              <span className="font-semibold text-gray-200">Devis</span>
+            <Link href="/bureau/devis-factures" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-[#E30613]/20 p-3 group-hover:scale-110 transition-transform">
+                <FileText className="h-8 w-8 text-[#E30613]" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Devis & Factures</span>
             </Link>
-            <Link href="/bureau/factures" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 hover:bg-[#1A1D24] hover:border-slate-500 transition-all text-center">
-              <Receipt className="h-8 w-8 text-gray-400" />
-              <span className="font-semibold text-gray-200">Factures</span>
+            <Link href="/bureau/catalogue" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-emerald-500/20 p-3 group-hover:scale-110 transition-transform">
+                <Package className="h-8 w-8 text-emerald-400" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Catalogue</span>
             </Link>
-            <Link href="/bureau/catalogue" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 hover:bg-[#1A1D24] hover:border-slate-500 transition-all text-center">
-              <FileText className="h-8 w-8 text-gray-400" />
-              <span className="font-semibold text-gray-200">Catalogue Ouvrages</span>
+            <Link href="/bureau/photos-chantier" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-purple-500/20 p-3 group-hover:scale-110 transition-transform">
+                <MapPin className="h-8 w-8 text-purple-400" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Photos</span>
             </Link>
-            <Link href="/bureau/rapports-intemperies" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 hover:bg-[#1A1D24] hover:border-slate-500 transition-all text-center md:col-span-2 lg:col-span-1">
-              <CheckCircle2 className="h-8 w-8 text-gray-400" />
-              <span className="font-semibold text-gray-200">Rapports Intempéries</span>
+            <Link href="/bureau/rapports-intemperies" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-amber-500/20 p-3 group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="h-8 w-8 text-amber-400" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Rapports</span>
+            </Link>
+            <Link href="/bureau/fournisseurs" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-orange-500/20 p-3 group-hover:scale-110 transition-transform">
+                <Truck className="h-8 w-8 text-orange-400" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Fournisseurs</span>
+            </Link>
+            <Link href="/bureau/fin-chantier" className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24]/60 p-6 hover:bg-[#1A1D24] hover:border-white/20 hover:scale-[1.02] transition-all text-center">
+              <div className="rounded-full bg-rose-500/20 p-3 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="h-8 w-8 text-rose-400" />
+              </div>
+              <span className="font-semibold text-gray-200 text-sm">Fin de Chantier</span>
             </Link>
           </div>
         </section>
