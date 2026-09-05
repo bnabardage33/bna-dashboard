@@ -59,36 +59,7 @@ export default function FicheSAV() {
     });
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avant' | 'apres') => {
-    const rawFile = e.target.files?.[0];
-    if (!rawFile) return;
-
-    const file = rawFile.type.startsWith('image/')
-      ? await compressImage(rawFile)
-      : rawFile;
-
-    setUploading(prev => ({ ...prev, [type]: true }));
-    const fileExt = rawFile.type.startsWith('image/') ? 'jpg' : rawFile.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `${ticket.chantier_id || 'unassigned'}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage.from('sav_photos').upload(filePath, file);
-
-    if (uploadError) {
-      alert("Erreur lors de l'envoi de l'image.");
-      console.error(uploadError);
-    } else {
-      const { data } = supabase.storage.from('sav_photos').getPublicUrl(filePath);
-      setTicket(prev => ({
-        ...prev,
-        photos: { ...prev.photos, [type]: data.publicUrl }
-      }));
-    }
-    setUploading(prev => ({ ...prev, [type]: false }));
-  };
-
-
-  // Ticket state
+  
   const [ticket, setTicket] = useState({
     chantier_id: "",
     statut: "ouvert",
@@ -127,6 +98,34 @@ export default function FicheSAV() {
       });
     }
   }, [id, isNew]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avant' | 'apres') => {
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
+
+    const file = rawFile.type.startsWith('image/')
+      ? await compressImage(rawFile)
+      : rawFile;
+
+    setUploading(prev => ({ ...prev, [type]: true }));
+    const fileExt = rawFile.type.startsWith('image/') ? 'jpg' : rawFile.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `${ticket.chantier_id || 'unassigned'}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage.from('sav_photos').upload(filePath, file);
+
+    if (uploadError) {
+      alert("Erreur lors de l'envoi de l'image.");
+      console.error(uploadError);
+    } else {
+      const { data } = supabase.storage.from('sav_photos').getPublicUrl(filePath);
+      setTicket(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [type]: data.publicUrl }
+      }));
+    }
+    setUploading(prev => ({ ...prev, [type]: false }));
+  };
 
   
   const handleGenerateDevis = async () => {

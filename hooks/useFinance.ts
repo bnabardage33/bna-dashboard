@@ -666,7 +666,7 @@ export function useTresoreriePrevision(days = 90) {
     setData(result);
   }, [factures, achats, masseSalariale, soldeInitial, tresLoading, paramLoading, days]);
 
-  return { data, isLoading: tresLoading || paramLoading };
+  return useMemo(() => ({ data, isLoading: tresLoading || paramLoading }), [data, tresLoading, paramLoading]);
 }
 
 // --- Hook Historique Saisies ---
