@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const DUREE_INACTIVITE_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -16,7 +16,7 @@ export default function InactivityLogout() {
   const estExclu = CHEMINS_EXCLUS.some((p) => pathname?.startsWith(p));
 
   const deconnecter = useCallback(async () => {
-    const supabase = createClient();
+    // using supabase singleton
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
