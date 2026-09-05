@@ -19,25 +19,6 @@ body {
   scrollbar-color: #E30613 #1A1D24;
 }
 
-body::-webkit-scrollbar {
-  width: 14px;
-}
-
-body::-webkit-scrollbar-track {
-  background: #1A1D24;
-  border-left: 2px solid #E30613;
-}
-
-body::-webkit-scrollbar-thumb {
-  background: #E30613;
-  border-radius: 7px;
-  border: 2px solid #1A1D24;
-}
-
-body::-webkit-scrollbar-thumb:hover {
-  background: #ff5a5a;
-}
-
 @media print {
   body * {
     visibility: hidden;
