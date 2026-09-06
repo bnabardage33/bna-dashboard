@@ -38,6 +38,7 @@ export default function RootLayout({
         <InactivityLogout />
         <header className="bg-[#1A1D24] relative z-[9999] h-[120px] overflow-hidden flex items-center justify-between px-5 border-b border-white/5 shadow-lg m-4 rounded-[22px]">
           <Drawer />
+          <div className="flex-1"></div>
           <Image
             src="/logo-bna.png"
             alt="BNA Bardage"
