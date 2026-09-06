@@ -44,7 +44,7 @@ export default function RootLayout({
               alt="BNA Bardage"
               width={400}
               height={200}
-              className="size-24 object-contain pointer-events-none"
+              className="size-48 object-contain pointer-events-none"
             />
           </div>
           <SearchNav />

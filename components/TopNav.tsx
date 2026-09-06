@@ -27,7 +27,7 @@ export default function TopNav() {
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2.5">
         {/* Logo et Nom de marque */}
         <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-800 border border-slate-700 shadow-sm">
+          <div className="flex h-28 w-28 items-center justify-center rounded-xl bg-slate-800 border border-slate-700 shadow-sm">
             <img
               src="/logo-bna.png"
               alt="BNA Bardage Logo"
