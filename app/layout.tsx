@@ -37,16 +37,14 @@ export default function RootLayout({
         <RegisterSW />
         <InactivityLogout />
         <header className="bg-[#1A1D24] relative z-[9999] h-[120px] overflow-hidden flex items-center justify-between px-5 border-b border-white/5 shadow-lg m-4 rounded-[22px]">
-          <div className="flex items-center gap-2">
-            <Drawer />
-            <Image
-              src="/logo-bna.png"
-              alt="BNA Bardage"
-              width={400}
-              height={200}
-              className="h-9 w-auto object-contain"
-            />
-          </div>
+          <Drawer />
+          <Image
+            src="/logo-bna.png"
+            alt="BNA Bardage"
+            width={400}
+            height={200}
+            className="absolute left-1/2 -translate-x-1/2 h-[200px] w-auto max-w-[400px] object-contain pointer-events-none"
+          />
           <SearchNav />
         </header>
         <main id="main-content-wrapper" className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12">
