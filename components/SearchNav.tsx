@@ -94,7 +94,7 @@ export default function SearchNav() {
           />
         </div>
         {open && (query.length >= 2) && (
-          <div className="absolute top-full left-0 mt-2 w-96 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 right-0">
+          <div className="absolute top-full right-0 mt-2 w-96 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
             {loading ? (
               <div className="p-4 text-gray-500 text-sm">Recherche...</div>
             ) : results && (results.clients.length + results.chantiers.length + results.devis.length + results.fournisseurs.length > 0) ? (
