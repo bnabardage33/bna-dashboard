@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Bell, X, FileText, HardHat, Users, Package, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Bell, FileText, HardHat, Users, Package, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -80,8 +80,8 @@ export default function SearchNav() {
 
   return (
     <div className="flex items-center gap-3 relative">
-      {/* SEARCH */}
-      <div ref={searchRef} className="relative">
+      {/* SEARCH - masqué sur mobile, visible sur desktop */}
+      <div ref={searchRef} className="relative hidden md:block">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -90,11 +90,11 @@ export default function SearchNav() {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setOpen(true); chercher(); }}
             onFocus={() => { if (query.length >= 2) chercher(); }}
-            className="bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-40 focus:w-60 focus:outline-none focus:border-[#E30613]/50 transition-all"
+            className="bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-40 focus:w-56 focus:outline-none focus:border-[#E30613]/50 transition-all"
           />
         </div>
         {open && (query.length >= 2) && (
-          <div className="absolute top-full right-0 mt-2 w-80 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+          <div className="absolute top-full left-0 mt-2 w-80 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
             {loading ? (
               <div className="p-4 text-gray-500 text-sm">Recherche...</div>
             ) : results && (results.clients.length + results.chantiers.length + results.devis.length + results.fournisseurs.length > 0) ? (
