@@ -44,7 +44,7 @@ export default function RootLayout({
             alt="BNA Bardage"
             width={400}
             height={200}
-            className="absolute left-1/2 -translate-x-1/2 h-[200px] w-auto max-w-[400px] object-contain pointer-events-none"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[64px] w-auto max-w-[130px] object-contain pointer-events-none z-0 sm:h-[120px] sm:max-w-[250px]"
           />
         </header>
         <main id="main-content-wrapper" className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12">
