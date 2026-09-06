@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from('clients')
         .select('id, nom, societe, email, tel')
-        .ilike('nom', searchTerm)
+        .or(`nom.ilike.${searchTerm},societe.ilike.${searchTerm},email.ilike.${searchTerm},tel.ilike.${searchTerm}`)
         .limit(limit),
       supabase
         .from('chantiers')
