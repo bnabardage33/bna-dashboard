@@ -38,13 +38,13 @@ export default function RootLayout({
         <InactivityLogout />
         <header className="bg-[#1A1D24] relative z-[9999] h-[120px] overflow-hidden flex items-center justify-between px-5 border-b border-white/5 shadow-lg m-4 rounded-[22px]">
           <Drawer />
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex justify-center items-center">
             <Image
               src="/logo-bna.png"
               alt="BNA Bardage"
               width={400}
               height={200}
-              className="h-12 w-auto object-contain pointer-events-none"
+              className="h-12 object-contain pointer-events-none"
             />
           </div>
           <SearchNav />
