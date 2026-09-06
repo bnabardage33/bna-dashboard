@@ -90,11 +90,11 @@ export default function SearchNav() {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setOpen(true); chercher(); }}
             onFocus={() => { if (query.length >= 2) chercher(); }}
-            className="bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-48 focus:w-72 focus:outline-none focus:border-[#E30613]/50 transition-all"
+            className="bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-40 focus:w-60 focus:outline-none focus:border-[#E30613]/50 transition-all"
           />
         </div>
         {open && (query.length >= 2) && (
-          <div className="absolute top-full left-0 mt-2 w-96 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+          <div className="absolute top-full left-0 mt-2 w-96 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 right-0">
             {loading ? (
               <div className="p-4 text-gray-500 text-sm">Recherche...</div>
             ) : results && (results.clients.length + results.chantiers.length + results.devis.length + results.fournisseurs.length > 0) ? (
