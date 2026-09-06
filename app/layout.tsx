@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Drawer from "@/components/Drawer";
+import SearchNav from "@/components/SearchNav";
 import RegisterSW from "@/components/RegisterSW";
 import InactivityLogout from "@/components/InactivityLogout";
 
@@ -44,7 +45,7 @@ export default function RootLayout({
             height={200}
             className="absolute left-1/2 -translate-x-1/2 h-[200px] w-auto max-w-[400px] object-contain pointer-events-none"
           />
-          <div className="w-10" />
+          <SearchNav />
         </header>
         <main id="main-content-wrapper" className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12">
           {children}
