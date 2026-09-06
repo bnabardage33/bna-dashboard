@@ -64,10 +64,7 @@ export default function SearchNav() {
   async function marquerLu(ids: string[]) {
     await supabase.from("notifications").update({ lu: true }).in("id", ids);
     setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, lu: true } : n));
-    setUnreadCount(prev => {
-      const stillUnread = prev.filter(n => !n.lu && !ids.includes(n.id)).length;
-      return Math.max(0, stillUnread);
-    });
+    setUnreadCount(prev => Math.max(0, (prev || 0) - ids.length));
   }
 
   async function chercher() {
