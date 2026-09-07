@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = [
+export const PUBLIC_PATHS = [
   '/login',
   '/espace-client',
   '/api/espace-client',
