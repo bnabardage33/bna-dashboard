@@ -49,7 +49,7 @@ export default function Home() {
       if (err) throw err;
       if (data) setDernieresNotes(data);
     } catch (err) {
-      setError(err.message || "Erreur lors du chargement des notes");
+      setError((err as Error).message || "Erreur lors du chargement des notes");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -76,7 +76,7 @@ export default function Home() {
       }
       await chargerStats();
     } catch (err) {
-      setError(err.message || "Erreur lors de la sauvegarde");
+      setError((err as Error).message || "Erreur lors de la sauvegarde");
       console.error(err);
     } finally {
       setIsSavingNote(false);

@@ -69,7 +69,7 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
       }
     }
 
-    let finalEquipeId = equipeId;
+    let finalEquipeId: string | undefined = equipeId;
     if (equipeId === "00000000-0000-0000-0000-000000000000") {
       const { data: firstEquipe } = await supabase.from('equipe').select('id').limit(1).single();
       if (firstEquipe?.id) {
@@ -99,7 +99,7 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
 
   } catch (error) {
     console.error("Détail erreur pointage:", error);
-    return { success: false, error: error.message || "Erreur inconnue" };
+    return { success: false, error: (error as Error).message || "Erreur inconnue" };
   }
 }
 
@@ -111,7 +111,7 @@ export async function supprimerPointageGlob(id: string) {
     return { success: true };
   } catch (error) {
     console.error("Erreur supprimer pointage:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
@@ -123,6 +123,6 @@ export async function reinitialiserPointagesChantier(chantierId: string) {
     return { success: true };
   } catch (error) {
     console.error("Erreur réinitialisation pointages chantier:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }

@@ -206,7 +206,7 @@ export default function FeuilleHeuresPage() {
                 />
                 <select
                   value={nouveauStatut}
-                  onChange={(e) => setNouveauStatut(e.target.value)}
+                  onChange={(e) => setNouveauStatut(e.target.value as "embauche" | "interimaire")}
                   className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 >
                   <option value="embauche">Embauché</option>

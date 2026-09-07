@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       throw new Error("L'IA n'a pas renvoyé le tableau 'lignes_prestation'.");
     }
 
-    const formattedLignes = result.lignes_prestation.map((ligne: Record<string, unknown>) => {
+    const formattedLignes = result.lignes_prestation.map((ligne: any) => {
       const unitLower = String(ligne.unite || "").toLowerCase();
       if (unitLower.includes("unit") || unitLower.includes("pièce") || unitLower.includes("piece") || unitLower === "u") {
         if (typeof ligne.qte === 'number') {

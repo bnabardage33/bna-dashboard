@@ -5,6 +5,7 @@ import { Zone, calculerZone } from "@/components/ZoneCard";
 import { ResultatPose, LABELS_FAMILLE } from "@/lib/poseCalcul";
 import { ResultatCalepinage } from "@/lib/calepinageCalcul";
 import PlanCalepinage from "@/components/PlanCalepinage";
+import Image from "next/image";
 
 type Entreprise = {
   raison_sociale: string;
@@ -47,11 +48,11 @@ export default function FicheDebitPDF({
       {/* En-tête */}
       <div className="flex items-start justify-between pt-3">
         <div className="flex items-center gap-3.5">
-          <img
+          <Image
             src={entreprise.logo_url || "/logo-bna.png"}
             alt="Logo BNA"
             className="h-20 sm:h-24 max-h-24 w-auto object-contain"
-          />
+           width={100} height={100} />
           <div>
             <p className="text-base font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
             <p className="text-xs text-slate-500 font-medium">Atelier &amp; Préparation Chantier — Fiche de Débit</p>

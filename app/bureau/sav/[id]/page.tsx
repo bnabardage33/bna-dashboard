@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { 
-  ArrowLeft, Camera, FileCheck, Wrench, Calendar, CheckCircle, 
+import {
+  ArrowLeft, Camera, FileCheck, Wrench, Calendar, CheckCircle,
   AlertTriangle, Save, Loader2
 } from "lucide-react";
+import Image from "next/image";
 import SignaturePad from "@/components/SignaturePad";
 import RapportSAVPDF from "@/components/RapportSAVPDF";
 import { Printer, X } from "lucide-react";
@@ -21,7 +22,7 @@ export default function FicheSAV() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [chantiers, setChantiers] = useState<Record<string, unknown>[]>([]);
+  const [chantiers, setChantiers] = useState<any[]>([]);
   const [entreprise, setEntreprise] = useState<EntrepriseSettings | null>(null);
   const [showPDF, setShowPDF] = useState(false);
 
@@ -29,7 +30,7 @@ export default function FicheSAV() {
 
   const compressImage = (file: File, maxDim = 1920, quality = 0.8): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      const img = new Image();
+      const img = new (window as any).Image();
       const reader = new FileReader();
       reader.onload = () => {
         img.onload = () => {
@@ -71,7 +72,7 @@ export default function FicheSAV() {
     cause_probable: "",
     respect_dtu: true,
     diagnostic_dtu: "",
-    materiel_prevu: [] as Record<string, unknown>[],
+    materiel_prevu: [] as any[],
     date_intervention: "",
     temps_estime: "",
     intervenant: "",
@@ -79,16 +80,16 @@ export default function FicheSAV() {
     photos: { client: null, avant: null, apres: null },
     signature_technicien: null as string | null,
     signature_client: null as string | null,
-    chantiers: null as Record<string, unknown> | null
+    chantiers: null as any | null
   });
 
   useEffect(() => {
-    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }: { data: Record<string, unknown> }) => { if (data) setEntreprise(data) });
+    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }: { data: any }) => { if (data) setEntreprise(data) });
     supabase.from("chantiers").select("id, nom, client_id, adresse_chantier, clients(id, nom, societe)").order("created_at", { ascending: false })
-      .then(({ data }: { data: Record<string, unknown>[] }) => { if (data) setChantiers(data); });
+      .then(({ data }: { data: any[] }) => { if (data) setChantiers(data); });
 
     if (!isNew) {
-      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }: { data: Record<string, unknown> }) => {
+      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }: { data: any }) => {
         if (data) {
           setTicket({
             ...data,
@@ -432,7 +433,7 @@ export default function FicheSAV() {
                   {uploading.avant ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
                   ) : ticket.photos.avant ? (
-                    <img src={ticket.photos.avant} className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-40 transition-opacity" />
+                    <Image src={ticket.photos.avant} alt="Photo avant" className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-40 transition-opacity"  width={100} height={100} />
                   ) : (
                     <Camera size={24} className="mb-1" />
                   )}
@@ -444,7 +445,7 @@ export default function FicheSAV() {
                   {uploading.apres ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
                   ) : ticket.photos.apres ? (
-                    <img src={ticket.photos.apres} className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-40 transition-opacity" />
+                    <Image src={ticket.photos.apres} alt="Photo après" className="absolute inset-0 w-full h-full object-cover opacity-60 hover:opacity-40 transition-opacity"  width={100} height={100} />
                   ) : (
                     <Camera size={24} className="mb-1" />
                   )}
@@ -460,7 +461,7 @@ export default function FicheSAV() {
                   <p className="text-[10px] uppercase text-gray-500 font-bold mb-2">Visa du Technicien</p>
                   {ticket.signature_technicien ? (
                     <div className="relative">
-                      <img src={ticket.signature_technicien} alt="Signature Technicien" className="h-20 w-auto mx-auto filter invert opacity-80" />
+                      <Image src={ticket.signature_technicien} alt="Signature Technicien" className="h-20 w-auto mx-auto filter invert opacity-80"  width={100} height={100} />
                       <button 
                         onClick={() => setTicket({...ticket, signature_technicien: null})}
                         className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
@@ -481,7 +482,7 @@ export default function FicheSAV() {
                   <p className="text-[10px] uppercase text-gray-500 font-bold mb-2">Signature du Client</p>
                   {ticket.signature_client ? (
                     <div className="relative">
-                      <img src={ticket.signature_client} alt="Signature Client" className="h-20 w-auto mx-auto filter invert opacity-80" />
+                      <Image src={ticket.signature_client} alt="Signature Client" className="h-20 w-auto mx-auto filter invert opacity-80"  width={100} height={100} />
                       <button 
                         onClick={() => setTicket({...ticket, signature_client: null})}
                         className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
@@ -554,7 +555,7 @@ export default function FicheSAV() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#1A1D24]/50 flex justify-center print:bg-[#1A1D24] print:p-0 print:block">
-            <RapportSAVPDF ticket={ticket} entreprise={entreprise} />
+            <RapportSAVPDF ticket={ticket as any} entreprise={entreprise} />
           </div>
         </div>
       )}

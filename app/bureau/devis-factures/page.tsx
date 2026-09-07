@@ -180,7 +180,7 @@ export default function DevisPage() {
 
         return [
           ...nettes,
-          ...newLignes.map((l: Record<string, unknown>) => ({
+          ...newLignes.map((l: any) => ({
             designation: l.designation || "",
             description: l.description || "",
             qte: l.qte || 1,
@@ -191,7 +191,7 @@ export default function DevisPage() {
       });
       setPromptIA("");
     } catch (err) {
-      alert("Erreur génération IA : " + err.message);
+      alert("Erreur génération IA : " + (err as Error).message);
     } finally {
       setGenererIAEnCours(false);
     }
@@ -703,7 +703,7 @@ export default function DevisPage() {
                           alert("Votre navigateur ne supporte pas la dictée vocale.");
                           return;
                         }
-                        const SpeechRec = (window as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition || (window as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+                        const SpeechRec = ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) as any;
                         const recognition = new SpeechRec();
                         recognition.lang = 'fr-FR';
                         setEcouteEnCours(true);

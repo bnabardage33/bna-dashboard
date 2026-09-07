@@ -9,7 +9,7 @@ export default function SaisiePointage() {
   const router = useRouter();
   
   const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
-  const [ouvriers, setOuvriers] = useState<Record<string, unknown>[]>([]);
+  const [ouvriers, setOuvriers] = useState<{id: string; full_name: string}[]>([]);
   
   const [formData, setFormData] = useState({
     chantier_id: "",

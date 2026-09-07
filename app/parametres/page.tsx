@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Building2, ShieldCheck, Scale, FileText, Check, AlertCircle } from "lucide-react";
+import Image from "next/image";
 
 export type Settings = {
   raison_sociale: string;
@@ -78,7 +79,7 @@ export default function ParametresPage() {
           mediateur_contact: fb.mediateur_contact || "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris",
         } as Settings);
       } catch (err) {
-        alert("Exception de chargement : " + (err?.message || String(err)));
+        alert("Exception de chargement : " + ((err as any)?.message || String(err)));
       } finally {
         setLoading(false);
       }
@@ -211,7 +212,7 @@ export default function ParametresPage() {
           <div className="mt-3 flex flex-wrap items-center gap-4">
             {form.logo_url ? (
               <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-2.5 shadow-sm">
-                <img src={form.logo_url} alt="Logo entreprise" className="h-16 w-auto object-contain" />
+                <Image src={form.logo_url} alt="Logo entreprise" className="h-16 w-auto object-contain"  width={100} height={100} />
               </div>
             ) : (
               <div className="flex h-16 w-32 items-center justify-center rounded-xl border border-dashed border-slate-600 text-xs text-gray-400">

@@ -24,17 +24,16 @@ export function calculerRentabiliteChantier(
   try {
     let avancementReel = 50; // fallback
     if (avancements && avancements.length > 0) {
-      // Filtrer pour ce chantier et trier du plus récent au plus ancien
       const avs = avancements
         .filter((a) => a.chantier_id === chantier.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
       if (avs.length > 0) {
-        avancementReel = avs[0].pourcentage;
-      } else if (chantier.avancement) {
+        avancementReel = avs[0].pourcentage ?? 50;
+      } else if (chantier.avancement != null) {
         avancementReel = chantier.avancement;
       }
-    } else if (chantier.avancement) {
+    } else if (chantier.avancement != null) {
       avancementReel = chantier.avancement;
     }
 

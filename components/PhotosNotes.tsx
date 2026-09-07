@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { compresserImage } from "@/lib/imageCompress";
+import Image from "next/image";
 
 type Photo = {
   id: string;
@@ -98,7 +99,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
 
       if (insertError) alert("Erreur enregistrement : " + insertError.message);
     } catch (err) {
-      alert("Erreur traitement photo : " + (err.message || String(err)));
+      alert("Erreur traitement photo : " + ((err as any).message || String(err)));
     } finally {
       setUploading(null);
       fetchPhotos();
@@ -187,11 +188,11 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
                   {photosColonne.map((p) => (
                     <div key={p.id} className="group relative">
                       <a href={p.url} target="_blank" rel="noopener noreferrer">
-                        <img
+                        <Image
                           src={p.url}
                           alt={col.label}
                           className="h-20 w-full rounded-lg object-cover"
-                        />
+                         width={100} height={100} />
                       </a>
                       <button
                         onClick={() => supprimerPhoto(p)}

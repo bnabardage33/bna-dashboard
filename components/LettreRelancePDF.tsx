@@ -3,6 +3,7 @@
 import { Entreprise } from "./DocumentPDF";
 import { useEffect } from "react";
 import { fmtEuro } from "@/lib/financeCalculs";
+import Image from "next/image";
 
 export type RelanceData = {
   type_document: "Relance 1" | "Relance 2" | "Mise en demeure";
@@ -46,7 +47,7 @@ export default function LettreRelancePDF({ data, onReady }: { data: RelanceData;
         {/* Entreprise */}
         <div className="w-1/2 pr-4">
           {entreprise.logo_url && (
-            <img src={entreprise.logo_url} alt="Logo" className="max-h-20 mb-4 object-contain" />
+            <Image src={entreprise.logo_url} alt="Logo" className="max-h-20 mb-4 object-contain"  width={100} height={100} />
           )}
           <h1 className="text-xl font-black text-slate-900 mb-1">{entreprise.raison_sociale}</h1>
           <p className="text-sm text-slate-600">

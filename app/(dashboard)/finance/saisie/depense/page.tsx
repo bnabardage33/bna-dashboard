@@ -9,7 +9,7 @@ export default function SaisieDepense() {
   const router = useRouter();
   
   const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
-  const [fournisseurs, setFournisseurs] = useState<Record<string, unknown>[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<{id: string; nom: string}[]>([]);
   
   const [formData, setFormData] = useState({
     chantier_id: "",

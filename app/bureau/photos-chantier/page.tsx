@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Check, Loader2, Trash2, ChevronDown } from 'lucide-react';
+import Image from "next/image";
 
 interface Photo {
   id: string;
@@ -103,7 +104,7 @@ export default function PhotosChantierAdmin() {
       const res = await fetch('/api/photos-chantier', { method: 'POST', body: fd });
 
       // Tenter de parser le JSON même si le statut est une erreur
-      let data: Record<string, unknown> = {};
+      let data: any = {};
       try {
         data = await res.json();
       } catch {
@@ -133,7 +134,7 @@ export default function PhotosChantierAdmin() {
       await fetch(`/api/photos-chantier?id=${id}`, { method: 'DELETE' });
       loadPhotos(chantier_id);
     } catch (e) {
-      setError(`Erreur suppression : ${e.message}`);
+      setError(`Erreur suppression : ${(e as Error).message}`);
     }
   };
 
@@ -196,7 +197,7 @@ export default function PhotosChantierAdmin() {
             onClick={() => fileRef.current?.click()}
           >
             {preview ? (
-              <img src={preview} alt="preview" className="max-h-48 rounded-xl object-contain" />
+              <Image src={preview} alt="preview" className="max-h-48 rounded-xl object-contain"  width={100} height={100} />
             ) : (
               <>
                 <Upload size={32} className="text-white" />
@@ -259,7 +260,7 @@ export default function PhotosChantierAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 {photos.map(p => (
                   <div key={p.id} className="relative rounded-xl overflow-hidden border border-white/10 group">
-                    <img src={p.url_image} alt={p.titre} className="w-full aspect-square object-cover" />
+                    <Image src={p.url_image} alt={p.titre} className="w-full aspect-square object-cover"  width={100} height={100} />
                     <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] px-2 py-1 font-bold truncate">{p.titre}</div>
                     {/* Bouton delete visible sur mobile tap */}
                     <button

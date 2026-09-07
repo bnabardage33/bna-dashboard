@@ -2,6 +2,7 @@
 
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import type { TicketSav, EntrepriseSettings } from "@/types/finance";
+import Image from "next/image";
 
 export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSav; entreprise: EntrepriseSettings | null }) {
   if (!ticket || !entreprise) return null;
@@ -19,7 +20,7 @@ export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSa
         <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10 border-b-2 border-slate-900 pb-6">
           <div className="w-full md:w-auto">
             {entreprise.logo_url ? (
-              <img src={entreprise.logo_url} alt="Logo" className="max-h-20 max-w-[200px] object-contain" />
+              <Image src={entreprise.logo_url} alt="Logo" className="max-h-20 max-w-[200px] object-contain"  width={100} height={100} />
             ) : (
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-slate-900 uppercase break-words">
                 {entreprise.raison_sociale}
@@ -105,7 +106,7 @@ export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSa
             <div className="border border-slate-200 rounded-lg p-2 bg-slate-50">
               <p className="text-xs text-slate-500 font-bold uppercase mb-2 text-center">Avant intervention</p>
               {ticket.photos?.avant ? (
-                <img src={ticket.photos.avant} alt="Avant" className="w-full h-48 object-cover rounded" />
+                <Image src={ticket.photos.avant} alt="Avant" className="w-full h-48 object-cover rounded"  width={100} height={100} />
               ) : (
                 <div className="w-full h-48 bg-slate-100 flex items-center justify-center text-slate-400 text-xs">Aucune photo</div>
               )}
@@ -113,7 +114,7 @@ export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSa
             <div className="border border-slate-200 rounded-lg p-2 bg-slate-50">
               <p className="text-xs text-slate-500 font-bold uppercase mb-2 text-center">Après intervention</p>
               {ticket.photos?.apres ? (
-                <img src={ticket.photos.apres} alt="Après" className="w-full h-48 object-cover rounded" />
+                <Image src={ticket.photos.apres} alt="Après" className="w-full h-48 object-cover rounded"  width={100} height={100} />
               ) : (
                 <div className="w-full h-48 bg-slate-100 flex items-center justify-center text-slate-400 text-xs">Aucune photo</div>
               )}
@@ -127,7 +128,7 @@ export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSa
             <p className="text-sm font-bold text-slate-900 mb-1">Visa du technicien ({ticket.intervenant})</p>
             <div className="h-32 border border-slate-300 rounded-lg bg-slate-50 relative overflow-hidden">
               {ticket.signature_technicien ? (
-                <img src={ticket.signature_technicien} alt="Visa Technicien" className="w-full h-full object-contain p-2" />
+                <Image src={ticket.signature_technicien} alt="Visa Technicien" className="w-full h-full object-contain p-2"  width={100} height={100} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs italic">Signé électroniquement</div>
               )}
@@ -137,7 +138,7 @@ export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSa
             <p className="text-sm font-bold text-slate-900 mb-1">Signature du client (Pour accord)</p>
             <div className="h-32 border border-slate-300 rounded-lg bg-slate-50 relative overflow-hidden">
               {ticket.signature_client ? (
-                <img src={ticket.signature_client} alt="Signature Client" className="w-full h-full object-contain p-2" />
+                <Image src={ticket.signature_client} alt="Signature Client" className="w-full h-full object-contain p-2"  width={100} height={100} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs italic">Aucune signature</div>
               )}

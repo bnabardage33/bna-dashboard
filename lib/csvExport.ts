@@ -42,7 +42,7 @@ export async function genererExportComptaCSV(mois: string) {
     .lte("date", endDate);
 
   // Map to common format
-  const rows: (string | number)[][] = [];
+  let rows: (string | number)[][] = [];
   rows.push([
     "Date",
     "Journal",
@@ -60,8 +60,8 @@ const facturesList = (factures ?? []) as (FactureFinance & { clients?: { nom: st
   const depensesList = (depenses ?? []) as (DepenseFinance & { fournisseurs?: { nom: string } })[];
 
   // Map to common format
-  const rows: (string | number)[][] = [];
-  rows.push([
+  let rows2: (string | number)[][] = [];
+  rows2.push([
     "Date",
     "Journal",
     "Référence",
@@ -74,47 +74,47 @@ const facturesList = (factures ?? []) as (FactureFinance & { clients?: { nom: st
   ]);
 
   facturesList.forEach((f) => {
-    rows.push([
-      new Date(f.date_emission).toLocaleDateString("fr-FR"),
+    rows2.push([
+      new Date((f as any).date_emission).toLocaleDateString("fr-FR"),
       "VENTES",
-      f.numero || f.id.substring(0, 8),
+      (f as any).numero || f.id.substring(0, 8),
       f.clients?.nom || "Client Divers",
       `Facture ${f.statut}`,
-      (f.montant_ht || 0).toFixed(2),
-      (f.montant_tva || ((f.montant_ht || 0) * (f.taux_tva || 20) / 100)).toFixed(2),
-      (f.montant_ttc || ((f.montant_ht || 0) * (1 + (f.taux_tva || 20) / 100))).toFixed(2),
-      f.taux_tva || 20
+      ((f as any).montant_ht || 0).toFixed(2),
+      ((f as any).montant_tva || (((f as any).montant_ht || 0) * ((f as any).taux_tva || 20) / 100)).toFixed(2),
+      ((f as any).montant_ttc || (((f as any).montant_ht || 0) * (1 + ((f as any).taux_tva || 20) / 100))).toFixed(2),
+      (f as any).taux_tva || 20
     ]);
   });
 
   if (achatsList) {
     achatsList.forEach((a) => {
-      rows.push([
-        new Date(a.date).toLocaleDateString("fr-FR"),
+      rows2.push([
+        new Date((a as any).date).toLocaleDateString("fr-FR"),
         "ACHATS",
-        a.numero || a.id.substring(0, 8),
+        (a as any).numero || a.id.substring(0, 8),
         a.fournisseurs?.nom || "Fournisseur Divers",
         "Commande Fournisseur",
-        (a.montant_ht || 0).toFixed(2),
-        (a.montant_tva || 0).toFixed(2),
-        (a.montant_ttc || a.montant_ht || 0).toFixed(2),
-        a.taux_tva || 20
+        ((a as any).montant_ht || 0).toFixed(2),
+        ((a as any).montant_tva || 0).toFixed(2),
+        (((a as any).montant_ttc || (a as any).montant_ht || 0)).toFixed(2),
+        (a as any).taux_tva || 20
       ]);
     });
   }
    
   depensesList.forEach((d) => {
-    const ht = d.montant_ht || 0;
-    const tvaPct = d.taux_tva || 20;
+    const ht = (d as any).montant_ht || 0;
+    const tvaPct = (d as any).taux_tva || 20;
     const tva = ht * (tvaPct / 100);
     const ttc = ht + tva;
     
-    rows.push([
-      new Date(d.date).toLocaleDateString("fr-FR"),
+    rows2.push([
+      new Date((d as any).date).toLocaleDateString("fr-FR"),
       "ACHATS",
       d.id.substring(0, 8),
       d.fournisseurs?.nom || "Autre",
-      `Dépense ${d.nature.replace("_", " ")}`,
+      `Dépense ${(d as any).nature.replace("_", " ")}`,
       ht.toFixed(2),
       tva.toFixed(2),
       ttc.toFixed(2),
@@ -124,7 +124,7 @@ const facturesList = (factures ?? []) as (FactureFinance & { clients?: { nom: st
 
   // BOM for Excel to recognize UTF-8 correctly
   const BOM = "\uFEFF";
-  const csvContent = BOM + formatCSV(rows);
+  const csvContent = BOM + formatCSV(rows2);
   
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

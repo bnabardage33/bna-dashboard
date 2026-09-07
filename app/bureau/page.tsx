@@ -40,7 +40,7 @@ export default function BureauDashboard() {
     chantiersEnCours: 0,
     fournisseursActifs: 0,
   });
-  const [healthCards, setHealthCards] = useState<Record<string, unknown>[]>([]);
+  const [healthCards, setHealthCards] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -68,12 +68,12 @@ export default function BureauDashboard() {
       
       for (const c of (chantiersRes.data || [])) {
         // Avancement
-        const avancements = (c.avancements_chantier || []) as Record<string, unknown>[];
+        const avancements = (c.avancements_chantier || []) as any[];
         avancements.sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime());
         const latestAvancement = avancements[0]?.pourcentage != null ? Number(avancements[0].pourcentage) : 0;
         
         // Pointages
-        const pointages = (c.pointages_globaux || []) as Record<string, unknown>[];
+        const pointages = (c.pointages_globaux || []) as any[];
         pointages.sort((a, b) => new Date(b.date_saisie || b.created_at || 0).getTime() - new Date(a.date_saisie || a.created_at || 0).getTime());
         
         // Budget calculation (Gaël Logic)

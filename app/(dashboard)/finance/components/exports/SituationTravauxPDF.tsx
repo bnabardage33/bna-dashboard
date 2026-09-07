@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { fmtEuro, fmtPct } from "@/lib/financeCalculs";
-import type { ChantierBilan } from "@/types/finance";
+import type { RentabiliteChantierExt } from "@/hooks/useFinance";
 
 export default function SituationTravauxPDF({
   chantier,
   onReady,
 }: {
-  chantier: ChantierBilan;
+  chantier: RentabiliteChantierExt;
   onReady: () => void;
 }) {
   useEffect(() => {

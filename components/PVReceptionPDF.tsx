@@ -1,3 +1,4 @@
+import Image from "next/image";
 // components/PVReceptionPDF.tsx
 
 export type StatutPV = "sans_reserve" | "avec_reserves" | "reserves_levees" | "refuse";
@@ -153,11 +154,11 @@ export default function PVReceptionPDF({
 
       <div className="flex items-start justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3.5">
-          <img
+          <Image
             src={entreprise.logo_url || "/logo-bna.png"}
             alt="Logo BNA"
             className="h-20 sm:h-24 max-h-24 w-auto object-contain"
-          />
+           width={100} height={100} />
           <div>
             <p className="text-base font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
             <p className="text-[11px] font-medium text-slate-600">Spécialiste Bardage Rapporté · Isolation ITE · Façades</p>
@@ -428,11 +429,11 @@ export default function PVReceptionPDF({
             {photos.map((p, i) => (
               <div key={p.id || i} className="rounded-xl border border-slate-300 bg-slate-50 p-2 space-y-1.5 shadow-sm">
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-200 flex items-center justify-center">
-                  <img
+                  <Image
                     src={p.url}
                     alt={p.titre || `Cliché ${i + 1}`}
                     className="h-full w-full object-cover"
-                  />
+                   width={100} height={100} />
                 </div>
                 <p className="text-[10px] font-semibold text-slate-700 text-center truncate">
                   {p.titre || `Vue de fin de chantier #${i + 1}`}
@@ -513,7 +514,7 @@ export default function PVReceptionPDF({
 
           <div className="flex-1 flex items-center justify-center py-1">
             {pv.signature_client ? (
-              <img src={pv.signature_client} alt="Signature Client" className="max-h-20 max-w-full object-contain" />
+              <Image src={pv.signature_client} alt="Signature Client" className="max-h-20 max-w-full object-contain"  width={100} height={100} />
             ) : (
               <p className="text-[10px] text-slate-300 italic">Signature manuscrite</p>
             )}
@@ -541,7 +542,7 @@ export default function PVReceptionPDF({
 
           <div className="flex-1 flex items-center justify-center py-1">
             {pv.signature_entreprise ? (
-              <img src={pv.signature_entreprise} alt="Signature Entreprise" className="max-h-20 max-w-full object-contain" />
+              <Image src={pv.signature_entreprise} alt="Signature Entreprise" className="max-h-20 max-w-full object-contain"  width={100} height={100} />
             ) : (
               <p className="text-[10px] text-slate-300 italic">Cachet et signature</p>
             )}

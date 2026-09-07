@@ -73,7 +73,7 @@ export default function BureauRapportsIntemperiesPage() {
       }
     }
 
-    const formatted: RapportListe[] = (rapportsRes.data || []).map((r: Record<string, unknown>) => ({
+    const formatted: RapportListe[] = (rapportsRes.data || []).map((r: any) => ({
       id: r.id,
       numero: r.numero,
       vigilance_officielle: r.vigilance_officielle,
@@ -113,7 +113,7 @@ export default function BureauRapportsIntemperiesPage() {
         setMessageFeedback(`❌ ${data.error || "Erreur lors de la génération"}`);
       }
     } catch (err) {
-      setMessageFeedback(`❌ Erreur réseau : ${err.message}`);
+      setMessageFeedback(`❌ Erreur réseau : ${(err as Error).message}`);
     } finally {
       setGenerationEnCours(false);
     }

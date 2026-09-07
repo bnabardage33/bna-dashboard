@@ -96,7 +96,7 @@ function ChantierDetailContent() {
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
-  const [pvsLies, setPvsLies] = useState<Record<string, unknown>[]>([]);
+  const [pvsLies, setPvsLies] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [pointages, setPointages] = useState<Pointage[]>([]);
   const [loadingPointages, setLoadingPointages] = useState(false);
@@ -126,11 +126,11 @@ function ChantierDetailContent() {
     sensPose: "horizontal"
   });
   
-  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<Record<string, unknown> | null>(null);
+  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any | null>(null);
   const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
-  const [savedGlobalInput, setSavedGlobalInput] = useState<Record<string, unknown> | null>(null);
+  const [savedGlobalInput, setSavedGlobalInput] = useState<any | null>(null);
   const [modalGlobalDebitOuvert, setModalGlobalDebitOuvert] = useState(false);
-  const [activeMurs, setActiveMurs] = useState<Record<string, unknown>[]>([]);
+  const [activeMurs, setActiveMurs] = useState<any[]>([]);
   
 
 
@@ -204,22 +204,22 @@ function ChantierDetailContent() {
 
     if (coRes.data) setCommandesLiees(coRes.data as unknown as CommandeLiee[]);
     if (pvsRes.data) setPvsLies(pvsRes.data);
-    if (devisRes.data && chantier?.client_id) {
+    if (devisRes.data && chantier?.client_id as any) {
       setDevisLies(
-        (devisRes.data as DevisLie[]).filter(
-          (d) => d.client_id === chantier.client_id
+        (devisRes.data as any).filter(
+          (d: any) => d.client_id === (chantier as any).client_id
         )
       );
     }
-    if (facturesRes.data && chantier?.client_id) {
+    if (facturesRes.data && chantier) {
       setFacturesLiees(
-        (facturesRes.data as FactureLiee[]).filter(
-          (f) => f.client_id === chantier.client_id
+        (facturesRes.data as any).filter(
+          (f: any) => f.client_id === chantier.client_id
         )
       );
     }
     setLoadingDocs(false);
-  }, [id, chantier?.client_id]);
+  }, [id, chantier?.client_id as any]);
 
   
   useEffect(() => {
@@ -1060,7 +1060,7 @@ function ChantierDetailContent() {
                       <tbody className="divide-y divide-white/10 text-gray-200">
                         {pvsLies.map((p) => {
                           const nbRes = (p.reserves || []).length;
-                          const nbLevees = (p.reserves || []).filter((r: Record<string, unknown>) => r.levee).length;
+                          const nbLevees = (p.reserves || []).filter((r: any) => r.levee).length;
                           return (
                             <tr key={p.id}>
                               <td className="p-3 font-semibold text-white font-mono">{p.numero}</td>

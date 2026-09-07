@@ -26,6 +26,8 @@ import {
 } from "@/lib/financeCalculs";
 
 export type RentabiliteChantierExt = RentabiliteResult & {
+  id: string;
+  avancement: number;
   chantier_id: string;
   nom: string;
   client_nom: string;
@@ -115,7 +117,7 @@ export function useRentabiliteChantiers() {
   const { rentabilites, alertes } = useMemo(() => {
     if (!chantiers.length) return { rentabilites: [], alertes: [] };
 
-    const rentabilitesData: RentabiliteChantierExt[] = chantiers.map((c) => {
+    const rentabilitesData: any[] = chantiers.map((c) => {
       const chantierBase: ChantierFinance = {
         id: c.id,
         nom: c.nom,

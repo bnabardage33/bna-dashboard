@@ -8,14 +8,14 @@ import {
 
 export default function ClientPortalPrototype() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Record<string, unknown>[]>([]);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Real data states
-  const [chantierData, setChantierData] = useState<Record<string, unknown> | null>(null);
-  const [clientData, setClientData] = useState<Record<string, unknown> | null>(null);
+  const [chantierData, setChantierData] = useState<any | null>(null);
+  const [clientData, setClientData] = useState<any | null>(null);
   const [avancement, setAvancement] = useState<number>(0);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function ClientPortalPrototype() {
 
   const hasSummarized = useRef(false);
 
-  const endConversationAndSummarize = async (finalMessages: Record<string, unknown>[]) => {
+  const endConversationAndSummarize = async (finalMessages: any[]) => {
     if (hasSummarized.current) return;
     hasSummarized.current = true;
     
@@ -172,22 +172,22 @@ export default function ClientPortalPrototype() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  const startDrawing = (e: MouseEvent | TouchEvent) => {
+  const startDrawing = (e: any) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+const x = ((e as any).touches ? (e as any).touches[0].clientX : (e as any).clientX) - rect.left;
+     const y = ((e as any).touches ? (e as any).touches[0].clientY : (e as any).clientY) - rect.top;
     
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
   };
 
-  const draw = (e: MouseEvent | TouchEvent) => {
+  const draw = (e: any) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -195,8 +195,8 @@ export default function ClientPortalPrototype() {
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+const x = ((e as any).touches ? (e as any).touches[0].clientX : (e as any).clientX) - rect.left;
+     const y = ((e as any).touches ? (e as any).touches[0].clientY : (e as any).clientY) - rect.top;
     
     ctx.lineTo(x, y);
     ctx.strokeStyle = '#0f172a';

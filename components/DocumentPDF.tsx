@@ -3,6 +3,7 @@
 
 import { Scissors } from "lucide-react";
 import { Entreprise } from "@/types/entreprise";
+import Image from "next/image";
 
 export type { Entreprise };
 
@@ -76,11 +77,11 @@ export default function DocumentPDF({
         {/* En-tête avec Logo imposant */}
         <div className="flex items-start justify-between pt-2">
           <div className="flex items-center gap-4">
-            <img
+            <Image
               src={logoUrl}
               alt="Logo BNA"
               className="h-20 sm:h-24 max-h-24 w-auto object-contain"
-            />
+             width={100} height={100} />
             <div>
               <p className="text-xl font-extrabold text-slate-900 tracking-tight">{entreprise.raison_sociale}</p>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">
@@ -272,7 +273,7 @@ export default function DocumentPDF({
             {doc.signature_client ? (
               <div className="mt-1 rounded-xl border border-slate-300 flex flex-col items-center justify-center p-2">
                 <p className="text-[10px] text-slate-600 mb-1 w-full text-left">Signé par : <strong>{doc.signataire_client_nom || "Le Client"}</strong></p>
-                <img src={doc.signature_client} alt="Signature Client" className="h-12 object-contain" />
+                <Image src={doc.signature_client} alt="Signature Client" className="h-12 object-contain"  width={100} height={100} />
               </div>
             ) : (
               <div className="mt-1 h-14 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] italic">
@@ -291,7 +292,7 @@ export default function DocumentPDF({
           {/* En-tête CGV */}
           <div className="flex items-center justify-between border-b border-slate-300 pb-2">
             <div className="flex items-center gap-3">
-              <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+              <Image src={logoUrl} alt="Logo" className="h-12 w-auto object-contain"  width={100} height={100} />
               <div>
                 <p className="font-bold text-slate-900 text-xs">{entreprise.raison_sociale}</p>
                 <p className="text-[9px] text-slate-500">Conditions Générales de Vente — Travaux de Bardage &amp; ITE</p>

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Check, Loader2, Trash2 } from 'lucide-react';
+import Image from "next/image";
 
 interface DocumentCompta {
   id: string;
@@ -198,7 +199,7 @@ export default function DocumentsComptaPage() {
             onClick={() => fileRef.current?.click()}
           >
             {preview ? (
-              <img src={preview} alt="preview" className="max-h-48 rounded-xl object-contain" />
+              <Image src={preview} alt="preview" className="max-h-48 rounded-xl object-contain"  width={100} height={100} />
             ) : (
               <>
                 <Upload size={32} className="text-white" />
@@ -259,7 +260,7 @@ export default function DocumentsComptaPage() {
                   onClick={() => window.open(d.url_image, '_blank')}
                   className="flex items-center gap-3 rounded-xl border border-white/10 p-2 cursor-pointer active:bg-white/5"
                 >
-                  <img src={d.url_image} alt={d.type} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                  <Image src={d.url_image} alt={d.type} className="w-14 h-14 rounded-lg object-cover shrink-0"  width={100} height={100} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${d.type === 'bl' ? 'bg-blue-600/30 text-blue-300' : 'bg-emerald-600/30 text-emerald-300'}`}>

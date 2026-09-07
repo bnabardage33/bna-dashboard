@@ -1,4 +1,5 @@
 import { Entreprise } from "@/types/entreprise";
+import Image from "next/image";
 
 type FournisseurInfo = {
   nom: string;
@@ -54,11 +55,11 @@ export default function BonCommandePDF({
       {/* En-tête */}
       <div className="flex items-start justify-between pt-3">
         <div className="flex items-center gap-3.5">
-          <img
+          <Image
             src={entreprise.logo_url || "/logo-bna.png"}
             alt="Logo BNA"
             className="h-20 sm:h-24 max-h-24 w-auto object-contain"
-          />
+           width={100} height={100} />
           <div>
             <p className="text-lg font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
             <p className="text-xs text-slate-500 font-medium">Spécialiste Bardage Rapporté · Isolation ITE</p>
@@ -168,7 +169,7 @@ export default function BonCommandePDF({
           <p className="text-[10px] text-slate-500">Bon pour accord et commande</p>
           {commande.signature_acheteur ? (
             <div className="mt-2 rounded-xl border border-slate-300 flex items-center justify-center p-2">
-              <img src={commande.signature_acheteur} alt="Signature Acheteur" className="h-12 object-contain" />
+              <Image src={commande.signature_acheteur} alt="Signature Acheteur" className="h-12 object-contain"  width={100} height={100} />
             </div>
           ) : (
             <div className="mt-4 h-16 rounded-lg border border-dashed border-slate-300 p-2 text-[10px] text-slate-400">

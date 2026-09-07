@@ -80,7 +80,7 @@ export default function CataloguePage() {
   const [isScraping, setIsScraping] = useState(false);
 
   const set = (field: keyof FormState, value: FormState[keyof FormState]) =>
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
 
   const categories = ["Toutes", "bardage", "etancheite", "habillage", "isolation", "installation"];
 
@@ -329,7 +329,7 @@ export default function CataloguePage() {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const data = results.data as Record<string, unknown>[];
+        const data = results.data as any[];
         let countNew = 0;
         let countUpdated = 0;
         
@@ -340,7 +340,7 @@ export default function CataloguePage() {
           const pu_ht = Number(row.pu_ht?.replace(',', '.') || 0);
           const prix_ttc = row.prix_ttc ? Number(row.prix_ttc.replace(',', '.')) : Math.round(pu_ht * 1.2 * 100) / 100;
           
-          const payload: Record<string, unknown> = {
+          const payload: any = {
             designation: row.designation.trim(),
             categorie: row.categorie?.trim() || "bardage",
             famille_label: row.famille_label?.trim() || "Import CSV",
@@ -877,7 +877,7 @@ export default function CataloguePage() {
                         onChange={(e) => {
                           const val = e.target.value;
                           const numericHt = parseFloat(val.replace(',', '.')) || 0;
-                          setFormData((prev) => ({
+                          setFormData((prev: any) => ({
                             ...prev,
                             pu_ht: val ? parseFloat(val.replace(',', '.')) || 0 : 0,
                             prix_ttc: val === "" ? null : parseFloat((numericHt * 1.2).toFixed(2))
@@ -898,7 +898,7 @@ export default function CataloguePage() {
                         onChange={(e) => {
                           const val = e.target.value;
                           const numericTtc = parseFloat(val.replace(',', '.')) || 0;
-                          setFormData((prev) => ({
+                          setFormData((prev: any) => ({
                             ...prev,
                             prix_ttc: val ? parseFloat(val.replace(',', '.')) || 0 : null,
                             pu_ht: val === "" ? null : parseFloat((numericTtc / 1.2).toFixed(2))

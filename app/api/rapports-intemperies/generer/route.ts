@@ -159,7 +159,7 @@ async function fetchMeteoVisualCrossing(
     throw new Error("Aucune donnée météo disponible pour aujourd'hui");
   }
 
-  const heures: HeureRapport[] = (today.hours ?? []).map((h: Record<string, unknown>) => ({
+  const heures: HeureRapport[] = (today.hours ?? []).map((h: any) => ({
     heure: String(h.datetime ?? "").slice(0, 5),
     temp: Math.round(Number(h.temp ?? 0)),
     vent: Math.round(Number(h.windspeed ?? 0)),
@@ -245,7 +245,7 @@ async function prochainNumero(): Promise<string> {
   }
 
   const numeros = (data ?? [])
-    .map((ligne: Record<string, unknown>) => {
+    .map((ligne: any) => {
       const morceaux = String(ligne.numero ?? "").split("-");
       return Number.parseInt(morceaux[2] ?? "", 10);
     })
@@ -363,9 +363,9 @@ export async function POST(request: NextRequest) {
     }
 
     const resultats: ResultatGeneration[] = [];
-    const listeChantiers = (chantiers || []) as Record<string, unknown>[];
+    const listeChantiers = (chantiers || []) as unknown as any[];
 
-    for (const chantier of listeChantiers) {
+    for (const chantier of listeChantiers as Record<string, string>[]) {
       try {
         const existant = await rapportDuJourExiste(chantier.id);
 
@@ -436,7 +436,7 @@ export async function POST(request: NextRequest) {
         };
 
         let numero: string;
-        let rapportFinal: Record<string, unknown>;
+        let rapportFinal: any;
 
         if (existant && force) {
           numero = existant.numero;

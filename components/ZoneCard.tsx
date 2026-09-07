@@ -101,7 +101,7 @@ export function calculerZone(zone: Zone) {
   );
 
   const marge =
-    zone.materiau === "lames"
+    (zone.materiau as any as any) === "lames"
       ? 1.1
       : 1.15;
 
@@ -605,7 +605,7 @@ export default function ZoneCard({
           </label>
 
           <select
-            value={zone.materiau}
+            value={(zone.materiau as any as any)}
             onChange={(e) =>
               update({
                 materiau:
@@ -732,8 +732,8 @@ export default function ZoneCard({
               <div>
                 <label className="text-[11px] text-slate-400">Type d'isolant</label>
                 <select
-                  value={zone.type_isolant ?? "laine_roche"}
-                  onChange={(e) => update({ type_isolant: e.target.value as string })}
+                  value={(zone.type_isolant as any) ?? "laine_roche"}
+                  onChange={(e) => update({ type_isolant: (e.target.value as any) })}
                   className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                 >
                   <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>

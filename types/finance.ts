@@ -3,6 +3,26 @@ export interface ChantierFinance {
   nom: string;
   prix_vente_ht: number;
   avancement: number;
+  statut?: string;
+  clients?: { nom: string };
+  code_acces?: string;
+}
+
+export interface LigneCommande {
+  id: string;
+  designation: string;
+  quantite: number;
+  prix_unitaire_ht: number;
+  montant_ht: number;
+}
+
+export interface MaterielPrevu {
+  id: string;
+  designation: string;
+  quantite: number;
+  unite: string;
+  prix_unitaire_ht: number;
+  montant_ht: number;
 }
 
 export interface ChantierBilan extends ChantierFinance {
@@ -136,7 +156,7 @@ export interface CommandeFinance {
   objet: string;
   date_commande: string;
   date_livraison_prevue: string | null;
-  lignes: any;
+  lignes: LigneCommande[];
   montant_ht: number;
   statut: string;
   fournisseurs?: { nom: string };
@@ -153,12 +173,13 @@ export interface TicketSav {
   cause_probable: string;
   respect_dtu: boolean;
   diagnostic_dtu: string;
-  materiel_prevu: any[];
+  materiel_prevu: MaterielPrevu[];
   date_intervention: string;
   temps_estime: string;
   intervenant: string;
   moyen_acces: string;
   photos: { client: string | null; avant: string | null; apres: string | null };
+  created_at?: string;
   signature_technicien: string | null;
   signature_client: string | null;
   chantiers?: { nom: string; client_id: string; adresse_chantier: string; clients?: { id: string; nom: string; societe: string } };

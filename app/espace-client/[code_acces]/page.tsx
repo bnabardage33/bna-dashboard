@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect, use } from "react";
-import { 
+import {
   FileText, CheckCircle2, MessageSquare, Clock, Download,
   AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard
 } from "lucide-react";
+import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
 
 interface ChatMessage {
@@ -456,7 +457,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                   onClick={() => setLightboxPhoto(photo)}
                 >
                   <div className="w-[140px] h-[140px] rounded-xl overflow-hidden border border-[#111111] shadow-sm">
-                    <img src={photo.url_image} alt={photo.titre} className="w-full h-full object-cover" />
+                    <Image src={photo.url_image} alt={photo.titre} className="w-full h-full object-cover"  width={100} height={100} />
                   </div>
                   <p className="text-[10px] font-bold text-[#111111] mt-1.5 truncate text-center">{photo.titre}</p>
                 </div>
@@ -477,11 +478,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             >
               <X size={22} />
             </button>
-            <img
+            <Image
               src={lightboxPhoto.url_image}
               alt={lightboxPhoto.titre}
               className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             />
             <div className="mt-4 text-center">
               <p className="text-white font-bold text-base">{lightboxPhoto.titre}</p>

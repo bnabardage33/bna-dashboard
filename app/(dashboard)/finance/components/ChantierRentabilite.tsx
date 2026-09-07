@@ -5,14 +5,14 @@ import { fmtEuro, fmtPct } from "@/lib/financeCalculs";
 import { AlertTriangle, FileText, BarChart2, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
-import type { ChantierFinance } from "@/types/finance";
+import type { RentabiliteChantierExt } from "@/hooks/useFinance";
 import SituationTravauxPDF from "./exports/SituationTravauxPDF";
 import BilanChantierPDF from "./exports/BilanChantierPDF";
 
 export default function ChantierRentabilite() {
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
-  const [printingSit, setPrintingSit] = useState<ChantierFinance | null>(null);
-  const [printingBilan, setPrintingBilan] = useState<ChantierFinance | null>(null);
+  const [printingSit, setPrintingSit] = useState<RentabiliteChantierExt | null>(null);
+  const [printingBilan, setPrintingBilan] = useState<RentabiliteChantierExt | null>(null);
   const [supprimantId, setSupprimantId] = useState<string | null>(null);
 
   const handleSupprimerChantier = async (id: string, nom: string) => {

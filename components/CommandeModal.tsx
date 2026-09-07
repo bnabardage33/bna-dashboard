@@ -148,7 +148,7 @@ export default function CommandeModal({
       onClose();
     } catch (err) {
       console.error(err);
-      alert(`Erreur lors de l'enregistrement: ${err.message || err.details || "Erreur inconnue"}`);
+      alert(`Erreur lors de l'enregistrement: ${(err as any).message || (err as any).details || "Erreur inconnue"}`);
     } finally {
       setIsSubmitting(false);
     }

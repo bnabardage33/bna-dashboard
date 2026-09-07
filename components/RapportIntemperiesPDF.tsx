@@ -3,6 +3,7 @@
 export type NiveauVigilance = "vert" | "jaune" | "orange" | "rouge";
 
 import { Entreprise } from "@/types/entreprise";
+import Image from "next/image";
 
 type Chantier = {
   nom: string | null;
@@ -105,11 +106,11 @@ export default function RapportIntemperiesPDF({
       {/* En-tête */}
       <div className="flex items-start justify-between pt-3">
         <div className="flex items-center gap-3.5">
-          <img
+          <Image
             src={entreprise.logo_url || "/logo-bna.png"}
             alt="Logo"
             className="h-20 sm:h-24 max-h-24 w-auto object-contain"
-          />
+           width={100} height={100} />
           <div>
             <p className="text-lg font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
             <p className="font-medium text-slate-500 text-xs">Spécialiste Bardage Rapporté · Isolation ITE</p>

@@ -27,6 +27,7 @@ export default function PortailsClientsPage() {
         .order("created_at", { ascending: false });
 
       if (data) {
+// @ts-ignore
         setChantiers(data);
       }
       setIsLoading(false);
@@ -88,7 +89,7 @@ export default function PortailsClientsPage() {
 
                 <div className="flex items-center gap-3 mt-4 sm:mt-0 w-full sm:w-auto">
                   <button 
-                    onClick={() => copyLink(chantier.code_acces)}
+                    onClick={() => copyLink(chantier.code_acces || '')}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#1A1D24] hover:bg-[#1A1D24] text-sm font-medium transition-colors"
                   >
                     <LinkIcon className="h-4 w-4" />
