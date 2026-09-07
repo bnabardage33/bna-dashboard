@@ -4,8 +4,8 @@
   "description": "Dashboard de pilotage chantiers, devis et facturation - BNA Bardage",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
   "orientation": "portrait",
   "icons": [
     {
@@ -25,6 +25,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

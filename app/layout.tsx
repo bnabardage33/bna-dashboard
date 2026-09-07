@@ -17,13 +17,14 @@ export const metadata: Metadata = {
   description: "Pilotage chantiers, devis et facturation — BNA Bardage",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo-bna.png",
-    apple: "/logo-bna.png",
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
   },
 };
 
 export const viewport: Viewport = {
   themeColor: "#0B0F19",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -33,6 +34,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${inter.variable} h-full`}>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="bg-[#0B0F19] min-h-screen text-gray-300 antialiased selection:bg-[#E30613]/30 selection:text-red-200 flex flex-col">
         <RegisterSW />
         <InactivityLogout />
