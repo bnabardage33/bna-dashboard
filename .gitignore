@@ -51,3 +51,4 @@ find_*.js
 trace_*.js
 print_*.js
 globalCalepinage.js
+.env.check

@@ -1,6 +1,7 @@
 // components/TopNav.tsx
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings, ShieldCheck, LogOut } from "lucide-react";
@@ -28,9 +29,11 @@ export default function TopNav() {
         {/* Logo et Nom de marque */}
         <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
           <div className="flex h-28 w-28 items-center justify-center rounded-xl bg-slate-800 border border-slate-700 shadow-sm">
-            <img
+            <Image
               src="/logo-bna.png"
               alt="BNA Bardage Logo"
+              width={112}
+              height={112}
               className="h-full w-full object-contain"
             />
           </div>
