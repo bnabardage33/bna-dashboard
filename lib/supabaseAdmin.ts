@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 
 // ⚠️ Ce client utilise la clé service_role : il contourne toutes les
 // policies RLS. Il ne doit JAMAIS être importé dans un composant "use client"
@@ -15,7 +16,7 @@ if (!supabaseServiceKey) {
   throw new Error('SUPABASE_SERVICE_ROLE_KEY manquante dans les variables d\'environnement');
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,

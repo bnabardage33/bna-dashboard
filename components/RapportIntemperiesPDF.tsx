@@ -5,7 +5,7 @@ export type NiveauVigilance = "vert" | "jaune" | "orange" | "rouge";
 import { Entreprise } from "@/types/entreprise";
 import Image from "next/image";
 
-type Chantier = {
+export type Chantier = {
   nom: string | null;
   adresse: string | null;
   code_postal: string | null;
@@ -25,9 +25,7 @@ export type RapportIntemperiesData = {
   risque_technique_niveau: string | null;
   risque_technique_motif: string | null;
   temp_max: number | null;
-  temp_min: number | null;
   rafales_max: number | null;
-  vent_moyen: number | null;
   pluie_cumul: number | null;
   materiau: string | null;
   acces: string | null;
@@ -71,7 +69,6 @@ const LABELS_ACCES: Record<string, string> = {
 
 // Calcule min/moyenne à partir du relevé horaire si dispo, sinon fallback
 function calculerTempMin(rapport: RapportIntemperiesData): number | null {
-  if (rapport.temp_min !== null && rapport.temp_min !== undefined) return rapport.temp_min;
   if (rapport.heures && rapport.heures.length > 0) {
     return Math.min(...rapport.heures.map((h) => h.temp));
   }
@@ -79,7 +76,6 @@ function calculerTempMin(rapport: RapportIntemperiesData): number | null {
 }
 
 function calculerVentMoyen(rapport: RapportIntemperiesData): number | null {
-  if (rapport.vent_moyen !== null && rapport.vent_moyen !== undefined) return rapport.vent_moyen;
   if (rapport.heures && rapport.heures.length > 0) {
     const total = rapport.heures.reduce((s, h) => s + h.vent, 0);
     return Math.round(total / rapport.heures.length);

@@ -5,7 +5,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import RapportIntemperiesPDF, { RapportIntemperiesData } from "@/components/RapportIntemperiesPDF";
+import RapportIntemperiesPDF, { RapportIntemperiesData, Chantier } from "@/components/RapportIntemperiesPDF";
+import { Entreprise } from "@/types/entreprise";
 
 function RapportDetailContent() {
   const params = useParams();
@@ -13,8 +14,8 @@ function RapportDetailContent() {
   const id = params.id as string;
 
   const [rapport, setRapport] = useState<RapportIntemperiesData | null>(null);
-  const [chantier, setChantier] = useState<any | null>(null);
-  const [entreprise, setEntreprise] = useState<any>({
+  const [chantier, setChantier] = useState<Chantier | null>(null);
+  const [entreprise, setEntreprise] = useState<Entreprise>({
     raison_sociale: "BNA BARDAGE",
     siret: "921 456 789 00012",
     telephone: "05 56 00 00 00",
@@ -23,6 +24,10 @@ function RapportDetailContent() {
     code_postal: "33000",
     ville: "Bordeaux",
     logo_url: null,
+    assurance: null,
+    iban: null,
+    bic: null,
+    mentions_legales: null,
   });
   const [loading, setLoading] = useState(true);
   const [validentEnCours, setValidantEnCours] = useState(false);
@@ -45,8 +50,8 @@ function RapportDetailContent() {
       setRapport({
         numero: dataRapport.numero,
         cree_le: dataRapport.cree_le,
-        cree_par: dataRapport.cree_par || "manuel",
-        vigilance_officielle: dataRapport.vigilance_officielle || "jaune",
+        cree_par: (dataRapport.cree_par as "auto" | "manuel") || "manuel",
+        vigilance_officielle: (dataRapport.vigilance_officielle as import("@/components/RapportIntemperiesPDF").NiveauVigilance) || "jaune",
         jour_arrete: dataRapport.jour_arrete ?? false,
         a_valider: dataRapport.a_valider ?? false,
         pluie_continue: dataRapport.pluie_continue ?? false,
@@ -54,16 +59,13 @@ function RapportDetailContent() {
         risque_technique_niveau: dataRapport.risque_technique_niveau,
         risque_technique_motif: dataRapport.risque_technique_motif,
         temp_max: dataRapport.temp_max ?? null,
-        temp_min: dataRapport.temp_min ?? null,
         rafales_max: dataRapport.rafales_max ?? null,
-        vent_moyen: dataRapport.vent_moyen ?? null,
         pluie_cumul: dataRapport.pluie_cumul ?? null,
         materiau: dataRapport.materiau ?? null,
         acces: dataRapport.acces ?? null,
         departement: dataRapport.departement ?? null,
-        vigilance_phenomene: dataRapport.vigilance_phenomene ?? null,
         mesures_prises: dataRapport.mesures_prises ?? null,
-        heures: dataRapport.releve_horaire,
+        heures: dataRapport.releve_horaire as { heure: string; temp: number; vent: number; rafales: number; pluie: number }[] | undefined,
       });
 
       if (dataRapport.chantier_id) {
@@ -80,6 +82,34 @@ function RapportDetailContent() {
             code_postal: "",
             ville: "",
           });
+        }
+
+        const dateRapport = new Date(dataRapport.cree_le);
+        const debutJour = new Date(dateRapport);
+        debutJour.setHours(0, 0, 0, 0);
+        const finJour = new Date(dateRapport);
+        finJour.setHours(23, 59, 59, 999);
+
+        const { data: captures } = await supabase
+          .from("vigilance_captures")
+          .select("vigilance_phenomenes")
+          .eq("chantier_id", dataRapport.chantier_id)
+          .gte("capture_le", debutJour.toISOString())
+          .lte("capture_le", finJour.toISOString());
+
+        if (captures && captures.length > 0) {
+          const nomsUniques = new Set<string>();
+          for (const capture of captures) {
+            const phenomenes = capture.vigilance_phenomenes as
+              | { nom: string; couleur: string }[]
+              | null;
+            phenomenes?.forEach((p) => nomsUniques.add(p.nom));
+          }
+          if (nomsUniques.size > 0) {
+            setRapport((prev) =>
+              prev ? { ...prev, vigilance_phenomene: Array.from(nomsUniques).join(", ") } : prev
+            );
+          }
         }
       }
 
