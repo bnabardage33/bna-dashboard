@@ -42,27 +42,29 @@ export default function BottomNav() {
           padding-bottom: 9rem !important;
         }
       `}</style>
-      <nav className="fixed bottom-10 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50">
-        {NAV_ITEMS.map((item) => {
-          const active = item.isActive(pathname || "");
-          const Icon = item.icon;
+<nav className="fixed bottom-10 left-4 right-4 rounded-3xl bg-[#1A1D24]/80 backdrop-blur-lg border border-white/5 flex justify-between items-center px-6 py-4 z-50" aria-label="Navigation principale">
+         {NAV_ITEMS.map((item) => {
+           const active = item.isActive(pathname || "");
+           const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className={`flex flex-col items-center justify-center gap-1 transition-all ${
-                active ? "text-[#ff5a5a]" : "text-white/50 hover:text-white/80"
-              }`}
-            >
-              <div className="flex h-7 w-7 items-center justify-center">
-                <Icon size={24} strokeWidth={active ? 2.5 : 2} fill="currentColor" />
-              </div>
-              <span className="text-[10.5px] tracking-tight font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+           return (
+             <Link
+               key={item.id}
+               href={item.href}
+               aria-current={active ? "page" : undefined}
+               aria-label={item.label}
+               className={`flex flex-col items-center justify-center gap-1 transition-all ${
+                 active ? "text-[#ff5a5a]" : "text-white/60 hover:text-white/80"
+               }`}
+             >
+               <div className="flex h-7 w-7 items-center justify-center">
+                 <Icon size={24} strokeWidth={active ? 2.5 : 2} fill="currentColor" />
+               </div>
+               <span className="text-[10.5px] tracking-tight font-medium">{item.label}</span>
+             </Link>
+           );
+         })}
+       </nav>
     </>
   );
 }

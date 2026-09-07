@@ -43,6 +43,8 @@ export default function Drawer() {
         onClick={() => setOpen(true)}
         className="relative z-[200] w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 border border-white/15 hover:bg-white/25 transition-all"
         aria-label="Ouvrir le menu"
+        aria-expanded={open}
+        aria-controls="bna-drawer"
       >
         <Menu size={20} className="text-white" />
       </button>
@@ -57,17 +59,21 @@ export default function Drawer() {
 
       {/* DRAWER */}
         <aside
+        id="bna-drawer"
+        role="navigation"
+        aria-label="Navigation principale"
         className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] border-r border-white/[0.08] bg-[#0B0F19] flex flex-col shadow-2xl transition-transform duration-300 z-[100] ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* DRAWER HEADER */}
         <div className="flex items-center justify-between px-5 pt-12 pb-5 border-b border-white/[0.06]">
           <div>
             <p className="text-white font-black text-[15px] tracking-tight">BNA Bardage</p>
-            <p className="text-white/40 text-[11px] mt-0.5">Dashboard Pro</p>
+            <p className="text-white text-[11px] mt-0.5">Dashboard Pro</p>
           </div>
           <button
             onClick={() => setOpen(false)}
             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] transition-all"
+            aria-label="Fermer le menu"
           >
             <X size={16} className="text-white/60" />
           </button>
@@ -79,16 +85,17 @@ export default function Drawer() {
             const active = isActive(item.href);
             const Icon = item.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
-                  active
-                    ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/[0.06]"
-                }`}
-              >
+<Link
+                 key={item.href}
+                 href={item.href}
+                 onClick={() => setOpen(false)}
+                 aria-current={active ? "page" : undefined}
+                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
+                   active
+                     ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
+                     : "text-white/60 hover:text-white hover:bg-white/[0.06]"
+                 }`}
+               >
                 <div
                   className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                     active ? "bg-[#E30613]/20" : "bg-white/[0.05]"
@@ -117,24 +124,24 @@ export default function Drawer() {
             className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
               isActive("/parametres")
                 ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
-                : "text-white/50 hover:text-white hover:bg-white/[0.06]"
-            }`}
+: "text-white/60 hover:text-white hover:bg-white/[0.06]"
+             }`}
+           >
+             <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
+               <Settings size={16} className={isActive("/parametres") ? "text-[#ff5a5a]" : "text-white/60"} strokeWidth={1.8} />
+             </div>
+             <span>Parametres</span>
+           </Link>
+           <button
+             onClick={handleLogout}
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/60 hover:text-white hover:bg-white/[0.06] transition-all font-medium text-[14px]"
           >
             <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
-              <Settings size={16} className={isActive("/parametres") ? "text-[#ff5a5a]" : "text-white/40"} strokeWidth={1.8} />
-            </div>
-            <span>Parametres</span>
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-white/50 hover:text-white hover:bg-white/[0.06] transition-all font-medium text-[14px]"
-          >
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
-              <LogOut size={16} className="text-white/40" strokeWidth={1.8} />
+              <LogOut size={16} className="text-white/60" strokeWidth={1.8} />
             </div>
             <span>Deconnexion</span>
           </button>
-          <p className="text-white/20 text-[10px] text-center pt-3">© 2026 BNA Bardage</p>
+          <p className="text-white/30 text-[10px] text-center pt-3">© 2026 BNA Bardage</p>
         </div>
       </aside>
     </>

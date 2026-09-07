@@ -11,6 +11,29 @@
   --font-sans: var(--font-inter);
 }
 
+:focus-visible {
+  outline: 2px solid #E30613;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #E30613;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  z-index: 99999;
+  font-weight: bold;
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
 body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
