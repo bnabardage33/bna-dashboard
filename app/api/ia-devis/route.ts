@@ -6,6 +6,14 @@ const googleProvider = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
 });
 
+interface CatalogueItem {
+  designation: string;
+  description?: string;
+  unite: string;
+  pu_ht: number;
+  [key: string]: unknown;
+}
+
 if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
   console.warn('GOOGLE_GENERATIVE_AI_API_KEY manquante. L\'API ia-devis sera indisponible.');
 }
@@ -22,7 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt manquant' }, { status: 400 });
     }
 
-    let filteredCatalog: any[] = [];
+    let filteredCatalog: CatalogueItem[] = [];
     const promptLower = prompt.toLowerCase();
     const needsOssature = ["bardage", "ite", "claire-voie", "hpl"].some((w: string) => promptLower.includes(w));
 
@@ -33,7 +41,7 @@ export async function POST(req: NextRequest) {
         keywords.push("chevron", "équerre", "equerre", "cheville", "vis", "ossature");
       }
 
-      filteredCatalog = catalogueContext.filter((c: any) => {
+      filteredCatalog = catalogueContext.filter((c: CatalogueItem) => {
         const text = `${c.designation} ${c.description || ''}`.toLowerCase();
         return keywords.some((kw: string) => text.includes(kw));
       });
@@ -43,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     const catalogueString = filteredCatalog.length > 0
-      ? "\n\nVOICI LE CATALOGUE DE L'ENTREPRISE (Extrait pertinent) :\n" + JSON.stringify(filteredCatalog.map((c: any) => ({
+      ? "\n\nVOICI LE CATALOGUE DE L'ENTREPRISE (Extrait pertinent) :\n" + JSON.stringify(filteredCatalog.map((c: CatalogueItem) => ({
           designation: c.designation,
           unite: c.unite,
           pu_ht: c.pu_ht
@@ -96,8 +104,8 @@ export async function POST(req: NextRequest) {
       throw new Error("L'IA n'a pas renvoyé le tableau 'lignes_prestation'.");
     }
 
-    const formattedLignes = result.lignes_prestation.map((ligne: any) => {
-      const unitLower = (ligne.unite || "").toLowerCase();
+    const formattedLignes = result.lignes_prestation.map((ligne: Record<string, unknown>) => {
+      const unitLower = String(ligne.unite || "").toLowerCase();
       if (unitLower.includes("unit") || unitLower.includes("pièce") || unitLower.includes("piece") || unitLower === "u") {
         if (typeof ligne.qte === 'number') {
           ligne.qte = Math.ceil(ligne.qte);

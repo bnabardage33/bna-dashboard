@@ -329,7 +329,7 @@ export default function CataloguePage() {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const data = results.data as any[];
+        const data = results.data as Record<string, unknown>[];
         let countNew = 0;
         let countUpdated = 0;
         
@@ -340,7 +340,7 @@ export default function CataloguePage() {
           const pu_ht = Number(row.pu_ht?.replace(',', '.') || 0);
           const prix_ttc = row.prix_ttc ? Number(row.prix_ttc.replace(',', '.')) : Math.round(pu_ht * 1.2 * 100) / 100;
           
-          const payload: any = {
+          const payload: Record<string, unknown> = {
             designation: row.designation.trim(),
             categorie: row.categorie?.trim() || "bardage",
             famille_label: row.famille_label?.trim() || "Import CSV",
@@ -879,8 +879,8 @@ export default function CataloguePage() {
                           const numericHt = parseFloat(val.replace(',', '.')) || 0;
                           setFormData((prev) => ({
                             ...prev,
-                            pu_ht: val as any,
-                            prix_ttc: val === "" ? "" as any : parseFloat((numericHt * 1.2).toFixed(2))
+                            pu_ht: val ? parseFloat(val.replace(',', '.')) || 0 : 0,
+                            prix_ttc: val === "" ? null : parseFloat((numericHt * 1.2).toFixed(2))
                           }));
                         }}
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
@@ -900,8 +900,8 @@ export default function CataloguePage() {
                           const numericTtc = parseFloat(val.replace(',', '.')) || 0;
                           setFormData((prev) => ({
                             ...prev,
-                            prix_ttc: val as any,
-                            pu_ht: val === "" ? "" as any : parseFloat((numericTtc / 1.2).toFixed(2))
+                            prix_ttc: val ? parseFloat(val.replace(',', '.')) || 0 : null,
+                            pu_ht: val === "" ? null : parseFloat((numericTtc / 1.2).toFixed(2))
                           }));
                         }}
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"

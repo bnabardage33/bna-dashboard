@@ -5,6 +5,19 @@ export interface ChantierFinance {
   avancement: number;
 }
 
+export interface ChantierBilan extends ChantierFinance {
+  client_nom: string;
+  avancement_reel: number;
+  cout_materiaux: number;
+  cout_main_oeuvre: number;
+  cout_sous_traitance: number;
+  cout_location: number;
+  cout_frais: number;
+  cout_direct_total: number;
+  marge_brute: number;
+  taux_marge_pct: number;
+}
+
 export type NatureDepense = 'materiaux' | 'quincaillerie' | 'sous_traitance' | 'location' | 'frais' | 'autre';
 
 export interface DepenseFinance {
@@ -113,4 +126,70 @@ export interface DepenseRow extends DepenseFinance {
 
 export interface FactureWithClient extends FactureFinance {
   clients: { nom: string };
+}
+
+export interface CommandeFinance {
+  id: string;
+  fournisseur_id: string;
+  chantier_id: string;
+  reference_interne: string;
+  objet: string;
+  date_commande: string;
+  date_livraison_prevue: string | null;
+  lignes: any;
+  montant_ht: number;
+  statut: string;
+  fournisseurs?: { nom: string };
+}
+
+export interface TicketSav {
+  id: string;
+  chantier_id: string;
+  statut: string;
+  sous_garantie: boolean;
+  type_sinistre: string;
+  localisation: string;
+  description: string;
+  cause_probable: string;
+  respect_dtu: boolean;
+  diagnostic_dtu: string;
+  materiel_prevu: any[];
+  date_intervention: string;
+  temps_estime: string;
+  intervenant: string;
+  moyen_acces: string;
+  photos: { client: string | null; avant: string | null; apres: string | null };
+  signature_technicien: string | null;
+  signature_client: string | null;
+  chantiers?: { nom: string; client_id: string; adresse_chantier: string; clients?: { id: string; nom: string; societe: string } };
+}
+
+export interface EntrepriseSettings {
+  id: number;
+  raison_sociale: string;
+  siret: string;
+  telephone: string;
+  email: string;
+  adresse: string;
+  code_postal: string;
+  ville: string;
+  iban: string;
+  bic: string;
+  assurance: string;
+  assurance_nom: string;
+  assurance_numero_police: string;
+  assurance_zone_geo: string;
+  mediateur_nom: string;
+  mediateur_contact: string;
+  mentions_legales: string;
+  logo_url: string;
+  seuil_ca: number;
+  taux_cotisations: number;
+}
+
+export interface Equipe {
+  id: string;
+  nom: string;
+  prenom: string;
+  role: string;
 }

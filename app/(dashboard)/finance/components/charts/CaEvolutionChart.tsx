@@ -64,7 +64,7 @@ export default function CaEvolutionChart({ endMois }: { endMois?: string }) {
                 color: "#f1f5f9", // slate-100
               }}
               itemStyle={{ color: "#22d3ee" }} // cyan-400
-              formatter={(value: any) => [fmtEuro(Number(value)), "CA HT"]}
+              formatter={(value) => [fmtEuro(Number(value ?? 0)), "CA HT"]}
               labelStyle={{ color: "#94a3b8", marginBottom: "4px" }}
             />
             <Line

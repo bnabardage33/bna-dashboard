@@ -66,7 +66,7 @@ export default function FeuilleHeuresPage() {
     setLignes((prev) => ({ ...prev, [id]: { ...prev[id], coche: !prev[id].coche } }));
   }
 
-  function majLigne(id: string, champ: "heures" | "type_heure", valeur: any) {
+  function majLigne(id: string, champ: "heures" | "type_heure", valeur: string | number) {
     setLignes((prev) => ({ ...prev, [id]: { ...prev[id], [champ]: valeur } }));
   }
 
@@ -206,7 +206,7 @@ export default function FeuilleHeuresPage() {
                 />
                 <select
                   value={nouveauStatut}
-                  onChange={(e) => setNouveauStatut(e.target.value as any)}
+                  onChange={(e) => setNouveauStatut(e.target.value)}
                   className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 >
                   <option value="embauche">Embauché</option>

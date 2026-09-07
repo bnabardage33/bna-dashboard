@@ -48,8 +48,8 @@ export default function PhotosChantierAdmin() {
             setChantier_id(data.chantiers[0].id);
           }
         }
-      } catch (e: any) {
-        setError(`Erreur réseau : ${e.message}`);
+      } catch (e) {
+        setError(`Erreur réseau : ${(e as Error).message}`);
       } finally {
         setLoadingChantiers(false);
       }
@@ -103,7 +103,7 @@ export default function PhotosChantierAdmin() {
       const res = await fetch('/api/photos-chantier', { method: 'POST', body: fd });
 
       // Tenter de parser le JSON même si le statut est une erreur
-      let data: any = {};
+      let data: Record<string, unknown> = {};
       try {
         data = await res.json();
       } catch {
@@ -111,7 +111,7 @@ export default function PhotosChantierAdmin() {
       }
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || `Erreur serveur HTTP ${res.status}`);
+        throw new Error(String(data.error) || `Erreur serveur HTTP ${res.status}`);
       }
 
       setSuccess(true);
@@ -120,8 +120,8 @@ export default function PhotosChantierAdmin() {
       setTitre('');
       if (fileRef.current) fileRef.current.value = '';
       loadPhotos(chantier_id);
-    } catch (e: any) {
-      setError(`❌ Échec de l'envoi : ${e.message}`);
+    } catch (e) {
+      setError(`❌ Échec de l'envoi : ${(e as Error).message}`);
     } finally {
       setUploading(false);
     }
@@ -132,7 +132,7 @@ export default function PhotosChantierAdmin() {
     try {
       await fetch(`/api/photos-chantier?id=${id}`, { method: 'DELETE' });
       loadPhotos(chantier_id);
-    } catch (e: any) {
+    } catch (e) {
       setError(`Erreur suppression : ${e.message}`);
     }
   };

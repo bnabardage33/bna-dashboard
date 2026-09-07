@@ -60,7 +60,7 @@ export default function FraisInterimPage() {
     });
 
     if (!error) {
-      const depenseData: any = {
+      const depenseData: Record<string, unknown> = {
         nature: "sous_traitance",
         montant_ht: totalHT,
         taux_tva: tauxTva,

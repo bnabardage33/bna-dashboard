@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       data: analysis
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erreur API analyze-chantier:", error);
     return NextResponse.json({ error: "Erreur lors de l'analyse du chantier." }, { status: 500 });
   }

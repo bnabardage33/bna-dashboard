@@ -97,7 +97,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
       });
 
       if (insertError) alert("Erreur enregistrement : " + insertError.message);
-    } catch (err: any) {
+    } catch (err) {
       alert("Erreur traitement photo : " + (err.message || String(err)));
     } finally {
       setUploading(null);

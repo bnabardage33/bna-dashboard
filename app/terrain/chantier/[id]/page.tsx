@@ -96,7 +96,7 @@ function ChantierDetailContent() {
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
-  const [pvsLies, setPvsLies] = useState<any[]>([]);
+  const [pvsLies, setPvsLies] = useState<Record<string, unknown>[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [pointages, setPointages] = useState<Pointage[]>([]);
   const [loadingPointages, setLoadingPointages] = useState(false);
@@ -126,11 +126,11 @@ function ChantierDetailContent() {
     sensPose: "horizontal"
   });
   
-  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any>(null);
+  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<Record<string, unknown> | null>(null);
   const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
-  const [savedGlobalInput, setSavedGlobalInput] = useState<any>(null);
+  const [savedGlobalInput, setSavedGlobalInput] = useState<Record<string, unknown> | null>(null);
   const [modalGlobalDebitOuvert, setModalGlobalDebitOuvert] = useState(false);
-  const [activeMurs, setActiveMurs] = useState<any[]>([]);
+  const [activeMurs, setActiveMurs] = useState<Record<string, unknown>[]>([]);
   
 
 
@@ -138,8 +138,8 @@ function ChantierDetailContent() {
   async function genererSecuriteIA() {
     setIsGeneratingSecurite(true);
     // On force le cast pour éviter les erreurs TS sur les index
-    const materiauClé = (chantier?.materiau_structurel as any) || "lames_bois";
-    const accesClé = (chantier?.moyen_acces as any) || "pied_oeuvre";
+    const materiauClé = chantier?.materiau_structurel || "lames_bois";
+    const accesClé = chantier?.moyen_acces || "pied_oeuvre";
     
     const contexte = `Chantier: ${chantier?.nom}\nMatériau: ${LABELS_MATERIAU[materiauClé as keyof typeof LABELS_MATERIAU] || "Bois"}\nMoyen d'accès: ${LABELS_ACCES[accesClé as keyof typeof LABELS_ACCES] || "Pied d'oeuvre"}\nZone vent: ${chantier?.zone_vent}`;
     
@@ -207,14 +207,14 @@ function ChantierDetailContent() {
     if (devisRes.data && chantier?.client_id) {
       setDevisLies(
         (devisRes.data as DevisLie[]).filter(
-          (d) => (d as any).client_id === chantier.client_id
+          (d) => d.client_id === chantier.client_id
         )
       );
     }
     if (facturesRes.data && chantier?.client_id) {
       setFacturesLiees(
         (facturesRes.data as FactureLiee[]).filter(
-          (f) => (f as any).client_id === chantier.client_id
+          (f) => f.client_id === chantier.client_id
         )
       );
     }
@@ -290,7 +290,7 @@ function ChantierDetailContent() {
         .from("chantiers")
         .update({ surface_m2, quantite_coupes_ml, singularites_nb })
         .eq("id", chantier.id)
-        .then(({ error }: { error: any }) => {
+        .then(({ error }: { error: Error }) => {
           if (error) {
             console.error("Erreur sync calepinage -> chantier:", error);
           }
@@ -1060,7 +1060,7 @@ function ChantierDetailContent() {
                       <tbody className="divide-y divide-white/10 text-gray-200">
                         {pvsLies.map((p) => {
                           const nbRes = (p.reserves || []).length;
-                          const nbLevees = (p.reserves || []).filter((r: any) => r.levee).length;
+                          const nbLevees = (p.reserves || []).filter((r: Record<string, unknown>) => r.levee).length;
                           return (
                             <tr key={p.id}>
                               <td className="p-3 font-semibold text-white font-mono">{p.numero}</td>

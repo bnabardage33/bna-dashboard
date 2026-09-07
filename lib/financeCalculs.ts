@@ -8,6 +8,7 @@ import {
   KpiMensuelResult,
   TvaResult,
   ChargesSocialesResult,
+  AvancementRow,
 } from "@/types/finance";
 
 /**
@@ -18,7 +19,7 @@ export function calculerRentabiliteChantier(
   chantier: ChantierFinance,
   depenses: DepenseFinance[],
   pointages: PointageFinance[],
-  avancements?: any[]
+  avancements?: AvancementRow[]
 ): RentabiliteResult {
   try {
     let avancementReel = 50; // fallback
@@ -291,13 +292,13 @@ export function fmtDate(dateIso: string): string {
 
 // --- Helpers TTC (factures.montant_ttc et commandes.montant_ttc n'existent pas en base) ---
 
-export function calculerMontantTTCFacture(facture: any): number {
+export function calculerMontantTTCFacture(facture: FactureFinance): number {
   const lignes = facture.lignes || [];
-  const totalHT = lignes.reduce((s: number, l: any) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
+  const totalHT = lignes.reduce((s: number, l: { qte: number; pu_ht: number }) => s + (l.qte || 0) * (l.pu_ht || 0), 0);
   const tvaPct = facture.tva_pct ?? 20;
   return totalHT * (1 + tvaPct / 100);
 }
 
-export function calculerMontantTTCCommande(commande: any, tvaPct = 20): number {
+export function calculerMontantTTCCommande(commande: { montant_ht: number }, tvaPct = 20): number {
   return (commande.montant_ht || 0) * (1 + tvaPct / 100);
 }

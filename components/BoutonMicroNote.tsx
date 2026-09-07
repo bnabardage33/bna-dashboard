@@ -57,7 +57,7 @@ export default function BoutonMicroNote({ onTexteReformule, onErreur }: BoutonMi
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setEtat('enregistrement');
-    } catch (err: any) {
+    } catch (err) {
       const msg = `Impossible d'accéder au micro : ${err.message}`;
       setEtat('erreur');
       onErreur?.(msg);
@@ -106,7 +106,7 @@ export default function BoutonMicroNote({ onTexteReformule, onErreur }: BoutonMi
       const dataReformulation = await resReformulation.json();
       onTexteReformule(dataReformulation.texteReformule ?? texteBrut);
       setEtat('inactif');
-    } catch (err: any) {
+    } catch (err) {
       const msg = `Erreur lors du traitement : ${err.message}`;
       onErreur?.(msg);
       setEtat('inactif');

@@ -91,7 +91,7 @@ export default function MargeParTypeChart() {
                 color: "#f1f5f9",
               }}
               cursor={{ fill: "#334155", opacity: 0.4 }}
-              formatter={(value: any) => [
+              formatter={(value) => [
                 <span key="marge" className={Number(value) >= 15 ? "text-gray-400" : "text-rose-400"}>
                   {Number(value).toFixed(1)}%
                 </span>,

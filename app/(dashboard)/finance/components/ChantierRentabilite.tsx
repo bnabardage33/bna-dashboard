@@ -5,13 +5,14 @@ import { fmtEuro, fmtPct } from "@/lib/financeCalculs";
 import { AlertTriangle, FileText, BarChart2, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
+import type { ChantierFinance } from "@/types/finance";
 import SituationTravauxPDF from "./exports/SituationTravauxPDF";
 import BilanChantierPDF from "./exports/BilanChantierPDF";
 
 export default function ChantierRentabilite() {
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
-  const [printingSit, setPrintingSit] = useState<any>(null);
-  const [printingBilan, setPrintingBilan] = useState<any>(null);
+  const [printingSit, setPrintingSit] = useState<ChantierFinance | null>(null);
+  const [printingBilan, setPrintingBilan] = useState<ChantierFinance | null>(null);
   const [supprimantId, setSupprimantId] = useState<string | null>(null);
 
   const handleSupprimerChantier = async (id: string, nom: string) => {
@@ -25,8 +26,8 @@ export default function ChantierRentabilite() {
       const { error } = await supabase.from("chantiers").delete().eq("id", id);
       if (error) throw error;
       window.location.reload();
-    } catch (err: any) {
-      alert("Erreur lors de la suppression : " + err.message);
+    } catch (err) {
+      alert("Erreur lors de la suppression : " + (err as Error).message);
     } finally {
       setSupprimantId(null);
     }

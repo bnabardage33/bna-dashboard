@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { FactureFinance, CommandeFinance, DepenseFinance } from "@/types/finance";
 const getMonthRange = (mois: string) => {
   const [year, month] = mois.split("-").map(Number);
   const startDate = `${mois}-01T00:00:00.000Z`;
@@ -54,24 +55,40 @@ export async function genererExportComptaCSV(mois: string) {
     "Taux TVA (%)"
   ]);
 
-  if (factures) {
-    factures.forEach((f: any) => {
-      rows.push([
-        new Date(f.date_emission).toLocaleDateString("fr-FR"),
-        "VENTES",
-        f.numero || f.id.substring(0, 8),
-        f.clients?.nom || "Client Divers",
-        `Facture ${f.statut}`,
-        (f.montant_ht || 0).toFixed(2),
-        (f.montant_tva || ((f.montant_ht || 0) * (f.taux_tva || 20) / 100)).toFixed(2),
-        (f.montant_ttc || ((f.montant_ht || 0) * (1 + (f.taux_tva || 20) / 100))).toFixed(2),
-        f.taux_tva || 20
-      ]);
-    });
-  }
+const facturesList = (factures ?? []) as (FactureFinance & { clients?: { nom: string } })[];
+  const achatsList = (achats ?? []) as (CommandeFinance & { fournisseurs?: { nom: string } })[];
+  const depensesList = (depenses ?? []) as (DepenseFinance & { fournisseurs?: { nom: string } })[];
 
-  if (achats) {
-    achats.forEach((a: any) => {
+  // Map to common format
+  const rows: (string | number)[][] = [];
+  rows.push([
+    "Date",
+    "Journal",
+    "Référence",
+    "Tiers",
+    "Libellé",
+    "Montant HT",
+    "Montant TVA",
+    "Montant TTC",
+    "Taux TVA (%)"
+  ]);
+
+  facturesList.forEach((f) => {
+    rows.push([
+      new Date(f.date_emission).toLocaleDateString("fr-FR"),
+      "VENTES",
+      f.numero || f.id.substring(0, 8),
+      f.clients?.nom || "Client Divers",
+      `Facture ${f.statut}`,
+      (f.montant_ht || 0).toFixed(2),
+      (f.montant_tva || ((f.montant_ht || 0) * (f.taux_tva || 20) / 100)).toFixed(2),
+      (f.montant_ttc || ((f.montant_ht || 0) * (1 + (f.taux_tva || 20) / 100))).toFixed(2),
+      f.taux_tva || 20
+    ]);
+  });
+
+  if (achatsList) {
+    achatsList.forEach((a) => {
       rows.push([
         new Date(a.date).toLocaleDateString("fr-FR"),
         "ACHATS",
@@ -85,27 +102,25 @@ export async function genererExportComptaCSV(mois: string) {
       ]);
     });
   }
-  
-  if (depenses) {
-    depenses.forEach((d: any) => {
-      const ht = d.montant_ht || 0;
-      const tvaPct = d.taux_tva || 20;
-      const tva = ht * (tvaPct / 100);
-      const ttc = ht + tva;
-      
-      rows.push([
-        new Date(d.date).toLocaleDateString("fr-FR"),
-        "ACHATS",
-        d.id.substring(0, 8),
-        d.fournisseurs?.nom || "Autre",
-        `Dépense ${d.nature.replace("_", " ")}`,
-        ht.toFixed(2),
-        tva.toFixed(2),
-        ttc.toFixed(2),
-        tvaPct
-      ]);
-    });
-  }
+   
+  depensesList.forEach((d) => {
+    const ht = d.montant_ht || 0;
+    const tvaPct = d.taux_tva || 20;
+    const tva = ht * (tvaPct / 100);
+    const ttc = ht + tva;
+    
+    rows.push([
+      new Date(d.date).toLocaleDateString("fr-FR"),
+      "ACHATS",
+      d.id.substring(0, 8),
+      d.fournisseurs?.nom || "Autre",
+      `Dépense ${d.nature.replace("_", " ")}`,
+      ht.toFixed(2),
+      tva.toFixed(2),
+      ttc.toFixed(2),
+      tvaPct
+    ]);
+  });
 
   // BOM for Excel to recognize UTF-8 correctly
   const BOM = "\uFEFF";

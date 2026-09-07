@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { FactureFinance } from "@/types/finance";
 import DocumentPDF from "@/components/DocumentPDF";
 import SignaturePad from "@/components/SignaturePad";
 import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
@@ -164,7 +165,7 @@ export default function FacturesPage() {
       .eq("devis_id", devisId);
 
     const deja = (facturesExistantes ?? []).reduce(
-      (s: number, f: any) => s + f.lignes.reduce((t: number, l: any) => t + l.qte * l.pu_ht, 0),
+      (s: number, f: FactureFinance) => s + f.lignes.reduce((t: number, l: { qte: number; pu_ht: number }) => t + l.qte * l.pu_ht, 0),
       0
     );
     setDejaFactureHT(deja);

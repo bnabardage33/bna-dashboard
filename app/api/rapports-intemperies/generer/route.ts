@@ -159,7 +159,7 @@ async function fetchMeteoVisualCrossing(
     throw new Error("Aucune donnée météo disponible pour aujourd'hui");
   }
 
-  const heures: HeureRapport[] = (today.hours ?? []).map((h: any) => ({
+  const heures: HeureRapport[] = (today.hours ?? []).map((h: Record<string, unknown>) => ({
     heure: String(h.datetime ?? "").slice(0, 5),
     temp: Math.round(Number(h.temp ?? 0)),
     vent: Math.round(Number(h.windspeed ?? 0)),
@@ -245,7 +245,7 @@ async function prochainNumero(): Promise<string> {
   }
 
   const numeros = (data ?? [])
-    .map((ligne: any) => {
+    .map((ligne: Record<string, unknown>) => {
       const morceaux = String(ligne.numero ?? "").split("-");
       return Number.parseInt(morceaux[2] ?? "", 10);
     })
@@ -363,7 +363,7 @@ export async function POST(request: NextRequest) {
     }
 
     const resultats: ResultatGeneration[] = [];
-    const listeChantiers = (chantiers || []) as any[];
+    const listeChantiers = (chantiers || []) as Record<string, unknown>[];
 
     for (const chantier of listeChantiers) {
       try {
@@ -436,7 +436,7 @@ export async function POST(request: NextRequest) {
         };
 
         let numero: string;
-        let rapportFinal: any;
+        let rapportFinal: Record<string, unknown>;
 
         if (existant && force) {
           numero = existant.numero;
@@ -475,7 +475,7 @@ export async function POST(request: NextRequest) {
           nom: chantier.nom,
           numero,
           vigilance: niveauRapport,
-          rapportId: rapportFinal.id,
+          rapportId: (rapportFinal as { id: string }).id,
           statut: existant && force ? "Rapport mis à jour avec succès" : "Rapport généré avec succès",
         });
       } catch (error: unknown) {

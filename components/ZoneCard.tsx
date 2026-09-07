@@ -733,7 +733,7 @@ export default function ZoneCard({
                 <label className="text-[11px] text-slate-400">Type d'isolant</label>
                 <select
                   value={zone.type_isolant ?? "laine_roche"}
-                  onChange={(e) => update({ type_isolant: e.target.value as any })}
+                  onChange={(e) => update({ type_isolant: e.target.value as string })}
                   className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                 >
                   <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>

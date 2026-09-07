@@ -180,7 +180,7 @@ export default function DevisPage() {
 
         return [
           ...nettes,
-          ...newLignes.map((l: any) => ({
+          ...newLignes.map((l: Record<string, unknown>) => ({
             designation: l.designation || "",
             description: l.description || "",
             qte: l.qte || 1,
@@ -190,7 +190,7 @@ export default function DevisPage() {
         ];
       });
       setPromptIA("");
-    } catch (err: any) {
+    } catch (err) {
       alert("Erreur génération IA : " + err.message);
     } finally {
       setGenererIAEnCours(false);
@@ -703,15 +703,15 @@ export default function DevisPage() {
                           alert("Votre navigateur ne supporte pas la dictée vocale.");
                           return;
                         }
-                        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                        const SpeechRec = (window as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition || (window as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
                         const recognition = new SpeechRec();
                         recognition.lang = 'fr-FR';
                         setEcouteEnCours(true);
                         setPromptIA("Écoute en cours...");
-                        recognition.onresult = (event: any) => {
+                        recognition.onresult = (event: { results: Array<{ [key: number]: { transcript: string } }> }) => {
                           setPromptIA(event.results[0][0].transcript);
                         };
-                        recognition.onerror = (event: any) => {
+                        recognition.onerror = (event: { error: string }) => {
                           setPromptIA("");
                           if (event.error === 'aborted') return;
                           let msg = "Erreur micro (" + event.error + "). ";

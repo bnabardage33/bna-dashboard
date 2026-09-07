@@ -11,6 +11,7 @@ import {
 import SignaturePad from "@/components/SignaturePad";
 import RapportSAVPDF from "@/components/RapportSAVPDF";
 import { Printer, X } from "lucide-react";
+import type { TicketSav, EntrepriseSettings } from "@/types/finance";
 
 export default function FicheSAV() {
   const params = useParams();
@@ -20,8 +21,8 @@ export default function FicheSAV() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [chantiers, setChantiers] = useState<any[]>([]);
-  const [entreprise, setEntreprise] = useState<any>(null);
+  const [chantiers, setChantiers] = useState<Record<string, unknown>[]>([]);
+  const [entreprise, setEntreprise] = useState<EntrepriseSettings | null>(null);
   const [showPDF, setShowPDF] = useState(false);
 
   const [uploading, setUploading] = useState<{avant: boolean, apres: boolean}>({avant: false, apres: false});
@@ -70,7 +71,7 @@ export default function FicheSAV() {
     cause_probable: "",
     respect_dtu: true,
     diagnostic_dtu: "",
-    materiel_prevu: [] as any[],
+    materiel_prevu: [] as Record<string, unknown>[],
     date_intervention: "",
     temps_estime: "",
     intervenant: "",
@@ -78,16 +79,16 @@ export default function FicheSAV() {
     photos: { client: null, avant: null, apres: null },
     signature_technicien: null as string | null,
     signature_client: null as string | null,
-    chantiers: null as any
+    chantiers: null as Record<string, unknown> | null
   });
 
   useEffect(() => {
-    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }: { data: any }) => { if (data) setEntreprise(data) });
+    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }: { data: Record<string, unknown> }) => { if (data) setEntreprise(data) });
     supabase.from("chantiers").select("id, nom, client_id, adresse_chantier, clients(id, nom, societe)").order("created_at", { ascending: false })
-      .then(({ data }: { data: any[] }) => { if (data) setChantiers(data); });
+      .then(({ data }: { data: Record<string, unknown>[] }) => { if (data) setChantiers(data); });
 
     if (!isNew) {
-      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }: { data: any }) => {
+      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }: { data: Record<string, unknown> }) => {
         if (data) {
           setTicket({
             ...data,

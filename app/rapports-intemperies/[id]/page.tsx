@@ -13,8 +13,8 @@ function RapportDetailContent() {
   const id = params.id as string;
 
   const [rapport, setRapport] = useState<RapportIntemperiesData | null>(null);
-  const [chantier, setChantier] = useState<any>(null);
-  const [entreprise, setEntreprise] = useState<any>({
+  const [chantier, setChantier] = useState<Record<string, unknown> | null>(null);
+  const [entreprise, setEntreprise] = useState<Record<string, unknown>>({
     raison_sociale: "BNA BARDAGE",
     siret: "921 456 789 00012",
     telephone: "05 56 00 00 00",

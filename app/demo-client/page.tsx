@@ -8,14 +8,14 @@ import {
 
 export default function ClientPortalPrototype() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<Record<string, unknown>[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Real data states
-  const [chantierData, setChantierData] = useState<any>(null);
-  const [clientData, setClientData] = useState<any>(null);
+  const [chantierData, setChantierData] = useState<Record<string, unknown> | null>(null);
+  const [clientData, setClientData] = useState<Record<string, unknown> | null>(null);
   const [avancement, setAvancement] = useState<number>(0);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function ClientPortalPrototype() {
 
   const hasSummarized = useRef(false);
 
-  const endConversationAndSummarize = async (finalMessages: any[]) => {
+  const endConversationAndSummarize = async (finalMessages: Record<string, unknown>[]) => {
     if (hasSummarized.current) return;
     hasSummarized.current = true;
     
@@ -172,7 +172,7 @@ export default function ClientPortalPrototype() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  const startDrawing = (e: any) => {
+  const startDrawing = (e: MouseEvent | TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -187,7 +187,7 @@ export default function ClientPortalPrototype() {
     setIsDrawing(true);
   };
 
-  const draw = (e: any) => {
+  const draw = (e: MouseEvent | TouchEvent) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;

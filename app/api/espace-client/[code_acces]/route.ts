@@ -77,7 +77,7 @@ export async function GET(
   }
 
   // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
-  let devisList: any[] = [];
+  let devisList: Record<string, unknown>[] = [];
   const { data: devisParChantier } = await supabaseAdmin
     .from("devis")
     .select("*")
@@ -96,7 +96,7 @@ export async function GET(
   }
 
   // 5. Factures — par chantier, fallback par client
-  let facturesList: any[] = [];
+  let facturesList: Record<string, unknown>[] = [];
   const { data: facturesParChantier } = await supabaseAdmin
     .from("factures")
     .select("*")

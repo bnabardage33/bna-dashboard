@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Plus, Wrench, CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import type { TicketSav } from "@/types/finance";
 
 export default function SAVPage() {
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<TicketSav[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtre, setFiltre] = useState("tous");
   const [recherche, setRecherche] = useState("");
@@ -28,7 +29,7 @@ export default function SAVPage() {
     if (data) {
       let filtered = data;
       if (recherche) {
-        filtered = data.filter((t: any) => 
+        filtered = data.filter((t: Record<string, unknown>) => 
           t.chantiers?.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
           t.chantiers?.clients?.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
           t.type_sinistre?.toLowerCase().includes(recherche.toLowerCase())

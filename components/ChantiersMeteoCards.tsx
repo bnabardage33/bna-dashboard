@@ -61,8 +61,18 @@ export default function ChantiersMeteoCards() {
         return;
       }
 
+type ChantierSupabase = {
+  id: string;
+  nom: string | null;
+  adresse_chantier: string | null;
+  materiau_structurel: string | null;
+  moyen_acces: string | null;
+  statut: string;
+  zone_vent: string | null;
+};
+
       const resultats = await Promise.all(
-        data.map(async (ch: any) => {
+        (data as ChantierSupabase[]).map(async (ch) => {
           const adresse = ch.adresse_chantier as string | null;
           const zoneVent = ch.zone_vent ? Number(ch.zone_vent) : 1; // Sécurité fallback zone 1
 

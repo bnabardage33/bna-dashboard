@@ -10,6 +10,7 @@ import {
 import { validerPointageAvecMeteo, supprimerPointageGlob, reinitialiserPointagesChantier } from "@/app/actions/pointage";
 import { Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import type { PointageFinance, Equipe } from "@/types/finance";
 
 const MOCK_CATALOGUE = {
   surface: 0.5,
@@ -94,8 +95,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
   const [heures, setHeures] = useState<number>(0);
   const [dateSaisie, setDateSaisie] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
-  const [historique, setHistorique] = useState<any[]>([]);
-  const [equipes, setEquipes] = useState<any[]>([]);
+  const [historique, setHistorique] = useState<PointageFinance[]>([]);
+  const [equipes, setEquipes] = useState<Equipe[]>([]);
   const [equipeId, setEquipeId] = useState<string>("00000000-0000-0000-0000-000000000000");
 
   const fetchHistorique = async () => {
@@ -269,8 +270,21 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
 /**
  * Vue 3 : Tableau de Bord / Rentabilité
  */
+interface PointageData {
+  volumeHeures: number;
+  coefMeteo: number;
+  meteo: string;
+}
+
+interface RentabiliteData {
+  id: string;
+  nom: string;
+  budget: number;
+  pointages: PointageData[];
+}
+
 export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chantierId: string, chantierNom: string }) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<RentabiliteData | null>(null);
 
   const fetchData = async () => {
     if (!chantierId) return;
@@ -292,7 +306,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
         id: chantier.id,
         nom: chantierNom,
         budget: budget || 0,
-        pointages: (chantier.pointages_globaux as any[])?.map(p => ({
+        pointages: (chantier.pointages_globaux as PointageData[])?.map(p => ({
           volumeHeures: Number(p.volume_heures_declare) || 0,
           coefMeteo: Number(p.coef_meteo) || 1.0,
           meteo: p.meteo_relevee || "Non relevée"
@@ -310,14 +324,14 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
 
   if (!data) return null;
 
-  const totalPointesBrut = data.pointages.reduce((sum: number, p: any) => sum + p.volumeHeures, 0);
+  const totalPointesBrut = data.pointages.reduce((sum: number, p: PointageData) => sum + p.volumeHeures, 0);
   const tempsConsomme = calculerTempsConsommeMeteo(data.pointages);
   const ecart = calculerBilanRentabilite(data.budget, tempsConsomme);
   const pct = data.budget > 0 ? Math.min((tempsConsomme / data.budget) * 100, 100) : 0;
   const estPositif = ecart >= 0;
 
   // Déterminer la météo dominante ou l'afficher en icônes
-  const icones = Array.from(new Set(data.pointages.map((p: any) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
+  const icones = Array.from(new Set(data.pointages.map((p: PointageData) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
 
   return (
     <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">

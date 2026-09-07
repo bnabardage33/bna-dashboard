@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import type { ChantierFinance } from "@/types/finance";
 
 export default function SaisieDepense() {
   const router = useRouter();
   
-  const [chantiers, setChantiers] = useState<any[]>([]);
-  const [fournisseurs, setFournisseurs] = useState<any[]>([]);
+  const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<Record<string, unknown>[]>([]);
   
   const [formData, setFormData] = useState({
     chantier_id: "",
@@ -61,7 +62,7 @@ export default function SaisieDepense() {
       const ht = parseFloat(formData.montant_ht);
       if (isNaN(ht) || ht <= 0) throw new Error("Montant HT invalide.");
 
-      const insertData: any = {
+      const insertData: Record<string, unknown> = {
         nature: formData.nature,
         montant_ht: ht,
         taux_tva: formData.taux_tva,
@@ -87,8 +88,8 @@ export default function SaisieDepense() {
         fournisseur_id: "",
         nature: "materiaux"
       }));
-    } catch (err: any) {
-      setError(err.message || "Erreur lors de l'enregistrement");
+    } catch (err) {
+      setError((err as Error).message || "Erreur lors de l'enregistrement");
     } finally {
       setLoading(false);
     }

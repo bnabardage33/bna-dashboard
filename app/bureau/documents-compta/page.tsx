@@ -78,7 +78,7 @@ export default function DocumentsComptaPage() {
 
       const res = await fetch('/api/documents-compta', { method: 'POST', body: fd });
 
-      let data: any = {};
+      let data: Record<string, unknown> = {};
       try {
         data = await res.json();
       } catch {
@@ -86,7 +86,7 @@ export default function DocumentsComptaPage() {
       }
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || `Erreur serveur HTTP ${res.status}`);
+        throw new Error(String(data.error) || `Erreur serveur HTTP ${res.status}`);
       }
 
       setSuccess(true);
@@ -96,8 +96,8 @@ export default function DocumentsComptaPage() {
       setMontantHt('');
       if (fileRef.current) fileRef.current.value = '';
       loadDocuments();
-    } catch (e: any) {
-      setError(`Echec de l'envoi : ${e.message}`);
+    } catch (e) {
+      setError(`Echec de l'envoi : ${(e as Error).message}`);
     } finally {
       setUploading(false);
     }
@@ -108,8 +108,8 @@ export default function DocumentsComptaPage() {
     try {
       await fetch(`/api/documents-compta?id=${id}`, { method: 'DELETE' });
       loadDocuments();
-    } catch (e: any) {
-      setError(`Erreur suppression : ${e.message}`);
+    } catch (e) {
+      setError(`Erreur suppression : ${(e as Error).message}`);
     }
   };
 

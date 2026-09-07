@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import type { ChantierFinance } from "@/types/finance";
 
 export default function SaisiePointage() {
   const router = useRouter();
   
-  const [chantiers, setChantiers] = useState<any[]>([]);
-  const [ouvriers, setOuvriers] = useState<any[]>([]);
+  const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
+  const [ouvriers, setOuvriers] = useState<Record<string, unknown>[]>([]);
   
   const [formData, setFormData] = useState({
     chantier_id: "",
@@ -31,7 +32,7 @@ export default function SaisiePointage() {
       
       const { data: oData } = await supabase.from("profiles").select("id, full_name, role");
       if (oData && isMounted) {
-        setOuvriers(oData.filter((o: any) => ["ouvrier", "chef", "admin"].includes(o.role)));
+        setOuvriers(oData.filter((o: { role: string }) => ["ouvrier", "chef", "admin"].includes(o.role)));
       }
     };
     fetchSelects();
@@ -69,8 +70,8 @@ export default function SaisiePointage() {
         heures: 7,
         type_heure: "Normale"
       }));
-    } catch (err: any) {
-      setError(err.message || "Erreur lors de l'enregistrement");
+    } catch (err) {
+      setError((err as Error).message || "Erreur lors de l'enregistrement");
     } finally {
       setLoading(false);
     }

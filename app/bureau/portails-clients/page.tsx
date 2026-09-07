@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { Users, Link as LinkIcon, ExternalLink, Plus } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import type { ChantierFinance } from "@/types/finance";
 
 export default function PortailsClientsPage() {
   const [isCopied, setIsCopied] = useState("");
-  const [chantiers, setChantiers] = useState<any[]>([]);
+  const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

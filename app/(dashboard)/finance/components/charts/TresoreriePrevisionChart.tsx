@@ -77,7 +77,7 @@ export default function TresoreriePrevisionChart() {
                 borderRadius: "0.5rem",
                 color: "#f1f5f9",
               }}
-              formatter={(value: any) => [
+              formatter={(value) => [
                 <span key="solde" className={Number(value) >= 0 ? "text-gray-400" : "text-rose-400"}>
                   {fmtEuro(Number(value))}
                 </span>,

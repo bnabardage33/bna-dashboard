@@ -69,7 +69,7 @@ export default function CoutRepartitionChart({ mois }: { mois?: string }) {
                 color: "#f1f5f9",
               }}
               itemStyle={{ color: "#f1f5f9" }}
-              formatter={(value: any, name: any) => [
+              formatter={(value, name) => [
                 `${fmtEuro(Number(value))} (${((Number(value) / total) * 100).toFixed(1)}%)`,
                 String(name),
               ]}

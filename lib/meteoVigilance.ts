@@ -225,6 +225,40 @@ export async function GET(
 }
 
 // ===========================================================================
+// TYPES MÉTÉO-FRANCE
+// ===========================================================================
+
+interface MeteoPhenomenonItem {
+  phenomenon_id?: number;
+  phenomenon_max_color_id?: { phenomenon_id?: number };
+  color_id?: number;
+  max_color_id?: number;
+}
+
+interface MeteoDomainItem {
+  domain_id?: string;
+  max_color_id?: string;
+  phenomenon_items?: MeteoPhenomenonItem[];
+  phenomenon_max_colors?: MeteoPhenomenonItem[];
+}
+
+interface MeteoPeriod {
+  timelaps?: { domain_ids?: MeteoDomainItem[] };
+  domain_ids?: MeteoDomainItem[];
+}
+
+interface MeteoFranceResponse {
+  product?: MeteoProduct;
+  periods?: MeteoPeriod[];
+  update_time?: string;
+}
+
+interface MeteoProduct {
+  periods: MeteoPeriod[];
+  update_time?: string;
+}
+
+// ===========================================================================
 // EXTRACTION DU DÉPARTEMENT
 // ===========================================================================
 //
@@ -239,7 +273,7 @@ export async function GET(
 // ===========================================================================
 
 function extraireDepartement(
-  data: any,
+  data: MeteoFranceResponse,
   departement: string,
   demain = false
 ): VigilanceDepartement | null {
@@ -286,12 +320,12 @@ function extraireDepartement(
     periode?.domain_ids ??
     [];
 
-  const domaineArray: any[] =
+  const domaineArray: MeteoDomainItem[] =
     Array.isArray(domaines)
       ? domaines
       : Object.values(
           domaines ?? {}
-        );
+        ) as MeteoDomainItem[];
 
   // -------------------------------------------------------------------------
   // Normalisation du département demandé
@@ -308,7 +342,7 @@ function extraireDepartement(
 
   const domaineDept =
     domaineArray.find(
-      (d: any) => {
+      (d: MeteoDomainItem) => {
         const id =
           d?.domain_id
             ?.toString()
@@ -380,7 +414,7 @@ function extraireDepartement(
   // Phénomènes
   // -------------------------------------------------------------------------
 
-  const phenomenesBrut: any[] =
+  const phenomenesBrut: MeteoPhenomenonItem[] =
     domaineDept.phenomenon_items ??
     domaineDept.phenomenon_max_colors ??
     [];
@@ -388,7 +422,7 @@ function extraireDepartement(
   const phenomenes =
     phenomenesBrut
       .map(
-        (phenomene: any) => {
+        (phenomene: MeteoPhenomenonItem) => {
           const id =
             Number(
               phenomene?.phenomenon_id ??

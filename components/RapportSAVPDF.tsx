@@ -1,8 +1,9 @@
 "use client";
 
 import { CheckCircle, AlertTriangle } from "lucide-react";
+import type { TicketSav, EntrepriseSettings } from "@/types/finance";
 
-export default function RapportSAVPDF({ ticket, entreprise }: { ticket: any; entreprise: any }) {
+export default function RapportSAVPDF({ ticket, entreprise }: { ticket: TicketSav; entreprise: EntrepriseSettings | null }) {
   if (!ticket || !entreprise) return null;
 
   const formatDate = (dateStr: string) => {

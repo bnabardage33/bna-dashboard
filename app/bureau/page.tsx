@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { calculerMontantTTCFacture } from "@/lib/financeCalculs";
+import type { FactureFinance } from "@/types/finance";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { 
@@ -39,7 +40,7 @@ export default function BureauDashboard() {
     chantiersEnCours: 0,
     fournisseursActifs: 0,
   });
-  const [healthCards, setHealthCards] = useState<any[]>([]);
+  const [healthCards, setHealthCards] = useState<Record<string, unknown>[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function BureauDashboard() {
 
       const devisEnAttente = devisRes.data?.length || 0;
       const facturesRetard = facturesRes.data?.length || 0;
-      const montantRetard = facturesRes.data?.reduce((sum: number, f: any) => sum + calculerMontantTTCFacture(f), 0) || 0;
+      const montantRetard = facturesRes.data?.reduce((sum: number, f: FactureFinance) => sum + calculerMontantTTCFacture(f), 0) || 0;
       const chantiersEnCours = chantiersRes.data?.length || 0;
       const fournisseursActifs = fournRes.data?.length || 0;
 
@@ -67,12 +68,12 @@ export default function BureauDashboard() {
       
       for (const c of (chantiersRes.data || [])) {
         // Avancement
-        const avancements = (c.avancements_chantier || []) as any[];
+        const avancements = (c.avancements_chantier || []) as Record<string, unknown>[];
         avancements.sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime());
         const latestAvancement = avancements[0]?.pourcentage != null ? Number(avancements[0].pourcentage) : 0;
         
         // Pointages
-        const pointages = (c.pointages_globaux || []) as any[];
+        const pointages = (c.pointages_globaux || []) as Record<string, unknown>[];
         pointages.sort((a, b) => new Date(b.date_saisie || b.created_at || 0).getTime() - new Date(a.date_saisie || a.created_at || 0).getTime());
         
         // Budget calculation (Gaël Logic)

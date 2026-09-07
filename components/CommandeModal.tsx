@@ -146,7 +146,7 @@ export default function CommandeModal({
       alert("Chiffrage enregistré avec succès");
       router.refresh();
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       alert(`Erreur lors de l'enregistrement: ${err.message || err.details || "Erreur inconnue"}`);
     } finally {

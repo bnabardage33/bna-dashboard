@@ -132,17 +132,18 @@ export default function FinChantierPage() {
 
       if (!data || data.length === 0) return [];
 
-      return data.map((z: any) => {
-        const l = Number(z.largeur) || 0;
-        const h = Number(z.hauteur_mur) || 0;
-        const hf = Number(z.hauteur_faite) || 0;
-        const isPignon = z.type === "pignon";
+      return data.map((z: Record<string, unknown>) => {
+        const l = Number((z as { largeur: string }).largeur) || 0;
+        const h = Number((z as { hauteur_mur: string }).hauteur_mur) || 0;
+        const hf = Number((z as { hauteur_faite: string }).hauteur_faite) || 0;
+        const isPignon = (z as { type: string }).type === "pignon";
         const surfaceBrute = isPignon && hf > h ? l * h + (l * (hf - h)) / 2 : l * h;
-        const surfaceOuvertures = (z.ouvertures || []).reduce(
-          (s: number, o: any) =>
+        const surfaceOuvertures = ((z as { ouvertures: Record<string, unknown>[] }).ouvertures || []).reduce(
+          (s: number, o: Record<string, unknown>) =>
             s + (Number(o.largeur) || 0) * (Number(o.hauteur) || 0) * (Number(o.quantite) || 1),
           0
         );
+        const surfaceNette = Math.max(0, surfaceBrute - surfaceOuvertures);
         const surfaceNette = Math.max(0, surfaceBrute - surfaceOuvertures);
 
         return {
@@ -177,17 +178,17 @@ export default function FinChantierPage() {
       console.error("Erreur chargement chantiers:", chantiersRes.error);
     }
 
-    const clientsMap = new Map((clientsRes.data || []).map((cl: any) => [cl.id, cl as any]));
-    const devisMap = new Map((devisRes.data || []).map((d: any) => [d.id, d as any]));
+    const clientsMap = new Map((clientsRes.data || []).map((cl: Record<string, unknown>) => [cl.id, cl]));
+    const devisMap = new Map((devisRes.data || []).map((d: Record<string, unknown>) => [d.id, d]));
 
-    const chantiersFormatted: ChantierOption[] = (chantiersRes.data || []).map((c: any) => {
-      const client = clientsMap.get(c.client_id) as any;
+    const chantiersFormatted: ChantierOption[] = (chantiersRes.data || []).map((c: Record<string, unknown>) => {
+      const client = clientsMap.get(c.client_id) as { nom: string; adresse_facturation: string; email: string; tel: string } | undefined;
       return {
-        id: c.id,
-        nom: c.nom || "Chantier sans nom",
-        adresse_chantier: c.adresse_chantier,
-        materiau_structurel: c.materiau_structurel,
-        client_id: c.client_id,
+        id: c.id as string,
+        nom: (c.nom as string) || "Chantier sans nom",
+        adresse_chantier: c.adresse_chantier as string,
+        materiau_structurel: c.materiau_structurel as string,
+        client_id: c.client_id as string,
         clients: client
           ? {
               nom: client.nom,
@@ -204,7 +205,7 @@ export default function FinChantierPage() {
     const chantiersMap = new Map(chantiersFormatted.map((c) => [c.id, c]));
 
     if (pvsRes.data) {
-      const enrichis: PVRow[] = (pvsRes.data as any[]).map((r) => {
+      const enrichis: PVRow[] = (pvsRes.data as PVRow[]).map((r) => {
         const ch = chantiersMap.get(r.chantier_id);
         const cl = clientsMap.get(r.client_id) || ch?.clients;
         const d = devisMap.get(r.devis_id);
@@ -215,9 +216,9 @@ export default function FinChantierPage() {
           notice_entretien: r.notice_entretien || DEFAULT_NOTICE,
           reserves: Array.isArray(r.reserves) ? r.reserves : [],
           checklist_repli: r.checklist_repli || DEFAULT_REPLI,
-          chantiers: ch ? { nom: (ch as any).nom, adresse_chantier: (ch as any).adresse_chantier } : null,
-          clients: cl ? { nom: (cl as any).nom, email: (cl as any).email, telephone: (cl as any).tel || (cl as any).telephone } : null,
-          devis: d ? { numero: (d as any).numero } : null,
+          chantiers: ch ? { nom: ch.nom as string, adresse_chantier: ch.adresse_chantier as string } : null,
+          clients: cl ? { nom: cl.nom as string, email: cl.email as string, telephone: cl.tel as string } : null,
+          devis: d ? { numero: d.numero as string } : null,
         };
       });
       setPvs(enrichis);
@@ -459,7 +460,7 @@ export default function FinChantierPage() {
           });
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       if (
         err?.code === "42P01" ||
         err?.message?.includes("pv_receptions") ||
