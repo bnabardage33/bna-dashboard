@@ -46,6 +46,7 @@ export interface DepenseFinance {
   nature: NatureDepense;
   montant_ht: number;
   date: string;
+  taux_tva?: number;
 }
 
 export interface PointageFinance {
@@ -54,6 +55,10 @@ export interface PointageFinance {
   heures: number;
   taux_horaire_charge: number;
   date: string;
+  date_saisie?: string;
+  coef_meteo?: number;
+  meteo_relevee?: string;
+  volume_heures_declare?: number;
 }
 
 export type StatutFacture = 'brouillon' | 'emise' | 'payee' | 'annulee';
@@ -67,6 +72,13 @@ export interface FactureFinance {
   statut: StatutFacture;
   date_emission: string;
   echeance: string;
+  numero?: string;
+  montant_ht?: number;
+  montant_tva?: number;
+  montant_ttc?: number;
+  taux_tva?: number;
+  clients?: { nom: string };
+  fournisseurs?: { nom: string };
 }
 
 export interface AchatFinance {
@@ -130,6 +142,7 @@ export interface AvancementRow {
   id: string;
   chantier_id: string;
   date: string;
+  created_at?: string;
   pourcentage?: number;
   chantiers?: { nom: string };
 }
@@ -137,6 +150,7 @@ export interface AvancementRow {
 export interface PointageRow extends PointageFinance {
   chantiers: { nom: string };
   profiles: { full_name: string };
+  created_at?: string;
 }
 
 export interface DepenseRow extends DepenseFinance {
@@ -146,6 +160,32 @@ export interface DepenseRow extends DepenseFinance {
 
 export interface FactureWithClient extends FactureFinance {
   clients: { nom: string };
+}
+
+export interface DevisLie {
+  id: string;
+  client_id: string;
+  nom: string;
+  adresse_chantier?: string;
+  montant_ht: number;
+  statut: string;
+}
+
+export interface FactureLiee {
+  id: string;
+  client_id: string;
+  nom: string;
+  montant_ht: number;
+  statut: string;
+}
+
+export interface RapportResult {
+  id: string;
+  numero: string;
+  chantier_id: string;
+  statut: string;
+  heures: any[];
+  lignes: any[];
 }
 
 export interface CommandeFinance {
@@ -160,6 +200,11 @@ export interface CommandeFinance {
   montant_ht: number;
   statut: string;
   fournisseurs?: { nom: string };
+  date?: string;
+  numero?: string;
+  montant_tva?: number;
+  montant_ttc?: number;
+  taux_tva?: number;
 }
 
 export interface TicketSav {
@@ -182,7 +227,7 @@ export interface TicketSav {
   created_at?: string;
   signature_technicien: string | null;
   signature_client: string | null;
-  chantiers?: { nom: string; client_id: string; adresse_chantier: string; clients?: { id: string; nom: string; societe: string } };
+  chantiers?: { nom: string; client_id: string; adresse_chantier: string; clients?: { id: string; nom: string; societe: string } } | null;
 }
 
 export interface EntrepriseSettings {
@@ -213,4 +258,40 @@ export interface Equipe {
   nom: string;
   prenom: string;
   role: string;
+}
+
+export interface CatalogueItem {
+  id: string;
+  nom: string;
+  prix_ht?: number;
+  categorie?: string;
+  famille?: string;
+  disponible?: boolean;
+  [key: string]: any;
+}
+
+export interface RapportResult {
+  id: string;
+  numero: string;
+  chantier_id: string;
+  statut: string;
+  heures: any[];
+  lignes: any[];
+}
+
+export interface PVRow {
+  id: string;
+  numero: string;
+  chantier_id: string;
+  client_id: string;
+  devis_id: string;
+  date_reception: string;
+  statut: string;
+  type_travaux: string | null;
+  adresse_chantier: string | null;
+  materiaux_utilises: string | null;
+  zones_metres?: any[];
+  photos?: any[];
+  reserves: any[];
+  observations: string | null;
 }

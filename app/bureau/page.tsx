@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { calculerMontantTTCFacture } from "@/lib/financeCalculs";
-import type { FactureFinance } from "@/types/finance";
+import type { FactureFinance, AvancementRow, PointageRow } from "@/types/finance";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { 
@@ -68,12 +68,12 @@ export default function BureauDashboard() {
       
       for (const c of (chantiersRes.data || [])) {
         // Avancement
-        const avancements = (c.avancements_chantier || []) as any[];
+        const avancements = (c.avancements_chantier || []) as AvancementRow[];
         avancements.sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime());
         const latestAvancement = avancements[0]?.pourcentage != null ? Number(avancements[0].pourcentage) : 0;
         
         // Pointages
-        const pointages = (c.pointages_globaux || []) as any[];
+        const pointages = (c.pointages_globaux || []) as PointageRow[];
         pointages.sort((a, b) => new Date(b.date_saisie || b.created_at || 0).getTime() - new Date(a.date_saisie || a.created_at || 0).getTime());
         
         // Budget calculation (Gaël Logic)

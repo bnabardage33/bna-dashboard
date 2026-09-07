@@ -22,6 +22,7 @@ import Image from "next/image";
 type PVRow = {
   id: string;
   numero: string;
+  nom: string;
   chantier_id: string | null;
   client_id: string | null;
   devis_id: string | null;
@@ -207,9 +208,9 @@ export default function FinChantierPage() {
 
     if (pvsRes.data) {
       const enrichis: PVRow[] = (pvsRes.data as PVRow[]).map((r) => {
-        const ch = chantiersMap.get(r.chantier_id as string) as any;
-        const cl = (clientsMap.get(r.client_id as string) || ch?.clients || {}) as any;
-        const chantier = chantiersMap.get(r.chantier_id as string) as any;
+        const ch = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
+        const cl = (clientsMap.get(r.client_id as string) || ch?.clients || {}) as {nom: string; email?: string; tel?: string} | undefined;
+        const chantier = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
         const d = devisMap.get(r.devis_id);
         return {
           ...r,
@@ -219,7 +220,7 @@ export default function FinChantierPage() {
           reserves: Array.isArray(r.reserves) ? r.reserves : [],
           checklist_repli: r.checklist_repli || DEFAULT_REPLI,
           chantiers: ch ? { nom: ch.nom as string, adresse_chantier: ch.adresse_chantier as string } : null,
-          clients: cl ? { nom: (cl as any).nom as string, email: (cl as any).email as string, telephone: (cl as any).tel as string } : null,
+          clients: cl ? { nom: cl.nom as string, email: (cl.email || '') as string, telephone: (cl.tel || '') as string } : null,
           devis: d ? { numero: (d as any).numero as string } : null,
         };
       });

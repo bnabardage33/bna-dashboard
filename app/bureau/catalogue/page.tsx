@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, Search, ArrowLeft, Save, X, Upload } from "lucide-
 import Link from "next/link";
 import { fmtEuro } from "@/lib/financeCalculs";
 import Papa from "papaparse";
+import type { CatalogueItem } from "@/types/finance";
 
 type CategorieOuvrage = "bardage" | "etancheite" | "habillage" | "isolation" | "installation";
 
@@ -329,7 +330,7 @@ export default function CataloguePage() {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const data = results.data as any[];
+        const data = results.data as CatalogueItem[];
         let countNew = 0;
         let countUpdated = 0;
         

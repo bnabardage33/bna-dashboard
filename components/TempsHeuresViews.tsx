@@ -110,7 +110,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
 
   const fetchEquipes = async () => {
     const { data } = await supabase.from('equipe').select('id, nom, prenom');
-    if (data && (data as any).length > 0) {
+    if (data && data.length > 0) {
       setEquipes(data);
       setEquipeId(data[0].id);
     }
@@ -237,20 +237,20 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         ) : (
           <div className="space-y-2">
             {historique.map(p => {
-              const adjusted = (p as any).volume_heures_declare / ((p as any).coef_meteo || 1.0);
-              const icon = METEO_ICONS[(p as any).meteo_relevee] || '➖';
-              
-              return (
-                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0B0F19]/50 border border-white/10">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{(p as any).date_saisie || 'Sans date'}</p>
-                    <p className="text-xs text-gray-400">
-                      Météo : {(p as any).meteo_relevee || 'N/A'} {icon} (Coef: {(p as any).coef_meteo || 1.0})
+const adjusted = (p.volume_heures_declare || 0) / ((p.coef_meteo || 1.0) || 1.0);
+               const icon = METEO_ICONS[p.meteo_relevee || ''] || '➖';
+               
+               return (
+                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0B0F19]/50 border border-white/10">
+                   <div>
+                     <p className="text-sm font-semibold text-white">{p.date_saisie || 'Sans date'}</p>
+                     <p className="text-xs text-gray-400">
+                       Météo : {p.meteo_relevee || 'N/A'} {icon} (Coef: {p.coef_meteo || 1.0})
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm text-gray-300">Brut : {(p as any).volume_heures_declare}h</p>
+                      <p className="text-sm text-gray-300">Brut : {p.volume_heures_declare}h</p>
                       <p className="text-xs text-gray-300">Ajusté : {adjusted.toFixed(1)}h</p>
                     </div>
                     <button onClick={() => handleDelete(p.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-md transition-colors" title="Supprimer">
@@ -307,9 +307,9 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
         nom: chantierNom,
         budget: budget || 0,
         pointages: (chantier.pointages_globaux as PointageData[])?.map(p => ({
-          volumeHeures: Number((p as any).volume_heures_declare) || 0,
-          coefMeteo: Number((p as any).coef_meteo) || 1.0,
-          meteo: (p as any).meteo_relevee || "Non relevée"
+          volumeHeures: p.volumeHeures || 0,
+          coefMeteo: p.coefMeteo || 1.0,
+          meteo: p.meteo || "Non relevée"
         })) || []
       };
       setData(formatted);
@@ -324,14 +324,14 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
 
   if (!data) return null;
 
-  const totalPointesBrut = (data as any).pointages.reduce((sum: number, p: PointageData) => sum + p.volumeHeures, 0);
-  const tempsConsomme = calculerTempsConsommeMeteo((data as any).pointages);
-  const ecart = calculerBilanRentabilite((data as any).budget, tempsConsomme);
-  const pct = (data as any).budget > 0 ? Math.min((tempsConsomme / (data as any).budget) * 100, 100) : 0;
+  const totalPointesBrut = data.pointages.reduce((sum: number, p: PointageData) => sum + p.volumeHeures, 0);
+  const tempsConsomme = calculerTempsConsommeMeteo(data.pointages);
+  const ecart = calculerBilanRentabilite(data.budget, tempsConsomme);
+  const pct = data.budget > 0 ? Math.min((tempsConsomme / data.budget) * 100, 100) : 0;
   const estPositif = ecart >= 0;
 
   // Déterminer la météo dominante ou l'afficher en icônes
-  const icones = Array.from(new Set((data as any).pointages.map((p: PointageData) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
+  const icones = Array.from(new Set(data.pointages.map((p: PointageData) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
 
   return (
     <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
@@ -343,7 +343,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
       <div className="space-y-6 mt-4">
         <div className="p-4 rounded-lg bg-[#0B0F19] border border-white/10">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-bold text-white">{(data as any).nom} {icones}</span>
+            <span className="font-bold text-white">{data.nom} {icones}</span>
             <span className={`font-bold ${estPositif ? 'text-emerald-400' : 'text-red-400'}`}>
               Écart : {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} h
             </span>
@@ -362,7 +362,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
               <span className="mx-2">|</span>
               <span className="text-gray-400">Consommé ajusté : {tempsConsomme.toFixed(1)}h</span>
             </div>
-            <span>Budget : {(data as any).budget.toFixed(1)}h</span>
+            <span>Budget : {data.budget.toFixed(1)}h</span>
           </div>
         </div>
       </div>

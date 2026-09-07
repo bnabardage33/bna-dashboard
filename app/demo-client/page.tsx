@@ -179,8 +179,8 @@ export default function ClientPortalPrototype() {
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-const x = ((e as any).touches ? (e as any).touches[0].clientX : (e as any).clientX) - rect.left;
-     const y = ((e as any).touches ? (e as any).touches[0].clientY : (e as any).clientY) - rect.top;
+const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
     
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -195,8 +195,8 @@ const x = ((e as any).touches ? (e as any).touches[0].clientX : (e as any).clien
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-const x = ((e as any).touches ? (e as any).touches[0].clientX : (e as any).clientX) - rect.left;
-     const y = ((e as any).touches ? (e as any).touches[0].clientY : (e as any).clientY) - rect.top;
+const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
     
     ctx.lineTo(x, y);
     ctx.strokeStyle = '#0f172a';

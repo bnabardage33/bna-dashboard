@@ -204,22 +204,22 @@ function ChantierDetailContent() {
 
     if (coRes.data) setCommandesLiees(coRes.data as unknown as CommandeLiee[]);
     if (pvsRes.data) setPvsLies(pvsRes.data);
-    if (devisRes.data && chantier?.client_id as any) {
+    if (devisRes.data && chantier?.client_id) {
       setDevisLies(
-        (devisRes.data as any).filter(
-          (d: any) => d.client_id === (chantier as any).client_id
+        (devisRes.data as DevisLie[]).filter(
+          (d: any) => d.client_id === chantier.client_id
         )
       );
     }
     if (facturesRes.data && chantier) {
       setFacturesLiees(
-        (facturesRes.data as any).filter(
+        (facturesRes.data as FactureLiee[]).filter(
           (f: any) => f.client_id === chantier.client_id
         )
       );
     }
     setLoadingDocs(false);
-  }, [id, chantier?.client_id as any]);
+  }, [id, chantier?.client_id]);
 
   
   useEffect(() => {

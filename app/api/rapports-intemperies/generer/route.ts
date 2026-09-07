@@ -22,6 +22,7 @@ import {
   NiveauAlerte,
 } from "@/lib/meteoAlerte";
 import type { HeureMeteo } from "@/lib/meteo";
+import type { RapportResult } from "@/types/finance";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -363,9 +364,9 @@ export async function POST(request: NextRequest) {
     }
 
     const resultats: ResultatGeneration[] = [];
-    const listeChantiers = (chantiers || []) as unknown as any[];
+    const listeChantiers = (chantiers || []) as unknown as RapportResult[];
 
-    for (const chantier of listeChantiers as Record<string, string>[]) {
+    for (const chantier of listeChantiers as any[]) {
       try {
         const existant = await rapportDuJourExiste(chantier.id);
 

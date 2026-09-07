@@ -75,46 +75,46 @@ const facturesList = (factures ?? []) as (FactureFinance & { clients?: { nom: st
 
   facturesList.forEach((f) => {
     rows2.push([
-      new Date((f as any).date_emission).toLocaleDateString("fr-FR"),
+      new Date(f.date_emission).toLocaleDateString("fr-FR"),
       "VENTES",
-      (f as any).numero || f.id.substring(0, 8),
+      f.numero || f.id.substring(0, 8),
       f.clients?.nom || "Client Divers",
       `Facture ${f.statut}`,
-      ((f as any).montant_ht || 0).toFixed(2),
-      ((f as any).montant_tva || (((f as any).montant_ht || 0) * ((f as any).taux_tva || 20) / 100)).toFixed(2),
-      ((f as any).montant_ttc || (((f as any).montant_ht || 0) * (1 + ((f as any).taux_tva || 20) / 100))).toFixed(2),
-      (f as any).taux_tva || 20
+      (f.montant_ht || 0).toFixed(2),
+      (f.montant_tva || ((f.montant_ht || 0) * (f.taux_tva || 20) / 100)).toFixed(2),
+      (f.montant_ttc || ((f.montant_ht || 0) * (1 + (f.taux_tva || 20) / 100))).toFixed(2),
+      f.taux_tva || 20
     ]);
   });
 
   if (achatsList) {
     achatsList.forEach((a) => {
       rows2.push([
-        new Date((a as any).date).toLocaleDateString("fr-FR"),
+        new Date(((a as CommandeFinance).date || '')).toLocaleDateString("fr-FR"),
         "ACHATS",
-        (a as any).numero || a.id.substring(0, 8),
+        (a as CommandeFinance).numero || a.id.substring(0, 8),
         a.fournisseurs?.nom || "Fournisseur Divers",
         "Commande Fournisseur",
-        ((a as any).montant_ht || 0).toFixed(2),
-        ((a as any).montant_tva || 0).toFixed(2),
-        (((a as any).montant_ttc || (a as any).montant_ht || 0)).toFixed(2),
-        (a as any).taux_tva || 20
+        ((a as CommandeFinance).montant_ht || 0).toFixed(2),
+        ((a as CommandeFinance).montant_tva || 0).toFixed(2),
+        (((a as CommandeFinance).montant_ttc || (a as CommandeFinance).montant_ht || 0)).toFixed(2),
+        (a as CommandeFinance).taux_tva || 20
       ]);
     });
   }
    
   depensesList.forEach((d) => {
-    const ht = (d as any).montant_ht || 0;
-    const tvaPct = (d as any).taux_tva || 20;
+    const ht = (d as DepenseFinance).montant_ht || 0;
+    const tvaPct = (d as DepenseFinance).taux_tva || 20;
     const tva = ht * (tvaPct / 100);
     const ttc = ht + tva;
     
     rows2.push([
-      new Date((d as any).date).toLocaleDateString("fr-FR"),
+      new Date((d as DepenseFinance).date).toLocaleDateString("fr-FR"),
       "ACHATS",
       d.id.substring(0, 8),
       d.fournisseurs?.nom || "Autre",
-      `Dépense ${(d as any).nature.replace("_", " ")}`,
+      `Dépense ${(d as DepenseFinance).nature.replace("_", " ")}`,
       ht.toFixed(2),
       tva.toFixed(2),
       ttc.toFixed(2),

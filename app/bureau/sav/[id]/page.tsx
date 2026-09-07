@@ -12,7 +12,7 @@ import Image from "next/image";
 import SignaturePad from "@/components/SignaturePad";
 import RapportSAVPDF from "@/components/RapportSAVPDF";
 import { Printer, X } from "lucide-react";
-import type { TicketSav, EntrepriseSettings } from "@/types/finance";
+import type { TicketSav, EntrepriseSettings, MaterielPrevu } from "@/types/finance";
 
 export default function FicheSAV() {
   const params = useParams();
@@ -72,7 +72,7 @@ export default function FicheSAV() {
     cause_probable: "",
     respect_dtu: true,
     diagnostic_dtu: "",
-    materiel_prevu: [] as any[],
+    materiel_prevu: [] as MaterielPrevu[],
     date_intervention: "",
     temps_estime: "",
     intervenant: "",
@@ -80,7 +80,7 @@ export default function FicheSAV() {
     photos: { client: null, avant: null, apres: null },
     signature_technicien: null as string | null,
     signature_client: null as string | null,
-    chantiers: null as any | null
+    chantiers: null
   });
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function FicheSAV() {
   const handleGenerateDevis = async () => {
     if (!ticket.chantiers) return alert("Veuillez sélectionner et enregistrer le chantier d'abord.");
     
-    const client_id = ticket.chantiers.client_id || ticket.chantiers.clients?.id;
+    const client_id = (ticket.chantiers as any).client_id || (ticket.chantiers as any).clients?.id;
     if (!client_id) return alert("Client introuvable sur ce chantier.");
 
     
@@ -160,8 +160,8 @@ export default function FicheSAV() {
       numero,
       client_id,
       chantier_id: ticket.chantier_id,
-      objet: "Intervention SAV - " + (ticket.chantiers.nom || ""),
-      adresse_chantier: ticket.chantiers.adresse_chantier || "",
+      objet: "Intervention SAV - " + ((ticket.chantiers as any).nom || ""),
+      adresse_chantier: (ticket.chantiers as any).adresse_chantier || "",
       type_travaux: "SAV",
       validite_jours: 30,
       delai_jours: 15,
@@ -555,7 +555,7 @@ export default function FicheSAV() {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#1A1D24]/50 flex justify-center print:bg-[#1A1D24] print:p-0 print:block">
-            <RapportSAVPDF ticket={ticket as any} entreprise={entreprise} />
+            <RapportSAVPDF ticket={ticket as TicketSav} entreprise={entreprise} />
           </div>
         </div>
       )}

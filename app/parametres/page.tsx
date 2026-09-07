@@ -79,7 +79,7 @@ export default function ParametresPage() {
           mediateur_contact: fb.mediateur_contact || "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris",
         } as Settings);
       } catch (err) {
-        alert("Exception de chargement : " + ((err as any)?.message || String(err)));
+        alert("Exception de chargement : " + ((err as Error)?.message || String(err)));
       } finally {
         setLoading(false);
       }

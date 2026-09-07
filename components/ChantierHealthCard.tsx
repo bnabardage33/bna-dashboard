@@ -28,7 +28,7 @@ export default function ChantierHealthCard({
         const json = await res.json();
         setAnalysis(json.data);
       } catch (err) {
-        setError((err as any).message);
+        setError((err as Error).message);
       } finally {
         setLoading(false);
       }

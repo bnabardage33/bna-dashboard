@@ -703,7 +703,7 @@ export default function DevisPage() {
                           alert("Votre navigateur ne supporte pas la dictée vocale.");
                           return;
                         }
-                        const SpeechRec = ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) as any;
+                        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                         const recognition = new SpeechRec();
                         recognition.lang = 'fr-FR';
                         setEcouteEnCours(true);
