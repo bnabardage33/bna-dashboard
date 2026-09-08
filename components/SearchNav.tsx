@@ -17,9 +17,9 @@ type Notification = {
   id: string;
   type: string;
   titre: string;
-  message: string;
-  lu: boolean;
-  created_at: string;
+  message: string | null;
+  lu: boolean | null;
+  created_at: string | null;
   lien: string | null;
 };
 
@@ -57,7 +57,7 @@ export default function SearchNav() {
     const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(20);
     if (data) {
       setNotifications(data);
-      setUnreadCount(data.filter((n: Notification) => !n.lu).length);
+      setUnreadCount(data.filter((n) => !n.lu).length);
     }
   }
 
@@ -179,7 +179,7 @@ export default function SearchNav() {
                   >
                     <p className="text-sm font-medium text-white">{n.titre}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
-                    <p className="text-[10px] text-gray-600 mt-1">{new Date(n.created_at).toLocaleDateString("fr-FR")}</p>
+                    <p className="text-[10px] text-gray-600 mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString("fr-FR") : ""}</p>
                   </Link>
                 ))
               )}
