@@ -29,13 +29,13 @@ export default function SAVPage() {
     if (data) {
       let filtered = data;
       if (recherche) {
-        filtered = data.filter((t: any) => 
+        filtered = data.filter((t) => 
           t.chantiers?.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
           t.chantiers?.clients?.nom?.toLowerCase().includes(recherche.toLowerCase()) ||
           t.type_sinistre?.toLowerCase().includes(recherche.toLowerCase())
         );
       }
-      setTickets(filtered);
+      setTickets(filtered as unknown as TicketSav[]);
     }
     setLoading(false);
   };
