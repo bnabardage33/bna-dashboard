@@ -72,7 +72,7 @@ type ChantierSupabase = {
 };
 
       const resultats = await Promise.all(
-        (data as ChantierSupabase[]).map(async (ch) => {
+        (data as unknown as ChantierSupabase[]).map(async (ch) => {
           const adresse = ch.adresse_chantier as string | null;
           const zoneVent = ch.zone_vent ? Number(ch.zone_vent) : 1; // Sécurité fallback zone 1
 
