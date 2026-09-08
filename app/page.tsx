@@ -10,7 +10,9 @@ type Note = {
   id: string;
   titre: string | null;
   contenu: string;
-  created_at: string;
+  created_at: string | null;
+  epingle?: boolean;
+  updated_at?: string | null;
 };
 
 export default function Home() {
@@ -167,7 +169,7 @@ export default function Home() {
                     <h4 className="font-semibold text-white text-sm mb-2 truncate group-hover:text-[#E30613] transition-colors">{n.titre || "Note sans titre"}</h4>
                     <p className="text-xs text-gray-400 line-clamp-3">{n.contenu}</p>
                     <span className="mt-auto pt-2 text-[10px] text-gray-500 font-medium">
-                      {new Date(n.created_at).toLocaleDateString("fr-FR")}
+                      {n.created_at ? new Date(n.created_at).toLocaleDateString("fr-FR") : ""}
                     </span>
                   </Link>
                 ))}
