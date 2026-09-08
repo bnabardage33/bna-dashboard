@@ -13,6 +13,7 @@ import SignaturePad from "@/components/SignaturePad";
 import RapportSAVPDF from "@/components/RapportSAVPDF";
 import { Printer, X } from "lucide-react";
 import type { TicketSav, EntrepriseSettings, MaterielPrevu } from "@/types/finance";
+import type { TablesInsert, TablesUpdate } from "@/types/supabase";
 
 export default function FicheSAV() {
   const params = useParams();
@@ -22,7 +23,7 @@ export default function FicheSAV() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [chantiers, setChantiers] = useState<any[]>([]);
+  const [chantiers, setChantiers] = useState<{ id: string; nom: string | null; client_id: string | null; adresse_chantier: string | null; clients: { id: string; nom: string; societe: string | null } | null }[]>([]);
   const [entreprise, setEntreprise] = useState<EntrepriseSettings | null>(null);
   const [showPDF, setShowPDF] = useState(false);
 
@@ -30,7 +31,7 @@ export default function FicheSAV() {
 
   const compressImage = (file: File, maxDim = 1920, quality = 0.8): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      const img = new (window as any).Image();
+      const img = new window.Image();
       const reader = new FileReader();
       reader.onload = () => {
         img.onload = () => {
@@ -80,21 +81,26 @@ export default function FicheSAV() {
     photos: { client: null, avant: null, apres: null },
     signature_technicien: null as string | null,
     signature_client: null as string | null,
-    chantiers: null
+    chantiers: null as {
+      nom: string | null;
+      client_id: string | null;
+      adresse_chantier: string | null;
+      clients: { id: string; nom: string; societe: string | null } | null;
+    } | null
   });
 
   useEffect(() => {
-    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }: { data: any }) => { if (data) setEntreprise(data) });
+    supabase.from("entreprise_settings").select("*").eq("id", 1).single().then(({ data }) => { if (data) setEntreprise(data as unknown as EntrepriseSettings) });
     supabase.from("chantiers").select("id, nom, client_id, adresse_chantier, clients(id, nom, societe)").order("created_at", { ascending: false })
-      .then(({ data }: { data: any[] }) => { if (data) setChantiers(data); });
+      .then(({ data }) => { if (data) setChantiers(data); });
 
     if (!isNew) {
-      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }: { data: any }) => {
+      supabase.from("tickets_sav").select("*, chantiers(nom, client_id, adresse_chantier, clients(id, nom, societe))").eq("id", id).single().then(({ data }) => {
         if (data) {
           setTicket({
             ...data,
             date_intervention: data.date_intervention ? data.date_intervention.split('T')[0] : "",
-          });
+          } as unknown as typeof ticket);
         }
         setLoading(false);
       });
@@ -133,7 +139,7 @@ export default function FicheSAV() {
   const handleGenerateDevis = async () => {
     if (!ticket.chantiers) return alert("Veuillez sélectionner et enregistrer le chantier d'abord.");
     
-    const client_id = (ticket.chantiers as any).client_id || (ticket.chantiers as any).clients?.id;
+    const client_id = ticket.chantiers?.client_id || ticket.chantiers?.clients?.id;
     if (!client_id) return alert("Client introuvable sur ce chantier.");
 
     
@@ -160,8 +166,8 @@ export default function FicheSAV() {
       numero,
       client_id,
       chantier_id: ticket.chantier_id,
-      objet: "Intervention SAV - " + ((ticket.chantiers as any).nom || ""),
-      adresse_chantier: (ticket.chantiers as any).adresse_chantier || "",
+      objet: "Intervention SAV - " + (ticket.chantiers?.nom || ""),
+      adresse_chantier: ticket.chantiers?.adresse_chantier || "",
       type_travaux: "SAV",
       validite_jours: 30,
       delai_jours: 15,
@@ -188,16 +194,17 @@ export default function FicheSAV() {
     if (!ticket.chantier_id) return alert("Veuillez sélectionner un chantier !");
     setSaving(true);
     
+    const { chantiers: _chantiers, ...ticketSansJointure } = ticket;
     const payload = {
-      ...ticket,
+      ...ticketSansJointure,
       date_intervention: ticket.date_intervention ? new Date(ticket.date_intervention).toISOString() : null,
     };
 
     if (isNew) {
-      const { data, error } = await supabase.from("tickets_sav").insert(payload).select().single();
+      const { data, error } = await supabase.from("tickets_sav").insert(payload as unknown as TablesInsert<"tickets_sav">).select().single();
       if (!error && data) router.replace(`/bureau/sav/${data.id}`);
     } else {
-      await supabase.from("tickets_sav").update(payload).eq("id", id);
+      await supabase.from("tickets_sav").update(payload as unknown as TablesUpdate<"tickets_sav">).eq("id", id);
     }
     setSaving(false);
   };
@@ -206,14 +213,16 @@ export default function FicheSAV() {
     if (!ticket.signature_technicien) return alert("Le visa du technicien est requis pour clôturer.");
     if (!ticket.signature_client) return alert("La signature du client est requise pour clôturer.");
     setTicket(prev => ({ ...prev, statut: "cloture" }));
+
+    const { chantiers: _chantiersCloture, ...ticketSansJointureCloture } = ticket;
     
     const payload = {
-      ...ticket,
+      ...ticketSansJointureCloture,
       statut: "cloture",
       date_intervention: ticket.date_intervention ? new Date(ticket.date_intervention).toISOString() : null,
     };
     
-    await supabase.from("tickets_sav").update(payload).eq("id", id);
+    await supabase.from("tickets_sav").update(payload as unknown as TablesUpdate<"tickets_sav">).eq("id", id);
   };
 
   if (loading) return <div className="p-12 text-center text-gray-400">Chargement de la fiche...</div>;
