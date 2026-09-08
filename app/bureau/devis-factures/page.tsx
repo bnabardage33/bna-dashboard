@@ -1,5 +1,20 @@
 "use client";
 
+interface SpeechRecognitionLike {
+  lang: string;
+  start: () => void;
+  onresult: ((event: { results: Array<{ [key: number]: { transcript: string } }> }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  }
+}
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
@@ -82,7 +97,7 @@ export default function DevisPage() {
 
   const [clientId, setClientId] = useState("");
   const [chantierId, setChantierId] = useState("");
-  const [chantiersClient, setChantiersClient] = useState<{id: string; nom: string; code_acces: string; adresse_chantier: string}[]>([]);
+  const [chantiersClient, setChantiersClient] = useState<{id: string; nom: string | null; code_acces: string | null; adresse_chantier: string | null}[]>([]);
   const [objet, setObjet] = useState("");
   const [adresseChantier, setAdresseChantier] = useState("");
   const [typeTravaux, setTypeTravaux] = useState("");
@@ -108,7 +123,7 @@ export default function DevisPage() {
       supabase.from("catalogue_ouvrages").select("*").order("designation"),
     ]);
     if (devisRes.error) console.error(devisRes.error);
-    else setDevis(devisRes.data as Devis[]);
+    else setDevis(devisRes.data as unknown as Devis[]);
     if (clientsRes.data) setClients(clientsRes.data as Client[]);
     if (catRes && catRes.data) setCatalogue(catRes.data as CatalogueOuvrage[]);
     if (settingsRes.data) setEntreprise(settingsRes.data as Entreprise);
@@ -180,12 +195,12 @@ export default function DevisPage() {
 
         return [
           ...nettes,
-          ...newLignes.map((l: any) => ({
-            designation: l.designation || "",
-            description: l.description || "",
-            qte: l.qte || 1,
-            unite: l.unite || "forfait",
-            pu_ht: l.pu_ht || 0,
+          ...newLignes.map((l: Record<string, unknown>) => ({
+            designation: (l.designation as string) || "",
+            description: (l.description as string) || "",
+            qte: (l.qte as number) || 1,
+            unite: (l.unite as string) || "forfait",
+            pu_ht: (l.pu_ht as number) || 0,
           }))
         ];
       });
@@ -703,8 +718,8 @@ export default function DevisPage() {
                           alert("Votre navigateur ne supporte pas la dictée vocale.");
                           return;
                         }
-                        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                        const recognition = new SpeechRec();
+                        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                        const recognition = new SpeechRec!();
                         recognition.lang = 'fr-FR';
                         setEcouteEnCours(true);
                         setPromptIA("Écoute en cours...");
