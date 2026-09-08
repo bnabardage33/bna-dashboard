@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import type { Tables } from "@/types/supabase";
 import { X, Search, Loader2 } from "lucide-react";
 import { LigneCommande } from "@/components/ZoneCard";
 import { useRouter } from "next/navigation";
@@ -69,7 +70,8 @@ export default function CommandeModal({
   const fetchData = async () => {
     setLoading(true);
     // 1. Fetch catalogue
-    let { data: catData, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
+    const { data: catDataInitial, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
+    let catData: Tables<"catalogue_ouvrages">[] | Tables<"articles">[] | null = catDataInitial;
     
 
 
@@ -77,7 +79,7 @@ export default function CommandeModal({
       const res = await supabase.from("articles").select("*");
       catData = res.data;
     }
-    if (catData) setCatalogue(catData as Article[]);
+    if (catData) setCatalogue(catData as unknown as Article[]);
 
     // 2. Fetch fournisseurs
     const { data: fournData } = await supabase.from("fournisseurs").select("id, nom");
@@ -121,7 +123,7 @@ export default function CommandeModal({
       // 1. Create commande
       const { data: commande, error: cmdError } = await supabase
         .from('commandes')
-        .insert({ chantier_id: chantierId, total_ht: totalGeneralHT })
+        .insert({ chantier_id: chantierId, designation: `Chiffrage ${chantierNom} - ${zoneNom}`, montant_ht: totalGeneralHT })
         .select('id')
         .single();
 
@@ -131,10 +133,10 @@ export default function CommandeModal({
       const lignesData = validLines.map(l => ({
         commande_id: commande.id,
         article_id: l.articleSelectionne!.id,
-        fournisseur_id: l.fournisseurSelectionneId,
+        fournisseur_id: l.fournisseurSelectionneId!,
         quantite: l.quantite,
         prix_unitaire: getPrix(l.articleSelectionne!),
-        total_ligne: l.totalHT
+        total_ligne: l.totalHT ?? 0
       }));
 
       const { error: linesError } = await supabase
