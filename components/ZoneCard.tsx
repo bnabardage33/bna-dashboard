@@ -203,17 +203,17 @@ export default function ZoneCard({
     zone.famille_pose &&
     zone.largeur > 0 &&
     hauteurTotale > 0
-      ? calculerPose(
-           zone.famille_pose,
-           zone.largeur,
-           hauteurTotale,
-           zone.angle,
-           zoneVent,
-           zone.largeur_lame_mm ??
-             defautModule(
-               zone.famille_pose
-             ),
-{
+? calculerPose(
+            zone.famille_pose,
+            zone.largeur,
+            hauteurTotale,
+            zone.angle,
+            zoneVent,
+            zone.largeur_lame_mm ??
+              defautModule(
+                zone.famille_pose
+              ),
+            {
               zoneVentRive: zone.zone_vent_rive ?? zone.angle,
               epaisseurIsolantMm: zone.epaisseur_isolant_mm ?? 120,
               typeIsolant: zone.type_isolant ?? "laine_roche",
@@ -222,7 +222,7 @@ export default function ZoneCard({
               moduleHauteurMm: zone.module_hauteur_mm ?? null,
               sensPose: zone.sens_pose ?? "horizontal",
             }
-         )
+          )
       : null;
 
   /* ============================================================

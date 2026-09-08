@@ -285,7 +285,7 @@ export default function FicheDebitPDF({
               )}
               <tr>
                 <td className="py-1.5 font-medium">Chevrons bois verticaux (max 3m / segment)</td>
-                <td className="py-1.5 text-center">{pose.entraxeHorizontal ? `${Math.round(pose.entraxeHorizontal * 100)} cm` : "60 cm"}</td>
+                <td className="py-1.5 text-center">{pose.entraxeHorizontal ? `${(pose.entraxeHorizontal * 100).toFixed(0)} cm` : "—"}</td>
                 <td className="py-1.5 text-right font-bold">{pose.nbSegmentsChevrons} pcs ({pose.lineaireChevronsM.toFixed(1)} ml)</td>
                 <td className="py-1.5 text-right">{pose.nbMontants} lignes</td>
               </tr>

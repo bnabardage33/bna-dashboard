@@ -19,6 +19,8 @@
 export type FamillePose = "hpl" | "composite" | "bois_naturel" | "cassette";
 export type SensPose = "horizontal" | "vertical";
 
+export const LIMITE_DTU_MM = 600;
+
 export const LABELS_FAMILLE: Record<FamillePose, string> = {
   hpl: "HPL Compact",
   composite: "Composite classique",
@@ -311,19 +313,19 @@ export function calculerPose(
   const surfacePaquetM2 = optionsAvancees?.surfacePaquetM2 ?? 4.8;
   const sensPose = optionsAvancees?.sensPose ?? "horizontal";
 
-  let entraxeHorizontalDefaut = 0.6; // 60 cm par défaut
+  let entraxeHorizontalDefaut = 0.5; // initialisé par le calcul dynamique HPL
   let nbVisParement = 0;
   let joint = "";
   const remarquesSupplementaires: string[] = [];
 
   if (famille === "hpl") {
-    // En mode vertical, le module largeur et hauteur s'inversent sur l'axe horizontal
+    // Algorithme obligatoire : LIMITE_DTU = 600mm uniquement
     const moduleLargeurMm = optionsAvancees?.moduleLargeurMm ?? null;
     const moduleHauteurMm = optionsAvancees?.moduleHauteurMm ?? null;
-    const moduleHorizontalMm = sensPose === "vertical"
-      ? Math.max(1, moduleHauteurMm ?? moduleLargeurMm ?? 600)
-      : Math.max(1, moduleLargeurMm ?? 600);
-    const entraxeReel = calculerEntraxeHPL(moduleHorizontalMm);
+    const dimension = (sensPose === "vertical" ? moduleHauteurMm : moduleLargeurMm) ?? null;
+    const moduleHorizontalMm = Math.max(1, dimension ?? 1000);
+    const nombreEspaces = Math.ceil(moduleHorizontalMm / LIMITE_DTU_MM);
+    const entraxeReel = moduleHorizontalMm / nombreEspaces;
     entraxeHorizontalDefaut = entraxeReel / 1000;
     const rangsVissagePanneau = Math.max(1, Math.ceil((hauteur - 0.06) / entraxeHorizontalDefaut)) + 1;
     nbVisParement = Math.round((largeur / entraxeHorizontalDefaut + 1) * rangsVissagePanneau);

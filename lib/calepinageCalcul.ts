@@ -15,6 +15,9 @@
 //      * Pertes réelles / sciure.
 //    - Taux de chute net réel calculé précisément.
 
+import { LIMITE_DTU_MM } from "@/lib/poseCalcul";
+
+export { LIMITE_DTU_MM };
 export type SensPose = "horizontal" | "vertical";
 
 export interface CalepinageInput {
@@ -116,12 +119,11 @@ export interface ResultatCalepinage {
 }
 
 const EPSILON_M = 0.0005;
-const LIMITE_DTU_MM = 600;
 
 export function calculerEntraxeReel(largeurModuleMm: number): number {
-  const m = Math.max(1, largeurModuleMm);
-  const nombreEspaces = Math.ceil(m / LIMITE_DTU_MM);
-  return m / nombreEspaces;
+  const dimension = Math.max(1, largeurModuleMm);
+  const nombreEspaces = Math.ceil(dimension / LIMITE_DTU_MM);
+  return dimension / nombreEspaces;
 }
 
 function axeSymetrique(dimTotaleM: number, dimModuleMm: number, entraxeReelMm: number): number[] {
@@ -518,10 +520,9 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const dimModuleLargeurAxeMm = sens === "horizontal" ? modLargeurMm : modHauteurMm;
   const dimModuleHauteurAxeMm = sens === "horizontal" ? modHauteurMm : modLargeurMm;
 
-  // L'entraxe se calcule toujours sur l'axe horizontal
-  // En mode vertical, le module largeur devient la hauteur et inversement
-  const moduleHorizontalMm = sens === "horizontal" ? modLargeurMm : modHauteurMm;
-  const entraxeReelMm = calculerEntraxeReel(Math.max(1, moduleHorizontalMm));
+  const dimension = sens === "vertical" ? modHauteurMm : modLargeurMm;
+  const nombreEspaces = Math.ceil(Math.max(1, dimension) / LIMITE_DTU_MM);
+  const entraxeReelMm = Math.max(1, dimension) / nombreEspaces;
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
   const dimModuleHauteurAxeM = dimModuleHauteurAxeMm / 1000;

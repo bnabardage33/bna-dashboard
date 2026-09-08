@@ -215,7 +215,7 @@ export default function PlanCalepinage({
   if (pose) {
 const entraxeDefaut = calepinage?.entraxeReelMm
   ? calepinage.entraxeReelMm / 1000
-  : pose?.entraxeHorizontal ?? 0.6;
+  : 0.5;
 const positionsX =
   pose.positionsChevronsM && pose.positionsChevronsM.length > 0
     ? pose.positionsChevronsM
@@ -676,11 +676,9 @@ const positionsX =
                 {pose ? pose.nbMontants : chevrons.length}
               </p>
               <p className="text-[10px] text-slate-500">
-                Entraxe {pose && pose.entraxeHorizontal
-                  ? `${Math.round(pose.entraxeHorizontal * 100)} cm`
-                  : calepinage?.entraxeReelMm
-                    ? `${calepinage.entraxeReelMm} mm`
-                    : "60 cm"}
+                Entraxe HPL : {pose && pose.entraxeHorizontal
+                  ? `${(pose.entraxeHorizontal * 100).toFixed(0)} cm`
+                  : "—"}
               </p>
             </div>
 
