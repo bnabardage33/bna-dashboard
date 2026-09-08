@@ -150,7 +150,8 @@ export default function CommandeModal({
       onClose();
     } catch (err) {
       console.error(err);
-      alert(`Erreur lors de l'enregistrement: ${(err as any).message || (err as any).details || "Erreur inconnue"}`);
+      const message = err instanceof Error ? err.message : (typeof err === "object" && err && "details" in err ? String((err as { details: unknown }).details) : "Erreur inconnue");
+      alert(`Erreur lors de l'enregistrement: ${message}`);
     } finally {
       setIsSubmitting(false);
     }
