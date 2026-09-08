@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { calculerMontantTTCFacture } from "@/lib/financeCalculs";
 import type { FactureFinance, AvancementRow, PointageRow } from "@/types/finance";
+import type { ChantierHealthData } from "@/lib/bna-analyzer";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { 
@@ -40,7 +41,7 @@ export default function BureauDashboard() {
     chantiersEnCours: 0,
     fournisseursActifs: 0,
   });
-  const [healthCards, setHealthCards] = useState<any[]>([]);
+  const [healthCards, setHealthCards] = useState<{ id: string; chantierName: string; chantierData: ChantierHealthData }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
