@@ -55,8 +55,8 @@ export async function genererExportComptaCSV(mois: string) {
     "Taux TVA (%)"
   ]);
 
-const facturesList = (factures ?? []) as (FactureFinance & { clients?: { nom: string } })[];
-  const achatsList = (achats ?? []) as (CommandeFinance & { fournisseurs?: { nom: string } })[];
+const facturesList = (factures ?? []) as unknown as (FactureFinance & { clients?: { nom: string } })[];
+  const achatsList = (achats ?? []) as unknown as (CommandeFinance & { fournisseurs?: { nom: string } })[];
   const depensesList = (depenses ?? []) as (DepenseFinance & { fournisseurs?: { nom: string } })[];
 
   // Map to common format
