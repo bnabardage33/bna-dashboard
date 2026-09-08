@@ -17,6 +17,7 @@
 //    - Bande EPDM 80-100 mm sur 100% des chevrons (+5% recouvrement)
 
 export type FamillePose = "hpl" | "composite" | "bois_naturel" | "cassette";
+export type SensPose = "horizontal" | "vertical";
 
 export const LABELS_FAMILLE: Record<FamillePose, string> = {
   hpl: "HPL Compact",
@@ -282,8 +283,9 @@ const REMARQUE_PERCAGE =
  */
 export function calculerEntraxeHPL(largeurModuleMm: number): number {
   const limiteDTU = 600;
-  const nombreEspaces = Math.ceil(largeurModuleMm / limiteDTU);
-  return largeurModuleMm / nombreEspaces;
+  const m = Math.max(1, largeurModuleMm);
+  const nombreEspaces = Math.ceil(m / limiteDTU);
+  return m / nombreEspaces;
 }
 
 export function calculerPose(
@@ -299,12 +301,15 @@ export function calculerPose(
     typeIsolant?: TypeIsolant | null;
     surfacePaquetM2?: number | null;
     moduleLargeurMm?: number | null;
+    moduleHauteurMm?: number | null;
+    sensPose?: SensPose | null;
   }
 ): ResultatPose {
   const zoneVentRive = optionsAvancees?.zoneVentRive ?? angle;
   const epaisseurIsolantMm = optionsAvancees?.epaisseurIsolantMm ?? 120;
   const typeIsolant = optionsAvancees?.typeIsolant ?? "laine_roche";
   const surfacePaquetM2 = optionsAvancees?.surfacePaquetM2 ?? 4.8;
+  const sensPose = optionsAvancees?.sensPose ?? "horizontal";
 
   let entraxeHorizontalDefaut = 0.6; // 60 cm par défaut
   let nbVisParement = 0;
@@ -312,10 +317,13 @@ export function calculerPose(
   const remarquesSupplementaires: string[] = [];
 
   if (famille === "hpl") {
+    // En mode vertical, le module largeur et hauteur s'inversent sur l'axe horizontal
     const moduleLargeurMm = optionsAvancees?.moduleLargeurMm ?? null;
-    const entraxeReel = moduleLargeurMm !== null
-      ? calculerEntraxeHPL(moduleLargeurMm)
-      : 0.6;
+    const moduleHauteurMm = optionsAvancees?.moduleHauteurMm ?? null;
+    const moduleHorizontalMm = sensPose === "vertical"
+      ? Math.max(1, moduleHauteurMm ?? moduleLargeurMm ?? 600)
+      : Math.max(1, moduleLargeurMm ?? 600);
+    const entraxeReel = calculerEntraxeHPL(moduleHorizontalMm);
     entraxeHorizontalDefaut = entraxeReel / 1000;
     const rangsVissagePanneau = Math.max(1, Math.ceil((hauteur - 0.06) / entraxeHorizontalDefaut)) + 1;
     nbVisParement = Math.round((largeur / entraxeHorizontalDefaut + 1) * rangsVissagePanneau);

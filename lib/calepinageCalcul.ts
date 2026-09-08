@@ -119,8 +119,9 @@ const EPSILON_M = 0.0005;
 const LIMITE_DTU_MM = 600;
 
 export function calculerEntraxeReel(largeurModuleMm: number): number {
-  const nombreEspaces = Math.ceil(largeurModuleMm / LIMITE_DTU_MM);
-  return largeurModuleMm / nombreEspaces;
+  const m = Math.max(1, largeurModuleMm);
+  const nombreEspaces = Math.ceil(m / LIMITE_DTU_MM);
+  return m / nombreEspaces;
 }
 
 function axeSymetrique(dimTotaleM: number, dimModuleMm: number, entraxeReelMm: number): number[] {
@@ -504,8 +505,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   if (modLargeurMm < 20) modLargeurMm = Math.round(modLargeurMm * 1000);
   if (modHauteurMm < 20) modHauteurMm = Math.round(modHauteurMm * 1000);
 
-  const entraxeReelMm = calculerEntraxeReel(modLargeurMm);
-
   const sens: SensPose = sensPose === "vertical" ? "vertical" : "horizontal";
 
   const largeur = Math.max(0, zoneLargeurM);
@@ -516,9 +515,13 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
 
   const hauteurTotale = estPignon ? hauteurFaite : hauteurMur;
 
-  // Module dimensions sur l'axe selon le sens de pose
   const dimModuleLargeurAxeMm = sens === "horizontal" ? modLargeurMm : modHauteurMm;
   const dimModuleHauteurAxeMm = sens === "horizontal" ? modHauteurMm : modLargeurMm;
+
+  // L'entraxe se calcule toujours sur l'axe horizontal
+  // En mode vertical, le module largeur devient la hauteur et inversement
+  const moduleHorizontalMm = sens === "horizontal" ? modLargeurMm : modHauteurMm;
+  const entraxeReelMm = calculerEntraxeReel(Math.max(1, moduleHorizontalMm));
 
   const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
   const dimModuleHauteurAxeM = dimModuleHauteurAxeMm / 1000;
