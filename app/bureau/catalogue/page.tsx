@@ -7,6 +7,7 @@ import Link from "next/link";
 import { fmtEuro } from "@/lib/financeCalculs";
 import Papa from "papaparse";
 import type { CatalogueItem } from "@/types/finance";
+import type { TablesInsert, TablesUpdate } from "@/types/supabase";
 
 type CategorieOuvrage = "bardage" | "etancheite" | "habillage" | "isolation" | "installation";
 
@@ -41,7 +42,7 @@ type Ouvrage = {
   prix_ttc?: number | null;
 };
 
-type FormState = Omit<Ouvrage, "id">;
+type FormState = Omit<Ouvrage, "id" | "pu_ht"> & { pu_ht: number | null };
 
 const emptyForm: FormState = {
   categorie: "bardage",
@@ -81,7 +82,7 @@ export default function CataloguePage() {
   const [isScraping, setIsScraping] = useState(false);
 
   const set = (field: keyof FormState, value: FormState[keyof FormState]) =>
-    setFormData((prev: any) => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
   const categories = ["Toutes", "bardage", "etancheite", "habillage", "isolation", "installation"];
 
@@ -146,7 +147,7 @@ export default function CataloguePage() {
         alert("La table 'catalogue_ouvrages' n'existe pas encore. Veuillez exécuter le script SQL fourni.");
       }
     } else {
-      setOuvrages(data || []);
+      setOuvrages((data as unknown as Ouvrage[]) || []);
     }
     setIsLoading(false);
   };
@@ -292,12 +293,12 @@ export default function CataloguePage() {
       if (editingOuvrage) {
         ({ error } = await supabase
           .from("catalogue_ouvrages")
-          .update(payload)
+          .update(payload as unknown as TablesUpdate<"catalogue_ouvrages">)
           .eq("id", editingOuvrage.id));
       } else {
         ({ error } = await supabase
           .from("catalogue_ouvrages")
-          .insert(payload));
+          .insert(payload as unknown as TablesInsert<"catalogue_ouvrages">));
       }
 
       if (error) {
@@ -341,7 +342,7 @@ export default function CataloguePage() {
           const pu_ht = Number(row.pu_ht?.replace(',', '.') || 0);
           const prix_ttc = row.prix_ttc ? Number(row.prix_ttc.replace(',', '.')) : Math.round(pu_ht * 1.2 * 100) / 100;
           
-          const payload: any = {
+          const payload: TablesInsert<"catalogue_ouvrages"> = {
             designation: row.designation.trim(),
             categorie: row.categorie?.trim() || "bardage",
             famille_label: row.famille_label?.trim() || "Import CSV",
@@ -367,10 +368,10 @@ export default function CataloguePage() {
           const existing = ouvrages.find(o => o.designation.toLowerCase() === row.designation.trim().toLowerCase());
           
           if (existing) {
-            const { error } = await supabase.from("catalogue_ouvrages").update(cleanPayload).eq("id", existing.id);
+            const { error } = await supabase.from("catalogue_ouvrages").update(cleanPayload as unknown as TablesUpdate<"catalogue_ouvrages">).eq("id", existing.id);
             if (!error) countUpdated++;
           } else {
-            const { error } = await supabase.from("catalogue_ouvrages").insert(cleanPayload);
+            const { error } = await supabase.from("catalogue_ouvrages").insert(cleanPayload as unknown as TablesInsert<"catalogue_ouvrages">);
             if (!error) countNew++;
           }
         }
@@ -874,11 +875,11 @@ export default function CataloguePage() {
                         required
                         type="text"
                         placeholder="0.00"
-                        value={formData.pu_ht}
+                        value={formData.pu_ht ?? ""}
                         onChange={(e) => {
                           const val = e.target.value;
                           const numericHt = parseFloat(val.replace(',', '.')) || 0;
-                          setFormData((prev: any) => ({
+                          setFormData((prev) => ({
                             ...prev,
                             pu_ht: val ? parseFloat(val.replace(',', '.')) || 0 : 0,
                             prix_ttc: val === "" ? null : parseFloat((numericHt * 1.2).toFixed(2))
@@ -899,7 +900,7 @@ export default function CataloguePage() {
                         onChange={(e) => {
                           const val = e.target.value;
                           const numericTtc = parseFloat(val.replace(',', '.')) || 0;
-                          setFormData((prev: any) => ({
+                          setFormData((prev) => ({
                             ...prev,
                             prix_ttc: val ? parseFloat(val.replace(',', '.')) || 0 : null,
                             pu_ht: val === "" ? null : parseFloat((numericTtc / 1.2).toFixed(2))
