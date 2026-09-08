@@ -213,20 +213,22 @@ export default function PlanCalepinage({
   const chevrons: SegmentChevron[] = [];
 
   if (pose) {
-    const positionsX =
-      pose.positionsChevronsM && pose.positionsChevronsM.length > 0
-        ? pose.positionsChevronsM
-        : (() => {
-            const entraxe = pose.entraxeHorizontal ?? 0.6;
-            const pos: number[] = [];
-            for (let x = 0; x <= largeurM + 0.001; x += entraxe) {
-              pos.push(Math.min(x, largeurM));
-            }
-            if (pos.length === 0 || Math.abs(pos[pos.length - 1] - largeurM) > 0.001) {
-              pos.push(largeurM);
-            }
-            return pos;
-          })();
+const entraxeDefaut = calepinage?.entraxeReelMm
+  ? calepinage.entraxeReelMm / 1000
+  : pose?.entraxeHorizontal ?? 0.6;
+const positionsX =
+  pose.positionsChevronsM && pose.positionsChevronsM.length > 0
+    ? pose.positionsChevronsM
+    : (() => {
+        const pos: number[] = [];
+        for (let x = 0; x <= largeurM + 0.001; x += entraxeDefaut) {
+          pos.push(Math.min(x, largeurM));
+        }
+        if (pos.length === 0 || Math.abs(pos[pos.length - 1] - largeurM) > 0.001) {
+          pos.push(largeurM);
+        }
+        return pos;
+      })();
 
     let numero = 1;
 
@@ -674,7 +676,11 @@ export default function PlanCalepinage({
                 {pose ? pose.nbMontants : chevrons.length}
               </p>
               <p className="text-[10px] text-slate-500">
-                Entraxe {pose && pose.entraxeHorizontal ? `${Math.round(pose.entraxeHorizontal * 100)} cm` : "60 cm"}
+                Entraxe {pose && pose.entraxeHorizontal
+                  ? `${Math.round(pose.entraxeHorizontal * 100)} cm`
+                  : calepinage?.entraxeReelMm
+                    ? `${calepinage.entraxeReelMm} mm`
+                    : "60 cm"}
               </p>
             </div>
 

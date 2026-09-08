@@ -265,6 +265,27 @@ function calculerInfrastructure(
 const REMARQUE_PERCAGE =
   "Perçage Spit MP3-S : Ø12mm, profondeur 70mm mini, couple de serrage 15 Nm (clé dynamométrique) — distance mini 10 cm des arêtes maçonnerie";
 
+/**
+ * Calcule l'entraxe réel horizontal pour l'HPL conformément à la règle métier :
+ * Le DTU de 600 mm est un MAXIMUM absolu.
+ * C'est la largeur du module qui dicte la position de l'ossature.
+ *
+ * Algorithme :
+ *   nombreEspaces = Math.ceil(largeurModule / 600)
+ *   entraxeReel = largeurModule / nombreEspaces
+ *
+ * Exemples :
+ *   1000mm → 2 espaces → 500mm
+ *   1200mm → 2 espaces → 600mm
+ *   600mm  → 1 espace  → 600mm
+ *   1500mm → 3 espaces → 500mm
+ */
+export function calculerEntraxeHPL(largeurModuleMm: number): number {
+  const limiteDTU = 600;
+  const nombreEspaces = Math.ceil(largeurModuleMm / limiteDTU);
+  return largeurModuleMm / nombreEspaces;
+}
+
 export function calculerPose(
   famille: FamillePose,
   largeur: number,
@@ -277,6 +298,7 @@ export function calculerPose(
     epaisseurIsolantMm?: number | null;
     typeIsolant?: TypeIsolant | null;
     surfacePaquetM2?: number | null;
+    moduleLargeurMm?: number | null;
   }
 ): ResultatPose {
   const zoneVentRive = optionsAvancees?.zoneVentRive ?? angle;
@@ -290,8 +312,12 @@ export function calculerPose(
   const remarquesSupplementaires: string[] = [];
 
   if (famille === "hpl") {
-    entraxeHorizontalDefaut = 0.6;
-    const rangsVissagePanneau = Math.max(1, Math.ceil((hauteur - 0.06) / 0.6)) + 1;
+    const moduleLargeurMm = optionsAvancees?.moduleLargeurMm ?? null;
+    const entraxeReel = moduleLargeurMm !== null
+      ? calculerEntraxeHPL(moduleLargeurMm)
+      : 0.6;
+    entraxeHorizontalDefaut = entraxeReel / 1000;
+    const rangsVissagePanneau = Math.max(1, Math.ceil((hauteur - 0.06) / entraxeHorizontalDefaut)) + 1;
     nbVisParement = Math.round((largeur / entraxeHorizontalDefaut + 1) * rangsVissagePanneau);
     joint = "1 Point Fixe Ø5,1mm au centre + Points Coulissants Ø8mm — vis de rive à 20-40mm";
     remarquesSupplementaires.push(`Vis parement HPL tête laquée (entraxe <600mm) : ${nbVisParement} vis`);

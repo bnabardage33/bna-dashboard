@@ -19,17 +19,15 @@ export type SensPose = "horizontal" | "vertical";
 
 export interface CalepinageInput {
   zoneLargeurM: number;
-  zoneHauteurM: number; // Hauteur à l'égout (ou totale si façade droite)
-  // Format matière première brute (achat fournisseur)
-  plaqueLongueurMm?: number | null; // ex: 3050 mm
-  plaqueLargeurMm?: number | null;  // ex: 1300 mm
-  // Format cible des modules posés en façade
-  moduleLargeurMm?: number | null;  // ex: 1000 mm
-  moduleHauteurMm?: number | null;  // ex: 600 mm
+  zoneHauteurM: number;
+  plaqueLongueurMm?: number | null;
+  plaqueLargeurMm?: number | null;
+  moduleLargeurMm?: number | null;
+  moduleHauteurMm?: number | null;
   sensPose?: SensPose | null;
   estPignon?: boolean;
   hauteurFaiteM?: number | null;
-  traitDeScieMm?: number | null;   // Épaisseur de lame de coupe (défaut: 3 mm)
+  traitDeScieMm?: number | null;
 }
 
 export interface PointCalepinage {
@@ -39,7 +37,7 @@ export interface PointCalepinage {
 
 export interface PieceCalepinage {
   id: string;
-  repere: string; // ex: "M-01", "R-01", "P-01"
+  repere: string;
   colonne: number;
   rangee: number;
   xM: number;
@@ -49,7 +47,7 @@ export interface PieceCalepinage {
   type: "pleine" | "coupe" | "pignon";
   surfaceM2: number;
   points?: PointCalepinage[];
-  plaqueIndex?: number; // N° de la plaque brute d'où provient cette pièce
+  plaqueIndex?: number;
 }
 
 export interface DecoupePiece {
@@ -79,7 +77,7 @@ export interface ChutePlaque {
 }
 
 export interface PlaqueDebit {
-  index: number; // 1, 2, 3...
+  index: number;
   longueurMm: number;
   largeurMm: number;
   surfaceM2: number;
@@ -95,37 +93,39 @@ export interface ResultatCalepinage {
   colonnesLargeursM: number[];
   rangeesHauteursM: number[];
   pieces: PieceCalepinage[];
-  nbPlaquesNecessaires: number;     // Nombre de plaques brutes à commander
-  nbPiecesPosees: number;           // Nombre de modules découpés posés
-  surfaceZoneM2: number;            // Surface nette posée (m²)
-  surfacePlaquesAchetesM2: number;  // Surface brute achetée (m²)
-  tauxChuteBrutePct: number;        // Taux de chute brut (%)
-  tauxChuteNettePct: number;        // Taux de perte nette après réemploi des chutes (%)
-  tauxChutePct: number;             // Rétrocompatibilité (taux net)
+  nbPlaquesNecessaires: number;
+  nbPiecesPosees: number;
+  surfaceZoneM2: number;
+  surfacePlaquesAchetesM2: number;
+  tauxChuteBrutePct: number;
+  tauxChuteNettePct: number;
+  tauxChutePct: number;
   totalChutesReutilisablesM2: number;
   totalDechetsPerteM2: number;
   nbJoints: number;
   estPignon: boolean;
   hauteurFaiteM: number;
   pentePct: number;
-  // Métadonnées matière & plan de coupe
   plaqueBruteLongueurMm: number;
   plaqueBruteLargeurMm: number;
   moduleCibleLargeurMm: number;
   moduleCibleHauteurMm: number;
   modulesParPlaqueBrute: number;
-  plaquesDebit: PlaqueDebit[];      // Plan de débit pas-à-pas pour l'atelier
+  plaquesDebit: PlaqueDebit[];
+  entraxeReelMm: number;
 }
 
 const EPSILON_M = 0.0005;
+const LIMITE_DTU_MM = 600;
 
-/**
- * Calepinage symétrique en largeur selon le module cible :
- * - Modules pleins centraux
- * - Rives coupées équilibrées à gauche et à droite
- */
-function axeSymetrique(dimTotaleM: number, dimModuleMm: number): number[] {
+export function calculerEntraxeReel(largeurModuleMm: number): number {
+  const nombreEspaces = Math.ceil(largeurModuleMm / LIMITE_DTU_MM);
+  return largeurModuleMm / nombreEspaces;
+}
+
+function axeSymetrique(dimTotaleM: number, dimModuleMm: number, entraxeReelMm: number): number[] {
   const dimModuleM = Math.max(0.1, dimModuleMm / 1000);
+  const entraxeReelM = Math.max(0.001, entraxeReelMm / 1000);
   if (dimTotaleM <= 0) return [0];
   if (dimTotaleM <= dimModuleM) return [dimTotaleM];
 
@@ -136,8 +136,7 @@ function axeSymetrique(dimTotaleM: number, dimModuleMm: number): number[] {
     return Array(Math.max(1, nFull)).fill(dimModuleM);
   }
 
-  // Répartition égale sur les 2 rives
-  const bout = reste / 2;
+  const bout = Math.max(entraxeReelM, Math.round(reste / 2 / entraxeReelM) * entraxeReelM);
   return [bout, ...Array(nFull).fill(dimModuleM), bout];
 }
 
@@ -505,6 +504,8 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   if (modLargeurMm < 20) modLargeurMm = Math.round(modLargeurMm * 1000);
   if (modHauteurMm < 20) modHauteurMm = Math.round(modHauteurMm * 1000);
 
+  const entraxeReelMm = calculerEntraxeReel(modLargeurMm);
+
   const sens: SensPose = sensPose === "vertical" ? "vertical" : "horizontal";
 
   const largeur = Math.max(0, zoneLargeurM);
@@ -523,7 +524,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const dimModuleHauteurAxeM = dimModuleHauteurAxeMm / 1000;
 
   // Découpage architectural de la façade en modules maniables
-  const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm);
+  const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm, entraxeReelMm);
   const rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
 
   const pieces: PieceCalepinage[] = [];
@@ -655,5 +656,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     moduleCibleHauteurMm: modHauteurMm,
     modulesParPlaqueBrute,
     plaquesDebit,
+    entraxeReelMm,
   };
 }
