@@ -10,6 +10,7 @@ import {
 import { validerPointageAvecMeteo, supprimerPointageGlob, reinitialiserPointagesChantier } from "@/app/actions/pointage";
 import { Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import type { Tables } from "@/types/supabase";
 import type { PointageFinance, Equipe } from "@/types/finance";
 
 const MOCK_CATALOGUE = {
@@ -95,8 +96,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
   const [heures, setHeures] = useState<number>(0);
   const [dateSaisie, setDateSaisie] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
-  const [historique, setHistorique] = useState<PointageFinance[]>([]);
-  const [equipes, setEquipes] = useState<Equipe[]>([]);
+  const [historique, setHistorique] = useState<Tables<"pointages_globaux">[]>([]);
+  const [equipes, setEquipes] = useState<{ id: string; nom: string; prenom: string }[]>([]);
   const [equipeId, setEquipeId] = useState<string>("00000000-0000-0000-0000-000000000000");
 
   const fetchHistorique = async () => {
@@ -306,11 +307,11 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
         id: chantier.id,
         nom: chantierNom,
         budget: budget || 0,
-        pointages: (chantier.pointages_globaux as PointageData[])?.map(p => ({
-          volumeHeures: p.volumeHeures || 0,
-          coefMeteo: p.coefMeteo || 1.0,
-          meteo: p.meteo || "Non relevée"
-        })) || []
+        pointages: (chantier.pointages_globaux || []).map((p: { volume_heures_declare: number; coef_meteo: number | null; meteo_relevee: string | null }) => ({
+          volumeHeures: p.volume_heures_declare || 0,
+          coefMeteo: p.coef_meteo || 1.0,
+          meteo: p.meteo_relevee || "Non relevée"
+        }))
       };
       setData(formatted);
     }
