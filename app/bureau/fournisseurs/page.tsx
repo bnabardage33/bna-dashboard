@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesUpdate } from "@/types/supabase";
 import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
 import SignaturePad from "@/components/SignaturePad";
@@ -274,7 +275,7 @@ export default function FournisseursPage() {
   }
 
   async function changerStatutCommande(c: Commande, statut: string) {
-    const updates: Record<string, unknown> = { statut };
+    const updates: TablesUpdate<"commandes"> = { statut };
     if (statut === "livree" && !c.date_livraison_reelle) {
       updates.date_livraison_reelle = new Date().toISOString().slice(0, 10);
     }
