@@ -52,14 +52,14 @@ export default function BureauDashboard() {
         supabase.from("devis").select("id").in("statut", ["brouillon", "envoye"]),
         supabase.from("factures").select("lignes, tva_pct").eq("statut", "envoyee").lt("echeance", today),
         supabase.from("chantiers")
-          .select("id, nom, created_at, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee, created_at, date_saisie), avancements_chantier(pourcentage, date, created_at)")
+          .select("id, nom, created_at, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee, date_saisie), avancements_chantier(pourcentage, date, created_at)")
           .in("statut", ["en_cours", "En cours", "prevu", "Actif", "Préparation", "preparation", "nouveau"]),
         supabase.from("fournisseurs").select("id").eq("statut_relation", "principal")
       ]);
 
       const devisEnAttente = devisRes.data?.length || 0;
       const facturesRetard = facturesRes.data?.length || 0;
-      const montantRetard = facturesRes.data?.reduce((sum: number, f: FactureFinance) => sum + calculerMontantTTCFacture(f), 0) || 0;
+      const montantRetard = facturesRes.data?.reduce((sum: number, f) => sum + calculerMontantTTCFacture(f as unknown as FactureFinance), 0) || 0;
       const chantiersEnCours = chantiersRes.data?.length || 0;
       const fournisseursActifs = fournRes.data?.length || 0;
 
