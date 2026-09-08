@@ -7,6 +7,9 @@ import CommandeModal from "@/components/CommandeModal";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
+import { PVReceptionData } from "@/components/PVReceptionPDF";
+
+type PvReceptionListe = PVReceptionData & { id: string };
 import PlanCalepinage from "@/components/PlanCalepinage";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
@@ -48,6 +51,7 @@ type Pointage = {
 
 type DevisLie = {
   id: string;
+  client_id: string | null;
   numero: string;
   objet: string | null;
   date_emission: string;
@@ -58,6 +62,7 @@ type DevisLie = {
 
 type FactureLiee = {
   id: string;
+  client_id: string | null;
   numero: string;
   objet: string | null;
   date_emission: string;
@@ -96,7 +101,7 @@ function ChantierDetailContent() {
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
-  const [pvsLies, setPvsLies] = useState<any[]>([]);
+  const [pvsLies, setPvsLies] = useState<PvReceptionListe[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [pointages, setPointages] = useState<Pointage[]>([]);
   const [loadingPointages, setLoadingPointages] = useState(false);
@@ -126,11 +131,11 @@ function ChantierDetailContent() {
     sensPose: "horizontal"
   });
   
-  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<any | null>(null);
   const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
-  const [savedGlobalInput, setSavedGlobalInput] = useState<any | null>(null);
   const [modalGlobalDebitOuvert, setModalGlobalDebitOuvert] = useState(false);
-  const [activeMurs, setActiveMurs] = useState<any[]>([]);
+  const [activeMurs, setActiveMurs] = useState<unknown[]>([]); // structure non consommee actuellement
+  const [savedGlobalInput, setSavedGlobalInput] = useState<CalepinageInput | null>(null);
+  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<ResultatCalepinage | null>(null);
   
 
 
@@ -176,7 +181,7 @@ function ChantierDetailContent() {
       .eq("chantier_id", id)
       .order("created_at", { ascending: true });
     if (error) console.error(error);
-    else setZones((data as Zone[]).map((z) => ({ ...z, ouvertures: z.ouvertures || [] })));
+    else setZones((data as unknown as Zone[]).map((z) => ({ ...z, ouvertures: z.ouvertures || [] })));
   }, [id]);
 
   const fetchDocuments = useCallback(async () => {
@@ -203,18 +208,18 @@ function ChantierDetailContent() {
     ]);
 
     if (coRes.data) setCommandesLiees(coRes.data as unknown as CommandeLiee[]);
-    if (pvsRes.data) setPvsLies(pvsRes.data);
+    if (pvsRes.data) setPvsLies(pvsRes.data as unknown as PvReceptionListe[]);
     if (devisRes.data && chantier?.client_id) {
       setDevisLies(
-        (devisRes.data as DevisLie[]).filter(
-          (d: any) => d.client_id === chantier.client_id
+        (devisRes.data as unknown as DevisLie[]).filter(
+          (d) => d.client_id === chantier.client_id
         )
       );
     }
     if (facturesRes.data && chantier) {
       setFacturesLiees(
-        (facturesRes.data as FactureLiee[]).filter(
-          (f: any) => f.client_id === chantier.client_id
+        (facturesRes.data as unknown as FactureLiee[]).filter(
+          (f) => f.client_id === chantier.client_id
         )
       );
     }
@@ -290,7 +295,7 @@ function ChantierDetailContent() {
         .from("chantiers")
         .update({ surface_m2, quantite_coupes_ml, singularites_nb })
         .eq("id", chantier.id)
-        .then(({ error }: { error: Error }) => {
+        .then(({ error }) => {
           if (error) {
             console.error("Erreur sync calepinage -> chantier:", error);
           }
@@ -364,7 +369,7 @@ function ChantierDetailContent() {
       console.error(error);
       return;
     }
-    setZones((z) => [...z, { ...(data as Zone), ouvertures: [] }]);
+    setZones((z) => [...z, { ...(data as unknown as Zone), ouvertures: [] }]);
   }
 
   async function updateZone(zone: Zone) {
@@ -1060,7 +1065,7 @@ function ChantierDetailContent() {
                       <tbody className="divide-y divide-white/10 text-gray-200">
                         {pvsLies.map((p) => {
                           const nbRes = (p.reserves || []).length;
-                          const nbLevees = (p.reserves || []).filter((r: any) => r.levee).length;
+                          const nbLevees = (p.reserves || []).filter((r) => r.levee).length;
                           return (
                             <tr key={p.id}>
                               <td className="p-3 font-semibold text-white font-mono">{p.numero}</td>

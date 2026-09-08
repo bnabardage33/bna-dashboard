@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 
-type Chantier = { id: string; nom: string };
+type Chantier = { id: string; nom: string | null };
 
 export default function FraisInterimPage() {
   const router = useRouter();
@@ -60,15 +61,15 @@ export default function FraisInterimPage() {
     });
 
     if (!error) {
-      const depenseData: Record<string, unknown> = {
+      const depenseData: TablesInsert<"depenses_chantier"> = {
         nature: "sous_traitance",
         montant_ht: totalHT,
         taux_tva: tauxTva,
         montant_tva: montantTva,
         date: formData.date,
         statut: "Engagé",
+        ...(formData.chantier_id ? { chantier_id: formData.chantier_id } : {}),
       };
-      if (formData.chantier_id) depenseData.chantier_id = formData.chantier_id;
 
       const { error: depenseError } = await supabase.from("depenses_chantier").insert(depenseData);
       if (depenseError) {

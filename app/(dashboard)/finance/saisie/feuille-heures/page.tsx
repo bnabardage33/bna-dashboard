@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { UserPlus, Save, ChevronDown, ChevronUp } from "lucide-react";
 
-type Chantier = { id: string; nom: string };
+type Chantier = { id: string; nom: string | null };
 type Ouvrier = {
   id: string;
   full_name: string;

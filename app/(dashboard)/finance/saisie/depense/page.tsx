@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import type { ChantierFinance } from "@/types/finance";
+import type { TablesInsert } from "@/types/supabase";
 
 export default function SaisieDepense() {
   const router = useRouter();
   
-  const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
+  const [chantiers, setChantiers] = useState<{ id: string; nom: string | null }[]>([]);
   const [fournisseurs, setFournisseurs] = useState<{id: string; nom: string}[]>([]);
   
   const [formData, setFormData] = useState({
@@ -62,17 +62,17 @@ export default function SaisieDepense() {
       const ht = parseFloat(formData.montant_ht);
       if (isNaN(ht) || ht <= 0) throw new Error("Montant HT invalide.");
 
-      const insertData: Record<string, unknown> = {
+      const insertData: TablesInsert<"depenses_chantier"> = {
         nature: formData.nature,
         montant_ht: ht,
         taux_tva: formData.taux_tva,
         montant_tva: parseFloat(formData.montant_tva) || (ht * formData.taux_tva / 100),
         date: formData.date,
-        statut: formData.statut
+        statut: formData.statut,
+        ...(formData.chantier_id ? { chantier_id: formData.chantier_id } : {}),
+        ...(formData.fournisseur_id ? { fournisseur_id: formData.fournisseur_id } : {}),
       };
       
-      if (formData.chantier_id) insertData.chantier_id = formData.chantier_id;
-      if (formData.fournisseur_id) insertData.fournisseur_id = formData.fournisseur_id;
 
       const { error: insertError } = await supabase.from("depenses_chantier").insert(insertData);
 
