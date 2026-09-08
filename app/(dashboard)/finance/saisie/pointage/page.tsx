@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import type { ChantierFinance } from "@/types/finance";
+
 
 export default function SaisiePointage() {
   const router = useRouter();
   
-  const [chantiers, setChantiers] = useState<ChantierFinance[]>([]);
+  const [chantiers, setChantiers] = useState<{ id: string; nom: string | null }[]>([]);
   const [ouvriers, setOuvriers] = useState<{id: string; full_name: string}[]>([]);
   
   const [formData, setFormData] = useState({
@@ -32,7 +32,7 @@ export default function SaisiePointage() {
       
       const { data: oData } = await supabase.from("profiles").select("id, full_name, role");
       if (oData && isMounted) {
-        setOuvriers(oData.filter((o: { role: string }) => ["ouvrier", "chef", "admin"].includes(o.role)));
+        setOuvriers(oData.filter((o: { role: string | null }) => o.role && ["ouvrier", "chef", "admin"].includes(o.role)));
       }
     };
     fetchSelects();
