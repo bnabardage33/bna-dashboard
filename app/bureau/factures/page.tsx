@@ -115,10 +115,10 @@ export default function FacturesPage() {
       supabase.from("catalogue_ouvrages").select("*").order("designation"),
     ]);
     if (facturesRes.error) console.error(facturesRes.error);
-    else setFactures(facturesRes.data as Facture[]);
+    else setFactures(facturesRes.data as unknown as Facture[]);
     if (clientsRes.data) setClients(clientsRes.data as Client[]);
     if (catRes && catRes.data) setCatalogue(catRes.data as CatalogueOuvrage[]);
-    if (devisRes.data) setDevisAcceptes(devisRes.data as Devis[]);
+    if (devisRes.data) setDevisAcceptes(devisRes.data as unknown as Devis[]);
     if (settingsRes.data) setEntreprise(settingsRes.data as Entreprise);
     setLoading(false);
   }
@@ -165,7 +165,8 @@ export default function FacturesPage() {
       .eq("devis_id", devisId);
 
     const deja = (facturesExistantes ?? []).reduce(
-      (s: number, f: FactureFinance) => s + f.lignes.reduce((t: number, l: { qte: number; pu_ht: number }) => t + l.qte * l.pu_ht, 0),
+      (s: number, f: { lignes: unknown }) =>
+        s + ((f.lignes as { qte: number; pu_ht: number }[]) || []).reduce((t, l) => t + l.qte * l.pu_ht, 0),
       0
     );
     setDejaFactureHT(deja);
