@@ -877,11 +877,16 @@ export default function ZoneCard({
                 <label className="text-[11px] text-slate-400">Trame cible des modules</label>
                 <select
                   value={
-                    zone.module_largeur_mm && zone.module_hauteur_mm
-                      ? `${zone.module_largeur_mm}x${zone.module_hauteur_mm}`
-                      : "1000x600"
+                    (() => {
+                      const l = zone.module_largeur_mm;
+                      const h = zone.module_hauteur_mm;
+                      if (!l || !h) return "1000x600";
+                      const presets = ["1000x600", "1200x800", "1500x450", "600x1200"];
+                      return presets.includes(`${l}x${h}`) ? `${l}x${h}` : "custom";
+                    })()
                   }
                   onChange={(e) => {
+                    if (e.target.value === "custom") return;
                     const [wStr, hStr] = e.target.value.split("x");
                     if (wStr && hStr) {
                       update({
