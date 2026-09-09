@@ -228,9 +228,10 @@ export default function ZoneCard({
       ? "vertical"
       : "horizontal";
 
-  // En mode "Trame personnalisée", l'utilisateur saisit LUI-MÊME les dimensions
-  // finales vues sur le mur (Largeur = axe X, Hauteur = axe Y) : l'orientation
-  // est implicitement horizontale et le bouton Vertical est neutralisé.
+  // En mode "Trame personnalisée", les champs Largeur/Hauteur reflètent déjà
+  // les dimensions finales vues sur le mur (Largeur = axe X, Hauteur = axe Y).
+  // Le bouton d'orientation sert alors de pivot : il intervertit simplement
+  // les deux valeurs. Les calculs restent donc forcés en horizontal.
   const sensPoseEffectif: SensPose = moduleTrameCustom ? "horizontal" : sensPoseActif;
 
   const pose =
@@ -977,17 +978,24 @@ export default function ZoneCard({
                       <button
                         key={s}
                         type="button"
-                        disabled={moduleTrameCustom}
-                        onClick={() => update({ sens_pose: s })}
-                        title={moduleTrameCustom ? "En trame personnalisée, l'orientation vient de la saisie Largeur/Hauteur" : undefined}
+                        onClick={() => {
+                          if (moduleTrameCustom) {
+                            // En trame personnalisée, le bouton pivote la plaque :
+                            // il intervertit Largeur et Hauteur (axes X/Y restent
+                            // garantis : Largeur = axe X) et met à jour la BDD.
+                            update({
+                              module_largeur_mm: zone.module_hauteur_mm ?? 600,
+                              module_hauteur_mm: zone.module_largeur_mm ?? 1000,
+                              sens_pose: s,
+                            });
+                          } else {
+                            update({ sens_pose: s });
+                          }
+                        }}
                         className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                           actif
                             ? "bg-red-600 text-white"
                             : "border border-slate-600 text-slate-300 hover:bg-slate-800"
-                        } ${
-                          moduleTrameCustom
-                            ? "cursor-not-allowed opacity-50 pointer-events-none"
-                            : ""
                         }`}
                       >
                         {s === "horizontal" ? "↔ Horizontal" : "↕ Vertical"}
@@ -995,11 +1003,6 @@ export default function ZoneCard({
                     );
                   })}
                 </div>
-                {moduleTrameCustom && (
-                  <p className="mt-1.5 text-[10px] text-slate-500">
-                    Trame personnalisée : l&apos;orientation est déduite de la saisie (Largeur = axe X, Hauteur = axe Y).
-                  </p>
-                )}
               </div>
             </div>
           </div>
