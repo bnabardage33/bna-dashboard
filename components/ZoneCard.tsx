@@ -185,6 +185,32 @@ export default function ZoneCard({
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
   const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
   const [replie, setReplie] = useState(false);
+
+  // Sélecteurs "Trame / Format personnalisé" : une fois l'option custom choisie,
+  // le select reste sur "custom" et déverrouille la saisie manuelle des champs.
+  const [trameModuleCustom, setTrameModuleCustom] = useState(false);
+  const [formatPlaqueCustom, setFormatPlaqueCustom] = useState(false);
+
+  const PRESETS_MODULES = ["1000x600", "1200x800", "1500x450", "600x1200"];
+  const PRESETS_PLAQUES = ["3050x1300", "3650x1860", "2550x1860", "2800x1300", "4100x1300"];
+
+  const moduleTrameValeur = (() => {
+    if (trameModuleCustom) return "custom";
+    const l = zone.module_largeur_mm;
+    const h = zone.module_hauteur_mm;
+    if (!l || !h) return "1000x600";
+    return PRESETS_MODULES.includes(`${l}x${h}`) ? `${l}x${h}` : "custom";
+  })();
+  const moduleTrameCustom = moduleTrameValeur === "custom";
+
+  const plaqueFormatValeur = (() => {
+    if (formatPlaqueCustom) return "custom";
+    const l = zone.plaque_longueur_mm;
+    const h = zone.plaque_largeur_mm;
+    if (!l || !h) return "3050x1300";
+    return PRESETS_PLAQUES.includes(`${l}x${h}`) ? `${l}x${h}` : "custom";
+  })();
+  const plaqueFormatCustom = plaqueFormatValeur === "custom";
   const calc = calculerZone(zone);
 
   /*
@@ -819,13 +845,16 @@ export default function ZoneCard({
               <div>
                 <label className="text-[11px] text-slate-400">Format standard fabricant</label>
                 <select
-                  value={
-                    zone.plaque_longueur_mm && zone.plaque_largeur_mm
-                      ? `${zone.plaque_longueur_mm}x${zone.plaque_largeur_mm}`
-                      : "3050x1300"
-                  }
+                  value={plaqueFormatValeur}
                   onChange={(e) => {
-                    const [lStr, wStr] = e.target.value.split("x");
+                    const v = e.target.value;
+                    if (v === "custom") {
+                      // Reste sur "custom" : les champs manuels se déverrouillent.
+                      setFormatPlaqueCustom(true);
+                      return;
+                    }
+                    setFormatPlaqueCustom(false);
+                    const [lStr, wStr] = v.split("x");
                     if (lStr && wStr) {
                       update({
                         plaque_longueur_mm: parseInt(lStr, 10),
@@ -848,6 +877,7 @@ export default function ZoneCard({
                 <Field
                   label="Longueur brute (mm)"
                   value={zone.plaque_longueur_mm ?? 3050}
+                  disabled={!plaqueFormatCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ plaque_longueur_mm: mm || null });
@@ -856,6 +886,7 @@ export default function ZoneCard({
                 <Field
                   label="Largeur brute (mm)"
                   value={zone.plaque_largeur_mm ?? 1300}
+                  disabled={!plaqueFormatCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ plaque_largeur_mm: mm || null });
@@ -876,18 +907,16 @@ export default function ZoneCard({
               <div>
                 <label className="text-[11px] text-slate-400">Trame cible des modules</label>
                 <select
-                  value={
-                    (() => {
-                      const l = zone.module_largeur_mm;
-                      const h = zone.module_hauteur_mm;
-                      if (!l || !h) return "1000x600";
-                      const presets = ["1000x600", "1200x800", "1500x450", "600x1200"];
-                      return presets.includes(`${l}x${h}`) ? `${l}x${h}` : "custom";
-                    })()
-                  }
+                  value={moduleTrameValeur}
                   onChange={(e) => {
-                    if (e.target.value === "custom") return;
-                    const [wStr, hStr] = e.target.value.split("x");
+                    const v = e.target.value;
+                    if (v === "custom") {
+                      // Reste sur "custom" : les champs manuels se déverrouillent.
+                      setTrameModuleCustom(true);
+                      return;
+                    }
+                    setTrameModuleCustom(false);
+                    const [wStr, hStr] = v.split("x");
                     if (wStr && hStr) {
                       update({
                         module_largeur_mm: parseInt(wStr, 10),
@@ -909,6 +938,7 @@ export default function ZoneCard({
                 <Field
                   label="Largeur module (mm)"
                   value={zone.module_largeur_mm ?? 1000}
+                  disabled={!moduleTrameCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ module_largeur_mm: mm || null });
@@ -917,6 +947,7 @@ export default function ZoneCard({
                 <Field
                   label="Hauteur module (mm)"
                   value={zone.module_hauteur_mm ?? 600}
+                  disabled={!moduleTrameCustom}
                   onChange={(v) => {
                     const mm = v > 0 && v < 20 ? Math.round(v * 1000) : v;
                     update({ module_hauteur_mm: mm || null });
@@ -1375,10 +1406,12 @@ function Field({
   label,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <div>
@@ -1389,6 +1422,7 @@ function Field({
       <input
         type="number"
         value={value}
+        disabled={disabled}
         onChange={(e) =>
           onChange(
             parseFloat(
@@ -1396,7 +1430,7 @@ function Field({
             ) || 0
           )
         }
-        className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+        className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
   );
