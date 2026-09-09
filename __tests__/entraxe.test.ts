@@ -100,8 +100,8 @@ describe("Entraxe HPL dynamique", () => {
   });
 });
 
-describe("Calepinage centré symétrique (HPL)", () => {
-  it("mur 2,60m / module 1000 / entraxe 500 : rives 30cm symétriques", () => {
+describe("Calepinage en plaques entières (largeur physique)", () => {
+  it("mur 2,60m / module 1000 : rives 30cm symétriques, plaques entières de 1m", () => {
     const res = calculerCalepinage({
       zoneLargeurM: 2.6,
       zoneHauteurM: 2.5,
@@ -110,11 +110,12 @@ describe("Calepinage centré symétrique (HPL)", () => {
       sensPose: "horizontal",
     });
     expect(res.entraxeReelMm).toBe(500);
-    expect(res.colonnesLargeursM).toEqual([0.3, 0.5, 0.5, 0.5, 0.5, 0.3]);
+    // Deux plaques PLEINES de 1m (et non 4 tranches d'entraxe de 50cm).
+    expect(res.colonnesLargeursM).toEqual([0.3, 1, 1, 0.3]);
     verifierJonctions(res, 2.6);
   });
 
-  it("mur 2,50m : 4 modules centrés de 50cm + rives 25cm", () => {
+  it("mur 2,50m : 2 plaques pleines de 1m + rives 25cm", () => {
     const res = calculerCalepinage({
       zoneLargeurM: 2.5,
       zoneHauteurM: 2.5,
@@ -122,11 +123,11 @@ describe("Calepinage centré symétrique (HPL)", () => {
       moduleHauteurMm: 600,
       sensPose: "horizontal",
     });
-    expect(res.colonnesLargeursM).toEqual([0.25, 0.5, 0.5, 0.5, 0.5, 0.25]);
+    expect(res.colonnesLargeursM).toEqual([0.25, 1, 1, 0.25]);
     verifierJonctions(res, 2.5);
   });
 
-  it("mur 4,00m / module 1500 / entraxe 500 : 7 modules + rives 25cm", () => {
+  it("mur 4,00m / module 1500 : 2 plaques pleines de 1,5m + rives 50cm", () => {
     const res = calculerCalepinage({
       zoneLargeurM: 4.0,
       zoneHauteurM: 2.5,
@@ -134,13 +135,11 @@ describe("Calepinage centré symétrique (HPL)", () => {
       moduleHauteurMm: 450,
       sensPose: "horizontal",
     });
-    expect(res.colonnesLargeursM).toEqual([
-      0.25, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.25,
-    ]);
+    expect(res.colonnesLargeursM).toEqual([0.5, 1.5, 1.5, 0.5]);
     verifierJonctions(res, 4.0);
   });
 
-  it("mur 2,15m : rives initiales 7.5cm < 150mm -> un module retiré, rives 32.5cm", () => {
+  it("mur 2,15m : rives initiales 7.5cm < 150mm -> une plaque retirée, rives 57.5cm", () => {
     const res = calculerCalepinage({
       zoneLargeurM: 2.15,
       zoneHauteurM: 2.5,
@@ -148,11 +147,11 @@ describe("Calepinage centré symétrique (HPL)", () => {
       moduleHauteurMm: 600,
       sensPose: "horizontal",
     });
-    expect(res.colonnesLargeursM).toEqual([0.325, 0.5, 0.5, 0.5, 0.325]);
+    expect(res.colonnesLargeursM).toEqual([0.575, 1, 0.575]);
     verifierJonctions(res, 2.15);
   });
 
-  it("mur 3,00m vertical / module 1000x600 (largeur visible 600) : 4 modules centrés + rives 30cm", () => {
+  it("mur 3,00m vertical / module 1000x600 (largeur physique 600) : 4 plaques pleines de 60cm + rives 30cm", () => {
     const res = calculerCalepinage({
       zoneLargeurM: 3.0,
       zoneHauteurM: 2.5,
@@ -163,6 +162,33 @@ describe("Calepinage centré symétrique (HPL)", () => {
     expect(res.entraxeReelMm).toBe(600);
     expect(res.colonnesLargeursM).toEqual([0.3, 0.6, 0.6, 0.6, 0.6, 0.3]);
     verifierJonctions(res, 3.0);
+  });
+
+  it("BUG RÉGRESSION: module 1200x800 vertical -> UNE plaque de 800mm, pas deux de 400mm", () => {
+    const res = calculerCalepinage({
+      zoneLargeurM: 2.4,
+      zoneHauteurM: 2.5,
+      moduleLargeurMm: 1200,
+      moduleHauteurMm: 800,
+      sensPose: "vertical",
+    });
+    expect(res.entraxeReelMm).toBe(400);
+    // Deux plaques ENTIÈRES de 80cm soutenues par un chevron central chacune.
+    expect(res.colonnesLargeursM).toEqual([0.4, 0.8, 0.8, 0.4]);
+    const piecesPleines = res.pieces.filter((p) => p.type === "pleine" && p.rangee === 0);
+    expect(piecesPleines.map((p) => p.largeurM)).toEqual([0.8, 0.8]);
+    expect(res.pieces.some((p) => p.type === "pleine" && Math.abs(p.largeurM - 0.4) < 1e-6)).toBe(false);
+
+    // L'ossature contient bien le chevron central de chaque plaque (x = 0.8 et 1.6)
+    // ainsi que les chevrons de joints (0.4, 1.2) et les rives (2.4).
+    const pose = calculerPose("hpl", 2.4, 2.5, false, 0, 1000, {
+      moduleLargeurMm: 1200,
+      moduleHauteurMm: 800,
+      sensPose: "vertical",
+    });
+    expect(pose.positionsChevronsM).toEqual([0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.4]);
+    expect(pose.positionsChevronsM).toContain(0.8);
+    expect(pose.positionsChevronsM).toContain(1.6);
   });
 
   it("cohérence: symétrie, rives ≥ 150mm et jonctions sur chevrons pour plusieurs largeurs", () => {
@@ -183,15 +209,14 @@ describe("Calepinage centré symétrique (HPL)", () => {
       verifierJonctions(calepinage, largeurM);
 
       // L'ossature posée partage exactement la même grille centrée :
-      // chaque chevron (sauf x=0 et x=largeur) coïncide avec une jonction
-      // de plaques alignée sur la rive gauche.
+      // chaque joint de plaque (sauf x=0 et x=largeur) est porté par un chevron.
       const chevrons = [...pose.positionsChevronsM];
       let x = 0;
       calepinage.colonnesLargeursM.forEach((c) => {
         x += c;
         if (Math.abs(x - largeurM) < 1e-6) return;
         const supporte = chevrons.some((cv) => Math.abs(cv - x) < 1e-6);
-        expect(supporte, `jonction à x=${x} sans chevron (largeur=${largeurM})`).toBe(true);
+        expect(supporte, `joint à x=${x} sans chevron (largeur=${largeurM})`).toBe(true);
       });
     }
   });

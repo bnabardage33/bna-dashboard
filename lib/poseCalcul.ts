@@ -98,47 +98,73 @@ export function getModeleEquerre(epaisseurIsolantMm: number): string {
 }
 
 /**
- * Rive minimale recommandée pour un joint de façade (règle du façadier).
- * En deçà, la bande de rive est retirée au profit d'un module entier
+ * Rive minimale recommandée pour une bande de façade (règle du façadier).
+ * En deçà, la bande de rive est retirée au profit d'une plaque entière
  * afin d'obtenir des rives plus larges et harmonieuses.
  */
 export const RIVE_MIN_MM = 150;
 
 /**
- * Calepinage centré de l'ossature HPL (règle façadier) :
- *  - Départ depuis l'axe du mur : on calcule le nombre `n` de modules entiers
- *    (chaque module est un intervalle d'entraxe réel) qui rentrent dans le mur.
- *  - L'espace restant est divisé EXACTEMENT en deux : riveGauche = riveDroite
- *    (symétrie absolue).
- *  - Si la rive est trop étroite (< RIVE_MIN_MM), on retire un module entier et
- *    on recalcule pour obtenir des rives plus larges.
- *  - L'ossature s'adapte aux plaques : un chevron à X = 0, un chevron sous chaque
- *    joint (X = riveGauche, X = riveGauche + entraxe réel, ...), un chevron final
- *    à X = largeurMur.
+ * Découpage esthétique CENTRÉ de la façade en plaques entières :
+ *  - le nombre de plaques entières `n` (largeur physique) est maximal,
+ *  - l'espace restant est divisé EXACTEMENT en deux : riveGauche = riveDroite,
+ *  - si la rive est trop étroite (< RIVE_MIN_MM), on retire une plaque et on
+ *    recalcule pour obtenir des rives plus larges.
+ * Cette répartition est la SOURCE UNIQUE utilisée par le calepinage (plaques)
+ * et par l'ossature (chevrons) : les deux restent ainsi parfaitement synchronisées.
  */
-export function positionsChevronsCalepinage(largeurM: number, entraxeReelMm: number): number[] {
+export function decoupageModulesCentres(largeurMm: number, moduleMm: number): { nModules: number; riveMm: number } {
+  const largeur = Math.max(0, Math.round(largeurMm));
+  const module = Math.max(1, Math.round(moduleMm));
+
+  if (largeur <= 0) return { nModules: 0, riveMm: 0 };
+  if (largeur < module) return { nModules: 0, riveMm: largeur / 2 };
+
+  let nModules = Math.floor(largeur / module);
+  let riveMm = (largeur - nModules * module) / 2;
+  while (riveMm < RIVE_MIN_MM && nModules > 1) {
+    nModules -= 1;
+    riveMm = (largeur - nModules * module) / 2;
+  }
+  return { nModules, riveMm };
+}
+
+/**
+ * Positions X de l'ossature HPL (STRUCTUREL) :
+ *  - l'ossature s'adapte aux plaques du calepinage centré `decoupageModulesCentres`,
+ *  - un chevron à X = 0,
+ *  - un chevron sous CHAQUE joint de plaque (riveGauche, + largeur de plaque, ...),
+ *  - des chevrons INTERMÉDIAIRES à l'intérieur de chaque plaque, tous les entraxes
+ *    réels (X = riveGauche + k × entraxe) dès que la largeur physique > LIMITE_DTU_MM,
+ *  - un chevron final à X = largeurMur.
+ * Les chevrons ne découpent JAMAIS les plaques : ils se placent virtuellement
+ * dans la largeur de chaque plaque, en arrière-plan.
+ */
+export function positionsChevronsCalepinage(
+  largeurM: number,
+  moduleLargeurMm: number,
+  entraxeReelMm: number
+): number[] {
   const largeurMm = Math.round(largeurM * 1000);
+  const moduleMm = Math.max(1, Math.round(moduleLargeurMm));
   const entraxeMm = Math.max(1, Math.round(entraxeReelMm));
 
   if (largeurMm <= 0) return [0];
-  if (largeurMm < entraxeMm) return [0, largeurMm / 1000];
 
-  let nModules = Math.floor(largeurMm / entraxeMm);
-  let riveMm = (largeurMm - nModules * entraxeMm) / 2;
-  while (riveMm < RIVE_MIN_MM && nModules > 1) {
-    nModules -= 1;
-    riveMm = (largeurMm - nModules * entraxeMm) / 2;
-  }
+  const { nModules, riveMm } = decoupageModulesCentres(largeurMm, moduleMm);
+  if (nModules === 0) return [0, largeurMm / 1000];
+
   const riveM = Math.round(riveMm) / 1000;
+  // Chaque plaque (moduleMm) est divisée en `moduleMm / entraxeMm` intervalles.
+  const nEspacesParModule = Math.max(1, Math.round(moduleMm / entraxeMm));
+  const nIntervallesTotal = nModules * nEspacesParModule;
 
   const positionsM: number[] = [0];
-  for (let k = 0; k <= nModules; k++) {
-    positionsM.push(riveM + (k * entraxeMm) / 1000);
+  for (let k = 0; k <= nIntervallesTotal; k++) {
+    const posM = Math.round((riveM + (k * entraxeMm) / 1000) * 1000) / 1000;
+    if (posM + 1e-6 < largeurM && posM > 1e-6) positionsM.push(posM);
   }
-  const dernier = positionsM[positionsM.length - 1];
-  if (Math.abs(dernier - largeurM) > 1e-6) {
-    positionsM.push(largeurM);
-  }
+  positionsM.push(largeurM);
   return positionsM;
 }
 
@@ -380,8 +406,10 @@ export function calculerPose(
     const nombreEspaces = Math.ceil(moduleHorizontalMm / LIMITE_DTU_MM);
     const entraxeReel = moduleHorizontalMm / nombreEspaces;
     entraxeHorizontalDefaut = entraxeReel / 1000;
-    // Ossature centrée : chaque joint de plaque repose sur un chevron.
-    positionsChevronsHpl = positionsChevronsCalepinage(largeur, entraxeReel);
+    // Ossature adaptée aux plaques : chevron sous chaque joint + chevrons
+    // intermédiaires dans chaque plaque (entraxe réel) — les chevrons ne
+    // découpent jamais la plaque (ils restent en arrière-plan).
+    positionsChevronsHpl = positionsChevronsCalepinage(largeur, moduleHorizontalMm, entraxeReel);
     const rangsVissagePanneau = Math.max(1, Math.ceil((hauteur - 0.06) / entraxeHorizontalDefaut)) + 1;
     nbVisParement = Math.round((largeur / entraxeHorizontalDefaut + 1) * rangsVissagePanneau);
     joint = "1 Point Fixe Ø5,1mm au centre + Points Coulissants Ø8mm — vis de rive à 20-40mm";

@@ -15,7 +15,7 @@
 //      * Pertes réelles / sciure.
 //    - Taux de chute net réel calculé précisément.
 
-import { LIMITE_DTU_MM, positionsChevronsCalepinage } from "./poseCalcul";
+import { LIMITE_DTU_MM, decoupageModulesCentres } from "./poseCalcul";
 
 export { LIMITE_DTU_MM };
 export type SensPose = "horizontal" | "vertical";
@@ -127,19 +127,31 @@ export function calculerEntraxeReel(largeurModuleMm: number): number {
 }
 
 /**
- * Calepinage centré des colonnes HPL :
- *  - riveGauche = riveDroite (symétrie absolue depuis l'axe du mur)
- *  - les colonnes centrales font exactement un intervalle d'entraxe réel
- *  - chaque bord vertical de colonne repose sur un chevron
+ * Calepinage ESTHÉTIQUE des colonnes HPL :
+ *  - le mur est centré en plaques ENTIÈRES de `moduleMm` (largeur physique),
+ *  - riveGauche = riveDroite (symétrie absolue depuis l'axe du mur),
+ *  - si une rive < RIVE_MIN_MM, une plaque est retirée pour élargir les rives.
+ * Ici les plaques gardent leur VRAIE largeur de saisie : les chevrons
+ * intermédiaires (entraxe) sont générés séparément dans l'ossature.
  */
-function axeSymetrique(largeurM: number, entraxeReelMm: number): number[] {
-  const positionsM = positionsChevronsCalepinage(largeurM, entraxeReelMm);
+function axeSymetrique(largeurM: number, moduleMm: number): number[] {
+  const largeurMm = Math.round(largeurM * 1000);
+  const moduleSizeMm = Math.max(1, Math.round(moduleMm));
+
+  if (largeurMm <= 0) return [0];
+  if (largeurMm < moduleSizeMm) return [largeurMm / 1000];
+
+  const { nModules, riveMm } = decoupageModulesCentres(largeurMm, moduleSizeMm);
+  if (nModules === 0) return [largeurMm / 1000];
+
+  const riveM = Math.round(riveMm) / 1000;
+  const moduleM = moduleSizeMm / 1000;
+
   const colonnes: number[] = [];
-  for (let i = 1; i < positionsM.length; i++) {
-    const diffM = Math.round((positionsM[i] - positionsM[i - 1]) * 1000) / 1000;
-    if (diffM > 0) colonnes.push(diffM);
-  }
-  return colonnes.length > 0 ? colonnes : [largeurM];
+  if (riveM > 0.005) colonnes.push(riveM);
+  for (let i = 0; i < nModules; i++) colonnes.push(moduleM);
+  if (riveM > 0.005) colonnes.push(riveM);
+  return colonnes;
 }
 
 /**
@@ -526,9 +538,9 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const nombreEspaces = Math.ceil(Math.max(1, dimension) / LIMITE_DTU_MM);
   const entraxeReelMm = Math.max(1, dimension) / nombreEspaces;
 
-  // Découpage centré de la façade : rives symétriques, colonnes alignées
-  // sur l'entraxe réel, chaque joint vertical porté par un chevron.
-  const colonnesLargeursM = axeSymetrique(largeur, entraxeReelMm);
+  // Découpage esthétique centré : plaques ENTIÈRES (largeur physique),
+  // rives symétriques, indépendant de l'ossature.
+  const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm);
   const rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
 
   const pieces: PieceCalepinage[] = [];
@@ -557,9 +569,11 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       if (surfaceM2 > EPSILON_M * EPSILON_M) {
         const estRive = colonne === 0 || colonne === colonnesLargeursM.length - 1;
         const estCoupePignon = estPignon && points.length !== 4;
-        // Une pièce pleine est une bande centrale d'exactement un entraxe réel.
+        // Une pièce "pleine" est une plaque de largeur physique complète.
         const estPleine =
-          !estRive && Math.abs(largeurPiece - entraxeReelMm / 1000) <= EPSILON_M;
+          !estRive &&
+          !estCoupePignon &&
+          Math.abs(largeurPiece - dimModuleLargeurAxeMm / 1000) <= EPSILON_M;
 
         let type: PieceCalepinage["type"] = estPleine ? "pleine" : "coupe";
         let repere = `M-${String(compteurPieces++).padStart(2, "0")}`;
