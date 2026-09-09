@@ -112,7 +112,7 @@ export function calculerZone(zone: Zone) {
   const nombreOuvertures = zone.ouvertures.length;
 
   let totalCoupesML = 0;
-  if (zone.sens_pose === "vertical") {
+  if ((zone.sens_pose ?? "horizontal").toString().toLowerCase() === "vertical") {
     const coupesBords = 2 * zone.largeur;
     const coupesOuvertures = zone.ouvertures.reduce((s, o) => s + 2 * o.largeur, 0);
     totalCoupesML = coupesBords + coupesOuvertures;
@@ -199,6 +199,11 @@ export default function ZoneCard({
       ? zone.hauteur_faite
       : zone.hauteur_mur;
 
+  const sensPoseActif: SensPose =
+    (zone.sens_pose ?? "horizontal").toString().toLowerCase() === "vertical"
+      ? "vertical"
+      : "horizontal";
+
   const pose =
     zone.famille_pose &&
     zone.largeur > 0 &&
@@ -220,7 +225,7 @@ export default function ZoneCard({
               surfacePaquetM2: zone.surface_paquet_m2 ?? 4.8,
               moduleLargeurMm: zone.module_largeur_mm ?? null,
               moduleHauteurMm: zone.module_hauteur_mm ?? null,
-              sensPose: zone.sens_pose ?? "horizontal",
+              sensPose: sensPoseActif,
             }
           )
       : null;
@@ -265,8 +270,6 @@ export default function ZoneCard({
         ? zone.module_hauteur_mm * 1000
         : zone.module_hauteur_mm
       : 600;
-
-  const sensPoseActif = zone.sens_pose ?? "horizontal";
 
   const peutCalepiner =
     zone.largeur > 0 &&
@@ -928,7 +931,7 @@ export default function ZoneCard({
                       type="button"
                       onClick={() => update({ sens_pose: s })}
                       className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                        (zone.sens_pose ?? "horizontal") === s
+                        (zone.sens_pose ?? "horizontal").toString().toLowerCase() === s
                           ? "bg-red-600 text-white"
                           : "border border-slate-600 text-slate-300 hover:bg-slate-800"
                       }`}

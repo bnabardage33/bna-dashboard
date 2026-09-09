@@ -387,6 +387,8 @@ function ChantierDetailContent() {
         famille_pose: zone.famille_pose,
         angle: zone.angle,
         largeur_lame_mm: zone.largeur_lame_mm,
+        module_largeur_mm: zone.module_largeur_mm ?? null,
+        module_hauteur_mm: zone.module_hauteur_mm ?? null,
         plaque_longueur_mm: zone.plaque_longueur_mm,
         plaque_largeur_mm: zone.plaque_largeur_mm,
         sens_pose: zone.sens_pose,

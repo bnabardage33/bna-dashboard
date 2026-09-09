@@ -311,7 +311,10 @@ export function calculerPose(
   const epaisseurIsolantMm = optionsAvancees?.epaisseurIsolantMm ?? 120;
   const typeIsolant = optionsAvancees?.typeIsolant ?? "laine_roche";
   const surfacePaquetM2 = optionsAvancees?.surfacePaquetM2 ?? 4.8;
-  const sensPose = optionsAvancees?.sensPose ?? "horizontal";
+  const sensPose: SensPose =
+    (optionsAvancees?.sensPose ?? "horizontal").toString().toLowerCase() === "vertical"
+      ? "vertical"
+      : "horizontal";
 
   let entraxeHorizontalDefaut = 0.5; // initialisé par le calcul dynamique HPL
   let nbVisParement = 0;

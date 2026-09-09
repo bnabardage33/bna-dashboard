@@ -15,7 +15,7 @@
 //      * Pertes réelles / sciure.
 //    - Taux de chute net réel calculé précisément.
 
-import { LIMITE_DTU_MM } from "@/lib/poseCalcul";
+import { LIMITE_DTU_MM } from "./poseCalcul";
 
 export { LIMITE_DTU_MM };
 export type SensPose = "horizontal" | "vertical";
@@ -507,7 +507,10 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   if (modLargeurMm < 20) modLargeurMm = Math.round(modLargeurMm * 1000);
   if (modHauteurMm < 20) modHauteurMm = Math.round(modHauteurMm * 1000);
 
-  const sens: SensPose = sensPose === "vertical" ? "vertical" : "horizontal";
+  const sens: SensPose =
+    (sensPose ?? "horizontal").toString().toLowerCase() === "vertical"
+      ? "vertical"
+      : "horizontal";
 
   const largeur = Math.max(0, zoneLargeurM);
   const hauteurMur = Math.max(0, zoneHauteurM);

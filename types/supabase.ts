@@ -205,6 +205,8 @@ export type Database = {
           largeur: number
           largeur_lame_mm: number | null
           materiau: string
+          module_hauteur_mm: number | null
+          module_largeur_mm: number | null
           nom: string
           ouvertures: Json
           plaque_largeur_mm: number | null
@@ -223,6 +225,8 @@ export type Database = {
           largeur?: number
           largeur_lame_mm?: number | null
           materiau?: string
+          module_hauteur_mm?: number | null
+          module_largeur_mm?: number | null
           nom?: string
           ouvertures?: Json
           plaque_largeur_mm?: number | null
@@ -241,6 +245,8 @@ export type Database = {
           largeur?: number
           largeur_lame_mm?: number | null
           materiau?: string
+          module_hauteur_mm?: number | null
+          module_largeur_mm?: number | null
           nom?: string
           ouvertures?: Json
           plaque_largeur_mm?: number | null
