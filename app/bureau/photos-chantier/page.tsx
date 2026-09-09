@@ -104,7 +104,7 @@ export default function PhotosChantierAdmin() {
       const res = await fetch('/api/photos-chantier', { method: 'POST', body: fd });
 
       // Tenter de parser le JSON même si le statut est une erreur
-      let data: any = {};
+      let data: { error?: string | null } = {};
       try {
         data = await res.json();
       } catch {

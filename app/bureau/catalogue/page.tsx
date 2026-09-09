@@ -228,7 +228,6 @@ export default function CataloguePage() {
   const handleOpenModal = (ouvrage?: Ouvrage) => {
     if (ouvrage) {
       setEditingOuvrage(ouvrage);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...rest } = ouvrage;
       
       // Migration à la volée des anciennes dimensions vers le tableau
@@ -336,14 +335,15 @@ export default function CataloguePage() {
         let countUpdated = 0;
         
         for (const row of data) {
-          if (!row.designation) continue;
+          const designation = row.designation;
+          if (!designation) continue;
 
           // Construire le payload de base avec les valeurs du CSV, ou valeurs par défaut si vide
           const pu_ht = Number(row.pu_ht?.replace(',', '.') || 0);
           const prix_ttc = row.prix_ttc ? Number(row.prix_ttc.replace(',', '.')) : Math.round(pu_ht * 1.2 * 100) / 100;
           
           const payload: TablesInsert<"catalogue_ouvrages"> = {
-            designation: row.designation.trim(),
+            designation: designation.trim(),
             categorie: row.categorie?.trim() || "bardage",
             famille_label: row.famille_label?.trim() || "Import CSV",
             unite: row.unite?.trim() || "m²",
@@ -365,7 +365,7 @@ export default function CataloguePage() {
           const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v != null));
 
           // Vérifie s'il existe déjà (recherche par designation)
-          const existing = ouvrages.find(o => o.designation.toLowerCase() === row.designation.trim().toLowerCase());
+          const existing = ouvrages.find(o => o.designation.toLowerCase() === designation.trim().toLowerCase());
           
           if (existing) {
             const { error } = await supabase.from("catalogue_ouvrages").update(cleanPayload as unknown as TablesUpdate<"catalogue_ouvrages">).eq("id", existing.id);

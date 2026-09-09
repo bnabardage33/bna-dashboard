@@ -17,6 +17,19 @@ type RapportListe = {
   chantiers: { nom: string | null } | null;
 };
 
+type RapportIntemperieRow = {
+  id: string;
+  numero: string | null;
+  chantier_id: string | null;
+  vigilance_officielle: string | null;
+  jour_arrete: boolean | null;
+  a_valider: boolean | null;
+  ampleur_impact: "complete" | "partielle" | null;
+  motif: string | null;
+  cree_le: string | null;
+  cree_par: string | null;
+};
+
 const EMOJI_VIGILANCE: Record<string, string> = {
   vert: "🟢",
   jaune: "🟡",
@@ -73,20 +86,21 @@ export default function BureauRapportsIntemperiesPage() {
       }
     }
 
-    const formatted: RapportListe[] = (rapportsRes.data || []).map((r: any) => ({
+    const formatted: RapportListe[] = (
+      ((rapportsRes.data as RapportIntemperieRow[] | null) ?? []).map((r) => ({
       id: r.id,
-      numero: r.numero,
-      vigilance_officielle: r.vigilance_officielle,
-      jour_arrete: r.jour_arrete,
-      a_valider: r.a_valider,
+      numero: r.numero ?? "",
+      vigilance_officielle: r.vigilance_officielle ?? "vert",
+      jour_arrete: r.jour_arrete ?? false,
+      a_valider: r.a_valider ?? false,
       ampleur_impact: r.ampleur_impact,
-      motif: r.motif,
-      cree_le: r.cree_le,
-      cree_par: r.cree_par,
+      motif: r.motif ?? "",
+      cree_le: r.cree_le ?? "",
+      cree_par: r.cree_par ?? "",
       chantiers: {
-        nom: chantiersMap.get(r.chantier_id) || "Chantier",
+        nom: chantiersMap.get(r.chantier_id ?? "") || "Chantier",
       },
-    }));
+    })));
 
     setRapports(formatted);
     setLoading(false);

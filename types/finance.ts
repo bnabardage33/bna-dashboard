@@ -179,15 +179,6 @@ export interface FactureLiee {
   statut: string;
 }
 
-export interface RapportResult {
-  id: string;
-  numero: string;
-  chantier_id: string;
-  statut: string;
-  heures: any[];
-  lignes: any[];
-}
-
 export interface CommandeFinance {
   id: string;
   fournisseur_id: string;
@@ -261,22 +252,28 @@ export interface Equipe {
 }
 
 export interface CatalogueItem {
-  id: string;
-  nom: string;
-  prix_ht?: number;
+  id?: string;
+  nom?: string;
+  prix_ht?: string;
   categorie?: string;
   famille?: string;
-  disponible?: boolean;
-  [key: string]: any;
-}
-
-export interface RapportResult {
-  id: string;
-  numero: string;
-  chantier_id: string;
-  statut: string;
-  heures: any[];
-  lignes: any[];
+  disponible?: string;
+  designation?: string;
+  pu_ht?: string;
+  prix_ttc?: string;
+  famille_label?: string;
+  unite?: string;
+  fabricant?: string;
+  gamme?: string;
+  code_decor?: string;
+  couleur?: string;
+  finition?: string;
+  fournisseur?: string;
+  description?: string;
+  longueur_mm?: string;
+  largeur_mm?: string;
+  epaisseur_mm?: string;
+  [key: string]: string | undefined;
 }
 
 export interface PVRow {
@@ -290,8 +287,8 @@ export interface PVRow {
   type_travaux: string | null;
   adresse_chantier: string | null;
   materiaux_utilises: string | null;
-  zones_metres?: any[];
-  photos?: any[];
-  reserves: any[];
+  zones_metres?: unknown[];
+  photos?: unknown[];
+  reserves: unknown[];
   observations: string | null;
 }

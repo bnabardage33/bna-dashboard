@@ -281,7 +281,13 @@ async function fetchMeteoJour(
   }
 
   const heures: HeureMeteo[] =
-    (today.hours || []).map((h: any) => ({
+    (today.hours || []).map((h: {
+      datetime?: string;
+      temp?: number;
+      windspeed?: number;
+      windgust?: number;
+      precip?: number;
+    }) => ({
       heure: h.datetime?.slice(0, 5) ?? "",
       temp: Math.round(h.temp ?? 0),
       vent: Math.round(h.windspeed ?? 0),
@@ -398,12 +404,32 @@ async function fetchVigilance(
     periodeEnCours?.domain_ids ??
     [];
 
-  const domaineArray: any[] =
-    Array.isArray(domaines)
+  type DomaineVigilance = {
+    domain_id?: unknown;
+    max_color_id?: unknown;
+    phenomenon_items?: unknown[];
+    phenomenon_max_colors?: unknown[];
+  };
+
+  type PhenomeneBrut = {
+    phenomenon_id?: unknown;
+    phenomenon_max_color_id?: {
+      phenomenon_id?: unknown;
+    };
+    color_id?: unknown;
+    max_color_id?: unknown;
+  };
+
+  const domaineArray: DomaineVigilance[] =
+    (Array.isArray(domaines)
       ? domaines
       : Object.values(
           domaines ?? {}
-        );
+        )).filter(
+      (d): d is DomaineVigilance =>
+        typeof d === "object" &&
+        d !== null
+    );
 
   const deptNormalized =
     departement
@@ -411,12 +437,12 @@ async function fetchVigilance(
       .toUpperCase();
 
   const domaineDept =
-    domaineArray.find((d: any) => {
-      const id =
-        d?.domain_id
-          ?.toString()
-          .trim()
-          .toUpperCase();
+    domaineArray.find((d) => {
+      const id = String(
+        d.domain_id ?? ""
+      )
+        .trim()
+        .toUpperCase();
 
       if (!id) {
         return false;
@@ -464,40 +490,44 @@ async function fetchVigilance(
 
   const couleurMax =
     COULEUR_PAR_ID[
-      domaineDept.max_color_id
+      String(domaineDept.max_color_id ?? "")
     ] ?? "vert";
 
-  const phenomenesBrut: any[] =
-    domaineDept.phenomenon_items ??
-    domaineDept.phenomenon_max_colors ??
-    [];
+  const phenomenesBrut: PhenomeneBrut[] =
+    (domaineDept.phenomenon_items ??
+      domaineDept.phenomenon_max_colors ??
+      []) as PhenomeneBrut[];
 
   const phenomenes =
     phenomenesBrut
-      .map((p: any) => {
+      .map((p) => {
         const id =
-          p?.phenomenon_id ??
-          p?.phenomenon_max_color_id
+          p.phenomenon_id ??
+          p.phenomenon_max_color_id
             ?.phenomenon_id;
 
         const couleurId =
-          p?.phenomenon_max_color_id ??
-          p?.color_id ??
-          p?.max_color_id;
+          p.phenomenon_max_color_id ??
+          p.color_id ??
+          p.max_color_id;
 
         if (
           !id ||
-          !PHENOMENE_PAR_ID[id]
+          !PHENOMENE_PAR_ID[
+            String(id)
+          ]
         ) {
           return null;
         }
 
         return {
           nom:
-            PHENOMENE_PAR_ID[id],
+            PHENOMENE_PAR_ID[
+              String(id)
+            ],
           couleur:
             COULEUR_PAR_ID[
-              couleurId
+              String(couleurId ?? "")
             ] ?? "vert",
         };
       })
@@ -968,10 +998,10 @@ async function prochainNumero(): Promise<string> {
 
   const nums =
     (data ?? []).map(
-      (d: any) =>
+      (d: { numero?: string | null }) =>
         parseInt(
-          d.numero
-            ?.split("-")[2]
+          (d.numero ?? "")
+            .split("-")[2] ?? ""
         ) || 0
     );
 
@@ -1288,14 +1318,14 @@ async function modeGenerer(
 
       const captureMatin =
         captures?.find(
-          (c: any) =>
+          (c: { periode?: string }) =>
             c.periode ===
             "matin"
         );
 
       const captureAprem =
         captures?.find(
-          (c: any) =>
+          (c: { periode?: string }) =>
             c.periode ===
             "apresmidi"
         );

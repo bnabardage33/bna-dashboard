@@ -13,7 +13,7 @@ describe('Logo et PWA', () => {
     expect(manifest.icons).toBeDefined()
     expect(manifest.icons.length).toBeGreaterThan(0)
 
-    const sizes = manifest.icons.map((icon: any) => icon.sizes)
+    const sizes = manifest.icons.map((icon: { sizes: string }) => icon.sizes)
     expect(sizes).toContain('192x192')
     expect(sizes).toContain('512x512')
   })

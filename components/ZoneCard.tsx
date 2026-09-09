@@ -102,9 +102,7 @@ export function calculerZone(zone: Zone) {
       totalOuvertures
   );
 
-  const marge = (zone.materiau as any) === "lames"
-      ? 1.1
-      : 1.15;
+  const marge = zone.materiau === "lames" ? 1.1 : 1.15;
 
   const surfaceACommander =
     surfaceNette * marge;
@@ -770,8 +768,10 @@ export default function ZoneCard({
               <div>
                 <label className="text-[11px] text-slate-400">Type d'isolant</label>
                 <select
-                  value={(zone.type_isolant ?? "laine_roche") as any}
-                  onChange={(e) => update({ type_isolant: e.target.value as any })}
+                  value={zone.type_isolant ?? "laine_roche"}
+                  onChange={(e) =>
+                    update({ type_isolant: e.target.value as Zone["type_isolant"] })
+                  }
                   className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
                 >
                   <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>

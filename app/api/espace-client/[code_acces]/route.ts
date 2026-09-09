@@ -15,6 +15,10 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// Lignes renvoyées telles quelles au client (type opaque volontaire :
+// ces données ne sont jamais lues structurellement côté serveur).
+type LignePassePartout = Record<string, unknown>;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ code_acces: string }> }
@@ -77,7 +81,7 @@ export async function GET(
   }
 
   // 4. Devis visibles (envoyés ou acceptés) — par chantier, fallback par client
-  let devisList: any[] = [];
+  let devisList: LignePassePartout[] = [];
   const { data: devisParChantier } = await supabaseAdmin
     .from("devis")
     .select("*")
@@ -96,7 +100,7 @@ export async function GET(
   }
 
   // 5. Factures — par chantier, fallback par client
-  let facturesList: any[] = [];
+  let facturesList: LignePassePartout[] = [];
   const { data: facturesParChantier } = await supabaseAdmin
     .from("factures")
     .select("*")

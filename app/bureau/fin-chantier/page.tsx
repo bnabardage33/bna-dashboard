@@ -57,6 +57,44 @@ type ChantierOption = {
   clients: { nom: string; adresse?: string | null; email?: string | null; telephone?: string | null } | null;
 };
 
+type OuvertureZoneRow = {
+  largeur: number;
+  hauteur: number;
+  quantite?: number;
+};
+
+type ZoneSupabaseRow = {
+  id: string;
+  nom?: string | null;
+  type?: string | null;
+  largeur: number;
+  hauteur_mur: number;
+  hauteur_faite?: number | null;
+  materiau?: string | null;
+  ouvertures: unknown;
+};
+
+type ClientSupabaseRow = {
+  id: string;
+  nom: string | null;
+  email: string | null;
+  tel: string | null;
+  adresse_facturation: string | null;
+};
+
+type DevisSupabaseRow = {
+  id: string;
+  numero: string | null;
+};
+
+type ChantierSupabaseRow = {
+  id: string;
+  nom: string | null;
+  adresse_chantier: string | null;
+  materiau_structurel: string | null;
+  client_id: string | null;
+};
+
 const DEFAULT_REPLI: ChecklistRepli = {
   nettoyage: true,
   dechets_evacues: true,
@@ -134,14 +172,14 @@ export default function FinChantierPage() {
 
       if (!data || data.length === 0) return [];
 
-      return data.map((z: any) => {
-        const l = Number((z as { largeur: string }).largeur) || 0;
-        const h = Number((z as { hauteur_mur: string }).hauteur_mur) || 0;
-        const hf = Number((z as { hauteur_faite: string }).hauteur_faite) || 0;
-        const isPignon = (z as { type: string }).type === "pignon";
+      return data.map((z: ZoneSupabaseRow) => {
+        const l = Number(z.largeur) || 0;
+        const h = Number(z.hauteur_mur) || 0;
+        const hf = Number(z.hauteur_faite) || 0;
+        const isPignon = z.type === "pignon";
         const surfaceBrute = isPignon && hf > h ? l * h + (l * (hf - h)) / 2 : l * h;
-        const surfaceOuvertures = ((z as { ouvertures: any[] }).ouvertures || []).reduce(
-          (s: number, o: any) =>
+        const surfaceOuvertures = ((z.ouvertures as OuvertureZoneRow[] | null) ?? []).reduce(
+          (s: number, o: OuvertureZoneRow) =>
             s + (Number(o.largeur) || 0) * (Number(o.hauteur) || 0) * (Number(o.quantite) || 1),
           0
         );
@@ -179,11 +217,11 @@ export default function FinChantierPage() {
       console.error("Erreur chargement chantiers:", chantiersRes.error);
     }
 
-    const clientsMap = new Map((clientsRes.data || []).map((cl: any) => [cl.id, cl]));
-    const devisMap = new Map((devisRes.data || []).map((d: any) => [d.id, d]));
+    const clientsMap = new Map((clientsRes.data || []).map((cl: ClientSupabaseRow) => [cl.id, cl]));
+    const devisMap = new Map((devisRes.data || []).map((d: DevisSupabaseRow) => [d.id, d]));
 
-    const chantiersFormatted: ChantierOption[] = (chantiersRes.data || []).map((c: any) => {
-      const client = clientsMap.get(c.client_id) as { nom: string; adresse_facturation: string; email: string; tel: string } | undefined;
+    const chantiersFormatted: ChantierOption[] = (chantiersRes.data || []).map((c: ChantierSupabaseRow) => {
+      const client = clientsMap.get(c.client_id || "") as { nom: string; adresse_facturation: string; email: string; tel: string } | undefined;
       return {
         id: c.id as string,
         nom: (c.nom as string) || "Chantier sans nom",
@@ -211,7 +249,7 @@ export default function FinChantierPage() {
         const ch = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
         const cl = (clientsMap.get(r.client_id as string) || ch?.clients || {}) as {nom: string; email?: string; tel?: string} | undefined;
         const chantier = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
-        const d = devisMap.get(r.devis_id);
+        const d = devisMap.get(r.devis_id as string);
         return {
           ...r,
           zones_metres: Array.isArray(r.zones_metres) ? r.zones_metres : [],
@@ -221,7 +259,7 @@ export default function FinChantierPage() {
           checklist_repli: r.checklist_repli || DEFAULT_REPLI,
           chantiers: ch ? { nom: ch.nom as string, adresse_chantier: ch.adresse_chantier as string } : null,
           clients: cl ? { nom: cl.nom as string, email: (cl.email || '') as string, telephone: (cl.tel || '') as string } : null,
-          devis: d ? { numero: (d as any).numero as string } : null,
+          devis: d ? { numero: d.numero as string } : null,
         };
       });
       setPvs(enrichis);
@@ -463,17 +501,18 @@ export default function FinChantierPage() {
           });
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const erreur = err as { code?: unknown; message?: unknown };
       if (
-        err?.code === "42P01" ||
-        err?.message?.includes("pv_receptions") ||
-        err?.message?.includes("relation")
+        erreur.code === "42P01" ||
+        String(erreur.message ?? "").includes("pv_receptions") ||
+        String(erreur.message ?? "").includes("relation")
       ) {
         alert(
           "⚠️ La table 'pv_receptions' n'existe pas encore dans votre base Supabase.\n\nVeuillez exécuter le script SQL dans votre console Supabase (SQL Editor) pour activer l'enregistrement des PV."
         );
       } else {
-        alert(`Erreur lors de l'enregistrement : ${err.message || err}`);
+        alert(`Erreur lors de l'enregistrement : ${erreur.message ?? err}`);
       }
     } finally {
       setSauvegardeEnCours(false);

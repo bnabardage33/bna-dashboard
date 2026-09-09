@@ -6,16 +6,28 @@ import {
   AlertCircle, Camera, HardHat, Send, X, Check
 } from "lucide-react";
 
+type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChantierData = {
+  id: string;
+  nom: string | null;
+  adresse_chantier: string | null;
+  clients?: { nom: string | null } | null;
+};
+type ClientData = { nom: string | null };
+type SignatureEvent =
+  | React.MouseEvent<HTMLCanvasElement>
+  | React.TouchEvent<HTMLCanvasElement>;
+
 export default function ClientPortalPrototype() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Real data states
-  const [chantierData, setChantierData] = useState<any | null>(null);
-  const [clientData, setClientData] = useState<any | null>(null);
+  const [chantierData, setChantierData] = useState<ChantierData | null>(null);
+  const [clientData, setClientData] = useState<ClientData | null>(null);
   const [avancement, setAvancement] = useState<number>(0);
 
   useEffect(() => {
@@ -40,7 +52,7 @@ export default function ClientPortalPrototype() {
           const clientName = chantier.clients?.nom || "Client";
           setChatMessages([
             { role: 'assistant', content: `Bonjour ${clientName} ! Votre chantier avance bien. Avez-vous des questions sur les travaux en cours ?` }
-          ]);
+          ] as ChatMessage[]);
 
           // Fetch real progress if exists
           const { data: avancements } = await supabase
@@ -60,7 +72,7 @@ export default function ClientPortalPrototype() {
           // Fallback if DB is completely empty
           setChatMessages([
             { role: 'assistant', content: 'Bonjour ! Votre chantier avance bien. Avez-vous des questions sur les travaux en cours ?' }
-          ]);
+          ] as ChatMessage[]);
         }
       } catch (e) {
         console.error("Failed to fetch real data", e);
@@ -80,7 +92,7 @@ export default function ClientPortalPrototype() {
 
   const hasSummarized = useRef(false);
 
-  const endConversationAndSummarize = async (finalMessages: any[]) => {
+  const endConversationAndSummarize = async (finalMessages: ChatMessage[]) => {
     if (hasSummarized.current) return;
     hasSummarized.current = true;
     
@@ -110,8 +122,8 @@ export default function ClientPortalPrototype() {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    const userMsg = { role: 'user', content: inputValue };
-    const newMessages = [...chatMessages, userMsg];
+    const userMsg: ChatMessage = { role: "user", content: inputValue };
+    const newMessages: ChatMessage[] = [...chatMessages, userMsg];
     setChatMessages(newMessages);
     setInputValue("");
     setIsLoading(true);
@@ -137,9 +149,9 @@ export default function ClientPortalPrototype() {
           isFin = true;
         }
         
-        const finalMessages = [...newMessages];
+        const finalMessages: ChatMessage[] = [...newMessages];
         if (botText) {
-          finalMessages.push({ role: 'assistant', content: botText });
+          finalMessages.push({ role: "assistant", content: botText });
         }
         setChatMessages(finalMessages);
         
@@ -151,10 +163,10 @@ export default function ClientPortalPrototype() {
           }, 3000);
         }
       } else {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: "Désolé, je rencontre un problème de connexion. Je laisse un message au patron." }]);
+        setChatMessages(prev => [...prev, { role: 'assistant' as const, content: "Désolé, je rencontre un problème de connexion. Je laisse un message au patron." }]);
       }
     } catch (error) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: "Erreur de réseau." }]);
+      setChatMessages(prev => [...prev, { role: 'assistant' as const, content: "Erreur de réseau." }]);
     }
     setIsLoading(false);
   };
@@ -172,22 +184,22 @@ export default function ClientPortalPrototype() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  const startDrawing = (e: any) => {
+  const startDrawing = (e: SignatureEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const x = ("touches" in e ? e.touches[0]?.clientX : e.clientX) - rect.left;
+    const y = ("touches" in e ? e.touches[0]?.clientY : e.clientY) - rect.top;
     
     ctx.beginPath();
     ctx.moveTo(x, y);
     setIsDrawing(true);
   };
 
-  const draw = (e: any) => {
+  const draw = (e: SignatureEvent) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -195,8 +207,8 @@ const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
     if (!ctx) return;
     
     const rect = canvas.getBoundingClientRect();
-const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-     const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    const x = ("touches" in e ? e.touches[0]?.clientX : e.clientX) - rect.left;
+    const y = ("touches" in e ? e.touches[0]?.clientY : e.clientY) - rect.top;
     
     ctx.lineTo(x, y);
     ctx.strokeStyle = '#0f172a';

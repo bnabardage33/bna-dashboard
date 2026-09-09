@@ -117,7 +117,7 @@ export function useRentabiliteChantiers() {
   const { rentabilites, alertes } = useMemo(() => {
     if (!chantiers.length) return { rentabilites: [], alertes: [] };
 
-    const rentabilitesData: any[] = chantiers.map((c) => {
+    const rentabilitesData: RentabiliteChantierExt[] = chantiers.map((c) => {
       const chantierBase: ChantierFinance = {
         id: c.id,
         nom: c.nom,
@@ -134,6 +134,8 @@ export function useRentabiliteChantiers() {
 
       return {
         ...result,
+        id: c.id,
+        avancement: 50,
         chantier_id: c.id,
         nom: c.nom,
         client_nom: c.client_nom || "",

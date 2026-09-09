@@ -22,7 +22,6 @@ import {
   NiveauAlerte,
 } from "@/lib/meteoAlerte";
 import type { HeureMeteo } from "@/lib/meteo";
-import type { RapportResult } from "@/types/finance";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -51,6 +50,16 @@ type ResultatGeneration = {
   rapportId?: string;
   statut: string;
   erreur?: string;
+};
+
+type ChantierMeteoRow = {
+  id: string;
+  nom: string | null;
+  adresse_chantier: string | null;
+  materiau_structurel: string | null;
+  moyen_acces: string | null;
+  zone_vent: string | null;
+  statut: string | null;
 };
 
 // -----------------------------------------------------------------------------
@@ -160,7 +169,14 @@ async function fetchMeteoVisualCrossing(
     throw new Error("Aucune donnée météo disponible pour aujourd'hui");
   }
 
-  const heures: HeureRapport[] = (today.hours ?? []).map((h: any) => ({
+  const heures: HeureRapport[] = (today.hours ?? []).map(
+    (h: {
+      datetime?: string | number;
+      temp?: string | number;
+      windspeed?: string | number;
+      windgust?: string | number;
+      precip?: string | number;
+    }) => ({
     heure: String(h.datetime ?? "").slice(0, 5),
     temp: Math.round(Number(h.temp ?? 0)),
     vent: Math.round(Number(h.windspeed ?? 0)),
@@ -246,7 +262,7 @@ async function prochainNumero(): Promise<string> {
   }
 
   const numeros = (data ?? [])
-    .map((ligne: any) => {
+    .map((ligne: { numero: string | null }) => {
       const morceaux = String(ligne.numero ?? "").split("-");
       return Number.parseInt(morceaux[2] ?? "", 10);
     })
@@ -364,9 +380,9 @@ export async function POST(request: NextRequest) {
     }
 
     const resultats: ResultatGeneration[] = [];
-    const listeChantiers = (chantiers || []) as unknown as RapportResult[];
+    const listeChantiers = (chantiers || []) as unknown as ChantierMeteoRow[];
 
-    for (const chantier of listeChantiers as any[]) {
+    for (const chantier of listeChantiers) {
       try {
         const existant = await rapportDuJourExiste(chantier.id);
 
@@ -437,7 +453,7 @@ export async function POST(request: NextRequest) {
         };
 
         let numero: string;
-        let rapportFinal: any;
+        let rapportId: string | null = null;
 
         if (existant && force) {
           numero = existant.numero;
@@ -451,7 +467,7 @@ export async function POST(request: NextRequest) {
           if (erreurMaj || !rapportMaj) {
             throw new Error(erreurMaj?.message || "Impossible de mettre à jour le rapport");
           }
-          rapportFinal = rapportMaj;
+          rapportId = rapportMaj.id;
         } else {
           numero = await prochainNumero();
           const { data: rapportCree, error: erreurInsertion } = await supabase
@@ -468,7 +484,7 @@ export async function POST(request: NextRequest) {
           if (erreurInsertion || !rapportCree) {
             throw new Error(erreurInsertion?.message || "Impossible de créer le rapport");
           }
-          rapportFinal = rapportCree;
+          rapportId = rapportCree.id;
         }
 
         resultats.push({
@@ -476,7 +492,7 @@ export async function POST(request: NextRequest) {
           nom: chantier.nom,
           numero,
           vigilance: niveauRapport,
-          rapportId: (rapportFinal as { id: string }).id,
+          rapportId: rapportId ?? undefined,
           statut: existant && force ? "Rapport mis à jour avec succès" : "Rapport généré avec succès",
         });
       } catch (error: unknown) {
