@@ -127,20 +127,40 @@ export function calculerEntraxeReel(largeurModuleMm: number): number {
 }
 
 function axeSymetrique(dimTotaleM: number, dimModuleMm: number, entraxeReelMm: number): number[] {
-  const dimModuleM = Math.max(0.1, dimModuleMm / 1000);
-  const entraxeReelM = Math.max(0.001, entraxeReelMm / 1000);
-  if (dimTotaleM <= 0) return [0];
-  if (dimTotaleM <= dimModuleM) return [dimTotaleM];
+  const moduleMm = Math.max(100, Math.round(dimModuleMm));
+  const entraxeMm = Math.max(1, Math.round(entraxeReelMm));
+  const largeurMm = Math.round(dimTotaleM * 1000);
 
-  const nFull = Math.floor(dimTotaleM / dimModuleM);
-  const reste = dimTotaleM - nFull * dimModuleM;
+  if (largeurMm <= 0) return [0];
+  if (largeurMm <= moduleMm) return [largeurMm / 1000];
 
-  if (reste < EPSILON_M) {
-    return Array(Math.max(1, nFull)).fill(dimModuleM);
-  }
+  // Chaque plaque pleine couvre exactement `nEspaces` intervalles d'entraxe.
+  // La grille des chevrons est : 0, entraxe, 2*entraxe, ..., largeur.
+  const nEspaces = Math.max(1, Math.round(moduleMm / entraxeMm));
+  const nIntervalles = Math.floor(largeurMm / entraxeMm);
+  const nFull = Math.floor(nIntervalles / nEspaces);
+  const resteIntervalles = nIntervalles - nFull * nEspaces;
 
-  const bout = Math.max(entraxeReelM, Math.round(reste / 2 / entraxeReelM) * entraxeReelM);
-  return [bout, ...Array(nFull).fill(dimModuleM), bout];
+  // Répartition (approximativement symétrique) des intervalles restants,
+  // toujours sur la grille d'entraxe pour que la jonction tombe sur un chevron.
+  const bGIntervalles = Math.floor(resteIntervalles / 2);
+  const bDIntervalles = resteIntervalles - bGIntervalles;
+  const boutG = bGIntervalles * entraxeMm;
+  const boutD = bDIntervalles * entraxeMm;
+
+  const totalAlignesMm = boutG + nFull * moduleMm + boutD;
+  // L'éventuel excédent (< entraxe) est absorbé par la rive droite : la plaque
+  // est alors coupée à la largeur exacte du mur, son bord droit s'appuyant
+  // sur le chevron de fermeture (x = largeur).
+  const diffMm = Math.max(0, largeurMm - totalAlignesMm);
+  const boutDFinal = boutD + diffMm;
+
+  const colonnesMm: number[] = [];
+  if (boutG > 0) colonnesMm.push(boutG);
+  for (let i = 0; i < nFull; i++) colonnesMm.push(moduleMm);
+  if (boutDFinal > 0) colonnesMm.push(boutDFinal);
+
+  return colonnesMm.map((c) => Math.round((c / 1000) * 1000) / 1000);
 }
 
 /**
