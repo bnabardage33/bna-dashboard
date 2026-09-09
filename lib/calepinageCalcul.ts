@@ -15,7 +15,7 @@
 //      * Pertes réelles / sciure.
 //    - Taux de chute net réel calculé précisément.
 
-import { LIMITE_DTU_MM } from "./poseCalcul";
+import { LIMITE_DTU_MM, positionsChevronsCalepinage } from "./poseCalcul";
 
 export { LIMITE_DTU_MM };
 export type SensPose = "horizontal" | "vertical";
@@ -126,41 +126,20 @@ export function calculerEntraxeReel(largeurModuleMm: number): number {
   return dimension / nombreEspaces;
 }
 
-function axeSymetrique(dimTotaleM: number, dimModuleMm: number, entraxeReelMm: number): number[] {
-  const moduleMm = Math.max(100, Math.round(dimModuleMm));
-  const entraxeMm = Math.max(1, Math.round(entraxeReelMm));
-  const largeurMm = Math.round(dimTotaleM * 1000);
-
-  if (largeurMm <= 0) return [0];
-  if (largeurMm <= moduleMm) return [largeurMm / 1000];
-
-  // Chaque plaque pleine couvre exactement `nEspaces` intervalles d'entraxe.
-  // La grille des chevrons est : 0, entraxe, 2*entraxe, ..., largeur.
-  const nEspaces = Math.max(1, Math.round(moduleMm / entraxeMm));
-  const nIntervalles = Math.floor(largeurMm / entraxeMm);
-  const nFull = Math.floor(nIntervalles / nEspaces);
-  const resteIntervalles = nIntervalles - nFull * nEspaces;
-
-  // Répartition (approximativement symétrique) des intervalles restants,
-  // toujours sur la grille d'entraxe pour que la jonction tombe sur un chevron.
-  const bGIntervalles = Math.floor(resteIntervalles / 2);
-  const bDIntervalles = resteIntervalles - bGIntervalles;
-  const boutG = bGIntervalles * entraxeMm;
-  const boutD = bDIntervalles * entraxeMm;
-
-  const totalAlignesMm = boutG + nFull * moduleMm + boutD;
-  // L'éventuel excédent (< entraxe) est absorbé par la rive droite : la plaque
-  // est alors coupée à la largeur exacte du mur, son bord droit s'appuyant
-  // sur le chevron de fermeture (x = largeur).
-  const diffMm = Math.max(0, largeurMm - totalAlignesMm);
-  const boutDFinal = boutD + diffMm;
-
-  const colonnesMm: number[] = [];
-  if (boutG > 0) colonnesMm.push(boutG);
-  for (let i = 0; i < nFull; i++) colonnesMm.push(moduleMm);
-  if (boutDFinal > 0) colonnesMm.push(boutDFinal);
-
-  return colonnesMm.map((c) => Math.round((c / 1000) * 1000) / 1000);
+/**
+ * Calepinage centré des colonnes HPL :
+ *  - riveGauche = riveDroite (symétrie absolue depuis l'axe du mur)
+ *  - les colonnes centrales font exactement un intervalle d'entraxe réel
+ *  - chaque bord vertical de colonne repose sur un chevron
+ */
+function axeSymetrique(largeurM: number, entraxeReelMm: number): number[] {
+  const positionsM = positionsChevronsCalepinage(largeurM, entraxeReelMm);
+  const colonnes: number[] = [];
+  for (let i = 1; i < positionsM.length; i++) {
+    const diffM = Math.round((positionsM[i] - positionsM[i - 1]) * 1000) / 1000;
+    if (diffM > 0) colonnes.push(diffM);
+  }
+  return colonnes.length > 0 ? colonnes : [largeurM];
 }
 
 /**
@@ -547,11 +526,9 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const nombreEspaces = Math.ceil(Math.max(1, dimension) / LIMITE_DTU_MM);
   const entraxeReelMm = Math.max(1, dimension) / nombreEspaces;
 
-  const dimModuleLargeurAxeM = dimModuleLargeurAxeMm / 1000;
-  const dimModuleHauteurAxeM = dimModuleHauteurAxeMm / 1000;
-
-  // Découpage architectural de la façade en modules maniables
-  const colonnesLargeursM = axeSymetrique(largeur, dimModuleLargeurAxeMm, entraxeReelMm);
+  // Découpage centré de la façade : rives symétriques, colonnes alignées
+  // sur l'entraxe réel, chaque joint vertical porté par un chevron.
+  const colonnesLargeursM = axeSymetrique(largeur, entraxeReelMm);
   const rangeesHauteursM = axeEquivalent(hauteurTotale, dimModuleHauteurAxeMm);
 
   const pieces: PieceCalepinage[] = [];
@@ -580,14 +557,17 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
       if (surfaceM2 > EPSILON_M * EPSILON_M) {
         const estRive = colonne === 0 || colonne === colonnesLargeursM.length - 1;
         const estCoupePignon = estPignon && points.length !== 4;
+        // Une pièce pleine est une bande centrale d'exactement un entraxe réel.
+        const estPleine =
+          !estRive && Math.abs(largeurPiece - entraxeReelMm / 1000) <= EPSILON_M;
 
-        let type: PieceCalepinage["type"] = "pleine";
+        let type: PieceCalepinage["type"] = estPleine ? "pleine" : "coupe";
         let repere = `M-${String(compteurPieces++).padStart(2, "0")}`;
 
         if (estCoupePignon) {
           type = "pignon";
           repere = `P-${String(compteurPignons++).padStart(2, "0")}`;
-        } else if (estRive || Math.abs(largeurPiece - dimModuleLargeurAxeM) > EPSILON_M) {
+        } else if (!estPleine) {
           type = "coupe";
           repere = `R-${String(compteurRives++).padStart(2, "0")}`;
         }

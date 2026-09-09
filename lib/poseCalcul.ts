@@ -98,6 +98,51 @@ export function getModeleEquerre(epaisseurIsolantMm: number): string {
 }
 
 /**
+ * Rive minimale recommandée pour un joint de façade (règle du façadier).
+ * En deçà, la bande de rive est retirée au profit d'un module entier
+ * afin d'obtenir des rives plus larges et harmonieuses.
+ */
+export const RIVE_MIN_MM = 150;
+
+/**
+ * Calepinage centré de l'ossature HPL (règle façadier) :
+ *  - Départ depuis l'axe du mur : on calcule le nombre `n` de modules entiers
+ *    (chaque module est un intervalle d'entraxe réel) qui rentrent dans le mur.
+ *  - L'espace restant est divisé EXACTEMENT en deux : riveGauche = riveDroite
+ *    (symétrie absolue).
+ *  - Si la rive est trop étroite (< RIVE_MIN_MM), on retire un module entier et
+ *    on recalcule pour obtenir des rives plus larges.
+ *  - L'ossature s'adapte aux plaques : un chevron à X = 0, un chevron sous chaque
+ *    joint (X = riveGauche, X = riveGauche + entraxe réel, ...), un chevron final
+ *    à X = largeurMur.
+ */
+export function positionsChevronsCalepinage(largeurM: number, entraxeReelMm: number): number[] {
+  const largeurMm = Math.round(largeurM * 1000);
+  const entraxeMm = Math.max(1, Math.round(entraxeReelMm));
+
+  if (largeurMm <= 0) return [0];
+  if (largeurMm < entraxeMm) return [0, largeurMm / 1000];
+
+  let nModules = Math.floor(largeurMm / entraxeMm);
+  let riveMm = (largeurMm - nModules * entraxeMm) / 2;
+  while (riveMm < RIVE_MIN_MM && nModules > 1) {
+    nModules -= 1;
+    riveMm = (largeurMm - nModules * entraxeMm) / 2;
+  }
+  const riveM = Math.round(riveMm) / 1000;
+
+  const positionsM: number[] = [0];
+  for (let k = 0; k <= nModules; k++) {
+    positionsM.push(riveM + (k * entraxeMm) / 1000);
+  }
+  const dernier = positionsM[positionsM.length - 1];
+  if (Math.abs(dernier - largeurM) > 1e-6) {
+    positionsM.push(largeurM);
+  }
+  return positionsM;
+}
+
+/**
  * Calcule les positions X précises des chevrons verticaux,
  * avec resserrement d'entraxe à 40 cm en rive/angle si demandé.
  */
@@ -200,10 +245,14 @@ function calculerInfrastructure(
   zoneVentRive: boolean,
   epaisseurIsolantMm: number,
   typeIsolant: TypeIsolant,
-  surfacePaquetM2: number
+  surfacePaquetM2: number,
+  positionsChevronsSurcharge?: number[]
 ) {
   const entraxeVertical = angle || zoneVentRive ? ENTRAXE_VERTICAL_ANGLE : ENTRAXE_VERTICAL_STANDARD;
-  const positionsChevronsM = calculerPositionsChevrons(largeur, entraxeHorizontalDefaut, zoneVentRive);
+  const positionsChevronsM =
+    positionsChevronsSurcharge && positionsChevronsSurcharge.length > 0
+      ? positionsChevronsSurcharge
+      : calculerPositionsChevrons(largeur, entraxeHorizontalDefaut, zoneVentRive);
   const nbMontants = positionsChevronsM.length;
 
   const ligne = calculerEquerresPourLigne(hauteur, entraxeVertical);
@@ -319,6 +368,7 @@ export function calculerPose(
   let entraxeHorizontalDefaut = 0.5; // initialisé par le calcul dynamique HPL
   let nbVisParement = 0;
   let joint = "";
+  let positionsChevronsHpl: number[] | null = null;
   const remarquesSupplementaires: string[] = [];
 
   if (famille === "hpl") {
@@ -330,6 +380,8 @@ export function calculerPose(
     const nombreEspaces = Math.ceil(moduleHorizontalMm / LIMITE_DTU_MM);
     const entraxeReel = moduleHorizontalMm / nombreEspaces;
     entraxeHorizontalDefaut = entraxeReel / 1000;
+    // Ossature centrée : chaque joint de plaque repose sur un chevron.
+    positionsChevronsHpl = positionsChevronsCalepinage(largeur, entraxeReel);
     const rangsVissagePanneau = Math.max(1, Math.ceil((hauteur - 0.06) / entraxeHorizontalDefaut)) + 1;
     nbVisParement = Math.round((largeur / entraxeHorizontalDefaut + 1) * rangsVissagePanneau);
     joint = "1 Point Fixe Ø5,1mm au centre + Points Coulissants Ø8mm — vis de rive à 20-40mm";
@@ -371,7 +423,8 @@ export function calculerPose(
     zoneVentRive,
     epaisseurIsolantMm,
     typeIsolant,
-    surfacePaquetM2
+    surfacePaquetM2,
+    positionsChevronsHpl ?? undefined
   );
 
   const totalVisGlobal = infra.nbChevillesMurales + infra.nbVisChevronEquerre + nbVisParement;
