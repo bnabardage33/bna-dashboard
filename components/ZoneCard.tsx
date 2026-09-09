@@ -2,7 +2,7 @@
 
 import type { Materiau } from "@/lib/meteoAlerte";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   calculerPose,
   FamillePose,
@@ -1413,6 +1413,26 @@ function Field({
   onChange: (v: number) => void;
   disabled?: boolean;
 }) {
+  // État local en TEXTE : l'utilisateur peut effacer librement ("" autorisé)
+  // pendant la frappe. La conversion stricte n'a lieu qu'au onBlur (ou au Enter).
+  const [texte, setTexte] = useState(String(value));
+
+  // Resynchronisation quand la valeur externe change (commit d'un autre champ,
+  // sélection d'un preset, rechargement...) sans écraser la frappe en cours :
+  // tant que la saisie locale vaut déjà la valeur externe, on ne touche à rien.
+  useEffect(() => {
+    setTexte((prev) => {
+      const n = parseFloat(String(prev).replace(",", "."));
+      if (Number.isFinite(n) && Math.abs(n - value) < 1e-9) return prev;
+      return String(value);
+    });
+  }, [value]);
+
+  function commiter() {
+    const n = parseFloat(texte.replace(",", "."));
+    onChange(Number.isFinite(n) ? n : 0);
+  }
+
   return (
     <div>
       <label className="text-xs uppercase tracking-wide text-slate-500">
@@ -1420,16 +1440,17 @@ function Field({
       </label>
 
       <input
-        type="number"
-        value={value}
+        type="text"
+        inputMode="decimal"
+        value={texte}
         disabled={disabled}
-        onChange={(e) =>
-          onChange(
-            parseFloat(
-              e.target.value
-            ) || 0
-          )
-        }
+        onChange={(e) => setTexte(e.target.value)}
+        onBlur={commiter}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
         className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
