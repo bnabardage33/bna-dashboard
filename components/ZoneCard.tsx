@@ -230,6 +230,11 @@ export default function ZoneCard({
       ? "vertical"
       : "horizontal";
 
+  // En mode "Trame personnalisée", l'utilisateur saisit LUI-MÊME les dimensions
+  // finales vues sur le mur (Largeur = axe X, Hauteur = axe Y) : l'orientation
+  // est implicitement horizontale et le bouton Vertical est neutralisé.
+  const sensPoseEffectif: SensPose = moduleTrameCustom ? "horizontal" : sensPoseActif;
+
   const pose =
     zone.famille_pose &&
     zone.largeur > 0 &&
@@ -251,7 +256,7 @@ export default function ZoneCard({
               surfacePaquetM2: zone.surface_paquet_m2 ?? 4.8,
               moduleLargeurMm: zone.module_largeur_mm ?? null,
               moduleHauteurMm: zone.module_hauteur_mm ?? null,
-              sensPose: sensPoseActif,
+              sensPose: sensPoseEffectif,
             }
           )
       : null;
@@ -310,7 +315,7 @@ export default function ZoneCard({
           plaqueLargeurMm: rawLargeurMm,
           moduleLargeurMm: modLargeurMm,
           moduleHauteurMm: modHauteurMm,
-          sensPose: sensPoseActif,
+          sensPose: sensPoseEffectif,
           estPignon: zone.type === "pignon",
           hauteurFaiteM: zone.hauteur_faite,
         })
@@ -912,7 +917,12 @@ export default function ZoneCard({
                     const v = e.target.value;
                     if (v === "custom") {
                       // Reste sur "custom" : les champs manuels se déverrouillent.
+                      // L'orientation est gérée par la saisie Largeur/Hauteur :
+                      // on force Horizontal pour éviter toute inversion en fond.
                       setTrameModuleCustom(true);
+                      if (sensPoseActif === "vertical") {
+                        update({ sens_pose: "horizontal" });
+                      }
                       return;
                     }
                     setTrameModuleCustom(false);
@@ -961,21 +971,35 @@ export default function ZoneCard({
                   Orientation de pose
                 </label>
                 <div className="mt-1 flex gap-2">
-                  {(["horizontal", "vertical"] as const).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => update({ sens_pose: s })}
-                      className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                        (zone.sens_pose ?? "horizontal").toString().toLowerCase() === s
-                          ? "bg-red-600 text-white"
-                          : "border border-slate-600 text-slate-300 hover:bg-slate-800"
-                      }`}
-                    >
-                      {s === "horizontal" ? "↔ Horizontal" : "↕ Vertical"}
-                    </button>
-                  ))}
+                  {(["horizontal", "vertical"] as const).map((s) => {
+                    const actif = (zone.sens_pose ?? "horizontal").toString().toLowerCase() === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        disabled={moduleTrameCustom}
+                        onClick={() => update({ sens_pose: s })}
+                        title={moduleTrameCustom ? "En trame personnalisée, l'orientation vient de la saisie Largeur/Hauteur" : undefined}
+                        className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                          actif
+                            ? "bg-red-600 text-white"
+                            : "border border-slate-600 text-slate-300 hover:bg-slate-800"
+                        } ${
+                          moduleTrameCustom
+                            ? "cursor-not-allowed opacity-50 pointer-events-none"
+                            : ""
+                        }`}
+                      >
+                        {s === "horizontal" ? "↔ Horizontal" : "↕ Vertical"}
+                      </button>
+                    );
+                  })}
                 </div>
+                {moduleTrameCustom && (
+                  <p className="mt-1.5 text-[10px] text-slate-500">
+                    Trame personnalisée : l&apos;orientation est déduite de la saisie (Largeur = axe X, Hauteur = axe Y).
+                  </p>
+                )}
               </div>
             </div>
           </div>
