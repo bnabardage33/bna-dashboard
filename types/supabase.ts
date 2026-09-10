@@ -1392,6 +1392,50 @@ export type Database = {
           },
         ]
       }
+      rapports_client: {
+        Row: {
+          chantier_id: string | null
+          contenu: Json
+          created_at: string | null
+          date_debut: string
+          date_fin: string
+          envoye_le: string | null
+          id: string
+          semaine_label: string
+          statut: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          contenu: Json
+          created_at?: string | null
+          date_debut: string
+          date_fin: string
+          envoye_le?: string | null
+          id?: string
+          semaine_label: string
+          statut?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          contenu?: Json
+          created_at?: string | null
+          date_debut?: string
+          date_fin?: string
+          envoye_le?: string | null
+          id?: string
+          semaine_label?: string
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rapports_client_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rapports_intemperies: {
         Row: {
           a_valider: boolean
