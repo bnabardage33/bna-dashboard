@@ -395,7 +395,10 @@ function ChantierDetailContent() {
         sens_pose: zone.sens_pose,
       })
       .eq("id", zone.id);
-    if (error) console.error(error);
+    if (error) {
+      console.error(error);
+      alert("Erreur lors de la sauvegarde de la zone : " + error.message);
+    }
   }
 
   async function supprimerZone(zoneId: string) {
