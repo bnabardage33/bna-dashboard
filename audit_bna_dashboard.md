@@ -1,5 +1,5 @@
 # 📋 Audit Complet — BNA Dashboard
-> Rapport mis à jour le 31/08/2026 — Toutes les pages, onglets, fonctionnalités et sécurité recensés
+> Rapport mis à jour le 10/09/2026 — Toutes les pages, onglets, fonctionnalités et sécurité recensés
 
 ---
 
@@ -7,9 +7,9 @@
 
 L'application est un **Next.js 15 App Router** connecté à **Supabase** (PostgreSQL + Storage).
 - **UI** : Tailwind CSS (dark mode slate-900)
-- **IA Vocale** : Groq Whisper (transcription) + Compound Mini (reformulation, devis, sécurité)
+- **IA** : Groq `openai/gpt-oss-20b` (chat, résumé, sécurité, reformulation) + Whisper `whisper-large-v3` (transcription audio) + Google Gemini `gemini-3.5-flash-lite` (génération devis via Vercel AI SDK)
 - **PDF** : `window.print()` avec composants React masqués (`hidden print:block`)
-- **API Météo** : Météo-France DPVigilance
+- **API Météo** : Météo-France DPVigilance + Visual Crossing
 
 ---
 
@@ -41,6 +41,9 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `parametres_finance` | `id, cle, valeur` | Finance (taux horaire, salaires...) |
 | `tickets_sav` | `id, chantier_id, statut, sous_garantie, type_sinistre, localisation, description, cause_probable, respect_dtu, diagnostic_dtu, materiel_prevu (JSONB), date_intervention, temps_estime, intervenant, moyen_acces, photos (JSONB), signature_technicien (text), signature_client (text)` | Bureau SAV |
 | `documents_compta` | `id, type (bl/ticket), date, note, montant_ht, taux_tva, montant_tva, montant_ttc, url_image, created_at` | Bureau Docs Compta |
+| `notifications` | `id, type, titre, message, destinataire_id, lien, lu, created_at` | Notifications (GET/POST/PATCH) |
+| `rapports_client` | `id, chantier_id, semaine_label, date_debut, date_fin, contenu (JSONB), statut, created_at` | Rapports Client (auto + manuel) |
+| `photos_chantier` | `id, chantier_id, url_image, titre, date_ajout` | Photos Chantier (upload/liste/suppression) |
 
 ### ⚠️ Migrations SQL requises (nouvelles colonnes)
 
@@ -62,7 +65,7 @@ ALTER TABLE public.tickets_sav
 
 > **Redirection automatique** : `/` → `/terrain` → `/terrain/meteo`
 
-- **Widget IA Vocal Groq** : enregistrement audio → transcription Whisper → reformulation → `notes_patron`
+- **Widget IA Vocal** : enregistrement audio → transcription Whisper → reformulation (gpt-oss-20b) → `notes_patron`
 - **Widget Météo du Jour** : temp, vent, rafales, alerte colorée (vert/jaune/orange/rouge)
 - **3 Dernières Notes** + lien page complète
 - **Chantiers Actifs & Météo** : liste avec alerte météo calculée en temps réel
@@ -84,7 +87,7 @@ ALTER TABLE public.tickets_sav
 **7 onglets** :
 
 #### Onglet 1 — Général
-- PPSPS Express IA (sécurité Groq)
+- PPSPS Express IA (sécurité — Groq `openai/gpt-oss-20b`)
 - Infos client, adresse, statut, matériau, moyen d'accès, zone de vent
 - Checklist fin de chantier
 
@@ -116,7 +119,7 @@ ALTER TABLE public.tickets_sav
 ---
 
 ### 3️⃣ Terrain → Notes Patron (`/terrain/notes`)
-- Dictée vocale IA, épingler, éditer, supprimer
+- Dictée vocale IA (Whisper → gpt-oss-20b), épingler, éditer, supprimer
 
 ### 4️⃣ Terrain → Boîte à Outils (`/terrain/outils`)
 - Hub de navigation vers Météo, Notes, DTU, Intempéries
@@ -139,7 +142,7 @@ ALTER TABLE public.tickets_sav
 
 ### 3️⃣ Bureau → Devis (`/bureau/devis-factures`)
 - Créer, changer statut, PDF + signature électronique
-- Génération IA Groq des lignes
+- Génération IA Gemini des lignes (Vercel AI SDK)
 - Devis accepté → Facturation (Globale / Acompte / Situation)
 - Modale responsive mobile
 
@@ -200,7 +203,7 @@ ALTER TABLE public.tickets_sav
     - `16–85%` → ✅ Préparation + 🔵 Pose En cours
     - `86–100%` → ✅ Préparation + ✅ Pose + 🔵 Finitions En cours
 - **Mes Documents** : Devis + Factures + Signature électronique
-- **Chatbot IA** (Groq) flottant + résumé en arrière-plan
+- **Chatbot IA** (Groq `openai/gpt-oss-20b`) flottant + résumé en arrière-plan
 
 ---
 
@@ -238,16 +241,24 @@ ALTER TABLE public.tickets_sav
 |---|---|
 | `/api/meteo` | Météo Visual Crossing (lang=fr) |
 | `/api/meteo-vigilance` | Alertes DPVigilance |
-| `/api/transcrire-note` | Audio → Texte (Groq Whisper) |
-| `/api/reformuler-note` | Reformulation IA (Groq Compound Mini) |
-| `/api/ia-devis` | Génération lignes devis (Groq) |
-| `/api/ia-securite` | Consignes PPSPS (Groq) |
+| `/api/transcrire-note` | Audio → Texte (Groq Whisper Large v3) |
+| `/api/reformuler-note` | Reformulation IA (Groq `openai/gpt-oss-20b`) |
+| `/api/ia-devis` | Génération lignes devis (Google Gemini 3.5 Flash Lite via Vercel AI SDK) |
+| `/api/ia-securite` | Consignes PPSPS (Groq `openai/gpt-oss-20b`) |
 | `/api/rapports-intemperies/generer` | Génération rapports (try/catch global → JSON 500) |
-| `/api/chat-client` | Messagerie Espace Client |
-| `/api/chat-client-summary` | Résumé conversation (Groq) |
+| `/api/chat-client` | Messagerie Espace Client (Groq `openai/gpt-oss-20b`) |
+| `/api/chat-client-summary` | Résumé conversation (Groq `openai/gpt-oss-20b`) |
 | `/api/espace-client/[code_acces]` | Données portail client (avancement réel, tri `created_at` DESC) |
+| `/api/espace-client/[code_acces]/signer` | Signature électronique devis/factures (vérification appartenance chantier) |
 | `/api/finance-pin` | Sécurisation module Finance via PIN |
 | `/api/documents-compta` | Scan BL/tickets — upload bucket `tickets` + table `documents_compta` (GET/POST/DELETE) |
+| `/api/analyze-chantier` | Analyse santé chantier (logique métier BNA, pas d'IA externe) |
+| `/api/scrape` | Scraping produits fournisseurs (Cheerio, extraction prix/dimensions) |
+| `/api/search` | Recherche globale (clients, chantiers, devis, fournisseurs) |
+| `/api/notifications` | Gestion notifications (GET/POST/PATCH) |
+| `/api/photos-chantier` | Upload/Liste/Suppression photos chantier (bucket `chantiers-photos`) |
+| `/api/rapports-client/generer` | Génération manuelle rapport hebdomadaire client |
+| `/api/rapports-client/auto` | Cron hebdo (lundi 6h) — génération auto brouillons rapports clients |
 
 ---
 
@@ -351,7 +362,7 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 - **Anticipation de bugs mobile** :
   - Bouton désactivé pendant l'écoute (évite le double-tap qui déclenche un plantage `aborted` sur Chrome Android).
   - Gestion claire des erreurs d'autorisation (cadenas URL) via un message explicite `event.error`.
-- Traitement de l'audio transcrit envoyé au backend `/api/ia-devis` (Groq) pour créer une ligne de devis structurée.
+- Traitement de l'audio transcrit envoyé au backend `/api/ia-devis` (Gemini via Vercel AI SDK) pour créer une ligne de devis structurée.
 
 ### 3️⃣ Import Bookmarklet (Passe-muraille Sécurité)
 - Contournement des sécurités Cloudflare / Datadome de fournisseurs (Leroy Merlin, Point.P, Castorama) par un script exécuté côté client.
@@ -365,6 +376,15 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 - **Résolution du Double-Read de Stream** : Correction d'un bug bloquant (`Body has already been read`) qui faisait planter l'API lors de l'interception d'une erreur (le buffer n'est désormais lu qu'une seule fois).
 - **Optimisation du Context Window** : La taille du payload envoyé à l'IA a été drastiquement réduite : les descriptions de produits ne sont plus injectées, et le nombre maximal d'articles de contexte a été plafonné à 15 (sélectionnés par pertinence de mots-clés) pour garantir un chiffrage rapide sans exploser les limites.
 - **Pivot vers Vercel AI SDK & Gemini 1.5 Pro (01 Septembre)** : Remplacement définitif de l'API Anthropic et Groq par le SDK officiel de Vercel (`@ai-sdk/google`) couplé à Gemini 1.5 Pro. La logique de parsing strict (Chain of Thought + Tableau final) et les règles de calcul DTU sont préservées, offrant ainsi une architecture d'entreprise robuste, native à Next.js, et insensible aux changements brusques de modèles des petits providers.
+
+### Unification du modèle IA (10 Septembre)
+- **Remplacement de `groq/compound-mini` par `openai/gpt-oss-20b`** : Les 2 routes utilisaient encore `compound-mini` ( obsolète) ont été migrées vers `openai/gpt-oss-20b` pour unifier tout le dashboard sur un seul modèle LLM.
+  - `app/api/ia-securite/route.ts` : Sécurité chantier (checklist PPSPS)
+  - `app/api/reformuler-note/route.ts` : Reformulation notes vocales
+- **État actuel de la stack IA** :
+  - `openai/gpt-oss-20b` (via Groq) — chat client, résumé conversations, sécurité, reformulation
+  - `whisper-large-v3` (via Groq) — transcription audio (notes vocales)
+  - `gemini-3.5-flash-lite` (via Google `@ai-sdk/google`) — génération de devis
 
 ### Synchronisation Dashboard Pro / Portail Client (01 Septembre)
 - **Nettoyage UI Mobile** : Suppression du double "header" noir (`<header>` redondant dans `page.tsx`) et nettoyage des règles CSS forcées qui cassaient la mise en page sous l'enveloppe du Layout principal (`app/layout.tsx`).

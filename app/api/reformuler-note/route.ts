@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { anonymizeText, deanonymizeText } from '@/lib/anonymizeText';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'groq/compound-mini';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
 export async function POST(req: NextRequest) {
   try {
