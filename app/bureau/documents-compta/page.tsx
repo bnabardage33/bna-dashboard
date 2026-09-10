@@ -5,7 +5,7 @@ import { Upload, Check, Loader2, Trash2, Paperclip } from 'lucide-react';
 import Image from "next/image";
 import Link from "next/link";
 
-interface Chantier { id: string; nom: string | null; }
+interface Chantier { id: string; nom: string | null; clients?: { nom: string | null; societe: string | null } | null; }
 interface Fournisseur { id: string; nom: string; }
 
 interface DocumentCompta {
@@ -259,7 +259,7 @@ export default function DocumentsComptaPage() {
               >
                 <option value="">-- Aucun --</option>
                 {chantiers.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nom || 'Chantier (sans nom)'}</option>
+                  <option key={c.id} value={c.id}>{c.nom || c.clients?.societe || c.clients?.nom || 'Chantier (sans nom)'}</option>
                 ))}
               </select>
               {chantierId && (

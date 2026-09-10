@@ -7,7 +7,7 @@ export async function GET() {
   const [chantiersRes, fournisseursRes] = await Promise.all([
     supabaseAdmin
       .from('chantiers')
-      .select('id, nom')
+      .select('id, nom, clients(nom, societe)')
       .order('nom'),
     supabaseAdmin
       .from('fournisseurs')
