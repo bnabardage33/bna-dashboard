@@ -36,8 +36,8 @@ type Commande = {
   date_livraison_prevue: string | null;
   date_livraison_reelle: string | null;
   created_at: string;
-  fournisseurs: { nom: string } | null;
-  chantiers: { nom: string | null; clients: { nom: string } | null } | null;
+  fournisseurs: { nom: string; contact: string | null; telephone: string | null; email: string | null; conditions_paiement: string | null } | null;
+  chantiers: { nom: string | null; adresse_chantier: string | null; clients: { nom: string } | null } | null;
 };
 
 type LigneMultiple = { designation: string; quantite: number; unite: string };
@@ -776,15 +776,15 @@ export default function FournisseursPage() {
               }}
               fournisseur={{
                 nom: apercuCommande.fournisseurs?.nom ?? "Fournisseur",
-                contact: null,
-                telephone: null,
-                email: null,
-                conditions_paiement: null,
+                contact: apercuCommande.fournisseurs?.contact ?? null,
+                telephone: apercuCommande.fournisseurs?.telephone ?? null,
+                email: apercuCommande.fournisseurs?.email ?? null,
+                conditions_paiement: apercuCommande.fournisseurs?.conditions_paiement ?? null,
               }}
               chantier={{
                 nom: apercuCommande.chantiers?.nom ?? "Chantier BNA",
-                adresse: null,
-                clientNom: null,
+                adresse: apercuCommande.chantiers?.adresse_chantier ?? null,
+                clientNom: apercuCommande.chantiers?.clients?.nom ?? null,
               }}
               entreprise={
                 entreprise || {
