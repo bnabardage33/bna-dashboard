@@ -6,7 +6,7 @@ import type { TablesUpdate } from "@/types/supabase";
 import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
 import SignaturePad from "@/components/SignaturePad";
-import { PenTool } from "lucide-react";
+import { PenTool, AlertTriangle } from "lucide-react";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 
@@ -44,6 +44,14 @@ type Commande = {
 type LigneMultiple = { designation: string; quantite: number; unite: string };
 
 const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
+
+function joursRetard(dateLivraisonPrevue: string): number {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const prevue = new Date(dateLivraisonPrevue);
+  prevue.setHours(0, 0, 0, 0);
+  return Math.floor((now.getTime() - prevue.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 const SPECIALITES = ["Bois", "Métal / Bac acier", "Composite", "Quincaillerie / Visserie", "Isolation", "Autre"];
 
@@ -101,6 +109,7 @@ export default function FournisseursPage() {
   const [lignesMultiples, setLignesMultiples] = useState<LigneMultiple[] | null>(null);
   const [prefillInfo, setPrefillInfo] = useState<{ chantierNom: string; zoneNom: string } | null>(null);
   const [maintenant, setMaintenant] = useState<Date | null>(null);
+  const [filtreCommandes, setFiltreCommandes] = useState<"toutes" | "en_retard">("toutes");
 
   async function fetchTout() {
     setLoading(true);
@@ -120,10 +129,59 @@ export default function FournisseursPage() {
     setLoading(false);
   }
 
+  async function detecterRetards() {
+    const today = new Date().toISOString().slice(0, 10);
+    const lundi = new Date();
+    lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7));
+    lundi.setHours(0, 0, 0, 0);
+    const debutSemaine = lundi.toISOString().slice(0, 10);
+
+    const retardataires = commandes.filter(
+      (c) =>
+        c.statut !== "livree" &&
+        c.statut !== "annulee" &&
+        c.date_livraison_prevue &&
+        c.date_livraison_prevue < today
+    );
+
+    if (retardataires.length === 0) return;
+
+    const { data: existantes } = await supabase
+      .from("notifications")
+      .select("lien")
+      .eq("type", "commande_retard")
+      .gte("created_at", `${debutSemaine}T00:00:00`);
+
+    const dejaNotifiees = new Set((existantes ?? []).map((n) => n.lien));
+
+    const aInserer = retardataires.filter((c) => !dejaNotifiees.has(`/bureau/fournisseurs?retard=${c.id}`));
+
+    if (aInserer.length === 0) return;
+
+    const rows = aInserer.map((c) => {
+      const jours = joursRetard(c.date_livraison_prevue!);
+      const fournisseurNom = c.fournisseurs?.nom ?? "—";
+      return {
+        type: "commande_retard",
+        titre: "Livraison en retard",
+        message: `Commande « ${c.designation} » fournisseur ${fournisseurNom} en retard de J+${jours}`,
+        lien: `/bureau/fournisseurs?retard=${c.id}`,
+        lu: false,
+      };
+    });
+
+    await supabase.from("notifications").insert(rows);
+  }
+
   useEffect(() => {
     fetchTout();
     setMaintenant(new Date());
   }, []);
+
+  useEffect(() => {
+    if (commandes.length === 0) return;
+    detecterRetards();
+  }, [commandes]);
 
   // Récupère une éventuelle commande pré-remplie transmise depuis un métré (Chantier → Zone)
   useEffect(() => {
@@ -178,6 +236,29 @@ export default function FournisseursPage() {
       achatsRecus,
     };
   }, [fournisseurs, commandes]);
+
+  const commandesFiltrees = useMemo(() => {
+    if (filtreCommandes === "toutes") return commandes;
+    const today = new Date().toISOString().slice(0, 10);
+    return commandes.filter(
+      (c) =>
+        c.statut !== "livree" &&
+        c.statut !== "annulee" &&
+        c.date_livraison_prevue &&
+        c.date_livraison_prevue < today
+    );
+  }, [commandes, filtreCommandes]);
+
+  const nbRetards = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return commandes.filter(
+      (c) =>
+        c.statut !== "livree" &&
+        c.statut !== "annulee" &&
+        c.date_livraison_prevue &&
+        c.date_livraison_prevue < today
+    ).length;
+  }, [commandes]);
 
   async function creerFournisseur(e: React.FormEvent) {
     e.preventDefault();
@@ -422,21 +503,57 @@ export default function FournisseursPage() {
 
       {tab === "commandes" && (
         <div className="space-y-4">
+          <div className="flex gap-2">
+            {(["toutes", "en_retard"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFiltreCommandes(f)}
+                className={`text-xs whitespace-nowrap transition-all ${
+                  filtreCommandes === f
+                    ? f === "en_retard"
+                      ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                      : "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
+                    : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                }`}
+              >
+                {f === "toutes" ? "Toutes" : `⚠️ En retard (${nbRetards})`}
+              </button>
+            ))}
+          </div>
           {loading ? (
             <p className="text-sm text-gray-400">Chargement…</p>
-          ) : commandes.length === 0 ? (
-            <p className="text-sm text-gray-500">Aucune commande pour l&apos;instant.</p>
+          ) : commandesFiltrees.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              {filtreCommandes === "en_retard" ? "Aucune commande en retard." : "Aucune commande pour l&apos;instant."}
+            </p>
           ) : (
             <div className="space-y-2">
-              {commandes.map((c) => {
+              {commandesFiltrees.map((c) => {
                 const statutInfo = STATUTS.find((s) => s.value === c.statut) ?? STATUTS[0];
+                const today = new Date().toISOString().slice(0, 10);
+                const enRetard =
+                  c.statut !== "livree" &&
+                  c.statut !== "annulee" &&
+                  c.date_livraison_prevue &&
+                  c.date_livraison_prevue < today;
+                const retardJours = enRetard ? joursRetard(c.date_livraison_prevue!) : 0;
                 return (
                   <div
                     key={c.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#1A1D24] p-4"
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-[#1A1D24] p-4 ${
+                      enRetard ? "border-red-500/40" : "border-white/10"
+                    }`}
                   >
                     <div>
-                      <p className="font-medium text-white">{c.designation}</p>
+                      <p className="font-medium text-white">
+                        {c.designation}
+                        {enRetard && (
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                            <AlertTriangle className="h-3 w-3" />
+                            EN RETARD J+{retardJours}
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {c.fournisseurs?.nom ?? "—"} ·{" "}
                         {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
