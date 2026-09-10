@@ -6,6 +6,8 @@ import type { Tables } from "@/types/supabase";
 import { X, Search, Loader2 } from "lucide-react";
 import { LigneCommande } from "@/components/ZoneCard";
 import { useRouter } from "next/navigation";
+import BonCommandePDF, { BonCommandeData } from "@/components/BonCommandePDF";
+import { Entreprise } from "@/types/entreprise";
 
 type Article = {
   id: string;
@@ -27,6 +29,16 @@ type Article = {
 type Fournisseur = {
   id: string;
   nom: string;
+  contact: string | null;
+  telephone: string | null;
+  email: string | null;
+  conditions_paiement: string | null;
+};
+
+type GroupeCommande = {
+  fournisseurId: string;
+  fournisseur: Fournisseur;
+  commande: BonCommandeData;
 };
 
 type LigneDevis = LigneCommande & {
@@ -41,6 +53,7 @@ export default function CommandeModal({
   lignesInitiales,
   chantierId,
   chantierNom,
+  chantierAdresse,
   zoneNom,
 }: {
   isOpen: boolean;
@@ -48,12 +61,15 @@ export default function CommandeModal({
   lignesInitiales: LigneCommande[];
   chantierId: string;
   chantierNom: string;
+  chantierAdresse?: string | null;
   zoneNom: string;
 }) {
   const router = useRouter();
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
   const [catalogue, setCatalogue] = useState<Article[]>([]);
   const [fournisseursList, setFournisseursList] = useState<Fournisseur[]>([]);
+  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
+  const [groupesCommande, setGroupesCommande] = useState<GroupeCommande[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({});
@@ -82,8 +98,12 @@ export default function CommandeModal({
     if (catData) setCatalogue(catData as unknown as Article[]);
 
     // 2. Fetch fournisseurs
-    const { data: fournData } = await supabase.from("fournisseurs").select("id, nom");
+    const { data: fournData } = await supabase.from("fournisseurs").select("id, nom, contact, telephone, email, conditions_paiement");
     if (fournData) setFournisseursList(fournData);
+
+    // 3. Fetch entreprise
+    const { data: entrepriseData } = await supabase.from("entreprise_settings").select("*").eq("id", 1).single();
+    if (entrepriseData) setEntreprise(entrepriseData as unknown as Entreprise);
 
     setLoading(false);
   };
@@ -145,9 +165,42 @@ export default function CommandeModal({
 
       if (linesError) throw linesError;
 
-      alert("Chiffrage enregistré avec succès");
+      // 3. Regrouper les lignes par fournisseur pour generer un bon de commande par fournisseur
+      const parFournisseur = new Map<string, typeof validLines>();
+      for (const l of validLines) {
+        const fid = l.fournisseurSelectionneId!;
+        if (!parFournisseur.has(fid)) parFournisseur.set(fid, []);
+        parFournisseur.get(fid)!.push(l);
+      }
+
+      const groupes: GroupeCommande[] = [];
+      for (const [fid, ls] of parFournisseur.entries()) {
+        const fournisseurInfo = fournisseursList.find(f => f.id === fid);
+        if (!fournisseurInfo) continue;
+        const montantGroupe = ls.reduce((s, l) => s + (l.totalHT ?? 0), 0);
+        groupes.push({
+          fournisseurId: fid,
+          fournisseur: fournisseurInfo,
+          commande: {
+            id: commande.id,
+            created_at: new Date().toISOString(),
+            designation: `Chiffrage ${chantierNom} - ${zoneNom}`,
+            quantite: null,
+            unite: null,
+            montant_ht: montantGroupe,
+            date_livraison_prevue: null,
+            lignes: ls.map(l => ({
+              designation: l.articleSelectionne!.designation,
+              quantite: l.quantite,
+              unite: l.unite,
+              montant_ht: l.totalHT ?? 0,
+            })),
+          },
+        });
+      }
+
+      setGroupesCommande(groupes);
       router.refresh();
-      onClose();
     } catch (err) {
       console.error(err);
       const message = err instanceof Error ? err.message : (typeof err === "object" && err && "details" in err ? String((err as { details: unknown }).details) : "Erreur inconnue");
@@ -173,7 +226,57 @@ export default function CommandeModal({
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-          {loading ? (
+          {groupesCommande ? (
+            <div className="space-y-6">
+              <p className="text-sm text-emerald-400 font-semibold">
+                Chiffrage enregistre — {groupesCommande.length} bon(s) de commande pret(s) a imprimer.
+              </p>
+              {groupesCommande.map((g) => (
+                <div key={g.fournisseurId} className="space-y-2">
+                  <div className="flex items-center justify-between print:hidden">
+                    <p className="text-sm font-semibold text-white">Fournisseur : {g.fournisseur.nom}</p>
+                    <button
+                      onClick={() => window.print()}
+                      className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700"
+                    >
+                      Imprimer / Exporter PDF
+                    </button>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white p-2">
+                    <BonCommandePDF
+                      commande={g.commande}
+                      fournisseur={g.fournisseur}
+                      chantier={{ nom: chantierNom, adresse: chantierAdresse ?? null, clientNom: null }}
+                      entreprise={
+                        entreprise || {
+                          raison_sociale: "BNA Bardage",
+                          siret: null,
+                          telephone: null,
+                          email: null,
+                          adresse: null,
+                          code_postal: null,
+                          ville: null,
+                          assurance: null,
+                          iban: null,
+                          bic: null,
+                          mentions_legales: null,
+                          logo_url: null,
+                        }
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-end pt-4 print:hidden">
+                <button
+                  onClick={() => { setGroupesCommande(null); onClose(); }}
+                  className="rounded-lg bg-slate-700 px-6 py-2.5 font-bold text-white hover:bg-slate-600"
+                >
+                  Terminer
+                </button>
+              </div>
+            </div>
+          ) : loading ? (
             <div className="text-center py-10 text-gray-400">Chargement des catalogues et fournisseurs...</div>
           ) : (
             <div className="w-full overflow-x-auto pb-4">
@@ -310,6 +413,7 @@ export default function CommandeModal({
           )}
         </div>
 
+        {!groupesCommande && (
         <div className="mt-6 border-t border-white/10 pt-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4 w-full">
           <p className="text-gray-400 text-sm hidden sm:block">
             Remplissez les correspondances catalogue et choisissez un fournisseur.
@@ -335,6 +439,7 @@ export default function CommandeModal({
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

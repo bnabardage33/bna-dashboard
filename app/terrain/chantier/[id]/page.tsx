@@ -1202,6 +1202,7 @@ function ChantierDetailContent() {
         lignesInitiales={commandeModalData.lignes}
         chantierId={chantier?.id || ""}
         chantierNom={commandeModalData.chantierNom || chantier?.nom || "Chantier en cours"}
+        chantierAdresse={chantier?.adresse_chantier}
         zoneNom={commandeModalData.zoneNom}
       />
     </div>
