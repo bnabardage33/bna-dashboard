@@ -137,6 +137,25 @@ export async function GET(
       contenu,
     }));
 
+  // 7. Intempéries (justificatifs auto) — visibles côté client
+  const { data: intemperiesBruts } = await supabaseAdmin
+    .from("rapports_intemperies")
+    .select("id, numero, motif, jour_arrete, cree_le, pluie_cumul, rafales_max, ampleur_impact, vigilance_officielle")
+    .eq("chantier_id", chantier.id)
+    .order("cree_le", { ascending: false });
+
+  const intemperies = (intemperiesBruts ?? []).map((r) => ({
+    id: r.id,
+    numero: r.numero,
+    motif: r.motif,
+    jour_arrete: r.jour_arrete,
+    cree_le: r.cree_le,
+    pluie_cumul: r.pluie_cumul,
+    rafales_max: r.rafales_max,
+    ampleur_impact: r.ampleur_impact,
+    vigilance_officielle: r.vigilance_officielle,
+  }));
+
   return NextResponse.json({
     entreprise,
     chantier,
@@ -146,6 +165,7 @@ export async function GET(
     devis: devisList,
     factures: facturesList,
     rapports,
+    intemperies,
   }, {
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",

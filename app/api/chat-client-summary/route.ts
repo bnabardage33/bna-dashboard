@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
+async function destinatairePatron(): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (data && data.length > 0) return data[0].id;
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { messages, clientName } = await req.json();
+    const { messages, clientName, chantierId } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length < 2) {
       return NextResponse.json({ status: 'ignored' });
@@ -67,6 +78,18 @@ export async function POST(req: NextRequest) {
       contenu: `Client : ${clientName || 'Client'}\n\nRésumé :\n${parsed.resume}`,
       epingle: true
     });
+
+    if (parsed.sentiment === 'negatif') {
+      const patronId = await destinatairePatron();
+      await supabaseAdmin.from('notifications').insert({
+        type: 'client_alert',
+        titre: '🔴 Client mécontent (Espace Web)',
+        message: `Client : ${clientName || 'Client'}\n${parsed.resume}`,
+        lien: chantierId ? `/bureau/chantiers?id=${chantierId}` : null,
+        destinataire_id: patronId,
+      });
+    }
+
     return NextResponse.json({ status: 'alert_created', resume: parsed.resume });
   } catch (err) {
     console.error('Erreur IA Chat Client Summary:', err);

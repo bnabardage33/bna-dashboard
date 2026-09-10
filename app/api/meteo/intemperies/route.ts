@@ -8,6 +8,29 @@ const FALLBACK_GEOLOC = { lat: 46.6, lng: 2.4 };
 const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES = ["ossature", "isolation", "bardage", "finitions"] as const;
 
+async function prochainNumeroIntemperie(): Promise<string> {
+  const annee = new Date().getFullYear();
+  const { data, error } = await supabaseAdmin
+    .from("rapports_intemperies")
+    .select("numero")
+    .ilike("numero", `RI-${annee}-%`);
+
+  if (error) {
+    console.error("Impossible de numéroter le rapport intempérie:", error.message);
+    return `RI-${annee}-001`;
+  }
+
+  const numeros = (data ?? [])
+    .map((ligne: { numero: string | null }) => {
+      const morceaux = String(ligne.numero ?? "").split("-");
+      return Number.parseInt(morceaux[2] ?? "", 10);
+    })
+    .filter((num: number) => Number.isFinite(num));
+
+  const prochain = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+  return `RI-${annee}-${String(prochain).padStart(3, "0")}`;
+}
+
 type JourIntemperie = {
   date: string;
   pluie: number;
@@ -215,6 +238,25 @@ export async function POST() {
       } else {
         rapportes.push(ch.nom);
       }
+
+      const pluieCumul = jour.pluie > 0 ? jour.pluie : null;
+      const rafalesMax = jour.vent > 0 ? jour.vent : null;
+
+      await supabaseAdmin.from("rapports_intemperies").insert({
+        numero: await prochainNumeroIntemperie(),
+        chantier_id: ch.id,
+        a_valider: true,
+        ampleur_impact: "partielle",
+        cree_par: "auto",
+        departement: null,
+        jour_arrete: true,
+        pluie_continue: pluieCumul !== null,
+        pluie_cumul: pluieCumul,
+        rafales_max: rafalesMax,
+        temp_max: null,
+        motif: `Intempérie météo : ${jour.raisons.join(" / ")} — source Open-Meteo`,
+        vigilance_officielle: "jaune",
+      });
     }
 
     return NextResponse.json({

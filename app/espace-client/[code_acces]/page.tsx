@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, use } from "react";
 import {
   FileText, CheckCircle2, MessageSquare, Clock, Download,
   AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard,
-  Printer
+  Printer, CloudRain
 } from "lucide-react";
 import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
@@ -62,6 +62,17 @@ interface PhotoData {
   date_ajout: string;
 }
 
+interface Intemperie {
+  id: string;
+  numero: string;
+  motif: string;
+  jour_arrete: boolean;
+  cree_le: string;
+  pluie_cumul?: number | null;
+  rafales_max?: number | null;
+  ampleur_impact?: string | null;
+}
+
 const TASKS_CATEGORIES = [
   { id: "nord", label: "Façade Nord", tasks: ["ossature", "isolation", "bardage", "finitions"] },
   { id: "sud", label: "Façade Sud", tasks: ["ossature", "isolation", "bardage", "finitions"] },
@@ -93,6 +104,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoData | null>(null);
 
   const [rapportsClient, setRapportsClient] = useState<RapportClientLeger[]>([]);
+  const [intemperies, setIntemperies] = useState<Intemperie[]>([]);
   const [apercuRapport, setApercuRapport] = useState<{
     titre: string;
     snapshot: SnapshotContenu;
@@ -119,6 +131,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           devis?: DevisRow[];
           factures?: FactureRow[];
           rapports?: RapportClientLeger[];
+          intemperies?: Intemperie[];
         } = await res.json();
 
         if (data.entreprise) setEntreprise(data.entreprise);
@@ -129,6 +142,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setDevisData(data.devis || []);
         setFacturesData(data.factures || []);
         setRapportsClient(data.rapports || []);
+        setIntemperies(data.intemperies || []);
 
         if (data.chantier?.id) {
           const photosRes = await fetch(`/api/photos-chantier?chantier_id=${data.chantier.id}`);
@@ -173,7 +187,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: finalMessages,
-          clientName: clientData?.nom || "Client"
+          clientName: clientData?.nom || "Client",
+          chantierId: chantierData?.id || null
         })
       });
     } catch {
@@ -206,6 +221,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           messages: newMessages,
           clientName: clientData?.nom || "Client",
           chantierName: chantierData?.nom || "Chantier",
+          chantierId: chantierData?.id || null,
           avancement: avancement
         })
       });
@@ -646,6 +662,47 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                     </div>
                     <span className="text-[#111111] text-xs font-bold px-3 py-1.5 shrink-0">Consulter</span>
                   </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* INTEMPÉRIES (justificatifs auto) */}
+        {intemperies.length > 0 && (
+          <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+            <h3 className="font-bold mb-1 text-[#111111]">Intempéries & justificatifs</h3>
+            <p className="text-xs text-[#111111]/70 mb-4">Arrêts de chantier dus à la météo, relevés automatiquement — envoyables à votre assurance en cas de besoin.</p>
+            <div className="space-y-3">
+              {intemperies.map((intemp) => {
+                const dateLabel = intemp.cree_le
+                  ? new Date(intemp.cree_le).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                  : "—";
+                const estArret = intemp.jour_arrete;
+                return (
+                  <div
+                    key={intemp.id}
+                    className={`p-3 rounded-xl border flex items-start gap-3 ${
+                      estArret
+                        ? "bg-[#FDF1F0] border-[#E30613]/40"
+                        : "bg-[#F2F2F2] border-[#111111]"
+                    }`}
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${estArret ? "bg-[#E30613] text-white" : "bg-white border border-[#111111] text-[#111111]"}`}>
+                      <CloudRain size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[#111111]">
+                        {estArret ? `Chantier à l'arrêt le ${dateLabel}` : `Intempérie signalée le ${dateLabel}`}
+                      </p>
+                      <p className="text-xs text-[#111111]/80 mt-0.5">{intemp.motif}</p>
+                      <p className="text-[11px] font-semibold text-[#E30613] mt-1">
+                        {estArret
+                          ? "Reprise prévue dès la fin des intempéries."
+                          : `Justificatif ${intemp.numero || ""}`.trim()}
+                      </p>
+                    </div>
+                  </div>
                 );
               })}
             </div>
