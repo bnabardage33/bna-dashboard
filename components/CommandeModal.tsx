@@ -75,6 +75,7 @@ export default function CommandeModal({
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({});
   const [categoryFilters, setCategoryFilters] = useState<Record<number, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState<Record<number, boolean>>({});
+  const [dateLivraisonPrevue, setDateLivraisonPrevue] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -188,7 +189,7 @@ export default function CommandeModal({
             quantite: null,
             unite: null,
             montant_ht: montantGroupe,
-            date_livraison_prevue: null,
+            date_livraison_prevue: dateLivraisonPrevue || null,
             lignes: ls.map(l => ({
               designation: l.articleSelectionne!.designation,
               quantite: l.quantite,
@@ -213,7 +214,7 @@ export default function CommandeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[210] flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 backdrop-blur-sm" onClick={onClose}>
       <div className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-[#0B0F19] p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
           <div>
@@ -419,6 +420,15 @@ export default function CommandeModal({
             Remplissez les correspondances catalogue et choisissez un fournisseur.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <div className="flex items-center gap-2 sm:border-r border-white/10 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">
+              <label className="text-xs text-gray-500 whitespace-nowrap">Livraison souhaitee</label>
+              <input
+                type="date"
+                value={dateLivraisonPrevue}
+                onChange={(e) => setDateLivraisonPrevue(e.target.value)}
+                className="rounded-lg border border-white/10 bg-[#1A1D24] px-2 py-1.5 text-xs text-gray-300"
+              />
+            </div>
             <div className="flex items-center gap-4 sm:border-r border-white/10 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">
               <span className="text-sm uppercase tracking-wide text-gray-500">Total Général HT</span>
               <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">{totalGeneralHT.toFixed(2)} €</span>
