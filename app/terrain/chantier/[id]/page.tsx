@@ -14,6 +14,7 @@ import PlanCalepinage from "@/components/PlanCalepinage";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
 import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
 import AvancementFacades from "@/components/AvancementFacadesWrapper";
+import RapportClientWrapper from "@/components/RapportClientWrapper";
 import { Scissors } from "lucide-react";
 import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
@@ -83,7 +84,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Avancement", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
+const TABS = ["Général", "Avancement", "Rapport Client", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -678,6 +679,8 @@ function ChantierDetailContent() {
       )}
 
       {tab === "Avancement" && <AvancementFacades chantierId={id} />}
+
+      {tab === "Rapport Client" && <RapportClientWrapper chantierId={id} />}
 
       {tab === "Temps Heures" && (
         <div className="space-y-6">
