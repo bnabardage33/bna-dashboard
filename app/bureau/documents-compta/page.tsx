@@ -65,18 +65,16 @@ export default function DocumentsComptaPage() {
   const loadData = async () => {
     setLoadingDocs(true);
     try {
-      const [docsRes, chRes, fRes] = await Promise.all([
+      const [docsRes, listRes] = await Promise.all([
         fetch('/api/documents-compta'),
-        fetch('/api/search?q=a&limit=100'),
-        fetch('/api/search?q=a&limit=100'),
+        fetch('/api/chantiers-fournisseurs'),
       ]);
       const docsData = await docsRes.json();
       setDocuments(docsData.documents || []);
 
-      const chData = await chRes.json();
-      setChantiers((chData.results?.chantiers ?? []).map((c: Chantier) => ({ id: c.id, nom: c.nom })));
-      const fData = await fRes.json();
-      setFournisseurs((fData.results?.fournisseurs ?? []).map((f: Fournisseur) => ({ id: f.id, nom: f.nom })));
+      const listData = await listRes.json();
+      setChantiers(listData.chantiers || []);
+      setFournisseurs(listData.fournisseurs || []);
     } catch {
     } finally {
       setLoadingDocs(false);
