@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
@@ -58,6 +58,7 @@ type Devis = {
   tva_pct: number;
   delai_jours: number | null;
   acompte_pct: number | null;
+  chantier_id: string | null;
   clients: Client | null;
 };
 
@@ -94,6 +95,14 @@ export default function DevisPage() {
   const [iaPromptOuvert, setIaPromptOuvert] = useState(false);
   const [iaPrompt, setIaPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function afficherToast(message: string) {
+    setToast(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
+  }
 
   const [clientId, setClientId] = useState("");
   const [chantierId, setChantierId] = useState("");
@@ -263,11 +272,11 @@ export default function DevisPage() {
     const { error } = await supabase.from("devis").update({ statut }).eq("id", d.id);
     if (error) return;
 
-    if (statut === "accepte" && d.statut !== "accepte") {
-      setDevisToBill(d);
-    } else {
-      fetchTout();
+    const accepte = statut === "accepte" || statut === "signe";
+    if (accepte && d.statut !== "accepte" && d.statut !== "signe") {
+      await genererFactureAcompte(d);
     }
+    fetchTout();
   }
 
 
@@ -334,40 +343,50 @@ export default function DevisPage() {
       .eq("devis_id", d.id)
       .eq("type_facture", "acompte");
 
-    if (existantes && existantes.length > 0) return;
+    if (existantes && existantes.length > 0) {
+      afficherToast(`Acompte déjà généré pour le devis ${d.numero}`);
+      return;
+    }
 
     const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
     const pct = d.acompte_pct ?? 30;
-    const montantHT = totalHT * (pct / 100);
+    const montantHT = Math.round(totalHT * (pct / 100) * 100) / 100;
 
-    const numero = await prochainNumero("factures", "FAC");
+    const numero = await prochainNumero("factures", "FACT");
+
+    const echeance = new Date();
+    echeance.setDate(echeance.getDate() + 15);
 
     const { error } = await supabase.from("factures").insert({
       numero,
       devis_id: d.id,
       client_id: d.client_id,
-      objet: `Acompte ${pct}% — ${d.objet ?? d.numero}`,
+      chantier_id: d.chantier_id ?? null,
+      objet: `Acompte ${pct}% devis ${d.numero}`,
       adresse_chantier: d.adresse_chantier,
       type_travaux: d.type_travaux,
-      tva_pct: d.tva_pct,
+      tva_pct: 20,
       type_facture: "acompte",
-      statut: "brouillon",
+      statut: "en_attente",
+      echeance: echeance.toISOString().slice(0, 10),
       lignes: [
         {
           designation: `Acompte ${pct}% à la commande`,
           description: d.objet ?? undefined,
           qte: 1,
           unite: "forfait",
-          pu_ht: Math.round(montantHT * 100) / 100,
+          pu_ht: montantHT,
         },
       ],
     });
 
     if (error) {
-      alert("Devis accepté, mais erreur lors de la génération de la facture d'acompte : " + error.message);
-    } else {
-      alert(`Facture d'acompte ${numero} générée automatiquement (${pct}% — ${montantHT.toFixed(2)} € HT).`);
+      afficherToast(`⚠️ Erreur génération acompte : ${error.message}`);
+      return;
     }
+
+    afficherToast(`✓ Facture d'acompte ${pct}% générée : ${montantHT.toLocaleString("fr-FR")}€`);
+    fetchTout();
   }
 
   async function transformerEnChantier(d: Devis) {
@@ -404,6 +423,11 @@ export default function DevisPage() {
 
   return (
     <div className="space-y-5">
+      {toast && (
+        <div className="fixed top-16 left-1/2 z-[300] max-w-[90vw] -translate-x-1/2 rounded-xl border border-emerald-500/40 bg-[#15181E] px-4 py-3 text-sm font-bold text-emerald-400 shadow-xl shadow-black/40">
+          {toast}
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-white">Devis Commerciaux</h1>

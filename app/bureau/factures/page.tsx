@@ -291,7 +291,7 @@ export default function FacturesPage() {
     .filter((f) => f.statut === "payee")
     .reduce((s, f) => s + f.lignes.reduce((t, l) => t + l.qte * l.pu_ht, 0) * (1 + f.tva_pct / 100), 0);
   const enAttente = factures
-    .filter((f) => f.statut === "envoyee")
+    .filter((f) => f.statut === "envoyee" || f.statut === "en_attente")
     .reduce((s, f) => s + f.lignes.reduce((t, l) => t + l.qte * l.pu_ht, 0) * (1 + f.tva_pct / 100), 0);
 
   return (
@@ -374,6 +374,7 @@ export default function FacturesPage() {
                       }`}
                     >
                       <option value="brouillon" className="bg-transparent text-white">Brouillon</option>
+                      <option value="en_attente" className="bg-transparent text-white">En attente</option>
                       <option value="envoyee" className="bg-transparent text-white">Envoyée</option>
                       <option value="payee" className="bg-transparent text-white">Payée</option>
                     </select>
