@@ -1,15 +1,19 @@
 # 📋 Audit Complet — BNA Dashboard
-> Rapport mis à jour le 10/09/2026 — Toutes les pages, onglets, fonctionnalités et sécurité recensés
+> Rapport mis à jour le 10/09/2026 (maj Missions 8→12) — Toutes les pages, onglets, fonctionnalités et sécurité recensés
 
 ---
 
 ## 🏗️ Architecture Générale
 
-L'application est un **Next.js 15 App Router** connecté à **Supabase** (PostgreSQL + Storage).
-- **UI** : Tailwind CSS (dark mode slate-900)
-- **IA** : Groq `openai/gpt-oss-20b` (chat, résumé, sécurité, reformulation) + Whisper `whisper-large-v3` (transcription audio) + Google Gemini `gemini-3.5-flash-lite` (génération devis via Vercel AI SDK)
+L'application est un **Next.js 16 App Router** connecté à **Supabase** (PostgreSQL + Storage).
+- **UI** : Tailwind CSS (dark mode slate-900 pour le dashboard pro, thème clair blanc `#FFFFFF`/`#111111` pour l'espace client)
+- **IA** :
+  - `openai/gpt-oss-20b` (Groq) — chat client, résumé conversations, sécurité, reformulation, dictée avancement (modèle unique, unification 10/09)
+  - `whisper-large-v3` (Groq) — transcription audio (notes vocales + dictée avancement)
+  - `gemini-3.5-flash-lite` (Vercel `@ai-sdk/google`) — génération devis **et** OCR de tickets/BL (vision)
 - **PDF** : `window.print()` avec composants React masqués (`hidden print:block`)
-- **API Météo** : Météo-France DPVigilance + Visual Crossing
+- **API Météo** : Météo-France DPVigilance (alertes) + Visual Crossing (détail) + **Open-Meteo** (veille intempéries auto, seuils pluie >10 mm / vent >50 km/h / gel <0 °C)
+- **Crons Vercel** (`vercel.json`) : `/api/rapports-client/auto` (lundi 6h) + `/api/cron/meteo` (chaque jour 6h) — **⚠️ les crons ne tournent pas sur l'offre Hobby (réservés au plan Pro / Vercel)**, déclenchement manuel possible avec `Authorization: Bearer <CRON_SECRET>`
 
 ---
 
@@ -32,7 +36,7 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `depenses_chantier` | `id, chantier_id, fournisseur_id, date, categorie, description, montant_ht, montant_tva, montant_ttc` | Finance Saisie |
 | `avancements_chantier` | `id, chantier_id, date, pourcentage, commentaire, details (JSONB), created_at` | Terrain Avancement Façades, Espace Client |
 | `pv_receptions` | `id, numero, chantier_id, client_id, devis_id, date_reception, statut, type_travaux, adresse_chantier, materiaux_utilises, zones_metres (JSONB), photos (JSONB), reserves (JSONB), observations, notice_entretien (JSONB), signature_client, signataire_client_nom, signature_entreprise, signataire_entreprise_nom, checklist_repli (JSONB)` | Bureau Fin de Chantier |
-| `rapports_intemperies` | `id, chantier_id, date_debut, date_fin, jours_arret...` | Bureau Intempéries |
+| `rapports_intemperies` | `id, numero (RI-AAAA-NNN), chantier_id, cree_le, cree_par (+'auto'), jour_arrete, ampleur_impact, pluie_continue, pluie_cumul, rafales_max, temp_max, motif, vigilance_officielle, a_valider` | Bureau Intempéries + Veille auto |
 | `notes_patron` | `id, titre, contenu, epingle, created_at, updated_at` | Terrain Notes |
 | `fiches_techniques` | `id, titre, categorie, reference, resume, contenu, fichier_url` | Terrain Fiches DTU |
 | `catalogue_ouvrages` | `id, designation, description, famille_label, unite, pu_ht, dimensions_disponibles` | Bureau Devis & Factures |
@@ -42,22 +46,21 @@ L'application est un **Next.js 15 App Router** connecté à **Supabase** (Postgr
 | `tickets_sav` | `id, chantier_id, statut, sous_garantie, type_sinistre, localisation, description, cause_probable, respect_dtu, diagnostic_dtu, materiel_prevu (JSONB), date_intervention, temps_estime, intervenant, moyen_acces, photos (JSONB), signature_technicien (text), signature_client (text)` | Bureau SAV |
 | `documents_compta` | `id, type (bl/ticket), date, note, montant_ht, taux_tva, montant_tva, montant_ttc, url_image, created_at` | Bureau Docs Compta |
 | `notifications` | `id, type, titre, message, destinataire_id, lien, lu, created_at` | Notifications (GET/POST/PATCH) |
-| `rapports_client` | `id, chantier_id, semaine_label, date_debut, date_fin, contenu (JSONB), statut, created_at` | Rapports Client (auto + manuel) |
+| `rapports_client` | `id, chantier_id, semaine_label, date_debut, date_fin, contenu (JSONB incl. communication.message_patron), statut, envoye_le, created_at` | Rapports Client (auto hebdo + manuel) |
 | `photos_chantier` | `id, chantier_id, url_image, titre, date_ajout` | Photos Chantier (upload/liste/suppression) |
 
-### ⚠️ Migrations SQL requises (nouvelles colonnes)
+### ✅ Migrations SQL appliquées (`supabase/migrations/`)
 
-```sql
--- Avancement Façades : JSONB des cases cochées + timestamp
-ALTER TABLE public.avancements_chantier
-  ADD COLUMN IF NOT EXISTS details jsonb DEFAULT '{}'::jsonb,
-  ADD COLUMN IF NOT EXISTS commentaire text,
-  ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+- `20260821_create_pv_receptions.sql` — PV de réception
+- `20260821_add_legal_and_insurance_settings.sql` — mentions légales + assurance décennale
+- `20260906_notifications.sql` — table notifications (cloche bureau)
+- `20260907_add_missing_columns.sql` — colonnes manquantes (`avancements_chantier.details/commentaire/created_at`, `tickets_sav.signature_technicien`, …)
+- `20260909_add_module_dimensions.sql` — dimensions modules (zones)
+- `20260910_create_rapports_client.sql` — rapports hebdomadaires client (`statut`, `envoye_le`)
+- `20260910_docs_compta_link_depenses.sql` — lien docs compta → dépenses chantier
+- `20260910_parametres_entreprise.sql` ⚠️ **À APPLIQUER DANS SUPABASE SQL EDITOR** (mission 07, dashboard tréso patron <-> entreprise_settings) — non confirmé par l'utilisateur
 
--- SAV : Visa du technicien
-ALTER TABLE public.tickets_sav
-  ADD COLUMN IF NOT EXISTS signature_technicien text;
-```
+> Note : la table `rapports_intemperies` (justificatifs météo, `numero RI-AAAA-NNN`, `cree_par`, `motif`, `jour_arrete`, etc.) existe en base mais sa création n'est pas tracée en fichier de migration ; créée manuellement côté Supabase.
 
 ---
 
@@ -143,12 +146,14 @@ ALTER TABLE public.tickets_sav
 ### 3️⃣ Bureau → Devis (`/bureau/devis-factures`)
 - Créer, changer statut, PDF + signature électronique
 - Génération IA Gemini des lignes (Vercel AI SDK)
+- **Facturation auto à l'acceptation** : quand un devis passe au statut `accepté` ou `signé`, une facture d'acompte (FACT-YYYY-NNN) est générée automatiquement (`pct = acompte_pct ?? 30%`, tva 20%, `statut = en_attente`, échéance +15 jours) ; dédup facturée si déjà existante pour ce devis
 - Devis accepté → Facturation (Globale / Acompte / Situation)
 - Modale responsive mobile
 
 ### 4️⃣ Bureau → Factures (`/bureau/factures`)
 - Créer, changer statut, Relance (pénalités LME 40€)
 - Mise en rouge auto si échéance dépassée
+- Filtre et card **"En attente de règlement"** (factures `statut='en_attente'`, issues de la facturation auto ou saisie manuelle)
 - Modale responsive mobile
 
 ### 5️⃣ Bureau → Fournisseurs (`/bureau/fournisseurs`)
@@ -160,6 +165,7 @@ ALTER TABLE public.tickets_sav
 
 ### 7️⃣ Bureau → Rapports d'Intempéries (`/bureau/rapports-intemperies`)
 - Génération auto depuis Météo-France + PDF
+- Numérotation `RI-AAAA-NNN`, lignes aussi créées automatiquement par la veille météo (`cree_par='auto'`)
 
 ### 8️⃣ Bureau → SAV (`/bureau/sav`) ⭐ MIS À JOUR
 
@@ -187,9 +193,16 @@ ALTER TABLE public.tickets_sav
 - Scan de Bons de Livraison / Tickets (pour la TVA), sans lien chantier pour l'instant (liste à plat)
 - Sélection photo via appareil photo **ou** galerie/fichiers (pas de `capture` forcé)
 - Saisie type (BL / Ticket), date, montant HT, taux TVA → calcul auto TVA/TTC affiché en direct
+- **OCR auto (IA vision Gemini)** : au choix d'une photo, `/api/ia-ocr-ticket` lit le ticket (montant, TVA, date, fournisseur, catégorie) et **pré-remplit le formulaire** — badge "🤖 Rempli auto par IA" ; matching approximatif fournisseur + bouton "+ Créer « … »" (insert fournisseur client-side)
 - Upload dans le bucket Storage `tickets`, table `documents_compta`
 - Liste des documents enregistrés : clic sur une ligne → ouvre l'image en grand (nouvel onglet), bouton suppression séparé (`stopPropagation`)
-- Route API dédiée `app/api/documents-compta/route.ts` (GET/POST/DELETE) via `supabaseAdmin`, même pattern que Photos Chantier
+- Route API dédiée `app/api/documents-compta/route.ts` (GET/POST/DELETE) via `supabaseAdmin`, POST acceptant aussi `file_url` (cas upload fait pour de l'IA), même pattern que Photos Chantier
+
+### 1️⃣2️⃣ Bureau → Météo Chantiers (`/bureau/meteo`) ⭐ NOUVEAU
+- Cartes météo par chantier en cours sur J → J+3 (Open-Meteo, géocodage Nominatim + fallback France)
+- Badge rouge "Alerte intempérie aujourd'hui" / vert "Conditions OK"
+- Boutons manuels : **"Vérifier intempéries du jour"** (POST `/api/meteo/intemperies`) et **"Notifier client"** (mailto)
+- Détecte pluie >10 mm, vent >50 km/h, gel <0 °C ; déduplique par jour ; trace `avancements_chantier` (cases inchangées) + crée un justificatif `rapports_intemperies` visible côté client
 
 ---
 
@@ -202,8 +215,13 @@ ALTER TABLE public.tickets_sav
     - `0–15%` → 🔵 Préparation En cours
     - `16–85%` → ✅ Préparation + 🔵 Pose En cours
     - `86–100%` → ✅ Préparation + ✅ Pose + 🔵 Finitions En cours
+- **Rapports hebdomadaires** : liste des rapports `statut='envoye'` (cron lundi + envoi manuel) avec photo couverture, delta d'avancement, aperçu imprimable/PDF (`RapportClientPrint`). **Le brouillon ne sort jamais** (double filtre côté API)
+- **Intempéries & justificatifs** ⭐ : section dédiée (badges "Chantier à l'arrêt le … / Reprise prévue dès la fin des intempéries" ou "Intempérie signalée", n° de justificatif, motif Open-Meteo) — envoyables à l'assurance
 - **Mes Documents** : Devis + Factures + Signature électronique
 - **Chatbot IA** (Groq `openai/gpt-oss-20b`) flottant + résumé en arrière-plan
+  - **Prompt sur données réelles** : le système charge l'avancement (%, cases/16), la date de fin, les devis, les factures et les arrêts intempéries des 14 derniers jours ; **plus aucun scénario "plaques HPL" hardcodé** ; règle "ne jamais inventer un retard/livraison" (réponse → le patron rappelle)
+  - **Alerte "client mécontent"** : le résumé injecte aussi une notification bureau (type `client_alert`, cloche) quand le sentiment est négatif
+- Photos chantier (galerie bridée aux photos du chantier)
 
 ---
 
@@ -239,26 +257,30 @@ ALTER TABLE public.tickets_sav
 
 | Route | Rôle |
 |---|---|
-| `/api/meteo` | Météo Visual Crossing (lang=fr) |
+| `/api/meteo` | Météo Visual Crossing (lang=fr) + couvre `/api/meteo/intemperies` (public via startsWith) |
+| `/api/meteo/intemperies` | Veille auto (POST : détecte intempéries, trace `avancements_chantier` + crée justificatifs `rapports_intemperies` `cree_par='auto'` ; GET : lecture des relevés) |
+| `/api/cron/meteo` | Cron quotidien 6h → relance le POST intempéries (public, Hobby n'exécute pas les crons) |
 | `/api/meteo-vigilance` | Alertes DPVigilance |
 | `/api/transcrire-note` | Audio → Texte (Groq Whisper Large v3) |
 | `/api/reformuler-note` | Reformulation IA (Groq `openai/gpt-oss-20b`) |
-| `/api/ia-devis` | Génération lignes devis (Google Gemini 3.5 Flash Lite via Vercel AI SDK) |
+| `/api/ia-avancement` | Dictée vocale avancement façades (transcription + déduction des cases cochées) |
+| `/api/ia-devis` | Génération lignes devis (Google Gemini `gemini-3.5-flash-lite` via Vercel AI SDK) |
 | `/api/ia-securite` | Consignes PPSPS (Groq `openai/gpt-oss-20b`) |
+| `/api/ia-ocr-ticket` | OCR tickets/BL (Gemini vision, `generateText` messages image+texte, upload `tickets/ia-ocr/` ou `image_url`) → JSON montant/TVA/date/fournisseur/catégorie |
 | `/api/rapports-intemperies/generer` | Génération rapports (try/catch global → JSON 500) |
-| `/api/chat-client` | Messagerie Espace Client (Groq `openai/gpt-oss-20b`) |
-| `/api/chat-client-summary` | Résumé conversation (Groq `openai/gpt-oss-20b`) |
-| `/api/espace-client/[code_acces]` | Données portail client (avancement réel, tri `created_at` DESC) |
+| `/api/chat-client` | Messagerie Espace Client — **prompt contextuel sur données réelles du chantier** (pas de scénario HPL inventé) |
+| `/api/chat-client-summary` | Résumé conversation + **notification `client_alert` côté bureau si sentiment négatif** + note patron |
+| `/api/espace-client/[code_acces]` | Données portail client (avancement réel, devis/factures/rapports `envoye` + **intempéries**) |
 | `/api/espace-client/[code_acces]/signer` | Signature électronique devis/factures (vérification appartenance chantier) |
 | `/api/finance-pin` | Sécurisation module Finance via PIN |
-| `/api/documents-compta` | Scan BL/tickets — upload bucket `tickets` + table `documents_compta` (GET/POST/DELETE) |
+| `/api/documents-compta` | Scan BL/tickets — upload bucket `tickets` + table `documents_compta` (GET/POST/DELETE), POST accepte `file_url` |
 | `/api/analyze-chantier` | Analyse santé chantier (logique métier BNA, pas d'IA externe) |
 | `/api/scrape` | Scraping produits fournisseurs (Cheerio, extraction prix/dimensions) |
 | `/api/search` | Recherche globale (clients, chantiers, devis, fournisseurs) |
 | `/api/notifications` | Gestion notifications (GET/POST/PATCH) |
 | `/api/photos-chantier` | Upload/Liste/Suppression photos chantier (bucket `chantiers-photos`) |
 | `/api/rapports-client/generer` | Génération manuelle rapport hebdomadaire client |
-| `/api/rapports-client/auto` | Cron hebdo (lundi 6h) — génération auto brouillons rapports clients |
+| `/api/rapports-client/auto` | Cron hebdo (lundi 6h) — génère les rapports et les marque **`envoye` + `envoye_le`** (envoi auto, plus de brouillons), message patron rédigé automatiquement |
 
 ---
 
@@ -281,7 +303,7 @@ ALTER TABLE public.tickets_sav
 
 - **Supabase Auth** activée sur le dashboard interne : email/mot de passe, compte admin unique
 - `middleware.ts` (racine) + `lib/supabase/middleware.ts` : bloque l'accès à toutes les routes sauf celles listées dans `PUBLIC_PATHS` :
-  `/login`, `/espace-client`, `/api/espace-client`, `/api/chat-client`, `/api/chat-client-summary`, `/api/meteo-vigilance`, `/manifest.json`, `/sw.js`
+  `/login`, `/espace-client`, `/api/espace-client`, `/api/chat-client`, `/api/chat-client-summary`, `/api/meteo` (+ `/api/meteo/intemperies` via `startsWith`), `/api/cron/meteo`, `/api/meteo-vigilance`, `/api/search`, `/api/notifications`, `/api/ia-devis`, `/api/reformuler-note`, `/api/transcrire-note`, `/api/ia-securite`, `/api/ia-avancement`, `/api/ia-ocr-ticket`, `/api/rapports-intemperies/generer`, `/api/rapports-client/auto`, `/api/scrape`, `/api/finance-pin`, `/api/photos-chantier`, `/api/analyze-chantier`, `/api/documents-compta`, `/api/chantiers-fournisseurs`, `/api/dashboard-patron`, `/manifest.json`, `/sw.js`
 - `lib/supabase/client.ts` (navigateur) + `lib/supabase/server.ts` (serveur) via `@supabase/ssr`
 - `lib/supabase.ts` migré de `createClient` (anon basique) vers `createBrowserClient` pour porter la session dans les pages qui font des appels directs Supabase côté navigateur
 - Page `/login` avec gestion d'erreur réseau + auto-connexion si autofill (Bitwarden) remplit email+mot de passe d'un coup
@@ -402,3 +424,24 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 - **Calcul TVA en direct** à la saisie (HT → TVA → TTC affichés instantanément avant l'envoi).
 - **Sélection photo** : retrait de l'attribut `capture="environment"` pour laisser le sélecteur natif proposer Appareil photo **et** Galerie/Fichiers (utile pour les tickets déjà dématérialisés, ex: reçus par email).
 - **Consultation** : clic sur une ligne de la liste ouvre l'image en grand dans un nouvel onglet ; le bouton de suppression utilise `stopPropagation()` pour ne pas déclencher l'ouverture en même temps.
+
+---
+
+## 🚀 MISSIONS LOGICIELLES RÉCENTES (08 → 10/09/2026)
+
+> Chaque mission : validée par l'utilisateur, livrée, `npx tsc --noEmit` à 0 erreur, commit + push Git.
+
+| Mission | Commit | Fonctionnalité |
+|---|---|---|
+| 08 — Analyse | `f7da883` | `ANALYSE_PROCHAINES_FONCTIONS.md` : 3 propositions retenues par l'utilisateur (facturation auto, veille météo intempéries, OCR BL/tickets) |
+| 09 — Facturation auto | `a6dfe14` | Devis accepté/signé → facture d'acompte auto (voir Bureau Devis/Factures) |
+| 10 — Veille météo intempéries | `6b5e150` | `/api/meteo/intemperies`, cron `/api/cron/meteo`, page `/bureau/meteo`, nav "Météo Chantiers" |
+| 11 — OCR BL/tickets | `46c9cb7` | `/api/ia-ocr-ticket` (Gemini vision) + pré-remplissage auto dans Docs Compta |
+| 12 — Espace client | `d0e954b` | Rapports hebdo envoyés auto, justificatifs intempéries visibles, **fix chat HPL** (prompt données réelles), alerte "client mécontent" → notifications |
+
+### ⚠️ Points d'attention en cours
+
+- **Crons Vercel** (rapports auto lundi 6h + météo quotidienne) : fonctionnent uniquement sur le **plan Pro** de Vercel. En Hobby, boutons de déclenchement manuel (page Météo, `/api/rapports-client/auto`) avec `Authorization: Bearer <CRON_SECRET>`.
+- **Migration `parametres_entreprise`** : à appliquer dans l'éditeur SQL Supabase (mission 07) — non confirmée.
+- **`lib/supabaseAdmin.ts`** : `NEXT_PUBLIC_SUPABASE_URL` non défini au moment du `next build` (pré-existant) → le build de vérif locale échoue ; on s'appuie sur `npx tsc --noEmit` comme gate. `.env.local` contient bien les clés.
+- **Fallbacks esthétiques du portail client** encore présents (si aucune donnée) : "Villa Arcachon", "33380 Arcachon", `BNA-7429`, badge "★ CLIENT PREMIUM", téléphone WhatsApp `33600000000` — à repasser pour supprimer les valeurs d'exemple.
