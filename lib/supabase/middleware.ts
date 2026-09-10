@@ -22,6 +22,7 @@ export const PUBLIC_PATHS = [
   '/api/photos-chantier',
   '/api/analyze-chantier',
   '/api/documents-compta',
+  '/api/chantiers-fournisseurs',
   '/manifest.json',
   '/sw.js',
 ]

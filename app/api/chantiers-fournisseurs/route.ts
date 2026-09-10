@@ -8,7 +8,6 @@ export async function GET() {
     supabaseAdmin
       .from('chantiers')
       .select('id, nom')
-      .in('statut', ['en_cours', 'prevu'])
       .order('nom'),
     supabaseAdmin
       .from('fournisseurs')
