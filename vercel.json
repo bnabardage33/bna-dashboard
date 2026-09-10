@@ -3,6 +3,10 @@
     {
       "path": "/api/rapports-client/auto",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/meteo",
+      "schedule": "0 6 * * *"
     }
   ]
 }

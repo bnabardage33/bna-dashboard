@@ -8,6 +8,7 @@ export const PUBLIC_PATHS = [
   '/api/chat-client',
   '/api/chat-client-summary',
   '/api/meteo',
+  '/api/cron/meteo',
   '/api/meteo-vigilance',
   '/api/search',
   '/api/notifications',

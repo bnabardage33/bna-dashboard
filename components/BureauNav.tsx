@@ -1,7 +1,7 @@
 "use client";
 
 import SubNav from "@/components/SubNav";
-import { BookOpen, Camera, Receipt, Wallet } from "lucide-react";
+import { BookOpen, Camera, CloudSun, Receipt, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type Item = { label: string; href: string; icon?: LucideIcon };
@@ -13,6 +13,7 @@ const items: Item[] = [
   { label: "Factures", href: "/bureau/factures" },
   { label: "Fournisseurs & Achats", href: "/bureau/fournisseurs" },
   { label: "Rapports Intempéries", href: "/bureau/rapports-intemperies" },
+  { label: "Météo Chantiers", href: "/bureau/meteo", icon: CloudSun },
   { label: "Fin de chantier", href: "/bureau/fin-chantier" },
   { label: "SAV & Garantie", href: "/bureau/sav" },
   { label: "Catalogue", href: "/bureau/catalogue", icon: BookOpen },
