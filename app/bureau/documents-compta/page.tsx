@@ -259,7 +259,7 @@ export default function DocumentsComptaPage() {
               >
                 <option value="">-- Aucun --</option>
                 {chantiers.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nom}</option>
+                  <option key={c.id} value={c.id}>{c.nom || 'Chantier (sans nom)'}</option>
                 ))}
               </select>
               {chantierId && (
@@ -381,7 +381,7 @@ export default function DocumentsComptaPage() {
                         {d.chantier_id && d.chantiers && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600/20 text-emerald-400">
                             <Paperclip className="h-3 w-3" />
-                            Lié à {d.chantiers.nom}
+                            Lié à {d.chantiers?.nom || 'chantier'}
                           </span>
                         )}
                       </div>
