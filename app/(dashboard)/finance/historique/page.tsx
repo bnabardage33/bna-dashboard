@@ -2,7 +2,7 @@
 
 import { useHistoriqueSaisies } from "@/hooks/useFinance";
 import { fmtEuro } from "@/lib/financeCalculs";
-import { Trash2, ArrowLeft } from "lucide-react";
+import { Trash2, ArrowLeft, Paperclip } from "lucide-react";
 import Link from "next/link";
 
 export default function HistoriquePage() {
@@ -102,13 +102,27 @@ export default function HistoriquePage() {
                         -{fmtEuro(d.montant_ht)}
                       </td>
                       <td className="px-2 py-2 text-right">
-                        <button
-                          onClick={() => supprimerDepense(d.id)}
-                          className="text-gray-500 hover:text-rose-400 transition-colors"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          {d.document_url && (
+                            <a
+                              href={d.document_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                              title="Voir le document"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </a>
+                          )}
+                          <button
+                            onClick={() => supprimerDepense(d.id)}
+                            className="text-gray-500 hover:text-rose-400 transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

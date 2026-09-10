@@ -1,8 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Check, Loader2, Trash2 } from 'lucide-react';
+import { Upload, Check, Loader2, Trash2, Paperclip } from 'lucide-react';
 import Image from "next/image";
+import Link from "next/link";
+
+interface Chantier { id: string; nom: string | null; }
+interface Fournisseur { id: string; nom: string; }
 
 interface DocumentCompta {
   id: string;
@@ -14,7 +18,22 @@ interface DocumentCompta {
   montant_tva: number;
   montant_ttc: number;
   url_image: string;
+  chantier_id: string | null;
+  fournisseur_id: string | null;
+  categorie: string | null;
+  chantiers: { id: string; nom: string | null } | null;
+  fournisseurs: { id: string; nom: string } | null;
 }
+
+const CATEGORIES = [
+  { value: 'materiaux', label: 'Matériaux' },
+  { value: 'quincaillerie', label: 'Quincaillerie' },
+  { value: 'location', label: 'Location' },
+  { value: 'carburant', label: 'Carburant' },
+  { value: 'sous_traitance', label: 'Sous-traitance' },
+  { value: 'frais', label: 'Frais' },
+  { value: 'autre', label: 'Autre' },
+];
 
 export default function DocumentsComptaPage() {
   const [type, setType] = useState<'bl' | 'ticket'>('bl');
@@ -22,6 +41,9 @@ export default function DocumentsComptaPage() {
   const [note, setNote] = useState('');
   const [montantHt, setMontantHt] = useState('');
   const [tauxTva, setTauxTva] = useState('20');
+  const [chantierId, setChantierId] = useState('');
+  const [fournisseurId, setFournisseurId] = useState('');
+  const [categorie, setCategorie] = useState('materiaux');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -29,6 +51,8 @@ export default function DocumentsComptaPage() {
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentCompta[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const ht = parseFloat(montantHt) || 0;
@@ -36,12 +60,21 @@ export default function DocumentsComptaPage() {
   const montantTvaCalcule = ht * (tva / 100);
   const montantTtcCalcule = ht + montantTvaCalcule;
 
-  const loadDocuments = async () => {
+  const loadData = async () => {
     setLoadingDocs(true);
     try {
-      const res = await fetch('/api/documents-compta');
-      const data = await res.json();
-      setDocuments(data.documents || []);
+      const [docsRes, chRes, fRes] = await Promise.all([
+        fetch('/api/documents-compta'),
+        fetch('/api/search?q=a&limit=100'),
+        fetch('/api/search?q=a&limit=100'),
+      ]);
+      const docsData = await docsRes.json();
+      setDocuments(docsData.documents || []);
+
+      const chData = await chRes.json();
+      setChantiers((chData.results?.chantiers ?? []).map((c: Chantier) => ({ id: c.id, nom: c.nom })));
+      const fData = await fRes.json();
+      setFournisseurs((fData.results?.fournisseurs ?? []).map((f: Fournisseur) => ({ id: f.id, nom: f.nom })));
     } catch {
     } finally {
       setLoadingDocs(false);
@@ -49,7 +82,7 @@ export default function DocumentsComptaPage() {
   };
 
   useEffect(() => {
-    loadDocuments();
+    loadData();
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,6 +109,9 @@ export default function DocumentsComptaPage() {
       fd.append('note', note.trim());
       fd.append('montant_ht', montantHt || '0');
       fd.append('taux_tva', tauxTva || '20');
+      if (chantierId) fd.append('chantier_id', chantierId);
+      if (fournisseurId) fd.append('fournisseur_id', fournisseurId);
+      fd.append('categorie', categorie);
 
       const res = await fetch('/api/documents-compta', { method: 'POST', body: fd });
 
@@ -95,8 +131,11 @@ export default function DocumentsComptaPage() {
       setPreview(null);
       setNote('');
       setMontantHt('');
+      setChantierId('');
+      setFournisseurId('');
+      setCategorie('materiaux');
       if (fileRef.current) fileRef.current.value = '';
-      loadDocuments();
+      loadData();
     } catch (e) {
       setError(`Echec de l'envoi : ${(e as Error).message}`);
     } finally {
@@ -108,7 +147,7 @@ export default function DocumentsComptaPage() {
     if (!confirm('Supprimer ce document definitivement ?')) return;
     try {
       await fetch(`/api/documents-compta?id=${id}`, { method: 'DELETE' });
-      loadDocuments();
+      loadData();
     } catch (e) {
       setError(`Erreur suppression : ${(e as Error).message}`);
     }
@@ -184,6 +223,48 @@ export default function DocumentsComptaPage() {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-white mb-1 block">Chantier (optionnel)</label>
+              <select
+                value={chantierId}
+                onChange={(e) => setChantierId(e.target.value)}
+                className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
+              >
+                <option value="">-- Aucun --</option>
+                {chantiers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nom}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-white mb-1 block">Fournisseur (optionnel)</label>
+              <select
+                value={fournisseurId}
+                onChange={(e) => setFournisseurId(e.target.value)}
+                className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
+              >
+                <option value="">-- Aucun --</option>
+                {fournisseurs.map((f) => (
+                  <option key={f.id} value={f.id}>{f.nom}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-white mb-1 block">Catégorie</label>
+            <select
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value)}
+              className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="text-xs font-bold text-white mb-1 block">Note (optionnel)</label>
             <input
@@ -199,7 +280,7 @@ export default function DocumentsComptaPage() {
             onClick={() => fileRef.current?.click()}
           >
             {preview ? (
-              <Image src={preview} alt="preview" className="max-h-48 rounded-xl object-contain"  width={100} height={100} />
+              <Image src={preview} alt="preview" className="max-h-48 rounded-xl object-contain" width={100} height={100} />
             ) : (
               <>
                 <Upload size={32} className="text-white" />
@@ -225,7 +306,7 @@ export default function DocumentsComptaPage() {
           {success && (
             <div className="bg-green-900/20 border border-white/10 rounded-xl p-3 flex items-center gap-2">
               <Check size={16} className="text-red-400 shrink-0" />
-              <p className="text-xs text-red-400 font-bold">Document enregistre avec succes !</p>
+              <p className="text-xs text-red-400 font-bold">Document enregistre avec succes !{chantierId && ' Depense chantier creee.'}</p>
             </div>
           )}
 
@@ -257,26 +338,45 @@ export default function DocumentsComptaPage() {
               {documents.map((d) => (
                 <div
                   key={d.id}
-                  onClick={() => window.open(d.url_image, '_blank')}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 p-2 cursor-pointer active:bg-white/5"
+                  className={`flex items-center gap-3 rounded-xl border p-2 cursor-pointer active:bg-white/5 ${
+                    d.chantier_id ? 'border-emerald-500/30' : 'border-white/10'
+                  }`}
                 >
-                  <Image src={d.url_image} alt={d.type} className="w-14 h-14 rounded-lg object-cover shrink-0"  width={100} height={100} />
+                  <Image src={d.url_image} alt={d.type} className="w-14 h-14 rounded-lg object-cover shrink-0" width={100} height={100} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${d.type === 'bl' ? 'bg-blue-600/30 text-blue-300' : 'bg-emerald-600/30 text-emerald-300'}`}>
                         {d.type === 'bl' ? 'BL' : 'Ticket'}
                       </span>
                       <span className="text-xs text-gray-400">{new Date(d.date).toLocaleDateString('fr-FR')}</span>
+                      {d.chantier_id && d.chantiers && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600/20 text-emerald-400">
+                          <Paperclip className="h-3 w-3" />
+                          Lié à {d.chantiers.nom}
+                        </span>
+                      )}
                     </div>
                     {d.note && <p className="text-xs text-gray-300 truncate mt-0.5">{d.note}</p>}
                     <p className="text-sm font-bold text-white mt-0.5">{d.montant_ttc.toFixed(2)} EUR TTC</p>
                   </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
-                    className="w-8 h-8 shrink-0 bg-[#E30613] rounded-full flex items-center justify-center"
-                  >
-                    <Trash2 size={14} className="text-white" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {d.chantier_id && (
+                      <Link
+                        href="/finance/historique"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30"
+                        title="Voir la dépense"
+                      >
+                        <Paperclip size={14} />
+                      </Link>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
+                      className="w-8 h-8 shrink-0 bg-[#E30613] rounded-full flex items-center justify-center"
+                    >
+                      <Trash2 size={14} className="text-white" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

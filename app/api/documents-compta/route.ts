@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('documents_compta')
-    .select('*')
+    .select('*, chantiers(id, nom), fournisseurs(id, nom)')
     .order('date', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
     const note = (formData.get('note') as string) || '';
     const montantHt = parseFloat(formData.get('montant_ht') as string) || 0;
     const tauxTva = parseFloat(formData.get('taux_tva') as string) || 20;
+    const chantierId = (formData.get('chantier_id') as string) || null;
+    const fournisseurId = (formData.get('fournisseur_id') as string) || null;
+    const categorie = (formData.get('categorie') as string) || 'materiaux';
 
     if (!file || !type) {
       return NextResponse.json({ error: 'file et type sont requis' }, { status: 400 });
@@ -60,11 +63,35 @@ export async function POST(request: NextRequest) {
         montant_tva: montantTva,
         montant_ttc: montantTtc,
         url_image: urlData.publicUrl,
+        chantier_id: chantierId,
+        fournisseur_id: fournisseurId,
+        categorie,
       })
       .select()
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (chantierId && data) {
+      const { error: depenseError } = await supabaseAdmin
+        .from('depenses_chantier')
+        .insert({
+          chantier_id: chantierId,
+          fournisseur_id: fournisseurId,
+          date,
+          nature: categorie,
+          montant_ht: montantHt,
+          montant_tva: montantTva,
+          taux_tva: tauxTva,
+          statut: 'engage',
+          document_url: urlData.publicUrl,
+        });
+
+      if (depenseError) {
+        console.error('Erreur insertion depense_chantier:', depenseError.message);
+      }
+    }
+
     return NextResponse.json({ document: data });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

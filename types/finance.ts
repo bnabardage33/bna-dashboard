@@ -47,6 +47,7 @@ export interface DepenseFinance {
   montant_ht: number;
   date: string;
   taux_tva?: number;
+  document_url?: string | null;
 }
 
 export interface PointageFinance {

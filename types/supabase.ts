@@ -580,8 +580,11 @@ export type Database = {
       }
       documents_compta: {
         Row: {
+          categorie: string | null
+          chantier_id: string | null
           created_at: string
           date: string
+          fournisseur_id: string | null
           id: string
           montant_ht: number
           montant_ttc: number
@@ -592,8 +595,11 @@ export type Database = {
           url_image: string
         }
         Insert: {
+          categorie?: string | null
+          chantier_id?: string | null
           created_at?: string
           date?: string
+          fournisseur_id?: string | null
           id?: string
           montant_ht?: number
           montant_ttc?: number
@@ -604,8 +610,11 @@ export type Database = {
           url_image: string
         }
         Update: {
+          categorie?: string | null
+          chantier_id?: string | null
           created_at?: string
           date?: string
+          fournisseur_id?: string | null
           id?: string
           montant_ht?: number
           montant_ttc?: number
@@ -615,7 +624,22 @@ export type Database = {
           type?: string
           url_image?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_compta_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_compta_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entreprise_settings: {
         Row: {
