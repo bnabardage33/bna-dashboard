@@ -324,11 +324,12 @@ export default function ChantiersPage() {
 
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               <div>
-                <label className="text-xs font-semibold text-gray-300">Nom du chantier</label>
+                <label className="text-xs font-semibold text-gray-300">Nom du chantier *</label>
                 <input
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
+                  required
                   className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:border-red-600 focus:outline-none"
                 />
               </div>
