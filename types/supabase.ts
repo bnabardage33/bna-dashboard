@@ -205,8 +205,6 @@ export type Database = {
           largeur: number
           largeur_lame_mm: number | null
           materiau: string
-          module_hauteur_mm: number | null
-          module_largeur_mm: number | null
           nom: string
           ouvertures: Json
           plaque_largeur_mm: number | null
@@ -225,8 +223,6 @@ export type Database = {
           largeur?: number
           largeur_lame_mm?: number | null
           materiau?: string
-          module_hauteur_mm?: number | null
-          module_largeur_mm?: number | null
           nom?: string
           ouvertures?: Json
           plaque_largeur_mm?: number | null
@@ -245,8 +241,6 @@ export type Database = {
           largeur?: number
           largeur_lame_mm?: number | null
           materiau?: string
-          module_hauteur_mm?: number | null
-          module_largeur_mm?: number | null
           nom?: string
           ouvertures?: Json
           plaque_largeur_mm?: number | null
@@ -393,6 +387,7 @@ export type Database = {
         Row: {
           chantier_id: string | null
           created_at: string | null
+          date_commande: string | null
           date_livraison_prevue: string | null
           date_livraison_reelle: string | null
           designation: string
@@ -407,6 +402,7 @@ export type Database = {
         Insert: {
           chantier_id?: string | null
           created_at?: string | null
+          date_commande?: string | null
           date_livraison_prevue?: string | null
           date_livraison_reelle?: string | null
           designation: string
@@ -421,6 +417,7 @@ export type Database = {
         Update: {
           chantier_id?: string | null
           created_at?: string | null
+          date_commande?: string | null
           date_livraison_prevue?: string | null
           date_livraison_reelle?: string | null
           designation?: string
@@ -1394,9 +1391,9 @@ export type Database = {
       }
       rapports_client: {
         Row: {
-          chantier_id: string | null
+          chantier_id: string
           contenu: Json
-          created_at: string | null
+          created_at: string
           date_debut: string
           date_fin: string
           envoye_le: string | null
@@ -1405,9 +1402,9 @@ export type Database = {
           statut: string
         }
         Insert: {
-          chantier_id?: string | null
+          chantier_id: string
           contenu: Json
-          created_at?: string | null
+          created_at?: string
           date_debut: string
           date_fin: string
           envoye_le?: string | null
@@ -1416,9 +1413,9 @@ export type Database = {
           statut?: string
         }
         Update: {
-          chantier_id?: string | null
+          chantier_id?: string
           contenu?: Json
-          created_at?: string | null
+          created_at?: string
           date_debut?: string
           date_fin?: string
           envoye_le?: string | null

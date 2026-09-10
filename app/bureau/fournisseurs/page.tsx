@@ -35,6 +35,7 @@ type Commande = {
   statut: string;
   date_livraison_prevue: string | null;
   date_livraison_reelle: string | null;
+  date_commande: string | null;
   created_at: string;
   fournisseurs: { nom: string; contact: string | null; telephone: string | null; email: string | null; conditions_paiement: string | null } | null;
   chantiers: { nom: string | null; adresse_chantier: string | null; clients: { nom: string } | null } | null;
@@ -283,6 +284,14 @@ export default function FournisseursPage() {
     if (!error) fetchTout();
   }
 
+  async function definirDateCommande(c: Commande, dateCommande: string) {
+    const { error } = await supabase
+      .from("commandes")
+      .update({ date_commande: dateCommande || null })
+      .eq("id", c.id);
+    if (!error) fetchTout();
+  }
+
   async function supprimerCommande(c: Commande) {
     if (!confirm("Supprimer cette commande ?")) return;
     const { error } = await supabase.from("commandes").delete().eq("id", c.id);
@@ -433,6 +442,15 @@ export default function FournisseursPage() {
                         {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
                         {c.quantite ? ` · ${c.quantite} ${c.unite}` : ""}
                         {c.montant_ht ? ` · ${c.montant_ht.toFixed(2)} € HT` : ""}
+                      </p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
+                        Commande passée le :
+                        <input
+                          type="date"
+                          value={c.date_commande ?? ""}
+                          onChange={(e) => definirDateCommande(c, e.target.value)}
+                          className="rounded border border-slate-600 bg-transparent px-1.5 py-0.5 text-xs text-gray-300"
+                        />
                       </p>
                       {c.date_livraison_prevue && (
                         <p className="text-xs text-gray-500">
