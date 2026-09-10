@@ -1,12 +1,13 @@
 "use client";
 
 import SubNav from "@/components/SubNav";
-import { BookOpen, Camera, Receipt } from "lucide-react";
+import { BookOpen, Camera, Receipt, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type Item = { label: string; href: string; icon?: LucideIcon };
 
 const items: Item[] = [
+  { label: "Tréso Patron", href: "/bureau/dashboard-patron", icon: Wallet },
   { label: "Clients", href: "/bureau/clients" },
   { label: "Devis", href: "/bureau/devis-factures" },
   { label: "Factures", href: "/bureau/factures" },

@@ -1138,6 +1138,30 @@ export type Database = {
         }
         Relationships: []
       }
+      parametres_entreprise: {
+        Row: {
+          id: number
+          tresorerie_actuelle: number
+          charges_fixes_mensuelles: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          tresorerie_actuelle?: number
+          charges_fixes_mensuelles?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          tresorerie_actuelle?: number
+          charges_fixes_mensuelles?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       photos: {
         Row: {
           chantier_id: string | null
