@@ -13,6 +13,19 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import type { Json } from "@/types/supabase";
+import RapportClientPrint, {
+  type EntrepriseRapport,
+} from "@/components/rapports/RapportClientPrint";
+import {
+  analyserSnapshot,
+  formatDateFr,
+  preparerEtImprimer,
+  statutFacade,
+  EMOJI_VIGILANCE,
+  FACADES,
+  STYLES_PRINT_RAPPORT,
+  type SnapshotContenu,
+} from "@/lib/rapports-client";
 import {
   Loader2,
   RefreshCw,
@@ -20,67 +33,13 @@ import {
   AlertTriangle,
   CheckCircle2,
   Pencil,
+  Printer,
+  X,
 } from "lucide-react";
 
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
-
-type FacadeId = "nord" | "sud" | "est" | "ouest";
-
-type FacadeCompteur = Record<FacadeId, number>;
-
-type PhotoRapport = {
-  url: string;
-  legende: string;
-  date: string | null;
-};
-
-type JourIntemperie = {
-  date: string;
-  motif: string;
-  jour_arrete: boolean;
-  vigilance: string;
-};
-
-type SnapshotContenu = {
-  periode: {
-    debut: string;
-    fin: string;
-    semaine: string;
-  };
-  chantier: {
-    id: string;
-    nom: string | null;
-    client_nom: string | null;
-    date_fin_estimee: string | null;
-  };
-  avancement: {
-    pct_debut: number;
-    pct_fin: number;
-    delta: number;
-    facades: FacadeCompteur;
-    cases_cochees: number;
-  };
-  photos: PhotoRapport[];
-  pointages: {
-    total_heures: number;
-    nb_pointages: number;
-    jours_pointes: number;
-    coef_meteo_moyen: number | null;
-    meteo_relevee: string[];
-  };
-  intemperies: {
-    jours_arret_total: number;
-    details: JourIntemperie[];
-    vigilance_max: string;
-  };
-  communication: {
-    observations: string | null;
-    date_fin_estimee: string | null;
-    message_patron: string | null;
-  };
-};
 
 type RapportBrut = {
   id: string;
@@ -104,168 +63,6 @@ type ReponseGenerer = {
   } | null;
 };
 
-const FACADES: { id: FacadeId; label: string }[] = [
-  { id: "nord", label: "Façade Nord" },
-  { id: "sud", label: "Façade Sud" },
-  { id: "est", label: "Façade Est" },
-  { id: "ouest", label: "Façade Ouest" },
-];
-
-const EMOJI_VIGILANCE: Record<string, string> = {
-  vert: "🟢",
-  jaune: "🟡",
-  orange: "🟠",
-  rouge: "🔴",
-};
-
-// -----------------------------------------------------------------------------
-// Parsing défensif du snapshot (jamais d'hypothèse sur les données brutes)
-// -----------------------------------------------------------------------------
-
-function objet(valeur: unknown): Record<string, unknown> | null {
-  return valeur !== null && typeof valeur === "object" && !Array.isArray(valeur)
-    ? (valeur as Record<string, unknown>)
-    : null;
-}
-
-function texte(valeur: unknown): string {
-  return typeof valeur === "string" ? valeur : "";
-}
-
-function texteNull(valeur: unknown): string | null {
-  return typeof valeur === "string" ? valeur : null;
-}
-
-function nombre(valeur: unknown): number {
-  return typeof valeur === "number" && Number.isFinite(valeur) ? valeur : 0;
-}
-
-function nombreNull(valeur: unknown): number | null {
-  return typeof valeur === "number" && Number.isFinite(valeur) ? valeur : null;
-}
-
-function booleen(valeur: unknown): boolean {
-  return valeur === true;
-}
-
-function tableau(valeur: unknown): unknown[] {
-  return Array.isArray(valeur) ? valeur : [];
-}
-
-function analyserFacades(valeur: unknown): FacadeCompteur {
-  const o = objet(valeur);
-  const compteur: FacadeCompteur = { nord: 0, sud: 0, est: 0, ouest: 0 };
-
-  for (const id of ["nord", "sud", "est", "ouest"] as const) {
-    const n = o?.[id];
-    if (typeof n === "number" && Number.isFinite(n)) compteur[id] = n;
-  }
-
-  return compteur;
-}
-
-function analyserSnapshot(contenu: Json | null): SnapshotContenu | null {
-  const o = objet(contenu);
-  if (!o) return null;
-
-  const periode = objet(o.periode);
-  const avancement = objet(o.avancement);
-  const pointages = objet(o.pointages);
-  const intemperies = objet(o.intemperies);
-  const communication = objet(o.communication);
-  const chantier = objet(o.chantier);
-
-  if (!periode || !avancement || !pointages || !intemperies || !communication) {
-    return null;
-  }
-
-  const photos: PhotoRapport[] = tableau(o.photos).map((p) => {
-    const photo = objet(p);
-    return {
-      url: texte(photo?.url),
-      legende: texte(photo?.legende),
-      date: texteNull(photo?.date),
-    };
-  });
-
-  const detailsIntemperies: JourIntemperie[] = tableau(intemperies.details).map((j) => {
-    const jour = objet(j);
-    return {
-      date: texte(jour?.date),
-      motif: texte(jour?.motif),
-      jour_arrete: booleen(jour?.jour_arrete),
-      vigilance: texte(jour?.vigilance),
-    };
-  });
-
-  return {
-    periode: {
-      debut: texte(periode.debut),
-      fin: texte(periode.fin),
-      semaine: texte(periode.semaine),
-    },
-    chantier: {
-      id: texte(chantier?.id),
-      nom: texteNull(chantier?.nom),
-      client_nom: texteNull(chantier?.client_nom),
-      date_fin_estimee: texteNull(chantier?.date_fin_estimee),
-    },
-    avancement: {
-      pct_debut: nombre(avancement.pct_debut),
-      pct_fin: nombre(avancement.pct_fin),
-      delta: nombre(avancement.delta),
-      facades: analyserFacades(avancement.facades),
-      cases_cochees: nombre(avancement.cases_cochees),
-    },
-    photos,
-    pointages: {
-      total_heures: nombre(pointages.total_heures),
-      nb_pointages: nombre(pointages.nb_pointages),
-      jours_pointes: nombre(pointages.jours_pointes),
-      coef_meteo_moyen: nombreNull(pointages.coef_meteo_moyen),
-      meteo_relevee: tableau(pointages.meteo_relevee)
-        .map((m) => (typeof m === "string" ? m : ""))
-        .filter((m) => m !== ""),
-    },
-    intemperies: {
-      jours_arret_total: nombre(intemperies.jours_arret_total),
-      details: detailsIntemperies,
-      vigilance_max: texte(intemperies.vigilance_max),
-    },
-    communication: {
-      observations: texteNull(communication.observations),
-      date_fin_estimee: texteNull(communication.date_fin_estimee),
-      message_patron: texteNull(communication.message_patron),
-    },
-  };
-}
-
-function statutFacade(n: number): { label: string; className: string } {
-  if (n >= 4) {
-    return {
-      label: "Terminée",
-      className: "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
-    };
-  }
-  if (n > 0) {
-    return {
-      label: "En cours",
-      className: "border border-amber-500/30 bg-amber-500/15 text-amber-300",
-    };
-  }
-  return {
-    label: "À commencer",
-    className: "border border-white/10 bg-[#1A1D24] text-gray-400",
-  };
-}
-
-function formatDateFr(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-}
-
 // -----------------------------------------------------------------------------
 // Composant principal
 // -----------------------------------------------------------------------------
@@ -284,6 +81,11 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
 
   const [modaleEnvoiOuverte, setModaleEnvoiOuverte] = useState(false);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
+
+  const [entreprise, setEntreprise] = useState<EntrepriseRapport | null>(null);
+  const [apercu, setApercu] = useState<{ titre: string; snapshot: SnapshotContenu } | null>(
+    null
+  );
 
   const rapportSelectionne =
     rapports.find((r) => r.id === idSelectionne) ?? null;
@@ -313,6 +115,17 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
   useEffect(() => {
     chargerRapports().finally(() => setChargementListe(false));
   }, [chargerRapports]);
+
+  useEffect(() => {
+    supabase
+      .from("entreprise_settings")
+      .select("raison_sociale, logo_url, adresse, code_postal, ville, mentions_legales")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setEntreprise(data);
+      });
+  }, []);
 
   // La liste change -> on garde une sélection valide, sinon la plus récente.
   useEffect(() => {
@@ -610,6 +423,20 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setApercu({
+                      titre: rapportSelectionne.semaine_label,
+                      snapshot: snapshotSelectionne,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-white/5"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Aperçu PDF
+                </button>
+
                 {!estEnvoye && (
                   <button
                     type="button"
@@ -890,6 +717,42 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+    {/* Overlay : aperçu PDF (rendu clair client) */}
+      {apercu && (
+        <div className="fixed inset-0 z-[220] overflow-y-auto bg-[#0B0F19]/95 p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0">
+          <style>{STYLES_PRINT_RAPPORT}</style>
+
+          <div className="mx-auto mb-4 flex max-w-[860px] items-center justify-between gap-3 print:hidden">
+            <p className="text-sm font-bold text-white">{apercu.titre}</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  void preparerEtImprimer();
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-500"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Imprimer / Export PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setApercu(null)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-white/5"
+              >
+                <X className="h-3.5 w-3.5" />
+                Fermer
+              </button>
+            </div>
+          </div>
+
+          <RapportClientPrint
+            snapshot={apercu.snapshot}
+            semaineLabel={apercu.titre}
+            entreprise={entreprise}
+          />
         </div>
       )}
     </div>

@@ -118,6 +118,25 @@ export async function GET(
     if (facturesParClient) facturesList = facturesParClient;
   }
 
+  // 6. Rapports hebdomadaires — STRICTEMENT envoyés au client.
+  //    Un brouillon ne doit JAMAIS sortir de cette route : filtre SQL
+  //    statut = 'envoye' ET re-filtrage défensif avant envoi.
+  const { data: rapportsClient } = await supabaseAdmin
+    .from("rapports_client")
+    .select("id, statut, semaine_label, date_debut, contenu")
+    .eq("chantier_id", chantier.id)
+    .eq("statut", "envoye")
+    .order("date_debut", { ascending: false });
+
+  const rapports = (rapportsClient ?? [])
+    .filter((r) => r.statut === "envoye")
+    .map(({ id, semaine_label, date_debut, contenu }) => ({
+      id,
+      semaine_label,
+      date_debut,
+      contenu,
+    }));
+
   return NextResponse.json({
     entreprise,
     chantier,
@@ -126,6 +145,7 @@ export async function GET(
     avancementDetails,
     devis: devisList,
     factures: facturesList,
+    rapports,
   }, {
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",

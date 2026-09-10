@@ -3,10 +3,19 @@
 import React, { useState, useRef, useEffect, use } from "react";
 import {
   FileText, CheckCircle2, MessageSquare, Clock, Download,
-  AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard
+  AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard,
+  Printer
 } from "lucide-react";
 import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
+import RapportClientPrint from "@/components/rapports/RapportClientPrint";
+import {
+  analyserSnapshot,
+  preparerEtImprimer,
+  STYLES_PRINT_RAPPORT,
+  type RapportClientLeger,
+  type SnapshotContenu,
+} from "@/lib/rapports-client";
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -83,6 +92,12 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoData | null>(null);
 
+  const [rapportsClient, setRapportsClient] = useState<RapportClientLeger[]>([]);
+  const [apercuRapport, setApercuRapport] = useState<{
+    titre: string;
+    snapshot: SnapshotContenu;
+  } | null>(null);
+
   useEffect(() => {
     const fetchRealData = async () => {
       try {
@@ -103,6 +118,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           avancementDetails?: AvancementDetails;
           devis?: DevisRow[];
           factures?: FactureRow[];
+          rapports?: RapportClientLeger[];
         } = await res.json();
 
         if (data.entreprise) setEntreprise(data.entreprise);
@@ -112,6 +128,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         if (data.avancementDetails) setAvancementDetails(data.avancementDetails);
         setDevisData(data.devis || []);
         setFacturesData(data.factures || []);
+        setRapportsClient(data.rapports || []);
 
         if (data.chantier?.id) {
           const photosRes = await fetch(`/api/photos-chantier?chantier_id=${data.chantier.id}`);
@@ -584,6 +601,57 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           </div>
         </section>
 
+        {/* RAPPORTS HEBDOMADAIRES */}
+        {rapportsClient.length > 0 && (
+          <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+            <h3 className="font-bold mb-4 text-[#111111]">Rapports hebdomadaires</h3>
+            <div className="space-y-3">
+              {rapportsClient.map((rapport) => {
+                const snapshot = analyserSnapshot(rapport.contenu);
+                const delta = snapshot?.avancement.delta ?? 0;
+                const photo = snapshot?.photos?.[0];
+                return (
+                  <button
+                    key={rapport.id}
+                    type="button"
+                    onClick={() => {
+                      if (snapshot) {
+                        setApercuRapport({ titre: rapport.semaine_label, snapshot });
+                      }
+                    }}
+                    className="w-full p-4 flex items-center justify-between group cursor-pointer border border-[#111111] rounded-xl bg-[#F2F2F2] text-left"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {photo ? (
+                        <div className="w-14 h-14 rounded-lg overflow-hidden border border-[#111111] shrink-0 bg-white">
+                          <Image
+                            src={photo.url}
+                            alt={photo.legende || "Photo de chantier"}
+                            width={112}
+                            height={112}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 rounded-lg border border-[#111111] bg-white flex items-center justify-center shrink-0">
+                          <FileText size={20} className="text-[#111111]" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-[#111111] truncate">{rapport.semaine_label}</p>
+                        <p className="text-xs font-semibold text-[#E30613]">
+                          Avancement : +{delta} point{Math.abs(delta) > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[#111111] text-xs font-bold px-3 py-1.5 shrink-0">Consulter</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* PROCHAINES ETAPES */}
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
           <h3 className="font-bold mb-4 text-[#111111]">Prochaines étapes</h3>
@@ -777,6 +845,41 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             )}
 
           </div>
+        </div>
+      )}
+
+    {/* Overlay : rapport hebdomadaire (rendu clair, imprimable) */}
+      {apercuRapport && (
+        <div className="fixed inset-0 z-[10001] overflow-y-auto bg-black/80 p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0">
+          <style>{STYLES_PRINT_RAPPORT}</style>
+
+          <div className="mx-auto mb-4 flex max-w-[860px] items-center justify-between gap-3 print:hidden">
+            <h2 className="font-bold text-white">{apercuRapport.titre}</h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => { void preparerEtImprimer(); }}
+                className="bg-[#E30613] text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition hover:bg-[#C00510] flex items-center gap-1.5"
+              >
+                <Printer size={14} />
+                Imprimer / PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setApercuRapport(null)}
+                className="bg-white/10 text-white text-xs font-bold px-4 py-2 rounded-lg transition hover:bg-white/20 flex items-center gap-1.5"
+              >
+                <X size={14} />
+                Fermer
+              </button>
+            </div>
+          </div>
+
+          <RapportClientPrint
+            snapshot={apercuRapport.snapshot}
+            semaineLabel={apercuRapport.titre}
+            entreprise={entreprise}
+          />
         </div>
       )}
 
