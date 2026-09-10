@@ -669,45 +669,42 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         )}
 
         {/* INTEMPÉRIES (justificatifs auto) */}
-        {intemperies.length > 0 && (
-          <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
-            <h3 className="font-bold mb-1 text-[#111111]">Intempéries & justificatifs</h3>
-            <p className="text-xs text-[#111111]/70 mb-4">Arrêts de chantier dus à la météo, relevés automatiquement — envoyables à votre assurance en cas de besoin.</p>
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <h3 className="font-bold mb-1 text-[#111111]">Intempéries & justificatifs</h3>
+          <p className="text-xs text-[#111111]/70 mb-4">Arrêts de chantier dus à la météo, relevés automatiquement — envoyables à votre assurance en cas de besoin.</p>
+          {intemperies.filter((intemp) => intemp.jour_arrete === true).length === 0 ? (
+            <div className="p-3 rounded-xl border border-[#111111] bg-[#F2F2F2]">
+              <p className="text-sm font-semibold text-[#111111]">Aucun arrêt météo signalé à ce jour.</p>
+            </div>
+          ) : (
             <div className="space-y-3">
-              {intemperies.map((intemp) => {
+              {intemperies.filter((intemp) => intemp.jour_arrete === true).map((intemp) => {
                 const dateLabel = intemp.cree_le
                   ? new Date(intemp.cree_le).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
                   : "—";
-                const estArret = intemp.jour_arrete;
                 return (
                   <div
                     key={intemp.id}
-                    className={`p-3 rounded-xl border flex items-start gap-3 ${
-                      estArret
-                        ? "bg-[#FDF1F0] border-[#E30613]/40"
-                        : "bg-[#F2F2F2] border-[#111111]"
-                    }`}
+                    className="p-3 rounded-xl border bg-[#FDF1F0] border-[#E30613]/40 flex items-start gap-3"
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${estArret ? "bg-[#E30613] text-white" : "bg-white border border-[#111111] text-[#111111]"}`}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#E30613] text-white">
                       <CloudRain size={18} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-[#111111]">
-                        {estArret ? `Chantier à l'arrêt le ${dateLabel}` : `Intempérie signalée le ${dateLabel}`}
+                        Chantier à l'arrêt le {dateLabel}
                       </p>
                       <p className="text-xs text-[#111111]/80 mt-0.5">{intemp.motif}</p>
                       <p className="text-[11px] font-semibold text-[#E30613] mt-1">
-                        {estArret
-                          ? "Reprise prévue dès la fin des intempéries."
-                          : `Justificatif ${intemp.numero || ""}`.trim()}
+                        {intemp.numero ? `Justificatif ${intemp.numero} — ` : ""}Reprise prévue dès la fin des intempéries.
                       </p>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* PROCHAINES ETAPES */}
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">

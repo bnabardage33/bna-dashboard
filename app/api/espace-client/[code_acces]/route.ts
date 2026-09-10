@@ -137,11 +137,15 @@ export async function GET(
       contenu,
     }));
 
-  // 7. Intempéries (justificatifs auto) — visibles côté client
+  // 7. Intempéries (justificatifs auto) — visibles côté client.
+  //    Source de vérité = rapports_intemperies_jours_arretes, en ne remontant
+  //    QUE les journées réellement arrêtées (l'ancienne table rapports_intemperies
+  //    contient des lignes de test "conditions normales" qui ne doivent pas sortir).
   const { data: intemperiesBruts } = await supabaseAdmin
-    .from("rapports_intemperies")
-    .select("id, numero, motif, jour_arrete, cree_le, pluie_cumul, rafales_max, ampleur_impact, vigilance_officielle")
+    .from("rapports_intemperies_jours_arretes")
+    .select("id, numero, motif, jour_arrete, cree_le, pluie_cumul, rafales_max, vigilance_officielle")
     .eq("chantier_id", chantier.id)
+    .eq("jour_arrete", true)
     .order("cree_le", { ascending: false });
 
   const intemperies = (intemperiesBruts ?? []).map((r) => ({
@@ -152,7 +156,6 @@ export async function GET(
     cree_le: r.cree_le,
     pluie_cumul: r.pluie_cumul,
     rafales_max: r.rafales_max,
-    ampleur_impact: r.ampleur_impact,
     vigilance_officielle: r.vigilance_officielle,
   }));
 
