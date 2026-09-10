@@ -17,6 +17,7 @@ export const PUBLIC_PATHS = [
   '/api/transcrire-note',
   '/api/ia-securite',
   '/api/ia-avancement',
+  '/api/ia-ocr-ticket',
   '/api/rapports-intemperies/generer',
   '/api/rapports-client/auto',
   '/api/scrape',

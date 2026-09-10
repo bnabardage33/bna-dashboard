@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const fileUrl = (formData.get('file_url') as string) || null;
     const type = formData.get('type') as string;
     const date = (formData.get('date') as string) || new Date().toISOString().slice(0, 10);
     const note = (formData.get('note') as string) || '';
@@ -27,30 +28,36 @@ export async function POST(request: NextRequest) {
     const fournisseurId = (formData.get('fournisseur_id') as string) || null;
     const categorie = (formData.get('categorie') as string) || 'materiaux';
 
-    if (!file || !type) {
-      return NextResponse.json({ error: 'file et type sont requis' }, { status: 400 });
-    }
-    if (type !== 'bl' && type !== 'ticket') {
-      return NextResponse.json({ error: 'type doit etre "bl" ou "ticket"' }, { status: 400 });
-    }
-
     const montantTva = montantHt * (tauxTva / 100);
     const montantTtc = montantHt + montantTva;
 
-    const ext = file.name.split('.').pop() || 'jpg';
-    const fileName = `documents-compta/${Date.now()}.${ext}`;
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    let urlImage = fileUrl;
 
-    const { error: storageError } = await supabaseAdmin.storage
-      .from('tickets')
-      .upload(fileName, buffer, { contentType: file.type, upsert: false });
+    if (!urlImage) {
+      if (!file || !type) {
+        return NextResponse.json({ error: 'file et type sont requis' }, { status: 400 });
+      }
+      if (type !== 'bl' && type !== 'ticket') {
+        return NextResponse.json({ error: 'type doit etre "bl" ou "ticket"' }, { status: 400 });
+      }
 
-    if (storageError) return NextResponse.json({ error: storageError.message }, { status: 500 });
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `documents-compta/${Date.now()}.${ext}`;
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
 
-    const { data: urlData } = supabaseAdmin.storage
-      .from('tickets')
-      .getPublicUrl(fileName);
+      const { error: storageError } = await supabaseAdmin.storage
+        .from('tickets')
+        .upload(fileName, buffer, { contentType: file.type, upsert: false });
+
+      if (storageError) return NextResponse.json({ error: storageError.message }, { status: 500 });
+
+      const { data: urlData } = supabaseAdmin.storage
+        .from('tickets')
+        .getPublicUrl(fileName);
+
+      urlImage = urlData.publicUrl;
+    }
 
     const { data, error } = await supabaseAdmin
       .from('documents_compta')
@@ -62,7 +69,7 @@ export async function POST(request: NextRequest) {
         taux_tva: tauxTva,
         montant_tva: montantTva,
         montant_ttc: montantTtc,
-        url_image: urlData.publicUrl,
+        url_image: urlImage,
         chantier_id: chantierId,
         fournisseur_id: fournisseurId,
         categorie,
@@ -84,7 +91,7 @@ export async function POST(request: NextRequest) {
           montant_tva: montantTva,
           taux_tva: tauxTva,
           statut: 'engage',
-          document_url: urlData.publicUrl,
+          document_url: urlImage,
         });
 
       if (depenseError) {

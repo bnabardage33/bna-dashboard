@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Check, Loader2, Trash2, Paperclip } from 'lucide-react';
+import { Upload, Check, Loader2, Trash2, Paperclip, Sparkles } from 'lucide-react';
 import Image from "next/image";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface Chantier { id: string; nom: string | null; clients?: { nom: string | null; societe: string | null } | null; }
 interface Fournisseur { id: string; nom: string; }
@@ -55,6 +56,10 @@ export default function DocumentsComptaPage() {
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
+  const [ocrEnCours, setOcrEnCours] = useState(false);
+  const [ocrInfo, setOcrInfo] = useState<string | null>(null);
+  const [ocrImageUrl, setOcrImageUrl] = useState<string | null>(null);
+  const [fpPropose, setFpPropose] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const ht = parseFloat(montantHt) || 0;
@@ -92,6 +97,77 @@ export default function DocumentsComptaPage() {
     setPreview(URL.createObjectURL(f));
     setSuccess(false);
     setError(null);
+    analyserPhoto(f);
+  };
+
+  const normaliser = (s: string) =>
+    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  const mapperCategorie = (cat: string): string => {
+    if (cat === 'outillage') return 'quincaillerie';
+    const trouve = CATEGORIES.find((c) => c.value === cat);
+    return trouve ? cat : 'autre';
+  };
+
+  const analyserPhoto = async (f: File) => {
+    setOcrEnCours(true);
+    setOcrInfo(null);
+    setOcrImageUrl(null);
+    setFpPropose(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', f);
+      const res = await fetch('/api/ia-ocr-ticket', { method: 'POST', body: fd });
+      let data: Record<string, unknown> = {};
+      try {
+        data = await res.json();
+      } catch {}
+      if (!res.ok || data.error) throw new Error(String(data.error || `Erreur serveur HTTP ${res.status}`));
+
+      if (data.montant_ht) {
+        setMontantHt(String(data.montant_ht));
+      } else if (data.montant_ttc && data.tva) {
+        const ht = Number(data.montant_ttc) / (1 + (Number(data.tva) || 20) / 100);
+        setMontantHt(String(Math.round(ht * 100) / 100));
+      }
+      if (data.tva) setTauxTva(String(data.tva));
+      if (data.date_facture) setDate(String(data.date_facture));
+      if (data.categorie) setCategorie(mapperCategorie(String(data.categorie)));
+
+      if (data.fournisseur_nom) {
+        const nom = String(data.fournisseur_nom);
+        const norm = normaliser(nom);
+        const trouve = fournisseurs.find((f) => {
+          const fn = normaliser(f.nom);
+          return fn && (fn.includes(norm) || norm.includes(fn));
+        });
+        if (trouve) setFournisseurId(trouve.id);
+        else setFpPropose(nom);
+      }
+
+      if (data.image_url) setOcrImageUrl(String(data.image_url));
+      setOcrInfo('🤖 Rempli auto par IA — vérifiez puis Enregistrer');
+    } catch (e) {
+      setError(`OCR échoué : ${(e as Error).message} — saisie manuelle possible`);
+    } finally {
+      setOcrEnCours(false);
+    }
+  };
+
+  const creerFournisseur = async () => {
+    if (!fpPropose) return;
+    const { data, error } = await supabase
+      .from('fournisseurs')
+      .insert({ nom: fpPropose })
+      .select()
+      .single();
+    if (error) {
+      setError('Erreur création fournisseur : ' + error.message);
+      return;
+    }
+    setFournisseurId(data.id);
+    setFpPropose(null);
+    loadData();
   };
 
   const handleUpload = async () => {
@@ -109,6 +185,7 @@ export default function DocumentsComptaPage() {
       fd.append('note', note.trim());
       fd.append('montant_ht', montantHt || '0');
       fd.append('taux_tva', tauxTva || '20');
+      if (ocrImageUrl) fd.append('file_url', ocrImageUrl);
       if (chantierId) fd.append('chantier_id', chantierId);
       if (fournisseurId) fd.append('fournisseur_id', fournisseurId);
       fd.append('categorie', categorie);
@@ -134,6 +211,9 @@ export default function DocumentsComptaPage() {
       setChantierId('');
       setFournisseurId('');
       setCategorie('materiaux');
+      setOcrInfo(null);
+      setOcrImageUrl(null);
+      setFpPropose(null);
       if (fileRef.current) fileRef.current.value = '';
       loadData();
     } catch (e) {
@@ -326,6 +406,34 @@ export default function DocumentsComptaPage() {
                 onChange={handleFileChange}
               />
             </div>
+
+            {ocrEnCours && (
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-gray-300">
+                <Loader2 size={14} className="animate-spin text-red-400" />
+                Lecture du ticket / BL par l'IA…
+              </div>
+            )}
+
+            {!ocrEnCours && ocrInfo && (
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs font-bold text-emerald-400">
+                <Sparkles size={14} />
+                {ocrInfo}
+              </div>
+            )}
+
+            {fpPropose && (
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+                <span className="text-xs text-gray-300">
+                  Fournisseur détecté : <b className="text-white">{fpPropose}</b>
+                </span>
+                <button
+                  onClick={creerFournisseur}
+                  className="ml-auto shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-400 hover:bg-emerald-600/30"
+                >
+                  + Créer (« {fpPropose} »)
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-900/20 border border-[#E30613] rounded-xl p-3">
