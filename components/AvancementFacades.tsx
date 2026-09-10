@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Loader2, CheckCircle2, Circle, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, ChevronDown, ChevronUp, Mic, Square } from "lucide-react";
 
 const FACADES = [
   { id: "nord", label: "Façade Nord" },
@@ -30,6 +30,27 @@ const ETAT_INITIAL: EtatAvancement = {
   ouest: { ossature: false, isolation: false, bardage: false, finitions: false }
 };
 
+const ETAPES_ORDRE: EtapeId[] = ["ossature", "isolation", "bardage", "finitions"];
+
+type EtatDictee = "inactif" | "enregistrement" | "transcription" | "ia";
+
+type ResultatIA = {
+  nord: number | null;
+  sud: number | null;
+  est: number | null;
+  ouest: number | null;
+  commentaire_clean: string;
+};
+
+function pourcentageVersEtapes(pct: number): Record<EtapeId, boolean> {
+  const base: Record<EtapeId, boolean> = { ossature: false, isolation: false, bardage: false, finitions: false };
+  const n = Math.round((Math.min(100, Math.max(0, pct)) / 100) * ETAPES_ORDRE.length);
+  for (let i = 0; i < n; i++) {
+    base[ETAPES_ORDRE[i]] = true;
+  }
+  return base;
+}
+
 export default function AvancementFacades({ chantierId }: { chantierId: string }) {
   const [etat, setEtat] = useState<EtatAvancement>(ETAT_INITIAL);
   const [observations, setObservations] = useState("");
@@ -38,6 +59,11 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
   const [expanded, setExpanded] = useState<Record<FacadeId, boolean>>({
     nord: true, sud: false, est: false, ouest: false
   });
+
+  const [etatDictee, setEtatDictee] = useState<EtatDictee>("inactif");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const fetchAvancement = async () => {
@@ -55,7 +81,6 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           }
           if (data[0].details && typeof data[0].details === "object") {
             const raw = data[0].details as Record<string, unknown>;
-            // Merge defensif : on ne prend que les valeurs connues, en fallback sur ETAT_INITIAL
             const merged: EtatAvancement = { ...ETAT_INITIAL };
             for (const f of FACADES) {
               const facadeData = raw[f.id];
@@ -110,8 +135,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
 
   const handleSave = async () => {
     setSaving(true);
-    
-    // Save to avancements_chantier with details column
+
     const { error } = await supabase.from("avancements_chantier").insert({
       chantier_id: chantierId,
       pourcentage: pct,
@@ -127,6 +151,102 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
     }
     setSaving(false);
   };
+
+  function appliquerResultat(result: ResultatIA) {
+    setEtat(prev => {
+      const next: EtatAvancement = { ...prev };
+      for (const f of FACADES) {
+        const pct = result[f.id];
+        if (pct !== null && pct !== undefined) {
+          next[f.id] = pourcentageVersEtapes(pct);
+        }
+      }
+      return next;
+    });
+    if (result.commentaire_clean) {
+      setObservations(prev => (prev ? prev + "\n" + result.commentaire_clean : result.commentaire_clean));
+    }
+  }
+
+  async function traiterAudio(audioBlob: Blob) {
+    setEtatDictee("transcription");
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "note.webm");
+
+      const resTranscription = await fetch("/api/transcrire-note", {
+        method: "POST",
+        body: formData,
+      });
+      if (!resTranscription.ok) throw new Error(`Erreur transcription (${resTranscription.status})`);
+      const dataTranscription = await resTranscription.json();
+      const texteBrut = dataTranscription.texteBrut?.trim();
+      if (!texteBrut) {
+        setEtatDictee("inactif");
+        alert("Aucun texte détecté dans l'enregistrement.");
+        return;
+      }
+
+      setEtatDictee("ia");
+      const resIa = await fetch("/api/ia-avancement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texteBrut }),
+      });
+      if (!resIa.ok) throw new Error(`Erreur IA (${resIa.status})`);
+      const dataIa = await resIa.json();
+      if (dataIa.error) throw new Error(dataIa.error);
+
+      appliquerResultat(dataIa);
+      setEtatDictee("inactif");
+    } catch (err) {
+      alert("Erreur lors du traitement : " + (err as Error).message);
+      setEtatDictee("inactif");
+    }
+  }
+
+  async function demarrerDictee() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+        if (audioBlob.size < 1000) {
+          setEtatDictee("inactif");
+          return;
+        }
+        await traiterAudio(audioBlob);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setEtatDictee("enregistrement");
+    } catch (err) {
+      alert("Impossible d'accéder au micro : " + (err as Error).message);
+      setEtatDictee("inactif");
+    }
+  }
+
+  function arreterDictee() {
+    mediaRecorderRef.current?.stop();
+  }
+
+  const dicteeEnTraitement = etatDictee === "transcription" || etatDictee === "ia";
 
   if (loading) return <div className="text-sm text-gray-400">Chargement de l'avancement...</div>;
 
@@ -144,10 +264,10 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
         {FACADES.map((facade) => {
           const isExpanded = expanded[facade.id];
           const etapesCochees = ETAPES.filter(e => etat[facade.id][e.id]).length;
-          
+
           return (
             <div key={facade.id} className="border border-white/10 rounded-lg overflow-hidden bg-[#0B0F19]/50">
-              <button 
+              <button
                 onClick={() => toggleFacade(facade.id)}
                 className="w-full flex items-center justify-between p-4 bg-[#1A1D24]/80 hover:bg-slate-700 transition-colors"
               >
@@ -159,7 +279,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
                 </div>
                 {isExpanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
               </button>
-              
+
               {isExpanded && (
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#0B0F19]/30">
                   {ETAPES.map((etape) => {
@@ -169,8 +289,8 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
                         key={etape.id}
                         onClick={() => toggleEtape(facade.id, etape.id)}
                         className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
-                          isChecked 
-                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300" 
+                          isChecked
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
                             : "bg-[#1A1D24] border-white/10 text-gray-400 hover:bg-slate-700"
                         }`}
                       >
@@ -187,7 +307,33 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
       </div>
 
       <div className="space-y-2 mb-6">
-        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Observations du jour</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Observations du jour</label>
+          <button
+            type="button"
+            onClick={etatDictee === "enregistrement" ? arreterDictee : demarrerDictee}
+            disabled={dicteeEnTraitement}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors ${
+              etatDictee === "enregistrement"
+                ? "bg-red-600 text-white animate-pulse"
+                : dicteeEnTraitement
+                ? "bg-white/10 text-gray-400 cursor-not-allowed"
+                : "bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30"
+            }`}
+          >
+            {etatDictee === "enregistrement" ? (
+              <Square size={14} />
+            ) : dicteeEnTraitement ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Mic size={14} />
+            )}
+            {etatDictee === "enregistrement" ? "Arrêter"
+              : etatDictee === "transcription" ? "Transcription…"
+              : etatDictee === "ia" ? "Analyse IA…"
+              : "🎙️ Dicter"}
+          </button>
+        </div>
         <textarea
           value={observations}
           onChange={(e) => setObservations(e.target.value)}
@@ -195,6 +341,17 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           rows={3}
           className="w-full bg-[#0B0F19] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-600"
         />
+        {etatDictee === "ia" && (
+          <p className="text-xs text-gray-500">Remplissage automatique des 16 cases d'avancement en cours…</p>
+        )}
+        {dicteeEnTraitement && (
+          <p className="text-xs text-gray-500 flex items-center gap-1.5">
+            <Loader2 size={12} className="animate-spin" /> Traitement de la note vocale…
+          </p>
+        )}
+        {etatDictee === "inactif" && (
+          <p className="text-xs text-gray-500">Ex. « Nord 100% fini, Sud 80%, on a eu de la pluie » — les cases se remplissent toutes seules.</p>
+        )}
       </div>
 
       <div className="flex justify-end">
