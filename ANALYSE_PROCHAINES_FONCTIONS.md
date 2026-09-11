@@ -5,11 +5,14 @@ Contexte : artisan solo façadier/bardage. Le dashboard automatise déjà : devi
 
 Audit des tâches encore manuelles après lecture complète de app/bureau/*, app/terrain/*, finance, composants et APIs.
 
+> ✅ **Statut (11/09/2026) : les 3 propositions ci-dessous sont livrées** (missions 09 → 11).
+> 🔄 L'analyse des prochaines fonctions manuelles est donc **à réactualiser** (ce document est dorénavant un historique des propositions).
+
 ---
 
 ## Propositions classées par ROI (gain de temps / complexité)
 
-### 🥇 1. Facturation automatique à l'acceptation d'un devis
+### ✅ 1. Facturation automatique à l'acceptation d'un devis — **LIVRÉ**
 
 - **Nom** : Facturation auto (Acompte à l'acceptation)
 - **Problème résolu** : Quand un devis passe à « Accepté », le patron doit aller créer à la main la facture d'acompte (30%) dans l'onglet Factures — et il oublie parfois de le faire, encaissant l'acompte en retard.
@@ -17,10 +20,11 @@ Audit des tâches encore manuelles après lecture complète de app/bureau/*, app
 - **Tables concernées** : `devis`, `factures`
 - **Complexité** : **Facile** — le générateur existe déjà.
 - **Détail important** : Le code `genererFactureAcompte()` et `handleGenererFacture()` dans `app/bureau/devis-factures/page.tsx` (l.274-371) est **déjà écrit mais mort** : à l'acceptation d'un devis, `changerStatut()` ne fait que `setDevisToBill(d)` (l.267) sans aucun modal ni appel de génération. Il suffit de le brancher (idéalement côté serveur dans une API déclenchée sur le changement de statut pour éviter toute dépendance au navigateur).
+- **🛠️ Livré** : mission 09 — commit `a6dfe14` (devis accepté/signé → facture d'acompte auto).
 
 ---
 
-### 🥈 2. Rapport intempéries en automatique (cron quotidien)
+### ✅ 2. Rapport intempéries en automatique (cron quotidien) — **LIVRÉ**
 
 - **Nom** : Veille météo intempéries automatique
 - **Problème résolu** : Par jour de pluie, le patron doit penser à cliquer « ⚡ Vérifier & Générer » pour tracer l'intempérie (protection vis-à-vis client et assurance décennale). S'il l'oublie, plus de preuve.
@@ -28,20 +32,22 @@ Audit des tâches encore manuelles après lecture complète de app/bureau/*, app
 - **Tables concernées** : `rapports_intemperies`, `rapports_intemperies_jours_arretes`, `chantiers` (+ API météo existante)
 - **Complexité** : **Facile à moyen** — le moteur complet existe (`app/api/rapports-intemperies/generer/route.ts`, dedup par jour, `cree_par: "auto"`), mais n'est déclenché qu'au clic. `vercel.json` n'a qu'**un seul cron** (rapports client, lundi 6h) : il suffit d'en ajouter un quotidien (~6h) + une notification.
 - **Risque** : budget des crons Vercel (les crons ne tournent pas sur l'offre gratuite) → à confirmer avant.
+- **🛠️ Livré** : mission 10 — commit `6b5e150` (`/api/meteo/intemperies`, cron `/api/cron/meteo`, page `/bureau/meteo`). ⚠️ Crons = plan Vercel Pro uniquement.
 
 ---
 
-### 🥉 3. OCR des BL / tickets (auto-remplissage du montant)
+### ✅ 3. OCR des BL / tickets (auto-remplissage du montant) — **LIVRÉ**
 
 - **Nom** : Scan intelligent BL / Ticket
 - **Problème résolu** : Aujourd'hui le patron photographie le BL/ticket puis **tape à la main** le montant HT et la TVA (`app/bureau/documents-compta/page.tsx`) — répétitif et source d'erreurs.
 - **Gain estimé** : ~2 min par document.
 - **Tables concernées** : `documents_compta`, `fournisseurs`, `depenses_chantier` (association auto + dépense auto déjà en place)
 - **Complexité** : **Difficile** — OCR multimodal (image → montants/date/fournisseur) avec fiabilité variable sur tickets abîmés, TVA multi-taux, montants barrés. Nécessite un modèle vision (Gemini Vision gpt-oss ne suffit pas) et une étape de validation humaine.
+- **🛠️ Livré** : mission 11 — commit `46c9cb7` (`/api/ia-ocr-ticket` Gemini vision + pré-remplissage dans Docs Compta).
 
 ---
 
-## ✅ Recommandation : coder en priorité la **Facturation automatique (proposition 1)**
+## ✅ Recommandation exécutée — Facturation automatique (proposition 1)
 
 **Pourquoi :**
 1. **ROI maximal** : quasi zéro effort (code déjà présent, il est simplement débranché), impact immédiat.

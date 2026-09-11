@@ -221,6 +221,7 @@ L'application est un **Next.js 16 App Router** connecté à **Supabase** (Postgr
 - **Chatbot IA** (Groq `openai/gpt-oss-20b`) flottant + résumé en arrière-plan
   - **Prompt sur données réelles** : le système charge l'avancement (%, cases/16), la date de fin, les devis, les factures et les arrêts intempéries des 14 derniers jours ; **plus aucun scénario "plaques HPL" hardcodé** ; règle "ne jamais inventer un retard/livraison" (réponse → le patron rappelle)
   - **Alerte "client mécontent"** : le résumé injecte aussi une notification bureau (type `client_alert`, cloche) quand le sentiment est négatif
+  - **Mémoire multi-sessions A+B+C** (mission 13) : messages bruts persistés au fil de l'eau (`espace_client_append`) + `resume_global` multi-sessions (consolidation incrémentale bornée en tokens, `decouperParTokens`) + **note patron unique par chantier** (index unique `notes_patron.espace_client_id`) ; verrou advisory anti-consolidations concurrentes ; idempotence `deja_consolide` — voir section Mission 13
 - Photos chantier (galerie bridée aux photos du chantier)
 
 ---
@@ -438,6 +439,43 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 | 10 — Veille météo intempéries | `6b5e150` | `/api/meteo/intemperies`, cron `/api/cron/meteo`, page `/bureau/meteo`, nav "Météo Chantiers" |
 | 11 — OCR BL/tickets | `46c9cb7` | `/api/ia-ocr-ticket` (Gemini vision) + pré-remplissage auto dans Docs Compta |
 | 12 — Espace client | `d0e954b` | Rapports hebdo envoyés auto, justificatifs intempéries visibles, **fix chat HPL** (prompt données réelles), alerte "client mécontent" → notifications |
+| 13 — Chat mémoire multi-sessions | `f71cf3f` | Mémoire multi-sessions A+B+C, note unique par chantier, consolidation incrémentale + budget tokens, idempotence, anti-concurrence — détails + validation réelle ci-après |
+
+### 🚀 Mission 13 — Chat Espace Client : mémoire multi-sessions (11/09/2026)
+
+> **Commit** : `f71cf3f` (feature) + commits attachés `67bd396`, `4c83db1`, `c252d58`.
+> **Migration** : `supabase/migrations/20260912_espace_client_conversations.sql` — **appliquée en production** puis vérifiée en lecture seule (table, colonne `notes_patron.espace_client_id`, fonctions RPC `espace_client_append` / `espace_client_consolider` présentes).
+
+**Design A+B+C (validé)**
+- **A — Niveau 1 (mémoire brute)** : les messages de la session sont persistés au fil de l'eau dans `espace_client_conversations.messages_session` via la RPC `espace_client_append()`.
+- **B — Niveau 2 (condensation)** : à la clôture, le LLM (Groq) condense en `resume_session` (par session, append-only dans `resumes_sessions`) + `resume_global` (mémoire multi-sessions consolidée).
+- **C — Note patron unique** : 1 note « Résumé Espace Web » par chantier (`espace_client_id` = clé de conversation, index unique), fusion de l'historique legacy « Résumé Espace Web », `epingle=true`.
+
+**Points clés de l'implémentation**
+- **Budget tokens** : `SEUIL_TOKENS_SESSION` + `decouperParTokens()` dans `lib/espace-chat-utils.ts` — le LLM ne reçoit jamais l'historique complet, seulement `resume_global` + session courante ; découpage séquentiel si dépassement.
+- **Consolidations concurrentes** : verrou advisory par clé (md5 de la clé) + `espace_client_consolider()` ne vide `messages_session` **que si** la taille n'a pas grandi pendant le calcul → aucun message perdu si un append arrive pendant la génération.
+- **Idempotence** : double clôture d'une même session → `status: deja_consolide` (pas de résumé ni de note en double).
+- **Conversation banale** : bonjour/au revoir court sans question → statut `ras`, pas d'appel LLM, mémoire brute purgée.
+
+**Tests**
+- Unitaires `__tests__/espace-chat-utils.test.ts` : estimation tokens, découpage par budget, état initial.
+- Intégration simulée `__tests__/espace-chat-circuit.test.ts` : circuit complet chat → persistance → clôture → consolidation → note unique, idempotence, RAS, panne Groq, mémoire fusionnée entre sessions.
+- Schéma `__tests__/espace-client-migration.test.ts` : table, index unique, colonne, fonctions RPC.
+
+**Validation réelle (Vercel → Groq + Supabase, 11/09/2026)**
+- ✅ **Échange Groq réel** en production (HTTP 200, modèle de prod).
+- ✅ **Persistance prouvée** : clôture appelée **sans** messages dans le corps de requête → le résumé a été produit depuis `messages_session` en BDD.
+- ✅ **Consolidation + mémoire multi-sessions** : `sessions` 1 → 2, résumé de session 2 = mémoire de la session 1 **fusionnée** (avancement s1 + façade s2).
+- ✅ **Idempotence** : double clôture s1 et s2 → `deja_consolide`.
+- ✅ **Réouverture du même chantier** (même clé, nouvelle session) puis fusion avec la mémoire précédente.
+- ✅ **Nettoyage des données de test effectué et vérifié** : suppression de la conversation et de la note `demo:CLIENT_TEST_E2E_JD`, contrôles SQL Editor à **0 ligne** (résultat collé par l'utilisateur), contre-vérification lecture seule cohérente.
+
+**Ce qui a été validé réellement** : chat réel (Groq prod), persistance BDD, consolidation, mémoire multi-sessions + fusion, idempotence, migration appliquée, nettoyage complet.
+
+**Limites connues (assumé, non automatisable en lecture seule)**
+- La **note patron** n'est pas lisible par la clé anon (RLS patron) → contenu vérifié **visuellement par l'utilisateur** + contenu déterministe (fonction pure `composerNote`).
+- Test réalisé en **mode démo** (clé `demo:*`, sans `chantierId`) — la base prod est encore quasi vide (pre-launch, `chantiers = 0`) ; le circuit via un vrai chantier reste à valider au premier usage réel.
+- **Incohérence latente signalée** : la migration `20260906_notifications.sql` contraint `type IN ('devis','facture','sav','chat','chantier','rapport','general')` alors que la prod contient `commande_retard` et que le résumé envoie `client_alert` → **à arbitrer avant tout `supabase db push`**.
 
 ### ⚠️ Points d'attention en cours
 
