@@ -155,6 +155,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setChatMessages([
           { role: 'assistant', content: `Bonjour, je suis l'assistant BNA, comment puis-je vous aider sur votre chantier ${chantierNom} ?` }
         ]);
+        nouvelleSession();
       } catch {
         console.error("Failed to fetch real data");
       } finally {
@@ -176,6 +177,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   }, [chatMessages, isChatOpen]);
 
   const hasSummarized = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
+  const nouvelleSession = () => {
+    sessionIdRef.current = crypto.randomUUID();
+    hasSummarized.current = false;
+  };
 
   const endConversationAndSummarize = async (finalMessages: ChatMessage[]) => {
     if (hasSummarized.current) return;
@@ -188,7 +194,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         body: JSON.stringify({ 
           messages: finalMessages,
           clientName: clientData?.nom || "Client",
-          chantierId: chantierData?.id || null
+          chantierId: chantierData?.id || null,
+          sessionId: sessionIdRef.current
         })
       });
     } catch {
@@ -222,7 +229,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           clientName: clientData?.nom || "Client",
           chantierName: chantierData?.nom || "Chantier",
           chantierId: chantierData?.id || null,
-          avancement: avancement
+          avancement: avancement,
+          sessionId: sessionIdRef.current
         })
       });
       const data = await res.json();
@@ -799,7 +807,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         <button 
           onClick={() => {
             if (isChatOpen) closeChat();
-            else { setIsChatOpen(true); hasSummarized.current = false; }
+            else { setIsChatOpen(true); nouvelleSession(); }
           }}
           className="flex-1 bg-black text-white rounded-full h-[60px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg"
         >

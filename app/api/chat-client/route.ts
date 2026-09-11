@@ -120,13 +120,60 @@ function formatContexte(contexte: ContexteChantier): string {
   return lignes.join('\n');
 }
 
+type Message = { role: string; content: string };
+
+async function persisterMessages(
+  cle: string,
+  chantierId: string | null | undefined,
+  clientName: string | null | undefined,
+  sessionId: string | null | undefined,
+  messages: Message[]
+) {
+  try {
+    await supabaseAdmin.rpc('espace_client_append', {
+      p_cle: cle,
+      p_chantier_id: chantierId ?? null,
+      p_client_nom: clientName ?? null,
+      p_session_id: sessionId ?? null,
+      p_messages: messages.map((m) => ({ role: m.role, content: m.content })),
+    });
+  } catch (e) {
+    console.error('persisterMessages espace client:', e);
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { messages, clientName, chantierName, chantierId, avancement } = await req.json();
+    const corps = (await req.json()) as Record<string, unknown> | null;
+    if (!corps || typeof corps !== 'object') {
+      return NextResponse.json({ error: 'Payload invalide' }, { status: 400 });
+    }
+
+    const {
+      messages,
+      clientName,
+      chantierName,
+      chantierId,
+      sessionId,
+      avancement,
+    } = corps as {
+      messages?: unknown;
+      clientName?: string;
+      chantierName?: string;
+      chantierId?: string;
+      sessionId?: string;
+      avancement?: number;
+    };
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages manquants ou invalides' }, { status: 400 });
     }
+
+    const cle = chantierId ?? `demo:${clientName ?? 'client'}`;
+    const dernierMsg = messages[messages.length - 1] as Message | undefined;
+    const userInput: Message[] = dernierMsg
+      ? [{ role: 'user', content: String(dernierMsg.content ?? '') }]
+      : [];
 
     const contexte = await chargerContexte(chantierId);
 
@@ -173,11 +220,17 @@ export async function POST(req: NextRequest) {
     if (!groqResponse.ok) {
       const errBody = await groqResponse.text();
       console.error('Erreur Groq API:', groqResponse.status, errBody);
+      await persisterMessages(cle, chantierId, clientName, sessionId, userInput);
       return NextResponse.json({ error: 'Erreur API IA', detail: errBody }, { status: 502 });
     }
 
     const groqData = await groqResponse.json();
-    let texte = groqData.choices?.[0]?.message?.content ?? "";
+    const texte = String(groqData.choices?.[0]?.message?.content ?? "");
+
+    await persisterMessages(cle, chantierId, clientName, sessionId, [
+      ...userInput,
+      { role: 'assistant', content: texte },
+    ]);
 
     return NextResponse.json({ texte });
   } catch (err) {

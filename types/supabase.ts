@@ -713,6 +713,53 @@ export type Database = {
         }
         Relationships: []
       }
+      espace_client_conversations: {
+        Row: {
+          chantier_id: string | null
+          cle: string
+          client_nom: string | null
+          id: string
+          messages_session: Json
+          resume_global: Json
+          resumes_sessions: Json
+          session_demarree_le: string | null
+          session_id_en_cours: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          chantier_id?: string | null
+          cle: string
+          client_nom?: string | null
+          id?: string
+          messages_session?: Json
+          resume_global?: Json
+          resumes_sessions?: Json
+          session_demarree_le?: string | null
+          session_id_en_cours?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          chantier_id?: string | null
+          cle?: string
+          client_nom?: string | null
+          id?: string
+          messages_session?: Json
+          resume_global?: Json
+          resumes_sessions?: Json
+          session_demarree_le?: string | null
+          session_id_en_cours?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espace_client_conversations_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipe: {
         Row: {
           id: string
@@ -1054,6 +1101,7 @@ export type Database = {
           contenu: string
           created_at: string | null
           epingle: boolean
+          espace_client_id: string | null
           id: string
           titre: string | null
           updated_at: string | null
@@ -1062,6 +1110,7 @@ export type Database = {
           contenu: string
           created_at?: string | null
           epingle?: boolean
+          espace_client_id?: string | null
           id?: string
           titre?: string | null
           updated_at?: string | null
@@ -1070,6 +1119,7 @@ export type Database = {
           contenu?: string
           created_at?: string | null
           epingle?: boolean
+          espace_client_id?: string | null
           id?: string
           titre?: string | null
           updated_at?: string | null
@@ -1819,7 +1869,26 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      espace_client_append: {
+        Args: {
+          p_cle: string
+          p_chantier_id?: string | null
+          p_client_nom?: string | null
+          p_session_id?: string | null
+          p_messages: Json
+        },
+        Returns: Json
+      },
+      espace_client_consolider: {
+        Args: {
+          p_cle: string
+          p_session_id?: string | null
+          p_nb_messages_calcules: number
+          p_resume_global?: Json
+          p_resume_session?: Json
+        },
+        Returns: Json
+      },
     }
     Enums: {
       [_ in never]: never
