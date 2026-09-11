@@ -331,7 +331,7 @@ export function useParametreFinance(cle: string) {
           .from("parametres_finance")
           .select("valeur")
           .eq("cle", cle)
-          .single();
+          .maybeSingle();
         if (!error && data && isMounted) {
           setValeur(data.valeur);
         }
