@@ -103,7 +103,7 @@ export default function SearchNav() {
                   <div className="px-4 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-bold">Clients</div>
                 )}
                 {results.clients.map(c => (
-                  <Link key={c.id} href={`/bureau/clients/${c.id}`} onClick={() => { setOpen(false); setQuery(""); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
+                  <Link key={c.id} href="/bureau/clients" onClick={() => { setOpen(false); setQuery(""); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
                     <Users size={14} className="text-blue-400" />
                     <div><p className="font-medium">{c.nom}</p><p className="text-xs text-gray-500">{c.societe || c.email}</p></div>
                     <ChevronRight size={14} className="ml-auto text-gray-600" />
