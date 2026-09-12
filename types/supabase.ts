@@ -217,6 +217,7 @@ export type Database = {
           ouvertures: Json
           plaque_largeur_mm: number | null
           plaque_longueur_mm: number | null
+          resultats_techniques: Json | null
           sens_pose: string | null
           type: string
         }
@@ -237,6 +238,7 @@ export type Database = {
           ouvertures?: Json
           plaque_largeur_mm?: number | null
           plaque_longueur_mm?: number | null
+          resultats_techniques?: Json | null
           sens_pose?: string | null
           type?: string
         }
@@ -257,6 +259,7 @@ export type Database = {
           ouvertures?: Json
           plaque_largeur_mm?: number | null
           plaque_longueur_mm?: number | null
+          resultats_techniques?: Json | null
           sens_pose?: string | null
           type?: string
         }
@@ -282,6 +285,7 @@ export type Database = {
           created_at: string | null
           date_debut: string | null
           date_fin: string | null
+          epaisseur_isolant_mm: number | null
           horaires: string | null
           id: string
           materiau_structurel: string
@@ -293,7 +297,10 @@ export type Database = {
           singularites_nb: number | null
           statut: string | null
           surface_m2: number | null
+          surface_paquet_m2: number | null
+          type_isolant: string | null
           zone_vent: number
+          zone_vent_rive: boolean | null
         }
         Insert: {
           adresse_chantier?: string | null
@@ -306,6 +313,7 @@ export type Database = {
           created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
+          epaisseur_isolant_mm?: number | null
           horaires?: string | null
           id?: string
           materiau_structurel?: string
@@ -317,7 +325,10 @@ export type Database = {
           singularites_nb?: number | null
           statut?: string | null
           surface_m2?: number | null
+          surface_paquet_m2?: number | null
+          type_isolant?: string | null
           zone_vent?: number
+          zone_vent_rive?: boolean | null
         }
         Update: {
           adresse_chantier?: string | null
@@ -330,6 +341,7 @@ export type Database = {
           created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
+          epaisseur_isolant_mm?: number | null
           horaires?: string | null
           id?: string
           materiau_structurel?: string
@@ -341,7 +353,10 @@ export type Database = {
           singularites_nb?: number | null
           statut?: string | null
           surface_m2?: number | null
+          surface_paquet_m2?: number | null
+          type_isolant?: string | null
           zone_vent?: number
+          zone_vent_rive?: boolean | null
         }
         Relationships: [
           {
@@ -1047,6 +1062,7 @@ export type Database = {
           prix_unitaire: number
           quantite: number
           total_ligne: number
+          zone_id: string | null
         }
         Insert: {
           article_id: string
@@ -1056,6 +1072,7 @@ export type Database = {
           prix_unitaire: number
           quantite: number
           total_ligne: number
+          zone_id?: string | null
         }
         Update: {
           article_id?: string
@@ -1065,6 +1082,7 @@ export type Database = {
           prix_unitaire?: number
           quantite?: number
           total_ligne?: number
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -1072,6 +1090,13 @@ export type Database = {
             columns: ["commande_id"]
             isOneToOne: false
             referencedRelation: "commandes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_commande_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_zones"
             referencedColumns: ["id"]
           },
         ]

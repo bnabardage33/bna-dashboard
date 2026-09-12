@@ -6,13 +6,12 @@ import { useParams, useRouter } from "next/navigation";
 import CommandeModal from "@/components/CommandeModal";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import ZoneCard, { Zone, LigneCommande, calculerZone } from "@/components/ZoneCard";
+import ZoneCard, { Zone, LigneCommande, ConfigTechnique, calculerZone } from "@/components/ZoneCard";
+import type { ResultatMetre } from "@/lib/metre-serialization";
+import type { Json } from "@/types/supabase";
 import { PVReceptionData } from "@/components/PVReceptionPDF";
 
 type PvReceptionListe = PVReceptionData & { id: string };
-import PlanCalepinage from "@/components/PlanCalepinage";
-import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
-import { calculerCalepinage, CalepinageInput, ResultatCalepinage } from "@/lib/calepinageCalcul";
 import AvancementFacades from "@/components/AvancementFacadesWrapper";
 import RapportClientWrapper from "@/components/RapportClientWrapper";
 import { Scissors } from "lucide-react";
@@ -39,6 +38,11 @@ type Chantier = {
   surface_m2?: number;
   quantite_coupes_ml?: number;
   singularites_nb?: number;
+  type_isolant: "laine_roche" | "laine_verre" | "sans_isolant" | null;
+  epaisseur_isolant_mm: number | null;
+  surface_paquet_m2: number | null;
+  zone_vent_rive: boolean | null;
+  coef_perte_rendement: number | null;
 };
 
 type Pointage = {
@@ -98,6 +102,8 @@ function ChantierDetailContent() {
 
   const [chantier, setChantier] = useState<Chantier | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [configDraft, setConfigDraft] = useState<ConfigTechnique | null>(null);
+  const [configSaved, setConfigSaved] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
@@ -119,28 +125,9 @@ function ChantierDetailContent() {
   const [meteo, setMeteo] = useState<JourMeteo | null>(null);
   const [loadingMeteo, setLoadingMeteo] = useState(false);
   const [detailMeteoOuvert, setDetailMeteoOuvert] = useState(false);
-  const [calepinageOuvert, setCalepinageOuvert] = useState<{zone: Zone, resultat: ResultatCalepinage} | null>(null);
   const [consignesSecurite, setConsignesSecurite] = useState<string | null>(null);
   const [isGeneratingSecurite, setIsGeneratingSecurite] = useState(false);
   
-  const [globalConfigHPL, setGlobalConfigHPL] = useState({
-    plaqueLongueurMm: 3050,
-    plaqueLargeurMm: 1300,
-    moduleLargeurMm: 1000,
-    moduleHauteurMm: 600,
-    traitDeScieMm: 3,
-    sensPose: "horizontal"
-  });
-  
-  const [isGlobalCalculated, setIsGlobalCalculated] = useState(false);
-  const [modalGlobalDebitOuvert, setModalGlobalDebitOuvert] = useState(false);
-  const [activeMurs, setActiveMurs] = useState<unknown[]>([]); // structure non consommee actuellement
-  const [savedGlobalInput, setSavedGlobalInput] = useState<CalepinageInput | null>(null);
-  const [calepinageGlobalResult, setCalepinageGlobalResult] = useState<ResultatCalepinage | null>(null);
-  
-
-
-
   async function genererSecuriteIA() {
     setIsGeneratingSecurite(true);
     // On force le cast pour éviter les erreurs TS sur les index
@@ -182,8 +169,37 @@ function ChantierDetailContent() {
       .eq("chantier_id", id)
       .order("created_at", { ascending: true });
     if (error) console.error(error);
-    else setZones((data as unknown as Zone[]).map((z) => ({ ...z, ouvertures: z.ouvertures || [] })));
+    else
+      setZones(
+        (data as unknown as Zone[]).map((z) => ({
+          ...z,
+          ouvertures: z.ouvertures || [],
+          // jsonb en base → objet ; toute valeur mal formée/absente reste NULL
+          // (zones historiques) et sera simplement (re)calculée.
+          resultats_techniques:
+            z.resultats_techniques && typeof z.resultats_techniques === "object"
+              ? (z.resultats_techniques as ResultatMetre)
+              : null,
+        })),
+      );
   }, [id]);
+
+  async function persisterResultatZone(zoneId: string, resultat: ResultatMetre) {
+    // Ack optimiste : la ZoneCard reçoit immédiatement le résultat stocké,
+    // ce qui met fin à l'attente d'écriture pour ces entrées.
+    setZones((zs) =>
+      zs.map((z) =>
+        z.id === zoneId ? { ...z, resultats_techniques: resultat } : z,
+      ),
+    );
+    const { error } = await supabase
+      .from("chantier_zones")
+      .update({ resultats_techniques: resultat as unknown as Json })
+      .eq("id", zoneId);
+    if (error) {
+      console.error("Erreur persistance resultats_techniques zone", error);
+    }
+  }
 
   const fetchDocuments = useCallback(async () => {
     setLoadingDocs(true);
@@ -229,24 +245,21 @@ function ChantierDetailContent() {
 
   
   useEffect(() => {
-    if (chantier?.id) {
-      const saved = localStorage.getItem('calepinage_' + chantier.id);
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          if (data.input) setSavedGlobalInput(data.input);
-          if (data.result) setCalepinageGlobalResult(data.result);
-          if (data.activeMurs) setActiveMurs(data.activeMurs);
-          if (data.isCalculated) setIsGlobalCalculated(true);
-        } catch (e) {}
-      }
-    }
-  }, [chantier?.id]);
-
-  useEffect(() => {
     setLoading(true);
     Promise.all([fetchChantier(), fetchZones()]).finally(() => setLoading(false));
   }, [fetchChantier, fetchZones]);
+
+  // Initialise le brouillon de la config technique depuis les valeurs persistées
+  useEffect(() => {
+    if (!chantier) return;
+    setConfigDraft({
+      type_isolant: chantier.type_isolant ?? null,
+      epaisseur_isolant_mm: chantier.epaisseur_isolant_mm ?? null,
+      surface_paquet_m2: chantier.surface_paquet_m2 ?? null,
+      zone_vent_rive: chantier.zone_vent_rive ?? null,
+      coef_perte_rendement: chantier.coef_perte_rendement ?? null,
+    });
+  }, [chantier?.id]);
 
   useEffect(() => {
     if (tab === "Documents" && chantier) {
@@ -269,7 +282,7 @@ function ChantierDetailContent() {
     // Calcul des totaux actuels
     const currentTotaux = zones.reduce(
       (acc, z) => {
-        const c = calculerZone(z);
+        const c = calculerZone(z, chantier.coef_perte_rendement);
         return {
           nette: acc.nette + c.surfaceNette,
           totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
@@ -350,6 +363,44 @@ function ChantierDetailContent() {
     if (!error) setChantier({ ...chantier, zone_vent });
   }
 
+  function majConfigTechnique(patch: Partial<ConfigTechnique>) {
+    setConfigDraft((prev) => (prev ? { ...prev, ...patch } : null));
+  }
+
+  async function sauvegarderConfigTechnique() {
+    if (!chantier || !configDraft) return;
+    setConfigSaved(false);
+    const { error } = await supabase
+      .from("chantiers")
+      .update({
+        type_isolant: configDraft.type_isolant,
+        epaisseur_isolant_mm: configDraft.epaisseur_isolant_mm,
+        surface_paquet_m2: configDraft.surface_paquet_m2,
+        zone_vent_rive: configDraft.zone_vent_rive,
+        coef_perte_rendement: configDraft.coef_perte_rendement,
+      })
+      .eq("id", id);
+    if (error) {
+      console.error(error);
+      alert("Erreur lors de l'enregistrement de la configuration technique : " + error.message);
+      return;
+    }
+    setChantier((prev) =>
+      prev
+        ? {
+            ...prev,
+            type_isolant: configDraft.type_isolant,
+            epaisseur_isolant_mm: configDraft.epaisseur_isolant_mm,
+            surface_paquet_m2: configDraft.surface_paquet_m2,
+            zone_vent_rive: configDraft.zone_vent_rive,
+            coef_perte_rendement: configDraft.coef_perte_rendement,
+          }
+        : null,
+    );
+    setConfigSaved(true);
+    window.setTimeout(() => setConfigSaved(false), 2500);
+  }
+
   async function ajouterZone() {
     const { data, error } = await supabase
       .from("chantier_zones")
@@ -406,27 +457,35 @@ function ChantierDetailContent() {
     if (!error) setZones((zs) => zs.filter((z) => z.id !== zoneId));
   }
 
-  const [commandeModalData, setCommandeModalData] = useState<{ isOpen: boolean; lignes: LigneCommande[]; zoneNom: string; chantierNom: string }>({
+  const [commandeModalData, setCommandeModalData] = useState<{
+    isOpen: boolean;
+    lignes: LigneCommande[];
+    zoneNom: string;
+    zoneId: string;
+    chantierNom: string;
+  }>({
     isOpen: false,
     lignes: [],
     zoneNom: "",
+    zoneId: "",
     chantierNom: "",
   });
 
   // Transmet les lignes calculées depuis une zone vers la modale de chiffrage/commande
-  function handleCreerCommande(lignes: LigneCommande[], zoneNom: string) {
+  function handleCreerCommande(lignes: LigneCommande[], zoneNom: string, zoneId: string) {
     if (!chantier) return;
     setCommandeModalData({
       isOpen: true,
       lignes,
       zoneNom,
+      zoneId,
       chantierNom: chantier.nom || chantier.clients?.nom || "Chantier en cours"
     });
   }
 
   const totaux = zones.reduce(
     (acc, z) => {
-      const c = calculerZone(z);
+      const c = calculerZone(z, chantier?.coef_perte_rendement);
       return {
         bruteFacade: acc.bruteFacade + c.bruteFacade,
         brutePignon: acc.brutePignon + c.brutePignon,
@@ -438,6 +497,22 @@ function ChantierDetailContent() {
     },
     { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0, totalCoupesML: 0 }
   );
+
+  const configTechnique: ConfigTechnique = chantier
+    ? {
+        type_isolant: chantier.type_isolant ?? null,
+        epaisseur_isolant_mm: chantier.epaisseur_isolant_mm ?? null,
+        surface_paquet_m2: chantier.surface_paquet_m2 ?? null,
+        zone_vent_rive: chantier.zone_vent_rive ?? null,
+        coef_perte_rendement: chantier.coef_perte_rendement ?? null,
+      }
+    : {
+        type_isolant: null,
+        epaisseur_isolant_mm: null,
+        surface_paquet_m2: null,
+        zone_vent_rive: null,
+        coef_perte_rendement: null,
+      };
 
   if (loading) return <p className="text-sm text-gray-400">Chargement…</p>;
   if (!chantier) return <p className="text-sm text-red-400">Chantier introuvable.</p>;
@@ -705,6 +780,164 @@ function ChantierDetailContent() {
 
       {tab === "Métrés & Technique" && (
         <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-300">Générer un devis</p>
+              <p className="mt-0.5 text-[11px] text-gray-500">
+                Chiffre ce chantier sur la base des résultats techniques persistés, sans nouveau calcul.
+              </p>
+            </div>
+            <Link
+              href={`/bureau/devis-factures?chantier_id=${encodeURIComponent(id)}`}
+              className="shrink-0 rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white shadow-md transition-colors hover:bg-sky-700"
+            >
+              Générer un devis →
+            </Link>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-300">
+                🧱 Configuration technique du chantier
+              </p>
+              <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-gray-400">
+                Persistée sur le chantier · utilisée par tous les calculs de pose
+              </span>
+            </div>
+            <p className="mt-0.5 text-[11px] text-gray-500">
+              Saisie au niveau du chantier. Les zones appliquent ces valeurs pour leur
+              calcul d&apos;isolant et d&apos;équerrerie. Les zones en attente (brouillon) utilisent
+              les mêmes valeurs de secours qu&apos;avant tant que rien n&apos;est configuré.
+            </p>
+
+            {configDraft ? (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                  <label className="text-[11px] text-gray-500">Type d&apos;isolant</label>
+                  <select
+                    value={configDraft.type_isolant ?? ""}
+                    onChange={(e) =>
+                      majConfigTechnique({
+                        type_isolant: (e.target.value || null) as ConfigTechnique["type_isolant"],
+                      })
+                    }
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                  >
+                    <option value="">— (secours : laine de roche)</option>
+                    <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>
+                    <option value="laine_verre">Laine de verre (ISOVER / Knauf)</option>
+                    <option value="sans_isolant">Sans isolant rapporté</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-500">Épaisseur isolant</label>
+                  <select
+                    value={configDraft.epaisseur_isolant_mm ?? ""}
+                    onChange={(e) =>
+                      majConfigTechnique({
+                        epaisseur_isolant_mm:
+                          e.target.value === "" ? null : parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                  >
+                    <option value="">— (secours : 120 mm)</option>
+                    <option value={0}>0 mm (Sans isolant / Lame d&apos;air seule)</option>
+                    <option value={80}>80 mm (R = 2.25)</option>
+                    <option value={100}>100 mm (R = 2.85)</option>
+                    <option value={120}>120 mm (R = 3.40 — Standard)</option>
+                    <option value={140}>140 mm (R = 4.00)</option>
+                    <option value={160}>160 mm (R = 4.55)</option>
+                    <option value={180}>180 mm (R = 5.10)</option>
+                    <option value={200}>200 mm (R = 5.70 — Haute perf.)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-500">Surface / Paquet (m²)</label>
+                  <input
+                    type="number"
+                    min={0.1}
+                    step={0.1}
+                    placeholder="4.8"
+                    value={configDraft.surface_paquet_m2 ?? ""}
+                    onChange={(e) =>
+                      majConfigTechnique({
+                        surface_paquet_m2:
+                          e.target.value === "" ? null : parseFloat(e.target.value),
+                      })
+                    }
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-500">Rives renforcées (40 cm)</label>
+                  <div className="mt-1 flex gap-1 rounded-lg border border-white/10 p-0.5">
+                    {[
+                      { v: null, l: "Auto" },
+                      { v: true, l: "Oui" },
+                      { v: false, l: "Non" },
+                    ].map((opt) => (
+                      <button
+                        key={String(opt.v)}
+                        type="button"
+                        onClick={() => majConfigTechnique({ zone_vent_rive: opt.v })}
+                        className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                          configDraft.zone_vent_rive === opt.v
+                            ? "bg-sky-600 text-white"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        {opt.l}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-gray-600">
+                    Auto = suit l&apos;angle de chaque zone
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-gray-500">Coefficient perte / rendement</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step={0.01}
+                    placeholder="1.1 / 1.15 auto"
+                    value={configDraft.coef_perte_rendement ?? ""}
+                    onChange={(e) =>
+                      majConfigTechnique({
+                        coef_perte_rendement:
+                          e.target.value === "" ? null : parseFloat(e.target.value),
+                      })
+                    }
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                  />
+                  <p className="mt-0.5 text-[10px] text-gray-600">
+                    Auto = 1.1 lames / 1.15 plaques
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-gray-500">Chargement…</p>
+            )}
+
+            <div className="mt-3 flex items-center justify-end gap-2">
+              {configSaved && (
+                <span className="text-[11px] font-semibold text-emerald-400">✓ Enregistré</span>
+              )}
+              <button
+                type="button"
+                onClick={sauvegarderConfigTechnique}
+                className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-md hover:bg-emerald-700 transition-colors"
+              >
+                Enregistrer la configuration technique
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-5">
             <Resume label="Brut façades" value={totaux.bruteFacade} />
             <Resume label="Brut pignons" value={totaux.brutePignon} />
@@ -722,9 +955,11 @@ function ChantierDetailContent() {
                 key={zone.id}
                 zone={zone}
                 zoneVent={chantier.zone_vent}
+                configTechnique={configTechnique}
                 onChange={updateZone}
                 onDelete={supprimerZone}
                 onCreerCommande={handleCreerCommande}
+                onPersistResult={(resultat) => persisterResultatZone(zone.id, resultat)}
               />
             ))}
 
@@ -1204,6 +1439,7 @@ function ChantierDetailContent() {
         chantierNom={commandeModalData.chantierNom || chantier?.nom || "Chantier en cours"}
         chantierAdresse={chantier?.adresse_chantier}
         zoneNom={commandeModalData.zoneNom}
+        zoneId={commandeModalData.zoneId}
       />
     </div>
   );

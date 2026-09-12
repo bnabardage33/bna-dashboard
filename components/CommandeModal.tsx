@@ -8,6 +8,7 @@ import { LigneCommande } from "@/components/ZoneCard";
 import { useRouter } from "next/navigation";
 import BonCommandePDF, { BonCommandeData } from "@/components/BonCommandePDF";
 import { Entreprise } from "@/types/entreprise";
+import { construireLignesCommande } from "@/lib/lignesCommande";
 
 type Article = {
   id: string;
@@ -55,6 +56,7 @@ export default function CommandeModal({
   chantierNom,
   chantierAdresse,
   zoneNom,
+  zoneId,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -63,6 +65,7 @@ export default function CommandeModal({
   chantierNom: string;
   chantierAdresse?: string | null;
   zoneNom: string;
+  zoneId: string;
 }) {
   const router = useRouter();
   const [lignes, setLignes] = useState<LigneDevis[]>([]);
@@ -151,14 +154,17 @@ export default function CommandeModal({
       if (cmdError) throw cmdError;
 
       // 2. Insert lines
-      const lignesData = validLines.map(l => ({
-        commande_id: commande.id,
-        article_id: l.articleSelectionne!.id,
-        fournisseur_id: l.fournisseurSelectionneId!,
-        quantite: l.quantite,
-        prix_unitaire: getPrix(l.articleSelectionne!),
-        total_ligne: l.totalHT ?? 0
-      }));
+      const lignesData = construireLignesCommande(
+        commande.id,
+        zoneId,
+        validLines.map(l => ({
+          article_id: l.articleSelectionne!.id,
+          fournisseur_id: l.fournisseurSelectionneId!,
+          quantite: l.quantite,
+          prix_unitaire: getPrix(l.articleSelectionne!),
+          total_ligne: l.totalHT ?? 0
+        })),
+      );
 
       const { error: linesError } = await supabase
         .from('lignes_commande')

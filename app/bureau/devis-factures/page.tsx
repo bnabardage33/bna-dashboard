@@ -15,9 +15,14 @@ declare global {
   }
 }
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  chantierIdDepuisRecherche,
+  planPreselectionDevis,
+} from "@/lib/devisPreselection";
 import { calculerDevis, CoutType } from "@/lib/devisCalcul";
 import {
   MATERIAU_STRUCTUREL_DEFAUT,
@@ -59,6 +64,8 @@ type Ligne = {
   pu_revient?: number | null;
   type_cout?: CoutType | null;
   a_chiffrer: boolean;
+  justification?: string;
+  confiance?: number;
 };
 
 type Devis = {
@@ -112,7 +119,8 @@ const LIGNE_VIDE: Ligne = {
   a_chiffrer: false,
 };
 
-export default function DevisPage() {
+function DevisContenu() {
+  const searchParams = useSearchParams();
   const [devis, setDevis] = useState<Devis[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [catalogue, setCatalogue] = useState<CatalogueOuvrage[]>([]);
@@ -186,6 +194,65 @@ export default function DevisPage() {
       };
     }
   }, [modalOuvert]);
+
+  // ── Présélection « Générer un devis » (arrivée avec ?chantier_id=…) ──
+  // Exécuté UNE fois au montage. Ne déclenche aucun calcul de quantités :
+  // récupère uniquement le client du chantier, charge ses chantiers et ouvre
+  // la modale. Sans chantier_id → aucun effet (comportement actuel) ;
+  // ID inexistant/sans client → aucune sélection forcée.
+  const preselectionEffectuee = useRef(false);
+  const clientIdCourant = useRef("");
+  const chantierIdCourant = useRef("");
+  useEffect(() => {
+    clientIdCourant.current = clientId;
+  }, [clientId]);
+  useEffect(() => {
+    chantierIdCourant.current = chantierId;
+  }, [chantierId]);
+
+  useEffect(() => {
+    if (preselectionEffectuee.current) return;
+    const chantierIdDemande = chantierIdDepuisRecherche(searchParams);
+    if (!chantierIdDemande) return;
+
+    let annule = false;
+    (async () => {
+      const { data: chantier, error } = await supabase
+        .from("chantiers")
+        .select("id, client_id, nom, code_acces, adresse_chantier, surface_m2")
+        .eq("id", chantierIdDemande)
+        .maybeSingle();
+
+      if (annule || error || !chantier) return;
+
+      const plan = planPreselectionDevis(
+        chantierIdDemande,
+        !!(clientIdCourant.current || chantierIdCourant.current),
+        chantier,
+      );
+      if (!plan) return;
+
+      preselectionEffectuee.current = true;
+      setClientId(plan.clientId);
+
+      const { data: chantiersDuClient } = await supabase
+        .from("chantiers")
+        .select("id, nom, code_acces, adresse_chantier, surface_m2")
+        .eq("client_id", plan.clientId)
+        .order("created_at", { ascending: false });
+
+      if (annule) return;
+      if (chantiersDuClient) {
+        setChantiersClient(chantiersDuClient as { id: string; nom: string | null; code_acces: string | null; adresse_chantier: string | null; surface_m2?: number | null }[]);
+      }
+      setChantierId(plan.chantierId);
+      if (plan.ouvrirModale) setModalOuvert(true);
+    })();
+
+    return () => {
+      annule = true;
+    };
+  }, []);
 
 
 
@@ -268,6 +335,8 @@ export default function DevisPage() {
             unite: (l.unite as string) || "forfait",
             pu_ht: typeof l.pu_ht === "number" && (l.pu_ht as number) > 0 ? (l.pu_ht as number) : null,
             a_chiffrer: !!l.a_chiffrer,
+            justification: typeof l.justification === "string" && l.justification ? (l.justification as string) : undefined,
+            confiance: typeof l.confiance === "number" ? (l.confiance as number) : undefined,
           })),
         ];
       });
@@ -863,6 +932,11 @@ export default function DevisPage() {
                         placeholder="Désignation"
                         className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
+                      {l.justification && (
+                        <p className="mt-1 text-[10px] leading-tight text-emerald-300/80 sm:text-[10px]" title={`Confiance : ${Math.round((l.confiance ?? 0) * 100)} %`}>
+                          {l.justification}
+                        </p>
+                      )}
                     </div>
                     <div className="col-span-1 sm:col-span-2">
                       <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
@@ -1148,5 +1222,16 @@ export default function DevisPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DevisPage() {
+  // `useSearchParams` n'est utilisée QUE dans DevisContenu : cette page cliente
+  // doit être enveloppée dans un <Suspense> (contrainte Next.js) pour ne pas
+  // faire échouer le build (prerendering).
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-gray-400">Chargement…</div>}>
+      <DevisContenu />
+    </Suspense>
   );
 }

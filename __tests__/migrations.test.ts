@@ -29,4 +29,23 @@ describe('Migrations SQL', () => {
     expect(content).toContain('marge_pct')
     expect(content).toContain('surface_m2')
   })
+
+  it('le fichier de migration socle métré + technique est additif et complet', () => {
+    const migrationPath = './supabase/migrations/20260912_metre_technique_socle.sql'
+    const content = readFileSync(migrationPath, 'utf-8')
+
+    // chantiers : configuration technique réellement utilisée par calculerPose()
+    expect(content).toContain('type_isolant')
+    expect(content).toContain('epaisseur_isolant_mm')
+    expect(content).toContain('surface_paquet_m2')
+    expect(content).toContain('zone_vent_rive')
+
+    // chantier_zones : résultat technique VALIDÉ des moteurs (JSONB, jamais recalculé en SQL)
+    expect(content).toContain('resultats_techniques')
+    expect(content).toContain('jsonb')
+
+    // lignes_commande : rattachement optionnel à la zone d'origine (FK nullable, non destructif)
+    expect(content).toContain('zone_id')
+    expect(content).toContain('on delete set null')
+  })
 })

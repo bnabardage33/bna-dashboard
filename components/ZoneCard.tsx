@@ -2,7 +2,7 @@
 
 import type { Materiau } from "@/lib/meteoAlerte";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   calculerPose,
   FamillePose,
@@ -15,6 +15,13 @@ import {
 import PlanCalepinage from "@/components/PlanCalepinage";
 import FicheDebitPDF from "@/components/FicheDebitPDF";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
+import {
+  extraireEntrees,
+  lesEntreesOntChangent,
+  serialiserResultatTechnique,
+} from "@/lib/metre-serialization";
+import type { EntreesMetre, ResultatMetre } from "@/lib/metre-serialization";
+import { persistanceNecessaire } from "@/lib/metre-persistance";
 
 type Ouverture = {
   id: string;
@@ -41,10 +48,21 @@ export type Zone = {
   module_largeur_mm?: number | null;
   module_hauteur_mm?: number | null;
   sens_pose: SensPose | null;
-  epaisseur_isolant_mm?: number | null;
-  type_isolant?: "laine_roche" | "laine_verre" | "sans_isolant" | null;
-  surface_paquet_m2?: number | null;
-  zone_vent_rive?: boolean | null;
+  resultats_techniques?: ResultatMetre | null;
+};
+
+/**
+ * Configuration technique du CHANTIER (source unique, persistée sur `chantiers`).
+ * Chaque valeur `null` signifie « non configurée » → les moteurs utilisent alors
+ * leur valeur de secours historique. Une valeur réellement saisie (y compris 0
+ * pour l'épaisseur d'isolant) est TOUJOURS utilisée, jamais remplacée en silence.
+ */
+export type ConfigTechnique = {
+  type_isolant: "laine_roche" | "laine_verre" | "sans_isolant" | null;
+  epaisseur_isolant_mm: number | null;
+  surface_paquet_m2: number | null;
+  zone_vent_rive: boolean | null;
+  coef_perte_rendement: number | null;
 };
 
 export type LigneCommande = {
@@ -57,7 +75,10 @@ export type LigneCommande = {
    CALCUL GLOBAL DE LA ZONE
    ============================================================ */
 
-export function calculerZone(zone: Zone) {
+export function calculerZone(
+  zone: Zone,
+  coefPerteRendement?: number | null
+) {
   const bruteFacade =
     zone.type === "facade"
       ? zone.largeur * zone.hauteur_mur
@@ -102,7 +123,10 @@ export function calculerZone(zone: Zone) {
       totalOuvertures
   );
 
-  const marge = zone.materiau === "lames" ? 1.1 : 1.15;
+  const marge =
+    coefPerteRendement && coefPerteRendement > 0
+      ? coefPerteRendement
+      : zone.materiau === "lames" ? 1.1 : 1.15;
 
   const surfaceACommander =
     surfaceNette * marge;
@@ -167,18 +191,23 @@ function defautModule(
 export default function ZoneCard({
   zone,
   zoneVent,
+  configTechnique,
   onChange,
   onDelete,
   onCreerCommande,
+  onPersistResult,
 }: {
   zone: Zone;
   zoneVent: number;
+  configTechnique: ConfigTechnique;
   onChange: (zone: Zone) => void;
   onDelete: (id: string) => void;
   onCreerCommande?: (
     lignes: LigneCommande[],
-    zoneNom: string
+    zoneNom: string,
+    zoneId: string
   ) => void;
+  onPersistResult?: (result: ResultatMetre) => void;
 }) {
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
   const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
@@ -209,7 +238,7 @@ export default function ZoneCard({
     return PRESETS_PLAQUES.includes(`${l}x${h}`) ? `${l}x${h}` : "custom";
   })();
   const plaqueFormatCustom = plaqueFormatValeur === "custom";
-  const calc = calculerZone(zone);
+  const calc = calculerZone(zone, configTechnique.coef_perte_rendement);
 
   /*
    * Pour le calcul de pose :
@@ -249,10 +278,10 @@ export default function ZoneCard({
                 zone.famille_pose
               ),
             {
-              zoneVentRive: zone.zone_vent_rive ?? zone.angle,
-              epaisseurIsolantMm: zone.epaisseur_isolant_mm ?? 120,
-              typeIsolant: zone.type_isolant ?? "laine_roche",
-              surfacePaquetM2: zone.surface_paquet_m2 ?? 4.8,
+              zoneVentRive: configTechnique.zone_vent_rive ?? zone.angle,
+              epaisseurIsolantMm: configTechnique.epaisseur_isolant_mm ?? 120,
+              typeIsolant: configTechnique.type_isolant ?? "laine_roche",
+              surfacePaquetM2: configTechnique.surface_paquet_m2 ?? 4.8,
               moduleLargeurMm: zone.module_largeur_mm ?? null,
               moduleHauteurMm: zone.module_hauteur_mm ?? null,
               sensPose: sensPoseEffectif,
@@ -319,6 +348,95 @@ export default function ZoneCard({
           hauteurFaiteM: zone.hauteur_faite,
         })
       : null;
+
+  /* ============================================================
+     PERSISTANCE `resultats_techniques` (source de vérité du métré)
+     ============================================================
+     On n'écrit sur Supabase QUE si les entrées qui influencent les
+     calculs ont réellement changé (comparé aux entrées déjà stockées).
+     Le JSONB est construit à partir des objets EXACTEMENT affichés
+     (calc / pose / calepinage) : aucun deuxième chemin de calcul,
+     aucun recalcul dans la couche de persistance, aucune quantité
+     inventée. Les trois moteurs restent la source du calcul.
+     ============================================================ */
+
+  // Entrées des moteurs pour CETTE zone, avec la config chantier persistée.
+  // Mémoïsées sur les valeurs exactes qui les composent : la structure n'est
+  // reconstruite que si l'une de ces valeurs change réellement.
+  const entreesActuelles = useMemo(
+    () => extraireEntrees(zone, configTechnique),
+    [
+      zone.type,
+      zone.largeur,
+      zone.hauteur_mur,
+      zone.hauteur_faite,
+      zone.materiau,
+      zone.ouvertures,
+      zone.famille_pose,
+      zone.angle,
+      zone.largeur_lame_mm,
+      zone.plaque_longueur_mm,
+      zone.plaque_largeur_mm,
+      zone.module_largeur_mm,
+      zone.module_hauteur_mm,
+      zone.sens_pose,
+      configTechnique.type_isolant,
+      configTechnique.epaisseur_isolant_mm,
+      configTechnique.surface_paquet_m2,
+      configTechnique.zone_vent_rive,
+      configTechnique.coef_perte_rendement,
+    ],
+  );
+
+  // Garde-fou anti-boucle : les entrées pour lesquelles on a déjà demandé
+  // une persistance (en attendant l'accusé de réception de la page).
+  const dernieresEntreesEcrites = useRef<EntreesMetre | null>(null);
+
+  useEffect(() => {
+    if (!onPersistResult) return;
+
+    // Initialisation au premier rendu : si le rechargement renvoie un résultat
+    // déjà stocké avec des entrées identiques, on ne doit RIEN réécrire.
+    if (dernieresEntreesEcrites.current === null) {
+      dernieresEntreesEcrites.current = zone.resultats_techniques?.entrees ?? null;
+    }
+
+    // Entrées identiques au stocké → aucune écriture Supabase.
+    const persister = persistanceNecessaire(zone.resultats_techniques, entreesActuelles);
+    if (!persister) {
+      dernieresEntreesEcrites.current = entreesActuelles;
+      return;
+    }
+
+    // Déjà émis pour ces mêmes entrées (écriture en vol) → on attend l'ack.
+    if (
+      dernieresEntreesEcrites.current &&
+      !lesEntreesOntChangent(dernieresEntreesEcrites.current, entreesActuelles)
+    ) {
+      return;
+    }
+
+    // Entrées modifiées (ou premier calcul) → on persiste les résultats
+    // exactement affichés, produits par les moteurs.
+    const nouveauResultat = serialiserResultatTechnique(
+      zone,
+      configTechnique,
+      calc,
+      pose,
+      calepinage,
+    );
+    dernieresEntreesEcrites.current = entreesActuelles;
+    onPersistResult(nouveauResultat);
+  }, [
+    onPersistResult,
+    zone,
+    zoneVent,
+    configTechnique,
+    entreesActuelles,
+    calc,
+    pose,
+    calepinage,
+  ]);
 
   /* ============================================================
      MISE À JOUR
@@ -495,7 +613,8 @@ export default function ZoneCard({
 
     onCreerCommande(
       lignes,
-      zone.nom
+      zone.nom,
+      zone.id
     );
   }
 
@@ -745,69 +864,28 @@ export default function ZoneCard({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Épaisseur Isolant */}
-              <div>
-                <label className="text-[11px] text-slate-400">Épaisseur Isolant</label>
-                <select
-                  value={zone.epaisseur_isolant_mm ?? 120}
-                  onChange={(e) => update({ epaisseur_isolant_mm: parseInt(e.target.value, 10) })}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                >
-                  <option value={0}>0 mm (Sans isolant / Lame d'air seule)</option>
-                  <option value={80}>80 mm (R = 2.25)</option>
-                  <option value={100}>100 mm (R = 2.85)</option>
-                  <option value={120}>120 mm (R = 3.40 — Standard)</option>
-                  <option value={140}>140 mm (R = 4.00)</option>
-                  <option value={160}>160 mm (R = 4.55)</option>
-                  <option value={180}>180 mm (R = 5.10)</option>
-                  <option value={200}>200 mm (R = 5.70 — Haute perf.)</option>
-                </select>
-              </div>
-
-              {/* Type d'isolant */}
-              <div>
-                <label className="text-[11px] text-slate-400">Type d'isolant</label>
-                <select
-                  value={zone.type_isolant ?? "laine_roche"}
-                  onChange={(e) =>
-                    update({ type_isolant: e.target.value as Zone["type_isolant"] })
-                  }
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-xs text-slate-100"
-                >
-                  <option value="laine_roche">Laine de roche (Rockwool Fixrock)</option>
-                  <option value="laine_verre">Laine de verre (ISOVER / Knauf)</option>
-                  <option value="sans_isolant">Sans isolant rapporté</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Conditionnement paquet & Options vent */}
-            <div className="grid grid-cols-2 gap-3">
-              <Field
-                label="Surface / Paquet (m²)"
-                value={zone.surface_paquet_m2 ?? 4.8}
-                onChange={(v) => update({ surface_paquet_m2: v || null })}
-              />
-
-              <div className="flex flex-col justify-end">
-                <button
-                  type="button"
-                  onClick={() => update({ zone_vent_rive: !(zone.zone_vent_rive ?? zone.angle) })}
-                  className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                    (zone.zone_vent_rive ?? zone.angle)
-                      ? "border-sky-500 bg-sky-950/40 text-sky-300"
-                      : "border-slate-600 bg-slate-900 text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <span>💨 Rives renforcées (40cm)</span>
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      (zone.zone_vent_rive ?? zone.angle) ? "bg-sky-400" : "bg-slate-600"
-                    }`}
-                  />
-                </button>
-              </div>
+            <div className="rounded-md border border-slate-700 bg-slate-900/60 p-2.5 text-[11px] text-slate-400">
+              Configuration technique du chantier (onglet « Métrés &amp; Technique ») :
+              isolant{" "}
+              <span className="font-semibold text-slate-200">
+                {configTechnique.type_isolant === "sans_isolant"
+                  ? "sans isolant rapporté"
+                  : (configTechnique.type_isolant ?? "laine_roche") === "laine_roche"
+                    ? "laine de roche"
+                    : "laine de verre"}
+              </span>
+              {" · "}
+              <span className="font-semibold text-slate-200">
+                ép. {configTechnique.epaisseur_isolant_mm ?? 120} mm
+              </span>
+              {" · "}
+              <span className="font-semibold text-slate-200">
+                {configTechnique.surface_paquet_m2 ?? 4.8} m²/paquet
+              </span>
+              {" · "}
+              <span className="font-semibold text-slate-200">
+                rives {(configTechnique.zone_vent_rive ?? zone.angle) ? "renforcées (40cm)" : "simples"}
+              </span>
             </div>
 
             {/* Badge de synthèse technique */}
@@ -1404,6 +1482,8 @@ export default function ZoneCard({
             ) : (
               <FicheDebitPDF
                 zone={zone}
+                zoneVentRive={configTechnique.zone_vent_rive ?? zone.angle}
+                coefPerteRendement={configTechnique.coef_perte_rendement}
                 chantier={{ nom: "Chantier BNA", adresse: null }}
                 entreprise={{
                   raison_sociale: "BNA Bardage",

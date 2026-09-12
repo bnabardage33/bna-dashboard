@@ -22,18 +22,22 @@ type ChantierInfo = {
 
 export default function FicheDebitPDF({
   zone,
+  zoneVentRive = false,
+  coefPerteRendement = null,
   chantier,
   entreprise,
   pose,
   calepinage,
 }: {
   zone: Zone;
+  zoneVentRive?: boolean;
+  coefPerteRendement?: number | null;
   chantier: ChantierInfo;
   entreprise: Entreprise;
   pose: ResultatPose | null;
   calepinage: ResultatCalepinage | null;
 }) {
-  const totaux = calculerZone(zone);
+  const totaux = calculerZone(zone, coefPerteRendement);
   const dateStr = new Date().toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -291,7 +295,7 @@ export default function FicheDebitPDF({
               </tr>
               <tr>
                 <td className="py-1.5 font-medium">Équerres {pose.isolant.modeleEquerreIsolco} ({pose.nbEquerresPorteuses} porteuses + {pose.nbEquerresGuides} guides)</td>
-                <td className="py-1.5 text-center">{pose.entraxeVertical} m {zone.angle || zone.zone_vent_rive ? "(angle/vent)" : ""}</td>
+                <td className="py-1.5 text-center">{pose.entraxeVertical} m {zone.angle || zoneVentRive ? "(angle/vent)" : ""}</td>
                 <td className="py-1.5 text-right font-bold">{pose.nbFixationsTotal}</td>
                 <td className="py-1.5 text-right">équerres</td>
               </tr>

@@ -22,6 +22,10 @@ export type LigneDevis = {
   pu_revient?: number | null;
   type_cout?: CoutType | null;
   a_chiffrer?: boolean;
+  // Traçabilité par zone (source : metre-complet) — champ JSON additif, facultatif.
+  // Chaque ligne issue d'une zone conserve l'identifiant zone.id ; les lignes
+  // issues de zones différentes ne sont jamais fusionnées silencieusement.
+  zone_id?: string | null;
 };
 
 export type CalculsDevis = {
