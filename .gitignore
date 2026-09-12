@@ -41,6 +41,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# credentials de test locaux
+**/.creds.json
+
 # dev scripts (one-off patches, do not commit)
 patch_*.js
 fix_*.js

@@ -40,9 +40,16 @@ type Ouvrage = {
   unite: string;
   pu_ht: number;
   prix_ttc?: number | null;
+  // Coût de revient & nature (IA Devis phase 1)
+  pu_revient?: number | null;
+  type_cout: string; // 'matiere' | 'main_oeuvre'
 };
 
-type FormState = Omit<Ouvrage, "id" | "pu_ht"> & { pu_ht: number | null };
+type FormState = Omit<Ouvrage, "id" | "pu_ht"> & {
+  pu_ht: number | null;
+  pu_revient: number | null;
+  type_cout: string;
+};
 
 const emptyForm: FormState = {
   categorie: "bardage",
@@ -61,6 +68,8 @@ const emptyForm: FormState = {
   fournisseur: "",
   unite: "m²",
   pu_ht: 0,
+  pu_revient: null,
+  type_cout: "matiere",
   prix_ttc: null,
 };
 
@@ -70,6 +79,7 @@ export default function CataloguePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("Toutes");
   const [activeFabricant, setActiveFabricant] = useState<string>("All");
+  const [typeFiltre, setTypeFiltre] = useState<"tous" | "matiere" | "main_oeuvre">("tous");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOuvrage, setEditingOuvrage] = useState<Ouvrage | null>(null);
@@ -225,7 +235,7 @@ export default function CataloguePage() {
     }
   }, []);
 
-  const handleOpenModal = (ouvrage?: Ouvrage) => {
+  const handleOpenModal = (ouvrage?: Ouvrage, typeInit?: "main_oeuvre" | "matiere") => {
     if (ouvrage) {
       setEditingOuvrage(ouvrage);
       const { id, ...rest } = ouvrage;
@@ -243,7 +253,7 @@ export default function CataloguePage() {
       setFormData({ ...emptyForm, ...rest, dimensions_disponibles: dims });
     } else {
       setEditingOuvrage(null);
-      setFormData(emptyForm);
+      setFormData({ ...emptyForm, type_cout: typeInit === "main_oeuvre" ? "main_oeuvre" : "matiere" });
     }
     setIsModalOpen(true);
   };
@@ -267,6 +277,8 @@ export default function CataloguePage() {
     const rawPayload = {
       ...formData,
       pu_ht: numericHt,
+      pu_revient: parseFloat(String(formData.pu_revient).replace(',', '.')) || 0,
+      type_cout: formData.type_cout === "main_oeuvre" ? "main_oeuvre" : "matiere",
       prix_ttc: numericTtc,
       longueur_mm: formData.longueur_mm != null ? Number(formData.longueur_mm) : null,
       largeur_mm: formData.largeur_mm != null ? Number(formData.largeur_mm) : null,
@@ -393,12 +405,15 @@ export default function CataloguePage() {
   const filteredOuvrages = ouvrages.filter((o) => {
     const matchesCat = activeCategory === "Toutes" || o.categorie === activeCategory;
     const matchesFab = activeFabricant === "All" || o.fabricant === activeFabricant;
+    const matchesType =
+      typeFiltre === "tous" ||
+      (o.type_cout === undefined || o.type_cout === null ? "matiere" : o.type_cout) === typeFiltre;
     const lowerSearch = searchQuery.toLowerCase();
     const matchesSearch = o.designation.toLowerCase().includes(lowerSearch) ||
       (o.description && o.description.toLowerCase().includes(lowerSearch)) ||
       (o.couleur && o.couleur.toLowerCase().includes(lowerSearch)) ||
       (o.code_decor && o.code_decor.toLowerCase().includes(lowerSearch));
-    return matchesCat && matchesFab && matchesSearch;
+    return matchesCat && matchesFab && matchesType && matchesSearch;
   });
 
   return (
@@ -439,6 +454,14 @@ export default function CataloguePage() {
               {isImporting ? "Importation..." : "Importer CSV"}
             </button>
             <button
+              onClick={() => handleOpenModal(undefined, "main_oeuvre")}
+              className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+              title="Créer une prestation de main-d'œuvre (pose, dépose, finition…)"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvelle Main-d&apos;œuvre
+            </button>
+            <button
               onClick={() => handleOpenModal()}
               className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-600 transition-colors"
             >
@@ -463,6 +486,25 @@ export default function CataloguePage() {
                 }`}
               >
                 {cat}
+              </button>
+            ))}
+          </div>
+          {/* Type de prestation */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Type :</span>
+            {(["tous", "matiere", "main_oeuvre"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTypeFiltre(t)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors border ${
+                  typeFiltre === t
+                    ? t === "main_oeuvre"
+                      ? "bg-violet-600/30 border-violet-500/50 text-violet-300"
+                      : "bg-emerald-600/20 border-emerald-500/40 text-emerald-300"
+                    : "bg-[#1A1D24] text-gray-400 border-white/10 hover:border-slate-500"
+                }`}
+              >
+                {t === "tous" ? "Tous" : t === "matiere" ? "Matériaux" : "Main-d'œuvre"}
               </button>
             ))}
           </div>
@@ -503,6 +545,7 @@ export default function CataloguePage() {
               setSearchQuery('');
               setActiveFabricant('All');
               setActiveCategory('Toutes');
+              setTypeFiltre('tous');
             }}
             className="ml-2 rounded bg-[#1A1D24] px-3 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
           >
@@ -518,11 +561,22 @@ export default function CataloguePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredOuvrages.map((o) => (
-              <div key={o.id} className="flex flex-col rounded-xl border border-white/10 bg-[#1A1D24]/50 p-5 hover:border-white/10 transition-colors">
+              <div key={o.id} className={`flex flex-col rounded-xl border p-5 transition-colors ${o.type_cout === "main_oeuvre" ? "border-violet-500/40 bg-violet-500/[0.06] hover:border-violet-500/60" : "border-white/10 bg-[#1A1D24]/50 hover:border-white/10"}`}>
                 <div className="flex justify-between items-start mb-2">
-                  <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded">
-                    {o.famille_label}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span
+                      className={`inline-block px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded w-fit ${
+                        o.type_cout === "main_oeuvre"
+                          ? "bg-violet-600/30 text-violet-300"
+                          : "bg-emerald-600/20 text-emerald-300"
+                      }`}
+                    >
+                      {o.type_cout === "main_oeuvre" ? "Main-d'œuvre" : "Matériau"}
+                    </span>
+                    <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded w-fit">
+                      {o.famille_label}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleOpenModal(o)} className="text-gray-500 hover:text-gray-400">
                       <Edit2 className="h-4 w-4" />
@@ -582,9 +636,20 @@ export default function CataloguePage() {
                 </p>
                 <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
                   <span className="text-xs font-medium text-gray-500">Unité : {o.unite}</span>
-                  <span className="text-lg font-black text-gray-400">{fmtEuro(o.pu_ht)} HT</span>
-                  {o.prix_ttc !== undefined && (
-                    <span className="text-sm font-medium text-gray-400">{fmtEuro(o.prix_ttc)} TTC</span>
+                  {o.type_cout === "main_oeuvre" ? (
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-xs font-medium text-violet-300/80">
+                        Revient : {fmtEuro(o.pu_revient ?? 0)} HT
+                      </span>
+                      <span className="text-lg font-black text-gray-200">{fmtEuro(o.pu_ht)} HT</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-lg font-black text-gray-400">{fmtEuro(o.pu_ht)} HT</span>
+                      {o.prix_ttc !== undefined && (
+                        <span className="text-sm font-medium text-gray-400">{fmtEuro(o.prix_ttc)} TTC</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -604,7 +669,13 @@ export default function CataloguePage() {
               {/* Header fixe */}
               <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
                 <h2 className="text-xl font-bold text-white">
-                  {editingOuvrage ? "Modifier le matériau" : "Nouveau matériau"}
+                  {editingOuvrage
+                    ? formData.type_cout === "main_oeuvre"
+                      ? "Modifier la main-d'œuvre"
+                      : "Modifier le matériau"
+                    : formData.type_cout === "main_oeuvre"
+                      ? "Nouvelle Main-d'œuvre"
+                      : "Nouveau matériau"}
                 </h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
                   <X className="h-5 w-5" />
@@ -616,6 +687,7 @@ export default function CataloguePage() {
                 <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-6">
                 
                 {/* ── Auto-remplissage ─────────── */}
+                {formData.type_cout === "matiere" && (
                 <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
                   <label className="block text-xs font-semibold text-cyan-400 mb-2">
                     ⚡ Auto-remplir via une adresse Web (Optionnel)
@@ -641,47 +713,172 @@ export default function CataloguePage() {
                     Copiez le lien depuis votre navigateur mobile et collez-le ici.
                   </p>
                 </div>
+                )}
 
-                {/* ── En-tête : Catégorie + Famille + Désignation ─────────── */}
+                {/* ── Type de prestation : Matériau / Main-d'œuvre ───────── */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Catégorie</label>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Type de prestation</label>
                     <select
-                      required
-                      value={formData.categorie}
-                      onChange={(e) => set("categorie", e.target.value)}
-                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      value={formData.type_cout}
+                      onChange={(e) => set("type_cout", e.target.value === "main_oeuvre" ? "main_oeuvre" : "matiere")}
+                      className={`w-full rounded border bg-transparent p-2 text-sm text-white ${
+                        formData.type_cout === "main_oeuvre"
+                          ? "border-violet-500/60 text-violet-300"
+                          : "border-slate-600"
+                      }`}
                     >
-                      {categories.filter((c) => c !== "Toutes").map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
+                      <option value="matiere">Matériau (fourniture)</option>
+                      <option value="main_oeuvre">Main-d'œuvre (prestation)</option>
                     </select>
                   </div>
+                  {formData.type_cout === "matiere" ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Catégorie</label>
+                      <select
+                        required
+                        value={formData.categorie}
+                        onChange={(e) => set("categorie", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      >
+                        {categories.filter((c) => c !== "Toutes").map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs font-semibold text-violet-300 mb-1">Famille / type de prestation</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="ex&nbsp;: Pose bardage, Dépose, Finition…"
+                        value={formData.famille_label ?? ""}
+                        onChange={(e) => set("famille_label", e.target.value)}
+                        className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {formData.type_cout === "matiere" ? (
+                  <>
+                  {/* ── En-tête : Famille + Désignation ─────────── */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Famille (ex&nbsp;: Bardage HPL)</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Bardage HPL"
+                        value={formData.famille_label ?? ""}
+                        onChange={(e) => set("famille_label", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="ex&nbsp;: Trespa Meteon – Blanc Ménuires B015"
+                        value={formData.designation ?? ""}
+                        onChange={(e) => set("designation", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
+                  </div>
+                  </>
+                ) : (
+                  <>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Famille (ex&nbsp;: Bardage HPL)</label>
+                    <label className="block text-xs font-semibold text-violet-300 mb-1">Désignation (titre de la fiche)</label>
                     <input
                       required
                       type="text"
-                      placeholder="Bardage HPL"
-                      value={formData.famille_label ?? ""}
-                      onChange={(e) => set("famille_label", e.target.value)}
-                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      placeholder="ex&nbsp;: Pose vêture HPL"
+                      value={formData.designation ?? ""}
+                      onChange={(e) => set("designation", e.target.value)}
+                      className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="ex&nbsp;: Trespa Meteon – Blanc Ménuires B015"
-                    value={formData.designation ?? ""}
-                    onChange={(e) => set("designation", e.target.value)}
-                    className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
-                  />
-                </div>
+                  {/* ── Section Prestation : Unité + Prix vente + Coût de revient ── */}
+                  <fieldset className="rounded-lg border border-violet-500/40 p-4 space-y-4">
+                    <legend className="px-2 text-xs font-bold uppercase tracking-widest text-violet-300">
+                      Prestation · Vente &amp; Coût de revient
+                    </legend>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
+                        <select
+                          required
+                          value={formData.unite}
+                          onChange={(e) => set("unite", e.target.value)}
+                          className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                        >
+                          <option value="m²">m²</option>
+                          <option value="ml">ml</option>
+                          <option value="unité">Unité</option>
+                          <option value="U">U (Unité)</option>
+                          <option value="heure">Heure</option>
+                          <option value="forfait">Forfait</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-400 mb-1">Prix de vente HT (€) — pu_ht</label>
+                        <input
+                          required
+                          type="text"
+                          placeholder="0.00"
+                          value={formData.pu_ht ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const numericHt = parseFloat(val.replace(',', '.')) || 0;
+                            setFormData((prev) => ({
+                              ...prev,
+                              pu_ht: val ? parseFloat(val.replace(',', '.')) || 0 : 0,
+                              prix_ttc: val === "" ? null : parseFloat((numericHt * 1.2).toFixed(2))
+                            }));
+                          }}
+                          className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">
+                        Coût de revient HT (€) — pu_revient
+                        <span className="ml-1 text-[10px] font-normal text-gray-500">(ce que la prestation te coûte vraiment)</span>
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="0.00"
+                        value={formData.pu_revient ?? ""}
+                        onChange={(e) => set("pu_revient", e.target.value === "" ? null : parseFloat(e.target.value.replace(',', '.')) || 0)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Description (détail de la prestation)</label>
+                      <textarea
+                        rows={2}
+                        placeholder="ex&nbsp;: Pose des panneaux vêture HPL sur ossature bois, fixation inox, finition soignée."
+                        value={formData.description ?? ""}
+                        onChange={(e) => set("description", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
+                  </fieldset>
+                  </>
+                )}
+
+                {/* ── Sections matériau (masquées en mode Main-d'œuvre) ─── */}
+                {formData.type_cout === "matiere" && (
+                <>
                 {/* ── Section 1 : Marque & Décor ─────────────────────────── */}
                 <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
                   <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
@@ -863,6 +1060,7 @@ export default function CataloguePage() {
                         <option value="m²">m²</option>
                         <option value="U">U (Unité)</option>
                         <option value="ml">ml</option>
+                        <option value="heure">Heure</option>
                         <option value="forfait">Forfait</option>
                       </select>
                     </div>
@@ -890,6 +1088,23 @@ export default function CataloguePage() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
+                        Coût de revient HT (€)
+                        <span className="ml-1 text-[10px] font-normal text-gray-500">(prix d'achat réel)</span>
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="0.00"
+                        value={formData.pu_revient ?? ""}
+                        onChange={(e) => set("pu_revient", e.target.value === "" ? null : parseFloat(e.target.value.replace(',', '.')) || 0)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Prix TTC (€)
                         <span className="ml-1 text-[10px] font-normal text-gray-500">(TVA 20%)</span>
                       </label>
@@ -911,6 +1126,8 @@ export default function CataloguePage() {
                     </div>
                   </div>
                 </fieldset>
+                </>
+                )}
 
                 </div> {/* Fin du contenu scrollable */}
 

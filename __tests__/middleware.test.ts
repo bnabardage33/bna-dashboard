@@ -11,7 +11,6 @@ describe('Middleware PUBLIC_PATHS', () => {
       '/api/meteo-vigilance',
       '/api/search',
       '/api/notifications',
-      '/api/ia-devis',
       '/api/reformuler-note',
       '/api/transcrire-note',
       '/api/ia-securite',
@@ -36,5 +35,9 @@ describe('Middleware PUBLIC_PATHS', () => {
   it('contient les routes de login et espace-client', () => {
     expect(PUBLIC_PATHS).toContain('/login')
     expect(PUBLIC_PATHS).toContain('/espace-client')
+  })
+
+  it('supprime /api/ia-devis des routes publiques — l\'IA Devis doit être protégée par session', () => {
+    expect(PUBLIC_PATHS).not.toContain('/api/ia-devis')
   })
 })

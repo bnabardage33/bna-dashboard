@@ -129,6 +129,8 @@ export type Database = {
           longueur_mm: number | null
           prix_ttc: number | null
           pu_ht: number
+          pu_revient: number
+          type_cout: string
           unite: string
         }
         Insert: {
@@ -150,6 +152,8 @@ export type Database = {
           longueur_mm?: number | null
           prix_ttc?: number | null
           pu_ht: number
+          pu_revient?: number
+          type_cout?: string
           unite: string
         }
         Update: {
@@ -171,6 +175,8 @@ export type Database = {
           longueur_mm?: number | null
           prix_ttc?: number | null
           pu_ht?: number
+          pu_revient?: number
+          type_cout?: string
           unite?: string
         }
         Relationships: []
@@ -515,14 +521,20 @@ export type Database = {
           adresse_chantier: string | null
           chantier_id: string | null
           client_id: string | null
+          cout_main_oeuvre_ht: number
+          cout_matiere_ht: number
           created_at: string | null
           date_emission: string | null
           delai_jours: number | null
           id: string
           lignes: Json
+          marge_ht: number
+          marge_pct: number
           numero: string
           objet: string | null
           statut: string
+          surface_m2: number | null
+          total_ht: number
           tva_pct: number
           type_travaux: string | null
           validite_jours: number | null
@@ -532,14 +544,20 @@ export type Database = {
           adresse_chantier?: string | null
           chantier_id?: string | null
           client_id?: string | null
+          cout_main_oeuvre_ht?: number
+          cout_matiere_ht?: number
           created_at?: string | null
           date_emission?: string | null
           delai_jours?: number | null
           id?: string
           lignes?: Json
+          marge_ht?: number
+          marge_pct?: number
           numero: string
           objet?: string | null
           statut?: string
+          surface_m2?: number | null
+          total_ht?: number
           tva_pct?: number
           type_travaux?: string | null
           validite_jours?: number | null
@@ -549,14 +567,20 @@ export type Database = {
           adresse_chantier?: string | null
           chantier_id?: string | null
           client_id?: string | null
+          cout_main_oeuvre_ht?: number
+          cout_matiere_ht?: number
           created_at?: string | null
           date_emission?: string | null
           delai_jours?: number | null
           id?: string
           lignes?: Json
+          marge_ht?: number
+          marge_pct?: number
           numero?: string
           objet?: string | null
           statut?: string
+          surface_m2?: number | null
+          total_ht?: number
           tva_pct?: number
           type_travaux?: string | null
           validite_jours?: number | null

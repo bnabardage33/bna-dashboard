@@ -12,7 +12,6 @@ export const PUBLIC_PATHS = [
   '/api/meteo-vigilance',
   '/api/search',
   '/api/notifications',
-  '/api/ia-devis',
   '/api/reformuler-note',
   '/api/transcrire-note',
   '/api/ia-securite',

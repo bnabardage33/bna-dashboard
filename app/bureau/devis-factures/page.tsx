@@ -17,6 +17,12 @@ declare global {
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { calculerDevis, CoutType } from "@/lib/devisCalcul";
+import {
+  MATERIAU_STRUCTUREL_DEFAUT,
+  MOYEN_ACCES_DEFAUT,
+  ZONE_VENT_DEFAUT,
+} from "@/lib/chantierDefaults";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
 import SignaturePad from "@/components/SignaturePad";
@@ -42,7 +48,17 @@ type Client = {
   email: string | null;
 };
 
-type Ligne = { designation: string; description?: string; qte: number; unite: string; pu_ht: number };
+type Ligne = {
+  designation: string;
+  description?: string;
+  qte: number | null;
+  unite: string;
+  pu_ht: number | null;
+  catalogue_id: string | null;
+  pu_revient?: number | null;
+  type_cout?: CoutType | null;
+  a_chiffrer: boolean;
+};
 
 type Devis = {
   id: string;
@@ -59,6 +75,12 @@ type Devis = {
   delai_jours: number | null;
   acompte_pct: number | null;
   chantier_id: string | null;
+  surface_m2?: number | null;
+  total_ht?: number | null;
+  cout_matiere_ht?: number | null;
+  cout_main_oeuvre_ht?: number | null;
+  marge_ht?: number | null;
+  marge_pct?: number | null;
   clients: Client | null;
 };
 
@@ -77,7 +99,17 @@ type Entreprise = {
   logo_url: string | null;
 };
 
-const LIGNE_VIDE: Ligne = { designation: "", description: "", qte: 1, unite: "forfait", pu_ht: 0 };
+const LIGNE_VIDE: Ligne = {
+  designation: "",
+  description: "",
+  qte: null,
+  unite: "forfait",
+  pu_ht: null,
+  catalogue_id: null,
+  pu_revient: null,
+  type_cout: null,
+  a_chiffrer: false,
+};
 
 export default function DevisPage() {
   const [devis, setDevis] = useState<Devis[]>([]);
@@ -106,7 +138,7 @@ export default function DevisPage() {
 
   const [clientId, setClientId] = useState("");
   const [chantierId, setChantierId] = useState("");
-  const [chantiersClient, setChantiersClient] = useState<{id: string; nom: string | null; code_acces: string | null; adresse_chantier: string | null}[]>([]);
+  const [chantiersClient, setChantiersClient] = useState<{id: string; nom: string | null; code_acces: string | null; adresse_chantier: string | null; surface_m2?: number | null}[]>([]);
   const [objet, setObjet] = useState("");
   const [adresseChantier, setAdresseChantier] = useState("");
   const [typeTravaux, setTypeTravaux] = useState("");
@@ -116,6 +148,7 @@ export default function DevisPage() {
   const [tva, setTva] = useState(10);
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
   const [promptIA, setPromptIA] = useState("");
+  const [surfacePonctuelle, setSurfacePonctuelle] = useState("");
   const [genererIAEnCours, setGenererIAEnCours] = useState(false);
   const [ecouteEnCours, setEcouteEnCours] = useState(false);
 
@@ -154,15 +187,22 @@ export default function DevisPage() {
     const ouv = catalogue.find((o) => o.id === ouvrageId);
     if (!ouv) return;
     setLignes((prev) => {
-      const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
       return [
-        ...nettes,
+        ...prev.filter(
+          (l) =>
+            l.a_chiffrer ||
+            l.designation.trim() ||
+            (typeof l.qte === "number" && l.qte > 0) ||
+            (typeof l.pu_ht === "number" && l.pu_ht > 0)
+        ),
         {
+          catalogue_id: ouv.id,
           designation: ouv.designation,
           description: ouv.description,
           qte: 1,
           unite: ouv.unite,
           pu_ht: ouv.pu_ht,
+          a_chiffrer: false,
         },
       ];
     });
@@ -172,12 +212,14 @@ export default function DevisPage() {
     if (!promptIA.trim()) return;
     setGenererIAEnCours(true);
     try {
+      const ponctuelle = parseFloat(surfacePonctuelle.replace(",", "."));
       const res = await fetch("/api/ia-devis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt: promptIA,
-          catalogueContext: catalogue 
+          chantier_id: chantierId && chantiersClient.length > 0 ? chantierId : undefined,
+          surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : undefined,
         }),
       });
       const data = await res.json();
@@ -185,16 +227,19 @@ export default function DevisPage() {
         throw new Error(data.error || "Erreur IA");
       }
       setLignes((prev) => {
-        const nettes = prev.filter((l) => l.designation.trim() || l.pu_ht > 0);
-        
-        let newLignes = [];
+        const nettes = prev.filter(
+          (l) =>
+            l.a_chiffrer ||
+            l.designation.trim() ||
+            (typeof l.qte === "number" && l.qte > 0) ||
+            (typeof l.pu_ht === "number" && l.pu_ht > 0)
+        );
+
+        let newLignes: Record<string, unknown>[] = [];
         if (Array.isArray(data)) {
           newLignes = data;
         } else if (data && Array.isArray(data.lignes)) {
           newLignes = data.lignes;
-        } else if (data && typeof data === 'object') {
-          // If it's a single object (e.g. from the old prompt behavior)
-          newLignes = [data];
         }
 
         if (newLignes.length === 0) {
@@ -204,16 +249,23 @@ export default function DevisPage() {
 
         return [
           ...nettes,
-          ...newLignes.map((l: Record<string, unknown>) => ({
-            designation: (l.designation as string) || "",
+          ...newLignes.map((l: Record<string, unknown>): Ligne => ({
+            catalogue_id: typeof l.catalogue_id === "string" && l.catalogue_id ? l.catalogue_id : null,
+            designation: (l.designation as string) || "À CHIFFRER",
             description: (l.description as string) || "",
-            qte: (l.qte as number) || 1,
+            qte: typeof l.qte === "number" && (l.qte as number) > 0 ? (l.qte as number) : null,
             unite: (l.unite as string) || "forfait",
-            pu_ht: (l.pu_ht as number) || 0,
-          }))
+            pu_ht: typeof l.pu_ht === "number" && (l.pu_ht as number) > 0 ? (l.pu_ht as number) : null,
+            a_chiffrer: !!l.a_chiffrer,
+          })),
         ];
       });
       setPromptIA("");
+      if (typeof data.nb_a_chiffrer === "number" && data.nb_a_chiffrer > 0) {
+        afficherToast(`⚠️ ${data.nb_a_chiffrer} ligne(s) « À CHIFFRER » — hors catalogue ou quantité manquante.`);
+      } else {
+        afficherToast("✓ Lignes générées depuis le catalogue.");
+      }
     } catch (err) {
       alert("Erreur génération IA : " + (err as Error).message);
     } finally {
@@ -222,14 +274,32 @@ export default function DevisPage() {
   }
 
   function updateLigne(i: number, patch: Partial<Ligne>) {
-    setLignes((l) => l.map((ligne, idx) => (idx === i ? { ...ligne, ...patch } : ligne)));
+    setLignes((l) =>
+      l.map((ligne, idx) => {
+        if (idx !== i) return ligne;
+        // Le patron complète une ligne « À CHIFFRER » : elle est alors prise en charge
+        // (catalogue ou saisie manuelle selon ce qu'il saisit).
+        if (ligne.a_chiffrer) {
+          return { ...ligne, ...patch, a_chiffrer: false };
+        }
+        const touchesPrixOuDesign =
+          "designation" in patch || "pu_ht" in patch || "unite" in patch;
+        if (touchesPrixOuDesign && ligne.catalogue_id) {
+          // Ligne issue du catalogue dont le patron modifie prix / désignation / unité :
+          // elle devient manuelle (le prix du catalogue reste la vérité côté IA & route).
+          return { ...ligne, ...patch, catalogue_id: null, pu_revient: null, type_cout: null };
+        }
+        return { ...ligne, ...patch };
+      })
+    );
   }
 
   function supprimerLigne(i: number) {
     setLignes((l) => l.filter((_, idx) => idx !== i));
   }
 
-  const totalHT = lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+  const apercuCalculs = calculerDevis(lignes);
+  const totalHT = apercuCalculs.total_ht;
 
   async function creerDevis(e: React.FormEvent) {
     e.preventDefault();
@@ -237,23 +307,39 @@ export default function DevisPage() {
 
     const numero = await prochainNumero("devis", "DEV");
 
-    const { error } = await supabase.from("devis").insert({
-      numero,
-      client_id: clientId,
-      chantier_id: chantierId || null,
-      objet: objet || null,
-      adresse_chantier: adresseChantier || null,
-      type_travaux: typeTravaux || null,
-      validite_jours: validite,
-      delai_jours: delai,
-      acompte_pct: acompte,
-      tva_pct: tva,
-      statut: "brouillon",
-      lignes,
-    });
+    // Ligne vierge jamais alimentée → écartée. Les lignes « À CHIFFRER » sont conservées
+    // (le patron doit les compléter ensuite) mais n'entrent jamais dans les totaux.
+    const lignesNettoyees = lignes.filter(
+      (l) =>
+        l.a_chiffrer ||
+        l.designation.trim() ||
+        (typeof l.qte === "number" && l.qte > 0) ||
+        (typeof l.pu_ht === "number" && l.pu_ht > 0)
+    );
 
-    if (error) {
-      alert("Erreur : " + error.message);
+    const ponctuelle = parseFloat(surfacePonctuelle.replace(",", "."));
+    const res = await fetch("/api/devis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numero,
+        client_id: clientId,
+        chantier_id: chantierId || null,
+        objet: objet || null,
+        adresse_chantier: adresseChantier || null,
+        type_travaux: typeTravaux || null,
+        validite_jours: validite,
+        delai_jours: delai,
+        acompte_pct: acompte,
+        tva_pct: tva,
+        surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : null,
+        lignes: lignesNettoyees,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || data?.error) {
+      alert("Erreur : " + (data?.error || "Erreur serveur lors de la création du devis."));
       return;
     }
 
@@ -265,6 +351,7 @@ export default function DevisPage() {
     setAdresseChantier("");
     setTypeTravaux("");
     setLignes([{ ...LIGNE_VIDE }]);
+    setSurfacePonctuelle("");
     fetchTout();
   }
 
@@ -289,11 +376,11 @@ export default function DevisPage() {
     let lignesFacture: Ligne[] = [];
     
     if (billType === "totale") {
-      // On copie exactement les lignes
-      lignesFacture = d.lignes;
+      // On copie les lignes chiffrées uniquement (jamais les « À CHIFFRER »).
+      lignesFacture = d.lignes.filter((l) => !l.a_chiffrer);
     } else if (billType === "acompte") {
       // Ligne unique d'acompte
-      const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+      const totalHT = calculerDevis(d.lignes).total_ht;
       const montantHT = totalHT * (billPct / 100);
       lignesFacture = [
         {
@@ -302,15 +389,21 @@ export default function DevisPage() {
           qte: 1,
           unite: "forfait",
           pu_ht: Math.round(montantHT * 100) / 100,
+          catalogue_id: null,
+          pu_revient: null,
+          type_cout: null,
+          a_chiffrer: false,
         },
       ];
     } else if (billType === "situation") {
-      // Situation: On copie les lignes mais on indique le pourcentage d'avancement dans la désignation
-      lignesFacture = d.lignes.map(l => ({
-        ...l,
-        designation: `[Avancement ${billPct}%] ${l.designation}`,
-        pu_ht: Math.round(l.pu_ht * (billPct / 100) * 100) / 100
-      }));
+      // Situation: On copie les lignes chiffrées mais on indique le pourcentage d'avancement dans la désignation
+      lignesFacture = d.lignes
+        .filter((l) => !l.a_chiffrer)
+        .map(l => ({
+          ...l,
+          designation: `[Avancement ${billPct}%] ${l.designation}`,
+          pu_ht: typeof l.pu_ht === "number" ? Math.round(l.pu_ht * (billPct / 100) * 100) / 100 : null,
+        }));
     }
 
     const { error } = await supabase.from("factures").insert({
@@ -348,7 +441,7 @@ export default function DevisPage() {
       return;
     }
 
-    const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+    const totalHT = calculerDevis(d.lignes).total_ht;
     const pct = d.acompte_pct ?? 30;
     const montantHT = Math.round(totalHT * (pct / 100) * 100) / 100;
 
@@ -397,6 +490,11 @@ export default function DevisPage() {
       client_id: d.client_id,
       adresse_chantier: d.adresse_chantier,
       statut: "prevu",
+      materiau_structurel: MATERIAU_STRUCTUREL_DEFAUT,
+      moyen_acces: MOYEN_ACCES_DEFAUT,
+      zone_vent: ZONE_VENT_DEFAUT,
+      prix_vente_ht: d.total_ht ?? null,
+      surface_m2: d.surface_m2 ?? null,
       code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
     });
@@ -458,9 +556,13 @@ export default function DevisPage() {
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2">
           {devis.map((d) => {
-            const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+            const totalHT = d.total_ht && d.total_ht > 0 ? d.total_ht : calculerDevis(d.lignes || []).total_ht;
             const totalTTC = totalHT * (1 + (d.tva_pct || 10) / 100);
             const nomClient = d.clients?.societe || d.clients?.nom || "Client direct";
+            const nbACHiffrer = (d.lignes || []).filter((l) => l.a_chiffrer).length;
+            const margeConnue =
+              (d.cout_matiere_ht ?? 0) + (d.cout_main_oeuvre_ht ?? 0) > 0 ||
+              (d.marge_ht ?? 0) !== 0;
 
             return (
               <div
@@ -508,6 +610,19 @@ export default function DevisPage() {
                       <p className="text-sm font-bold text-gray-300 font-mono">{totalTTC.toFixed(2)} €</p>
                     </div>
                   </div>
+
+                  {(nbACHiffrer > 0 || margeConnue) && (
+                    <div className="flex items-center justify-between gap-2 text-[10px]">
+                      {margeConnue && (
+                        <span className="font-semibold text-emerald-400/90">
+                          Marge : {Math.round((d.marge_pct ?? 0) * 100) / 100}% · {(d.marge_ht ?? 0).toFixed(2)} €
+                        </span>
+                      )}
+                      {nbACHiffrer > 0 && (
+                        <span className="font-bold text-amber-400">À CHIFFRER ×{nbACHiffrer}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-3.5 flex items-center justify-between border-t border-white/10/60 pt-3">
@@ -580,7 +695,7 @@ export default function DevisPage() {
                   if (id) {
                     const { data } = await supabase
                       .from("chantiers")
-                      .select("id, nom, code_acces, adresse_chantier")
+                      .select("id, nom, code_acces, adresse_chantier, surface_m2")
                       .eq("client_id", id)
                       .order("created_at", { ascending: false });
                     if (data) setChantiersClient(data);
@@ -616,6 +731,37 @@ export default function DevisPage() {
                     </option>
                   ))}
                 </select>
+              )}
+
+              {(chantierId || chantiersClient.length > 0) && (
+                (() => {
+                  const terrain = chantiersClient.find((c) => c.id === chantierId);
+                  const surfChantier =
+                    terrain && typeof terrain.surface_m2 === "number" && terrain.surface_m2 > 0
+                      ? terrain.surface_m2
+                      : null;
+                  return (
+                    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
+                      <div className="flex-1 min-w-[180px]">
+                        <label className="text-[11px] font-semibold uppercase text-gray-400">
+                          Surface métré (m²)
+                        </label>
+                        <input
+                          type="number"
+                          value={surfacePonctuelle}
+                          onChange={(e) => setSurfacePonctuelle(e.target.value)}
+                          placeholder={surfChantier ? `automatique : ${surfChantier} m²` : "surface ponctuelle…"}
+                          className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-400 max-w-[240px]">
+                        {surfChantier
+                          ? `Chantier métré : ${surfChantier} m² — utilisé automatiquement si vide.`
+                          : "Si vide : le chantier lié fait foi ; sinon les lignes « m² » restent non chiffrées."}
+                      </p>
+                    </div>
+                  );
+                })()
               )}
 
               <input
@@ -682,7 +828,12 @@ export default function DevisPage() {
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Lignes de prestation</p>
                 {lignes.map((l, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2">
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                    {l.a_chiffrer && (
+                      <span className="col-span-12 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                        À CHIFFRER — hors catalogue ou quantité inconnue. Complétez manuellement.
+                      </span>
+                    )}
                     <input
                       value={l.designation}
                       onChange={(e) => updateLigne(i, { designation: e.target.value })}
@@ -691,7 +842,7 @@ export default function DevisPage() {
                     />
                     <input
                       type="number"
-                      value={l.qte}
+                      value={l.qte ?? ""}
                       onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
                       placeholder="Qté"
                       className="col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
@@ -704,7 +855,7 @@ export default function DevisPage() {
                     />
                     <input
                       type="number"
-                      value={l.pu_ht}
+                      value={l.pu_ht ?? ""}
                       onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
                       placeholder="PU HT"
                       className="col-span-3 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
@@ -813,9 +964,27 @@ export default function DevisPage() {
                 </div>
               </div>
 
-              <p className="text-right text-sm font-bold text-white pt-2">
-                Total HT : <span className="font-mono text-gray-400">{totalHT.toFixed(2)} €</span>
-              </p>
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Coût matière</span>
+                  <span className="text-xs font-mono text-gray-300">{apercuCalculs.cout_matiere_ht.toFixed(2)} €</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Main d&apos;œuvre</span>
+                  <span className="text-xs font-mono text-gray-300">{apercuCalculs.cout_main_oeuvre_ht.toFixed(2)} €</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Marge estimée</span>
+                  <span className="text-xs font-mono text-emerald-400 font-bold">
+                    {apercuCalculs.marge_ht.toFixed(2)} € ({apercuCalculs.marge_pct.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="h-px bg-white/10/60" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold uppercase text-gray-300">Total HT</span>
+                  <span className="text-base font-bold font-mono text-white">{totalHT.toFixed(2)} €</span>
+                </div>
+              </div>
             </div>
 
             <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
@@ -875,7 +1044,15 @@ export default function DevisPage() {
                 objet: apercu.objet,
                 adresse_chantier: apercu.adresse_chantier,
                 type_travaux: apercu.type_travaux,
-                lignes: apercu.lignes,
+                lignes: (apercu.lignes || [])
+                  .filter((l) => !l.a_chiffrer)
+                  .map((l) => ({
+                    designation: l.designation || "—",
+                    description: l.description,
+                    qte: typeof l.qte === "number" && l.qte > 0 ? l.qte : 0,
+                    unite: l.unite || "forfait",
+                    pu_ht: typeof l.pu_ht === "number" && l.pu_ht > 0 ? l.pu_ht : 0,
+                  })),
                 tva_pct: apercu.tva_pct,
                 acompte_pct: apercu.acompte_pct,
                 delai_jours: apercu.delai_jours,
