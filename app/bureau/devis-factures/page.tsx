@@ -669,27 +669,27 @@ export default function DevisPage() {
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-[210] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
             onSubmit={creerDevis}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-2xl h-[94dvh] sm:h-auto sm:max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1A1D24] w-[calc(100vw-20px)] max-w-2xl h-[90dvh] sm:h-auto sm:max-h-[85vh] sm:w-full flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5 shrink-0">
-              <h2 className="text-lg font-bold text-white">Nouveau Devis</h2>
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-1.5 sm:py-3.5 shrink-0">
+              <h2 className="text-[17px] sm:text-lg font-bold text-white">Nouveau Devis</h2>
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-xl text-gray-400 hover:bg-white/5 hover:text-white"
+                className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg text-lg sm:text-xl text-gray-400 hover:bg-white/5 hover:text-white"
                 aria-label="Fermer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-3 sm:gap-4">
+            <div className="p-3 pb-6 overflow-y-auto flex-1 flex flex-col gap-2.5 sm:gap-4 sm:p-4">
               <select
                 value={clientId}
                 onChange={async (e) => {
@@ -707,7 +707,7 @@ export default function DevisPage() {
                   }
                 }}
                 required
-                className="w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-3 text-[15px] text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
               >
                 <option value="">-- Choisir un client --</option>
                 {clients.map((c) => (
@@ -727,7 +727,7 @@ export default function DevisPage() {
                     const ch = chantiersClient.find(c => c.id === id);
                     if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
                   }}
-                  className="w-full min-h-[46px] rounded-xl border border-red-700 bg-transparent px-3.5 py-3 text-[15px] text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                  className="w-full min-h-[42px] rounded-xl border border-red-700 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                 >
                   <option value="">-- Lier à un chantier (optionnel) --</option>
                   {chantiersClient.map((c) => (
@@ -746,7 +746,7 @@ export default function DevisPage() {
                       ? terrain.surface_m2
                       : null;
                   return (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
                       <div className="flex-1 w-full min-w-[160px]">
                         <label className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                           Surface métré (m²)
@@ -756,7 +756,7 @@ export default function DevisPage() {
                           value={surfacePonctuelle}
                           onChange={(e) => setSurfacePonctuelle(e.target.value)}
                           placeholder={surfChantier ? `automatique : ${surfChantier} m²` : "surface ponctuelle…"}
-                          className="mt-1 w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                          className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                         />
                       </div>
                       <p className="text-xs text-gray-400 sm:max-w-[240px]">
@@ -773,59 +773,59 @@ export default function DevisPage() {
                 value={objet}
                 onChange={(e) => setObjet(e.target.value)}
                 placeholder="Objet (ex. Bardage bois claire-voie)"
-                className="w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-3 text-[15px] text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
               />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <input
                   value={adresseChantier}
                   onChange={(e) => setAdresseChantier(e.target.value)}
                   placeholder="Adresse du chantier"
-                  className="w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-3 text-[15px] text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                  className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                 />
                 <input
                   value={typeTravaux}
                   onChange={(e) => setTypeTravaux(e.target.value)}
                   placeholder="Type de travaux"
-                  className="w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-3 text-[15px] text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                  className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Validité (j)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
                   <input
                     type="number"
                     value={validite}
                     onChange={(e) => setValidite(parseInt(e.target.value) || 0)}
-                    className="mt-1 w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Délai (j)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Délai (j)</label>
                   <input
                     type="number"
                     value={delai}
                     onChange={(e) => setDelai(parseInt(e.target.value) || 0)}
-                    className="mt-1 w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">Acompte (%)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Acompte (%)</label>
                   <input
                     type="number"
                     value={acompte}
                     onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
-                    className="mt-1 w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase text-gray-400">TVA (%)</label>
+                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">TVA (%)</label>
                   <input
                     type="number"
                     step="0.1"
                     value={tva}
                     onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full min-h-[46px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   />
                 </div>
               </div>
@@ -833,59 +833,59 @@ export default function DevisPage() {
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 sm:text-[11px]">Lignes de prestation</p>
                 {lignes.map((l, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-3 sm:grid-cols-12 sm:items-center sm:gap-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
+                  <div key={i} className="grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] p-2 sm:grid-cols-12 sm:items-center sm:gap-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
                     {l.a_chiffrer && (
-                      <div className="col-span-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 sm:col-span-12">
-                        <span className="text-sm">⚠️</span>
+                      <div className="col-span-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 sm:col-span-12">
+                        <span className="text-xs">⚠️</span>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-300">À CHIFFRER</p>
-                          <p className="text-[11px] text-amber-200/80">Cette prestation doit être complétée manuellement.</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-amber-300 sm:text-[11px]">À CHIFFRER</p>
+                          <p className="text-[10px] text-amber-200/80 sm:text-[11px]">Cette prestation doit être complétée manuellement.</p>
                         </div>
                       </div>
                     )}
-                    <div className="col-span-2 sm:col-span-4">
-                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Désignation</label>
+                    <div className="col-span-3 sm:col-span-4">
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Désignation</label>
                       <input
                         value={l.designation}
                         onChange={(e) => updateLigne(i, { designation: e.target.value })}
                         placeholder="Désignation"
-                        className="w-full min-h-[44px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
                       <input
                         type="number"
                         value={l.qte ?? ""}
                         onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
                         placeholder="Qté"
-                        className="w-full min-h-[44px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Unité</label>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Unité</label>
                       <input
                         value={l.unite}
                         onChange={(e) => updateLigne(i, { unite: e.target.value })}
                         placeholder="Unité"
-                        className="w-full min-h-[44px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
-                    <div className="col-span-2 sm:col-span-3">
-                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Prix unitaire HT</label>
+                    <div className="col-span-1 sm:col-span-3">
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Prix u. HT</label>
                       <input
                         type="number"
                         value={l.pu_ht ?? ""}
                         onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
                         placeholder="PU HT"
-                        className="w-full min-h-[44px] rounded-xl border border-slate-600 bg-transparent px-3 py-2.5 text-[15px] text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
-                    <div className="col-span-2 flex items-end justify-end sm:col-span-1 sm:items-center sm:justify-center">
+                    <div className="col-span-3 flex items-end justify-end sm:col-span-1 sm:items-center sm:justify-center">
                       <button
                         type="button"
                         onClick={() => supprimerLigne(i)}
-                        className="flex min-h-[44px] items-center justify-center gap-1 rounded-lg px-3 text-sm font-semibold text-gray-500 hover:bg-red-500/10 hover:text-red-400 sm:min-h-0 sm:p-1 sm:text-xs"
+                        className="flex min-h-[36px] items-center justify-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-gray-500 hover:bg-red-500/10 hover:text-red-400 sm:min-h-0 sm:p-1 sm:text-xs"
                       >
                         <span className="inline sm:hidden">🗑 Supprimer</span>
                         <span className="hidden text-lg leading-none sm:inline">✕</span>
@@ -893,7 +893,7 @@ export default function DevisPage() {
                     </div>
                   </div>
                 ))}
-                <div className="flex flex-col sm:flex-row items-stretch gap-2 rounded-xl border border-violet-500/40 bg-violet-500/5 p-2">
+                <div className="flex flex-col sm:flex-row items-stretch gap-1.5 sm:gap-2 rounded-xl border border-violet-500/40 bg-violet-500/5 p-1.5 sm:p-2">
                   <div className="flex flex-1 items-center bg-transparent relative">
                     <input
                       value={promptIA}
@@ -906,7 +906,7 @@ export default function DevisPage() {
                       }}
                       placeholder="✨ Décris la prestation ou dicte-la au micro..."
                       disabled={genererIAEnCours}
-                      className="w-full rounded-lg border border-violet-500/40 bg-transparent pl-3 pr-10 py-3 text-[15px] text-white placeholder:text-gray-500 disabled:opacity-50 sm:py-1.5 sm:text-xs"
+                      className="w-full min-h-[42px] sm:min-h-0 rounded-lg border border-violet-500/40 bg-transparent pl-3 pr-10 py-2 text-sm text-white placeholder:text-gray-500 disabled:opacity-50 sm:py-1.5 sm:text-xs"
                     />
                     <button
                       type="button"
@@ -954,7 +954,7 @@ export default function DevisPage() {
                     type="button"
                     onClick={genererLigneIA}
                     disabled={genererIAEnCours || !promptIA.trim() || promptIA === "Écoute en cours..."}
-                    className="w-full min-h-[48px] sm:w-auto sm:min-h-0 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-3 text-sm sm:py-1.5 sm:text-xs font-bold text-white disabled:opacity-50 transition-colors whitespace-nowrap"
+                    className="w-full min-h-[44px] sm:w-auto sm:min-h-0 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2.5 text-sm sm:py-1.5 sm:text-xs font-bold text-white disabled:opacity-50 transition-colors whitespace-nowrap"
                   >
                     {genererIAEnCours ? "Génération..." : "✨ Générer avec l'IA"}
                   </button>
@@ -964,7 +964,7 @@ export default function DevisPage() {
                   <button
                     type="button"
                     onClick={ajouterLigne}
-                    className="w-full sm:w-auto min-h-[48px] sm:min-h-0 rounded-xl border-2 border-dashed border-slate-600 bg-transparent px-4 py-3 text-sm sm:py-1.5 sm:text-xs font-semibold text-gray-200 hover:bg-white/5 hover:border-gray-300"
+                    className="w-full sm:w-auto min-h-[42px] sm:min-h-0 rounded-xl border-2 border-dashed border-slate-600 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs font-semibold text-gray-200 hover:bg-white/5 hover:border-gray-300"
                   >
                     + Ajouter une ligne vierge
                   </button>
@@ -974,7 +974,7 @@ export default function DevisPage() {
                       insererDepuisCatalogue(e.target.value);
                       e.target.value = "";
                     }}
-                    className="w-full sm:flex-1 min-h-[48px] sm:min-h-0 rounded-xl border border-red-600/50 bg-transparent px-3 py-3 text-sm sm:py-1.5 sm:text-xs text-gray-400 font-medium hover:border-gray-300"
+                    className="w-full sm:flex-1 min-h-[42px] sm:min-h-0 rounded-xl border border-red-600/50 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs text-gray-400 font-medium hover:border-gray-300"
                   >
                     <option value="" disabled>
                       📦 + Insérer un ouvrage depuis le catalogue standard...
@@ -988,40 +988,40 @@ export default function DevisPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-4 space-y-2.5">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 space-y-1.5 sm:px-4 sm:py-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Coût matière</span>
-                  <span className="text-base sm:text-xs font-mono text-gray-200">{apercuCalculs.cout_matiere_ht.toFixed(2)} €</span>
+                  <span className="text-sm sm:text-xs font-mono text-gray-200">{apercuCalculs.cout_matiere_ht.toFixed(2)} €</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Main d&apos;œuvre</span>
-                  <span className="text-base sm:text-xs font-mono text-gray-200">{apercuCalculs.cout_main_oeuvre_ht.toFixed(2)} €</span>
+                  <span className="text-sm sm:text-xs font-mono text-gray-200">{apercuCalculs.cout_main_oeuvre_ht.toFixed(2)} €</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Marge estimée</span>
-                  <span className="text-base sm:text-xs font-mono text-emerald-400 font-bold">
+                  <span className="text-sm sm:text-xs font-mono text-emerald-400 font-bold">
                     {apercuCalculs.marge_ht.toFixed(2)} € ({apercuCalculs.marge_pct.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="h-px bg-white/10/60" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm sm:text-sm font-bold uppercase text-gray-100">Total HT</span>
-                  <span className="text-2xl sm:text-base font-black font-mono text-white">{totalHT.toFixed(2)} €</span>
+                  <span className="text-lg sm:text-base font-black font-mono text-white">{totalHT.toFixed(2)} €</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex flex-col sm:flex-row sm:justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="p-2.5 border-t border-white/10 flex flex-row sm:justify-end items-center gap-2 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="w-full sm:w-auto min-h-[50px] sm:min-h-0 rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-3 sm:py-2.5 text-sm sm:text-xs font-semibold text-gray-300 hover:bg-white/5"
+                className="flex-none min-h-[44px] sm:min-h-0 rounded-xl border border-slate-600 bg-[#1A1D24] px-3 sm:px-4 py-2 text-sm sm:py-2.5 sm:text-xs font-semibold text-gray-300 hover:bg-white/5"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="w-full sm:w-auto min-h-[50px] sm:min-h-0 rounded-xl bg-red-600 px-5 py-3 sm:py-2.5 text-sm sm:text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
+                className="flex-1 min-w-[0] sm:flex-none min-h-[44px] sm:min-h-0 rounded-xl bg-red-600 px-3 sm:px-5 py-2 text-sm sm:py-2.5 sm:text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md whitespace-nowrap"
               >
                 Enregistrer le Devis
               </button>
