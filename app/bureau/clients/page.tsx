@@ -26,6 +26,7 @@ type ResultatEntrepriseGouv = {
     adresse: string;
     code_postal: string;
     commune: string;
+    libelle_commune: string;
   };
 };
 
@@ -131,7 +132,7 @@ export default function ClientsPage() {
     setSiret(item.siege?.siret || item.siren);
     setAdresse(item.siege?.adresse || "");
     setCodePostal(item.siege?.code_postal || "");
-    setVille(item.siege?.commune || "");
+    setVille(item.siege?.libelle_commune || "");
     if (!nom) setNom("Direction");
     setResultatsGouv([]);
     setRechercheGouv("");
@@ -320,7 +321,7 @@ export default function ClientsPage() {
                           >
                             <p className="font-bold text-white">{item.nom_complet}</p>
                             <p className="text-gray-400 text-[11px]">
-                              SIRET : {item.siege?.siret || item.siren} · {item.siege?.commune} (
+                              SIRET : {item.siege?.siret || item.siren} · {item.siege?.libelle_commune} (
                               {item.siege?.code_postal})
                             </p>
                           </button>
