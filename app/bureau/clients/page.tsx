@@ -311,7 +311,7 @@ export default function ClientsPage() {
                     )}
 
                     {resultatsGouv.length > 0 && (
-                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-transparent shadow-2xl">
+                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-[#0B0F19] shadow-2xl">
                         {resultatsGouv.map((item, idx) => (
                           <button
                             key={idx}
