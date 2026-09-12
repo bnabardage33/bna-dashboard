@@ -45,9 +45,10 @@ type Ouvrage = {
   type_cout: string; // 'matiere' | 'main_oeuvre'
 };
 
-type FormState = Omit<Ouvrage, "id" | "pu_ht"> & {
-  pu_ht: number | null;
-  pu_revient: number | null;
+type FormState = Omit<Ouvrage, "id" | "pu_ht" | "pu_revient" | "prix_ttc"> & {
+  pu_ht: string;
+  pu_revient: string;
+  prix_ttc: string;
   type_cout: string;
 };
 
@@ -67,10 +68,10 @@ const emptyForm: FormState = {
   dimensions_disponibles: [],
   fournisseur: "",
   unite: "m²",
-  pu_ht: 0,
-  pu_revient: null,
+  pu_ht: "",
+  pu_revient: "",
   type_cout: "matiere",
-  prix_ttc: null,
+  prix_ttc: "",
 };
 
 export default function CataloguePage() {
@@ -129,8 +130,8 @@ export default function CataloguePage() {
           designation: data.designation || prev.designation,
           fabricant: data.fabricant || prev.fabricant,
           fournisseur: data.fournisseur || prev.fournisseur,
-          prix_ttc: data.prix_ttc ? data.prix_ttc : prev.prix_ttc,
-          pu_ht: data.prix_ttc ? parseFloat((data.prix_ttc / 1.2).toFixed(2)) : prev.pu_ht,
+          prix_ttc: data.prix_ttc ? String(data.prix_ttc).replace(".", ",") : prev.prix_ttc,
+          pu_ht: data.prix_ttc ? (data.prix_ttc / 1.2).toFixed(2).replace(".", ",") : prev.pu_ht,
           dimensions_disponibles: newDims
         };
       });
@@ -223,8 +224,8 @@ export default function CataloguePage() {
             ...prev,
             designation: title || "",
             fournisseur: fournisseur,
-            prix_ttc: parsedPriceTtc,
-            pu_ht: parsedPriceTtc ? parseFloat((parsedPriceTtc / 1.2).toFixed(2)) : 0,
+            prix_ttc: parsedPriceTtc !== null ? String(parsedPriceTtc).replace(".", ",") : "",
+            pu_ht: parsedPriceTtc !== null ? (parsedPriceTtc / 1.2).toFixed(2).replace(".", ",") : "",
             dimensions_disponibles: (longueur_mm || largeur_mm || epaisseur_mm) ? [{ longueur_mm, largeur_mm, epaisseur_mm }] : []
         }));
         
@@ -250,7 +251,14 @@ export default function CataloguePage() {
         });
       }
       
-      setFormData({ ...emptyForm, ...rest, dimensions_disponibles: dims });
+      setFormData({
+        ...emptyForm,
+        ...rest,
+        pu_ht: rest.pu_ht != null ? String(rest.pu_ht).replace(".", ",") : "",
+        pu_revient: rest.pu_revient != null ? String(rest.pu_revient).replace(".", ",") : "",
+        prix_ttc: rest.prix_ttc != null ? String(rest.prix_ttc).replace(".", ",") : "",
+        dimensions_disponibles: dims,
+      });
     } else {
       setEditingOuvrage(null);
       setFormData({ ...emptyForm, type_cout: typeInit === "main_oeuvre" ? "main_oeuvre" : "matiere" });
@@ -831,15 +839,16 @@ export default function CataloguePage() {
                         <input
                           required
                           type="text"
+                          inputMode="decimal"
                           placeholder="0.00"
-                          value={formData.pu_ht ?? ""}
+                          value={formData.pu_ht}
                           onChange={(e) => {
                             const val = e.target.value;
                             const numericHt = parseFloat(val.replace(',', '.')) || 0;
                             setFormData((prev) => ({
                               ...prev,
-                              pu_ht: val ? parseFloat(val.replace(',', '.')) || 0 : 0,
-                              prix_ttc: val === "" ? null : parseFloat((numericHt * 1.2).toFixed(2))
+                              pu_ht: val,
+                              prix_ttc: val.trim() === "" ? "" : (numericHt * 1.2).toFixed(2).replace(".", ",")
                             }));
                           }}
                           className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
@@ -855,9 +864,10 @@ export default function CataloguePage() {
                       <input
                         required
                         type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
-                        value={formData.pu_revient ?? ""}
-                        onChange={(e) => set("pu_revient", e.target.value === "" ? null : parseFloat(e.target.value.replace(',', '.')) || 0)}
+                        value={formData.pu_revient}
+                        onChange={(e) => set("pu_revient", e.target.value)}
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
@@ -1072,15 +1082,16 @@ export default function CataloguePage() {
                       <input
                         required
                         type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
-                        value={formData.pu_ht ?? ""}
+                        value={formData.pu_ht}
                         onChange={(e) => {
                           const val = e.target.value;
                           const numericHt = parseFloat(val.replace(',', '.')) || 0;
                           setFormData((prev) => ({
                             ...prev,
-                            pu_ht: val ? parseFloat(val.replace(',', '.')) || 0 : 0,
-                            prix_ttc: val === "" ? null : parseFloat((numericHt * 1.2).toFixed(2))
+                            pu_ht: val,
+                            prix_ttc: val.trim() === "" ? "" : (numericHt * 1.2).toFixed(2).replace(".", ",")
                           }));
                         }}
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
@@ -1094,9 +1105,10 @@ export default function CataloguePage() {
                       <input
                         required
                         type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
-                        value={formData.pu_revient ?? ""}
-                        onChange={(e) => set("pu_revient", e.target.value === "" ? null : parseFloat(e.target.value.replace(',', '.')) || 0)}
+                        value={formData.pu_revient}
+                        onChange={(e) => set("pu_revient", e.target.value)}
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
                       />
                     </div>
@@ -1110,15 +1122,16 @@ export default function CataloguePage() {
                       </label>
                       <input
                         type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
-                        value={formData.prix_ttc ?? ""}
+                        value={formData.prix_ttc}
                         onChange={(e) => {
                           const val = e.target.value;
                           const numericTtc = parseFloat(val.replace(',', '.')) || 0;
                           setFormData((prev) => ({
                             ...prev,
-                            prix_ttc: val ? parseFloat(val.replace(',', '.')) || 0 : null,
-                            pu_ht: val === "" ? null : parseFloat((numericTtc / 1.2).toFixed(2))
+                            prix_ttc: val,
+                            pu_ht: val.trim() === "" ? "" : (numericTtc / 1.2).toFixed(2).replace(".", ",")
                           }));
                         }}
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white focus:border-white/10 focus:ring-1 focus:ring-cyan-500"
