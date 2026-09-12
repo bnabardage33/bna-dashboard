@@ -16,6 +16,7 @@ declare global {
 }
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase";
 import { calculerDevis, CoutType } from "@/lib/devisCalcul";
 import {
@@ -175,6 +176,16 @@ export default function DevisPage() {
   useEffect(() => {
     fetchTout();
   }, []);
+
+  useEffect(() => {
+    if (modalOuvert) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [modalOuvert]);
 
 
 
@@ -667,22 +678,23 @@ export default function DevisPage() {
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
 
-      {modalOuvert && (
-        <div
-          className="fixed inset-0 z-[210] flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-sm"
-          onClick={() => setModalOuvert(false)}
-        >
-          <form
-            onSubmit={creerDevis}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-[calc(100vw-20px)] max-w-2xl h-[90dvh] sm:h-auto sm:max-h-[85vh] sm:w-full flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+      {modalOuvert &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setModalOuvert(false)}
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-1.5 sm:py-3.5 shrink-0">
+            <form
+              onSubmit={creerDevis}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#1A1D24] w-full max-w-2xl h-[90dvh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            >
+            <div className="flex items-center justify-between border-b border-white/10 px-4 min-h-[52px] py-2 sm:min-h-0 sm:py-3.5 shrink-0">
               <h2 className="text-[17px] sm:text-lg font-bold text-white">Nouveau Devis</h2>
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg text-lg sm:text-xl text-gray-400 hover:bg-white/5 hover:text-white"
+                className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg text-lg sm:text-xl text-gray-400 hover:bg-white/5 hover:text-white"
                 aria-label="Fermer"
               >
                 ✕
@@ -1027,8 +1039,9 @@ export default function DevisPage() {
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
 
       {apercu && entreprise && (
         <div
