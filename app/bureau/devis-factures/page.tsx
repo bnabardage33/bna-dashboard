@@ -288,11 +288,13 @@ function DevisContenu() {
   }
 
   async function genererLigneIA() {
+    if (!apercu) return;
     if (!promptIA.trim()) return;
+    if (!apercu) return;
     setGenererIAEnCours(true);
     try {
       const ponctuelle = parseFloat(surfacePonctuelle.replace(",", "."));
-      const res = await fetch("/api/ia-devis", {
+      const res = await fetch(`/api/devis/${apercu.id}/analyse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
