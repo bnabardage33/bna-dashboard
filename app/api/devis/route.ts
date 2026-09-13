@@ -35,6 +35,8 @@ function texte(v: unknown): string {
  */
 function normaliserLigne(brute: LigneBrute, catalogue: Map<string, CatalogueRow>): LigneDevis {
   const id = typeof brute.catalogue_id === "string" ? brute.catalogue_id.trim() : "";
+  // Traçabilité par zone (additif) : préservé si fourni par l'IA / le client.
+  const zone_id = texte(brute.zone_id) || null;
 
   if (!id) {
     // Ligne manuelle : saisie directe et complète par le patron (fonctionnalité
@@ -54,31 +56,41 @@ function normaliserLigne(brute: LigneBrute, catalogue: Map<string, CatalogueRow>
           pu_revient: null,
           type_cout: null,
           a_chiffrer: false,
+          zone_id,
         };
       }
     }
-    return creerLigneAChiffrer(
-      texte(brute.designation) || "À CHIFFRER",
-      texte(brute.description)
-    );
+    return {
+      ...creerLigneAChiffrer(
+        texte(brute.designation) || "À CHIFFRER",
+        texte(brute.description)
+      ),
+      zone_id,
+    };
   }
 
   const ouvrage = catalogue.get(id);
   if (!ouvrage) {
-    return creerLigneAChiffrer(
-      texte(brute.designation) || "À CHIFFRER",
-      texte(brute.description) || `Référence inconnue dans le catalogue : ${id}`
-    );
+    return {
+      ...creerLigneAChiffrer(
+        texte(brute.designation) || "À CHIFFRER",
+        texte(brute.description) || `Référence inconnue dans le catalogue : ${id}`
+      ),
+      zone_id,
+    };
   }
 
   let qte = typeof brute.qte === "number" && Number.isFinite(brute.qte) ? brute.qte : null;
   if (qte !== null && qte <= 0) qte = null;
 
   if (qte === null) {
-    return creerLigneAChiffrer(
-      ouvrage.designation,
-      texte(brute.description) || "Quantité manquante — à compléter."
-    );
+    return {
+      ...creerLigneAChiffrer(
+        ouvrage.designation,
+        texte(brute.description) || "Quantité manquante — à compléter."
+      ),
+      zone_id,
+    };
   }
 
   const uniteBas = ouvrage.unite.toLowerCase();
@@ -105,6 +117,7 @@ function normaliserLigne(brute: LigneBrute, catalogue: Map<string, CatalogueRow>
     pu_revient: ouvrage.pu_revient,
     type_cout,
     a_chiffrer: false,
+    zone_id,
   };
 }
 

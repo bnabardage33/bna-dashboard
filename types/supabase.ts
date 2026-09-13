@@ -617,6 +617,94 @@ export type Database = {
           },
         ]
       }
+      devis_ia: {
+        Row: {
+          alertes: Json
+          analyse_resultats: Json
+          created_at: string
+          devis_id: string
+          id: string
+          lignes_proposees: Json
+          marge_estimee: number
+          marge_pct: number
+          recommandations: Json
+          statut: string
+          total_estime: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          alertes?: Json
+          analyse_resultats?: Json
+          created_at?: string
+          devis_id: string
+          id?: string
+          lignes_proposees?: Json
+          marge_estimee?: number
+          marge_pct?: number
+          recommandations?: Json
+          statut?: string
+          total_estime?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          alertes?: Json
+          analyse_resultats?: Json
+          created_at?: string
+          devis_id?: string
+          id?: string
+          lignes_proposees?: Json
+          marge_estimee?: number
+          marge_pct?: number
+          recommandations?: Json
+          statut?: string
+          total_estime?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_ia_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: true
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devis_ia_historique: {
+        Row: {
+          cree_le: string
+          devis_ia_id: string
+          id: string
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          cree_le?: string
+          devis_ia_id: string
+          id?: string
+          snapshot?: Json
+          version: number
+        }
+        Update: {
+          cree_le?: string
+          devis_ia_id?: string
+          id?: string
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_ia_historique_devis_ia_id_fkey"
+            columns: ["devis_ia_id"]
+            isOneToOne: false
+            referencedRelation: "devis_ia"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents_compta: {
         Row: {
           categorie: string | null

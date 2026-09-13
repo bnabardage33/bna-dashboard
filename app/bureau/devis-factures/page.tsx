@@ -66,6 +66,7 @@ type Ligne = {
   a_chiffrer: boolean;
   justification?: string;
   confiance?: number;
+  zone_id?: string | null;
 };
 
 type Devis = {
@@ -337,6 +338,7 @@ function DevisContenu() {
             a_chiffrer: !!l.a_chiffrer,
             justification: typeof l.justification === "string" && l.justification ? (l.justification as string) : undefined,
             confiance: typeof l.confiance === "number" ? (l.confiance as number) : undefined,
+            zone_id: typeof l.zone_id === "string" && l.zone_id ? (l.zone_id as string) : null,
           })),
         ];
       });
