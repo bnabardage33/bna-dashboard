@@ -275,6 +275,11 @@ export default function CataloguePage() {
     const numericTtc = formData.prix_ttc != null && String(formData.prix_ttc) !== "" 
       ? parseFloat(String(formData.prix_ttc).replace(',', '.'))
       : parseFloat((numericHt * 1.2).toFixed(2));
+
+    const numericRevient = formData.pu_revient != null && String(formData.pu_revient).trim() !== ""
+      ? parseFloat(String(formData.pu_revient).replace(',', '.'))
+      : null;
+
     // Coercition numérique stricte pour éviter tout rejet Supabase
     const dimensionsFormatted = (formData.dimensions_disponibles || []).map(d => ({
       longueur_mm: d.longueur_mm != null && String(d.longueur_mm) !== "" ? Number(d.longueur_mm) : null,
@@ -282,10 +287,27 @@ export default function CataloguePage() {
       epaisseur_mm: d.epaisseur_mm != null && String(d.epaisseur_mm) !== "" ? Number(d.epaisseur_mm) : null,
     }));
 
+    // --- Nommage intelligent : ajout des dimensions à la désignation si non présentes ---
+    let finalDesignation = formData.designation.trim();
+    const L = formData.longueur_mm != null ? Number(formData.longueur_mm) : null;
+    const l = formData.largeur_mm != null ? Number(formData.largeur_mm) : null;
+    const ep = formData.epaisseur_mm != null ? Number(formData.epaisseur_mm) : null;
+
+    let dimSuffix = "";
+    if (L && l) dimSuffix += `${L}x${l}`;
+    if (ep) dimSuffix += dimSuffix ? ` ép.${ep}mm` : `ép.${ep}mm`;
+    else if (dimSuffix) dimSuffix += " mm";
+
+    if (dimSuffix && L && !finalDesignation.includes(String(L))) {
+      finalDesignation = `${finalDesignation} — ${dimSuffix}`;
+    }
+    // ----------------------------------------------------------------------------------
+
     const rawPayload = {
       ...formData,
+      designation: finalDesignation,
       pu_ht: numericHt,
-      pu_revient: parseFloat(String(formData.pu_revient).replace(',', '.')) || 0,
+      pu_revient: numericRevient,
       type_cout: formData.type_cout === "main_oeuvre" ? "main_oeuvre" : "matiere",
       prix_ttc: numericTtc,
       longueur_mm: formData.longueur_mm != null ? Number(formData.longueur_mm) : null,
@@ -355,15 +377,31 @@ export default function CataloguePage() {
         let countUpdated = 0;
         
         for (const row of data) {
-          const designation = row.designation;
-          if (!designation) continue;
+          if (!row.designation) continue;
+          
+          let finalDesignation = row.designation.trim();
+          
+          const L = row.longueur_mm ? Number(row.longueur_mm) : null;
+          const l = row.largeur_mm ? Number(row.largeur_mm) : null;
+          const ep = row.epaisseur_mm ? Number(row.epaisseur_mm) : null;
+
+          // Si le produit a des dimensions, on les ajoute au nom pour créer une variante unique
+          let dimSuffix = "";
+          if (L && l) dimSuffix += `${L}x${l}`;
+          if (ep) dimSuffix += dimSuffix ? ` ép.${ep}mm` : `ép.${ep}mm`;
+          else if (dimSuffix) dimSuffix += " mm";
+
+          // On évite les doublons si le nom contenait déjà "3000" par exemple
+          if (dimSuffix && L && !finalDesignation.includes(String(L))) {
+            finalDesignation = `${finalDesignation} — ${dimSuffix}`;
+          }
 
           // Construire le payload de base avec les valeurs du CSV, ou valeurs par défaut si vide
           const pu_ht = Number(row.pu_ht?.replace(',', '.') || 0);
           const prix_ttc = row.prix_ttc ? Number(row.prix_ttc.replace(',', '.')) : Math.round(pu_ht * 1.2 * 100) / 100;
           
           const payload: TablesInsert<"catalogue_ouvrages"> = {
-            designation: designation.trim(),
+            designation: finalDesignation,
             categorie: row.categorie?.trim() || "bardage",
             famille_label: row.famille_label?.trim() || "Import CSV",
             unite: row.unite?.trim() || "m²",
@@ -376,16 +414,16 @@ export default function CataloguePage() {
             finition: row.finition?.trim() || null,
             fournisseur: row.fournisseur?.trim() || null,
             description: row.description?.trim() || null,
-            longueur_mm: row.longueur_mm ? Number(row.longueur_mm) : null,
-            largeur_mm: row.largeur_mm ? Number(row.largeur_mm) : null,
-            epaisseur_mm: row.epaisseur_mm ? Number(row.epaisseur_mm) : null,
+            longueur_mm: L,
+            largeur_mm: l,
+            epaisseur_mm: ep,
           };
 
           // On retire les nulls pour éviter les crash si base pas à jour
           const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v != null));
 
-          // Vérifie s'il existe déjà (recherche par designation)
-          const existing = ouvrages.find(o => o.designation.toLowerCase() === designation.trim().toLowerCase());
+          // Vérifie s'il existe déjà (recherche par la nouvelle designation unique)
+          const existing = ouvrages.find(o => o.designation.toLowerCase() === finalDesignation.toLowerCase());
           
           if (existing) {
             const { error } = await supabase.from("catalogue_ouvrages").update(cleanPayload as unknown as TablesUpdate<"catalogue_ouvrages">).eq("id", existing.id);
@@ -859,10 +897,9 @@ export default function CataloguePage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Coût de revient HT (€) — pu_revient
-                        <span className="ml-1 text-[10px] font-normal text-gray-500">(ce que la prestation te coûte vraiment)</span>
+                        <span className="ml-1 text-[10px] font-normal text-gray-500">(optionnel)</span>
                       </label>
                       <input
-                        required
                         type="text"
                         inputMode="decimal"
                         placeholder="0.00"
@@ -1100,10 +1137,9 @@ export default function CataloguePage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Coût de revient HT (€)
-                        <span className="ml-1 text-[10px] font-normal text-gray-500">(prix d'achat réel)</span>
+                        <span className="ml-1 text-[10px] font-normal text-gray-500">(optionnel)</span>
                       </label>
                       <input
-                        required
                         type="text"
                         inputMode="decimal"
                         placeholder="0.00"

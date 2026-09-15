@@ -136,6 +136,31 @@ describe('catalogueMatching — formulation libre (synonymes, mots partiels)', (
 })
 
 describe('catalogueMatching — arbitrage sémantique', () => {
+  it('score très faible (concept absurde) → null (seuil < 0.55)', () => {
+    const absurde = 'un concept complètement abstrait et inconnu au bataillon'
+    const corr = meilleureCorrespondance(absurde, ITEMS)
+    expect(corr).toBeNull()
+  })
+
+  it('Faille 2 corrigée : Rejet en cas d\'ex aequo strict', () => {
+    const HPL_ROUGE = catalogue({
+      id: 'hpl-rouge',
+      designation: 'Panneau HPL 8mm standard',
+      famille_label: 'HPL',
+    })
+    const HPL_GRIS = catalogue({
+      id: 'hpl-gris',
+      designation: 'Panneau HPL 8mm standard',
+      famille_label: 'HPL',
+    })
+
+    // Le concept matche exactement les deux avec le même score et le même nombre de mots trouvés.
+    const corr = meilleureCorrespondance('Panneau HPL 8mm standard', [HPL_ROUGE, HPL_GRIS])
+
+    // La fonction doit renvoyer null pour forcer "À CHIFFRER" car on ne peut pas deviner arbitrairement
+    expect(corr).toBeNull()
+  })
+
   it('une description métier vague ne produit pas de faux positif : elle part en arbitrage', () => {
     const best = meilleure('habillage extérieur imitation bois')
     expect(best).toBeNull()
@@ -147,12 +172,12 @@ describe('catalogueMatching — arbitrage sémantique', () => {
     const best = meilleure('pose')
     expect(best?.item.id).toBe(POSE.id)
   })
-  it('le concept tautologique « bois » seul retombe sur la référence qui le documente', () => {
-    // Le mot « bois » est documenté en description de la lame composite : c'est
-    // la seule référence qui peut l'expliquer par le lexique seul.
+  it('le concept tautologique « bois » seul retombe en arbitrage (ex aequo entre composite et chevron)', () => {
+    // Faille 2 corrigée : Avant, ce test s'attendait à COMPOSITE juste parce qu'il était
+    // en 1ère position dans le tableau, ignorant silencieusement CHEVRON (qui a aussi "bois").
+    // Désormais, on vérifie que l'algorithme est honnête et lève l'ambiguïté.
     const best = meilleure('bois')
-    expect(best).not.toBeNull()
-    expect(best!.item.id).toBe(COMPOSITE.id)
+    expect(best).toBeNull()
   })
 })
 

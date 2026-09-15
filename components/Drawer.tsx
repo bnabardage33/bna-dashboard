@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, Camera, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -19,8 +19,13 @@ const NAV_ITEMS = [
 
 export default function Drawer() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -82,21 +87,26 @@ export default function Drawer() {
         {/* NAV LINKS */}
         <nav className="flex-1 px-3 pt-4 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href);
+            // Pour éviter les erreurs d'hydratation liées à usePathname() (middleware, rewrites, etc.)
+            // On s'assure de n'appliquer le style actif qu'une fois le composant monté côté client,
+            // ou on utilise suppressHydrationWarning pour tolérer les différences.
+            const active = open || mounted ? isActive(item.href) : false;
             const Icon = item.icon;
             return (
-<Link
-                 key={item.href}
-                 href={item.href}
-                 onClick={() => setOpen(false)}
-                 aria-current={active ? "page" : undefined}
-                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
-                   active
-                     ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
-                     : "text-white/60 hover:text-white hover:bg-white/[0.06]"
-                 }`}
-               >
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                aria-current={active ? "page" : undefined}
+                suppressHydrationWarning
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
+                  active
+                    ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
+                    : "text-white/60 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
                 <div
+                  suppressHydrationWarning
                   className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                     active ? "bg-[#E30613]/20" : "bg-white/[0.05]"
                   }`}
@@ -107,9 +117,9 @@ export default function Drawer() {
                     strokeWidth={active ? 2.5 : 1.8}
                   />
                 </div>
-                <span className="flex-1">{item.label}</span>
+                <span suppressHydrationWarning className="flex-1">{item.label}</span>
                 {active && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] shrink-0" />
+                  <div suppressHydrationWarning className="w-1.5 h-1.5 rounded-full bg-[#ff5a5a] shrink-0" />
                 )}
               </Link>
             );
@@ -121,16 +131,17 @@ export default function Drawer() {
           <Link
             href="/parametres"
             onClick={() => setOpen(false)}
+            suppressHydrationWarning
             className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
-              isActive("/parametres")
+              (open || mounted ? isActive("/parametres") : false)
                 ? "bg-[#E30613]/15 border border-[#E30613]/30 text-white"
-: "text-white/60 hover:text-white hover:bg-white/[0.06]"
+                : "text-white/60 hover:text-white hover:bg-white/[0.06]"
              }`}
            >
-             <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
-               <Settings size={16} className={isActive("/parametres") ? "text-[#ff5a5a]" : "text-white/60"} strokeWidth={1.8} />
+             <div suppressHydrationWarning className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.05]">
+               <Settings size={16} className={(open || mounted ? isActive("/parametres") : false) ? "text-[#ff5a5a]" : "text-white/60"} strokeWidth={1.8} />
              </div>
-             <span>Parametres</span>
+             <span suppressHydrationWarning>Parametres</span>
            </Link>
            <button
              onClick={handleLogout}

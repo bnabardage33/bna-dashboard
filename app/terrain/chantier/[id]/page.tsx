@@ -900,12 +900,12 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-gray-500">Coefficient perte / rendement</label>
+                  <label className="text-[11px] text-gray-500 font-bold text-amber-500/80">Multiplicateur de chute (Matériaux)</label>
                   <input
                     type="number"
                     min={1}
                     step={0.01}
-                    placeholder="1.1 / 1.15 auto"
+                    placeholder="ex: 1.10 pour +10%"
                     value={configDraft.coef_perte_rendement ?? ""}
                     onChange={(e) =>
                       majConfigTechnique({
@@ -913,10 +913,10 @@ function ChantierDetailContent() {
                           e.target.value === "" ? null : parseFloat(e.target.value),
                       })
                     }
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                    className="mt-1 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 px-2.5 py-1.5 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
-                  <p className="mt-0.5 text-[10px] text-gray-600">
-                    Auto = 1.1 lames / 1.15 plaques
+                  <p className="mt-0.5 text-[10px] text-amber-500/70">
+                    ex: 1.1 = +10% de marge. Par défaut: 1.10 (lames) / 1.15 (plaques)
                   </p>
                 </div>
               </div>

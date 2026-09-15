@@ -9,7 +9,7 @@
 //
 // 2. IMBRICATION & DÉBIT D'ATELIER (Nesting 2D Guillotine) :
 //    - Répartition optimisée des modules sur les plaques brutes d'achat (ex: 3050 × 1300 mm).
-//    - Les découpes triangulaires opposées de pignons s'associent en paires rectangulaires.
+//    - L'imbrication des pignons par boîte englobante est indépendante (garantit le respect du fil matière).
 //    - Détection intelligente des chutes :
 //      * Chutes réutilisables (longueur >= 800 mm ou surface >= 0.30 m²) pour tableaux de fenêtres ou départs.
 //      * Pertes réelles / sciure.
@@ -31,6 +31,14 @@ export interface CalepinageInput {
   estPignon?: boolean;
   hauteurFaiteM?: number | null;
   traitDeScieMm?: number | null;
+  /**
+   * Autorise le pivot à 90° des pièces lors du nesting sur plaque brute.
+   * `true` (défaut) : optimisation de matière maximale, adapté aux décors NON-directionnels (uni, granit…).
+   * `false` : interdit le pivot — obligatoire pour les décors directionnels (bois veiné, métal brossé…)
+   *            afin que le plan de débit atelier respecte le sens de fibre.
+   * Non persisté en BDD : à re-sélectionner si le matériau change.
+   */
+  autoriserRotation?: boolean;
 }
 
 export interface PointCalepinage {
@@ -65,7 +73,6 @@ export interface DecoupePiece {
   type: "pleine" | "coupe" | "pignon";
   colonne: number;
   rangee: number;
-  estPairePignon?: boolean;
 }
 
 export interface ChutePlaque {
@@ -116,6 +123,19 @@ export interface ResultatCalepinage {
   modulesParPlaqueBrute: number;
   plaquesDebit: PlaqueDebit[];
   entraxeReelMm: number;
+  /** Pièces dont aucune orientation ne rentre dans le format de plaque brute (Faille 1). */
+  piecesIncompatibles?: PieceIncompatible[];
+}
+
+/**
+ * Pièce dont les dimensions dépassent le format de plaque brute dans toutes les orientations.
+ * Le moteur ne génère PAS de plan de coupe impossible pour ces pièces.
+ */
+export interface PieceIncompatible {
+  repere: string;
+  largeurMm: number;
+  hauteurMm: number;
+  raison: string;
 }
 
 const EPSILON_M = 0.0005;
@@ -260,10 +280,12 @@ function genererPlanDebitNesting(
   plaqueBruteLargeurMm: number,
   moduleLargeurMm: number,
   moduleHauteurMm: number,
-  traitDeScieMm = 3
+  traitDeScieMm = 3,
+  autoriserRotation = true
 ): {
   plaquesDebit: PlaqueDebit[];
   modulesParPlaque: number;
+  piecesIncompatibles: PieceIncompatible[];
 } {
   const rawL = plaqueBruteLongueurMm;
   const rawH = plaqueBruteLargeurMm;
@@ -306,15 +328,20 @@ function genererPlanDebitNesting(
   };
 
   const sheets: Sheet2D[] = [];
+  // Faille 1 : liste des pièces dont aucune orientation ne rentre dans la plaque brute.
+  const piecesIncompatibles: PieceIncompatible[] = [];
 
   for (const item of piecesToPlace) {
     let placed = false;
     const { sourcePiece, wMm, hMm } = item;
 
-    // Tester orientation normale et pivotée à 90°
+    // Orientation normale toujours disponible.
+    // Pivot 90° uniquement si autoriserRotation=true (décors non-directionnels).
+    // Pour les décors avec sens de fibre (bois veiné, métal brossé…), le pivot est interdit
+    // afin que le plan de débit atelier respecte le sens de pose visuel.
     const orientations = [
       { w: wMm, h: hMm },
-      { w: hMm, h: wMm },
+      ...(autoriserRotation ? [{ w: hMm, h: wMm }] : []),
     ];
 
     for (const sheet of sheets) {
@@ -381,24 +408,39 @@ function genererPlanDebitNesting(
       if (placed) break;
     }
 
-    // 3. Ouvrir une nouvelle plaque brute
+    // 3. Ouvrir une nouvelle plaque brute — Faille 1 corrigée
+    // Sélectionner la première orientation physiquement réalisable (h <= rawH et w <= rawL).
+    // Si aucune ne rentre, la pièce est déclarée incompatible : aucun plan impossible n'est créé.
     if (!placed) {
       const newSheetIndex = sheets.length + 1;
-      const firstOri = orientations[0];
+
+      // Chercher la première orientation qui rentre physiquement dans la plaque brute.
+      const validOri = orientations.find(o => o.h <= rawH && o.w <= rawL);
+
+      if (!validOri) {
+        // Aucune orientation physiquement réalisable : on ne génère pas de plan impossible.
+        piecesIncompatibles.push({
+          repere: sourcePiece.repere,
+          largeurMm: wMm,
+          hauteurMm: hMm,
+          raison: `Pièce ${wMm}×${hMm} mm incompatible avec la plaque brute ${rawL}×${rawH} mm dans toutes les orientations`,
+        });
+        continue; // Pièce ignorée du plan de débit
+      }
 
       const newShelf: Shelf2D = {
         yMm: 0,
-        heightMm: firstOri.h,
-        currentXMm: firstOri.w + traitDeScieMm,
+        heightMm: validOri.h,
+        currentXMm: validOri.w + traitDeScieMm,
         pieces: [
           {
             id: sourcePiece.id,
             repere: sourcePiece.repere,
-            nom: `${sourcePiece.repere} (${firstOri.w}×${firstOri.h})`,
+            nom: `${sourcePiece.repere} (${validOri.w}×${validOri.h})`,
             xMm: 0,
             yMm: 0,
-            largeurMm: firstOri.w,
-            hauteurMm: firstOri.h,
+            largeurMm: validOri.w,
+            hauteurMm: validOri.h,
             surfaceM2: sourcePiece.surfaceM2,
             type: sourcePiece.type,
             colonne: sourcePiece.colonne,
@@ -410,7 +452,7 @@ function genererPlanDebitNesting(
       sheets.push({
         index: newSheetIndex,
         shelves: [newShelf],
-        currentYMm: firstOri.h + traitDeScieMm,
+        currentYMm: validOri.h + traitDeScieMm,
       });
 
       sourcePiece.plaqueIndex = newSheetIndex;
@@ -464,7 +506,10 @@ function genererPlanDebitNesting(
       });
     }
 
-    const surfaceUtileM2 = allPieces.reduce((s, p) => s + (p.largeurMm * p.hauteurMm) / 1_000_000, 0);
+    // Faille 4 corrigée : utilise la vraie surface géométrique (airePolygone) et non la boîte
+    // englobante (largeurMm × hauteurMm). Impacte uniquement tauxRendementPct par plaque.
+    // Les totaux zone (surfaceZoneM2, totalDechetsPerteM2) ne sont pas affectés.
+    const surfaceUtileM2 = allPieces.reduce((s, p) => s + p.surfaceM2, 0);
     const surfaceChutesM2 = Math.max(0, surfacePlaqueM2 - surfaceUtileM2);
     const surfaceChutesReutilisablesM2 = chutes
       .filter((c) => c.reutilisable)
@@ -489,6 +534,7 @@ function genererPlanDebitNesting(
   return {
     plaquesDebit,
     modulesParPlaque,
+    piecesIncompatibles,
   };
 }
 
@@ -504,6 +550,7 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     estPignon = false,
     hauteurFaiteM = null,
     traitDeScieMm = 3,
+    autoriserRotation = true,
   } = input;
 
   // 1. SÉCURISATION DES DIMENSIONS PLAQUES BRUTES FOURNISSEUR
@@ -611,13 +658,18 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
   const nbPiecesPosees = pieces.length;
 
   // 3. OPTIMISATION NESTING DANS LES PLAQUES BRUTES FOURNISSEUR
-  const { plaquesDebit, modulesParPlaque: modulesParPlaqueBrute } = genererPlanDebitNesting(
+  const {
+    plaquesDebit,
+    modulesParPlaque: modulesParPlaqueBrute,
+    piecesIncompatibles,
+  } = genererPlanDebitNesting(
     pieces,
     rawLongueurMm,
     rawLargeurMm,
     dimModuleLargeurAxeMm,
     dimModuleHauteurAxeMm,
-    traitDeScieMm ?? 3
+    traitDeScieMm ?? 3,
+    autoriserRotation
   );
 
   const nbPlaquesNecessaires = plaquesDebit.length;
@@ -678,5 +730,6 @@ export function calculerCalepinage(input: CalepinageInput): ResultatCalepinage {
     modulesParPlaqueBrute,
     plaquesDebit,
     entraxeReelMm,
+    piecesIncompatibles: piecesIncompatibles.length > 0 ? piecesIncompatibles : undefined,
   };
 }

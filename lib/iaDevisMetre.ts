@@ -49,6 +49,17 @@ function toCoutType(raw: string | null | undefined): CoutType {
   return raw === "main_oeuvre" ? "main_oeuvre" : "matiere";
 }
 
+function normaliserUnite(u: string): string {
+  return u.toLowerCase().replace(/\s+/g, "").replace("²", "2").replace("é", "e").replace(/pi[eè]ces?/, "u").replace(/unit[eé]s?/, "u");
+}
+
+function sontUnitesCompatibles(u1: string, u2: string): boolean {
+  if (!u1 || !u2) return true;
+  const n1 = normaliserUnite(u1);
+  const n2 = normaliserUnite(u2);
+  return n1 === n2 || n1 === "forfait" || n2 === "forfait";
+}
+
 // ── Construction ───────────────────────────────────────────────────────
 // Chaque poste technique produit UNE ligne de devis distincte, portant le
 // zone.id d'origine. Aucune fusion de quantités (même intra-zone) : deux
@@ -72,6 +83,20 @@ export function construireLignesDepuisPostes(
 
     if (corr) {
       const ouvrage = catalogueMap.get(corr.item.id)!;
+      
+      // Faille 1 corrigée : on empêche l'écrasement silencieux d'une unité
+      // par une autre totalement incompatible.
+      if (!sontUnitesCompatibles(poste.unite, ouvrage.unite)) {
+        lignes.push({
+          ...creerLigneAChiffrer(
+            `${poste.libelle} (Zone : ${poste.zoneNom})`,
+            `Conflit d'unités : calculé en [${poste.unite}] mais l'article matché est en [${ouvrage.unite}]. ${poste.contexte.join("; ")}`.trim(),
+          ),
+          zone_id: poste.zoneId,
+        });
+        continue;
+      }
+
       lignes.push({
         catalogue_id: ouvrage.id,
         designation: ouvrage.designation,

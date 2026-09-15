@@ -370,6 +370,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ devis
         marge_pct: estims.marge_pct,
         nb_a_chiffrer,
         nb_alertes: lue.alertes.length,
+        lignes: lue.lignes_proposees,
       });
     } catch (errAnalyse) {
       // Échec après revendication → on relâche le verrou sans inventer.

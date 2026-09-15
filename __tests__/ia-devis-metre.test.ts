@@ -46,6 +46,16 @@ const CATALOGUE = [
     pu_revient: 9.5,
     type_cout: "matiere",
   },
+  {
+    id: "cat-epdm",
+    designation: "Bande EPDM",
+    description: "Protection de chevrons",
+    famille_label: "ETANCHEITE",
+    unite: "ml",
+    pu_ht: 6.5,
+    pu_revient: 3.5,
+    type_cout: "matiere",
+  },
 ];
 
 function poste(overrides: Partial<PosteTechnique> & { zoneId: string }): PosteTechnique {
@@ -93,7 +103,7 @@ describe("construireLignesDepuisPostes", () => {
 
   it("aucune correspondance catalogue → ligne « À CHIFFRER » avec zone_id (aucune invention)", () => {
     const lignes = construireLignesDepuisPostes(
-      [poste({ zoneId: "z-a", libelle: "Bande EPDM", quantite: 7.1, contexte: [] })],
+      [poste({ zoneId: "z-a", libelle: "Objet introuvable", quantite: 7.1, contexte: [] })],
       CATALOGUE,
     );
 
@@ -102,6 +112,22 @@ describe("construireLignesDepuisPostes", () => {
     expect(lignes[0].catalogue_id).toBeNull();
     expect(lignes[0].zone_id).toBe("z-a");
     expect(lignes[0].qte).toBeNull(); // format historique « À CHIFFRER » : pas de quantité fabriquée
+  });
+
+  it("Faille 1 corrigée : conflit d'unités bloque le matching et génère un À CHIFFRER avec zone_id", () => {
+    const lignes = construireLignesDepuisPostes(
+      [
+        // Ce poste est en "m²" (ex: Isolant), mais disons qu'il matche "cat-equerre" qui est en "u"
+        poste({ zoneId: "z-test", zoneNom: "Zone Test", libelle: "Équerre", quantite: 15, unite: "m²", contexte: [] })
+      ],
+      CATALOGUE,
+    );
+
+    expect(lignes).toHaveLength(1);
+    expect(lignes[0].a_chiffrer).toBe(true);
+    expect(lignes[0].catalogue_id).toBeNull();
+    expect(lignes[0].zone_id).toBe("z-test");
+    expect(lignes[0].description).toContain("Conflit d'unités");
   });
 
   it("plusieurs zones → lignes SÉPARÉES, chacune avec son zone_id (jamais fusionnées)", () => {
@@ -253,9 +279,9 @@ describe("flux de bout en bout : payload → lignes (mapper + liaison)", () => {
     const { postes } = mapperQuantitesPersistees(payload);
     const lignes = construireLignesDepuisPostes(postes, CATALOGUE);
 
-    const chevron = lignes.find((l) => l.designation.includes("Chevron"));
-    expect(chevron!.qte).toBe(6.75);
-    expect(chevron!.zone_id).toBe("z-a");
+    const epdm = lignes.find((l) => l.designation.includes("EPDM"));
+    expect(epdm!.qte).toBe(7.1);
+    expect(epdm!.zone_id).toBe("z-a");
 
     // Aucune ligne ne porte de quantité calculée à partir de la surface (15 m²).
     for (const l of lignes) {

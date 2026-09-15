@@ -54,6 +54,8 @@ export type EntreesMetre = {
   surface_paquet_m2: number | null;
   zone_vent_rive: boolean | null;
   coef_perte_rendement: number | null;
+  // Paramètre d'optimisation (HPL)
+  autoriser_rotation?: boolean | null;
   ouvertures: Array<{
     id: string;
     type: "fenetre" | "porte";
@@ -90,6 +92,7 @@ export type ResultatMetre = {
 export function extraireEntrees(
   zone: Zone,
   configTechnique: ConfigTechnique,
+  autoriserRotation: boolean = true
 ): EntreesMetre {
   const ouverturesTriees = [...zone.ouvertures]
     .map((o) => ({
@@ -119,6 +122,7 @@ export function extraireEntrees(
     surface_paquet_m2: configTechnique.surface_paquet_m2 ?? null,
     zone_vent_rive: configTechnique.zone_vent_rive ?? null,
     coef_perte_rendement: configTechnique.coef_perte_rendement ?? null,
+    autoriser_rotation: zone.materiau === "plaques" ? autoriserRotation : null,
     ouvertures: ouverturesTriees,
   };
 }
@@ -144,11 +148,12 @@ export function serialiserResultatTechnique(
   resultatZone: ReturnType<typeof calculerZone>,
   resultatPose: ResultatPose | null,
   resultatCalepinage: ResultatCalepinage | null,
+  autoriserRotation: boolean = true
 ): ResultatMetre {
   return {
     version_moteur: VERSION_MOTEUR,
     calcule_le: new Date().toISOString(),
-    entrees: extraireEntrees(zone, configTechnique),
+    entrees: extraireEntrees(zone, configTechnique, autoriserRotation),
     resultat_zone: resultatZone,
     resultat_pose: resultatPose,
     resultat_calepinage: resultatCalepinage,

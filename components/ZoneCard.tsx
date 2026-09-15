@@ -8,6 +8,7 @@ import {
   FamillePose,
   LABELS_FAMILLE,
 } from "@/lib/poseCalcul";
+import { simulerPoseComposite } from "@/lib/poseCompositeCalcul";
 import {
   calculerCalepinage,
   SensPose,
@@ -43,6 +44,7 @@ export type Zone = {
   famille_pose: FamillePose | null;
   angle: boolean;
   largeur_lame_mm: number | null;
+  longueur_lame_mm?: number | null;
   plaque_longueur_mm: number | null;
   plaque_largeur_mm: number | null;
   module_largeur_mm?: number | null;
@@ -150,6 +152,41 @@ export function calculerZone(
     totalCoupesML += 2 * longueurRampant;
   }
 
+  // --- CALCUL LAMES COMPOSITES (sans calepinage HPL) ---
+  let lamesACommander = 0;
+  let surfaceTheoriqueLames = 0;
+  let lamesNeuvesSimul = 0;
+  let morceauxReutilises = 0;
+  let longueurChutesGenerees = 0;
+  let longueurChutesReutilisees = 0;
+  let chutesPerdues = 0;
+
+  if (zone.materiau === "lames" && zone.longueur_lame_mm && zone.largeur_lame_mm) {
+    const L_m = zone.longueur_lame_mm / 1000;
+    const l_utile_m = (zone.largeur_lame_mm - 15) / 1000;
+
+    if (L_m > 0 && l_utile_m > 0) {
+      const res = simulerPoseComposite(
+        zone.type,
+        zone.largeur,
+        zone.hauteur_mur,
+        zone.hauteur_faite,
+        null, // peakX par défaut symétrique
+        L_m,
+        l_utile_m,
+        marge
+      );
+      
+      lamesNeuvesSimul = res.lamesNeuves;
+      morceauxReutilises = res.morceauxReutilises;
+      longueurChutesGenerees = res.longueurChutesGenerees;
+      longueurChutesReutilisees = res.longueurChutesReutilisees;
+      chutesPerdues = res.chutesPerdues;
+      lamesACommander = res.lamesACommander;
+      surfaceTheoriqueLames = res.surfaceTheoriqueLames;
+    }
+  }
+
   return {
     bruteFacade,
     brutePignon,
@@ -159,6 +196,13 @@ export function calculerZone(
     surfaceACommander,
     nombreOuvertures,
     totalCoupesML,
+    lamesACommander,
+    surfaceTheoriqueLames,
+    lamesNeuvesSimul,
+    morceauxReutilises,
+    longueurChutesGenerees,
+    longueurChutesReutilisees,
+    chutesPerdues,
   };
 }
 
@@ -166,22 +210,16 @@ export function calculerZone(
    PARAMÈTRES DE POSE
    ============================================================ */
 
-function labelModule(
-  famille: FamillePose | null
-) {
-  if (famille === "cassette") {
-    return "Largeur module cassette (mm)";
-  }
-
-  return "Largeur lame (mm)";
+function labelModule(famille: FamillePose | null) {
+  if (famille === "cassette") return "Largeur module cassette (mm)";
+  if (famille === "composite") return "Largeur totale lame (mm)";
+  return "Largeur utile (mm)";
 }
 
-function defautModule(
-  famille: FamillePose | null
-) {
-  return famille === "cassette"
-    ? 600
-    : 125;
+function defautModule(famille: FamillePose | null) {
+  if (famille === "cassette") return 600;
+  if (famille === "composite") return 202; // Standard CEDRAL ou équivalent avec languette
+  return 125;
 }
 
 /* ============================================================
@@ -217,6 +255,13 @@ export default function ZoneCard({
   // le select reste sur "custom" et déverrouille la saisie manuelle des champs.
   const [trameModuleCustom, setTrameModuleCustom] = useState(false);
   const [formatPlaqueCustom, setFormatPlaqueCustom] = useState(false);
+  
+  // Faille 3 : autorisation locale de rotation HPL (optimisation nesting vs fil du bois)
+  // On restaure le choix depuis le JSONB de la zone (sauvegardé précédemment).
+  // S'il n'y a pas de sauvegarde, on initialise à true (par défaut on autorise).
+  const [autoriserRotation, setAutoriserRotation] = useState(
+    zone.resultats_techniques?.entrees?.autoriser_rotation ?? true
+  );
 
   const PRESETS_MODULES = ["1000x600", "1200x800", "1500x450", "600x1200"];
   const PRESETS_PLAQUES = ["3050x1300", "3650x1860", "2550x1860", "2800x1300", "4100x1300"];
@@ -346,6 +391,7 @@ export default function ZoneCard({
           sensPose: sensPoseEffectif,
           estPignon: zone.type === "pignon",
           hauteurFaiteM: zone.hauteur_faite,
+          autoriserRotation,
         })
       : null;
 
@@ -364,7 +410,7 @@ export default function ZoneCard({
   // Mémoïsées sur les valeurs exactes qui les composent : la structure n'est
   // reconstruite que si l'une de ces valeurs change réellement.
   const entreesActuelles = useMemo(
-    () => extraireEntrees(zone, configTechnique),
+    () => extraireEntrees(zone, configTechnique, autoriserRotation),
     [
       zone.type,
       zone.largeur,
@@ -385,6 +431,7 @@ export default function ZoneCard({
       configTechnique.surface_paquet_m2,
       configTechnique.zone_vent_rive,
       configTechnique.coef_perte_rendement,
+      autoriserRotation,
     ],
   );
 
@@ -424,6 +471,7 @@ export default function ZoneCard({
       calc,
       pose,
       calepinage,
+      autoriserRotation,
     );
     dernieresEntreesEcrites.current = entreesActuelles;
     onPersistResult(nouveauResultat);
@@ -436,6 +484,7 @@ export default function ZoneCard({
     calc,
     pose,
     calepinage,
+    autoriserRotation,
   ]);
 
   /* ============================================================
@@ -823,29 +872,28 @@ export default function ZoneCard({
           ))}
         </select>
 
-        {/* MODULE LAME / CASSETTE */}
+        {/* MODULE LAME / COMPOSITE / CASSETTE */}
 
-        {(zone.famille_pose ===
-          "bois_naturel" ||
-          zone.famille_pose ===
-            "cassette") && (
-          <Field
-            label={labelModule(
-              zone.famille_pose
+        {(zone.famille_pose === "bois_naturel" || zone.famille_pose === "composite" || zone.famille_pose === "cassette") && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label={labelModule(zone.famille_pose)}
+              value={zone.largeur_lame_mm ?? defautModule(zone.famille_pose)}
+              onChange={(v) => update({ largeur_lame_mm: v })}
+            />
+            {zone.famille_pose === "composite" && (
+              <Field
+                label="Longueur lame (mm)"
+                value={zone.longueur_lame_mm ?? 2090}
+                onChange={(v) => update({ longueur_lame_mm: v })}
+              />
             )}
-            value={
-              zone.largeur_lame_mm ??
-              defautModule(
-                zone.famille_pose
-              )
-            }
-            onChange={(v) =>
-              update({
-                largeur_lame_mm:
-                  v,
-              })
-            }
-          />
+          </div>
+        )}
+        {zone.famille_pose === "composite" && (
+          <div className="text-[11px] text-gray-500 mt-1 italic px-1">
+            Note: La largeur utile calculée déduit automatiquement 15mm pour l'emboîtement de la languette.
+          </div>
         )}
 
         {/* ==================================================== */}
@@ -1082,6 +1130,26 @@ export default function ZoneCard({
                   })}
                 </div>
               </div>
+
+              {/* AUTORISATION ROTATION (FAILLE 3) */}
+              <div className="pt-2">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!autoriserRotation}
+                    onChange={(e) => setAutoriserRotation(!e.target.checked)}
+                    className="mt-0.5 rounded border-slate-600 bg-slate-900 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
+                  />
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-300 block">
+                      Décor directionnel (Fil du bois imposé)
+                    </span>
+                    <span className="text-[9px] text-slate-400 block leading-tight">
+                      Cocher si le décor a un sens. Interdit le pivot des plaques à 90° dans l'atelier.
+                    </span>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         )}
@@ -1249,13 +1317,48 @@ export default function ZoneCard({
           highlight
         />
 
-        <Resultat
-          label="À commander"
-          value={
-            calc.surfaceACommander
-          }
-          highlight
-        />
+        {zone.materiau === "lames" && zone.longueur_lame_mm && zone.largeur_lame_mm ? (
+          <div className="col-span-full mt-2 rounded-xl border border-sky-500/30 bg-sky-950/20 p-3 space-y-2">
+            <div className="flex items-center justify-between border-b border-sky-500/20 pb-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-sky-400">À commander (Lames)</span>
+              <span className="text-lg font-black text-sky-300">{calc.lamesACommander} lames</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Surface nette :</span>
+                <span className="font-semibold text-gray-200">{calc.surfaceNette.toFixed(2)} m²</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Lames neuves simulées :</span>
+                <span className="font-semibold text-sky-200">{calc.lamesNeuvesSimul} lames</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Chutes réutilisées :</span>
+                <span className="font-semibold text-emerald-400">{calc.morceauxReutilises} morceaux ({calc.longueurChutesReutilisees?.toFixed(1)} ml)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Chutes jetées :</span>
+                <span className="font-semibold text-red-400">{calc.chutesPerdues?.toFixed(1)} ml</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Marge sécurité :</span>
+                <span className="font-semibold text-amber-200">
+                  + {configTechnique.coef_perte_rendement ? Math.round((configTechnique.coef_perte_rendement - 1) * 100) : 10}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Surface comm. finale :</span>
+                <span className="font-semibold text-gray-200">{calc.surfaceACommander.toFixed(2)} m²</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Resultat
+            label="À commander"
+            value={calc.surfaceACommander}
+            highlight
+          />
+        )}
 
       </div>
 

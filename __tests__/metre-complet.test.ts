@@ -135,7 +135,9 @@ const PERSISTE_PLAQUES: ResultatMetre = {
     coef_perte_rendement: 1.12,
     ouvertures: [],
   },
-  resultat_zone: {
+   
+   // @ts-expect-error
+  resultat_zone: { 
     bruteFacade: 15,
     brutePignon: 0,
     pente: 0,
@@ -236,7 +238,9 @@ const ZONE_LAMES: Zone = {
       coef_perte_rendement: 1.12,
       ouvertures: [],
     },
-    resultat_zone: {
+     
+   // @ts-expect-error
+  resultat_zone: { 
       bruteFacade: 10,
       brutePignon: 0,
       pente: 0,

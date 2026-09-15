@@ -56,23 +56,42 @@ function postesPourZone(zone: EntreeZoneMetreComplet): PosteTechnique[] {
 
   // ── Métrage (resultat_zone) ───────────────────────────────────────
   const m = zone.metrage;
+  const c = zone.calepinage;
   if (m) {
+    const isCompositeV2 = zone.zone.materiau === "lames" && (m.lamesACommander ?? 0) > 0 && (m.surfaceTheoriqueLames ?? 0) > 0;
+    const isHplValid = zone.zone.materiau === "plaques" && !!c;
+    
+    let quantiteFacturable = m.surfaceACommander;
+    let descriptionSurface = `surface nette ${m.surfaceNette} m²`;
+
+    if (isHplValid) {
+      // Raccordement HPL : La source de vérité commerciale est la surface
+      // brute totale des plaques réellement achetées.
+      quantiteFacturable = c.surfacePlaquesAchetesM2;
+      descriptionSurface = `calepinage précis : ${c.nbPlaquesNecessaires} plaques entières (${c.tauxChutePct}% de chute)`;
+    } else if (isCompositeV2) {
+      // Raccordement Composite V2 : si le moteur a calculé des lames
+      // la quantité facturable réelle en m² est la surfaceTheoriqueLames.
+      quantiteFacturable = m.surfaceTheoriqueLames!;
+      descriptionSurface = `calcul précis V2 : ${m.lamesACommander} lames`;
+    }
+
     pushSiPositif(postes, {
       ...base,
       categorie: "metrage",
       libelle: "Bardage — surface à commander",
       unite: "m²",
       contexte: [
-        `surface nette ${m.surfaceNette} m²`,
+        descriptionSurface,
         `${m.nombreOuvertures} ouverture(s)`,
       ],
-    }, m.surfaceACommander);
+    }, quantiteFacturable);
   }
 
   // ── Pose (resultat_pose) ──────────────────────────────────────────
   const p = zone.pose;
   if (p) {
-    // Isolant (paquets + surface)
+    // Isolant (fusion de paquets et chevilles rosaces au profit d'un forfait m² commercial)
     if (p.isolant.actif) {
       pushSiPositif(postes, {
         ...base,
@@ -80,76 +99,18 @@ function postesPourZone(zone: EntreeZoneMetreComplet): PosteTechnique[] {
         libelle: `Isolant ${p.isolant.typeIsolant} ép. ${p.isolant.epaisseurMm}mm`,
         unite: "m²",
         contexte: [
-          `${p.isolant.nbPaquetsACommander} paquets de ${p.isolant.surfacePaquetM2} m²`,
-          `+8% perte → surface à commander ${p.isolant.surfaceACommanderM2} m²`,
+          `Inclus : ${p.isolant.nbPaquetsACommander} paquets de ${p.isolant.surfacePaquetM2} m²`,
+          `Fixations : ${p.isolant.nbChevillesRosaces} chevilles rosaces incluses`,
         ],
       }, p.isolant.surfaceACommanderM2);
-      pushSiPositif(postes, {
-        ...base,
-        categorie: "isolant",
-        libelle: `Isolant ${p.isolant.typeIsolant} — paquets`,
-        unite: "paquets",
-        contexte: [`surface nette ${p.isolant.surfaceNetteM2} m²`],
-      }, p.isolant.nbPaquetsACommander);
     }
 
-    // Équerres (porteuses + guides)
-    const nbEquerres = (p.nbEquerresPorteuses || 0) + (p.nbEquerresGuides || 0);
-    pushSiPositif(postes, {
-      ...base,
-      categorie: "pose",
-      libelle: "Équerres",
-      unite: "u",
-      contexte: [
-        `porteuses ${p.nbEquerresPorteuses}`,
-        `guides ${p.nbEquerresGuides}`,
-      ],
-    }, nbEquerres);
+    // L'ossature métallique/bois (Équerres, Chevrons, Chevilles, Vis) n'est PAS extraite ici.
+    // Elle est incluse dans le forfait m² du "Bardage" au catalogue, ce qui évite
+    // la génération de dizaines de lignes "À CHIFFRER" sur le devis client.
+    // Les données techniques (BOM) restent préservées dans la BDD et les plans d'atelier.
 
-    // Chevronnage
-    pushSiPositif(postes, {
-      ...base,
-      categorie: "pose",
-      libelle: "Chevronnage",
-      unite: "ml",
-      contexte: [
-        `entraxe vertical ${p.entraxeVertical} m`,
-        `entraxe horizontal ${p.entraxeHorizontal} m`,
-      ],
-    }, p.lineaireChevronsM);
-
-    // Chevilles murales
-    pushSiPositif(postes, {
-      ...base,
-      categorie: "pose",
-      libelle: "Chevilles maçonnerie",
-      unite: "u",
-      contexte: [],
-    }, p.nbChevillesMurales);
-
-    // Chevilles rosaces (isolant)
-    pushSiPositif(postes, {
-      ...base,
-      categorie: "pose",
-      libelle: "Chevilles rosaces isolant",
-      unite: "u",
-      contexte: [],
-    }, p.isolant.nbChevillesRosaces);
-
-    // Vis
-    const nbVisTotal = (p.nbVisChevronEquerre || 0) + (p.nbVisParement || 0);
-    pushSiPositif(postes, {
-      ...base,
-      categorie: "pose",
-      libelle: "Vis",
-      unite: "u",
-      contexte: [
-        `chevron-équerre ${p.nbVisChevronEquerre}`,
-        `parement ${p.nbVisParement}`,
-      ],
-    }, nbVisTotal);
-
-    // EPDM
+    // EPDM (Ligne facturée unitairement au ml selon le catalogue)
     pushSiPositif(postes, {
       ...base,
       categorie: "pose",
@@ -166,20 +127,8 @@ function postesPourZone(zone: EntreeZoneMetreComplet): PosteTechnique[] {
     }
   }
 
-  // ── Calepinage (resultat_calepinage) ──────────────────────────────
-  const c = zone.calepinage;
-  if (c) {
-    pushSiPositif(postes, {
-      ...base,
-      categorie: "calepinage",
-      libelle: "Plaques",
-      unite: "plaques",
-      contexte: [
-        `${c.tauxChutePct}% de chute`,
-        `surface zone ${c.surfaceZoneM2} m²`,
-      ],
-    }, c.nbPlaquesNecessaires);
-  }
+  // Note: Le resultat_calepinage (c) est désormais fusionné dans le poste
+  // "Bardage — surface à commander" pour éviter le double comptage commercial.
 
   return postes;
 }

@@ -104,7 +104,9 @@ function zoneEntree(overrides: Partial<EntreeZoneMetreComplet> & { id: string; n
     version_moteur: "1.0.0",
     calcule_le: "2026-09-12T10:00:00.000Z",
     entrees: null,
-    metrage: {
+     
+     // @ts-expect-error
+    metrage: { 
       bruteFacade: 15,
       brutePignon: 0,
       pente: 0,
@@ -156,24 +158,51 @@ function payloadFixture(zones: EntreeZoneMetreComplet[]): PayloadMetreComplet {
    ================================================================== */
 
 describe("mapperQuantitesPersistees", () => {
-  it("quantités du JSONB reflétées À L'IDENTIQUE — aucun recalcul (chevrons ≠ 1,5×surface)", () => {
+  it("l'isolant est extrait en m² (forfait commercial) et non plus en paquets", () => {
     const zones = [zoneEntree({ id: "z-a", nom: "Façade Nord" })];
     const { postes } = mapperQuantitesPersistees(payloadFixture(zones));
 
-    const chevron = postes.find((p) => p.libelle === "Chevronnage");
-    expect(chevron).toBeDefined();
-    expect(chevron!.quantite).toBe(6.75); // valeur persistée (surface 15 → 1,5×15 = 22,5 JAMAIS utilisé)
-    expect(chevron!.unite).toBe("ml");
+    const isolant = postes.find((p) => p.categorie === "isolant");
+    expect(isolant).toBeDefined();
+    expect(isolant!.unite).toBe("m²");
+    expect(isolant!.quantite).toBe(16.2); // p.isolant.surfaceACommanderM2 (et non nbPaquetsACommander)
+    expect(isolant!.contexte[0]).toContain("4 paquets"); // info technique conservée dans le contexte
   });
 
-  it("chevilles/équerres proviennent du JSONB, pas de règle 2/m² ou 6/m²", () => {
+  it("la quincaillerie d'ossature (équerres, chevrons, vis) est filtrée du devis commercial", () => {
     const zones = [zoneEntree({ id: "z-a", nom: "Façade Nord" })];
     const { postes } = mapperQuantitesPersistees(payloadFixture(zones));
 
-    const equerres = postes.find((p) => p.libelle === "Équerres");
-    expect(equerres!.quantite).toBe(5); // porteuses 3 + guides 2 (persistés)
-    const chevillesMurales = postes.find((p) => p.libelle === "Chevilles maçonnerie");
-    expect(chevillesMurales!.quantite).toBe(10); // persisté (jamais 15×6)
+    expect(postes.some((p) => p.libelle === "Équerres")).toBe(false);
+    expect(postes.some((p) => p.libelle === "Chevronnage")).toBe(false);
+    expect(postes.some((p) => p.libelle === "Chevilles maçonnerie")).toBe(false);
+    expect(postes.some((p) => p.libelle === "Vis")).toBe(false);
+    
+    // L'EPDM est en revanche conservé car vendu unitairement au ml
+    expect(postes.some((p) => p.libelle === "Bande EPDM")).toBe(true);
+  });
+
+  it("utilise les quantités exactes Composite V2 si disponibles plutôt que la surface + 10%", () => {
+    const zones = [
+      zoneEntree({
+        id: "z-comp",
+        nom: "Façade Composite",
+        zone: { ...zoneEntree({ id: "1", nom: "1" }).zone, materiau: "lames" },
+        metrage: { 
+          // Ancien calcul (surfaceNette * 1.1)
+          bruteFacade: 15, brutePignon: 0, pente: 0, totalOuvertures: 0,
+          surfaceNette: 15, surfaceACommander: 16.5, nombreOuvertures: 0, totalCoupesML: 0,
+          // Résultat Composite V2
+          lamesACommander: 50, surfaceTheoriqueLames: 18.7
+        } as any,
+      }),
+    ];
+    const { postes } = mapperQuantitesPersistees(payloadFixture(zones));
+
+    const metrage = postes.find((p) => p.categorie === "metrage");
+    expect(metrage).toBeDefined();
+    expect(metrage!.quantite).toBe(18.7); // On utilise la surface théorique des lames V2
+    expect(metrage!.contexte[0]).toContain("calcul précis V2 : 50 lames");
   });
 
   it("une valeur modifiée dans le JSONB → quantité différente, sans modifier aucun moteur", () => {
@@ -182,13 +211,13 @@ describe("mapperQuantitesPersistees", () => {
       zoneEntree({
         id: "z-a",
         nom: "Façade Nord",
-        pose: { ...POSE_BASE, lineaireChevronsM: 9.0 },
+        pose: { ...POSE_BASE, lineaireBandeEPDMM: 9.0 },
       }),
     ];
 
-    const p1 = mapperQuantitesPersistees(payloadFixture(zones1)).postes.find((p) => p.libelle === "Chevronnage");
-    const p2 = mapperQuantitesPersistees(payloadFixture(zones2)).postes.find((p) => p.libelle === "Chevronnage");
-    expect(p1!.quantite).toBe(6.75);
+    const p1 = mapperQuantitesPersistees(payloadFixture(zones1)).postes.find((p) => p.libelle === "Bande EPDM");
+    const p2 = mapperQuantitesPersistees(payloadFixture(zones2)).postes.find((p) => p.libelle === "Bande EPDM");
+    expect(p1!.quantite).toBe(7.1);
     expect(p2!.quantite).toBe(9.0);
   });
 
@@ -198,15 +227,30 @@ describe("mapperQuantitesPersistees", () => {
 
     expect(postes.some((p) => p.categorie === "pose")).toBe(false);
     expect(postes.some((p) => p.categorie === "isolant")).toBe(false);
-    expect(postes.find((p) => p.libelle === "Chevronnage")).toBeUndefined();
+    expect(postes.find((p) => p.libelle === "Bande EPDM")).toBeUndefined();
   });
 
-  it("resultat_calepinage null → AUCUN poste plaques", () => {
+  it("resultat_calepinage null sur plaques → fallback sur surface + 15%", () => {
     const zones = [zoneEntree({ id: "z-a", nom: "Façade Nord", calepinage: null })];
     const { postes } = mapperQuantitesPersistees(payloadFixture(zones));
 
+    const metrage = postes.find((p) => p.categorie === "metrage");
+    expect(metrage).toBeDefined();
+    expect(metrage!.quantite).toBe(16.95); // L'ancienne valeur (fallback)
+    expect(metrage!.contexte[0]).toContain("surface nette");
+  });
+
+  it("utilise la surface réelle du calepinage HPL si disponible et supprime le doublon 'Plaques'", () => {
+    const zones = [zoneEntree({ id: "z-hpl", nom: "Façade HPL" })];
+    const { postes } = mapperQuantitesPersistees(payloadFixture(zones));
+
+    const metrage = postes.find((p) => p.categorie === "metrage");
+    expect(metrage).toBeDefined();
+    expect(metrage!.quantite).toBe(16.98); // c.surfacePlaquesAchetesM2
+    expect(metrage!.contexte[0]).toContain("calepinage précis : 12 plaques");
+
+    // Vérifie l'absence absolue de la ligne "Plaques" unitaire (doublon)
     expect(postes.some((p) => p.libelle === "Plaques")).toBe(false);
-    expect(postes.some((p) => p.categorie === "calepinage")).toBe(false);
   });
 
   it("resultat_zone null → AUCUNE quantité de métrage inventée", () => {
@@ -236,9 +280,9 @@ describe("mapperQuantitesPersistees", () => {
     ];
     const { postes } = mapperQuantitesPersistees(payloadFixture(zones));
 
-    const chevrons = postes.filter((p) => p.libelle === "Chevronnage");
-    expect(chevrons).toHaveLength(2);
-    expect(chevrons.map((p) => p.zoneId).sort()).toEqual(["z-a", "z-b"]);
+    const epdm = postes.filter((p) => p.libelle === "Bande EPDM");
+    expect(epdm).toHaveLength(2);
+    expect(epdm.map((p) => p.zoneId).sort()).toEqual(["z-a", "z-b"]);
     expect(postes.every((p) => p.zoneId === "z-a" || p.zoneId === "z-b")).toBe(true);
   });
 

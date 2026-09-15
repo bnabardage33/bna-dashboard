@@ -143,7 +143,11 @@ function finaliserQuantites(lignes: LigneDevis[]): LigneDevis[] {
   return lignes.map((l) => {
     if (l.a_chiffrer || l.catalogue_id == null) return l;
     if (l.qte == null || l.qte <= 0) {
-      return creerLigneAChiffrer(l.designation, "Quantité indéterminée — à compléter.");
+      // Faille 3 corrigée : on transmet le zone_id existant
+      return {
+        ...creerLigneAChiffrer(l.designation, "Quantité indéterminée — à compléter."),
+        zone_id: l.zone_id
+      };
     }
     return l;
   });

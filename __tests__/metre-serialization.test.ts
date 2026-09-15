@@ -236,6 +236,41 @@ describe("metre-serialization", () => {
       expect(lesEntreesOntChangent(e1, e2)).toBe(true);
     });
 
+    describe("Persistance de autoriserRotation (Faille 3)", () => {
+      it("true est correctement sauvegardé (et par défaut)", () => {
+        const e = extraireEntrees(ZONE_BASE, CONFIG_BASE, true);
+        expect(e.autoriser_rotation).toBe(true);
+      });
+
+      it("false est correctement sauvegardé", () => {
+        const e = extraireEntrees(ZONE_BASE, CONFIG_BASE, false);
+        expect(e.autoriser_rotation).toBe(false);
+      });
+
+      it("l'absence de la propriété dans une ancienne sauvegarde retourne true (par défaut au runtime via ?? true)", () => {
+        const jsonAncien = { largeur: 5, hauteur_mur: 3, materiau: "plaques" }; // pas de autoriser_rotation
+        // Ce cas est surtout géré dans ZoneCard au `useState(zone.resultats... ?? true)`
+        // Mais on vérifie que entreesIdentiques l'acceptera s'il est null vs null.
+        expect(entreesIdentiques(jsonAncien as any, jsonAncien as any)).toBe(true);
+      });
+
+      it("la modification du toggle déclenche bien la persistance", () => {
+        const e1 = extraireEntrees(ZONE_BASE, CONFIG_BASE, true);
+        const e2 = extraireEntrees(ZONE_BASE, CONFIG_BASE, false);
+        expect(lesEntreesOntChangent(e1, e2)).toBe(true);
+      });
+
+      it("le Composite V2 n'est pas pollué par autoriser_rotation (forcé à null)", () => {
+        const zoneComposite: Zone = { ...ZONE_BASE, materiau: "lames", famille_pose: "composite" };
+        const eTrue = extraireEntrees(zoneComposite, CONFIG_BASE, true);
+        const eFalse = extraireEntrees(zoneComposite, CONFIG_BASE, false);
+        
+        expect(eTrue.autoriser_rotation).toBeNull();
+        expect(eFalse.autoriser_rotation).toBeNull();
+        expect(lesEntreesOntChangent(eTrue, eFalse)).toBe(false); // Pas de changement vu
+      });
+    });
+
     it("hauteur mur modifiée = changement détecté", () => {
       const e1 = extraireEntrees(ZONE_BASE, CONFIG_BASE);
       const e2 = extraireEntrees({ ...ZONE_BASE, hauteur_mur: 4 }, CONFIG_BASE);

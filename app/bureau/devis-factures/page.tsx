@@ -134,9 +134,7 @@ function DevisContenu() {
   const [apercu, setApercu] = useState<Devis | null>(null);
   const [modeSignature, setModeSignature] = useState(false);
   const [signatureData, setSignatureData] = useState<{ image: string; nom: string } | null>(null);
-  const [iaPromptOuvert, setIaPromptOuvert] = useState(false);
-  const [iaPrompt, setIaPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -287,14 +285,53 @@ function DevisContenu() {
     });
   }
 
+  async function creerDevisViergeIA(): Promise<string | null> {
+    const numero = await prochainNumero("devis", "DEV");
+    const ponctuelle = parseFloat(surfacePonctuelle.replace(",", "."));
+    const lignesNettoyees = lignes.filter(
+      (l) =>
+        l.a_chiffrer ||
+        l.designation.trim() ||
+        (typeof l.qte === "number" && l.qte > 0) ||
+        (typeof l.pu_ht === "number" && l.pu_ht > 0)
+    );
+    const res = await fetch("/api/devis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numero,
+        client_id: clientId,
+        chantier_id: chantierId || null,
+        objet: objet || null,
+        adresse_chantier: adresseChantier || null,
+        type_travaux: typeTravaux || null,
+        validite_jours: validite,
+        delai_jours: delai,
+        acompte_pct: acompte,
+        tva_pct: tva,
+        surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : null,
+        lignes: lignesNettoyees,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || data?.error) {
+      alert("Erreur lors de la création du devis (IA) : " + (data?.error || "réponse inattendue."));
+      return null;
+    }
+    const id = data && typeof data.id === "string" ? data.id : null;
+    if (!id) {
+      alert("Le devis a été créé mais son identifiant est illisible. Réessayez.");
+      return null;
+    }
+    return id;
+  }
+
   async function genererLigneIA() {
-    if (!apercu) return;
     if (!promptIA.trim()) return;
-    if (!apercu) return;
     setGenererIAEnCours(true);
     try {
       const ponctuelle = parseFloat(surfacePonctuelle.replace(",", "."));
-      const res = await fetch(`/api/devis/${apercu.id}/analyse`, {
+      const res = await fetch(`/api/ia-devis`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -529,7 +566,7 @@ function DevisContenu() {
     const pct = d.acompte_pct ?? 30;
     const montantHT = Math.round(totalHT * (pct / 100) * 100) / 100;
 
-    const numero = await prochainNumero("factures", "FACT");
+    const numero = await prochainNumero("factures", "FAC");
 
     const echeance = new Date();
     echeance.setDate(echeance.getDate() + 15);
@@ -542,7 +579,7 @@ function DevisContenu() {
       objet: `Acompte ${pct}% devis ${d.numero}`,
       adresse_chantier: d.adresse_chantier,
       type_travaux: d.type_travaux,
-      tva_pct: 20,
+      tva_pct: d.tva_pct,   // Fix #1 : reprend le taux TVA du devis (ex. 10% rénovation)
       type_facture: "acompte",
       statut: "en_attente",
       echeance: echeance.toISOString().slice(0, 10),
@@ -595,8 +632,22 @@ function DevisContenu() {
 
   async function supprimerDevis(d: Devis) {
     if (!confirm(`Supprimer le devis ${d.numero} ?`)) return;
+    // Fix #8 : vérification des factures liées avant suppression.
+    const { data: facturesLiees } = await supabase
+      .from("factures")
+      .select("id, numero")
+      .eq("devis_id", d.id);
+    if (facturesLiees && facturesLiees.length > 0) {
+      const nums = facturesLiees.map((f: { numero: string }) => f.numero).join(", ");
+      alert(`Impossible de supprimer le devis ${d.numero} : ${facturesLiees.length} facture(s) liée(s) existent (${nums}). Supprimez-les d'abord dans l'onglet Factures.`);
+      return;
+    }
     const { error } = await supabase.from("devis").delete().eq("id", d.id);
-    if (!error) fetchTout();
+    if (error) {
+      alert("Erreur lors de la suppression : " + error.message);
+      return;
+    }
+    fetchTout();
   }
 
   function imprimer() {
@@ -717,7 +768,17 @@ function DevisContenu() {
                     >
                       👁️ Aperçu PDF
                     </button>
-                    {d.statut !== "accepte" && (
+                    {/* Fix #3 : bouton Facturer → ouvre la modale de génération manuelle */}
+                    {(d.statut === "accepte" || d.statut === "signe") && (
+                      <button
+                        onClick={() => { setDevisToBill(d); setBillType("acompte"); setBillPct(d.acompte_pct ?? 30); }}
+                        className="rounded-xl border border-emerald-600/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20"
+                        title="Générer une facture (acompte / situation / totale)"
+                      >
+                        🧾 Facturer
+                      </button>
+                    )}
+                    {d.statut !== "accepte" && d.statut !== "signe" && (
                       <button
                         onClick={() => transformerEnChantier(d)}
                         className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40"
@@ -742,11 +803,112 @@ function DevisContenu() {
         </div>
       )}
 
+      {/* Fix #3 : Modale de génération de facture manuelle */}
+      {devisToBill && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setDevisToBill(null)}
+        >
+          <form
+            onSubmit={handleGenererFacture}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#1A1D24] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5 animate-in fade-in"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-white">Générer une facture</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Devis {devisToBill.numero} · {devisToBill.clients?.societe || devisToBill.clients?.nom || "—"}</p>
+              </div>
+              <button type="button" onClick={() => setDevisToBill(null)} className="text-gray-400 hover:text-white p-1.5">✕</button>
+            </div>
+
+            {/* Type de facture */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Type de facture</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(["acompte", "situation", "totale"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setBillType(type)}
+                    className={`rounded-xl border py-2 text-xs font-bold transition-all ${
+                      billType === type
+                        ? "border-emerald-500 bg-emerald-500/20 text-emerald-400"
+                        : "border-white/10 bg-white/5 text-gray-400 hover:border-gray-500"
+                    }`}
+                  >
+                    {type === "acompte" ? "Acompte" : type === "situation" ? "Situation" : "Totale"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pourcentage (si acompte ou situation) */}
+            {(billType === "acompte" || billType === "situation") && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  {billType === "acompte" ? "% d'acompte" : "% d'avancement"}
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={5}
+                    max={100}
+                    step={5}
+                    value={billPct}
+                    onChange={(e) => setBillPct(parseInt(e.target.value))}
+                    className="flex-1 accent-emerald-500"
+                  />
+                  <span className="w-12 text-right text-sm font-bold text-white">{billPct}%</span>
+                </div>
+              </div>
+            )}
+
+            {/* Aperçu montant */}
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 space-y-1">
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>Total devis HT</span>
+                <span className="font-mono text-gray-200">{(devisToBill.total_ht && devisToBill.total_ht > 0 ? devisToBill.total_ht : calculerDevis(devisToBill.lignes || []).total_ht).toFixed(2)} €</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-gray-300">
+                  {billType === "totale" ? "Montant facturé HT" : `Montant ${billType === "acompte" ? "acompte" : "situation"} HT`}
+                </span>
+                <span className="font-mono text-sm font-black text-emerald-400">
+                  {(() => {
+                    const base = devisToBill.total_ht && devisToBill.total_ht > 0 ? devisToBill.total_ht : calculerDevis(devisToBill.lignes || []).total_ht;
+                    const montant = billType === "totale" ? base : Math.round(base * (billPct / 100) * 100) / 100;
+                    return montant.toFixed(2);
+                  })()} €
+                </span>
+              </div>
+              <p className="text-[10px] text-gray-500">TVA {devisToBill.tva_pct}% appliquée</p>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setDevisToBill(null)}
+                className="flex-none rounded-xl border border-slate-600 bg-transparent px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-white/5"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="flex-1 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 shadow-md transition-colors"
+              >
+                Générer la facture
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* FAB (+) */}
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Créer un devis"
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
+        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
@@ -1200,10 +1362,16 @@ function DevisContenu() {
                   <button
                     disabled={!signatureData}
                     onClick={async () => {
+                      const ancienStatut = apercu.statut;
                       await supabase
                         .from("devis")
                         .update({ statut: "accepte" })
                         .eq("id", apercu.id);
+                      // Fix #2 : cohérence avec changerStatut() — génère l'acompte si
+                      // le devis n'était pas encore accepté/signé avant la signature.
+                      if (ancienStatut !== "accepte" && ancienStatut !== "signe") {
+                        await genererFactureAcompte({ ...apercu, statut: ancienStatut });
+                      }
                       setApercu(null);
                       setModeSignature(false);
                       setSignatureData(null);

@@ -158,24 +158,41 @@ export function meilleureCorrespondance(
 ): Correspondance | null {
   let meilleure: Correspondance | null = null;
   let meilleurNbAppariements = -1;
+  let ambiguite = false;
 
   for (const item of items) {
     const { score, appariements } = scoreConceptVsItem(concept, item);
     if (score < SEUIL_CORRESPONDANCE) continue;
+
+    // Détection d'un vrai ex aequo sur les critères de classement
+    if (
+      meilleure !== null &&
+      score === meilleure.score &&
+      appariements.length === meilleurNbAppariements
+    ) {
+      ambiguite = true;
+      continue;
+    }
+
     const mieuxScore =
       meilleure === null ||
       score > meilleure.score ||
       (score === meilleure.score && appariements.length > meilleurNbAppariements);
-    if (!mieuxScore) continue;
-    meilleure = {
-      item,
-      score,
-      justification: appariements
-        .map((a) => `« ${a.mot} » ↔ « ${a.trouve} » (${a.type})`)
-        .join(" · "),
-    };
-    meilleurNbAppariements = appariements.length;
+      
+    if (mieuxScore) {
+      meilleure = {
+        item,
+        score,
+        justification: appariements
+          .map((a) => `« ${a.mot} » ↔ « ${a.trouve} » (${a.type})`)
+          .join(" · "),
+      };
+      meilleurNbAppariements = appariements.length;
+      ambiguite = false; // On a trouvé un meilleur score incontestable
+    }
   }
 
+  // Faille 2 corrigée : S'il reste une ambiguïté stricte, on rejette (forçage "À CHIFFRER")
+  if (ambiguite) return null;
   return meilleure;
 }
