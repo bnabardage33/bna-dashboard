@@ -17,6 +17,7 @@ import RapportClientWrapper from "@/components/RapportClientWrapper";
 import { Scissors } from "lucide-react";
 import PhotosNotes from "@/components/PhotosNotes";
 import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
+import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteView } from "@/components/TempsHeuresViews";
@@ -483,6 +484,46 @@ function ChantierDetailContent() {
     });
   }
 
+  function handleCreerCommandeQuincaillerie() {
+    if (!chantier) return;
+    
+    // On utilise la surface nette totale pour le calcul des matériaux
+    const surfaceCalcul = totaux.nette > 0 ? totaux.nette : totaux.aCommander;
+    
+    const { mlChevrons, nbEquerres, nbChevilles, nbVisAutoForeuses } = calculerBesoinsBardage(surfaceCalcul);
+
+    const lignesQuincaillerie: LigneCommande[] = [
+      {
+        designation: "Chevrons d'ossature bois",
+        quantite: mlChevrons,
+        unite: "ml",
+      },
+      {
+        designation: "Équerres de fixation bardage",
+        quantite: nbEquerres,
+        unite: "unité",
+      },
+      {
+        designation: "Chevilles d'ancrage façade",
+        quantite: nbChevilles,
+        unite: "unité",
+      },
+      {
+        designation: "Vis auto-foreuses (blocage équerres)",
+        quantite: nbVisAutoForeuses,
+        unite: "unité",
+      },
+    ];
+
+    setCommandeModalData({
+      isOpen: true,
+      lignes: lignesQuincaillerie,
+      zoneNom: "Quincaillerie Globale",
+      zoneId: "global-quincaillerie",
+      chantierNom: chantier.nom || chantier.clients?.nom || "Chantier en cours"
+    });
+  }
+
   const totaux = zones.reduce(
     (acc, z) => {
       const c = calculerZone(z, chantier?.coef_perte_rendement);
@@ -945,6 +986,13 @@ function ChantierDetailContent() {
             <Resume label="Total net" value={totaux.nette} />
             <Resume label="À commander" value={totaux.aCommander} highlight />
           </div>
+
+          <button
+            onClick={handleCreerCommandeQuincaillerie}
+            className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 py-3 text-sm font-bold text-white transition-all shadow-md"
+          >
+            📦 Générer le Bon de Commande Quincaillerie
+          </button>
 
           
         
