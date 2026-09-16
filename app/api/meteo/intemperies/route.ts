@@ -9,26 +9,13 @@ const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES = ["ossature", "isolation", "bardage", "finitions"] as const;
 
 async function prochainNumeroIntemperie(): Promise<string> {
-  const annee = new Date().getFullYear();
-  const { data, error } = await supabaseAdmin
-    .from("rapports_intemperies")
-    .select("numero")
-    .ilike("numero", `RI-${annee}-%`);
-
-  if (error) {
-    console.error("Impossible de numéroter le rapport intempérie:", error.message);
-    return `RI-${annee}-001`;
+  const { data, error } = await supabaseAdmin.rpc('generer_prochain_numero_ri');
+  if (error || !data) {
+    console.error("Erreur génération numéro RPC:", error);
+    const annee = new Date().getFullYear();
+    return `RI-${annee}-${Math.floor(Math.random() * 900) + 100}`; // Fallback au cas où
   }
-
-  const numeros = (data ?? [])
-    .map((ligne: { numero: string | null }) => {
-      const morceaux = String(ligne.numero ?? "").split("-");
-      return Number.parseInt(morceaux[2] ?? "", 10);
-    })
-    .filter((num: number) => Number.isFinite(num));
-
-  const prochain = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
-  return `RI-${annee}-${String(prochain).padStart(3, "0")}`;
+  return data;
 }
 
 type JourIntemperie = {

@@ -248,30 +248,13 @@ async function fetchVigilanceInterne(
 // -----------------------------------------------------------------------------
 
 async function prochainNumero(): Promise<string> {
-  const annee = new Date().getFullYear();
-
-  const { data, error } = await supabase
-    .from("rapports_intemperies")
-    .select("numero")
-    .ilike("numero", `RI-${annee}-%`);
-
-  if (error) {
+  const { data, error } = await supabase.rpc('generer_prochain_numero_ri');
+  if (error || !data) {
     throw new Error(
-      `Impossible de récupérer les numéros existants : ${error.message}`
+      `Impossible de générer un numéro sécurisé via RPC : ${error?.message}`
     );
   }
-
-  const numeros = (data ?? [])
-    .map((ligne: { numero: string | null }) => {
-      const morceaux = String(ligne.numero ?? "").split("-");
-      return Number.parseInt(morceaux[2] ?? "", 10);
-    })
-    .filter((numero) => Number.isFinite(numero));
-
-  const prochain =
-    numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
-
-  return `RI-${annee}-${String(prochain).padStart(3, "0")}`;
+  return data;
 }
 
 // -----------------------------------------------------------------------------
