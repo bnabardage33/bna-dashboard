@@ -17,6 +17,7 @@ declare global {
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { calculerAidesITE, ProfilRevenu } from "@/lib/primesCalcul";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
@@ -93,6 +94,7 @@ type Devis = {
   cout_main_oeuvre_ht?: number | null;
   marge_ht?: number | null;
   marge_pct?: number | null;
+  profil_revenu?: ProfilRevenu | null;
   clients: Client | null;
 };
 
@@ -158,6 +160,7 @@ function DevisContenu() {
   const [acompte, setAcompte] = useState(30);
   const [tva, setTva] = useState(10);
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
+  const [profilRevenu, setProfilRevenu] = useState<ProfilRevenu>("aucun");
   const [promptIA, setPromptIA] = useState("");
   const [surfacePonctuelle, setSurfacePonctuelle] = useState("");
   const [genererIAEnCours, setGenererIAEnCours] = useState(false);
@@ -333,6 +336,7 @@ function DevisContenu() {
         delai_jours: delai,
         acompte_pct: acompte,
         tva_pct: tva,
+      profil_revenu: profilRevenu,
         surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : null,
         lignes: lignesNettoyees,
       }),
@@ -794,6 +798,22 @@ function DevisContenu() {
                       <p className="text-sm font-bold text-gray-300 font-mono">{totalTTC.toFixed(2)} €</p>
                     </div>
                   </div>
+                  
+                  {d.profil_revenu && d.profil_revenu !== 'aucun' && (
+                    (() => {
+                      const aides = calculerAidesITE(d.surface_m2 || 0, d.profil_revenu);
+                      if (aides.totalAides > 0) {
+                        const reste = Math.max(0, totalTTC - aides.totalAides);
+                        return (
+                          <div className="flex items-center justify-between rounded-xl bg-cyan-900/20 p-2.5 border border-cyan-500/20 mt-2">
+                            <span className="text-[11px] font-bold uppercase text-cyan-400">Reste à charge</span>
+                            <span className="text-sm font-black font-mono text-cyan-300">{reste.toFixed(2)} €</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()
+                  )}
 
                   {(nbACHiffrer > 0 || margeConnue) && (
                     <div className="flex items-center justify-between gap-2 text-[10px]">
@@ -1086,7 +1106,7 @@ function DevisContenu() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
                 <div>
                   <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
                   <input
@@ -1123,6 +1143,20 @@ function DevisContenu() {
                     onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
                     className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold uppercase text-cyan-400 sm:text-xs">MaPrimeRénov'</label>
+                  <select
+                    value={profilRevenu}
+                    onChange={(e) => setProfilRevenu(e.target.value as ProfilRevenu)}
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-cyan-600/50 bg-cyan-900/10 px-3 py-2 text-sm text-cyan-100 focus:border-cyan-400 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                  >
+                    <option value="aucun" className="text-gray-900">Aucun</option>
+                    <option value="bleu" className="text-gray-900">Bleu (Très modeste)</option>
+                    <option value="jaune" className="text-gray-900">Jaune (Modeste)</option>
+                    <option value="violet" className="text-gray-900">Violet (Interm.)</option>
+                    <option value="rose" className="text-gray-900">Rose (Aisé)</option>
+                  </select>
                 </div>
               </div>
 
@@ -1309,6 +1343,28 @@ function DevisContenu() {
                   <span className="text-sm sm:text-sm font-bold uppercase text-gray-100">Total HT</span>
                   <span className="text-lg sm:text-base font-black font-mono text-white">{totalHT.toFixed(2)} €</span>
                 </div>
+                {profilRevenu !== 'aucun' && (
+                  (() => {
+                    const terrain = chantiersClient.find((c) => c.id === chantierId);
+                    const surfaceCalc = parseFloat(surfacePonctuelle) || (terrain && terrain.surface_m2) || 0;
+                    const aides = calculerAidesITE(surfaceCalc, profilRevenu);
+                    const totalTTC = totalHT * (1 + tva / 100);
+                    const reste = Math.max(0, totalTTC - aides.totalAides);
+                    return (
+                      <>
+                        <div className="flex items-center justify-between text-cyan-300 mt-2">
+                          <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide">Aides estimées (MPR + CEE)</span>
+                          <span className="text-sm sm:text-xs font-mono">- {aides.totalAides.toFixed(2)} €</span>
+                        </div>
+                        <div className="h-px bg-white/10/60 my-1" />
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm sm:text-sm font-bold uppercase text-cyan-100">Reste à charge TTC</span>
+                          <span className="text-xl sm:text-lg font-black font-mono text-cyan-400">{reste.toFixed(2)} €</span>
+                        </div>
+                      </>
+                    );
+                  })()
+                )}
               </div>
             </div>
 
