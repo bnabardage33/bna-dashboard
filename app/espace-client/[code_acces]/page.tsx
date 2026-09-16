@@ -9,6 +9,7 @@ import {
 import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
 import RapportClientPrint from "@/components/rapports/RapportClientPrint";
+import { calculerAidesITE } from "@/lib/primesCalcul";
 import {
   analyserSnapshot,
   preparerEtImprimer,
@@ -547,8 +548,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                   const totalHT = (devis.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                   const totalTTC = totalHT * (1 + (devis.tva_pct || 20) / 100);
                   return (
+                    <div key={`devis-wrapper-${devis.id}`} className="flex flex-col gap-2">
                     <div
-                      key={`devis-${devis.id}`}
                       onClick={() => { setActiveDoc({ ...devis, kind: 'devis' }); setIsDevisOpen(true); }}
                       className="p-4 flex items-center justify-between group cursor-pointer border border-[#111111] rounded-xl bg-[#F2F2F2]"
                     >
@@ -572,6 +573,42 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                         <button className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Signer</button>
                       )}
                     </div>
+
+                    {devis.profil_revenu && devis.profil_revenu !== "aucun" && (
+                      (() => {
+                        const aides = calculerAidesITE(devis.surface_m2 || 0, devis.profil_revenu as any, totalHT);
+                        if (aides.totalAides > 0) {
+                          const reste = Math.max(0, totalTTC - aides.totalAides);
+                          return (
+                            <div className="mt-2 p-4 border border-cyan-500/30 rounded-xl bg-cyan-50">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-cyan-700 font-bold text-sm">💡 Simulation de vos aides d'État (MaPrimeRénov' + CEE)</span>
+                              </div>
+                              <div className="space-y-1.5 text-sm">
+                                <div className="flex justify-between text-gray-600">
+                                  <span>Montant global des travaux (TTC)</span>
+                                  <span className="font-mono">{totalTTC.toFixed(2)} €</span>
+                                </div>
+                                <div className="flex justify-between text-cyan-700 font-semibold">
+                                  <span>Primes estimées (Plafond Légal inclus)</span>
+                                  <span className="font-mono">- {aides.totalAides.toFixed(2)} €</span>
+                                </div>
+                                <div className="h-px bg-cyan-200 my-1" />
+                                <div className="flex justify-between font-bold text-gray-900 text-base">
+                                  <span>Reste à charge net</span>
+                                  <span className="font-mono text-cyan-800">{reste.toFixed(2)} €</span>
+                                </div>
+                              </div>
+                              <p className="text-[10px] text-gray-500 mt-3 italic leading-tight">
+                                Ce reste à charge peut être financé par un Éco-Prêt à Taux Zéro (Éco-PTZ). Rapprochez-vous de votre conseiller BNA.
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()
+                    )}
+                  </div>
                   );
                 })}
                 
