@@ -31,6 +31,7 @@ import {
 } from "@/lib/chantierDefaults";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
+import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, Sparkles, Loader2 } from "lucide-react";
 
@@ -39,6 +40,8 @@ type CatalogueOuvrage = {
   famille_label: string;
   designation: string;
   description: string;
+  designation_devis?: string;
+  code_ral?: string;
   unite: string;
   pu_ht: number;
 };
@@ -275,8 +278,29 @@ function DevisContenu() {
         {
           catalogue_id: ouv.id,
           designation: ouv.designation,
-          description: ouv.description,
-          qte: 1,
+          description: [ouv.designation_devis || ouv.description, ouv.code_ral ? `- Finition : ${ouv.code_ral}` : null].filter(Boolean).join(" \n"),
+          qte: (() => {
+            let surf = parseFloat(surfacePonctuelle.replace(",", "."));
+            if (isNaN(surf) || surf <= 0) {
+              const terrain = chantiersClient.find(c => c.id === chantierId);
+              if (terrain && typeof terrain.surface_m2 === "number" && terrain.surface_m2 > 0) {
+                surf = terrain.surface_m2;
+              }
+            }
+            if (surf && surf > 0) {
+              const besoins = calculerBesoinsBardage(surf);
+              const lowerDesig = (ouv.designation || "").toLowerCase();
+              if (lowerDesig.includes("chevron") || ouv.famille_label === "Ossature") {
+                if (ouv.unite === "ml") return besoins.mlChevrons;
+                if (ouv.unite === "m²") return surf;
+              }
+              if (lowerDesig.includes("équerre") || lowerDesig.includes("equerre")) return besoins.nbEquerres;
+              if (lowerDesig.includes("cheville")) return besoins.nbChevilles;
+              if (lowerDesig.includes("vis") && (lowerDesig.includes("auto-foreuse") || lowerDesig.includes("autoforeuse") || lowerDesig.includes("ossature"))) return besoins.nbVisAutoForeuses;
+              if (ouv.unite === "m²" || ouv.unite === "m2") return surf;
+            }
+            return 1;
+          })(),
           unite: ouv.unite,
           pu_ht: ouv.pu_ht,
           a_chiffrer: false,
@@ -499,13 +523,37 @@ function DevisContenu() {
     if (billType === "totale") {
       // On copie les lignes chiffrées uniquement (jamais les « À CHIFFRER »).
       lignesFacture = d.lignes.filter((l) => !l.a_chiffrer);
+
+      // Récupérer les factures d'acompte existantes pour déduction fiscale
+      const { data: acomptesExistants } = await supabase
+        .from("factures")
+        .select("numero, lignes")
+        .eq("devis_id", d.id)
+        .eq("type_facture", "acompte");
+        
+      if (acomptesExistants && acomptesExistants.length > 0) {
+        for (const ac of acomptesExistants) {
+          const mntAcompteHT = ac.lignes.reduce((sum, l) => sum + (l.qte * (l.pu_ht || 0)), 0);
+          lignesFacture.push({
+            designation: `Déduction de la facture d'acompte n°${ac.numero}`,
+            description: "",
+            qte: -1,
+            unite: "forfait",
+            pu_ht: mntAcompteHT,
+            catalogue_id: null,
+            pu_revient: null,
+            type_cout: null,
+            a_chiffrer: false,
+          });
+        }
+      }
     } else if (billType === "acompte") {
       // Ligne unique d'acompte
       const totalHT = calculerDevis(d.lignes).total_ht;
       const montantHT = totalHT * (billPct / 100);
       lignesFacture = [
         {
-          designation: `Acompte ${billPct}% à la commande`,
+          designation: `Facture d'acompte (${billPct}%) sur le devis n°${d.numero}`,
           description: d.objet ?? undefined,
           qte: 1,
           unite: "forfait",
@@ -585,7 +633,7 @@ function DevisContenu() {
       echeance: echeance.toISOString().slice(0, 10),
       lignes: [
         {
-          designation: `Acompte ${pct}% à la commande`,
+          designation: `Facture d'acompte (${pct}%) sur le devis n°${d.numero}`,
           description: d.objet ?? undefined,
           qte: 1,
           unite: "forfait",

@@ -154,6 +154,48 @@ export async function GET(request: Request) {
     if (longueur_mm !== null && longueur_mm >= 10 && longueur_mm <= 100) longueur_mm *= 10;
     if (largeur_mm !== null && largeur_mm >= 10 && largeur_mm <= 100) largeur_mm *= 10;
 
+    
+    // 6. Extraction de la description (Résumé court)
+    let description = $('meta[name="description"], meta[property="og:description"]').attr('content') || '';
+    description = description.trim();
+
+    // 7. Enrichissement de la designation_devis (Normes, DTU, ACERMI...)
+    const allText = $('body').text().replace(/\s+/g, ' ');
+    const dtuMatch = allText.match(/(DTU\s*\d+\.\d+)/gi);
+    const acermiMatch = allText.match(/(ACERMI\s*[\w-]+)/gi);
+    const classeMatch = allText.match(/(classe\s*d['']?emploi\s*\S+|classe\s*\d(?:\.\d)?)/gi);
+    const normeMatch = allText.match(/(NF\s*EN\s*\S+|norme\s*\S+)/gi);
+
+    const specs = [
+      ...(dtuMatch || []),
+      ...(acermiMatch || []),
+      ...(classeMatch || []),
+      ...(normeMatch || [])
+    ].map(s => s.trim().toUpperCase());
+    
+    const uniqueSpecs = [...new Set(specs)];
+    
+    let designation_devis = title + (brand ? ` de marque ${brand}` : '') + '.';
+    if (uniqueSpecs.length > 0) {
+      designation_devis += ` Caractéristiques techniques et normes conformes : ${uniqueSpecs.join(', ')}.`;
+    }
+
+    // 8. Extraction du code RAL
+    let code_ral = null;
+    const ralMatch = allText.match(/RAL\s*\d{4}/i);
+    if (ralMatch) {
+      code_ral = ralMatch[0].toUpperCase();
+    } else {
+      const searchColorText = (title + " " + description).toLowerCase();
+      if (searchColorText.includes('gris anthracite') || searchColorText.includes('anthracite')) {
+        code_ral = 'RAL 7016';
+      } else if (searchColorText.includes('blanc pur') || searchColorText.includes('blanc')) {
+        code_ral = 'RAL 9016';
+      } else if (searchColorText.includes('noir profond') || searchColorText.includes('noir')) {
+        code_ral = 'RAL 9005';
+      }
+    }
+
     return NextResponse.json({
       designation: title,
       fabricant: brand,
@@ -161,7 +203,10 @@ export async function GET(request: Request) {
       prix_ttc: price,
       longueur_mm,
       largeur_mm,
-      epaisseur_mm
+      epaisseur_mm,
+      description,
+      designation_devis,
+      code_ral
     });
 
   } catch (error) {

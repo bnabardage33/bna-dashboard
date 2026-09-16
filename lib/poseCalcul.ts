@@ -483,3 +483,51 @@ export function calculerPose(
     remarques,
   };
 }
+
+/**
+ * Fonction simplifiée pour calculer rapidement les besoins d'ossature d'un bardage
+ * selon les normes DTU 41.2 et 45.4, à utiliser dans le module de devis automatique.
+ * 
+ * @param surfaceM2 Surface totale du bardage (si largeur/hauteur inconnues, sert de base approchée)
+ * @param largeurFacade Largeur optionnelle (pour un calcul plus précis du nombre de montants)
+ * @param hauteurFacade Hauteur optionnelle (pour un calcul plus précis)
+ */
+export function calculerBesoinsBardage(surfaceM2: number, largeurFacade?: number, hauteurFacade?: number) {
+  // Entraxes DTU
+  const entraxeHorizontalMax = 0.60; // 60 cm max pour les chevrons
+  const entraxeVerticalMax = 1.20; // 1,20m max sur le chevron pour les équerres
+
+  let mlChevrons = 0;
+  let nbEquerres = 0;
+
+  // Si on a les dimensions exactes, on simule une grille
+  if (largeurFacade && largeurFacade > 0 && hauteurFacade && hauteurFacade > 0) {
+    const nbMontants = Math.ceil(largeurFacade / entraxeHorizontalMax) + 1;
+    mlChevrons = nbMontants * hauteurFacade;
+
+    const nbEquerresParMontant = Math.ceil(hauteurFacade / entraxeVerticalMax) + 1;
+    nbEquerres = nbMontants * nbEquerresParMontant;
+  } else {
+    // Calcul approché purement basé sur la surface (ratio DTU classique)
+    // 1 m² = environ 1.7 to 2 ml de chevrons (ex: 1 / 0.6 = 1.66 + marges)
+    mlChevrons = surfaceM2 * (1 / entraxeHorizontalMax); 
+    // 4.5 équerres par m² est une excellente moyenne sécurité pour l'entraxe vertical de 1.20m sur chevrons espacés de 0.60m
+    nbEquerres = Math.ceil(surfaceM2 * 4.5);
+  }
+
+  // Arrondi au ml supérieur pour les chevrons
+  mlChevrons = Math.ceil(mlChevrons * 1.05); // +5% de perte/chute
+
+  // 1 ou 2 chevilles d'ancrage par équerre (Généralement 2 pour la sécurité sur maçonnerie standard)
+  const nbChevilles = nbEquerres * 2;
+
+  // 2 vis auto-foreuses par équerre (obligation DTU pour bloquer la rotation)
+  const nbVisAutoForeuses = nbEquerres * 2;
+
+  return {
+    mlChevrons,
+    nbEquerres,
+    nbChevilles,
+    nbVisAutoForeuses
+  };
+}

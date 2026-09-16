@@ -194,10 +194,10 @@ export default function DocumentPDF({
           </thead>
           <tbody className="divide-y divide-slate-200">
             {doc.lignes.map((l, i) => (
-              <tr key={i} className="hover:bg-slate-50/50">
+              <tr key={i} className="hover:bg-slate-50/50 break-inside-avoid">
                 <td className="p-2">
                   <p className="font-semibold text-slate-900">{l.designation}</p>
-                  {l.description && <p className="text-[11px] text-slate-500 mt-0.5">{l.description}</p>}
+                  {l.description && <p className="text-[11px] text-slate-500 mt-0.5 whitespace-pre-wrap leading-relaxed">{l.description}</p>}
                 </td>
                 <td className="p-2 text-right text-slate-700">{l.qte}</td>
                 <td className="p-2 text-right text-slate-700">{l.unite}</td>

@@ -8,6 +8,7 @@ import {
   type CoutType,
   type LigneDevis,
 } from "@/lib/devisCalcul";
+import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import {
   meilleureCorrespondance,
   scoreConceptVsItem,
@@ -94,24 +95,52 @@ function appliquerQuantitesFactuelles(
   qteExplicite: boolean
 ): LigneDevis {
   if (ligne.a_chiffrer || !ligne.catalogue_id) return ligne;
-  if (qteExplicite) return ligne;
+  
   const ouvrage = catalogue.get(ligne.catalogue_id);
   if (!ouvrage) return ligne;
 
-  const designation = ouvrage.designation;
-  const regle = REGLES_OSSATURE.find((r) => r.matcher.test(designation));
+  // Option B: Force main_oeuvre to m² and set quantity to surface if applicable
+  if (ouvrage.type_cout === "main_oeuvre" && surface && surface > 0) {
+    const isBardageOrITE = ouvrage.categorie?.toLowerCase().includes("bardage") || 
+                           ouvrage.categorie?.toLowerCase().includes("isolation") || 
+                           ouvrage.famille_label?.toLowerCase().includes("pose");
+                           
+    if (isBardageOrITE || ligne.designation.toLowerCase().includes("pose") || ligne.designation.toLowerCase().includes("main d'oeuvre")) {
+      ligne.unite = "m²";
+      ligne.qte = surface;
+      return ligne; // Retour direct pour garantir le verrouillage
+    }
+  }
 
-  if (surface !== null) {
-    if (regle) {
-      let qte = surface * regle.facteur;
-      if (regle.type === "unite" || estUnitePiece(ouvrage.unite)) qte = Math.ceil(qte);
-      else qte = Math.round(qte * 100) / 100;
-      return { ...ligne, qte };
+  if (qteExplicite) return ligne;
+
+  // Si on a une surface, appliquer le moteur de calpinage (poseCalcul)
+  if (surface && surface > 0) {
+    const besoins = calculerBesoinsBardage(surface);
+    const des = (ouvrage.designation + " " + ouvrage.famille_label).toLowerCase();
+    
+    if (des.includes("chevron") || ouvrage.famille_label.toLowerCase().includes("ossature")) {
+      if (ouvrage.unite === "ml") ligne.qte = besoins.mlChevrons;
+      else if (ouvrage.unite === "u" || ouvrage.unite === "unité") ligne.qte = besoins.mlChevrons; // fallback
+      else ligne.qte = surface;
+      return ligne;
+    }
+    if (des.includes("équerre") || des.includes("equerre")) {
+      ligne.qte = besoins.nbEquerres;
+      return ligne;
+    }
+    if (des.includes("cheville")) {
+      ligne.qte = besoins.nbChevilles;
+      return ligne;
+    }
+    if (des.includes("vis")) {
+      ligne.qte = besoins.nbVisAutoForeuses;
+      return ligne;
     }
     if (estUniteM2(ouvrage.unite)) {
-      return { ...ligne, qte: Math.round(surface * 100) / 100 };
+      ligne.qte = surface;
+      return ligne;
     }
-    return ligne;
   }
 
   return ligne;
@@ -211,9 +240,9 @@ async function cheminLegacy(
     "\n\nRÉPONSE STRICTEMENT JSON — réponds UNIQUEMENT par un tableau, sans texte avant/après, sans markdown :" +
     '[{"prestation":"<la prestation demandée, formulation libre et naturelle, sans prix ni quantité>","qte":nombre|null,"description":"détail technique court"}...]' +
     "\nRÈGLES IMPÉRATIVES :" +
-    "\n1. prestation : décris en QUELQUES MOTS ce que le client veut (matériau, finition, usage, pose…). Conserve ses synonymes et son vocabulaire (« habillage imitation bois », « montage des éléments »…). Ne recopie JAMAIS une désignation du catalogue." +
+    "\n1. prestation : décris en QUELQUES MOTS ce que le client veut en respectant STRICTEMENT le formalisme technique et normé. Tu dois exiger et inclure la mention des normes en vigueur (ex: NF DTU 41.2, 45.4, critères ACERMI, classe d'emploi 3.2 pour le bois) dans la description. Conserve ses synonymes et son vocabulaire, mais élève le niveau technique." +
     "\n2. qte : uniquement un NOMBRE, sans unité, ou null si aucune quantité n'est donnée. « 24 m² » → 24 ; « 36 chevrons » → 36 ; « 20 heures » → 20. Ne l'arrondis pas." +
-    "\n3. description : détail technique court (matériau, épaisseur, contexte chantier)." +
+    "\n3. description : détail technique complet (matériau, épaisseur, contexte chantier, références normatives strictes comme NF DTU ou ACERMI)." +
     "\n4. Ne déduis pas une quantité à partir de la surface : si la demande contient un chiffre explicite, utilise-le ; sinon qte null. Ne déduplique JAMAIS une prestation déjà demandée." +
     "\nMAXIMUM 12 prestations par réponse.";
 

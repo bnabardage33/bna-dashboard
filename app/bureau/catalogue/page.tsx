@@ -24,11 +24,13 @@ type Ouvrage = {
   famille_label: string;
   designation: string;
   description?: string;
+  designation_devis?: string;
   // Marque & Décor
   fabricant?: string;
   gamme?: string;
   code_decor?: string;
   couleur?: string;
+  code_ral?: string;
   finition?: string;
   // Dimensions & Spécifications
   longueur_mm?: number | null; // Keep for backward compatibility / fallback
@@ -57,10 +59,12 @@ const emptyForm: FormState = {
   famille_label: "",
   designation: "",
   description: "",
+  designation_devis: "",
   fabricant: "",
   gamme: "",
   code_decor: "",
   couleur: "",
+  code_ral: "",
   finition: "",
   longueur_mm: null,
   largeur_mm: null,
@@ -91,6 +95,8 @@ export default function CataloguePage() {
   const [formData, setFormData] = useState<FormState>(emptyForm);
   const [importUrl, setImportUrl] = useState("");
   const [isScraping, setIsScraping] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<"general" | "dimensions" | "tarifs">("general");
 
   const set = (field: keyof FormState, value: FormState[keyof FormState]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -128,6 +134,9 @@ export default function CataloguePage() {
         return {
           ...prev,
           designation: data.designation || prev.designation,
+          description: data.description || prev.description,
+          designation_devis: data.designation_devis || prev.designation_devis,
+          code_ral: data.code_ral || prev.code_ral,
           fabricant: data.fabricant || prev.fabricant,
           fournisseur: data.fournisseur || prev.fournisseur,
           prix_ttc: data.prix_ttc ? String(data.prix_ttc).replace(".", ",") : prev.prix_ttc,
@@ -263,6 +272,7 @@ export default function CataloguePage() {
       setEditingOuvrage(null);
       setFormData({ ...emptyForm, type_cout: typeInit === "main_oeuvre" ? "main_oeuvre" : "matiere" });
     }
+    setActiveTab("general");
     setIsModalOpen(true);
   };
 
@@ -319,9 +329,11 @@ export default function CataloguePage() {
       gamme: formData.gamme?.trim() || null,
       code_decor: formData.code_decor?.trim() || null,
       couleur: formData.couleur?.trim() || null,
+      code_ral: formData.code_ral?.trim() || null,
       finition: formData.finition?.trim() || null,
       fournisseur: formData.fournisseur?.trim() || null,
       description: formData.description?.trim() || null,
+      designation_devis: formData.designation_devis?.trim() || null,
     };
 
     // Filtrer les valeurs null pour ne pas crasher si la colonne n'existe pas encore dans Supabase
@@ -728,10 +740,39 @@ export default function CataloguePage() {
                 </button>
               </div>
 
+              {/* Onglets de navigation */}
+              <div className="flex px-4 pt-2 border-b border-gray-700/50 space-x-4 bg-[#1A1D24]">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('general')}
+                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'general' ? 'border-cyan-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                >
+                  Général
+                </button>
+                {formData.type_cout === 'matiere' && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('dimensions')}
+                    className={`pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'dimensions' ? 'border-cyan-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                  >
+                    Dimensions & Décor
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('tarifs')}
+                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'tarifs' ? 'border-cyan-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                >
+                  Tarifs
+                </button>
+              </div>
+
               {/* Formulaire avec scroll séparé et footer statique */}
               <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-hidden">
                 <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-6">
                 
+                {activeTab === 'general' && (
+                <>
                 {/* ── Auto-remplissage ─────────── */}
                 {formData.type_cout === "matiere" && (
                 <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
@@ -834,6 +875,26 @@ export default function CataloguePage() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Description (courte, pour la carte)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="ex : Panneau HPL avec fixation apparente..."
+                      value={formData.description ?? ""}
+                      onChange={(e) => set("description", e.target.value)}
+                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-cyan-400 mb-1">Désignation complète pour le devis (Normes DTU, ACERMI...)</label>
+                    <textarea
+                      rows={3}
+                      placeholder="ex : Panneaux stratifiés compacts (HPL) conformes à la norme EN 438..."
+                      value={formData.designation_devis ?? ""}
+                      onChange={(e) => set("designation_devis", e.target.value)}
+                      className="w-full rounded border border-cyan-500/40 bg-transparent p-2 text-sm text-white"
+                    />
+                  </div>
                   </>
                 ) : (
                   <>
@@ -848,6 +909,29 @@ export default function CataloguePage() {
                       className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Description (détail de la prestation)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="ex&nbsp;: Pose des panneaux vêture HPL sur ossature bois, fixation inox, finition soignée."
+                      value={formData.description ?? ""}
+                      onChange={(e) => set("description", e.target.value)}
+                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-violet-300 mb-1">Désignation complète pour le devis (Normes DTU, ACERMI...)</label>
+                    <textarea
+                      rows={3}
+                      placeholder="ex : Pose de panneaux selon la norme DTU 41.2, avec fixations agrées..."
+                      value={formData.designation_devis ?? ""}
+                      onChange={(e) => set("designation_devis", e.target.value)}
+                      className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
+                    />
+                  </div>
+
+                  {activeTab === 'tarifs' && formData.type_cout === 'main_oeuvre' && (
+                  <>
 
                   {/* ── Section Prestation : Unité + Prix vente + Coût de revient ── */}
                   <fieldset className="rounded-lg border border-violet-500/40 p-4 space-y-4">
@@ -908,23 +992,35 @@ export default function CataloguePage() {
                         className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
                       />
                     </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Description (détail de la prestation)</label>
-                      <textarea
-                        rows={2}
-                        placeholder="ex&nbsp;: Pose des panneaux vêture HPL sur ossature bois, fixation inox, finition soignée."
-                        value={formData.description ?? ""}
-                        onChange={(e) => set("description", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
-                      />
-                    </div>
+                    {(() => {
+                      const vente = parseFloat(String(formData.pu_ht).replace(',', '.')) || 0;
+                      const revient = parseFloat(String(formData.pu_revient).replace(',', '.')) || 0;
+                      if (vente > 0 && revient > 0) {
+                        const marge = vente - revient;
+                        const margePct = (marge / vente) * 100;
+                        return (
+                          <div className="mt-3 flex items-center justify-between rounded bg-violet-900/30 px-3 py-2 border border-violet-500/20">
+                            <span className="text-xs font-medium text-violet-300">Marge brute estimée</span>
+                            <span className={`text-sm font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              {marge.toFixed(2)} € <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </fieldset>
                   </>
                 )}
+                  </>
+                )}
+
+                </>
+                )}
+
 
                 {/* ── Sections matériau (masquées en mode Main-d'œuvre) ─── */}
-                {formData.type_cout === "matiere" && (
+                {activeTab === 'dimensions' && formData.type_cout === "matiere" && (
                 <>
                 {/* ── Section 1 : Marque & Décor ─────────────────────────── */}
                 <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
@@ -978,15 +1074,27 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Finition</label>
-                    <input
-                      type="text"
-                      placeholder="ex&nbsp;: FA Satin"
-                      value={formData.finition ?? ""}
-                      onChange={(e) => set("finition", e.target.value)}
-                      className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Code RAL</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: RAL 7016"
+                        value={formData.code_ral ?? ""}
+                        onChange={(e) => set("code_ral", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Finition</label>
+                      <input
+                        type="text"
+                        placeholder="ex&nbsp;: FA Satin"
+                        value={formData.finition ?? ""}
+                        onChange={(e) => set("finition", e.target.value)}
+                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                      />
+                    </div>
                   </div>
                 </fieldset>
 
@@ -1078,6 +1186,9 @@ export default function CataloguePage() {
                     </button>
                   </div>
                 </fieldset>
+
+                {activeTab === 'tarifs' && formData.type_cout === 'matiere' && (
+                  <>
 
                 {/* ── Section 3 : Fournisseur & Tarifs ──────────────────── */}
                 <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
