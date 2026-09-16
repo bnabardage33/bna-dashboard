@@ -929,11 +929,15 @@ export default function CataloguePage() {
                       className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
                     />
                   </div>
+                </fieldset>
+                </>
+                )}
+                </>
+                )}
 
-                  {activeTab === 'tarifs' && formData.type_cout === 'main_oeuvre' && (
-                  <>
-
-                  {/* ── Section Prestation : Unité + Prix vente + Coût de revient ── */}
+                {activeTab === 'tarifs' && formData.type_cout === 'main_oeuvre' && (
+                <>
+                  {/* ── Section Prestation : Unité + Prix vente + Coût de revient ── */}}
                   <fieldset className="rounded-lg border border-violet-500/40 p-4 space-y-4">
                     <legend className="px-2 text-xs font-bold uppercase tracking-widest text-violet-300">
                       Prestation · Vente &amp; Coût de revient
@@ -1186,6 +1190,8 @@ export default function CataloguePage() {
                     </button>
                   </div>
                 </fieldset>
+                </>
+                )}
 
                 {activeTab === 'tarifs' && formData.type_cout === 'matiere' && (
                   <>
