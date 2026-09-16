@@ -801,7 +801,7 @@ function DevisContenu() {
                   
                   {d.profil_revenu && d.profil_revenu !== 'aucun' && (
                     (() => {
-                      const aides = calculerAidesITE(d.surface_m2 || 0, d.profil_revenu);
+                      const aides = calculerAidesITE(d.surface_m2 || 0, d.profil_revenu, totalHT);
                       if (aides.totalAides > 0) {
                         const reste = Math.max(0, totalTTC - aides.totalAides);
                         return (
@@ -1347,7 +1347,7 @@ function DevisContenu() {
                   (() => {
                     const terrain = chantiersClient.find((c) => c.id === chantierId);
                     const surfaceCalc = parseFloat(surfacePonctuelle) || (terrain && terrain.surface_m2) || 0;
-                    const aides = calculerAidesITE(surfaceCalc, profilRevenu);
+                    const aides = calculerAidesITE(surfaceCalc, profilRevenu, totalHT);
                     const totalTTC = totalHT * (1 + tva / 100);
                     const reste = Math.max(0, totalTTC - aides.totalAides);
                     return (
