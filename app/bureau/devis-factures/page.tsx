@@ -533,7 +533,8 @@ function DevisContenu() {
         
       if (acomptesExistants && acomptesExistants.length > 0) {
         for (const ac of acomptesExistants) {
-          const mntAcompteHT = ac.lignes.reduce((sum, l) => sum + (l.qte * (l.pu_ht || 0)), 0);
+          const lignesAc = (ac.lignes as unknown as Ligne[]) || [];
+          const mntAcompteHT = lignesAc.reduce((sum: number, l: Ligne) => sum + ((l.qte || 0) * (l.pu_ht || 0)), 0);
           lignesFacture.push({
             designation: `Déduction de la facture d'acompte n°${ac.numero}`,
             description: "",

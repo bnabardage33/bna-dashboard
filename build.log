@@ -1,0 +1,21 @@
+▲ Next.js 16.3.5 (webpack)
+- Environments: .env.local
+⚠ Warning: Next.js ignored package-lock.json in /data/data/com.termux/files/home because it is outside the current Git repository (/data/data/com.termux/files/home/bna-dashboard).
+ To use this directory, set `outputFileTracingRoot` in your Next.js config.
+
+✓ Running next.config.ts took 592ms
+  Skipping creating a lockfile at /data/data/com.termux/files/home/bna-dashboard/.next/lock because we're using WASM bindings
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+
+  To migrate automatically, run:
+  npx @next/codemod@canary middleware-to-proxy .
+
+  Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 39.1s
+  Running TypeScript ...
+  Finished TypeScript in 16.6s ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/54) ...
+  Generating static pages using 1 worker (13/54) 

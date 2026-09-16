@@ -59,6 +59,7 @@ function quantiteExpliciteDansLaDemande(prompt: string): boolean {
 }
 
 type CatalogueOuvrage = {
+  categorie?: string | null;
   id: string;
   designation: string;
   description: string | null;
