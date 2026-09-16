@@ -1,5 +1,5 @@
 # 📋 Audit Complet — BNA Dashboard
-> Rapport mis à jour le 10/09/2026 (maj Missions 8→12) — Toutes les pages, onglets, fonctionnalités et sécurité recensés
+> Rapport mis à jour le 16/09/2026 (Refonte Devis IA, Calepinage, Facturation & Aides MPR) — Toutes les pages, onglets, fonctionnalités et sécurité recensés
 
 ---
 
@@ -428,7 +428,7 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 
 ---
 
-## 🚀 MISSIONS LOGICIELLES RÉCENTES (08 → 10/09/2026)
+## 🚀 MISSIONS LOGICIELLES RÉCENTES (08 → 16/09/2026)
 
 > Chaque mission : validée par l'utilisateur, livrée, `npx tsc --noEmit` à 0 erreur, commit + push Git.
 
@@ -440,6 +440,11 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 | 11 — OCR BL/tickets | `46c9cb7` | `/api/ia-ocr-ticket` (Gemini vision) + pré-remplissage auto dans Docs Compta |
 | 12 — Espace client | `d0e954b` | Rapports hebdo envoyés auto, justificatifs intempéries visibles, **fix chat HPL** (prompt données réelles), alerte "client mécontent" → notifications |
 | 13 — Chat mémoire multi-sessions | `f71cf3f` | Mémoire multi-sessions A+B+C, note unique par chantier, consolidation incrémentale + budget tokens, idempotence, anti-concurrence — détails + validation réelle ci-après |
+| 14 — Scraping Web & Catalogue | `da0a6d4` | Ajout des colonnes `designation_devis`, `code_ral`. Scraper URL web auto-extracteur des DTU, normes, ACERMI et mapping RAL. |
+| 15 — Calepinage (DTU 41.2/45.4) | `47d80bf` | Module de calcul auto des mètres linéaires (chevrons entraxe 60cm max) et équerres (entraxe 1.20m max) avec ancrages. Connecté au moteur IA. |
+| 16 — Fiabilisation Devis IA | `6cd4288` | Option B: Verrouillage strict de l'unité de main-d'œuvre ITE/Bardage en `m²` et injection automatique des textes réglementaires de devis. |
+| 17 — Factures d'Acompte (Loi FR) | `d954588` | Respect strict de la loi anti-fraude à la TVA : numérotation propre, calcul TVA immédiat, déduction automatique en ligne négative (qte: -1) sur la facture de solde. |
+| 18 — Reste à Charge (Aides Anah) | `de869ae` | Intégration du profil MaPrimeRénov' (Bleu, Jaune, Violet, Rose) + forfait CEE. Calcul du reste à charge net plafonné à l'assiette légale des travaux éligibles (150 €/m²). |
 
 ### 🚀 Mission 13 — Chat Espace Client : mémoire multi-sessions (11/09/2026)
 
