@@ -9,13 +9,13 @@ const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES = ["ossature", "isolation", "bardage", "finitions"] as const;
 
 async function prochainNumeroIntemperie(): Promise<string> {
-  const { data, error } = await supabaseAdmin.rpc('generer_prochain_numero_ri');
+  const { data, error } = await supabaseAdmin.rpc('generer_prochain_numero_ri' as any);
   if (error || !data) {
     console.error("Erreur génération numéro RPC:", error);
     const annee = new Date().getFullYear();
     return `RI-${annee}-${Math.floor(Math.random() * 900) + 100}`; // Fallback au cas où
   }
-  return data;
+  return data as string;
 }
 
 type JourIntemperie = {

@@ -248,13 +248,13 @@ async function fetchVigilanceInterne(
 // -----------------------------------------------------------------------------
 
 async function prochainNumero(): Promise<string> {
-  const { data, error } = await supabase.rpc('generer_prochain_numero_ri');
+  const { data, error } = await supabase.rpc('generer_prochain_numero_ri' as any);
   if (error || !data) {
     throw new Error(
       `Impossible de générer un numéro sécurisé via RPC : ${error?.message}`
     );
   }
-  return data;
+  return data as string;
 }
 
 // -----------------------------------------------------------------------------

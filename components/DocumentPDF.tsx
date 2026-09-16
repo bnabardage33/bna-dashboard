@@ -34,6 +34,8 @@ export type DocumentData = {
   acompte_pct?: number | null;
   delai_jours?: number | null;
   type_facture?: "acompte" | "solde" | "totale";
+  profil_revenu?: string | null;
+  surface_m2?: number | null;
   signature_client?: string | null;
   signataire_client_nom?: string | null;
 };
