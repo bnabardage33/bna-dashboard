@@ -929,7 +929,6 @@ export default function CataloguePage() {
                       className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
                     />
                   </div>
-                </fieldset>
                 </>
                 )}
                 </>
