@@ -83,7 +83,7 @@ export interface DecisionJourChantier {
 // au chantier.
 // -----------------------------------------------------------------------------
 
-const SEUILS_MATERIAUX: Record<
+export const SEUILS_MATERIAUX: Record<
   Materiau,
   {
     vent_vigilance: number;
@@ -126,7 +126,7 @@ const SEUILS_MATERIAUX: Record<
   },
 };
 
-const SEUILS_ACCES: Record<
+export const SEUILS_ACCES: Record<
   Acces,
   {
     vent_vigilance: number;
