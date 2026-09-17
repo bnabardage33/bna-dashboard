@@ -285,7 +285,7 @@ function ChantierDetailContent() {
     // Calcul des totaux actuels
     const currentTotaux = zones.reduce(
       (acc, z) => {
-        const c = calculerZone(z, chantier.coef_perte_rendement);
+        const c = calculerZone(z, configDraft?.coef_perte_rendement ?? (chantier?.coef_perte_rendement === 1.8 ? 1.10 : (chantier?.coef_perte_rendement ?? 1.10)));
         return {
           nette: acc.nette + c.surfaceNette,
           totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
@@ -528,7 +528,7 @@ function ChantierDetailContent() {
 
   const totaux = zones.reduce(
     (acc, z) => {
-      const c = calculerZone(z, chantier?.coef_perte_rendement);
+      const c = calculerZone(z, configDraft?.coef_perte_rendement ?? (chantier?.coef_perte_rendement === 1.8 ? 1.10 : (chantier?.coef_perte_rendement ?? 1.10)));
       return {
         bruteFacade: acc.bruteFacade + c.bruteFacade,
         brutePignon: acc.brutePignon + c.brutePignon,
@@ -541,7 +541,7 @@ function ChantierDetailContent() {
     { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0, totalCoupesML: 0 }
   );
 
-  const configTechnique: ConfigTechnique = chantier
+  const configTechnique: ConfigTechnique = configDraft ?? (chantier
     ? {
         type_isolant: chantier.type_isolant ?? null,
         epaisseur_isolant_mm: chantier.epaisseur_isolant_mm ?? null,
@@ -555,7 +555,7 @@ function ChantierDetailContent() {
         surface_paquet_m2: null,
         zone_vent_rive: null,
         coef_perte_rendement: null,
-      };
+      });
 
   if (loading) return <p className="text-sm text-gray-400">Chargement…</p>;
   if (!chantier) return <p className="text-sm text-red-400">Chantier introuvable.</p>;

@@ -203,6 +203,7 @@ export function calculerZone(
     longueurChutesGenerees,
     longueurChutesReutilisees,
     chutesPerdues,
+    marge,
   };
 }
 
@@ -1316,7 +1317,7 @@ export default function ZoneCard({
             <Chiffre
               label="Montants / chevrons"
               value={
-                pose.nbMontants
+                Math.ceil(pose.nbMontants * (calc.marge || 1))
               }
             />
 
@@ -1330,13 +1331,13 @@ export default function ZoneCard({
             <Chiffre
               label="Équerres / fixations totales"
               value={
-                pose.nbFixationsTotal
+                Math.ceil(pose.nbFixationsTotal * (calc.marge || 1))
               }
             />
 
             <Chiffre
               label="Vis (total estimé)"
-              value={pose.nbVis}
+              value={Math.ceil(pose.nbVis * (calc.marge || 1))}
             />
 
           </div>
