@@ -55,7 +55,22 @@ export default function HistoriquePage() {
                     <tr key={p.id} className="hover:bg-[#1A1D24]/20">
                       <td className="px-2 py-2">{new Date(p.date).toLocaleDateString("fr-FR")}</td>
                       <td className="px-2 py-2">{p.profiles?.full_name || "Inconnu"}</td>
-                      <td className="px-2 py-2 truncate max-w-[120px]" title={p.chantiers?.nom}>{p.chantiers?.nom}</td>
+                      <td className="px-2 py-2 truncate max-w-[120px]" title={p.chantiers?.nom}>{p.chantiers?.nom}
+                        <br />
+                        <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
+                          p.phase_travail === "ossature" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                          p.phase_travail === "isolation" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                          p.phase_travail === "bardage" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                          p.phase_travail === "finitions" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" :
+                          "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                        }`}>
+                          {p.phase_travail === "ossature" ? "🏗️ Ossature" :
+                           p.phase_travail === "isolation" ? "🌡️ Isolation" :
+                           p.phase_travail === "bardage" ? "🪵 Bardage" :
+                           p.phase_travail === "finitions" ? "✨ Finitions" :
+                           "📁 Général"}
+                        </span>
+</td>
                       <td className="px-2 py-2 text-right font-medium text-gray-400">{p.heures}h</td>
                       <td className="px-2 py-2 text-right">
                         <button

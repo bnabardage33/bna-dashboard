@@ -17,7 +17,8 @@ export default function SaisiePointage() {
     ouvrier_id: "",
     heures: 7,
     taux_horaire_charge: 28.50,
-    type_heure: "Normale"
+    type_heure: "Normale",
+    phase_travail: "general"
   });
 
   const [loading, setLoading] = useState(false);
@@ -56,7 +57,8 @@ export default function SaisiePointage() {
         heures: formData.heures,
         taux_horaire_charge: formData.taux_horaire_charge,
         date: formData.date,
-        type_heure: formData.type_heure
+        type_heure: formData.type_heure,
+        phase_travail: formData.phase_travail
       });
 
       if (insertError) throw insertError;
@@ -68,7 +70,8 @@ export default function SaisiePointage() {
         ...prev,
         ouvrier_id: "",
         heures: 7,
-        type_heure: "Normale"
+        type_heure: "Normale",
+        phase_travail: "general"
       }));
     } catch (err) {
       setError((err as Error).message || "Erreur lors de l'enregistrement");
@@ -116,6 +119,18 @@ export default function SaisiePointage() {
             <label className="block text-sm text-gray-400 mb-1">Taux horaire chargé (€)</label>
             <input type="number" step="0.01" min="0" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_horaire_charge} onChange={e => setFormData({...formData, taux_horaire_charge: parseFloat(e.target.value)})} />
           </div>
+        </div>
+
+        
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Phase de travail</label>
+          <select required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.phase_travail} onChange={e => setFormData({...formData, phase_travail: e.target.value})}>
+            <option value="ossature">🏗️ Pose Ossature (DTU 45.4)</option>
+            <option value="isolation">🌡️ Pose Isolation (ITE)</option>
+            <option value="bardage">🪵 Pose Bardage (DTU 41.2)</option>
+            <option value="finitions">✨ Finitions & Profilés</option>
+            <option value="general">📁 Nettoyage / Repli général</option>
+          </select>
         </div>
 
         <div>

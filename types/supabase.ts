@@ -1454,6 +1454,7 @@ export type Database = {
           taux_horaire_charge: number
           type_heure: string | null
           user_id: string | null
+          phase_travail: string | null
         }
         Insert: {
           chantier_id?: string | null
@@ -1464,6 +1465,7 @@ export type Database = {
           taux_horaire_charge?: number
           type_heure?: string | null
           user_id?: string | null
+          phase_travail?: string | null
         }
         Update: {
           chantier_id?: string | null
@@ -1474,6 +1476,7 @@ export type Database = {
           taux_horaire_charge?: number
           type_heure?: string | null
           user_id?: string | null
+          phase_travail?: string | null
         }
         Relationships: [
           {
@@ -1502,6 +1505,7 @@ export type Database = {
           id: string
           meteo_relevee: string | null
           volume_heures_declare: number
+          phase_travail: string | null
         }
         Insert: {
           chantier_id?: string | null
@@ -1512,6 +1516,7 @@ export type Database = {
           id?: string
           meteo_relevee?: string | null
           volume_heures_declare: number
+          phase_travail: string | null
         }
         Update: {
           chantier_id?: string | null
@@ -1522,6 +1527,7 @@ export type Database = {
           id?: string
           meteo_relevee?: string | null
           volume_heures_declare?: number
+          phase_travail?: string | null
         }
         Relationships: [
           {

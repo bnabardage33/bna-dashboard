@@ -60,6 +60,7 @@ export interface PointageFinance {
   coef_meteo?: number;
   meteo_relevee?: string;
   volume_heures_declare?: number;
+  phase_travail?: string;
 }
 
 export type StatutFacture = 'brouillon' | 'emise' | 'payee' | 'annulee';
