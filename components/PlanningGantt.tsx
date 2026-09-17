@@ -27,6 +27,7 @@ const DAYS_TOTAL = 180;
 export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGanttProps) {
   const [localChantiers, setLocalChantiers] = useState<GanttChantier[]>(chantiers);
   const [intemperies, setIntemperies] = useState<Record<string, boolean>>({});
+  const [avancements, setAvancements] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Synchronise state with props
@@ -35,20 +36,36 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
   }, [chantiers]);
 
   useEffect(() => {
-    async function fetchIntemperies() {
-      const { data } = await supabase
+    async function fetchData() {
+      // Intempéries
+      const { data: intData } = await supabase
         .from("rapports_intemperies")
         .select("chantier_id, jour_arrete")
         .eq("jour_arrete", true);
-      if (data) {
+      if (intData) {
         const map: Record<string, boolean> = {};
-        for (const r of data) {
+        for (const r of intData) {
           map[r.chantier_id] = true;
         }
         setIntemperies(map);
       }
+      
+      // Avancements
+      const { data: avData } = await supabase
+        .from("avancements_chantier")
+        .select("chantier_id, pourcentage, date")
+        .order("date", { ascending: false });
+      if (avData) {
+        const avMap: Record<string, number> = {};
+        for (const av of avData) {
+          if (av.chantier_id && avMap[av.chantier_id] === undefined && typeof av.pourcentage === 'number') {
+            avMap[av.chantier_id] = av.pourcentage;
+          }
+        }
+        setAvancements(avMap);
+      }
     }
-    fetchIntemperies();
+    fetchData();
   }, []);
 
   const timelineStart = useMemo(() => {
@@ -224,11 +241,25 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
                       className={`absolute h-9 rounded-lg border-2 ${bgColor} ${borderColor} shadow-lg flex items-center px-2 cursor-grab active:cursor-grabbing hover:brightness-110 transition-all z-20 overflow-hidden ${hasAlert ? 'ring-2 ring-red-500' : ''}`}
                       style={{ left, width }}
                     >
-                      <div className="whitespace-nowrap text-white text-xs font-bold truncate select-none pointer-events-none">
-                        {ch.nom || nomClient}
+                      {/* Jauge d'avancement (Calque sombre sous le texte) */}
+                      {avancements[ch.id] !== undefined && (
+                        <div 
+                          className="absolute top-0 bottom-0 left-0 bg-black/30 pointer-events-none"
+                          style={{ width: `${avancements[ch.id]}%` }}
+                        />
+                      )}
+                      
+                      <div className="relative z-10 whitespace-nowrap text-white text-xs font-bold truncate select-none pointer-events-none flex-1 flex items-center gap-2">
+                        <span>{ch.nom || nomClient}</span>
+                        {avancements[ch.id] !== undefined && width > 100 && (
+                          <span className="text-[10px] bg-black/40 px-1.5 py-0.5 rounded-md font-medium">
+                            {avancements[ch.id]}%
+                          </span>
+                        )}
                       </div>
+                      
                       {hasAlert && (
-                        <AlertTriangle className="w-3 h-3 text-white ml-auto shrink-0 pointer-events-none drop-shadow" />
+                        <AlertTriangle className="relative z-10 w-3 h-3 text-white ml-auto shrink-0 pointer-events-none drop-shadow" />
                       )}
                     </div>
                   ) : (
