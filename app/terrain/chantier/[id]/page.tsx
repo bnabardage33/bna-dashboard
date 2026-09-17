@@ -105,6 +105,7 @@ function ChantierDetailContent() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [configDraft, setConfigDraft] = useState<ConfigTechnique | null>(null);
   const [configSaved, setConfigSaved] = useState(false);
+  const [configOpen, setConfigOpen] = useState(() => !chantier?.coef_perte_rendement);
   const [zones, setZones] = useState<Zone[]>([]);
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
@@ -259,7 +260,7 @@ function ChantierDetailContent() {
       epaisseur_isolant_mm: chantier.epaisseur_isolant_mm ?? null,
       surface_paquet_m2: chantier.surface_paquet_m2 ?? null,
       zone_vent_rive: chantier.zone_vent_rive ?? null,
-      coef_perte_rendement: chantier.coef_perte_rendement ?? null,
+      coef_perte_rendement: chantier.coef_perte_rendement === 1.8 ? 1.10 : (chantier.coef_perte_rendement ?? 1.10),
     });
   }, [chantier?.id]);
 
@@ -546,7 +547,7 @@ function ChantierDetailContent() {
         epaisseur_isolant_mm: chantier.epaisseur_isolant_mm ?? null,
         surface_paquet_m2: chantier.surface_paquet_m2 ?? null,
         zone_vent_rive: chantier.zone_vent_rive ?? null,
-        coef_perte_rendement: chantier.coef_perte_rendement ?? null,
+        coef_perte_rendement: chantier.coef_perte_rendement === 1.8 ? 1.10 : (chantier.coef_perte_rendement ?? 1.10),
       }
     : {
         type_isolant: null,
@@ -838,15 +839,22 @@ function ChantierDetailContent() {
           </div>
 
           <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-300">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setConfigOpen(!configOpen)}
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-2">
                 🧱 Configuration technique du chantier
+                <span className="text-gray-500">{configOpen ? '▲' : '▼'}</span>
               </p>
-              <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-gray-400">
-                Persistée sur le chantier · utilisée par tous les calculs de pose
+              <span className="hidden sm:inline-block rounded bg-white/5 px-2 py-0.5 text-[10px] text-gray-400">
+                Persistée · utilisée par tous les calculs
               </span>
             </div>
-            <p className="mt-0.5 text-[11px] text-gray-500">
+            
+            {configOpen && (
+              <>
+            <p className="mt-2 text-[11px] text-gray-500">
               Saisie au niveau du chantier. Les zones appliquent ces valeurs pour leur
               calcul d&apos;isolant et d&apos;équerrerie. Les zones en attente (brouillon) utilisent
               les mêmes valeurs de secours qu&apos;avant tant que rien n&apos;est configuré.
@@ -958,7 +966,7 @@ function ChantierDetailContent() {
                     className="mt-1 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 px-2.5 py-1.5 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                   <p className="mt-0.5 text-[10px] text-amber-500/70">
-                    ex: 1.1 = +10% de marge. Par défaut: 1.10 (lames) / 1.15 (plaques)
+                    ex: 1.1 = +10% de marge. Par défaut: 1.10
                   </p>
                 </div>
               </div>
@@ -978,6 +986,8 @@ function ChantierDetailContent() {
                 Enregistrer la configuration technique
               </button>
             </div>
+            </>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-5">

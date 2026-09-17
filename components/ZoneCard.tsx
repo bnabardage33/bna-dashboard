@@ -1277,92 +1277,6 @@ export default function ZoneCard({
       {/* RÉSULTATS MÉTRÉS */}
       {/* ====================================================== */}
 
-      <div className="grid grid-cols-2 gap-3 border-t border-slate-700 pt-3 sm:grid-cols-3">
-
-        <Resultat
-          label="Brute façade"
-          value={
-            calc.bruteFacade
-          }
-        />
-
-        <Resultat
-          label="Brute pignon"
-          value={
-            calc.brutePignon
-          }
-        />
-
-        <Resultat
-          label="Ouvertures"
-          value={
-            calc.totalOuvertures
-          }
-        />
-
-        {zone.type ===
-          "pignon" && (
-          <Resultat
-            label="Pente"
-            value={calc.pente}
-            unite="%"
-          />
-        )}
-
-        <Resultat
-          label="Nette à couvrir"
-          value={
-            calc.surfaceNette
-          }
-          highlight
-        />
-
-        {zone.materiau === "lames" && zone.longueur_lame_mm && zone.largeur_lame_mm ? (
-          <div className="col-span-full mt-2 rounded-xl border border-sky-500/30 bg-sky-950/20 p-3 space-y-2">
-            <div className="flex items-center justify-between border-b border-sky-500/20 pb-2">
-              <span className="text-xs font-bold uppercase tracking-wide text-sky-400">À commander (Lames)</span>
-              <span className="text-lg font-black text-sky-300">{calc.lamesACommander} lames</span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Surface nette :</span>
-                <span className="font-semibold text-gray-200">{calc.surfaceNette.toFixed(2)} m²</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Lames neuves simulées :</span>
-                <span className="font-semibold text-sky-200">{calc.lamesNeuvesSimul} lames</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Chutes réutilisées :</span>
-                <span className="font-semibold text-emerald-400">{calc.morceauxReutilises} morceaux ({calc.longueurChutesReutilisees?.toFixed(1)} ml)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Chutes jetées :</span>
-                <span className="font-semibold text-red-400">{calc.chutesPerdues?.toFixed(1)} ml</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Marge sécurité :</span>
-                <span className="font-semibold text-amber-200">
-                  + {configTechnique.coef_perte_rendement ? Math.round((configTechnique.coef_perte_rendement - 1) * 100) : 10}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Surface comm. finale :</span>
-                <span className="font-semibold text-gray-200">{calc.surfaceACommander.toFixed(2)} m²</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <Resultat
-            label="À commander"
-            value={calc.surfaceACommander}
-            highlight
-          />
-        )}
-
-      </div>
-
-      {/* ====================================================== */}
       {/* CALCUL TECHNIQUE */}
       {/* ====================================================== */}
 
@@ -1431,17 +1345,22 @@ export default function ZoneCard({
             {pose.joint}
           </p>
 
-          {pose.remarques.length >
-            0 && (
-            <ul className="list-inside list-disc text-xs text-slate-500">
-              {pose.remarques.map(
-                (r, i) => (
-                  <li key={i}>
-                    {r}
-                  </li>
-                )
-              )}
-            </ul>
+          {pose.remarques.length > 0 && (
+            <details className="mt-2 group">
+              <summary className="text-xs text-sky-400 font-semibold cursor-pointer select-none hover:text-sky-300 transition-colors list-none flex items-center gap-1.5">
+                <span className="text-sky-500/70 group-open:rotate-90 transition-transform">▶</span>
+                Voir les spécifications de pose et fixations détaillées (DTU)
+              </summary>
+              <ul className="list-inside list-disc text-xs text-slate-500 mt-2 pl-4 space-y-1">
+                {pose.remarques.map(
+                  (r, i) => (
+                    <li key={i}>
+                      {r}
+                    </li>
+                  )
+                )}
+              </ul>
+            </details>
           )}
 
           <p className="text-xs italic text-amber-400">
@@ -1671,36 +1590,7 @@ function Field({
    RÉSULTAT
    ============================================================== */
 
-function Resultat({
-  label,
-  value,
-  unite = "m²",
-  highlight,
-}: {
-  label: string;
-  value: number;
-  unite?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-xs text-slate-500">
-        {label}
-      </p>
 
-      <p
-        className={`text-sm font-semibold ${
-          highlight
-            ? "text-red-400"
-            : "text-white"
-        }`}
-      >
-        {value.toFixed(2)}{" "}
-        {unite}
-      </p>
-    </div>
-  );
-}
 
 /* ==============================================================
    CHIFFRE TECHNIQUE
