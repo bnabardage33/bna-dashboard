@@ -488,3 +488,16 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 - **Migration `parametres_entreprise`** : à appliquer dans l'éditeur SQL Supabase (mission 07) — non confirmée.
 - **`lib/supabaseAdmin.ts`** : `NEXT_PUBLIC_SUPABASE_URL` non défini au moment du `next build` (pré-existant) → le build de vérif locale échoue ; on s'appuie sur `npx tsc --noEmit` comme gate. `.env.local` contient bien les clés.
 - **Fallbacks esthétiques du portail client** encore présents (si aucune donnée) : "Villa Arcachon", "33380 Arcachon", `BNA-7429`, badge "★ CLIENT PREMIUM", téléphone WhatsApp `33600000000` — à repasser pour supprimer les valeurs d'exemple.
+
+### Mission 16 : Numérotation Sécurisée des Intempéries (RPC SQL)
+- **Objectif** : Empêcher les doublons de justificatifs météo lors des exécutions simultanées du Cron Vercel.
+- **Réalisation** : Création d'une fonction PostgreSQL PL/pgSQL (`generer_prochain_numero_ri`) utilisant un verrouillage `SHARE ROW EXCLUSIVE MODE`. Suppression de la logique front/API au profit d'un simple appel RPC robuste.
+
+### Mission 17 : Générateur de Bon de Commande Quincaillerie (DTU)
+- **Objectif** : Créer automatiquement un bon de commande de fixations depuis le calepinage.
+- **Réalisation** : Bouton ajouté dans le métré d'un chantier. Calcule les ml de chevrons, le nombre d'équerres et vis via `calculerBesoinsBardage` et pré-remplit le `CommandeModal` avec affectation dynamique des fournisseurs et des prix.
+
+### Mission 18 : Planning de Gantt Interactif (Terrain)
+- **Objectif** : Vue macro des chantiers pour le pilotage.
+- **Réalisation** : Création de `PlanningGantt.tsx`. Vue sur 6 mois avec Drag & Drop tactile (Pointer Events) pour décaler les dates d'un chantier. Indicateurs visuels (Aujourd'hui, couleurs de statuts, bordure rouge + icône d'alerte si arrêt météo actif).
+
