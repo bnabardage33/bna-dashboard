@@ -748,8 +748,8 @@ export default function CataloguePage() {
 
         {/* Modal Ajout/Edition */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-32 bg-black/80 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-transparent shadow-2xl flex flex-col max-h-[80vh]">
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-2 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-transparent shadow-2xl flex flex-col max-h-[92vh]">
               {/* Header fixe */}
               <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
                 <h2 className="text-xl font-bold text-white">
@@ -795,7 +795,7 @@ export default function CataloguePage() {
 
               {/* Formulaire avec scroll séparé et footer statique */}
               <form onSubmit={handleSave} className="flex-1 flex flex-col overflow-hidden">
-                <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-6">
+                <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-3">
                 
                 {activeTab === 'general' && (
                 <>
@@ -829,7 +829,7 @@ export default function CataloguePage() {
                 )}
 
                 {/* ── Type de prestation : Matériau / Main-d'œuvre ───────── */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 mb-1">Type de prestation</label>
                     <select
@@ -871,7 +871,7 @@ export default function CataloguePage() {
                 {formData.type_cout === "matiere" ? (
                   <>
                   {/* ── En-tête : Désignation ─────────── */}
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
                       <input
@@ -946,12 +946,12 @@ export default function CataloguePage() {
                 {activeTab === 'tarifs' && formData.type_cout === 'main_oeuvre' && (
                 <>
                   {/* ── Section Prestation : Unité + Prix vente + Coût de revient ── */}
-                  <fieldset className="rounded-lg border border-violet-500/40 p-4 space-y-4">
+                  <fieldset className="rounded-lg border border-violet-500/40 p-3 space-y-3">
                     <legend className="px-2 text-xs font-bold uppercase tracking-widest text-violet-300">
                       Prestation · Vente &amp; Coût de revient
                     </legend>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
                         <select
@@ -1030,12 +1030,12 @@ export default function CataloguePage() {
                 {activeTab === 'dimensions' && formData.type_cout === "matiere" && (
                 <>
                 {/* ── Section 1 : Marque & Décor ─────────────────────────── */}
-                <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
+                <fieldset className="rounded-lg border border-slate-600 p-3 space-y-3">
                   <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     1 · Marque &amp; Décor
                   </legend>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Fabricant</label>
                       <input
@@ -1058,7 +1058,7 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Code Décor</label>
                       <input
@@ -1081,7 +1081,7 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Code RAL</label>
                       <input
@@ -1106,7 +1106,7 @@ export default function CataloguePage() {
                 </fieldset>
 
                 {/* ── Section 2 : Dimensions & Spécifications ────────────── */}
-                <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
+                <fieldset className="rounded-lg border border-slate-600 p-3 space-y-3">
                   <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     2 · Dimensions &amp; Spécifications
                   </legend>
@@ -1200,12 +1200,12 @@ export default function CataloguePage() {
                   <>
 
                 {/* ── Section 3 : Fournisseur & Tarifs ──────────────────── */}
-                <fieldset className="rounded-lg border border-slate-600 p-4 space-y-4">
+                <fieldset className="rounded-lg border border-slate-600 p-3 space-y-3">
                   <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     3 · Fournisseur &amp; Tarifs
                   </legend>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Fournisseur</label>
                       <input
@@ -1233,7 +1233,7 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Prix Unitaire HT (€)</label>
                       <input
@@ -1270,7 +1270,7 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Prix TTC (€)
