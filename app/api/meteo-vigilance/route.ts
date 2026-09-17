@@ -4,7 +4,7 @@
 // pluie-inondation, orages, etc.).
 //
 // Doc / abonnement : portail-api.meteofrance.fr -> "DonneesPubliquesVigilance"
-// Clé API attendue dans la variable d'env METEOFRANCE_API_KEY (.env.local).
+// Clé API attendue dans la variable d'env METEOFRANCE_APPLICATION_ID (.env.local).
 
 import { NextRequest, NextResponse } from "next/server";
 import { obtenirTokenMeteoFrance, invaliderCacheToken } from "@/lib/meteoFranceToken";
