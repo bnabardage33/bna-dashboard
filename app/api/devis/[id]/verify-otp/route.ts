@@ -3,11 +3,11 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { code } = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     if (!code || typeof code !== "string" || code.length !== 6) {
       return NextResponse.json({ error: "Code OTP invalide" }, { status: 400 });
