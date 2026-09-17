@@ -2,6 +2,7 @@
 
 import KpiGrid from "./components/KpiGrid";
 import ChantierRentabilite from "./components/ChantierRentabilite";
+import RentabiliteMainOeuvreWidget from "./components/RentabiliteMainOeuvreWidget";
 import TvaWidget from "./components/TvaWidget";
 import TresorerieWidget from "./components/TresorerieWidget";
 import UrsaafWidget from "./components/UrsaafWidget";
@@ -124,6 +125,9 @@ export default function FinanceDashboard() {
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <ChantierRentabilite />
+            <div className="mt-6">
+              <RentabiliteMainOeuvreWidget />
+            </div>
           </div>
           <div className="flex flex-col gap-6">
             <TvaWidget mois={selectedMois} />
