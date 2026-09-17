@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { randomInt } from "crypto";
 
 export async function POST(
   req: Request,
@@ -14,7 +15,7 @@ export async function POST(
     }
 
     // Générer OTP (6 chiffres)
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = randomInt(100000, 1000000).toString();
     
     // Date d'expiration à +10 minutes
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();

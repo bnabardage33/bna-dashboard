@@ -8,14 +8,16 @@ export default function SignatureModal({
   numero,
   onClose,
   onSuccess,
+  initialPhone,
 }: {
   devisId: string;
   numero: string;
   onClose: () => void;
   onSuccess: () => void;
+  initialPhone?: string;
 }) {
   const [step, setStep] = useState<"PHONE" | "OTP" | "SUCCESS">("PHONE");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(initialPhone || "");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

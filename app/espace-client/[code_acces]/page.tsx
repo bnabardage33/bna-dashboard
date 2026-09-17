@@ -9,6 +9,7 @@ import {
 import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
 import RapportClientPrint from "@/components/rapports/RapportClientPrint";
+import SignatureModal from "@/components/SignatureModal";
 import { calculerAidesITE } from "@/lib/primesCalcul";
 import {
   analyserSnapshot,
@@ -100,6 +101,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [activeDoc, setActiveDoc] = useState<ActiveDoc | null>(null);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
 
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoData | null>(null);
@@ -570,7 +572,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                       {estSigne ? (
                         <button className="text-[#111111] text-xs font-bold px-3 py-1.5 transition">Consulter</button>
                       ) : (
-                        <button className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Signer</button>
+                        <button onClick={() => setSigningDevis({ id: devis.id, numero: devis.numero })} className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition hover:bg-red-700">✍️ Signer par SMS</button>
                       )}
                     </div>
 
