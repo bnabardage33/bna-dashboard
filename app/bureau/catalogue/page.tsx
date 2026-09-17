@@ -55,8 +55,8 @@ type FormState = Omit<Ouvrage, "id" | "pu_ht" | "pu_revient" | "prix_ttc"> & {
 };
 
 const emptyForm: FormState = {
-  categorie: "bardage",
-  famille_label: "",
+  categorie: "Parements & Bardages",
+  famille_label: "Parements & Bardages",
   designation: "",
   description: "",
   designation_devis: "",
@@ -101,7 +101,8 @@ export default function CataloguePage() {
   const set = (field: keyof FormState, value: FormState[keyof FormState]) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const categories = ["Toutes", "bardage", "etancheite", "habillage", "isolation", "installation"];
+
+  const dynamicCategories = ["Toutes", ...Array.from(new Set(ouvrages.map(o => o.famille_label || o.categorie).filter(Boolean)))].sort();
 
   const handleScrapeUrl = async () => {
     if (!importUrl) return;
@@ -461,7 +462,7 @@ export default function CataloguePage() {
   };
 
   const filteredOuvrages = ouvrages.filter((o) => {
-    const matchesCat = activeCategory === "Toutes" || o.categorie === activeCategory;
+    const matchesCat = activeCategory === "Toutes" || o.famille_label === activeCategory || o.categorie === activeCategory;
     const matchesFab = activeFabricant === "All" || o.fabricant === activeFabricant;
     const matchesType =
       typeFiltre === "tous" ||
@@ -533,7 +534,7 @@ export default function CataloguePage() {
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1A1D24]/50 p-4 rounded-xl border border-white/10">
           {/* Catégorie */}
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
+            {dynamicCategories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -819,50 +820,33 @@ export default function CataloguePage() {
                       <option value="main_oeuvre">Main-d'œuvre (prestation)</option>
                     </select>
                   </div>
-                  {formData.type_cout === "matiere" ? (
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Catégorie</label>
-                      <select
-                        required
-                        value={formData.categorie}
-                        onChange={(e) => set("categorie", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
-                      >
-                        {categories.filter((c) => c !== "Toutes").map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-xs font-semibold text-violet-300 mb-1">Famille / type de prestation</label>
-                      <input
-                        required
-                        type="text"
-                        placeholder="ex&nbsp;: Pose bardage, Dépose, Finition…"
-                        value={formData.famille_label ?? ""}
-                        onChange={(e) => set("famille_label", e.target.value)}
-                        className="w-full rounded border border-violet-500/40 bg-transparent p-2 text-sm text-white"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className={`block text-xs font-semibold mb-1 ${formData.type_cout === "main_oeuvre" ? "text-violet-300" : "text-gray-400"}`}>
+                      Famille Professionnelle
+                    </label>
+                    <select
+                      required
+                      value={formData.famille_label}
+                      onChange={(e) => {
+                        set("famille_label", e.target.value);
+                        set("categorie", e.target.value);
+                      }}
+                      className={`w-full rounded border bg-transparent p-2 text-sm text-white ${formData.type_cout === "main_oeuvre" ? "border-violet-500/40" : "border-slate-600"}`}
+                    >
+                      <option value="">Sélectionner une famille</option>
+                      <option value="Ossature & Fixations">Ossature & Fixations</option>
+                      <option value="Isolation & Étanchéité">Isolation & Étanchéité</option>
+                      <option value="Parements & Bardages">Parements & Bardages</option>
+                      <option value="Profilés & Finitions">Profilés & Finitions</option>
+                      <option value="Main-d'œuvre">Main-d'œuvre</option>
+                    </select>
+                  </div>
                 </div>
 
                 {formData.type_cout === "matiere" ? (
                   <>
-                  {/* ── En-tête : Famille + Désignation ─────────── */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Famille (ex&nbsp;: Bardage HPL)</label>
-                      <input
-                        required
-                        type="text"
-                        placeholder="Bardage HPL"
-                        value={formData.famille_label ?? ""}
-                        onChange={(e) => set("famille_label", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
-                      />
-                    </div>
+                  {/* ── En-tête : Désignation ─────────── */}
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
                       <input
