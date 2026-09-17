@@ -79,6 +79,16 @@ const emptyForm: FormState = {
 };
 
 
+
+const getSousFamille = (o: Ouvrage): string => {
+  const text = `${o.gamme || ''} ${o.designation || ''}`.toLowerCase();
+  if (text.includes("polyrey") || text.includes("trespa") || text.includes("hpl")) return "HPL (Trespa/Polyrey)";
+  if (text.includes("composite") || text.includes("coextrusion") || text.includes("ligna")) return "Lame Composite";
+  if (text.includes("james hardie") || text.includes("cedral") || text.includes("fibrociment")) return "Fibrociment";
+  if (text.includes("mélèze") || text.includes("meleze") || text.includes("douglas") || text.includes("sapin") || text.includes("bois")) return "Bois Massif";
+  return "Autre";
+};
+
 const mapToMainFamily = (rawCat: string | null | undefined, typeCout: string | null | undefined): string => {
   if (typeCout === "main_oeuvre") return "Main-d'œuvre";
   const cat = (rawCat || "").toLowerCase();
@@ -107,6 +117,7 @@ export default function CataloguePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("Toutes");
+  const [activeSubCategory, setActiveSubCategory] = useState<string>("Tous");
   const [activeFabricant, setActiveFabricant] = useState<string>("All");
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "matiere" | "main_oeuvre">("tous");
 
@@ -488,7 +499,9 @@ export default function CataloguePage() {
   const filteredOuvrages = ouvrages.filter((o) => {
     const mappedCat = mapToMainFamily(o.famille_label || o.categorie, o.type_cout);
     const matchesCat = activeCategory === "Toutes" || mappedCat === activeCategory;
+    const matchesSubCat = activeCategory !== "Parements & Bardages" || activeSubCategory === "Tous" || getSousFamille(o) === activeSubCategory;
     const matchesFab = activeFabricant === "All" || o.fabricant === activeFabricant;
+    if (!matchesSubCat) return false;
     const matchesType =
       typeFiltre === "tous" ||
       (o.type_cout === undefined || o.type_cout === null ? "matiere" : o.type_cout) === typeFiltre;
@@ -562,7 +575,7 @@ export default function CataloguePage() {
             {displayCategories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => { setActiveCategory(cat); setActiveSubCategory("Tous"); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
                   activeCategory === cat
                     ? "bg-red-600/20 text-gray-400 border border-white/10"
@@ -573,6 +586,25 @@ export default function CataloguePage() {
               </button>
             ))}
           </div>
+
+          {activeCategory === "Parements & Bardages" && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 mt-2 w-full">
+              {["Tous", "Bois Massif", "Lame Composite", "HPL (Trespa/Polyrey)", "Fibrociment"].map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => setActiveSubCategory(sub)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                    activeSubCategory === sub
+                      ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/30"
+                      : "bg-[#1A1D24] text-gray-500 border border-white/5 hover:border-slate-600"
+                  }`}
+                >
+                  {sub}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Type de prestation */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Type :</span>
@@ -629,6 +661,7 @@ export default function CataloguePage() {
               setSearchQuery('');
               setActiveFabricant('All');
               setActiveCategory('Toutes');
+              setActiveSubCategory('Tous');
               setTypeFiltre('tous');
             }}
             className="ml-2 rounded bg-[#1A1D24] px-3 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
@@ -1047,14 +1080,28 @@ export default function CataloguePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Gamme</label>
-                      <input
-                        type="text"
-                        placeholder="ex&nbsp;: Reysipur"
-                        value={formData.gamme ?? ""}
-                        onChange={(e) => set("gamme", e.target.value)}
-                        className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
-                      />
+                      <label className="block text-xs font-semibold text-gray-400 mb-1">Gamme / Sous-Famille</label>
+                      {formData.famille_label === "Parements & Bardages" ? (
+                        <select
+                          value={formData.gamme ?? ""}
+                          onChange={(e) => set("gamme", e.target.value)}
+                          className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                        >
+                          <option value="">Sélectionner...</option>
+                          <option value="Bois Massif">Bois Massif</option>
+                          <option value="Lame Composite">Lame Composite</option>
+                          <option value="HPL (Trespa/Polyrey)">HPL (Trespa/Polyrey)</option>
+                          <option value="Fibrociment">Fibrociment</option>
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="ex&nbsp;: Reysipur"
+                          value={formData.gamme ?? ""}
+                          onChange={(e) => set("gamme", e.target.value)}
+                          className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
+                        />
+                      )}
                     </div>
                   </div>
 
