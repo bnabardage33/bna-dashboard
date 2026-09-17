@@ -78,6 +78,30 @@ const emptyForm: FormState = {
   prix_ttc: "",
 };
 
+
+const mapToMainFamily = (rawCat: string | null | undefined, typeCout: string | null | undefined): string => {
+  if (typeCout === "main_oeuvre") return "Main-d'œuvre";
+  const cat = (rawCat || "").toLowerCase();
+  
+  if (cat.includes("ossature") || cat.includes("fixation") || cat.includes("tasseau") || cat.includes("liteau") || cat.includes("bois") || cat.includes("structure") || cat.includes("équerre")) {
+    return "Ossature & Fixations";
+  }
+  if (cat.includes("isol") || cat.includes("etanch") || cat.includes("étanch") || cat.includes("pare-pluie") || cat.includes("membrane")) {
+    return "Isolation & Étanchéité";
+  }
+  if (cat.includes("finition") || cat.includes("profil") || cat.includes("angle") || cat.includes("pliage") || cat.includes("alu") || cat.includes("habillage") || cat.includes("grille") || cat.includes("bavette")) {
+    return "Profilés & Finitions";
+  }
+  if (cat.includes("main") || cat.includes("oeuvre") || cat.includes("prestation") || cat.includes("pose") || cat.includes("heure") || cat.includes("installation")) {
+    return "Main-d'œuvre";
+  }
+  if (cat.includes("bardage") || cat.includes("parement") || cat.includes("composite") || cat.includes("clin") || cat.includes("hpl") || cat.includes("lame") || cat.includes("trespa") || cat.includes("cedral")) {
+    return "Parements & Bardages";
+  }
+  
+  return "Parements & Bardages"; // Default fallback
+};
+
 export default function CataloguePage() {
   const [ouvrages, setOuvrages] = useState<Ouvrage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,7 +126,7 @@ export default function CataloguePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
 
-  const dynamicCategories = ["Toutes", ...Array.from(new Set(ouvrages.map(o => o.famille_label || o.categorie).filter(Boolean)))].sort();
+  const displayCategories = ["Toutes", "Ossature & Fixations", "Isolation & Étanchéité", "Parements & Bardages", "Profilés & Finitions", "Main-d'œuvre"];
 
   const handleScrapeUrl = async () => {
     if (!importUrl) return;
@@ -462,7 +486,8 @@ export default function CataloguePage() {
   };
 
   const filteredOuvrages = ouvrages.filter((o) => {
-    const matchesCat = activeCategory === "Toutes" || o.famille_label === activeCategory || o.categorie === activeCategory;
+    const mappedCat = mapToMainFamily(o.famille_label || o.categorie, o.type_cout);
+    const matchesCat = activeCategory === "Toutes" || mappedCat === activeCategory;
     const matchesFab = activeFabricant === "All" || o.fabricant === activeFabricant;
     const matchesType =
       typeFiltre === "tous" ||
@@ -534,7 +559,7 @@ export default function CataloguePage() {
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1A1D24]/50 p-4 rounded-xl border border-white/10">
           {/* Catégorie */}
           <div className="flex flex-wrap gap-2">
-            {dynamicCategories.map((cat) => (
+            {displayCategories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -633,7 +658,7 @@ export default function CataloguePage() {
                       {o.type_cout === "main_oeuvre" ? "Main-d'œuvre" : "Matériau"}
                     </span>
                     <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded w-fit">
-                      {o.famille_label}
+                      {mapToMainFamily(o.famille_label || o.categorie, o.type_cout)}
                     </span>
                   </div>
                   <div className="flex gap-2">
