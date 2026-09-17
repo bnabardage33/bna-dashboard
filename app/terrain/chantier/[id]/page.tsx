@@ -107,6 +107,7 @@ function ChantierDetailContent() {
   const [configSaved, setConfigSaved] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
+  const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
   const [pvsLies, setPvsLies] = useState<PvReceptionListe[]>([]);
@@ -1239,6 +1240,16 @@ function ChantierDetailContent() {
                                 >
                                   {d.statut}
                                 </span>
+                              </td>
+                              <td className="p-3 text-right">
+                                {d.statut !== "signe" && d.statut !== "accepte" && (
+                                  <button
+                                    onClick={() => setSigningDevis({ id: d.id, numero: d.numero })}
+                                    className="bg-sky-600/20 text-sky-400 hover:bg-sky-600/30 text-[10px] font-bold px-2 py-1 rounded transition"
+                                  >
+                                    ✍️ Signer par SMS
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           );

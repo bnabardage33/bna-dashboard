@@ -553,6 +553,14 @@ export type Database = {
           tva_pct: number
           type_travaux: string | null
           validite_jours: number | null
+          devis_parent_id: string | null
+          is_avenant: boolean | null
+          otp_code: string | null
+          otp_expires_at: string | null
+          signature_date: string | null
+          signature_ip: string | null
+          signature_phone: string | null
+          profil_revenu: string | null
         }
         Insert: {
           acompte_pct?: number | null
@@ -576,6 +584,14 @@ export type Database = {
           tva_pct?: number
           type_travaux?: string | null
           validite_jours?: number | null
+          devis_parent_id?: string | null
+          is_avenant?: boolean | null
+          otp_code?: string | null
+          otp_expires_at?: string | null
+          signature_date?: string | null
+          signature_ip?: string | null
+          signature_phone?: string | null
+          profil_revenu?: string | null
         }
         Update: {
           acompte_pct?: number | null
@@ -599,6 +615,14 @@ export type Database = {
           tva_pct?: number
           type_travaux?: string | null
           validite_jours?: number | null
+          devis_parent_id?: string | null
+          is_avenant?: boolean | null
+          otp_code?: string | null
+          otp_expires_at?: string | null
+          signature_date?: string | null
+          signature_ip?: string | null
+          signature_phone?: string | null
+          profil_revenu?: string | null
         }
         Relationships: [
           {
