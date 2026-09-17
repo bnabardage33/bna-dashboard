@@ -12,6 +12,7 @@ import BilanChantierPDF from "./exports/BilanChantierPDF";
 export default function ChantierRentabilite() {
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
   const [printingSit, setPrintingSit] = useState<RentabiliteChantierExt | null>(null);
+  const [numeroSit, setNumeroSit] = useState<string | undefined>(undefined);
   const [printingBilan, setPrintingBilan] = useState<RentabiliteChantierExt | null>(null);
   const [supprimantId, setSupprimantId] = useState<string | null>(null);
 
@@ -47,9 +48,11 @@ export default function ChantierRentabilite() {
         <div className="hidden print:block">
           <SituationTravauxPDF
             chantier={printingSit}
+            numero={numeroSit}
             onReady={() => {
               window.print();
               setPrintingSit(null);
+              setNumeroSit(undefined);
             }}
           />
         </div>
@@ -142,7 +145,11 @@ export default function ChantierRentabilite() {
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => setPrintingSit(r)}
+                          onClick={async () => {
+                            const { data: num } = await supabase.rpc('generer_prochain_numero_sit' as any);
+                            setNumeroSit((num as string) ?? undefined);
+                            setPrintingSit(r);
+                          }}
                           disabled={!!printingSit || !!printingBilan}
                           className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-gray-400 transition-colors disabled:opacity-50"
                           title="Générer la Situation de Travaux"

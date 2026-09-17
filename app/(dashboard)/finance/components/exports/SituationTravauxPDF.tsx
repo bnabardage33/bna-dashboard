@@ -7,9 +7,11 @@ import type { RentabiliteChantierExt } from "@/hooks/useFinance";
 export default function SituationTravauxPDF({
   chantier,
   onReady,
+  numero,
 }: {
   chantier: RentabiliteChantierExt;
   onReady: () => void;
+  numero?: string;
 }) {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -21,7 +23,7 @@ export default function SituationTravauxPDF({
   if (!chantier) return null;
 
   const dateStr = new Date().toLocaleDateString("fr-FR");
-  const numSituation = `SIT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`;
+  const numSituation = numero ?? `SIT-${new Date().getFullYear()}-DRAFT`;
 
   const avancementReel = chantier.avancement_reel || 50;
   const pvHT = chantier.prix_vente_ht || 0;

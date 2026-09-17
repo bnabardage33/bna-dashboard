@@ -150,7 +150,15 @@ export default function FicheSAV() {
     if (isNaN(prix)) return alert("Montant invalide, veuillez entrer un nombre (ex: 150.50).");
 
     setSaving(true);
-    const numero = "SAV-" + Math.floor(1000 + Math.random() * 9000);
+
+    // Numéro SAV séquentiel et atomique via RPC PostgreSQL (anti-doublon)
+    const { data: numeroRPC, error: rpcError } = await supabase.rpc('generer_prochain_numero_sav' as any);
+    if (rpcError || !numeroRPC) {
+      setSaving(false);
+      alert("Erreur lors de la génération du numéro SAV : " + (rpcError?.message || "RPC vide"));
+      return;
+    }
+    const numero = numeroRPC as string;
     
     const lignes = [
       {
