@@ -7,6 +7,7 @@ import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, AlertTriangle } from "lucide-react";
+import { analyserPerformancesFournisseurs, type AnalytiqueFournisseur } from "@/lib/fournisseursAnalytique";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 
@@ -76,7 +77,9 @@ function estMemeMois(dateStr: string | null, ref: Date) {
 }
 
 export default function FournisseursPage() {
-  const [tab, setTab] = useState<"fournisseurs" | "commandes">("fournisseurs");
+  const [tab, setTab] = useState<"fournisseurs" | "commandes" | "analyse">("fournisseurs");
+  const [devis, setDevis] = useState<any[]>([]);
+  const [catalogue, setCatalogue] = useState<any[]>([]);
 
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
@@ -426,7 +429,7 @@ export default function FournisseursPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        {(["fournisseurs", "commandes"] as const).map((t) => (
+        {(["fournisseurs", "commandes", "analyse"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -436,7 +439,7 @@ export default function FournisseursPage() {
                 : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
-            {t === "fournisseurs" ? "🏢 Fournisseurs" : "📦 Commandes Matériaux"}
+            {t === "fournisseurs" ? "🏢 Fournisseurs" : t === "commandes" ? "📦 Commandes Matériaux" : "📊 Analyse des Marges"}
           </button>
         ))}
       </div>
