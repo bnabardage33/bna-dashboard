@@ -272,7 +272,7 @@ interface MeteoProduct {
 //
 // ===========================================================================
 
-function extraireDepartement(
+export function extraireDepartement(
   data: MeteoFranceResponse,
   departement: string,
   demain = false

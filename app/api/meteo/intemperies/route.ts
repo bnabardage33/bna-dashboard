@@ -137,16 +137,16 @@ async function fetchVigilanceDepartement(departement: string): Promise<{ niveau:
     if (!res.ok) return null;
     const json = await res.json();
 
-    const { extraireDepartementVigilance } = await import("@/lib/meteoVigilance");
-    const resultat = extraireDepartementVigilance(json, departement);
+    const { extraireDepartement } = await import("@/lib/meteoVigilance");
+    const resultat = extraireDepartement(json, departement);
     if (!resultat) return null;
 
     const phenomenesCritiques = resultat.phenomenes
-      .filter((p) =>
+      .filter((p: any) =>
         PHENOMENES_CRITIQUES.some((nom) => p.nom.toLowerCase().includes(nom)) &&
         ["orange", "rouge"].includes(p.couleur)
       )
-      .map((p) => `${p.nom} ${p.couleur}`);
+      .map((p: any) => `${p.nom} ${p.couleur}`);
 
     return { niveau: resultat.couleurMax, phenomenes: phenomenesCritiques };
   } catch {
