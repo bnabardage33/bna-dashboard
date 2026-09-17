@@ -1,10 +1,12 @@
 export type AnalytiqueFournisseur = {
   fournisseur_id: string;
   nom: string;
-  total_achats_ht: number; // Commandes passées chez lui
-  total_ventes_ht: number; // Devis signés utilisant ses articles
-  marge_reelle: number;
+  total_achats_reels_ht: number; // Commandes réelles passées
+  cout_achat_theorique_vendu: number; // Qte * pu_revient_catalogue des devis signés
+  total_ventes_ht: number; // Qte * pu_ht des devis signés
+  marge_theorique: number; // Ventes - Achat Théorique
   rentabilite_pct: number;
+  ecart_achat: number; // Achat Théorique - Achats Réels
 };
 
 export function analyserPerformancesFournisseurs(
@@ -13,57 +15,66 @@ export function analyserPerformancesFournisseurs(
   devis: any[],
   catalogue: any[]
 ): AnalytiqueFournisseur[] {
-  // Créer un dictionnaire de mapping Catalogue -> Fournisseur Nom
-  const catalogueFournisseurMap = new Map<string, string>();
+  // Map catalogue -> fournisseur nom & pu_revient
+  const catalogueFournisseurMap = new Map<string, { fournisseur: string; pu_revient: number }>();
   for (const c of catalogue) {
     if (c.fournisseur) {
-      catalogueFournisseurMap.set(c.id, c.fournisseur);
+      catalogueFournisseurMap.set(c.id, {
+        fournisseur: c.fournisseur,
+        pu_revient: c.pu_revient || 0,
+      });
     }
   }
 
-  // Filtrer les commandes validées
   const statutsAchat = ["commandee", "partiellement_livree", "livree", "valide", "recu"];
   const achatsValides = commandes.filter((c) => statutsAchat.includes(c.statut));
 
-  // Filtrer les devis signés
   const statutsVente = ["signe", "accepte"];
   const devisValides = devis.filter((d) => statutsVente.includes(d.statut));
 
   return fournisseurs.map((f) => {
-    // Calcul Achats
+    // Achats réels (bons de commande)
     const achatsFournisseur = achatsValides.filter((c) => c.fournisseur_id === f.id);
-    const totalAchats = achatsFournisseur.reduce((acc, c) => acc + (c.montant_ht || 0), 0);
+    const totalAchatsReels = achatsFournisseur.reduce((acc, c) => acc + (c.montant_ht || 0), 0);
 
-    // Calcul Ventes
-    // On cherche toutes les lignes de devis signés qui utilisent un article de CE fournisseur
     let totalVentes = 0;
+    let coutAchatTheorique = 0;
+
     for (const d of devisValides) {
       if (Array.isArray(d.lignes)) {
         for (const ligne of d.lignes) {
           if (ligne.catalogue_id) {
-            const nomFournisseurArticle = catalogueFournisseurMap.get(ligne.catalogue_id);
-            // On matche par nom (insensible à la casse)
+            const articleData = catalogueFournisseurMap.get(ligne.catalogue_id);
             if (
-              nomFournisseurArticle &&
-              nomFournisseurArticle.toLowerCase() === f.nom.toLowerCase()
+              articleData &&
+              articleData.fournisseur.toLowerCase() === f.nom.toLowerCase()
             ) {
-              totalVentes += (ligne.qte || 0) * (ligne.pu_ht || 0);
+              const qte = ligne.qte || 0;
+              const prixVente = ligne.pu_ht || 0;
+              // Si la ligne a mémorisé son pu_revient, on l'utilise, sinon on prend celui du catalogue
+              const prixAchat = typeof ligne.pu_revient === "number" ? ligne.pu_revient : articleData.pu_revient;
+
+              totalVentes += qte * prixVente;
+              coutAchatTheorique += qte * prixAchat;
             }
           }
         }
       }
     }
 
-    const margeReelle = totalVentes - totalAchats;
-    const rentabilitePct = totalVentes > 0 ? (margeReelle / totalVentes) * 100 : 0;
+    const margeTheorique = totalVentes - coutAchatTheorique;
+    const rentabilitePct = totalVentes > 0 ? (margeTheorique / totalVentes) * 100 : 0;
+    const ecartAchat = coutAchatTheorique - totalAchatsReels;
 
     return {
       fournisseur_id: f.id,
       nom: f.nom,
-      total_achats_ht: totalAchats,
+      total_achats_reels_ht: totalAchatsReels,
+      cout_achat_theorique_vendu: coutAchatTheorique,
       total_ventes_ht: totalVentes,
-      marge_reelle: margeReelle,
+      marge_theorique: margeTheorique,
       rentabilite_pct: rentabilitePct,
+      ecart_achat: ecartAchat,
     };
-  }).sort((a, b) => b.total_achats_ht - a.total_achats_ht); // Trier par volume d'achat
+  }).sort((a, b) => b.total_achats_reels_ht - a.total_achats_reels_ht);
 }
