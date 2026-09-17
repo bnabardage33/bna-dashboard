@@ -106,7 +106,8 @@ export default function RentabiliteMainOeuvreWidget() {
                   <th className="p-4 text-right">Budget Vendu (€)</th>
                   <th className="p-4 text-right">Coût Réel (€)</th>
                   <th className="p-4 text-right">Écart (€)</th>
-                  <th className="p-4 text-right">Performance</th>
+                  <th className="p-4 text-right">Perf. Financière</th>
+                  <th className="p-4 text-right" title="Performance pondérée par la météo (Gaël Logic)">Perf. Météo 🌦️</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -129,9 +130,14 @@ export default function RentabiliteMainOeuvreWidget() {
                           />
                         </div>
                         <span className={`text-xs ${d.ecart < 0 ? "text-rose-400" : "text-gray-400"}`}>
-                          {d.budget_vendu === 0 ? "Hors devis" : `${d.performance_pct.toFixed(1)}%`}
+                          {d.budget_vendu === 0 ? "Hors devis" : `${d.performance_pct > 0 ? "+" : ""}${d.performance_pct.toFixed(1)}%`}
                         </span>
                       </div>
+                    </td>
+                    <td className="p-4 text-right">
+                      <span className={`font-bold px-2.5 py-1 rounded-lg text-xs ${d.performance_meteo_pct >= 0 ? "bg-emerald-900/30 text-emerald-400" : "bg-rose-900/30 text-rose-400"}`}>
+                        {d.budget_vendu === 0 ? "—" : `${d.performance_meteo_pct > 0 ? "+" : ""}${d.performance_meteo_pct.toFixed(1)}%`}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -144,6 +150,14 @@ export default function RentabiliteMainOeuvreWidget() {
                 )}
               </tbody>
             </table>
+          </div>
+          
+          <div className="p-3 bg-blue-950/20 border border-blue-900/30 rounded-lg flex gap-3 text-sm text-blue-200">
+            <span className="text-xl">💡</span>
+            <p>
+              <strong>Gaël Logic :</strong> Si l'Écart (€) est négatif mais que la <em>Performance Météo</em> est positive, l'équipe a été physiquement très performante compte tenu du mauvais temps. 
+              Dans ce cas, ne blâmez pas les ouvriers, mais réévaluez plutôt à la hausse votre prix de vente de la pose au m² pour ce type d'ouvrage !
+            </p>
           </div>
         </>
       )}

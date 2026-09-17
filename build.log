@@ -3,7 +3,7 @@
 ⚠ Warning: Next.js ignored package-lock.json in /data/data/com.termux/files/home because it is outside the current Git repository (/data/data/com.termux/files/home/bna-dashboard).
  To use this directory, set `outputFileTracingRoot` in your Next.js config.
 
-✓ Running next.config.ts took 592ms
+✓ Running next.config.ts took 326ms
   Skipping creating a lockfile at /data/data/com.termux/files/home/bna-dashboard/.next/lock because we're using WASM bindings
 
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
@@ -13,9 +13,17 @@
 
   Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-✓ Compiled successfully in 39.1s
+✓ Compiled successfully in 24.6s
   Running TypeScript ...
-  Finished TypeScript in 16.6s ...
-  Collecting page data using 1 worker ...
-  Generating static pages using 1 worker (0/54) ...
-  Generating static pages using 1 worker (13/54) 
+app/api/meteo/intemperies/route.ts(12,51): error TS2345: Argument of type '"generer_prochain_numero_ri"' is not assignable to parameter of type '"espace_client_append" | "espace_client_consolider"'.
+app/api/meteo/intemperies/route.ts(18,3): error TS2322: Type 'string | number | true | { [key: string]: Json | undefined; } | Json[]' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+app/api/rapports-intemperies/generer/route.ts(251,46): error TS2345: Argument of type '"generer_prochain_numero_ri"' is not assignable to parameter of type '"espace_client_append" | "espace_client_consolider"'.
+app/api/rapports-intemperies/generer/route.ts(257,3): error TS2322: Type 'string | number | true | { [key: string]: Json | undefined; } | Json[]' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+app/espace-client/[code_acces]/page.tsx(577,28): error TS2339: Property 'profil_revenu' does not exist on type 'DevisRow'.
+app/espace-client/[code_acces]/page.tsx(577,51): error TS2339: Property 'profil_revenu' does not exist on type 'DevisRow'.
+app/espace-client/[code_acces]/page.tsx(579,62): error TS2339: Property 'surface_m2' does not exist on type 'DevisRow'.
+app/espace-client/[code_acces]/page.tsx(579,85): error TS2339: Property 'profil_revenu' does not exist on type 'DevisRow'.
+Failed to type check.
+

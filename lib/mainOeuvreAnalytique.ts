@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { calculerTempsConsommeMeteo } from "@/lib/gaelLogic";
 
 export type RentabilitePhase = {
   phase: string;
@@ -7,6 +8,7 @@ export type RentabilitePhase = {
   budget_vendu: number;
   ecart: number;
   performance_pct: number;
+  performance_meteo_pct: number;
 };
 
 export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise<RentabilitePhase[]> {
@@ -14,6 +16,11 @@ export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise
   const { data: pointages } = await supabase
     .from("pointages")
     .select("heures, taux_horaire_charge, phase_travail")
+    .eq("chantier_id", chantierId);
+
+  const { data: pointagesGlobaux } = await supabase
+    .from("pointages_globaux")
+    .select("volume_heures_declare, coef_meteo, phase_travail")
     .eq("chantier_id", chantierId);
 
   // 2. Calculer le Coût Réel par phase
@@ -95,13 +102,37 @@ export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise
     const ecart = vendu - reel;
     const performance = vendu > 0 ? (ecart / vendu) * 100 : reel > 0 ? -100 : 0;
 
+    // Calcul de la performance météo (Gaël Logic)
+    let tempsBudgetPhase = vendu > 0 ? vendu / 28.50 : 0; // Taux moyen horaire
+    
+    // Récupérer les pointages globaux pour cette phase
+    const pGlobauxPhase = (pointagesGlobaux || []).filter(pg => (pg.phase_travail || "general") === p.key);
+    const heuresDeclareesTotal = pGlobauxPhase.reduce((acc, pg) => acc + (pg.volume_heures_declare || 0), 0);
+    
+    let tempsConsommeMeteo = 0;
+    if (heuresDeclareesTotal > 0) {
+      const formatted = pGlobauxPhase.map(pg => ({
+        volumeHeures: pg.volume_heures_declare || 0,
+        coefMeteo: pg.coef_meteo || 1.0
+      }));
+      tempsConsommeMeteo = calculerTempsConsommeMeteo(formatted);
+    } else {
+      // Fallback si pas de saisie d'équipe (pointages_globaux) mais seulement des pointages individuels
+      const pIndivPhase = (pointages || []).filter(pt => (pt.phase_travail || "general") === p.key);
+      const heuresIndivTotal = pIndivPhase.reduce((acc, pt) => acc + (pt.heures || 0), 0);
+      tempsConsommeMeteo = heuresIndivTotal; // Par défaut pas de météo en individuel
+    }
+
+    const performanceMeteoPct = tempsBudgetPhase > 0 ? (1 - (tempsConsommeMeteo / tempsBudgetPhase)) * 100 : 0;
+
     return {
       phase: p.key,
       nom_affichage: p.label,
       cout_reel: reel,
       budget_vendu: vendu,
       ecart: ecart,
-      performance_pct: performance
+      performance_pct: performance,
+      performance_meteo_pct: performanceMeteoPct
     };
   });
 }
