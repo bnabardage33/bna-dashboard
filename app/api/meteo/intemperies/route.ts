@@ -13,7 +13,7 @@ async function prochainNumeroIntemperie(): Promise<string> {
   if (error || !data) {
     console.error("Erreur génération numéro RPC:", error);
     const annee = new Date().getFullYear();
-    return `RI-${annee}-${Math.floor(Math.random() * 900) + 100}`; // Fallback au cas où
+    throw new Error(`RPC generer_prochain_numero_ri échouée: ${error?.message || 'pas de data'}`);
   }
   return data as string;
 }

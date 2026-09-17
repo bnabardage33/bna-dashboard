@@ -156,7 +156,7 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
     <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 overflow-hidden shadow-lg mt-4 flex flex-col relative">
       <div 
         ref={containerRef}
-        className="overflow-x-auto select-none touch-pan-x touch-pan-y"
+        className="overflow-x-auto select-none touch-pan-x"
         style={{ cursor: "grab" }}
       >
         <div style={{ width: DAYS_TOTAL * DAY_WIDTH_PX, position: "relative" }}>
