@@ -41,6 +41,8 @@ type Devis = {
   lignes: Ligne[];
   tva_pct: number;
   statut: string;
+  devis_parent_id?: string | null;
+  is_avenant?: boolean;
 };
 
 type Facture = {
@@ -149,20 +151,30 @@ export default function FacturesPage() {
     if (!devisId) return;
     const d = devisAcceptes.find((x) => x.id === devisId);
     if (!d) return;
+
+    // Récupérer les avenants validés associés à ce devis parent
+    const avenants = devisAcceptes.filter((x) => x.devis_parent_id === devisId);
+    
     setClientId(d.client_id);
     setObjet(d.objet ?? "");
     setAdresseChantier(d.adresse_chantier ?? "");
     setTypeTravaux(d.type_travaux ?? "");
     setTva(d.tva_pct);
-    setLignes(d.lignes.length ? d.lignes : [{ ...LIGNE_VIDE }]);
+    
+    const lignesCumulees = [...d.lignes, ...avenants.flatMap(a => a.lignes)];
+    setLignes(lignesCumulees.length ? lignesCumulees : [{ ...LIGNE_VIDE }]);
 
     const totalHT = d.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
-    setTotalDevisHT(totalHT);
+    const totalAvenantsHT = avenants.reduce((sum, av) => sum + av.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0), 0);
+    
+    setTotalDevisHT(totalHT + totalAvenantsHT);
 
+    // Récupérer les factures existantes (sur le devis parent ET les avenants)
+    const idsToSearch = [devisId, ...avenants.map(a => a.id)];
     const { data: facturesExistantes } = await supabase
       .from("factures")
       .select("lignes")
-      .eq("devis_id", devisId);
+      .in("devis_id", idsToSearch);
 
     const deja = (facturesExistantes ?? []).reduce(
       (s: number, f: { lignes: unknown }) =>
@@ -448,7 +460,7 @@ export default function FacturesPage() {
                   className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
                 >
                   <option value="">-- Créer depuis un devis accepté (optionnel) --</option>
-                  {devisAcceptes.map((d) => (
+                  {devisAcceptes.filter(d => !d.is_avenant).map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.numero} — {d.objet}
                     </option>

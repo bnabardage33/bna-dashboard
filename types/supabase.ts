@@ -766,6 +766,13 @@ export type Database = {
             referencedRelation: "fournisseurs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "devis_devis_parent_id_fkey"
+            columns: ["devis_parent_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          }
         ]
       }
       entreprise_settings: {
