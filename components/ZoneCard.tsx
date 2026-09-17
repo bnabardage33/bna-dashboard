@@ -161,9 +161,15 @@ export function calculerZone(
   let longueurChutesReutilisees = 0;
   let chutesPerdues = 0;
 
-  if (zone.materiau === "lames" && zone.longueur_lame_mm && zone.largeur_lame_mm) {
-    const L_m = zone.longueur_lame_mm / 1000;
-    const l_utile_m = (zone.largeur_lame_mm - 15) / 1000;
+  if (zone.materiau === "lames") {
+    // Dimensions de lame : saisie si présente, sinon standard composite
+    // (lame 2090 mm × 202 mm, moins 15 mm d'emboîtement de languette).
+    const longueurLameMm =
+      zone.longueur_lame_mm && zone.longueur_lame_mm > 0 ? zone.longueur_lame_mm : 2090;
+    const largeurLameMm =
+      zone.largeur_lame_mm && zone.largeur_lame_mm > 0 ? zone.largeur_lame_mm : 202;
+    const L_m = longueurLameMm / 1000;
+    const l_utile_m = (largeurLameMm - 15) / 1000;
 
     if (L_m > 0 && l_utile_m > 0) {
       const res = simulerPoseComposite(
@@ -251,6 +257,8 @@ export default function ZoneCard({
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
   const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
   const [replie, setReplie] = useState(false);
+  // Accordéon des spécifications DTU : fermé par défaut (le mobile reste lisible).
+  const [specsPoseOuvertes, setSpecsPoseOuvertes] = useState(false);
 
   // Sélecteurs "Trame / Format personnalisé" : une fois l'option custom choisie,
   // le select reste sur "custom" et déverrouille la saisie manuelle des champs.
@@ -285,6 +293,11 @@ export default function ZoneCard({
   })();
   const plaqueFormatCustom = plaqueFormatValeur === "custom";
   const calc = calculerZone(zone, configTechnique.coef_perte_rendement);
+
+  // Simulation de pose lames (rangée par rangée + réutilisation des chutes) :
+  // affichée uniquement quand le matériau de la zone est « lames » et que le
+  // moteur a réellement produit des quantités (ou toujours si 'lames').
+  const afficherSimulationLames = zone.materiau === "lames";
 
   /*
    * Pour le calcul de pose :
@@ -1281,18 +1294,33 @@ export default function ZoneCard({
       {/* CALCUL TECHNIQUE */}
       {/* ====================================================== */}
 
-      {pose && (
+      {(pose || afficherSimulationLames) && (
         <div className="space-y-2 rounded-lg border border-sky-600/30 bg-sky-600/5 p-3">
 
           <p className="text-xs font-semibold uppercase tracking-wide text-sky-400">
-            Calcul technique —{" "}
-            {
-              LABELS_FAMILLE[
-                zone.famille_pose!
-              ]
-            }
+            Calcul technique
+            {pose && zone.famille_pose
+              ? ` — ${LABELS_FAMILLE[zone.famille_pose]}`
+              : zone.materiau === "lames"
+                ? " — Lames"
+                : ""}
           </p>
 
+          {afficherSimulationLames && (
+            <div className="rounded-md border border-sky-500/20 bg-sky-950/20 p-2.5">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-sky-300">
+                🪚 Calpinage lames — réutilisation des chutes
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <Chiffre label="Lames neuves à commander" value={calc.lamesACommander} />
+                <Chiffre label="Chutes réutilisées" value={calc.morceauxReutilises} />
+                <Chiffre label="Chutes jetées (ml)" value={calc.chutesPerdues.toFixed(2)} />
+              </div>
+            </div>
+          )}
+
+          {pose && (
+            <>
           <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
 
             <Chiffre
@@ -1347,21 +1375,35 @@ export default function ZoneCard({
           </p>
 
           {pose.remarques.length > 0 && (
-            <details className="mt-2 group">
-              <summary className="text-xs text-sky-400 font-semibold cursor-pointer select-none hover:text-sky-300 transition-colors list-none flex items-center gap-1.5">
-                <span className="text-sky-500/70 group-open:rotate-90 transition-transform">▶</span>
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setSpecsPoseOuvertes((v) => !v)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-sky-400 cursor-pointer select-none hover:text-sky-300 transition-colors"
+              >
+                <span
+                  className={`text-sky-500/70 transition-transform ${
+                    specsPoseOuvertes ? "rotate-90" : ""
+                  }`}
+                >
+                  ▶
+                </span>
                 Voir les spécifications de pose et fixations détaillées (DTU)
-              </summary>
-              <ul className="list-inside list-disc text-xs text-slate-500 mt-2 pl-4 space-y-1">
-                {pose.remarques.map(
-                  (r, i) => (
-                    <li key={i}>
-                      {r}
-                    </li>
-                  )
-                )}
-              </ul>
-            </details>
+              </button>
+              {specsPoseOuvertes && (
+                <ul className="list-inside list-disc text-xs text-slate-500 mt-2 pl-4 space-y-1">
+                  {pose.remarques.map(
+                    (r, i) => (
+                      <li key={i}>
+                        {r}
+                      </li>
+                    )
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
+            </>
           )}
 
           <p className="text-xs italic text-amber-400">

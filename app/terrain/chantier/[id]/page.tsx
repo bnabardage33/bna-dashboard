@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import CommandeModal from "@/components/CommandeModal";
@@ -105,7 +105,9 @@ function ChantierDetailContent() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [configDraft, setConfigDraft] = useState<ConfigTechnique | null>(null);
   const [configSaved, setConfigSaved] = useState(false);
-  const [configOpen, setConfigOpen] = useState(() => !chantier?.coef_perte_rendement);
+  // Tiroir de configuration technique : replié par défaut. Il n'est déplié
+  // qu'après chargement SI le chantier n'a encore aucune configuration.
+  const [configOpen, setConfigOpen] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
   const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
@@ -262,7 +264,19 @@ function ChantierDetailContent() {
       zone_vent_rive: chantier.zone_vent_rive ?? null,
       coef_perte_rendement: chantier.coef_perte_rendement === 1.8 ? 1.10 : (chantier.coef_perte_rendement ?? 1.10),
     });
+    // Déjà configuré → tiroir replié (zones visibles). Sinon → on l'ouvre.
+    setConfigOpen(!chantier.coef_perte_rendement);
   }, [chantier?.id]);
+
+  // Multiplicateur de chute STRICT utilisé partout :
+  //   surface À COMMANDER = surface nette totale × coefPerteEffectif
+  // Valeur du brouillon si saisie, sinon valeur persistée du chantier, avec
+  // normalisation des anciennes valeurs 1.8 vers 1.10 (règle « lames »).
+  const coefPerteEffectif =
+    configDraft?.coef_perte_rendement ??
+    (chantier?.coef_perte_rendement === 1.8
+      ? 1.10
+      : chantier?.coef_perte_rendement ?? 1.10);
 
   useEffect(() => {
     if (tab === "Documents" && chantier) {
@@ -285,14 +299,14 @@ function ChantierDetailContent() {
     // Calcul des totaux actuels
     const currentTotaux = zones.reduce(
       (acc, z) => {
-        const c = calculerZone(z, configDraft?.coef_perte_rendement ?? (chantier?.coef_perte_rendement === 1.8 ? 1.10 : (chantier?.coef_perte_rendement ?? 1.10)));
+        const c = calculerZone(z, coefPerteEffectif);
         return {
           nette: acc.nette + c.surfaceNette,
           totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
           ouvertures: acc.ouvertures + c.nombreOuvertures,
         };
       },
-      { nette: 0, totalCoupesML: 0, ouvertures: 0 }
+      { nette: 0, totalCoupesML: 0, ouvertures: 0 },
     );
 
     const surface_m2 = parseFloat(currentTotaux.nette.toFixed(2));
@@ -318,7 +332,7 @@ function ChantierDetailContent() {
           }
         });
     }
-  }, [zones, chantier?.id]);
+  }, [zones, chantier?.id, coefPerteEffectif]);
 
   async function changerStatut(statut: string) {
     if (!chantier) return;
@@ -526,20 +540,29 @@ function ChantierDetailContent() {
     });
   }
 
-  const totaux = zones.reduce(
-    (acc, z) => {
-      const c = calculerZone(z, configDraft?.coef_perte_rendement ?? (chantier?.coef_perte_rendement === 1.8 ? 1.10 : (chantier?.coef_perte_rendement ?? 1.10)));
-      return {
-        bruteFacade: acc.bruteFacade + c.bruteFacade,
-        brutePignon: acc.brutePignon + c.brutePignon,
-        ouvertures: acc.ouvertures + c.totalOuvertures,
-        nette: acc.nette + c.surfaceNette,
-        aCommander: acc.aCommander + c.surfaceACommander,
-        totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
-      };
-    },
-    { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, aCommander: 0, totalCoupesML: 0 }
-  );
+  // Bandeau de synthèse : SOMME RÉELLE et dynamique des zones configurées
+  // (Zone 1 + Zone 2 + …). Aucune valeur de secours : si une zone affiche
+  // 94 m² net, le bandeau affiche 94 m² net. « À commander » applique
+  // strictement nette totale × coefPerteEffectif.
+  const totaux = useMemo(() => {
+    const sum = zones.reduce(
+      (acc, z) => {
+        const c = calculerZone(z, coefPerteEffectif);
+        return {
+          bruteFacade: acc.bruteFacade + c.bruteFacade,
+          brutePignon: acc.brutePignon + c.brutePignon,
+          ouvertures: acc.ouvertures + c.totalOuvertures,
+          nette: acc.nette + c.surfaceNette,
+          totalCoupesML: acc.totalCoupesML + (c.totalCoupesML || 0),
+        };
+      },
+      { bruteFacade: 0, brutePignon: 0, ouvertures: 0, nette: 0, totalCoupesML: 0 }
+    );
+    return {
+      ...sum,
+      aCommander: sum.nette * coefPerteEffectif,
+    };
+  }, [zones, coefPerteEffectif]);
 
   const configTechnique: ConfigTechnique = configDraft ?? (chantier
     ? {
