@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check } from "lucide-react";
+import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check, BarChartHorizontal } from "lucide-react";
+import PlanningGantt from "@/components/PlanningGantt";
 
 type Client = { id: string; nom: string; societe: string | null };
 
@@ -23,12 +24,17 @@ type Chantier = {
 
 export default function ChantiersPage() {
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [viewMode, setViewMode] = useState<"liste" | "gantt">("liste");
+
+  const handleUpdateDates = async (id: string, newDebut: string, newFin: string) => {
+    setChantiers(prev => prev.map(c => c.id === id ? { ...c, date_debut: newDebut, date_fin: newFin } : c));
+    await supabase.from("chantiers").update({ date_debut: newDebut, date_fin: newFin }).eq("id", id);
+  };
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [recherche, setRecherche] = useState("");
-  const [vue, setVue] = useState<"liste" | "planning">("liste");
 
   // Formulaire nouveau chantier
   const [nom, setNom] = useState("");
@@ -142,6 +148,26 @@ export default function ChantiersPage() {
         </button>
       </div>
 
+      {/* Barre de recherche & Vues */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex bg-[#1A1D24] border border-white/10 rounded-xl p-1 shrink-0 w-max">
+          <button
+            onClick={() => setViewMode("liste")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "liste" ? "bg-white/10 text-white" : "text-gray-400 hover:text-white"}`}
+          >
+            <List className="w-4 h-4" />
+            Liste
+          </button>
+          <button
+            onClick={() => setViewMode("gantt")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "gantt" ? "bg-white/10 text-white" : "text-gray-400 hover:text-white"}`}
+          >
+            <BarChartHorizontal className="w-4 h-4" />
+            Planning Gantt
+          </button>
+        </div>
+      </div>
+      
       {/* Barre de recherche */}
       <div className="w-full">
         <input
@@ -165,14 +191,14 @@ export default function ChantiersPage() {
           
           <div className="flex items-center gap-2 bg-[#1A1D24] p-1 rounded-lg border border-white/10">
             <button
-              onClick={() => setVue("liste")}
-              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "liste" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
+              onClick={() => setViewMode("liste")}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${viewMode === "liste" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
             >
               <List className="h-4 w-4" /> Liste
             </button>
             <button
-              onClick={() => setVue("planning")}
-              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${vue === "planning" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
+              onClick={() => setViewMode("gantt")}
+              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${viewMode === "gantt" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
             >
               <Calendar className="h-4 w-4" /> Planning
             </button>
@@ -184,6 +210,21 @@ export default function ChantiersPage() {
             + Créer un premier chantier
           </button>
         </div>
+      ) : (
+        viewMode === "gantt" ? (
+        <PlanningGantt 
+          chantiers={chantiersFiltres.map(c => ({
+            id: c.id,
+            nom: c.nom,
+            client_nom: c.clients?.nom || null,
+            client_societe: c.clients?.societe || null,
+            adresse_chantier: c.adresse_chantier,
+            date_debut: c.date_debut,
+            date_fin: c.date_fin,
+            statut: c.statut
+          }))} 
+          onUpdateDates={handleUpdateDates} 
+        />
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2">
           {chantiersFiltres.map((ch) => {
@@ -286,6 +327,7 @@ export default function ChantiersPage() {
             );
           })}
         </div>
+        )
       )}
 
       {/* Bouton Flottant FAB (+) */}
