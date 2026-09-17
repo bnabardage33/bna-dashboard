@@ -6,6 +6,25 @@ export interface AidesEstimees {
   totalAides: number;
 }
 
+export function determinerZoneClimatique(codePostal: string): 'H1' | 'H2' | 'H3' {
+  const dep = codePostal.substring(0, 2);
+  const h1 = ["75", "77", "78", "91", "92", "93", "94", "95", "59", "62", "80", "02", "60", "51", "08", "10", "52", "54", "55", "57", "88", "67", "68", "70", "90", "25", "39", "71", "21", "89", "58", "42", "69", "01", "74", "73", "38", "05", "26", "07", "43", "63", "15"];
+  const h3 = ["06", "83", "13", "30", "34", "11", "66", "2A", "2B"];
+
+  if (h1.includes(dep)) return 'H1';
+  if (h3.includes(dep)) return 'H3';
+  return 'H2'; // Reste de la France
+}
+
+/**
+ * Extrait le code postal d'une adresse complète
+ */
+export function extraireCodePostal(adresse: string | null | undefined): string {
+  if (!adresse) return "00000";
+  const match = adresse.match(/\b\d{5}\b/);
+  return match ? match[0] : "00000";
+}
+
 /**
  * Calcule une estimation des aides MaPrimeRénov' et CEE
  * pour des travaux d'Isolation Thermique par l'Extérieur (ITE).
@@ -13,9 +32,10 @@ export interface AidesEstimees {
  * @param surfaceM2 Surface isolée en mètres carrés
  * @param profilRevenu Code couleur MaPrimeRénov'
  * @param montantTotalHT Montant total HT du devis
+ * @param codePostal Code postal du chantier (pour les CEE)
  * @returns { primeAnah, primeCEE, totalAides }
  */
-export function calculerAidesITE(surfaceM2: number, profilRevenu: ProfilRevenu, montantTotalHT: number): AidesEstimees {
+export function calculerAidesITE(surfaceM2: number, profilRevenu: ProfilRevenu, montantTotalHT: number, codePostal: string): AidesEstimees {
   if (profilRevenu === 'aucun' || surfaceM2 <= 0 || montantTotalHT <= 0) {
     return { primeAnah: 0, primeCEE: 0, totalAides: 0 };
   }
@@ -44,7 +64,17 @@ export function calculerAidesITE(surfaceM2: number, profilRevenu: ProfilRevenu, 
 
   // 1. Calcul des primes brutes au forfait
   const primeAnahBrute = surfaceM2 * tauxAnah;
-  const primeCEEBrute = surfaceM2 * 10;
+  
+  // 1.5 Calcul précis CEE BAR-EN-102
+  const zone = determinerZoneClimatique(codePostal);
+  let kwhCumacParM2 = 1300;
+  if (zone === 'H1') kwhCumacParM2 = 1600;
+  else if (zone === 'H3') kwhCumacParM2 = 880;
+
+  const volumeCumac = surfaceM2 * kwhCumacParM2;
+  const tauxCEE = (profilRevenu === 'bleu' || profilRevenu === 'jaune') ? 0.009 : 0.0075;
+  const primeCEEBrute = volumeCumac * tauxCEE;
+
   const totalBrut = primeAnahBrute + primeCEEBrute;
 
   // 2. Détermination de la base éligible (plafonnée à 150€ HT / m² selon l'Anah pour l'ITE)
@@ -60,10 +90,7 @@ export function calculerAidesITE(surfaceM2: number, profilRevenu: ProfilRevenu, 
 
   if (totalAides > plafondAidesTotal) {
     totalAides = plafondAidesTotal;
-    // On réduit la prime Anah en priorité pour respecter le plafond global, 
-    // car les CEE sont généralement déduits en premier
     primeAnah = Math.max(0, totalAides - primeCEE);
-    // Si même après avoir annulé l'Anah ça dépasse (rare), on réduit les CEE
     primeCEE = totalAides - primeAnah; 
   }
 

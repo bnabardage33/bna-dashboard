@@ -10,7 +10,7 @@ import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
 import RapportClientPrint from "@/components/rapports/RapportClientPrint";
 import SignatureModal from "@/components/SignatureModal";
-import { calculerAidesITE } from "@/lib/primesCalcul";
+import { calculerAidesITE, extraireCodePostal } from "@/lib/primesCalcul";
 import {
   analyserSnapshot,
   preparerEtImprimer,
@@ -578,7 +578,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
                     {devis.profil_revenu && devis.profil_revenu !== "aucun" && (
                       (() => {
-                        const aides = calculerAidesITE(devis.surface_m2 || 0, devis.profil_revenu as any, totalHT);
+                        const aides = calculerAidesITE(devis.surface_m2 || 0, devis.profil_revenu as any, totalHT, extraireCodePostal(devis.adresse_chantier));
                         if (aides.totalAides > 0) {
                           const reste = Math.max(0, totalTTC - aides.totalAides);
                           return (
