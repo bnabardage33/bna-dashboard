@@ -115,7 +115,10 @@ function calculerSimulationAides(
   profilRevenu: string | null,
   surfaceChantier: number | null
 ): SimulationAides | null {
-  const PROFILS_VALIDES = ["bleu", "jaune", "violet", "rose"];
+  // Active la simulation UNIQUEMENT si l'artisan a configuré un profil de
+// revenu éligible ('bleu', 'jaune' ou 'violet'). 'rose' n'est pas couvert
+// par les aides Anah et ne doit pas déclencher l'encart.
+const PROFILS_VALIDES = ["bleu", "jaune", "violet"];
   if (!profilRevenu || !PROFILS_VALIDES.includes(profilRevenu)) return null;
 
   const surface = nombreColonne(devis.surface_m2) || nombreColonne(surfaceChantier);
@@ -262,9 +265,8 @@ export async function GET(
         profilsMap.get(String(devis.id)) ?? null,
         chantier.surface_m2 ?? null
       );
-      if (simulation) {
-        devis.simulation_aides = simulation;
-      }
+      // Toujours présent côté client : simulation si profil éligible, sinon null.
+      devis.simulation_aides = simulation;
       return devis;
     });
   }

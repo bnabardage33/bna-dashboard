@@ -56,7 +56,7 @@ interface SimulationAides {
 
 interface DevisRow extends DocumentData {
   id: string;
-  simulation_aides?: SimulationAides;
+  simulation_aides?: SimulationAides | null;
 }
 
 interface FactureRow extends DocumentData {
