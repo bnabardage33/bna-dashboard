@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifierSession } from '@/lib/auth';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const { contexte } = await req.json();
 

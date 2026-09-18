@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { verifierSession } from "@/lib/auth";
 import {
   calculerDevis,
   creerLigneAChiffrer,
@@ -438,6 +439,8 @@ async function cheminLegacy(
 // ── POST ───────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       return NextResponse.json({ error: "Clé API Google AI manquante dans la configuration." }, { status: 503 });

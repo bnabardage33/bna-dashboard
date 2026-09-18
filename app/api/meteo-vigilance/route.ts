@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { obtenirTokenMeteoFrance, invaliderCacheToken } from "@/lib/meteoFranceToken";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
+import { verifierSession } from "@/lib/auth";
 
 const URL_VIGILANCE =
   "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
@@ -85,6 +86,8 @@ interface MeteoFranceData {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const rawParam = request.nextUrl.searchParams.get("departement") || request.nextUrl.searchParams.get("location");
   const demain = request.nextUrl.searchParams.get("demain") === "true";
 

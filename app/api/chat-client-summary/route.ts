@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifierSession } from '@/lib/auth';
 import {
   MessageChat,
   ResumeGlobal,
@@ -207,6 +208,8 @@ function composerNote(
 }
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const corps = (await req.json()) as Record<string, unknown> | null;
     if (!corps || typeof corps !== 'object') {

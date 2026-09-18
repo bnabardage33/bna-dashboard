@@ -1,34 +1,40 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export const PUBLIC_PATHS = [
-  '/login',
-  '/espace-client',
-  '/api/espace-client',
-  '/api/chat-client',
-  '/api/chat-client-summary',
-  '/api/meteo',
-  '/api/cron/meteo',
-  '/api/meteo-vigilance',
-  '/api/search',
-  '/api/notifications',
-  '/api/reformuler-note',
-  '/api/transcrire-note',
-  '/api/ia-securite',
-  '/api/ia-avancement',
-  '/api/ia-ocr-ticket',
-  '/api/rapports-intemperies/generer',
-  '/api/rapports-client/auto',
-  '/api/scrape',
-  '/api/finance-pin',
-  '/api/photos-chantier',
-  '/api/analyze-chantier',
-  '/api/documents-compta',
-  '/api/chantiers-fournisseurs',
-  '/api/dashboard-patron',
-  '/manifest.json',
-  '/sw.js',
-]
+// ⚠️ BOUCLIER DE SÉCURITÉ — liste blanche STRICTE.
+//
+// La zone publique est réduite au strict nécessaire :
+//   - '/'          : page racine (landing) ;
+//   - '/login'     : seul et unique point de connexion ;
+//   - '/espace-client' et '/api/espace-client' : le portail client est public
+//     PAR CONCEPTION (le client n'a JAMAIS de session, il s'authentifie via
+//     son code d'accès).
+//
+// TOUT le reste (dashboard, terrain, bureau, API métier, IA, météo, compta,
+// photos, recherche, caisse…) exige une session Supabase active : l'utilisateur
+// est redirigé vers /login. En complément, chaque route handler protégée
+// vérifie elle-même la session (lib/auth.ts → 401) avant toute requête base.
+export const PUBLIC_PATHS = ['/login'] as const
+
+// Préfixes publics uniques du portail client (pages + API du portail).
+export const PUBLIC_PREFIXES = ['/espace-client', '/api/espace-client'] as const
+
+function cheminEstPublic(pathname: string): boolean {
+  if (pathname === '/') return true
+  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) return true
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
+// Exception serveur-à-serveur : Vercel Cron envoie automatiquement
+// `Authorization: Bearer <CRON_SECRET>` quand la variable d'env est définie.
+// Ces appels (sans navigateur, donc sans session) doivent atteindre leurs
+// handlers — qui, eux, ré-affirment le secret (défense en profondeur).
+function possedeBearerCron(request: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET ?? ''
+  if (!secret) return false
+  const autorisation = request.headers.get('authorization')
+  return autorisation === `Bearer ${secret}`
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -56,11 +62,9 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isPublic = PUBLIC_PATHS.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  )
+  const isPublic = cheminEstPublic(request.nextUrl.pathname)
 
-  if (!user && !isPublic) {
+  if (!user && !isPublic && !possedeBearerCron(request)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

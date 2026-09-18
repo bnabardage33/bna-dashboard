@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifierSession } from '@/lib/auth';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
@@ -143,6 +144,8 @@ async function persisterMessages(
 }
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const corps = (await req.json()) as Record<string, unknown> | null;
     if (!corps || typeof corps !== 'object') {

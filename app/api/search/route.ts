@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
+import { verifierSession } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q')?.trim() || '';

@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import { verifierSession } from "@/lib/auth";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import {
   evaluerJourChantier,
@@ -294,6 +295,8 @@ async function rapportDuJourExiste(
 // -----------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     let body: {
       chantierId?: string;

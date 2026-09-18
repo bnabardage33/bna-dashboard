@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { analyzeChantierHealth, ChantierHealthData } from '@/lib/bna-analyzer';
+import { verifierSession } from '@/lib/auth';
 
 export async function POST(req: Request) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const data: ChantierHealthData = await req.json();
 

@@ -1,10 +1,13 @@
 // app/api/photos-chantier/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifierSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const chantier_id = request.nextUrl.searchParams.get('chantier_id');
 
   // Sans chantier_id => retourne la liste de tous les chantiers (pour le select admin)
@@ -28,6 +31,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -67,6 +72,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const id = request.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 });
 

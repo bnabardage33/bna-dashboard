@@ -143,6 +143,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           factures?: FactureRow[];
           rapports?: RapportClientLeger[];
           intemperies?: Intemperie[];
+          photos?: PhotoData[];
         } = await res.json();
 
         if (data.entreprise) setEntreprise(data.entreprise);
@@ -154,12 +155,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setFacturesData(data.factures || []);
         setRapportsClient(data.rapports || []);
         setIntemperies(data.intemperies || []);
-
-        if (data.chantier?.id) {
-          const photosRes = await fetch(`/api/photos-chantier?chantier_id=${data.chantier.id}`);
-          const photosData: { photos?: PhotoData[] } = await photosRes.json();
-          setPhotos(photosData.photos || []);
-        }
+        setPhotos(data.photos || []);
 
         const clientName = data.client?.nom || "Client";
         const chantierNom = data.chantier?.nom || "d'Arcachon";

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { randomInt } from "crypto";
+import { verifierSession } from "@/lib/auth";
 
 // Cooldown anti-inondation : on ne peut (re)demander un OTP pour un même
 // devis qu'une fois par minute. Empêche de flinguer la limite SMS et protège
@@ -12,6 +13,8 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const { phone } = await req.json();
     const { id } = await params;

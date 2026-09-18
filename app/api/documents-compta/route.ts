@@ -1,10 +1,13 @@
 // app/api/documents-compta/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifierSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const { data, error } = await supabaseAdmin
     .from('documents_compta')
     .select('*, chantiers(id, nom), fournisseurs(id, nom)')
@@ -15,6 +18,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -106,6 +111,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const id = request.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 });
 

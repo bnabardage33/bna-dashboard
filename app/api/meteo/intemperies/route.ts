@@ -1,11 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
+import { verifierSession } from "@/lib/auth";
 
 // ─── Seuils communs ───────────────────────────────────────────────────────────
 const SEUIL_PLUIE_MM = 5;
 const SEUIL_GEL_C = 0;
+
+// Autorise à la fois la session (page /bureau/meteo) et le cron Vercel
+// (Authorization: Bearer CRON_SECRET, envoyé automatiquement par Vercel
+// quand la variable d'env CRON_SECRET est définie).
+async function autoriserAccesMeteo(request: NextRequest): Promise<boolean> {
+  const session = await verifierSession();
+  if (session.authentifie) return true;
+
+  const secret = process.env.CRON_SECRET ?? "";
+  if (!secret) return false;
+
+  const autorisation = request.headers.get("authorization") ?? "";
+  return autorisation === `Bearer ${secret}`;
+}
 
 const FALLBACK_GEOLOC = { lat: 46.6, lng: 2.4 };
 const FACADES = ["nord", "sud", "est", "ouest"] as const;
@@ -237,7 +252,10 @@ function detailsVierges() {
   return zero;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!(await autoriserAccesMeteo(request))) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
   try {
     const chantiers = await analyserChantiers();
     return NextResponse.json(
@@ -249,7 +267,10 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  if (!(await autoriserAccesMeteo(request))) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
   try {
     const chantiers = await analyserChantiers();
     const intemp = chantiers.filter((c) => c.intemperieAujourdhui);

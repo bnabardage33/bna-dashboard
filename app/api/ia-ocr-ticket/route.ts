@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { verifierSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,8 @@ function asString(v: unknown): string | null {
 const CATEGORIES_ACCEPTEES = ["materiaux", "outillage", "location", "carburant", "autre"];
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       return NextResponse.json(

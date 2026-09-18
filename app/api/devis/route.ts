@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { verifierSession } from "@/lib/auth";
 import {
   calculerDevis,
   creerLigneAChiffrer,
@@ -132,6 +133,8 @@ type CatalogueRow = {
 };
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {

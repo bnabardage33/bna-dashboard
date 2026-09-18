@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifierSession } from "@/lib/auth";
 
 interface RawHeure {
   datetime: string;
@@ -67,6 +68,8 @@ const toJours = (raw: RawJour[]): Jour[] =>
   }));
 
 export async function GET(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const { searchParams } = new URL(req.url);
   const location = searchParams.get("location") || "Bordeaux,FR";
   const key = process.env.VISUALCROSSING_API_KEY;

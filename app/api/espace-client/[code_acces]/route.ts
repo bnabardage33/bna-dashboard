@@ -76,6 +76,11 @@ const SELECT_FACTURES = `id, numero, statut, date_emission, echeance, objet, adr
 // internes (seuil_ca, taux_cotisations) restent au serveur.
 const SELECT_ENTREPRISE = `id, raison_sociale, siret, telephone, email, adresse, code_postal, ville, assurance, assurance_nom, assurance_numero_police, assurance_zone_geo, mediateur_nom, mediateur_contact, iban, bic, mentions_legales, logo_url` as const;
 
+// Photos de chantier : uniquement ce que le client doit voir (image + titre + date).
+// Serties ici (et non via /api/photos-chantier, désormais réservé à l'admin
+// connecté) pour rester dans le périmètre SCOPÉ au code d'accès.
+const SELECT_PHOTOS = `id, url_image, titre, date_ajout` as const;
+
 // Lignes renvoyées telles quelles au client (type opaque volontaire :
 // ces données ne sont jamais lues structurellement côté serveur).
 type LignePassePartout = Record<string, unknown>;
@@ -331,6 +336,22 @@ export async function GET(
     vigilance_officielle: r.vigilance_officielle,
   }));
 
+  // 8. Photos du chantier — serties côté serveur (périmètre scropé au code,
+  //    colonnes whitelistées). L'endpoint admin /api/photos-chantier est lui
+  //    réservé aux sessions connectées.
+  const { data: photosChantier } = await supabaseAdmin
+    .from("photos_chantier")
+    .select(SELECT_PHOTOS)
+    .eq("chantier_id", chantier.id)
+    .order("date_ajout", { ascending: false });
+
+  const photos = (photosChantier ?? []).map((p) => ({
+    id: p.id,
+    url_image: p.url_image,
+    titre: p.titre,
+    date_ajout: p.date_ajout,
+  }));
+
   return NextResponse.json({
     entreprise: nettoyer(entreprise),
     chantier: nettoyer(chantier),
@@ -341,6 +362,7 @@ export async function GET(
     factures: facturesList.map((f) => nettoyer(f)),
     rapports,
     intemperies,
+    photos,
   }, {
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",

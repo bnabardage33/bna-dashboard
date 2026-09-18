@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { verifierSession } from "@/lib/auth";
 
 // SÉCURITÉ OTP :
 // - La vérification se fait EXCLUSIVEMENT côté serveur : on compare le code
@@ -26,6 +27,8 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const { code } = await req.json();
     const { id } = await params;

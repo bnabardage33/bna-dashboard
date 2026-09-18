@@ -37,6 +37,13 @@ const delegue = new Proxy({}, {
 
 vi.mock('@/lib/supabaseAdmin', () => ({ supabaseAdmin: delegue }))
 
+// Les routes de chat exigent désormais une session (lib/auth.ts) : dans ce
+// test d'intégration (sans navigateur ni cookies), on simule une session valide
+// pour continuer à exercer la logique métier du circuit vis-à-vis de l'IA.
+vi.mock('@/lib/auth', () => ({
+  verifierSession: async () => ({ authentifie: true }),
+}))
+
 let nextId = 0
 function uid(prefix: string): string {
   nextId += 1

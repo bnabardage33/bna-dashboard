@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
+import { verifierSession } from '@/lib/auth';
 
 export async function GET(request: Request) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const { searchParams } = new URL(request.url);
   const urlToScrape = searchParams.get('url');
 

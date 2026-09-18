@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { verifierSession } from "@/lib/auth";
 import { calculerDevis } from "@/lib/devisCalcul";
 import { ChantierIntrouvableError, servirPayloadMetreComplet } from "@/lib/servir-metre-complet";
 import { scoreConceptVsItem } from "@/lib/catalogueMatching";
@@ -172,6 +173,8 @@ async function revendiquerAnalyse(devisId: string): Promise<{
 // ── POST : lancer (ou relancer) une analyse IA d'un devis. ─────────────
 
 export async function POST(req: NextRequest, contexte: { params: Promise<{ devis_id: string }> }) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const devisId = await lireParams(contexte);
   if (!devisId) {
     return NextResponse.json({ error: "devis_id manquant." }, { status: 400 });
@@ -393,6 +396,8 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ devis
 // ── GET : lecture de l'analyse existante (+ historique optionnel). ─────
 
 export async function GET(req: NextRequest, contexte: { params: Promise<{ devis_id: string }> }) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   const devisId = await lireParams(contexte);
   if (!devisId) {
     return NextResponse.json({ error: "devis_id manquant." }, { status: 400 });

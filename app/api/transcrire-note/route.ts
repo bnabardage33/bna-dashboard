@@ -4,11 +4,14 @@
 // Ce texte brut est ensuite envoyé séparément à /api/reformuler-note.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { verifierSession } from '@/lib/auth';
 
 const GROQ_TRANSCRIPTION_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const WHISPER_MODEL = 'whisper-large-v3';
 
 export async function POST(req: NextRequest) {
+  const session = await verifierSession();
+  if (!session.authentifie) return session.reponse;
   try {
     const formData = await req.formData();
     const audioFile = formData.get('audio') as File | null;
