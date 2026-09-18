@@ -10,7 +10,6 @@ import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
 import RapportClientPrint from "@/components/rapports/RapportClientPrint";
 import SignatureModal from "@/components/SignatureModal";
-import { calculerAidesITE, extraireCodePostal } from "@/lib/primesCalcul";
 import {
   analyserSnapshot,
   preparerEtImprimer,
@@ -47,8 +46,17 @@ interface DevisLigne {
   pu_ht: number;
 }
 
+// Résultat public pré-calculé côté serveur (aucun profil de revenu reçu).
+interface SimulationAides {
+  primeAnah: number;
+  primeCEE: number;
+  totalAides: number;
+  resteACharge: number;
+}
+
 interface DevisRow extends DocumentData {
   id: string;
+  simulation_aides?: SimulationAides;
 }
 
 interface FactureRow extends DocumentData {
@@ -582,39 +590,38 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                       )}
                     </div>
 
-                    {devis.profil_revenu && devis.profil_revenu !== "aucun" && (
-                      (() => {
-                        const aides = calculerAidesITE(devis.surface_m2 || 0, devis.profil_revenu as any, totalHT, extraireCodePostal(devis.adresse_chantier));
-                        if (aides.totalAides > 0) {
-                          const reste = Math.max(0, totalTTC - aides.totalAides);
-                          return (
-                            <div className="mt-2 p-4 border border-cyan-500/30 rounded-xl bg-cyan-50">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-cyan-700 font-bold text-sm">💡 Simulation de vos aides d'État (MaPrimeRénov' + CEE)</span>
-                              </div>
-                              <div className="space-y-1.5 text-sm">
-                                <div className="flex justify-between text-gray-600">
-                                  <span>Montant global des travaux (TTC)</span>
-                                  <span className="font-mono">{totalTTC.toFixed(2)} €</span>
-                                </div>
-                                <div className="flex justify-between text-cyan-700 font-semibold">
-                                  <span>Primes estimées (Plafond Légal inclus)</span>
-                                  <span className="font-mono">- {aides.totalAides.toFixed(2)} €</span>
-                                </div>
-                                <div className="h-px bg-cyan-200 my-1" />
-                                <div className="flex justify-between font-bold text-gray-900 text-base">
-                                  <span>Reste à charge net</span>
-                                  <span className="font-mono text-cyan-800">{reste.toFixed(2)} €</span>
-                                </div>
-                              </div>
-                              <p className="text-[10px] text-gray-500 mt-3 italic leading-tight">
-                                Ce reste à charge peut être financé par un Éco-Prêt à Taux Zéro (Éco-PTZ). Rapprochez-vous de votre conseiller BNA.
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()
+                    {devis.simulation_aides && (
+                      <div className="mt-2 p-4 border border-cyan-500/30 rounded-xl bg-cyan-50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-cyan-700 font-bold text-sm">💡 Simulation de vos aides d'État (MaPrimeRénov' + CEE)</span>
+                        </div>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex justify-between text-gray-600">
+                            <span>Montant global des travaux (TTC)</span>
+                            <span className="font-mono">{totalTTC.toFixed(2)} €</span>
+                          </div>
+                          <div className="flex justify-between text-cyan-700 font-semibold">
+                            <span>Prime MaPrimeRénov' (Anah)</span>
+                            <span className="font-mono">- {devis.simulation_aides.primeAnah.toFixed(2)} €</span>
+                          </div>
+                          <div className="flex justify-between text-cyan-700 font-semibold">
+                            <span>Prime CEE</span>
+                            <span className="font-mono">- {devis.simulation_aides.primeCEE.toFixed(2)} €</span>
+                          </div>
+                          <div className="flex justify-between text-cyan-700 font-semibold">
+                            <span>Primes estimées (Plafond Légal inclus)</span>
+                            <span className="font-mono">- {devis.simulation_aides.totalAides.toFixed(2)} €</span>
+                          </div>
+                          <div className="h-px bg-cyan-200 my-1" />
+                          <div className="flex justify-between font-bold text-gray-900 text-base">
+                            <span>Reste à charge net</span>
+                            <span className="font-mono text-cyan-800">{devis.simulation_aides.resteACharge.toFixed(2)} €</span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-3 italic leading-tight">
+                          Ce reste à charge peut être financé par un Éco-Prêt à Taux Zéro (Éco-PTZ). Rapprochez-vous de votre conseiller BNA.
+                        </p>
+                      </div>
                     )}
                   </div>
                   );
