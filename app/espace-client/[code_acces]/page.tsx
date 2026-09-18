@@ -337,8 +337,10 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
   const submitSignature = async () => {
     if (!signatureData) return;
-    
-    if (activeDoc) {
+
+    // Seuls les devis sont signables par le portail client. Une facture ne
+    // peut pas être signée ni passée au statut "payee" depuis cette interface.
+    if (activeDoc && activeDoc.kind === 'devis') {
       try {
         const res = await fetch(`/api/espace-client/${codeAcces}/signer`, {
           method: 'POST',
@@ -363,7 +365,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     }, 2000);
   };
 
-  const docEstSigne = isSigned || (activeDoc && (activeDoc.statut === 'accepte' || activeDoc.statut === 'payee'));
+  const docEstSigne = isSigned || (activeDoc
+    ? activeDoc.kind === 'facture'
+      ? activeDoc.statut === 'payee'
+      : activeDoc.statut === 'signe' || activeDoc.statut === 'accepte'
+    : false);
 
   const calculateEstimatedEndDate = () => {
     let endDateStr = chantierData?.date_fin_estimee;
@@ -546,7 +552,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             ) : (
               <>
                 {devisData.map((devis) => {
-                  const estSigne = isSigned || devis.statut === 'accepte';
+                  const estSigne = isSigned || devis.statut === 'signe' || devis.statut === 'accepte';
                   const totalHT = (devis.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                   const totalTTC = totalHT * (1 + (devis.tva_pct || 20) / 100);
                   return (
@@ -893,7 +899,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               )}
 
               {!docEstSigne && (
-                <p className="text-xs text-slate-500 italic">Je soussigné(e) {displayName}, donne mon bon pour accord.</p>
+                <p className="text-xs text-slate-500 italic">
+                  {activeDoc?.kind === 'devis'
+                    ? `Je soussigné(e) ${displayName}, donne mon bon pour accord.`
+                    : "Cette facture est à régler : son statut « réglée » sera confirmé par votre artisan ou le service de paiement."}
+                </p>
               )}
             </div>
 
@@ -908,8 +918,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               </div>
             )}
 
-            {/* Zone de signature — uniquement si pas encore signé */}
-            {!docEstSigne && !isSigned && (
+            {/* Zone de signature — uniquement pour un devis non encore signé.
+                Les factures ne sont jamais signables depuis ce portail. */}
+            {!docEstSigne && !isSigned && activeDoc?.kind === 'devis' && (
               <div className="p-6 flex flex-col">
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-sm font-bold text-slate-800">Votre signature ci-dessous :</label>
