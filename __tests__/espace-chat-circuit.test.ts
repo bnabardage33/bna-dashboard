@@ -1,11 +1,13 @@
 // @vitest-environment node
 //
 // Test d'intégration du circuit chat Espace Client SANS environnement réel :
-// les VRAIES routes app/api/chat-client et app/api/chat-client-summary sont
-// importées et exécutées, avec un mock Supabase en mémoire qui rejoue fidèlement
-// la logique SQL des fonctions serveur (append/consolider, upsert note, index
-// unique) et un stub Groq déterministe. L'architecture n'est pas modifiée : seul
-// le module @/lib/supabaseAdmin est remplacé par le test.
+// la VRAIE route /api/espace-client/:code/chat (scopée au code d'accès) et la
+// route de consolidation /api/chat-client-summary sont importées et exécutées,
+// avec un mock Supabase en mémoire qui rejoue fidèlement la logique SQL des
+// fonctions serveur (append/consolider, upsert note, index unique) et un stub
+// Groq déterministe. L'anonymisation est neutralisée (identité) car elle requiert
+// le réseau. L'architecture n'est pas modifiée : seul le module @/lib/supabaseAdmin
+// est remplacé par le test.
 //
 // Limite assumée (documentée, non masquée) : le mock ne rejoue pas la
 // sérialisation réelle de pg_advisory_xact_lock (PostgreSQL) ; les règles
@@ -42,6 +44,13 @@ vi.mock('@/lib/supabaseAdmin', () => ({ supabaseAdmin: delegue }))
 // pour continuer à exercer la logique métier du circuit vis-à-vis de l'IA.
 vi.mock('@/lib/auth', () => ({
   verifierSession: async () => ({ authentifie: true }),
+}))
+
+// L'anonymisation PII (anonymizeText) interroge l'API Supabase au runtime :
+// neutralisée ici (identité) pour ne pas dépendre du réseau dans le test.
+vi.mock('@/lib/anonymizeText', () => ({
+  anonymizeText: async (text: string) => ({ anonymizedText: text, mapping: {} }),
+  deanonymizeText: (text: string) => text,
 }))
 
 let nextId = 0
@@ -173,6 +182,7 @@ interface CircuitState {
   convRows: MiniRow[]
   noteRows: MiniRow[]
   notifRows: MiniRow[]
+  chantierRows: MiniRow[]
   groqCalls: { endpoint: 'chat' | 'resume'; body: { messages: Array<{ role: string; content: string }> } }[]
   groqFail: boolean
   supabase: {
@@ -280,6 +290,16 @@ function setCircuit(): CircuitState {
     convRows: [],
     noteRows: [],
     notifRows: [],
+    chantierRows: [
+      { id: 'chantier-1', code_acces: 'ACCES-1', client_nom: 'CLIENT-1', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-2', code_acces: 'ACCES-2', client_nom: 'CLIENT-2', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-3', code_acces: 'ACCES-3', client_nom: 'CLIENT-3', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-4', code_acces: 'ACCES-4', client_nom: 'CLIENT-4', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-5', code_acces: 'ACCES-5', client_nom: 'CLIENT-5', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-6', code_acces: 'ACCES-6', client_nom: 'CLIENT-6', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-7', code_acces: 'ACCES-7', client_nom: 'CLIENT-7', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-8', code_acces: 'ACCES-8', client_nom: 'CLIENT-8', created_at: '2026-01-01T00:00:00Z' },
+    ],
     groqCalls: [],
     groqFail: false,
     supabase: undefined as unknown as CircuitState['supabase'],
@@ -292,6 +312,7 @@ function setCircuit(): CircuitState {
       }
       if (table === 'notes_patron') return new FakeQuery(table, { rows: etat.noteRows })
       if (table === 'notifications' || table === 'notifs') return new FakeQuery(table, { rows: etat.notifRows })
+      if (table === 'chantiers') return new FakeQuery(table, { rows: etat.chantierRows })
       if (table === 'profiles') return new FakeQuery(table, { rows: [{ id: 'patron-test', created_at: '2026-01-01T00:00:00Z' }] })
       return new FakeQuery(table, { rows: [] })
     },
@@ -354,11 +375,11 @@ function installerGroq(etat: CircuitState): void {
 }
 
 async function chargerRoutes(): Promise<{
-  chatClient: { POST: (req: NextRequest) => Promise<Response> }
-  resume: { POST: (req: NextRequest) => Promise<Response> }
+  chatClient: { POST: (req: NextRequest, ctx: { params: Promise<{ code_acces: string }> }) => Promise<Response> }
+  resume: { POST: (req: NextRequest, ctx: { params: Promise<{ code_acces: string }> }) => Promise<Response> }
 }> {
-  const chatClient = await import('../app/api/chat-client/route')
-  const resume = await import('../app/api/chat-client-summary/route')
+  const chatClient = await import('../app/api/espace-client/[code_acces]/chat/route')
+  const resume = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
   return { chatClient, resume }
 }
 
@@ -387,7 +408,7 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('1. session → messages → fermeture → UNE seule note', async () => {
-    const cle = 'demo:CLIENT-1'
+    const cle = 'chantier-1'
     const session = 'session-1'
     const greeting: MessageSa = { role: 'assistant', content: 'Bonjour je peux vous aider ?' }
     const corps2 = [
@@ -396,12 +417,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
     ]
 
     const r1 = await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-1/chat', {
         messages: corps2,
-        clientName: 'CLIENT-1',
-        chantierId: null,
         sessionId: session,
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-1' }) }
     )
     expect(r1.status).toBe(200)
 
@@ -411,12 +431,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
       { role: 'user', content: 'Merci, et les finitions sont prévues quand ?' },
     ]
     const r2 = await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-1/chat', {
         messages: corps3,
-        clientName: 'CLIENT-1',
-        chantierId: null,
         sessionId: session,
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-1' }) }
     )
     expect(r2.status).toBe(200)
 
@@ -426,12 +445,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
 
     const rep = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-1/chat-summary', {
           messages: corps3,
-          clientName: 'CLIENT-1',
-          chantierId: null,
           sessionId: session,
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-1' }) }
       )
     )
     expect(rep.status).toBe('alert_created')
@@ -444,27 +462,25 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('2. réouverture même chantier → nouvelle session → fusion avec la mémoire', async () => {
-    const cle = 'demo:CLIENT-2'
+    const cle = 'chantier-2'
     const corps1 = [
       { role: 'assistant', content: 'Bonjour je peux vous aider ?' },
       { role: 'user', content: 'Demande sur les délais du bardage 🧩' },
     ]
     await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-2/chat', {
         messages: corps1,
-        clientName: 'CLIENT-2',
-        chantierId: null,
         sessionId: 'session-2a',
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-2' }) }
     )
     const rep1 = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-2/chat-summary', {
           messages: corps1,
-          clientName: 'CLIENT-2',
-          chantierId: null,
           sessionId: 'session-2a',
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-2' }) }
       )
     )
     expect(rep1.status).toBe('alert_created')
@@ -475,21 +491,19 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
       { role: 'user', content: 'J’ai réfléchi à la couleur, on peut en parler ? 🔥COLERE' },
     ]
     await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-2/chat', {
         messages: corps2,
-        clientName: 'CLIENT-2',
-        chantierId: null,
         sessionId: 'session-2b',
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-2' }) }
     )
     const rep2 = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-2/chat-summary', {
           messages: corps2,
-          clientName: 'CLIENT-2',
-          chantierId: null,
           sessionId: 'session-2b',
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-2' }) }
       )
     )
     expect(rep2.status).toBe('alert_created')
@@ -513,20 +527,19 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('3. conversation banale → aucun appel LLM de consolidation et aucune note', async () => {
-    const cle = 'demo:CLIENT-3'
+    const cle = 'chantier-3'
     const avant = etat.groqCalls.filter((c) => c.endpoint === 'resume').length
 
     const rep = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-3/chat-summary', {
           messages: [
             { role: 'assistant', content: 'Bonjour je peux vous aider ?' },
             { role: 'user', content: 'bonjour au revoir' },
           ],
-          clientName: 'CLIENT-3',
-          chantierId: null,
           sessionId: 'session-3',
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-3' }) }
       )
     )
     expect(rep.status).toBe('ras')
@@ -537,7 +550,7 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('4. session > 6000 tokens → découpage en plusieurs blocs, aucune perte', async () => {
-    const cle = 'demo:CLIENT-4'
+    const cle = 'chantier-4'
     const grosA = 'MARQUEUR_A_' + 'x'.repeat(9000)
     const grosB = 'MARQUEUR_B_' + 'y'.repeat(9000)
     const grosC = 'MARQUEUR_C_' + 'z'.repeat(9000)
@@ -557,12 +570,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
 
     for (const paquet of [etape1, etape2, etape3]) {
       const r = await routes.chatClient.POST(
-        postBody('http://x/api/chat-client', {
+        postBody('http://x/api/espace-client/ACCES-4/chat', {
           messages: paquet,
-          clientName: 'CLIENT-4',
-          chantierId: null,
           sessionId: 'session-4',
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-4' }) }
       )
       expect(r.status).toBe(200)
     }
@@ -572,7 +584,7 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
 
     const rep = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-4/chat-summary', {
           messages: [
             etape1[0],
             etape3[1] as MessageSa,
@@ -581,10 +593,9 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
             etape3[0] as MessageSa,
             etape1[1] as MessageSa,
           ],
-          clientName: 'CLIENT-4',
-          chantierId: null,
           sessionId: 'session-4',
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-4' }) }
       )
     )
     expect(rep.status).toBe('alert_created')
@@ -615,29 +626,27 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('5. fermeture répétée → pas de doublon (note unique, pas de re-consolidation)', async () => {
-    const cle = 'demo:CLIENT-5'
+    const cle = 'chantier-5'
     const session = 'session-5'
     const corps = [
       { role: 'assistant', content: 'Bonjour je peux vous aider ?' },
       { role: 'user', content: 'Mon chantier est en retard ?' },
     ]
     await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-5/chat', {
         messages: corps,
-        clientName: 'CLIENT-5',
-        chantierId: null,
         sessionId: session,
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-5' }) }
     )
 
     const r1 = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-5/chat-summary', {
           messages: corps,
-          clientName: 'CLIENT-5',
-          chantierId: null,
           sessionId: session,
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-5' }) }
       )
     )
     expect(r1.status).toBe('alert_created')
@@ -646,12 +655,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
     // double clic / fermeture répétée avec la même session
     const r2 = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-5/chat-summary', {
           messages: corps,
-          clientName: 'CLIENT-5',
-          chantierId: null,
           sessionId: session,
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-5' }) }
       )
     )
     expect(r2.status).toBe('deja_consolide')
@@ -667,7 +675,7 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('6. erreur Groq pendant le chat → aucun message perdu', async () => {
-    const cle = 'demo:CLIENT-6'
+    const cle = 'chantier-6'
     const session = 'session-6'
     const critique =
       'Message critique à conserver absolument : où aller chercher mon acompte et quels documents ? ' +
@@ -680,12 +688,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
 
     etat.groqFail = true
     const r = await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-6/chat', {
         messages: corps,
-        clientName: 'CLIENT-6',
-        chantierId: null,
         sessionId: session,
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-6' }) }
     )
     expect(r.status).toBe(502)
 
@@ -699,12 +706,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
     etat.groqFail = false
     const rep = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-6/chat-summary', {
           messages: corps,
-          clientName: 'CLIENT-6',
-          chantierId: null,
           sessionId: session,
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-6' }) }
       )
     )
     expect(rep.status).toBe('alert_created')
@@ -716,18 +722,17 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
   })
 
   it('7. interruption de session (pas de clôture) → mémoire conservée puis ré-consolidée', async () => {
-    const cle = 'demo:CLIENT-7'
+    const cle = 'chantier-7'
 
     await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-7/chat', {
         messages: [
           { role: 'assistant', content: 'Bonjour je peux vous aider ?' },
           { role: 'user', content: 'Premier échange de la session interrompue' },
         ],
-        clientName: 'CLIENT-7',
-        chantierId: null,
         sessionId: 'session-7-initiale',
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-7' }) }
     )
     // l’utilisateur ferme la page sans clôture : rien n’est perdu (le POST
     // mémorise user + réponse assistant)
@@ -736,15 +741,14 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
 
     // réouverture plus tard : nouvelle session, nouvel échange
     await routes.chatClient.POST(
-      postBody('http://x/api/chat-client', {
+      postBody('http://x/api/espace-client/ACCES-7/chat', {
         messages: [
           { role: 'assistant', content: 'Bonjour je peux vous aider ?' },
           { role: 'user', content: 'Suite du sujet après interruption' },
         ],
-        clientName: 'CLIENT-7',
-        chantierId: null,
         sessionId: 'session-7-suite',
-      })
+      }),
+        { params: Promise.resolve({ code_acces: 'ACCES-7' }) }
     )
     ligne = convParCle(etat.convRows, cle)
     expect((ligne?.messages_session as MessageSa[]).length).toBe(4)
@@ -752,12 +756,11 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
     // clôture : les deux échanges sont consolidés en une seule fois
     const rep = await parseReponse(
       await routes.resume.POST(
-        postBody('http://x/api/chat-client-summary', {
+        postBody('http://x/api/espace-client/ACCES-7/chat-summary', {
           messages: [],
-          clientName: 'CLIENT-7',
-          chantierId: null,
           sessionId: 'session-7-suite',
-        })
+        }),
+          { params: Promise.resolve({ code_acces: 'ACCES-7' }) }
       )
     )
     expect(rep.status).toBe('alert_created')
@@ -769,7 +772,7 @@ describe('Circuit chat Espace Client (simulé, sans environnement réel)', () =>
 
   it('8. concurrence : append pendant la consolidation ne perd rien (anti-écrasement)', async () => {
     const sup = etat.supabase
-    const cle = 'demo:CLIENT-8'
+    const cle = 'chantier-8'
     await sup.rpc('espace_client_append', {
       p_cle: cle,
       p_messages: [{ role: 'user', content: 'm1' }],
