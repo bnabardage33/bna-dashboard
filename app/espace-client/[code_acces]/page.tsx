@@ -195,13 +195,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     hasSummarized.current = true;
     
     try {
-      await fetch('/api/chat-client-summary', {
+      await fetch(`/api/espace-client/${codeAcces}/chat-summary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: finalMessages,
-          clientName: clientData?.nom || "Client",
-          chantierId: chantierData?.id || null,
           sessionId: sessionIdRef.current
         })
       });
@@ -228,15 +226,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/chat-client', {
+      const res = await fetch(`/api/espace-client/${codeAcces}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: newMessages,
-          clientName: clientData?.nom || "Client",
-          chantierName: chantierData?.nom || "Chantier",
-          chantierId: chantierData?.id || null,
-          avancement: avancement,
           sessionId: sessionIdRef.current
         })
       });
