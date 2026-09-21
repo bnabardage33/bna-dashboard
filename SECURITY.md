@@ -10,7 +10,7 @@
 
 3. **RLS Supabase** : la clé `service_role` contourne toutes les policies. Utiliser `@supabase/ssr` (`createServerClient`) pour respecter les règles RLS côté serveur.
 
-4. **Le middleware** (`middleware.ts`) protège les routes internes. Les routes publiques sont dans `PUBLIC_PATHS` (`lib/supabase/middleware.ts`).
+4. **Le proxy Next.js 16** (`proxy.ts`, anciennement `middleware.ts`) protège les routes internes. Les routes publiques sont dans `PUBLIC_PATHS` (`lib/supabase/middleware.ts`).
 
 ## Clés requises
 
