@@ -31,8 +31,8 @@ function texte(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
-function lireParams(contexte: { params: Promise<{ devis_id: string }> }): Promise<string> {
-  return contexte.params.then((p) => texte(p.devis_id));
+function lireParams(contexte: { params: Promise<{ id: string }> }): Promise<string> {
+  return contexte.params.then((p) => texte(p.id));
 }
 
 type CatalogueOuvrage = {
@@ -172,7 +172,7 @@ async function revendiquerAnalyse(devisId: string): Promise<{
 
 // ── POST : lancer (ou relancer) une analyse IA d'un devis. ─────────────
 
-export async function POST(req: NextRequest, contexte: { params: Promise<{ devis_id: string }> }) {
+export async function POST(req: NextRequest, contexte: { params: Promise<{ id: string }> }) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   const devisId = await lireParams(contexte);
@@ -395,7 +395,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ devis
 
 // ── GET : lecture de l'analyse existante (+ historique optionnel). ─────
 
-export async function GET(req: NextRequest, contexte: { params: Promise<{ devis_id: string }> }) {
+export async function GET(req: NextRequest, contexte: { params: Promise<{ id: string }> }) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   const devisId = await lireParams(contexte);

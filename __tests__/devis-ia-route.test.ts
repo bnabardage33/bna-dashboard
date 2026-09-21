@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 
-const source = readFileSync("./app/api/devis/[devis_id]/analyse/route.ts", "utf8");
+const source = readFileSync("./app/api/devis/[id]/analyse/route.ts", "utf8");
 
 function segment(debut: string, fin: string): string {
   const i = source.indexOf(debut);
