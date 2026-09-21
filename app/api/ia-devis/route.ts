@@ -9,7 +9,11 @@ import {
   type CoutType,
   type LigneDevis,
 } from "@/lib/devisCalcul";
-import { calculerBesoinsBardage } from "@/lib/poseCalcul";
+import {
+  quantiteExpliciteDansLaDemande,
+  construireLigneLegacy,
+  type CatalogueOuvrage,
+} from "@/lib/iaDevisLegacy";
 import {
   meilleureCorrespondance,
   scoreConceptVsItem,
@@ -35,41 +39,7 @@ const PROMPT_MAX_CHARS = 6000;
 // Quantités OSSATURE (DTU 41.2) — uniquement quand aucun payload metre-complet
 // n'est disponible (pas de chantier_id). Les règles 1,5 / 2 / 6 ne sont
 // JAMAIS utilisées lorsque le chemin metre-complet est actif (chantier_id fourni).
-type RegleOssature = { matcher: RegExp; facteur: number; type: "ml" | "unite" };
-const REGLES_OSSATURE: RegleOssature[] = [
-  { matcher: /chevron/i, facteur: 1.5, type: "ml" },
-  { matcher: /équerre|equerre/i, facteur: 2, type: "unite" },
-  { matcher: /cheville/i, facteur: 6, type: "unite" },
-];
-
-function estUniteM2(unite: string): boolean {
-  const u = unite.toLowerCase().replace(/\s+/g, "");
-  return u === "m²" || u === "m2" || u === "m^2" || u === "mq";
-}
-
-function estUnitePiece(unite: string): boolean {
-  const u = unite.toLowerCase();
-  return u === "u" || u === "unité" || u === "unite" || u.includes("pièce") || u.includes("piece") || u.includes("unit");
-}
-
-/** Vrai si la demande contient une quantité EXPLICITE. */
-function quantiteExpliciteDansLaDemande(prompt: string): boolean {
-  return /(\d+(?:[.,]\d+)?)\s*(?:m2|mq|m\s?carre|unit\w*|pieces?|heures?|chevrons?|vis|equerres?)/.test(
-    normaliserMatching(prompt)
-  );
-}
-
-type CatalogueOuvrage = {
-  categorie?: string | null;
-  id: string;
-  designation: string;
-  description: string | null;
-  famille_label: string;
-  unite: string;
-  pu_ht: number;
-  pu_revient: number;
-  type_cout: string;
-};
+// Le moteur de calepinage vit dans @/lib/iaDevisLegacy (jamais dans cette route).
 
 function versItemCatalogue(o: CatalogueOuvrage): ItemCatalogue {
   return {
@@ -88,86 +58,6 @@ function texte(v: unknown): string {
 
 function estNombrePositif(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v) && v > 0;
-}
-
-function appliquerQuantitesFactuelles(
-  ligne: LigneDevis,
-  surface: number | null,
-  catalogue: Map<string, CatalogueOuvrage>,
-  qteExplicite: boolean
-): LigneDevis {
-  if (ligne.a_chiffrer || !ligne.catalogue_id) return ligne;
-  
-  const ouvrage = catalogue.get(ligne.catalogue_id);
-  if (!ouvrage) return ligne;
-
-  // Option B: Force main_oeuvre to m² and set quantity to surface if applicable
-  if (ouvrage.type_cout === "main_oeuvre" && surface && surface > 0) {
-    const isBardageOrITE = ouvrage.categorie?.toLowerCase().includes("bardage") || 
-                           ouvrage.categorie?.toLowerCase().includes("isolation") || 
-                           ouvrage.famille_label?.toLowerCase().includes("pose");
-                           
-    if (isBardageOrITE || ligne.designation.toLowerCase().includes("pose") || ligne.designation.toLowerCase().includes("main d'oeuvre")) {
-      ligne.unite = "m²";
-      ligne.qte = surface;
-      return ligne; // Retour direct pour garantir le verrouillage
-    }
-  }
-
-  if (qteExplicite) return ligne;
-
-  // Si on a une surface, appliquer le moteur de calpinage (poseCalcul)
-  if (surface && surface > 0) {
-    const besoins = calculerBesoinsBardage(surface);
-    const des = (ouvrage.designation + " " + ouvrage.famille_label).toLowerCase();
-    
-    if (des.includes("chevron") || ouvrage.famille_label.toLowerCase().includes("ossature")) {
-      if (ouvrage.unite === "ml") ligne.qte = besoins.mlChevrons;
-      else if (ouvrage.unite === "u" || ouvrage.unite === "unité") ligne.qte = besoins.mlChevrons; // fallback
-      else ligne.qte = surface;
-      return ligne;
-    }
-    if (des.includes("équerre") || des.includes("equerre")) {
-      ligne.qte = besoins.nbEquerres;
-      return ligne;
-    }
-    if (des.includes("cheville")) {
-      ligne.qte = besoins.nbChevilles;
-      return ligne;
-    }
-    if (des.includes("vis")) {
-      ligne.qte = besoins.nbVisAutoForeuses;
-      return ligne;
-    }
-    if (estUniteM2(ouvrage.unite)) {
-      ligne.qte = surface;
-      return ligne;
-    }
-  }
-
-  return ligne;
-}
-
-function construireLigne(
-  ouvrage: CatalogueOuvrage,
-  description: string,
-  qte: number | null,
-  surface: number | null,
-  catalogueMap: Map<string, CatalogueOuvrage>,
-  qteExplicite: boolean
-): LigneDevis {
-  const ligne: LigneDevis = {
-    catalogue_id: ouvrage.id,
-    designation: ouvrage.designation,
-    description,
-    qte: qte ?? 0,
-    unite: ouvrage.unite,
-    pu_ht: ouvrage.pu_ht,
-    pu_revient: ouvrage.pu_revient ?? 0,
-    type_cout: (ouvrage.type_cout === "main_oeuvre" ? "main_oeuvre" : "matiere") as CoutType,
-    a_chiffrer: false,
-  };
-  return appliquerQuantitesFactuelles(ligne, surface, catalogueMap, qteExplicite);
 }
 
 function finaliserQuantites(lignes: LigneDevis[]): LigneDevis[] {
@@ -306,7 +196,7 @@ async function cheminLegacy(
     const item = slot.correspondance.item;
     const ouvrage = catalogueMap.get(item.id)!;
     const qteExplicite = slot.concept.qte !== null && quantiteExpliciteDansLaDemande(prompt);
-    const ligne = construireLigne(
+    const ligne = construireLigneLegacy(
       ouvrage,
       slot.concept.description,
       slot.concept.qte,
@@ -391,7 +281,7 @@ async function cheminLegacy(
         }
         utilisateur.add(ouvrage.id);
         const qteExplicite = slot.concept.qte !== null && quantiteExpliciteDansLaDemande(prompt);
-        const ligne = construireLigne(
+        const ligne = construireLigneLegacy(
           ouvrage,
           slot.concept.description,
           slot.concept.qte,
