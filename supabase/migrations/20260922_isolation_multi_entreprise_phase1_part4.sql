@@ -126,8 +126,10 @@ insert into public.parametres_finance (entreprise_id, cle, valeur)
 values ('22222222-2222-4222-8222-222222222222', 'solde_bancaire', 0)
 on conflict (entreprise_id, cle) do nothing;
 
+-- NB : id de parametres_entreprise est un uuid en production (la table a migré
+-- depuis bigint) ; on fournit donc un uuid déterministe pour le tenant TEST.
 insert into public.parametres_entreprise (id, entreprise_id, tresorerie_actuelle, charges_fixes_mensuelles)
-values (2, '22222222-2222-4222-8222-222222222222', 1000, 100)
+values ('22222222-2222-4222-8222-222222222223', '22222222-2222-4222-8222-222222222222', 1000, 100)
 on conflict (entreprise_id) do nothing;
 
 insert into public.entreprise_settings (id, entreprise_id, raison_sociale, siret)
