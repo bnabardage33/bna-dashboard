@@ -71,21 +71,47 @@ create trigger tg_auto_entreprise before insert on public.lignes_commande for ea
 
 -- Le profil 'patron' (premier créé) devient admin de BNA + claim app_metadata posé.
 -- Le claim apparaîtra au prochain refresh/relogin du JWT.
+--
+-- Colonne de métadonnées : détectée dynamiquement, car selon la version de
+-- GoTrue, auth.users expose app_metadata (colonne générée, non modifiable) ou
+-- raw_app_meta_data (stockage brut). On écrit TOUJOURS sur raw_app_meta_data
+-- quand elle existe, sinon sur app_metadata.
 do $$
 declare
   v_id uuid;
   v_bna uuid := '11111111-1111-4111-8111-111111111111'::uuid;
+  v_col text;
+  v_claim jsonb;
 begin
   select id into v_id from public.profiles order by created_at asc limit 1;
-  if v_id is not null then
-    insert into public.entreprise_membres (entreprise_id, user_id, role)
-    values (v_bna, v_id, 'admin')
-    on conflict (entreprise_id, user_id) do nothing;
-
-    update auth.users
-       set app_metadata = coalesce(app_metadata, '{}'::jsonb) || jsonb_build_object('entreprise_id', v_bna::text)
-     where id = v_id;
+  if v_id is null then
+    raise notice 'aucun profile : claim JWT non posé';
+    return;
   end if;
+
+  insert into public.entreprise_membres (entreprise_id, user_id, role)
+  values (v_bna, v_id, 'admin')
+  on conflict (entreprise_id, user_id) do nothing;
+
+  -- Détection de la colonne de métadonnées (raw_app_meta_data préférée)
+  select column_name into v_col
+    from information_schema.columns
+   where table_schema = 'auth'
+     and table_name = 'users'
+     and column_name in ('raw_app_meta_data', 'app_metadata')
+   order by (column_name = 'raw_app_meta_data') desc
+   limit 1;
+
+  if v_col is null then
+    raise exception 'auth.users : ni raw_app_meta_data ni app_metadata trouvée';
+  end if;
+
+  v_claim := jsonb_build_object('entreprise_id', v_bna::text);
+  execute format(
+    'update auth.users set %I = coalesce(%I, ''{}''::jsonb) || %L where id = %L',
+    v_col, v_col, v_claim::text, v_id
+  );
+  raise notice 'claim % posé sur auth.users.% pour %', v_claim, v_col, v_id;
 end $$;
 
 -- -----------------------------------------------------------------------------
