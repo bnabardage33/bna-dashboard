@@ -100,17 +100,17 @@ export default function SaisieDepense() {
       <h1 className="text-2xl font-bold mb-6">Saisie Dépense</h1>
       
       {error && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md text-sm">{error}</div>}
-      {success && <div className="mb-4 p-3 bg-red-600/10 border border-white/10 text-gray-400 rounded-md text-sm font-medium">Dépense enregistrée avec succès !</div>}
+      {success && <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md text-sm font-medium">Dépense enregistrée avec succès !</div>}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Date</label>
-            <input type="date" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            <input type="date" required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Chantier <span className="text-xs text-gray-500">(Optionnel)</span></label>
-            <select className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
+            <select className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
               <option value="">-- Sans affectation --</option>
               {chantiers.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
             </select>
@@ -120,7 +120,7 @@ export default function SaisieDepense() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Nature</label>
-            <select required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.nature} onChange={e => setFormData({...formData, nature: e.target.value})}>
+            <select required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.nature} onChange={e => setFormData({...formData, nature: e.target.value})}>
               <option value="materiaux">Matériaux</option>
               <option value="quincaillerie">Quincaillerie</option>
               <option value="sous_traitance">Sous-traitance</option>
@@ -130,7 +130,7 @@ export default function SaisieDepense() {
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Fournisseur <span className="text-xs text-gray-500">(Optionnel)</span></label>
-            <select className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.fournisseur_id} onChange={e => setFormData({...formData, fournisseur_id: e.target.value})}>
+            <select className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.fournisseur_id} onChange={e => setFormData({...formData, fournisseur_id: e.target.value})}>
               <option value="">Sélectionner</option>
               {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}</option>)}
             </select>
@@ -140,12 +140,12 @@ export default function SaisieDepense() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Montant HT (€)</label>
-            <input type="number" step="0.01" min="0" required className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.montant_ht} onChange={handleMontantChange} />
+            <input type="number" step="0.01" min="0" required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.montant_ht} onChange={handleMontantChange} />
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="block text-sm text-gray-400 mb-1">TVA (%)</label>
-              <select className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_tva} onChange={e => handleTvaChange(e.target.value)}>
+              <select className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_tva} onChange={e => handleTvaChange(e.target.value)}>
                 <option value="20">20%</option>
                 <option value="10">10%</option>
                 <option value="5.5">5.5%</option>
@@ -154,7 +154,7 @@ export default function SaisieDepense() {
             </div>
             <div className="flex-1">
               <label className="block text-sm text-gray-400 mb-1">Montant TVA</label>
-              <input type="number" step="0.01" className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.montant_tva} onChange={e => setFormData({...formData, montant_tva: e.target.value})} />
+              <input type="number" step="0.01" className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.montant_tva} onChange={e => setFormData({...formData, montant_tva: e.target.value})} />
             </div>
           </div>
         </div>

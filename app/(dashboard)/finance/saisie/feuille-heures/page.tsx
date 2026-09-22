@@ -145,7 +145,7 @@ export default function FeuilleHeuresPage() {
             <select
               value={chantierId}
               onChange={(e) => setChantierId(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+              className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             >
               {chantiers.map((c) => (
                 <option key={c.id} value={c.id}>{c.nom}</option>
@@ -158,7 +158,7 @@ export default function FeuilleHeuresPage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+              className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
           <div>
@@ -168,7 +168,7 @@ export default function FeuilleHeuresPage() {
               step="0.01"
               value={tauxHoraire}
               onChange={(e) => setTauxHoraire(parseFloat(e.target.value) || 0)}
-              className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+              className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
         </div>
@@ -195,19 +195,19 @@ export default function FeuilleHeuresPage() {
                   required
                   value={nouveauNom}
                   onChange={(e) => setNouveauNom(e.target.value)}
-                  className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 />
                 <input
                   type="text"
                   placeholder="Qualification (ex: bardeur confirmé)"
                   value={nouvelleQualif}
                   onChange={(e) => setNouvelleQualif(e.target.value)}
-                  className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 />
                 <select
                   value={nouveauStatut}
                   onChange={(e) => setNouveauStatut(e.target.value as "embauche" | "interimaire")}
-                  className="bg-transparent border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 >
                   <option value="embauche">Embauché</option>
                   <option value="interimaire">Intérimaire</option>
@@ -271,14 +271,14 @@ export default function FeuilleHeuresPage() {
                       value={ligne.heures}
                       onChange={(e) => majLigne(o.id, "heures", parseFloat(e.target.value) || 0)}
                       disabled={!ligne.coche}
-                      className="w-20 bg-transparent border border-white/10 rounded-md p-1.5 text-sm text-center focus:border-white/10 outline-none disabled:opacity-40"
+                      className="w-20 bg-[#242830] border border-white/10 rounded-md p-1.5 text-sm text-center focus:border-white/10 outline-none disabled:opacity-40"
                     />
                     <span className="text-xs text-gray-500">h</span>
                     <select
                       value={ligne.type_heure}
                       onChange={(e) => majLigne(o.id, "type_heure", e.target.value)}
                       disabled={!ligne.coche}
-                      className="bg-transparent border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
+                      className="bg-[#242830] border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
                     >
                       <option value="normale">Normale</option>
                       <option value="supplementaire">Supplémentaire</option>
@@ -292,7 +292,7 @@ export default function FeuilleHeuresPage() {
         </div>
 
         {message && (
-          <div className={`rounded-lg border p-3 text-sm ${message.startsWith("✓") ? "border-white/10 bg-red-600/10 text-gray-400" : "border-rose-500/40 bg-rose-500/10 text-rose-400"}`}>
+          <div className={`rounded-lg border p-3 text-sm ${message.startsWith("✓") ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-rose-500/40 bg-rose-500/10 text-rose-400"}`}>
             {message}
           </div>
         )}

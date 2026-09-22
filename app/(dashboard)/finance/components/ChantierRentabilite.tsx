@@ -121,16 +121,16 @@ export default function ChantierRentabilite() {
                     <td className="px-4 py-3 text-right text-gray-400">
                       {fmtEuro(r.cout_direct_total)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-bold ${r.marge_brute >= 0 ? "text-gray-400" : "text-rose-400"}`}>
+                    <td className={`px-4 py-3 text-right font-bold ${r.marge_brute >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                       {fmtEuro(r.marge_brute)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-flex rounded-md px-2 py-1 text-xs font-bold ${
                           r.taux_marge_pct >= 15
-                            ? "bg-red-600/10 text-gray-400"
+                            ? "bg-emerald-500/10 text-emerald-400"
                             : r.taux_marge_pct > 0
-                            ? "bg-red-600/10 text-gray-400"
+                            ? "bg-orange-500/10 text-orange-400"
                             : "bg-rose-500/10 text-rose-400"
                         }`}
                       >

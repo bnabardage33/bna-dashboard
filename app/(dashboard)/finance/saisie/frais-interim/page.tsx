@@ -98,7 +98,7 @@ export default function FraisInterimPage() {
           <h1 className="text-xl font-bold text-white mb-6">Frais d'Agence Intérim</h1>
 
           {message && (
-            <div className={`mb-4 rounded-lg border p-3 text-sm ${message.startsWith("✓") ? "border-white/10 bg-red-600/10 text-gray-400" : "border-rose-500/40 bg-rose-500/10 text-rose-400"}`}>
+            <div className={`mb-4 rounded-lg border p-3 text-sm ${message.startsWith("✓") ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-rose-500/40 bg-rose-500/10 text-rose-400"}`}>
               {message}
             </div>
           )}
@@ -110,7 +110,7 @@ export default function FraisInterimPage() {
                 <select
                   value={formData.chantier_id}
                   onChange={(e) => setFormData({ ...formData, chantier_id: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 >
                   <option value="">-- Sans affectation --</option>
                   {chantiers.map((c) => (
@@ -124,7 +124,7 @@ export default function FraisInterimPage() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function FraisInterimPage() {
                   placeholder="ex: Adecco, Manpower..."
                   value={formData.agence_nom}
                   onChange={(e) => setFormData({ ...formData, agence_nom: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
               <div>
@@ -148,7 +148,7 @@ export default function FraisInterimPage() {
                   required
                   value={formData.interimaire_nom}
                   onChange={(e) => setFormData({ ...formData, interimaire_nom: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function FraisInterimPage() {
                   required
                   value={formData.salaire_brut}
                   onChange={(e) => setFormData({ ...formData, salaire_brut: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
               <div>
@@ -172,7 +172,7 @@ export default function FraisInterimPage() {
                   step="0.01"
                   value={formData.coefficient}
                   onChange={(e) => setFormData({ ...formData, coefficient: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
               <div>
@@ -182,7 +182,7 @@ export default function FraisInterimPage() {
                   step="0.1"
                   value={formData.taux_tva}
                   onChange={(e) => setFormData({ ...formData, taux_tva: e.target.value })}
-                  className="w-full bg-transparent border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
             </div>

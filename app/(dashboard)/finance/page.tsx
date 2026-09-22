@@ -95,21 +95,21 @@ export default function FinanceDashboard() {
             </Link>
             <Link
               href="/finance/saisie/frais-interim"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-red-600/10 px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-red-600/20"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1A1D24]"
             >
               <Clock className="h-4 w-4" />
               Frais Intérim
             </Link>
             <Link
               href="/finance/saisie/feuille-heures"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-red-600/10 px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-red-600/20"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1A1D24]"
             >
               <Users className="h-4 w-4" />
               Feuille d'heures
             </Link>
             <Link
               href="/finance/saisie/depense"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 bg-rose-600/10 px-4 py-2 text-sm font-medium text-rose-400 transition-colors hover:bg-rose-600/20"
+              className="flex items-center gap-2 rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"
             >
               <Receipt className="h-4 w-4" />
               + Dépense

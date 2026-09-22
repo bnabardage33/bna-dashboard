@@ -308,7 +308,7 @@ L'application est un **Next.js 16 App Router** connecté à **Supabase** (Postgr
 - `lib/supabase/client.ts` (navigateur) + `lib/supabase/server.ts` (serveur) via `@supabase/ssr`
 - `lib/supabase.ts` migré de `createClient` (anon basique) vers `createBrowserClient` pour porter la session dans les pages qui font des appels directs Supabase côté navigateur
 - Page `/login` avec gestion d'erreur réseau + auto-connexion si autofill (Bitwarden) remplit email+mot de passe d'un coup
-- Déconnexion manuelle disponible dans `TopNav`
+- Déconnexion manuelle disponible dans le `Drawer` (menu burger en haut à gauche)
 - **⚠️ Piège récurrent identifié** : toute route qui fait un appel serveur-à-serveur interne (`fetch` vers une autre route `/api/...` du même projet) doit être ajoutée à `PUBLIC_PATHS`, sinon le middleware la redirige vers `/login` (HTML au lieu de JSON) faute de cookie de session — déjà rencontré sur `/api/meteo-vigilance`, `manifest.json`, `sw.js`
 
 ### 2️⃣ RLS (Row Level Security) Supabase

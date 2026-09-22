@@ -48,17 +48,17 @@ export default function KpiGrid({ mois }: { mois?: string }) {
       <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 flex flex-col justify-between">
         <div className="flex items-center gap-2 text-gray-400">
           {margePositive ? (
-            <TrendingUp className="h-4 w-4 text-gray-400" />
+            <TrendingUp className="h-4 w-4 text-emerald-400" />
           ) : (
             <TrendingDown className="h-4 w-4 text-rose-400" />
           )}
           <span className="text-xs uppercase tracking-wider">Marge Brute</span>
         </div>
         <div className="mt-4 flex items-baseline gap-2">
-          <span className={`text-2xl font-bold ${margePositive ? "text-gray-400" : "text-rose-400"}`}>
+          <span className={`text-2xl font-bold ${margePositive ? "text-emerald-400" : "text-rose-400"}`}>
             {fmtEuro(kpis?.marge_brute ?? 0)}
           </span>
-          <span className={`text-sm font-medium ${margePositive ? "text-gray-400" : "text-rose-500"}`}>
+          <span className={`text-sm font-medium ${margePositive ? "text-emerald-400/80" : "text-rose-500"}`}>
             ({fmtPct(tauxMarge)})
           </span>
         </div>
