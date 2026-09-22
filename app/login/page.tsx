@@ -57,6 +57,29 @@ export default function LoginPage() {
     return () => clearTimeout(timer)
   }, [email, password, submit])
 
+  // Auto-redirection si une session valide existe déjà.
+  // Le proxy peut renvoyer vers /login « par erreur » (micro-coupure réseau
+  // pendant getUser, course de rotation de jeton). Au lieu de rester bloqué
+  // sur le formulaire, on regagne le tableau de bord — la session, elle,
+  // est bien là.
+  useEffect(() => {
+    let actif = true
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (actif && data.session) {
+          router.replace('/')
+          router.refresh()
+        }
+      })
+      .catch(() => {
+        // hors-ligne : on reste sur le formulaire, pas de boucle
+      })
+    return () => {
+      actif = false
+    }
+  }, [router])
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">
       <form onSubmit={handleLogin} className="w-full max-w-sm bg-[#1A1D24] p-8 rounded-2xl shadow-sm border border-slate-100 space-y-4">

@@ -60,14 +60,46 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Récupération TOLÉRANTE de la session.
+  //
+  // Le proxy appelle Supabase à CHAQUE requête. Une micro-coupure réseau
+  // (chantier, mobile, rotation de jeton en cours) fait échouer getUser()
+  // et renverrait `user = null` — ce qui éjectait autrefois un utilisateur
+  // connecté vers /login « par moment ».
+  //
+  // En cas d'échec, on s'appuie sur la présence du cookie de session (posé
+  // par @supabase/ssr, préfixe sb-) pour LAISSER PASSER la requête : le
+  // client navigateur rafraîchit le jeton en arrière-plan, et la sécurité
+  // reste assurée par les contrôles en aval (Server Components → getUser ;
+  // routes API → verifierSession → 401). Aucune donnée n'est jamais rendue
+  // sans session valide.
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch (err) {
+    console.error(
+      'updateSession : getUser a échoué (réseau ?) — requête laissée passer, la session sera ré-évaluée en aval.',
+      err instanceof Error ? err.message : err
+    )
+  }
 
   const isPublic = cheminEstPublic(request.nextUrl.pathname)
+  const aCookieSessions = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith('sb-'))
 
-  if (!user && !isPublic && !possedeBearerCron(request)) {
+  if (!user && !isPublic && !possedeBearerCron(request) && !aCookieSessions) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    // ⚠️ Copie des cookies de session fraîchement rafraîchis sur la réponse
+    // de redirection : sinon la rotation de jeton opérée par getUser() se
+    // perd pendant le redirect et l'utilisateur est re-éjecté au tour.
+    supabaseResponse.cookies.getAll().forEach((cook) =>
+      redirectResponse.cookies.set(cook)
+    )
+    return redirectResponse
   }
 
   return supabaseResponse
