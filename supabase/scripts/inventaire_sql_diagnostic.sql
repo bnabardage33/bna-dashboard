@@ -56,9 +56,11 @@ where n.nspname = 'public' and c.relkind in ('r','p','v','m','f')
 order by c.relname;
 
 -- 5) POLICIES exactes (rôles, commande, USING, WITH CHECK)
+--    NB : pg_policies est une vue : qual / with_check y sont DÉJÀ du texte
+--    rendu (pas d'oid qualrelid ici — c'est la table pg_policy qui les possède).
 select schemaname, tablename, policyname, permissive, roles, cmd,
-       pg_get_expr(qual, qualrelid) as using_,
-       pg_get_expr(with_check, with_check_relid) as with_check_
+       qual as using_,
+       with_check as with_check_
 from pg_policies
 where schemaname = 'public'
 order by tablename, policyname;
