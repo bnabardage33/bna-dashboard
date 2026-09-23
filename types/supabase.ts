@@ -1549,6 +1549,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          entreprise_id: string | null
           full_name: string
           id: string
           qualification: string | null
@@ -1557,6 +1558,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          entreprise_id?: string | null
           full_name: string
           id?: string
           qualification?: string | null
@@ -1565,13 +1567,22 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          entreprise_id?: string | null
           full_name?: string
           id?: string
           qualification?: string | null
           role?: string | null
           statut_emploi?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       pv_receptions: {
         Row: {
@@ -2062,6 +2073,13 @@ export type Database = {
           p_resume_session?: Json
         },
         Returns: Json
+      },
+      rattacher_entreprise: {
+        Args: {
+          p_user_id: string
+          p_entreprise_id: string
+        },
+        Returns: undefined
       },
     }
     Enums: {
