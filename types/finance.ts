@@ -246,13 +246,6 @@ export interface EntrepriseSettings {
   taux_cotisations: number;
 }
 
-export interface Equipe {
-  id: string;
-  nom: string;
-  prenom: string;
-  role: string;
-}
-
 export interface CatalogueItem {
   id?: string;
   nom?: string;

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Tables } from "@/types/supabase";
 import { X, Search, Loader2 } from "lucide-react";
 import { LigneCommande } from "@/components/ZoneCard";
 import { useRouter } from "next/navigation";
@@ -90,14 +89,9 @@ export default function CommandeModal({
   const fetchData = async () => {
     setLoading(true);
     // 1. Fetch catalogue
-    const { data: catDataInitial, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
-    let catData: Tables<"catalogue_ouvrages">[] | Tables<"articles">[] | null = catDataInitial;
-    
-
-
-    if (catError || !catData || catData.length === 0) {
-      const res = await supabase.from("articles").select("*");
-      catData = res.data;
+    const { data: catData, error: catError } = await supabase.from("catalogue_ouvrages").select("*");
+    if (catError) {
+      console.error("Erreur chargement catalogue_ouvrages:", catError.message);
     }
     if (catData) setCatalogue(catData as unknown as Article[]);
 

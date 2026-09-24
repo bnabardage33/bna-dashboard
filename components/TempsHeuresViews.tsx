@@ -11,7 +11,6 @@ import { validerPointageAvecMeteo, supprimerPointageGlob, reinitialiserPointages
 import { Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Tables } from "@/types/supabase";
-import type { PointageFinance, Equipe } from "@/types/finance";
 
 const MOCK_CATALOGUE = {
   surface: 0.5,
@@ -97,8 +96,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
   const [dateSaisie, setDateSaisie] = useState<string>(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [historique, setHistorique] = useState<Tables<"pointages_globaux">[]>([]);
-  const [equipes, setEquipes] = useState<{ id: string; nom: string; prenom: string }[]>([]);
-  const [equipeId, setEquipeId] = useState<string>("00000000-0000-0000-0000-000000000000");
+  const [ouvriers, setOuvriers] = useState<{ id: string; full_name: string; role: string | null }[]>([]);
+  const [ouvrierId, setOuvrierId] = useState<string>(""); // "" = pointage collectif sans ouvrier
 
   const fetchHistorique = async () => {
     if (!chantierId) return;
@@ -109,17 +108,19 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
     if (data) setHistorique(data);
   };
 
-  const fetchEquipes = async () => {
-    const { data } = await supabase.from('equipe').select('id, nom, prenom');
-    if (data && data.length > 0) {
-      setEquipes(data);
-      setEquipeId(data[0].id);
+  const fetchOuvriers = async () => {
+    const { data } = await supabase.from("profiles").select("id, full_name, role");
+    const ouvriers = (data || []).filter(
+      (o) => o.role && ["ouvrier", "chef", "admin"].includes(o.role)
+    );
+    if (ouvriers.length > 0) {
+      setOuvriers(ouvriers);
     }
   };
 
   React.useEffect(() => {
     fetchHistorique();
-    fetchEquipes();
+    fetchOuvriers();
     window.addEventListener("pointageChanged", fetchHistorique);
     return () => window.removeEventListener("pointageChanged", fetchHistorique);
   }, [chantierId]);
@@ -128,7 +129,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
     if (heures <= 0 || !chantierId || !dateSaisie) return;
     setLoading(true);
     
-    const result = await validerPointageAvecMeteo(chantierId, equipeId, heures, dateSaisie);
+    const result = await validerPointageAvecMeteo(chantierId, ouvrierId, heures, dateSaisie);
     
     setLoading(false);
     if (result.success) {
@@ -177,19 +178,26 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
           </div>
         </div>
 
-        {equipes.length > 0 && (
+        {ouvriers.length > 0 && (
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Équipe / Ouvrier</label>
+            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Ouvrier</label>
             <select 
-              value={equipeId} 
-              onChange={(e) => setEquipeId(e.target.value)} 
+              value={ouvrierId} 
+              onChange={(e) => setOuvrierId(e.target.value)} 
               className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             >
-              {equipes.map(eq => (
-                <option key={eq.id} value={eq.id}>{eq.prenom} {eq.nom}</option>
+              <option value="">Collectif (sans ouvrier)</option>
+              {ouvriers.map(o => (
+                <option key={o.id} value={o.id}>{o.full_name || o.id}</option>
               ))}
             </select>
           </div>
+        )}
+        {ouvriers.length === 0 && (
+          <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-md p-3">
+            Aucun ouvrier enregistré pour votre entreprise : le pointage sera enregistré
+            en mode collectif (sans ouvrier). Ajoutez des fiches depuis « Feuille d&apos;heures » si besoin.
+          </p>
         )}
         
         <div>

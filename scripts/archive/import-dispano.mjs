@@ -1,3 +1,10 @@
+// ⚠️ ARCHIVÉ le 2026-09-24 — décision produit (PLAN_EXECUTION_A_G.md, §A)
+// Ne plus exécuter. Cible la table legacy `articles` (0 ligne, doublon de
+// `catalogue_ouvrages`). Décision : aucune colonne `reference` ne sera créée
+// dans `catalogue_ouvrages` pour maintenir ce flux. Un futur import vers le
+// catalogue actif devra être réécrit (mapping designation, pu_ht, fournisseur…)
+// et validé séparément.
+
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import fs from 'fs';

@@ -21,7 +21,7 @@ async function getSupabase() {
   );
 }
 
-export async function validerPointageAvecMeteo(chantierId: string, equipeId: string, heures: number, dateSaisie: string, commentaire: string = "") {
+export async function validerPointageAvecMeteo(chantierId: string, userId: string, heures: number, dateSaisie: string, commentaire: string = "") {
   const supabase = await getSupabase();
   try {
     const { data: chantier, error: chantierErr } = await supabase
@@ -69,16 +69,6 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
       }
     }
 
-    let finalEquipeId: string | undefined = equipeId;
-    if (equipeId === "00000000-0000-0000-0000-000000000000") {
-      const { data: firstEquipe } = await supabase.from('equipe').select('id').limit(1).single();
-      if (firstEquipe?.id) {
-        finalEquipeId = firstEquipe.id;
-      } else {
-        finalEquipeId = undefined;
-      }
-    }
-
     const payload: Record<string, unknown> = {
       chantier_id: chantierId,
       volume_heures_declare: heures,
@@ -87,7 +77,7 @@ export async function validerPointageAvecMeteo(chantierId: string, equipeId: str
       coef_meteo: coef_meteo,
       commentaire: commentaire
     };
-    if (finalEquipeId) payload.equipe_id = finalEquipeId;
+    if (userId) payload.user_id = userId; // optionnel : pointage collectif sans ouvrier -> user_id = NULL
 
     const { error: insertErr } = await supabase
       .from('pointages_globaux')
