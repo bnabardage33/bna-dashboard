@@ -33,7 +33,7 @@ export type DocumentData = {
   tva_pct: number;
   acompte_pct?: number | null;
   delai_jours?: number | null;
-  type_facture?: "acompte" | "solde" | "totale";
+  type_facture?: "acompte" | "situation" | "solde" | "totale";
   profil_revenu?: string | null;
   surface_m2?: number | null;
   signature_client?: string | null;

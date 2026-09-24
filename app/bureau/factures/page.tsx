@@ -58,7 +58,7 @@ type Facture = {
   date_emission: string;
   echeance: string | null;
   statut: string;
-  type_facture: "acompte" | "solde" | "totale";
+  type_facture: "acompte" | "situation" | "solde" | "totale";
   lignes: Ligne[];
   tva_pct: number;
   clients: Client | null;
@@ -100,7 +100,7 @@ export default function FacturesPage() {
   const [adresseChantier, setAdresseChantier] = useState("");
   const [typeTravaux, setTypeTravaux] = useState("");
   const [echeance, setEcheance] = useState("");
-  const [typeFacture, setTypeFacture] = useState<"acompte" | "solde" | "totale">("totale");
+  const [typeFacture, setTypeFacture] = useState<"acompte" | "situation" | "solde" | "totale">("totale");
   const [tva, setTva] = useState(10);
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
   const [totalDevisHT, setTotalDevisHT] = useState<number | null>(null);

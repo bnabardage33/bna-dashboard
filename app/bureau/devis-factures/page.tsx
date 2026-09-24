@@ -522,7 +522,13 @@ function DevisContenu() {
     if (!devisToBill) return;
     const d = devisToBill;
     
-    const numero = await prochainNumero("factures", "FAC");
+    // Numérotation : situation → RPC generer_prochain_numero_sit (SIT-YYYY-###,
+    // persistée/atomique/scopée entreprise+année ; source factures.type_facture='situation') ;
+    // acompte/solde → FAC-YYYY-### (prochainNumero). RPC absente des types générés → cast.
+    const numero =
+      billType === "situation"
+        ? (((await supabase.rpc("generer_prochain_numero_sit" as never)).data as unknown as string) ?? "")
+        : await prochainNumero("factures", "FAC");
     let lignesFacture: Ligne[] = [];
     
     if (billType === "totale") {

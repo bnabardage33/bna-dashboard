@@ -2,17 +2,14 @@
 
 import { useRentabiliteChantiers } from "@/hooks/useFinance";
 import { fmtEuro, fmtPct } from "@/lib/financeCalculs";
-import { AlertTriangle, FileText, BarChart2, Trash2 } from "lucide-react";
+import { AlertTriangle, BarChart2, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import type { RentabiliteChantierExt } from "@/hooks/useFinance";
-import SituationTravauxPDF from "./exports/SituationTravauxPDF";
 import BilanChantierPDF from "./exports/BilanChantierPDF";
 
 export default function ChantierRentabilite() {
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
-  const [printingSit, setPrintingSit] = useState<RentabiliteChantierExt | null>(null);
-  const [numeroSit, setNumeroSit] = useState<string | undefined>(undefined);
   const [printingBilan, setPrintingBilan] = useState<RentabiliteChantierExt | null>(null);
   const [supprimantId, setSupprimantId] = useState<string | null>(null);
 
@@ -44,20 +41,6 @@ export default function ChantierRentabilite() {
 
   return (
     <div className="flex flex-col gap-4">
-      {printingSit && (
-        <div className="hidden print:block">
-          <SituationTravauxPDF
-            chantier={printingSit}
-            numero={numeroSit}
-            onReady={() => {
-              window.print();
-              setPrintingSit(null);
-              setNumeroSit(undefined);
-            }}
-          />
-        </div>
-      )}
-
       {printingBilan && (
         <div className="hidden print:block">
           <BilanChantierPDF
@@ -145,20 +128,8 @@ export default function ChantierRentabilite() {
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={async () => {
-                            const { data: num } = await supabase.rpc('generer_prochain_numero_sit' as any);
-                            setNumeroSit((num as string) ?? undefined);
-                            setPrintingSit(r);
-                          }}
-                          disabled={!!printingSit || !!printingBilan}
-                          className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-gray-400 transition-colors disabled:opacity-50"
-                          title="Générer la Situation de Travaux"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </button>
-                        <button
                           onClick={() => setPrintingBilan(r)}
-                          disabled={!!printingSit || !!printingBilan}
+                          disabled={!!printingBilan}
                           className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-gray-400 transition-colors disabled:opacity-50"
                           title="Générer le Bilan Analytique"
                         >
