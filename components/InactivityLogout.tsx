@@ -18,8 +18,7 @@ export default function InactivityLogout() {
   const deconnecter = useCallback(async () => {
     // using supabase singleton
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+window.location.href = "/login";
   }, [router]);
 
   const reinitialiserTimer = useCallback(() => {

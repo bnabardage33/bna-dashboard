@@ -29,8 +29,7 @@ export default function Drawer() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+window.location.href = "/login";
   };
 
   const isActive = (href: string) =>

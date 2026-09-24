@@ -31,8 +31,7 @@ export default function LoginPage() {
         return
       }
 
-      router.push('/')
-      router.refresh()
+window.location.href = '/'
     } catch (err) {
       setError("Connexion impossible. Verifie ton reseau et reessaie.")
       setLoading(false)
