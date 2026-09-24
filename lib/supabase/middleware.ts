@@ -89,7 +89,6 @@ export async function updateSession(request: NextRequest) {
     .getAll()
     .some((c) => c.name.startsWith('sb-'))
     
-    console.error('DEBUG', request.nextUrl.pathname, 'user:', !!user, 'cookies:', request.cookies.getAll().map((c) => c.name))
   if (!user && !isPublic && !possedeBearerCron(request) && !aCookieSessions) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
