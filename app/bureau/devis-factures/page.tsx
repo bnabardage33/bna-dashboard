@@ -32,6 +32,7 @@ import {
 } from "@/lib/chantierDefaults";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
 import { prochainNumero } from "@/lib/documents";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, Sparkles, Loader2 } from "lucide-react";
@@ -580,10 +581,16 @@ function DevisContenu() {
         }));
     }
 
-    const { error } = await supabase.from("factures").insert({
+    const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(d.chantier_id);
+
+    // types/supabase.ts stale (régénération CLI utilisateur en attente) :
+    // entreprise_id n'y figure pas → payload casté (schéma réel = OpenAPI).
+    const payload = {
       numero,
       devis_id: d.id,
       client_id: d.client_id,
+      chantier_id,
+      ...(entreprise_id ? { entreprise_id } : {}),
       objet: `${billType === "totale" ? "Facture" : billType === "acompte" ? "Acompte" : "Situation d'avancement"} — ${d.objet ?? d.numero}`,
       adresse_chantier: d.adresse_chantier,
       type_travaux: d.type_travaux,
@@ -591,7 +598,8 @@ function DevisContenu() {
       type_facture: billType === "totale" ? "solde" : billType,
       statut: "brouillon",
       lignes: lignesFacture,
-    });
+    };
+    const { error } = await supabase.from("factures").insert(payload as never);
 
     if (error) {
       alert("Erreur lors de la génération de la facture : " + error.message);
@@ -624,11 +632,15 @@ function DevisContenu() {
     const echeance = new Date();
     echeance.setDate(echeance.getDate() + 15);
 
-    const { error } = await supabase.from("factures").insert({
+    const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(d.chantier_id);
+
+    // types/supabase.ts stale → payload casté (schéma réel = OpenAPI).
+    const payload = {
       numero,
       devis_id: d.id,
       client_id: d.client_id,
-      chantier_id: d.chantier_id ?? null,
+      chantier_id,
+      ...(entreprise_id ? { entreprise_id } : {}),
       objet: `Acompte ${pct}% devis ${d.numero}`,
       adresse_chantier: d.adresse_chantier,
       type_travaux: d.type_travaux,
@@ -645,7 +657,8 @@ function DevisContenu() {
           pu_ht: montantHT,
         },
       ],
-    });
+    };
+    const { error } = await supabase.from("factures").insert(payload as never);
 
     if (error) {
       afficherToast(`⚠️ Erreur génération acompte : ${error.message}`);

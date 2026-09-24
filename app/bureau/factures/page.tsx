@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import type { FactureFinance } from "@/types/finance";
 import DocumentPDF from "@/components/DocumentPDF";
 import SignaturePad from "@/components/SignaturePad";
@@ -35,6 +36,7 @@ type Devis = {
   id: string;
   numero: string;
   client_id: string;
+  chantier_id?: string | null;
   objet: string | null;
   adresse_chantier: string | null;
   type_travaux: string | null;
@@ -253,10 +255,20 @@ export default function FacturesPage() {
 
     const numero = await prochainNumero("factures", "FAC");
 
-    const { error } = await supabase.from("factures").insert({
+    const devisChoisi = depuisDevis
+      ? devisAcceptes.find((d) => d.id === depuisDevis)
+      : null;
+    const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(
+      devisChoisi?.chantier_id
+    );
+
+    // types/supabase.ts stale → payload casté (schéma réel = OpenAPI).
+    const payload = {
       numero,
       devis_id: depuisDevis || null,
       client_id: clientId,
+      chantier_id,
+      ...(entreprise_id ? { entreprise_id } : {}),
       objet: objet || null,
       adresse_chantier: adresseChantier || null,
       type_travaux: typeTravaux || null,
@@ -265,7 +277,8 @@ export default function FacturesPage() {
       type_facture: typeFacture,
       statut: "brouillon",
       lignes,
-    });
+    };
+    const { error } = await supabase.from("factures").insert(payload as never);
 
     if (error) {
       alert("Erreur : " + error.message);

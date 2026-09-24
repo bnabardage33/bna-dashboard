@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { verifierSession } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import {
   calculerDevis,
   creerLigneAChiffrer,
@@ -166,29 +167,51 @@ export async function POST(req: NextRequest) {
     // Surface factuelle : CHANTIER PRIME (source de vérité terrain), sinon métré
     // ponctuel fourni au devis. Jamais devinée.
     let surface_m2: number | null = null;
+    // Contexte multi-entreprise (isolée depuis la Phase 1) : entreprise_id est
+    // NOT NULL sans default sur devis. Résolu depuis le chantier (service_role
+    // lit sans RLS), sinon depuis le claim app_metadata.entreprise_id de la session.
+    let entreprise_id: string | null = null;
     const chantierId = texte(body.chantier_id);
     if (chantierId) {
       const { data: chantier } = await supabaseAdmin
         .from("chantiers")
-        .select("id, surface_m2")
+        .select("*")
         .eq("id", chantierId)
         .maybeSingle();
       if (chantier?.surface_m2 && chantier.surface_m2 > 0) {
         surface_m2 = chantier.surface_m2;
       }
+      const entrepriseChantier = (
+        chantier as unknown as { entreprise_id?: string | null } | null
+      )?.entreprise_id;
+      if (entrepriseChantier) entreprise_id = entrepriseChantier;
     }
     if (surface_m2 === null && estNombrePositif(body.surface_m2)) {
       surface_m2 = body.surface_m2;
     }
+    if (!entreprise_id) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      entreprise_id =
+        (user?.app_metadata as { entreprise_id?: string } | null | undefined)
+          ?.entreprise_id ?? null;
+    }
+    if (!entreprise_id) {
+      return NextResponse.json(
+        { error: "Contexte entreprise introuvable." },
+        { status: 400 }
+      );
+    }
 
     const calculs = calculerDevis(lignes);
 
-    const { data, error } = await supabaseAdmin
-      .from("devis")
-      .insert({
+    const insertDevis = {
       numero,
       client_id: clientId,
       chantier_id: chantierId || null,
+      entreprise_id,
       objet: texte(body.objet) || null,
       adresse_chantier: texte(body.adresse_chantier) || null,
       type_travaux: texte(body.type_travaux) || null,
@@ -216,7 +239,13 @@ export async function POST(req: NextRequest) {
       marge_ht: calculs.marge_ht,
       marge_pct: calculs.marge_pct,
       surface_m2,
-      })
+    };
+
+    // types/supabase.ts stale (régénération CLI utilisateur en attente) :
+    // entreprise_id n'y figure pas → payload casté (schéma réel = OpenAPI).
+    const { data, error } = await supabaseAdmin
+      .from("devis")
+      .insert(insertDevis as never)
       .select("id");
 
     let idCree: string | null = null;
