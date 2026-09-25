@@ -2,6 +2,11 @@
 // Agrégation serveur du snapshot hebdo (semaine passée, Europe/Paris).
 // À importer UNIQUEMENT dans les route handlers : utilise supabaseAdmin
 // (service_role) et ne doit jamais être chargé côté client.
+//
+// ISOLATION MULTI-ENTREPRISE (O3-B3) : le service_role contourne la RLS, donc
+// `construireSnapshot(chantierId, entrepriseId)` exige les DEUX identifiants.
+// `entrepriseId` n'est pas optionnel : chaque appelant doit fournir le tenant
+// qu'il a déjà validé, et chaque lecture est filtrée puis revalidée.
 
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import type { Json } from "@/types/supabase";
@@ -24,18 +29,68 @@ const ORDRE_VIGILANCE: Record<string, number> = {
   rouge: 3,
 };
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+// ISOLATION MULTI-ENTREPRISE (O3-B3)
+// ------------------------------------------------------------------
+// `construireSnapshot` s'exécute sous service_role (le cron O3-B2 n'a pas de
+// session), donc la RLS ne filtre RIEN : chaque lecture doit porter un
+// `.eq("entreprise_id", …)` explicite.
+//
+// Double barrière sur chaque accès :
+//   1. le filtre `.eq("entreprise_id", entrepriseId)` à l'émission ;
+//   2. la revalidation ci-dessous, qui rejette (fail-closed) toute ligne
+//      remontée avec une autre entreprise — elle couvrirait aussi une
+//      régression du filtre ou une ligne incohérente en base.
+// ------------------------------------------------------------------
+
+function exigerEntreprise<T extends { entreprise_id: string }>(
+  lignes: T[],
+  entrepriseId: string,
+  contexte: string
+): T[] {
+  for (const ligne of lignes) {
+    if (ligne.entreprise_id !== entrepriseId) {
+      throw new Error(
+        `Incohérence d'entreprise sur ${contexte} : ligne hors entreprise attendue`
+      );
+    }
+  }
+  return lignes;
+}
+
+function exigerEntrepriseUnitaire<T extends { entreprise_id: string }>(
+  ligne: T | null | undefined,
+  entrepriseId: string,
+  contexte: string
+): T | null {
+  if (ligne && ligne.entreprise_id !== entrepriseId) {
+    throw new Error(
+      `Incohérence d'entreprise sur ${contexte} : ligne hors entreprise attendue`
+    );
+  }
+  return ligne ?? null;
+}
+
 type ChantierSnapshotRow = {
   id: string;
   nom: string | null;
   client_id: string | null;
   date_fin: string | null;
   adresse_chantier: string | null;
+  entreprise_id: string;
 };
 
 type PhotoRow = {
   date_prise: string | null;
   type: string;
   url: string;
+  entreprise_id: string;
 };
 
 type PointageGlobalRow = {
@@ -44,6 +99,7 @@ type PointageGlobalRow = {
   date_saisie: string;
   meteo_relevee: string | null;
   volume_heures_declare: number;
+  entreprise_id: string;
 };
 
 type RapportIntemperieRow = {
@@ -51,6 +107,7 @@ type RapportIntemperieRow = {
   jour_arrete: boolean;
   motif: string;
   vigilance_officielle: string;
+  entreprise_id: string;
 };
 
 type AvancementRow = {
@@ -58,6 +115,7 @@ type AvancementRow = {
   created_at: string | null;
   details: Json | null;
   pourcentage: number;
+  entreprise_id: string;
 };
 
 // -----------------------------------------------------------------------------
@@ -257,28 +315,54 @@ function agregerIntemperies(
 // Construction du snapshot complet pour un chantier
 // -----------------------------------------------------------------------------
 
-export async function construireSnapshot(chantierId: string): Promise<SnapshotContenu> {
-  const { data: chantier, error: erreurChantier } = await supabase
+export async function construireSnapshot(
+  chantierId: string,
+  entrepriseId: string
+): Promise<SnapshotContenu> {
+  if (!estUuid(entrepriseId)) {
+    throw new Error("Contexte entreprise invalide");
+  }
+
+  if (!estUuid(chantierId)) {
+    throw new Error("Chantier invalide");
+  }
+
+  const { data: chantierBrut, error: erreurChantier } = await supabase
     .from("chantiers")
-    .select("id, nom, client_id, date_fin, adresse_chantier")
+    .select("id, nom, client_id, date_fin, adresse_chantier, entreprise_id")
     .eq("id", chantierId)
+    .eq("entreprise_id", entrepriseId)
     .maybeSingle();
 
   if (erreurChantier) {
     throw new Error(`Erreur chargement du chantier : ${erreurChantier.message}`);
   }
 
-  if (!chantier) {
+  if (!chantierBrut) {
     throw new Error("Chantier introuvable");
   }
 
-  const ch: ChantierSnapshotRow = chantier;
+  exigerEntrepriseUnitaire(chantierBrut, entrepriseId, "chantiers");
 
-  const { data: client } = await supabase
-    .from("clients")
-    .select("nom")
-    .eq("id", ch.client_id ?? "")
-    .maybeSingle();
+  const ch: ChantierSnapshotRow = chantierBrut;
+
+  // `clients` n'est pas un enfant de chantier : il n'a ni trigger d'entreprise
+  // ni contrainte composite. Le seul lien est `chantiers.client_id` (FK
+  // simple). On lit donc le client dans l'entreprise DU CHANTIER déjà
+  // revalidé, puis on revalide : un client d'un autre tenant ne peut pas
+  // enrichir le snapshot.
+  let client: { nom: string | null; entreprise_id: string } | null = null;
+
+  if (ch.client_id) {
+    const { data: clientBrut } = await supabase
+      .from("clients")
+      .select("nom, entreprise_id")
+      .eq("id", ch.client_id)
+      .eq("entreprise_id", ch.entreprise_id)
+      .maybeSingle();
+
+    client = exigerEntrepriseUnitaire(clientBrut, ch.entreprise_id, "clients");
+  }
 
   const { debut, fin, lundiISO, dimancheISO } = encadrerSemainePassee(new Date());
   const debutISO = debut.toISOString();
@@ -286,10 +370,11 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
 
   // --- Avancements -----------------------------------------------------------
 
-  const { data: avancements, error: erreurAvancements } = await supabase
+  const { data: avancementsBruts, error: erreurAvancements } = await supabase
     .from("avancements_chantier")
-    .select("pourcentage, details, commentaire, created_at")
+    .select("pourcentage, details, commentaire, created_at, entreprise_id")
     .eq("chantier_id", chantierId)
+    .eq("entreprise_id", entrepriseId)
     .gte("created_at", debutISO)
     .lte("created_at", finISO)
     .order("created_at", { ascending: false });
@@ -298,18 +383,29 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
     throw new Error(`Erreur chargement des avancements : ${erreurAvancements.message}`);
   }
 
-  const listeAvancements: AvancementRow[] = avancements ?? [];
+  const listeAvancements: AvancementRow[] = exigerEntreprise(
+    (avancementsBruts ?? []) as AvancementRow[],
+    entrepriseId,
+    "avancements_chantier"
+  );
   const dernierPeriode = listeAvancements[0];
   const pctFin = dernierPeriode ? Number(dernierPeriode.pourcentage) : 0;
 
-  const { data: avantPeriode } = await supabase
+  const { data: avantPeriodeBrut } = await supabase
     .from("avancements_chantier")
-    .select("pourcentage")
+    .select("pourcentage, entreprise_id")
     .eq("chantier_id", chantierId)
+    .eq("entreprise_id", entrepriseId)
     .lt("created_at", debutISO)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  const avantPeriode = exigerEntrepriseUnitaire(
+    avantPeriodeBrut as { pourcentage: number; entreprise_id: string } | null,
+    entrepriseId,
+    "avancements_chantier"
+  );
 
   const pctDebut = avantPeriode?.pourcentage != null ? Number(avantPeriode.pourcentage) : 0;
   const delta = pctFin - pctDebut;
@@ -320,15 +416,20 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
 
   const { data: photosRaw, error: erreurPhotos } = await supabase
     .from("photos")
-    .select("url, type, date_prise")
+    .select("url, type, date_prise, entreprise_id")
     .eq("chantier_id", chantierId)
+    .eq("entreprise_id", entrepriseId)
     .order("date_prise", { ascending: false });
 
   if (erreurPhotos) {
     console.error(`Erreur chargement photos chantier ${chantierId} : ${erreurPhotos.message}`);
   }
 
-  const photosPeriode: PhotoRow[] = (photosRaw ?? []).filter((photo) => {
+  const photosPeriode: PhotoRow[] = exigerEntreprise(
+    (photosRaw ?? []) as PhotoRow[],
+    entrepriseId,
+    "photos"
+  ).filter((photo) => {
     const jour = String(photo.date_prise ?? "").slice(0, 10);
     return jour >= lundiISO && jour <= dimancheISO;
   });
@@ -360,10 +461,13 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
 
   // --- Pointages globaux -----------------------------------------------------
 
-  const { data: pointagesData, error: erreurPointages } = await supabase
+  const { data: pointagesBruts, error: erreurPointages } = await supabase
     .from("pointages_globaux")
-    .select("volume_heures_declare, meteo_relevee, coef_meteo, commentaire, date_saisie")
+    .select(
+      "volume_heures_declare, meteo_relevee, coef_meteo, commentaire, date_saisie, entreprise_id"
+    )
     .eq("chantier_id", chantierId)
+    .eq("entreprise_id", entrepriseId)
     .gte("date_saisie", lundiISO)
     .lte("date_saisie", dimancheISO);
 
@@ -371,7 +475,11 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
     throw new Error(`Erreur chargement des pointages : ${erreurPointages.message}`);
   }
 
-  const listePointages: PointageGlobalRow[] = pointagesData ?? [];
+  const listePointages: PointageGlobalRow[] = exigerEntreprise(
+    (pointagesBruts ?? []) as PointageGlobalRow[],
+    entrepriseId,
+    "pointages_globaux"
+  );
 
   const totalHeures = listePointages.reduce(
     (total, p) => total + Number(p.volume_heures_declare || 0),
@@ -397,10 +505,11 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
 
   // --- Rapports intempéries ---------------------------------------------------
 
-  const { data: intemperiesData, error: erreurIntemperies } = await supabase
+  const { data: intemperiesBruts, error: erreurIntemperies } = await supabase
     .from("rapports_intemperies")
-    .select("cree_le, motif, jour_arrete, vigilance_officielle")
+    .select("cree_le, motif, jour_arrete, vigilance_officielle, entreprise_id")
     .eq("chantier_id", chantierId)
+    .eq("entreprise_id", entrepriseId)
     .gte("cree_le", debutISO)
     .lte("cree_le", finISO)
     .order("cree_le", { ascending: true });
@@ -410,7 +519,11 @@ export async function construireSnapshot(chantierId: string): Promise<SnapshotCo
   }
 
   const intemperies = agregerIntemperies(
-    (intemperiesData ?? []) as RapportIntemperieRow[],
+    exigerEntreprise(
+      (intemperiesBruts ?? []) as RapportIntemperieRow[],
+      entrepriseId,
+      "rapports_intemperies"
+    ),
     lundiISO,
     dimancheISO
   );

@@ -297,7 +297,7 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        const contenu = await construireSnapshot(chantier.id);
+        const contenu = await construireSnapshot(chantier.id, entrepriseId);
         const prochaine = await prochaineEtape(entrepriseId, chantier.id);
 
         const messagePatron = redigerMessage(contenu, signature, prochaine);
