@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import type { TablesInsert } from "@/types/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
 import { verifierSession } from "@/lib/auth";
@@ -32,11 +33,11 @@ export const revalidate = 0;
 
 // ─── Numérotation sécurisée ───────────────────────────────────────────────────
 async function prochainNumeroIntemperie(): Promise<string> {
-  const { data, error } = await supabaseAdmin.rpc('generer_prochain_numero_ri' as any);
+  const { data, error } = await supabaseAdmin.rpc('generer_prochain_numero_ri');
   if (error || !data) {
     throw new Error(`RPC generer_prochain_numero_ri échouée: ${error?.message || 'pas de data'}`);
   }
-  return data as string;
+  return data;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -300,7 +301,7 @@ export async function POST(request: NextRequest) {
         chantier_id: ch.id, date: today,
         commentaire: `🌧️ Intempérie détectée auto : ${jour.raisons.join(" / ")} (${sourceVigilance})`,
         pourcentage: ancienPct, details,
-      });
+      } as TablesInsert<"avancements_chantier">);
 
       if (error) console.error("Erreur insert avancement:", error.message);
       else rapportes.push(ch.nom);
@@ -319,7 +320,7 @@ export async function POST(request: NextRequest) {
         temp_max: null,
         motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,
         vigilance_officielle: ch.vigilanceOfficielle ?? "vert",
-      });
+      } as TablesInsert<"rapports_intemperies">);
     }
 
     return NextResponse.json(

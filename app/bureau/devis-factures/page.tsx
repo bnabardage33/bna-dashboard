@@ -20,6 +20,7 @@ import { createPortal } from "react-dom";
 import { calculerAidesITE, ProfilRevenu, extraireCodePostal } from "@/lib/primesCalcul";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import {
   chantierIdDepuisRecherche,
   planPreselectionDevis,
@@ -95,7 +96,6 @@ type Devis = {
   cout_main_oeuvre_ht?: number | null;
   marge_ht?: number | null;
   marge_pct?: number | null;
-  profil_revenu?: ProfilRevenu | null;
   clients: Client | null;
 };
 
@@ -524,10 +524,11 @@ function DevisContenu() {
     
     // Numérotation : situation → RPC generer_prochain_numero_sit (SIT-YYYY-###,
     // persistée/atomique/scopée entreprise+année ; source factures.type_facture='situation') ;
-    // acompte/solde → FAC-YYYY-### (prochainNumero). RPC absente des types générés → cast.
+    // acompte/solde → FAC-YYYY-### (prochainNumero). RPC typée dans types/supabase.ts
+    // (overload 0-arg → Returns: string).
     const numero =
       billType === "situation"
-        ? (((await supabase.rpc("generer_prochain_numero_sit" as never)).data as unknown as string) ?? "")
+        ? (((await supabase.rpc("generer_prochain_numero_sit")).data) ?? "")
         : await prochainNumero("factures", "FAC");
     let lignesFacture: Ligne[] = [];
     
@@ -589,8 +590,9 @@ function DevisContenu() {
 
     const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(d.chantier_id);
 
-    // types/supabase.ts stale (régénération CLI utilisateur en attente) :
-    // entreprise_id n'y figure pas → payload casté (schéma réel = OpenAPI).
+    // `entreprise_id` omis quand `chantier_id` est présent : rempli par le
+    // trigger `tg_auto_entreprise` (règle produit, cf. lib/contexteEntreprise.ts) ;
+    // les types régénérés le marquent "requis" → assertion typée ci-dessous.
     const payload = {
       numero,
       devis_id: d.id,
@@ -605,7 +607,12 @@ function DevisContenu() {
       statut: "brouillon",
       lignes: lignesFacture,
     };
-    const { error } = await supabase.from("factures").insert(payload as never);
+    // `entreprise_id` est omis quand `chantier_id` est présent : le trigger
+    // `tg_auto_entreprise` le dérive du chantier (règle produit conservée,
+    // cf. lib/contexteEntreprise.ts). Le type Insert le marque "requis"
+    // (NOT NULL sans défaut côté PostgREST) → assertion typée ciblée
+    // (jamais as any / as never / as unknown).
+    const { error } = await supabase.from("factures").insert(payload as TablesInsert<"factures">);
 
     if (error) {
       alert("Erreur lors de la génération de la facture : " + error.message);
@@ -640,7 +647,9 @@ function DevisContenu() {
 
     const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(d.chantier_id);
 
-    // types/supabase.ts stale → payload casté (schéma réel = OpenAPI).
+    // `entreprise_id` omis si chantier présent : rempli par le trigger
+    // `tg_auto_entreprise` (règle produit, cf. lib/contexteEntreprise.ts) →
+    // assertion typée ciblée (jamais as any / as never / as unknown).
     const payload = {
       numero,
       devis_id: d.id,
@@ -664,7 +673,7 @@ function DevisContenu() {
         },
       ],
     };
-    const { error } = await supabase.from("factures").insert(payload as never);
+    const { error } = await supabase.from("factures").insert(payload as TablesInsert<"factures">);
 
     if (error) {
       afficherToast(`⚠️ Erreur génération acompte : ${error.message}`);
@@ -678,7 +687,7 @@ function DevisContenu() {
   async function transformerEnChantier(d: Devis) {
     if (!confirm(`Transformer le devis ${d.numero} en chantier actif ?`)) return;
 
-    const { error: chantierError } = await supabase.from("chantiers").insert({
+    const { error: chantierError } = await supabase.from("chantiers").insert(({
       nom: d.objet || d.type_travaux || d.numero,
       client_id: d.client_id,
       adresse_chantier: d.adresse_chantier,
@@ -690,7 +699,7 @@ function DevisContenu() {
       surface_m2: d.surface_m2 ?? null,
       code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
-    });
+    } as Omit<TablesInsert<"chantiers">, "entreprise_id">) as TablesInsert<"chantiers">);
 
     if (chantierError) {
       alert("Erreur création chantier : " + chantierError.message);
@@ -818,22 +827,6 @@ function DevisContenu() {
                     </div>
                   </div>
                   
-                  {d.profil_revenu && d.profil_revenu !== 'aucun' && (
-                    (() => {
-                      const aides = calculerAidesITE(d.surface_m2 || 0, d.profil_revenu, totalHT, extraireCodePostal(d.adresse_chantier));
-                      if (aides.totalAides > 0) {
-                        const reste = Math.max(0, totalTTC - aides.totalAides);
-                        return (
-                          <div className="flex items-center justify-between rounded-xl bg-cyan-900/20 p-2.5 border border-cyan-500/20 mt-2">
-                            <span className="text-[11px] font-bold uppercase text-cyan-400">Reste à charge</span>
-                            <span className="text-sm font-black font-mono text-cyan-300">{reste.toFixed(2)} €</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()
-                  )}
-
                   {(nbACHiffrer > 0 || margeConnue) && (
                     <div className="flex items-center justify-between gap-2 text-[10px]">
                       {margeConnue && (

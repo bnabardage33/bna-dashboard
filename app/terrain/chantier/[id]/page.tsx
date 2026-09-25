@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import CommandeModal from "@/components/CommandeModal";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import ZoneCard, { Zone, LigneCommande, ConfigTechnique, calculerZone } from "@/components/ZoneCard";
 import type { ResultatMetre } from "@/lib/metre-serialization";
 import type { Json } from "@/types/supabase";
@@ -421,7 +422,7 @@ function ChantierDetailContent() {
   async function ajouterZone() {
     const { data, error } = await supabase
       .from("chantier_zones")
-      .insert({
+      .insert(({
         chantier_id: id,
         type: "facade",
         nom: `Zone ${zones.length + 1}`,
@@ -431,7 +432,7 @@ function ChantierDetailContent() {
         ouvertures: [],
         famille_pose: null,
         angle: false,
-      })
+      } as Omit<TablesInsert<"chantier_zones">, "entreprise_id">) as TablesInsert<"chantier_zones">)
       .select()
       .single();
     if (error) {

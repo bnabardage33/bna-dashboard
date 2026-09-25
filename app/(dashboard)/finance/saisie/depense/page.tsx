@@ -62,7 +62,7 @@ export default function SaisieDepense() {
       const ht = parseFloat(formData.montant_ht);
       if (isNaN(ht) || ht <= 0) throw new Error("Montant HT invalide.");
 
-      const insertData: TablesInsert<"depenses_chantier"> = {
+      const insertData = {
         nature: formData.nature,
         montant_ht: ht,
         taux_tva: formData.taux_tva,
@@ -74,7 +74,7 @@ export default function SaisieDepense() {
       };
       
 
-      const { error: insertError } = await supabase.from("depenses_chantier").insert(insertData);
+      const { error: insertError } = await supabase.from("depenses_chantier").insert(insertData as TablesInsert<"depenses_chantier">);
 
       if (insertError) throw insertError;
 

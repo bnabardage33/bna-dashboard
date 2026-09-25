@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { UserPlus, Save, ChevronDown, ChevronUp } from "lucide-react";
 
 type Chantier = { id: string; nom: string | null };
@@ -115,7 +116,7 @@ export default function FeuilleHeuresPage() {
       type_heure: l.type_heure,
     }));
 
-    const { error } = await supabase.from("pointages").insert(inserts);
+    const { error } = await supabase.from("pointages").insert(inserts as TablesInsert<"pointages">[]);
 
     if (error) {
       setMessage("❌ Erreur : " + error.message);

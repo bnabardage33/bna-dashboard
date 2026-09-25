@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { Loader2, CheckCircle2, Circle, ChevronDown, ChevronUp, Mic, Square } from "lucide-react";
 
 const FACADES = [
@@ -136,13 +137,13 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
   const handleSave = async () => {
     setSaving(true);
 
-    const { error } = await supabase.from("avancements_chantier").insert({
+    const { error } = await supabase.from("avancements_chantier").insert(({
       chantier_id: chantierId,
       pourcentage: pct,
       date: new Date().toISOString().split('T')[0],
       commentaire: observations,
       details: etat
-    });
+    } as Omit<TablesInsert<"avancements_chantier">, "entreprise_id">) as TablesInsert<"avancements_chantier">);
 
     if (error) {
       alert("Erreur lors de l'enregistrement de l'avancement : " + error.message + "\nAssurez-vous d'avoir ajouté la colonne 'details' (jsonb) à la table avancements_chantier !");

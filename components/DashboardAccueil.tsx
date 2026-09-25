@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { FileText, Mic, ArrowRight } from 'lucide-react';
 import BoutonMicroNote from '@/components/BoutonMicroNote';
 import { supabase } from '@/lib/supabase';
+import type { TablesInsert } from '@/types/supabase';
 
 export type Note = {
   id: string;
@@ -79,7 +80,7 @@ export default function DashboardAccueil({
         .insert({
           titre: titreExtrait,
           contenu: texte,
-        })
+        } as TablesInsert<"notes_patron">)
         .select();
 
       if (!err && data) {

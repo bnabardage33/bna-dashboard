@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import {
   ChantierFinance,
   DepenseFinance,
@@ -351,7 +352,7 @@ export function useParametreFinance(cle: string) {
     setValeur(newVal);
     await supabase
       .from("parametres_finance")
-      .upsert({ cle, valeur: newVal }, { onConflict: "cle" });
+      .upsert({ cle, valeur: newVal } as TablesInsert<"parametres_finance">, { onConflict: "cle" });
   };
 
   return { valeur, updateValeur, isLoading };

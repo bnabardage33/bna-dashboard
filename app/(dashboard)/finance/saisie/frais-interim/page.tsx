@@ -58,10 +58,10 @@ export default function FraisInterimPage() {
       salaire_brut: salaireBrut,
       coefficient,
       taux_tva: tauxTva,
-    });
+    } as TablesInsert<"frais_interim">);
 
     if (!error) {
-      const depenseData: TablesInsert<"depenses_chantier"> = {
+      const depenseData = {
         nature: "sous_traitance",
         montant_ht: totalHT,
         taux_tva: tauxTva,
@@ -71,7 +71,7 @@ export default function FraisInterimPage() {
         ...(formData.chantier_id ? { chantier_id: formData.chantier_id } : {}),
       };
 
-      const { error: depenseError } = await supabase.from("depenses_chantier").insert(depenseData);
+      const { error: depenseError } = await supabase.from("depenses_chantier").insert(depenseData as TablesInsert<"depenses_chantier">);
       if (depenseError) {
         console.error("Erreur insertion depense miroir frais interim:", depenseError);
       }

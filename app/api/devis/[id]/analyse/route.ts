@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import type { TablesInsert } from "@/types/supabase";
 import { verifierSession } from "@/lib/auth";
 import { calculerDevis } from "@/lib/devisCalcul";
 import { ChantierIntrouvableError, servirPayloadMetreComplet } from "@/lib/servir-metre-complet";
@@ -125,7 +126,7 @@ async function revendiquerAnalyse(devisId: string): Promise<{
     // Un seul POST concurrent peut créer la ligne ; les autres échouent (23505).
     const { data: cree, error: errInsert } = await supabaseAdmin
       .from("devis_ia")
-      .insert({ devis_id: devisId, statut: "en_cours", version: 1 })
+      .insert({ devis_id: devisId, statut: "en_cours", version: 1 } as TablesInsert<"devis_ia">)
       .select("id")
       .single();
     if (errInsert || !cree) {
@@ -336,7 +337,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
             devis_ia_id: devisIaId,
             version: snapshot.version,
             snapshot: snapshot.contenu as unknown as Json,
-          });
+          } as TablesInsert<"devis_ia_historique">);
         if (errArchive) {
           console.error("Erreur archivage historique devis_ia :", errArchive.message);
           throw new ErreurAnalyse("Impossible d'archiver l'historique.");

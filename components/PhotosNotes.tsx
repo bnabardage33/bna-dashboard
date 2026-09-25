@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { compresserImage } from "@/lib/imageCompress";
 import Image from "next/image";
 
@@ -95,7 +96,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
         url: urlData.publicUrl,
         type,
         date_prise: new Date().toISOString(),
-      });
+      } as TablesInsert<"photos">);
 
       if (insertError) alert("Erreur enregistrement : " + insertError.message);
     } catch (err) {

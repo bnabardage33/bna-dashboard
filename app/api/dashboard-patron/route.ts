@@ -12,6 +12,8 @@ export const dynamic = 'force-dynamic';
 
 const JOURS_PROJECTION = 30;
 const DEFAUT_TRESORERIE = 5000;
+// Tenant BNA — parametres_entreprise est désormais par entreprise (id uuid, pas 1).
+const ENTREPRISE_BNA = '11111111-1111-4111-8111-111111111111';
 
 function debutJourMs(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -55,7 +57,7 @@ async function lireParametresEntreprise() {
   const { data: params } = await supabaseAdmin
     .from('parametres_entreprise')
     .select('tresorerie_actuelle, charges_fixes_mensuelles')
-    .eq('id', 1)
+    .eq('entreprise_id', ENTREPRISE_BNA)
     .single();
 
   let tresorerieActuelle = params?.tresorerie_actuelle ?? null;
@@ -364,12 +366,12 @@ export async function POST(req: NextRequest) {
       .from('parametres_entreprise')
       .upsert(
         {
-          id: 1,
+          entreprise_id: ENTREPRISE_BNA,
           tresorerie_actuelle: tresorerieActuelle ?? DEFAUT_TRESORERIE,
           charges_fixes_mensuelles: chargesFixesMensuelles ?? 0,
           updated_at: new Date().toISOString(),
         },
-        { onConflict: 'id' }
+        { onConflict: 'entreprise_id' }
       );
 
     if (error) {

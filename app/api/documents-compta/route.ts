@@ -1,6 +1,7 @@
 // app/api/documents-compta/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import type { TablesInsert } from '@/types/supabase';
 import { verifierSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
         chantier_id: chantierId,
         fournisseur_id: fournisseurId,
         categorie,
-      })
+      } as TablesInsert<"documents_compta">)
       .select()
       .single();
 
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
           taux_tva: tauxTva,
           statut: 'engage',
           document_url: urlImage,
-        });
+        } as TablesInsert<"depenses_chantier">);
 
       if (depenseError) {
         console.error('Erreur insertion depense_chantier:', depenseError.message);

@@ -11,11 +11,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import {
-  calculerAidesITE,
-  extraireCodePostal,
-  type ProfilRevenu,
-} from "@/lib/primesCalcul";
 
 // Force dynamic — never cache this route on Vercel/Next.js
 export const dynamic = "force-dynamic";
@@ -41,7 +36,6 @@ const SENSITIVE_KEYS = [
   "cout_matiere_ht",
   "cout_main_oeuvre_ht",
   "total_ht",
-  "profil_revenu",
   // Données internes de chantier (calepinage / appro / vent)
   "prix_vente_ht",
   "coef_perte_rendement",
@@ -85,70 +79,11 @@ const SELECT_PHOTOS = `id, url_image, titre, date_ajout` as const;
 // ces données ne sont jamais lues structurellement côté serveur).
 type LignePassePartout = Record<string, unknown>;
 
-// Résultat public de la simulation d'aides MaPrimeRénov' + CEE.
-// Pré-calculé côté serveur : le client reçoit UNIQUEMENT les totaux.
-interface SimulationAides {
-  primeAnah: number;
-  primeCEE: number;
-  totalAides: number;
-  resteACharge: number;
-}
-
-type LigneDevis = { qte?: unknown; pu_ht?: unknown };
-
-function nombreColonne(valeur: unknown, defaut = 0): number {
-  const n = Number(valeur);
-  return Number.isFinite(n) ? n : defaut;
-}
-
-// Total HT public reconstruit depuis les lignes du devis (designation / qte / pu_ht).
-function totalHTDevis(devis: LignePassePartout): number {
-  const lignes = Array.isArray(devis.lignes)
-    ? (devis.lignes as LigneDevis[])
-    : [];
-  return lignes.reduce(
-    (somme, ligne) => somme + nombreColonne(ligne?.qte) * nombreColonne(ligne?.pu_ht),
-    0
-  );
-}
-
-// Prépare l'encart "aides d'État" SANS jamais exposer le profil de revenu.
-// Utilise la surface du devis (fallback : surface du chantier), le profil
-// lu côté serveur, et le total TTC public. Retourne null si aucune aide.
-function calculerSimulationAides(
-  devis: LignePassePartout,
-  profilRevenu: string | null,
-  surfaceChantier: number | null
-): SimulationAides | null {
-  // Active la simulation UNIQUEMENT si l'artisan a configuré un profil de
-// revenu éligible ('bleu', 'jaune' ou 'violet'). 'rose' n'est pas couvert
-// par les aides Anah et ne doit pas déclencher l'encart.
-const PROFILS_VALIDES = ["bleu", "jaune", "violet"];
-  if (!profilRevenu || !PROFILS_VALIDES.includes(profilRevenu)) return null;
-
-  const surface = nombreColonne(devis.surface_m2) || nombreColonne(surfaceChantier);
-  const totalHT = totalHTDevis(devis);
-  if (surface <= 0 || totalHT <= 0) return null;
-
-  const tvaPct = nombreColonne(devis.tva_pct, 20) || 20;
-  const aides = calculerAidesITE(
-    surface,
-    profilRevenu as ProfilRevenu,
-    totalHT,
-    extraireCodePostal(String(devis.adresse_chantier ?? ""))
-  );
-  if (aides.totalAides <= 0) return null;
-
-  const totalTTC = totalHT * (1 + tvaPct / 100);
-  const resteACharge = Math.max(0, totalTTC - aides.totalAides);
-
-  return {
-    primeAnah: Math.round(aides.primeAnah * 100) / 100,
-    primeCEE: Math.round(aides.primeCEE * 100) / 100,
-    totalAides: Math.round(aides.totalAides * 100) / 100,
-    resteACharge: Math.round(resteACharge * 100) / 100,
-  };
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// (L'encart "aides d'État" de l'espace client a été retiré : il dépendait de
+// `devis.profil_revenu`, colonne supprimée en PROD. `simulation_aides` reste
+// null/absent côté client, qui rend l'encart conditionnellement.)
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Nettoyage défensif : retire toute colonne sensible qui passerait dans
 // la réponse (protection contre un futur select trop large).
@@ -228,7 +163,7 @@ export async function GET(
   }
 
   // 4. Devis visibles (envoyés, signés ou acceptés) — par chantier, fallback par client.
-  //    Sélection EXPLICITE : jamais otp_code / marges / signature / profil_revenu.
+  //    Sélection EXPLICITE : jamais otp_code / marges / signature.
   let devisList: LignePassePartout[] = [];
   const { data: devisParChantier } = await supabaseAdmin
     .from("devis")
@@ -247,34 +182,11 @@ export async function GET(
     if (devisParClient) devisList = devisParClient as unknown as LignePassePartout[];
   }
 
-  // 4bis. Simulation des aides d'État (MaPrimeRénov' + CEE), CALCULÉE CÔTÉ SERVEUR.
-  // On relit `profil_revenu` en interne (requête séparée, jamais renvoyée au client)
-  // puis on attache le résultat public `simulation_aides` à chaque devis.
-  if (devisList.length > 0) {
-    const idsDevis = devisList
-      .map((d) => d.id)
-      .filter((x): x is string => typeof x === "string");
-
-    const { data: profilsDevis } = await supabaseAdmin
-      .from("devis")
-      .select("id, profil_revenu")
-      .in("id", idsDevis);
-
-    const profilsMap = new Map<string, string | null>(
-      (profilsDevis ?? []).map((p) => [p.id, p.profil_revenu])
-    );
-
-    devisList = devisList.map((devis) => {
-      const simulation = calculerSimulationAides(
-        devis,
-        profilsMap.get(String(devis.id)) ?? null,
-        chantier.surface_m2 ?? null
-      );
-      // Toujours présent côté client : simulation si profil éligible, sinon null.
-      devis.simulation_aides = simulation;
-      return devis;
-    });
-  }
+  // 4bis. Simulation des aides d'État (MaPrimeRénov' + CEE) SUPPRIMÉE :
+  // elle dépendait de `devis.profil_revenu`, colonne supprimée en PROD.
+  // Sans source de profil (neutre et vérifiée), aucun montant d'aide ne peut
+  // être calculé sans inventer de valeur → `simulation_aides` reste absent
+  // (comportement inchangé côté client : l'encart est rendu conditionnellement).
 
   // 5. Factures — par chantier, fallback par client. Whitelist stricte également.
   let facturesList: LignePassePartout[] = [];

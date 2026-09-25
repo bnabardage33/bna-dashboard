@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import type { TablesInsert } from "@/types/supabase";
 import {
   construireSnapshot,
   encadrerSemainePassee,
@@ -149,7 +150,7 @@ export async function GET(request: NextRequest) {
 
       const { error: erreurInsertion } = await supabase
         .from("rapports_client")
-        .insert({
+        .insert(({
           chantier_id: chantier.id,
           semaine_label: contenu.periode.semaine,
           date_debut: lundiISO,
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
           contenu,
           statut: "envoye",
           envoye_le: new Date().toISOString(),
-        });
+        } as Omit<TablesInsert<"rapports_client">, "entreprise_id">) as TablesInsert<"rapports_client">);
 
       if (erreurInsertion) {
         enErreur += 1;

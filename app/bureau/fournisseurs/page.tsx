@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { TablesUpdate } from "@/types/supabase";
+import type { TablesInsert, TablesUpdate } from "@/types/supabase";
 import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
 import SignaturePad from "@/components/SignaturePad";
@@ -173,7 +173,7 @@ export default function FournisseursPage() {
       };
     });
 
-    await supabase.from("notifications").insert(rows);
+    await supabase.from("notifications").insert(rows as TablesInsert<"notifications">[]);
   }
 
   useEffect(() => {
@@ -275,7 +275,7 @@ export default function FournisseursPage() {
       conditions_paiement: fConditions || null,
       notes: fNotes || null,
       statut_relation: fStatutRelation,
-    });
+    } as TablesInsert<"fournisseurs">);
     if (error) {
       alert("Erreur : " + error.message);
       return;
@@ -332,7 +332,7 @@ export default function FournisseursPage() {
         date_livraison_prevue: cDateLivraison || null,
         statut: "a_commander",
       }));
-      const { error } = await supabase.from("commandes").insert(inserts);
+      const { error } = await supabase.from("commandes").insert(inserts as TablesInsert<"commandes">[]);
       if (error) {
         alert("Erreur : " + error.message);
         return;
@@ -348,7 +348,7 @@ export default function FournisseursPage() {
         montant_ht: cMontant ? parseFloat(cMontant) : null,
         date_livraison_prevue: cDateLivraison || null,
         statut: "a_commander",
-      });
+      } as TablesInsert<"commandes">);
       if (error) {
         alert("Erreur : " + error.message);
         return;

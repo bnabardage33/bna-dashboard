@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import type { TablesInsert } from '@/types/supabase';
 import { verifierSession } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('notifications')
-      .insert({ type, titre, message, destinataire_id, lien })
+      .insert({ type, titre, message, destinataire_id, lien } as TablesInsert<"notifications">)
       .select()
       .single();
 

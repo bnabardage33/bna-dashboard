@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { useRouter } from "next/navigation";
 
 
@@ -59,7 +60,7 @@ export default function SaisiePointage() {
         date: formData.date,
         type_heure: formData.type_heure,
         phase_travail: formData.phase_travail
-      });
+      } as TablesInsert<"pointages">);
 
       if (insertError) throw insertError;
 

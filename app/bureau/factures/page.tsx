@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import type { TablesInsert } from "@/types/supabase";
 import type { FactureFinance } from "@/types/finance";
 import DocumentPDF from "@/components/DocumentPDF";
 import SignaturePad from "@/components/SignaturePad";
@@ -262,7 +263,9 @@ export default function FacturesPage() {
       devisChoisi?.chantier_id
     );
 
-    // types/supabase.ts stale → payload casté (schéma réel = OpenAPI).
+    // `entreprise_id` omis quand `chantier_id` est présent : rempli par le
+    // trigger `tg_auto_entreprise` (règle produit, cf. lib/contexteEntreprise.ts) ;
+    // les types régénérés le marquent "requis" → assertion typée ciblée.
     const payload = {
       numero,
       devis_id: depuisDevis || null,
@@ -278,7 +281,7 @@ export default function FacturesPage() {
       statut: "brouillon",
       lignes,
     };
-    const { error } = await supabase.from("factures").insert(payload as never);
+    const { error } = await supabase.from("factures").insert(payload as TablesInsert<"factures">);
 
     if (error) {
       alert("Erreur : " + error.message);

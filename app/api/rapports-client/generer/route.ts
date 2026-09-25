@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import type { TablesInsert } from "@/types/supabase";
 import {
   construireSnapshot,
   encadrerSemainePassee,
@@ -100,14 +101,14 @@ export async function POST(request: NextRequest) {
 
     const { data: rapportCree, error: erreurInsertion } = await supabase
       .from("rapports_client")
-      .insert({
+      .insert(({
         chantier_id: chantierId,
         semaine_label: contenu.periode.semaine,
         date_debut: lundiISO,
         date_fin: dimancheISO,
         contenu,
         statut: "brouillon",
-      })
+      } as Omit<TablesInsert<"rapports_client">, "entreprise_id">) as TablesInsert<"rapports_client">)
       .select()
       .single();
 

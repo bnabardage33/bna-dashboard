@@ -1,6 +1,7 @@
 // app/api/photos-chantier/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import type { TablesInsert } from '@/types/supabase';
 import { verifierSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('photos_chantier')
-      .insert({ chantier_id, url_image: urlData.publicUrl, titre, date_ajout: new Date().toISOString() })
+      .insert({ chantier_id, url_image: urlData.publicUrl, titre, date_ajout: new Date().toISOString() } as TablesInsert<"photos_chantier">)
       .select()
       .single();
 

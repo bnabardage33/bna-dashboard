@@ -152,13 +152,13 @@ export default function FicheSAV() {
     setSaving(true);
 
     // Numéro SAV séquentiel et atomique via RPC PostgreSQL (anti-doublon)
-    const { data: numeroRPC, error: rpcError } = await supabase.rpc('generer_prochain_numero_sav' as any);
+    const { data: numeroRPC, error: rpcError } = await supabase.rpc('generer_prochain_numero_sav');
     if (rpcError || !numeroRPC) {
       setSaving(false);
       alert("Erreur lors de la génération du numéro SAV : " + (rpcError?.message || "RPC vide"));
       return;
     }
-    const numero = numeroRPC as string;
+    const numero = numeroRPC;
     
     const lignes = [
       {
@@ -183,9 +183,9 @@ export default function FicheSAV() {
       tva_pct: 20,
       statut: "brouillon",
       lignes
-    };
+    } as Omit<TablesInsert<"devis">, "entreprise_id">;
 
-    const { data, error } = await supabase.from("devis").insert(payload).select().single();
+    const { data, error } = await supabase.from("devis").insert(payload as TablesInsert<"devis">).select().single();
     setSaving(false);
 
     if (error) {

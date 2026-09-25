@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import type { TablesInsert } from '@/types/supabase';
 import {
   MessageChat,
   ResumeGlobal,
@@ -257,7 +258,7 @@ export async function traiterConsolidation(corps: Record<string, unknown>): Prom
     if (ligneBrute) {
       await supabaseAdmin.rpc('espace_client_consolider', {
         p_cle: cle,
-        p_session_id: sessionId,
+        p_session_id: sessionId as string,
         p_nb_messages_calcules: stockes.length,
         p_resume_global: null,
         p_resume_session: null,
@@ -316,7 +317,7 @@ export async function traiterConsolidation(corps: Record<string, unknown>): Prom
   if (ligneBrute) {
     const { data: resultatConsolide } = await supabaseAdmin.rpc('espace_client_consolider', {
       p_cle: cle,
-      p_session_id: sessionId,
+      p_session_id: sessionId as string,
       p_nb_messages_calcules: stockes.length,
       p_resume_global: {
         texte: resumeGlobalFinal.texte,
@@ -390,7 +391,7 @@ export async function traiterConsolidation(corps: Record<string, unknown>): Prom
       contenu,
       epingle: true,
       espace_client_id: cle,
-    });
+    } as TablesInsert<"notes_patron">);
   }
 
   // Notification au patron : priorité au mécontentement, sinon aux demandes en attente.
@@ -403,7 +404,7 @@ export async function traiterConsolidation(corps: Record<string, unknown>): Prom
         `Client : ${clientNom}\n${resumeGlobalFinal.texte}`,
       lien: chantierId ? `/bureau/chantiers?id=${chantierId}` : null,
       destinataire_id: patronId,
-    });
+    } as TablesInsert<"notifications">);
   } else if (resumeGlobalFinal.demandes_en_attente.length > 0) {
     await supabaseAdmin.from('notifications').insert({
       type: 'client_alert',
@@ -413,7 +414,7 @@ export async function traiterConsolidation(corps: Record<string, unknown>): Prom
         resumeGlobalFinal.demandes_en_attente.map((d) => `- ${d}`).join('\n'),
       lien: chantierId ? `/bureau/chantiers?id=${chantierId}` : null,
       destinataire_id: patronId,
-    });
+    } as TablesInsert<"notifications">);
   }
 
   return NextResponse.json({

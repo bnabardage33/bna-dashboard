@@ -146,7 +146,7 @@ async function persisterMessages(
       p_cle: cle,
       p_chantier_id: chantierId,
       p_client_nom: clientName,
-      p_session_id: sessionId,
+      p_session_id: sessionId as string,
       p_messages: messages.map((m) => ({ role: m.role, content: m.content })),
     });
   } catch (e) {

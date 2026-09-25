@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import BoutonMicroNote from "@/components/BoutonMicroNote";
 import { Mic, Pin, Plus, Trash2, Edit3, X, Check, Building } from "lucide-react";
 
@@ -69,7 +70,7 @@ export default function NotesPage() {
     const { error } = await supabase.from("notes_patron").insert({
       titre: titreFinal || null,
       contenu: contenu.trim(),
-    });
+    } as TablesInsert<"notes_patron">);
     if (error) {
       alert("Erreur : " + error.message);
       return;

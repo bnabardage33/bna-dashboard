@@ -241,11 +241,12 @@ export async function POST(req: NextRequest) {
       surface_m2,
     };
 
-    // types/supabase.ts stale (régénération CLI utilisateur en attente) :
-    // entreprise_id n'y figure pas → payload casté (schéma réel = OpenAPI).
+    // `entreprise_id` est TOUJOURS renseigné ici (vérifié non-null plus haut) :
+    // le cast `as never` devient inutile depuis la régénération des types
+    // (devis.entreprise_id désormais typé requis dans types/supabase.ts).
     const { data, error } = await supabaseAdmin
       .from("devis")
-      .insert(insertDevis as never)
+      .insert(insertDevis)
       .select("id");
 
     let idCree: string | null = null;

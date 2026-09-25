@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import type { TablesInsert } from "@/types/supabase";
 import { verifierSession } from "@/lib/auth";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import {
@@ -249,13 +250,13 @@ async function fetchVigilanceInterne(
 // -----------------------------------------------------------------------------
 
 async function prochainNumero(): Promise<string> {
-  const { data, error } = await supabase.rpc('generer_prochain_numero_ri' as any);
+  const { data, error } = await supabase.rpc('generer_prochain_numero_ri');
   if (error || !data) {
     throw new Error(
       `Impossible de générer un numéro sécurisé via RPC : ${error?.message}`
     );
   }
-  return data as string;
+  return data;
 }
 
 // -----------------------------------------------------------------------------
@@ -458,12 +459,12 @@ export async function POST(request: NextRequest) {
           numero = await prochainNumero();
           const { data: rapportCree, error: erreurInsertion } = await supabase
             .from("rapports_intemperies")
-            .insert({
+            .insert(({
               numero,
               chantier_id: chantier.id,
               ...donneesRapport,
               cree_par: "auto",
-            })
+            } as Omit<TablesInsert<"rapports_intemperies">, "entreprise_id">) as TablesInsert<"rapports_intemperies">)
             .select()
             .single();
 

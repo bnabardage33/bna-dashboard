@@ -5,6 +5,7 @@ import { Upload, Check, Loader2, Trash2, Paperclip, Sparkles } from 'lucide-reac
 import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 
 interface Chantier { id: string; nom: string | null; clients?: { nom: string | null; societe: string | null } | null; }
 interface Fournisseur { id: string; nom: string; }
@@ -158,7 +159,7 @@ export default function DocumentsComptaPage() {
     if (!fpPropose) return;
     const { data, error } = await supabase
       .from('fournisseurs')
-      .insert({ nom: fpPropose })
+      .insert({ nom: fpPropose } as TablesInsert<"fournisseurs">)
       .select()
       .single();
     if (error) {

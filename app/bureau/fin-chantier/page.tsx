@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { prochainNumero } from "@/lib/documents";
 import SignaturePad from "@/components/SignaturePad";
 import PVReceptionPDF, {
@@ -245,22 +246,23 @@ export default function FinChantierPage() {
     const chantiersMap = new Map(chantiersFormatted.map((c) => [c.id, c]));
 
     if (pvsRes.data) {
-      const enrichis: PVRow[] = (pvsRes.data as PVRow[]).map((r) => {
+      const enrichis: PVRow[] = (pvsRes.data ?? []).map((r) => {
         const ch = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
         const cl = (clientsMap.get(r.client_id as string) || ch?.clients || {}) as {nom: string; email?: string; tel?: string} | undefined;
         const chantier = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
         const d = devisMap.get(r.devis_id as string);
         return {
           ...r,
-          zones_metres: Array.isArray(r.zones_metres) ? r.zones_metres : [],
-          photos: Array.isArray(r.photos) ? r.photos : [],
-          notice_entretien: r.notice_entretien || DEFAULT_NOTICE,
-          reserves: Array.isArray(r.reserves) ? r.reserves : [],
-          checklist_repli: r.checklist_repli || DEFAULT_REPLI,
+          nom: '',
+          zones_metres: (Array.isArray(r.zones_metres) ? r.zones_metres : []) as ZoneMetre[],
+          photos: (Array.isArray(r.photos) ? r.photos : []) as PhotoFinChantier[],
+          notice_entretien: (r.notice_entretien || DEFAULT_NOTICE) as NoticeEntretien,
+          reserves: (Array.isArray(r.reserves) ? r.reserves : []) as Reserve[],
+          checklist_repli: (r.checklist_repli || DEFAULT_REPLI) as ChecklistRepli,
           chantiers: ch ? { nom: ch.nom as string, adresse_chantier: ch.adresse_chantier as string } : null,
           clients: cl ? { nom: cl.nom as string, email: (cl.email || '') as string, telephone: (cl.tel || '') as string } : null,
           devis: d ? { numero: d.numero as string } : null,
-        };
+        } as PVRow;
       });
       setPvs(enrichis);
     }
@@ -463,7 +465,7 @@ export default function FinChantierPage() {
       } else {
         // Création
         const numero = await prochainNumero("pv_receptions", "PVR");
-        const { data: nouveauPv, error } = await supabase.from("pv_receptions").insert({
+        const { data: nouveauPv, error } = await supabase.from("pv_receptions").insert(({
           numero,
           chantier_id: formChantierId || null,
           client_id: formClientId || null,
@@ -482,7 +484,7 @@ export default function FinChantierPage() {
           signataire_client_nom: formSignClientNom,
           signature_entreprise: formSignEntreprise,
           signataire_entreprise_nom: formSignEntrepriseNom,
-        }).select().single();
+        } as Omit<TablesInsert<"pv_receptions">, "entreprise_id">) as TablesInsert<"pv_receptions">).select().single();
 
         if (error) throw error;
 

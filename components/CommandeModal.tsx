@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { X, Search, Loader2 } from "lucide-react";
 import { LigneCommande } from "@/components/ZoneCard";
 import { useRouter } from "next/navigation";
@@ -141,7 +142,7 @@ export default function CommandeModal({
       // 1. Create commande
       const { data: commande, error: cmdError } = await supabase
         .from('commandes')
-        .insert({ chantier_id: chantierId, designation: `Chiffrage ${chantierNom} - ${zoneNom}`, montant_ht: totalGeneralHT })
+        .insert({ chantier_id: chantierId, designation: `Chiffrage ${chantierNom} - ${zoneNom}`, montant_ht: totalGeneralHT } as TablesInsert<"commandes">)
         .select('id')
         .single();
 
@@ -162,7 +163,7 @@ export default function CommandeModal({
 
       const { error: linesError } = await supabase
         .from('lignes_commande')
-        .insert(lignesData);
+        .insert(lignesData as TablesInsert<"lignes_commande">[]);
 
       if (linesError) throw linesError;
 

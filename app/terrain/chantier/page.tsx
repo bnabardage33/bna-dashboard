@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check, BarChartHorizontal } from "lucide-react";
 import PlanningGantt from "@/components/PlanningGantt";
 
@@ -75,7 +76,7 @@ export default function ChantiersPage() {
     if (!clientId) return;
     setCreationEnCours(true);
 
-    const { error } = await supabase.from("chantiers").insert({
+    const { error } = await supabase.from("chantiers").insert(({
       nom: nom || null,
       client_id: clientId,
       adresse_chantier: adresse || null,
@@ -85,7 +86,7 @@ export default function ChantiersPage() {
       statut: "prevu",
       code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
-    });
+    } as Omit<TablesInsert<"chantiers">, "entreprise_id">) as TablesInsert<"chantiers">);
 
     setCreationEnCours(false);
 

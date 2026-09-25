@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import type { TablesInsert } from "@/types/supabase";
 
 type Client = {
   id: string;
@@ -167,7 +168,7 @@ export default function ClientsPage() {
       ville: ville || null,
       tel: tel || null,
       email: email || null,
-    });
+    } as TablesInsert<"clients">);
 
     if (error) {
       alert("Erreur : " + error.message);
