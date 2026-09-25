@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import type { TablesInsert } from "@/types/supabase";
+import type { Database, TablesInsert } from "@/types/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
 import { verifierSession } from "@/lib/auth";
@@ -9,18 +11,87 @@ import { verifierSession } from "@/lib/auth";
 const SEUIL_PLUIE_MM = 5;
 const SEUIL_GEL_C = 0;
 
-// Autorise à la fois la session (page /bureau/meteo) et le cron Vercel
-// (Authorization: Bearer CRON_SECRET, envoyé automatiquement par Vercel
-// quand la variable d'env CRON_SECRET est définie).
-async function autoriserAccesMeteo(request: NextRequest): Promise<boolean> {
+type ClientMeteo = SupabaseClient<Database>;
+
+type ContexteMeteo = {
+  client: ClientMeteo;
+  entrepriseIds: string[];
+};
+
+type ResultatContexteMeteo =
+  | { ok: true; contexte: ContexteMeteo }
+  | { ok: false; reponse: NextResponse };
+
+// La session utilisateur est toujours limitée à son claim JWT. Le cron Vercel
+// n'a pas de session : après validation de CRON_SECRET, il reçoit uniquement
+// des contextes tenant explicites, puis chaque opération est scopée séparément.
+async function resoudreContexteMeteo(
+  request: NextRequest
+): Promise<ResultatContexteMeteo> {
   const session = await verifierSession();
-  if (session.authentifie) return true;
+  if (session.authentifie) {
+    const client = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await client.auth.getUser();
+
+    if (error || !user) {
+      return {
+        ok: false,
+        reponse: NextResponse.json({ error: "Non autorisé" }, { status: 401 }),
+      };
+    }
+
+    const claim = (user.app_metadata as { entreprise_id?: unknown } | null | undefined)
+      ?.entreprise_id;
+    const entrepriseId = typeof claim === "string" ? claim.trim() : "";
+
+    if (!entrepriseId) {
+      return {
+        ok: false,
+        reponse: NextResponse.json(
+          { error: "Contexte entreprise introuvable." },
+          { status: 403 }
+        ),
+      };
+    }
+
+    return {
+      ok: true,
+      contexte: { client, entrepriseIds: [entrepriseId] },
+    };
+  }
 
   const secret = process.env.CRON_SECRET ?? "";
-  if (!secret) return false;
-
   const autorisation = request.headers.get("authorization") ?? "";
-  return autorisation === `Bearer ${secret}`;
+  if (!secret || autorisation !== `Bearer ${secret}`) {
+    return {
+      ok: false,
+      reponse: NextResponse.json({ error: "Non autorisé" }, { status: 401 }),
+    };
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("entreprises")
+    .select("id")
+    .eq("actif", true)
+    .order("id");
+
+  if (error) {
+    return {
+      ok: false,
+      reponse: NextResponse.json({ error: "Erreur serveur" }, { status: 500 }),
+    };
+  }
+
+  return {
+    ok: true,
+    contexte: {
+      client: supabaseAdmin,
+      entrepriseIds: (data ?? []).map((entreprise) => entreprise.id),
+    },
+  };
 }
 
 const FALLBACK_GEOLOC = { lat: 46.6, lng: 2.4 };
@@ -32,10 +103,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // ─── Numérotation sécurisée ───────────────────────────────────────────────────
-async function prochainNumeroIntemperie(): Promise<string> {
-  const { data, error } = await supabaseAdmin.rpc('generer_prochain_numero_ri');
+// La RPC est réservée à service_role. Sa variante UUID impose explicitement le
+// tenant de numérotation ; elle n'est jamais appelée sans entrepriseId.
+async function prochainNumeroIntemperie(entrepriseId: string): Promise<string> {
+  const { data, error } = await supabaseAdmin.rpc("generer_prochain_numero_ri", {
+    p_entreprise_id: entrepriseId,
+  });
   if (error || !data) {
-    throw new Error(`RPC generer_prochain_numero_ri échouée: ${error?.message || 'pas de data'}`);
+    throw new Error(`RPC generer_prochain_numero_ri échouée: ${error?.message || "pas de data"}`);
   }
   return data;
 }
@@ -170,22 +245,81 @@ async function fetchVigilanceDepartement(departement: string): Promise<{ niveau:
   }
 }
 
-// Chargement des chantiers avec adresse chantier + moyen_acces + materiau
-async function chargerChantiers() {
-  const { data, error } = await supabaseAdmin
+// Chargement des chantiers avec adresse chantier + moyen_acces + materiau.
+// Les clients sont lus dans une requête séparée, filtrée par tenant et par les
+// seuls client_id des chantiers déjà scopés. Un chantier sans client reste
+// analysé, mais aucun email d'un autre tenant ne peut être lu ou exposé.
+async function chargerChantiers(supabase: ClientMeteo, entrepriseId: string) {
+  const { data: chantiers, error } = await supabase
     .from("chantiers")
-    .select("id, nom, adresse_chantier, client_nom, moyen_acces, materiau_structurel, clients(email, societe, nom)")
+    .select(
+      "id, client_id, entreprise_id, nom, adresse_chantier, client_nom, moyen_acces, materiau_structurel"
+    )
+    .eq("entreprise_id", entrepriseId)
     .eq("statut", "en_cours");
   if (error) throw new Error("Erreur chargement chantiers : " + error.message);
-  return data ?? [];
+
+  const clientIds = [...new Set(
+    (chantiers ?? [])
+      .map((chantier) => chantier.client_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+  )];
+  const clientsParId = new Map<string, {
+    id: string;
+    entreprise_id: string;
+    email: string | null;
+    societe: string | null;
+    nom: string;
+  }>();
+
+  if (clientIds.length > 0) {
+    const { data: clients, error: clientError } = await supabase
+      .from("clients")
+      .select("id, entreprise_id, email, societe, nom")
+      .eq("entreprise_id", entrepriseId)
+      .in("id", clientIds);
+    if (clientError) {
+      throw new Error("Erreur chargement clients : " + clientError.message);
+    }
+
+    for (const client of clients ?? []) {
+      if (client.entreprise_id !== entrepriseId) {
+        throw new Error("Client hors entreprise");
+      }
+      clientsParId.set(client.id, client);
+    }
+  }
+
+  return (chantiers ?? []).map((chantier) => ({
+    ...chantier,
+    clients: chantier.client_id
+      ? clientsParId.get(chantier.client_id) ?? null
+      : null,
+  }));
 }
 
-async function analyserChantiers(): Promise<ChantierMeteo[]> {
-  const chantiers = await chargerChantiers();
+async function analyserChantiers(
+  supabase: ClientMeteo,
+  entrepriseId: string
+): Promise<ChantierMeteo[]> {
+  const chantiers = await chargerChantiers(supabase, entrepriseId);
   const resultats: ChantierMeteo[] = [];
 
   for (const ch of chantiers) {
-    const client = Array.isArray(ch.clients) ? ch.clients[0] : ch.clients ?? null;
+    if (ch.entreprise_id !== entrepriseId) {
+      throw new Error("Chantier hors entreprise");
+    }
+
+    const client = (Array.isArray(ch.clients) ? ch.clients[0] : ch.clients ?? null) as {
+      entreprise_id?: string;
+      email?: string | null;
+      societe?: string | null;
+      nom?: string | null;
+    } | null;
+    if (client && client.entreprise_id !== entrepriseId) {
+      throw new Error("Client hors entreprise");
+    }
+
     const emailClient = client?.email ?? null;
     const nomClient = (client as { societe?: string; nom?: string } | null)?.societe
       || (client as { nom?: string } | null)?.nom
@@ -254,11 +388,17 @@ function detailsVierges() {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await autoriserAccesMeteo(request))) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const resultatContexte = await resoudreContexteMeteo(request);
+  if (!resultatContexte.ok) return resultatContexte.reponse;
+
   try {
-    const chantiers = await analyserChantiers();
+    const chantiers: ChantierMeteo[] = [];
+    for (const entrepriseId of resultatContexte.contexte.entrepriseIds) {
+      chantiers.push(
+        ...(await analyserChantiers(resultatContexte.contexte.client, entrepriseId))
+      );
+    }
+
     return NextResponse.json(
       { jourAujourdhui: dateParis(), chantiers, nbIntemperies: chantiers.filter((c) => c.intemperieAujourdhui).length },
       { headers: { "Cache-Control": "no-store" } }
@@ -269,62 +409,98 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await autoriserAccesMeteo(request))) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
+  const resultatContexte = await resoudreContexteMeteo(request);
+  if (!resultatContexte.ok) return resultatContexte.reponse;
+
   try {
-    const chantiers = await analyserChantiers();
-    const intemp = chantiers.filter((c) => c.intemperieAujourdhui);
     const today = dateParis();
     const rapportes: string[] = [];
+    const intemperies: Array<{
+      chantier: string;
+      departement: string | null;
+      vigilance: string | null;
+      raisons: string[];
+    }> = [];
     let dejaExistant = 0;
 
-    for (const ch of intemp) {
-      const { data: deja } = await supabaseAdmin.from("avancements_chantier").select("id")
-        .eq("chantier_id", ch.id).eq("date", today).ilike("commentaire", "%Intempérie détectée auto%");
+    for (const entrepriseId of resultatContexte.contexte.entrepriseIds) {
+      const chantiers = await analyserChantiers(resultatContexte.contexte.client, entrepriseId);
+      const intemp = chantiers.filter((c) => c.intemperieAujourdhui);
 
-      if (deja && deja.length > 0) { dejaExistant++; continue; }
+      intemperies.push(
+        ...intemp.map((c) => ({
+          chantier: c.nom,
+          departement: c.departement,
+          vigilance: c.vigilanceOfficielle,
+          raisons: c.jours[0].raisons,
+        }))
+      );
 
-      const { data: prev } = await supabaseAdmin.from("avancements_chantier").select("pourcentage, details")
-        .eq("chantier_id", ch.id).order("id", { ascending: false }).limit(1);
+      for (const ch of intemp) {
+        const { data: deja } = await resultatContexte.contexte.client
+          .from("avancements_chantier")
+          .select("id")
+          .eq("entreprise_id", entrepriseId)
+          .eq("chantier_id", ch.id)
+          .eq("date", today)
+          .ilike("commentaire", "%Intempérie détectée auto%");
 
-      const ancienPct = prev && prev.length > 0 ? (prev[0].pourcentage ?? 0) : 0;
-      const details = prev && prev.length > 0 && prev[0].details && typeof prev[0].details === "object"
-        ? prev[0].details : detailsVierges();
+        if (deja && deja.length > 0) { dejaExistant++; continue; }
 
-      const jour = ch.jours[0];
-      const sourceVigilance = ch.vigilanceOfficielle && ["orange", "rouge"].includes(ch.vigilanceOfficielle)
-        ? `Vigilance MétéoFrance ${ch.vigilanceOfficielle.toUpperCase()} + Open-Meteo`
-        : "Open-Meteo";
+        const { data: prev } = await resultatContexte.contexte.client
+          .from("avancements_chantier")
+          .select("pourcentage, details")
+          .eq("entreprise_id", entrepriseId)
+          .eq("chantier_id", ch.id)
+          .order("id", { ascending: false })
+          .limit(1);
 
-      const { error } = await supabaseAdmin.from("avancements_chantier").insert({
-        chantier_id: ch.id, date: today,
-        commentaire: `🌧️ Intempérie détectée auto : ${jour.raisons.join(" / ")} (${sourceVigilance})`,
-        pourcentage: ancienPct, details,
-      } as TablesInsert<"avancements_chantier">);
+        const ancienPct = prev && prev.length > 0 ? (prev[0].pourcentage ?? 0) : 0;
+        const details = prev && prev.length > 0 && prev[0].details && typeof prev[0].details === "object"
+          ? prev[0].details : detailsVierges();
 
-      if (error) console.error("Erreur insert avancement:", error.message);
-      else rapportes.push(ch.nom);
+        const jour = ch.jours[0];
+        const sourceVigilance = ch.vigilanceOfficielle && ["orange", "rouge"].includes(ch.vigilanceOfficielle)
+          ? `Vigilance MétéoFrance ${ch.vigilanceOfficielle.toUpperCase()} + Open-Meteo`
+          : "Open-Meteo";
 
-      await supabaseAdmin.from("rapports_intemperies").insert({
-        numero: await prochainNumeroIntemperie(),
-        chantier_id: ch.id,
-        a_valider: true,
-        ampleur_impact: ch.vigilanceOfficielle === "rouge" ? "totale" : "partielle",
-        cree_par: "auto",
-        departement: ch.departement,
-        jour_arrete: true,
-        pluie_continue: jour.pluie > 0,
-        pluie_cumul: jour.pluie > 0 ? jour.pluie : null,
-        rafales_max: jour.vent > 0 ? jour.vent : null,
-        temp_max: null,
-        motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,
-        vigilance_officielle: ch.vigilanceOfficielle ?? "vert",
-      } as TablesInsert<"rapports_intemperies">);
+        const { error } = await resultatContexte.contexte.client
+          .from("avancements_chantier")
+          .insert({
+            entreprise_id: entrepriseId,
+            chantier_id: ch.id,
+            date: today,
+            commentaire: `🌧️ Intempérie détectée auto : ${jour.raisons.join(" / ")} (${sourceVigilance})`,
+            pourcentage: ancienPct,
+            details,
+          } as TablesInsert<"avancements_chantier">);
+
+        if (error) console.error("Erreur insert avancement:", error.message);
+        else rapportes.push(ch.nom);
+
+        await resultatContexte.contexte.client
+          .from("rapports_intemperies")
+          .insert({
+            entreprise_id: entrepriseId,
+            numero: await prochainNumeroIntemperie(entrepriseId),
+            chantier_id: ch.id,
+            a_valider: true,
+            ampleur_impact: ch.vigilanceOfficielle === "rouge" ? "totale" : "partielle",
+            cree_par: "auto",
+            departement: ch.departement,
+            jour_arrete: true,
+            pluie_continue: jour.pluie > 0,
+            pluie_cumul: jour.pluie > 0 ? jour.pluie : null,
+            rafales_max: jour.vent > 0 ? jour.vent : null,
+            temp_max: null,
+            motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,
+            vigilance_officielle: ch.vigilanceOfficielle ?? "vert",
+          } as TablesInsert<"rapports_intemperies">);
+      }
     }
 
     return NextResponse.json(
-      { jourAujourdhui: today, intemperies: intemp.map((c) => ({ chantier: c.nom, departement: c.departement, vigilance: c.vigilanceOfficielle, raisons: c.jours[0].raisons })), rapportes, dejaExistant },
+      { jourAujourdhui: today, intemperies, rapportes, dejaExistant },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (err) {
