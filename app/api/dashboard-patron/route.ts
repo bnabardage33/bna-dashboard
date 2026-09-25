@@ -5,15 +5,13 @@
 // POST : met à jour la trésorerie actuelle (parametres_entreprise).
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createClient } from '@/lib/supabase/server';
 import { verifierSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 const JOURS_PROJECTION = 30;
 const DEFAUT_TRESORERIE = 5000;
-// Tenant BNA — parametres_entreprise est désormais par entreprise (id uuid, pas 1).
-const ENTREPRISE_BNA = '11111111-1111-4111-8111-111111111111';
 
 function debutJourMs(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -53,21 +51,26 @@ function clampJour(j: number): number {
   return Math.max(1, Math.min(JOURS_PROJECTION, j));
 }
 
-async function lireParametresEntreprise() {
-  const { data: params } = await supabaseAdmin
+async function lireParametresEntreprise(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  entreprise_id: string
+) {
+  const { data: params } = await supabase
     .from('parametres_entreprise')
     .select('tresorerie_actuelle, charges_fixes_mensuelles')
-    .eq('entreprise_id', ENTREPRISE_BNA)
+    .eq('entreprise_id', entreprise_id)
     .single();
 
   let tresorerieActuelle = params?.tresorerie_actuelle ?? null;
   let chargesFixes = params?.charges_fixes_mensuelles ?? 0;
 
   if (tresorerieActuelle === null) {
-    // Fallback sur l'ancien paramètre solde_bancaire si présent
-    const { data: solde } = await supabaseAdmin
+    // Fallback sur l'ancien paramètre solde_bancaire si présent.
+    // Scopé par entreprise_id : sinon la valeur d'un autre tenant était lue.
+    const { data: solde } = await supabase
       .from('parametres_finance')
       .select('valeur')
+      .eq('entreprise_id', entreprise_id)
       .eq('cle', 'solde_bancaire')
       .single();
     tresorerieActuelle = solde?.valeur ?? DEFAUT_TRESORERIE;
@@ -80,18 +83,49 @@ export async function GET() {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   try {
+    // Contexte multi-entreprise : le claim app_metadata.entreprise_id du JWT
+    // (même source que la RPC RLS entreprise_courante()) est la seule autorité
+    // de scoping. Le client SSR honore la RLS (défense en profondeur) et le
+    // .eq() explicite verrouille chaque requête sur ce tenant.
+    // Fail-closed : pas de claim => aucune donnée servie.
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const entreprise_id =
+      (user?.app_metadata as { entreprise_id?: string } | null | undefined)
+        ?.entreprise_id ?? null;
+
+    if (!entreprise_id) {
+      return NextResponse.json(
+        { error: 'Contexte entreprise introuvable.' },
+        { status: 403 }
+      );
+    }
+
     const [{ tresorerieActuelle, chargesFixes }, facturesRes, devisRes, depensesRes, docsRes, chantiersRes] =
       await Promise.all([
-        lireParametresEntreprise(),
-        supabaseAdmin.from('factures').select('*, clients(nom, email, societe)'),
-        supabaseAdmin.from('devis').select('*, clients(nom, email)'),
-        supabaseAdmin.from('depenses_chantier').select('*, fournisseurs(nom, email)'),
-        supabaseAdmin
+        lireParametresEntreprise(supabase, entreprise_id),
+        supabase
+          .from('factures')
+          .select('*, clients(nom, email, societe)')
+          .eq('entreprise_id', entreprise_id),
+        supabase
+          .from('devis')
+          .select('*, clients(nom, email)')
+          .eq('entreprise_id', entreprise_id),
+        supabase
+          .from('depenses_chantier')
+          .select('*, fournisseurs(nom, email)')
+          .eq('entreprise_id', entreprise_id),
+        supabase
           .from('documents_compta')
-          .select('*, fournisseurs(nom, email)'),
-        supabaseAdmin
+          .select('*, fournisseurs(nom, email)')
+          .eq('entreprise_id', entreprise_id),
+        supabase
           .from('chantiers')
-          .select('id, nom, client_nom, prix_vente_ht, statut'),
+          .select('id, nom, client_nom, prix_vente_ht, statut')
+          .eq('entreprise_id', entreprise_id),
       ]);
 
     const factures = facturesRes.data ?? [];
@@ -352,6 +386,22 @@ export async function POST(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   try {
+    // Même fail-closed que le GET : sans claim entreprise, aucune écriture.
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const entreprise_id =
+      (user?.app_metadata as { entreprise_id?: string } | null | undefined)
+        ?.entreprise_id ?? null;
+
+    if (!entreprise_id) {
+      return NextResponse.json(
+        { error: 'Contexte entreprise introuvable.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const tresorerieActuelle =
       typeof body.tresorerie_actuelle === 'number' ? body.tresorerie_actuelle : undefined;
@@ -362,11 +412,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Aucun paramètre à mettre à jour' }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    // Upsert ciblé par l'entreprise du claim : la ligne écrite/appartenue est
+    // celle du tenant courant. Le client SSR applique aussi la RLS en écriture.
+    const { error } = await supabase
       .from('parametres_entreprise')
       .upsert(
         {
-          entreprise_id: ENTREPRISE_BNA,
+          entreprise_id,
           tresorerie_actuelle: tresorerieActuelle ?? DEFAUT_TRESORERIE,
           charges_fixes_mensuelles: chargesFixesMensuelles ?? 0,
           updated_at: new Date().toISOString(),
