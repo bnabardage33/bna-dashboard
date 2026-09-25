@@ -5,12 +5,14 @@
 // message patron, et le marque 'envoye' avec date d'envoi — le client le
 // voit directement dans son espace client. Aucune action manuelle requise.
 //
-// Protection : header Authorization: Bearer <CRON_SECRET> (variable d'env).
-// Route ajoutée à PUBLIC_PATHS dans lib/supabase/middleware.ts (elle est
-// appelée serveur-à-serveur, sans session navigateur).
+// Protection : header Authorization: Bearer <CRON_SECRET> (variable d'env),
+// vérifié explicitement ici. La route n'est PAS dans PUBLIC_PATHS : elle
+//franchit le middleware grâce à l'exception serveur-à-serveur
+// `possedeBearerCron` de lib/supabase/middleware.ts, qui reconnaît exactement
+// le même bearer. Vercel l'appelle sans session navigateur.
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { TablesInsert } from "@/types/supabase";
 import {
   construireSnapshot,
@@ -21,6 +23,97 @@ import type { SnapshotContenu } from "@/lib/rapports-client";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Aucune marque d'un tenant en dur : la signature provient toujours des
+// réglages de l'entreprise traitée, ou de ce libellé neutre.
+const SIGNATURE_PAR_DEFAUT = "Votre entreprise";
+
+function estUuid(value: string) {
+  return UUID_RE.test(value);
+}
+
+type ResultatContexteCron =
+  | { ok: true; entrepriseIds: string[] }
+  | { ok: false; reponse: NextResponse };
+
+// Contexte tenant d'un cron : aucun claim JWT n'est disponible (appel
+// serveur-à-serveur), on exige donc le secret, puis on transforme la liste des
+// entreprises actives en une liste de contextes strictement séparés.
+async function resoudreContexteCron(
+  request: NextRequest
+): Promise<ResultatContexteCron> {
+  const secret = process.env.CRON_SECRET ?? "";
+  const autorisation = request.headers.get("authorization");
+
+  if (secret === "" || autorisation !== `Bearer ${secret}`) {
+    return {
+      ok: false,
+      reponse: NextResponse.json(
+        { success: false, error: "Non autorisé" },
+        { status: 401 }
+      ),
+    };
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("entreprises")
+      .select("id")
+      .eq("actif", true)
+      .order("id");
+
+    if (error) {
+      return {
+        ok: false,
+        reponse: NextResponse.json(
+          { success: false, error: "Erreur serveur" },
+          { status: 500 }
+        ),
+      };
+    }
+
+    const entrepriseIds = [
+      ...new Set((data ?? []).map((entreprise) => entreprise.id)),
+    ];
+
+    if (entrepriseIds.length === 0) {
+      return {
+        ok: false,
+        reponse: NextResponse.json(
+          {
+            success: false,
+            error: "Aucune entreprise active : traitement interrompu",
+          },
+          { status: 500 }
+        ),
+      };
+    }
+
+    if (entrepriseIds.some((id) => !estUuid(id))) {
+      return {
+        ok: false,
+        reponse: NextResponse.json(
+          { success: false, error: "Contexte entreprise invalide" },
+          { status: 500 }
+        ),
+      };
+    }
+
+    return { ok: true, entrepriseIds };
+  } catch (err) {
+    console.error("Rapports client /auto : erreur de contexte", err);
+    return {
+      ok: false,
+      reponse: NextResponse.json(
+        { success: false, error: "Erreur serveur" },
+        { status: 500 }
+      ),
+    };
+  }
+}
+
 const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES_LABELS: Record<string, string> = {
   ossature: "la pose de l'ossature",
@@ -29,10 +122,14 @@ const ETAPES_LABELS: Record<string, string> = {
   finitions: "les finitions",
 };
 
-async function prochaineEtape(chantierId: string): Promise<string> {
-  const { data } = await supabase
+async function prochaineEtape(
+  entrepriseId: string,
+  chantierId: string
+): Promise<string> {
+  const { data } = await supabaseAdmin
     .from("avancements_chantier")
     .select("details")
+    .eq("entreprise_id", entrepriseId)
     .eq("chantier_id", chantierId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -83,74 +180,134 @@ function redigerMessage(
   lignes.push(`Voir les photos du chantier en pièce jointe.`);
   lignes.push(``);
   lignes.push(`Cordialement,`);
-  lignes.push(signature || "BNA Bardage");
+  lignes.push(signature || SIGNATURE_PAR_DEFAUT);
 
   return lignes.join("\n");
 }
 
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET ?? "";
-  const autorisation = request.headers.get("authorization");
+  const resultatContexte = await resoudreContexteCron(request);
+  if (!resultatContexte.ok) return resultatContexte.reponse;
 
-  if (secret === "" || autorisation !== `Bearer ${secret}`) {
-    return NextResponse.json(
-      { success: false, error: "Non autorisé" },
-      { status: 401 }
-    );
-  }
+  const { entrepriseIds } = resultatContexte;
 
   const { lundiISO, dimancheISO } = encadrerSemainePassee(new Date());
 
-  const { data: chantiers, error: erreurChantiers } = await supabase
-    .from("chantiers")
-    .select("id, nom")
-    .eq("statut", "en_cours");
-
-  if (erreurChantiers) {
-    console.error("Rapports client /auto : erreur chargement chantiers", erreurChantiers);
-    return NextResponse.json(
-      { success: false, error: erreurChantiers.message },
-      { status: 500 }
-    );
-  }
-
-  const { data: entreprise } = await supabase
-    .from("entreprise_settings")
-    .select("raison_sociale")
-    .eq("id", 1)
-    .maybeSingle();
-
-  const signature = entreprise?.raison_sociale ?? "BNA Bardage";
-
+  let total = 0;
   let generes = 0;
   let dejaExistants = 0;
   let enErreur = 0;
 
-  for (const chantier of chantiers ?? []) {
-    const { data: existant } = await supabase
-      .from("rapports_client")
-      .select("id")
-      .eq("chantier_id", chantier.id)
-      .eq("date_debut", lundiISO)
-      .eq("date_fin", dimancheISO)
+  // Un tenant ne voit et ne produit que ses propres données : chaque itération
+  // porte un entreprise_id explicite, réutilisé sur TOUS les accès métier.
+  for (const entrepriseId of entrepriseIds) {
+    // --- Réglages de l'entreprise traitée (jamais `.eq("id", 1)`) ----------
+
+    const { data: settings, error: erreurSettings } = await supabaseAdmin
+      .from("entreprise_settings")
+      .select("raison_sociale, entreprise_id")
+      .eq("entreprise_id", entrepriseId)
       .maybeSingle();
 
-    if (existant) {
-      dejaExistants += 1;
-      continue;
+    if (erreurSettings) {
+      console.error(
+        "Rapports client /auto : erreur chargement réglages",
+        erreurSettings
+      );
+      return NextResponse.json(
+        { success: false, error: erreurSettings.message },
+        { status: 500 }
+      );
     }
 
-    try {
-      const contenu = await construireSnapshot(chantier.id);
-      const prochaine = await prochaineEtape(chantier.id);
+    if (settings && settings.entreprise_id !== entrepriseId) {
+      return NextResponse.json(
+        { success: false, error: "Contexte entreprise invalide" },
+        { status: 500 }
+      );
+    }
 
-      const messagePatron = redigerMessage(contenu, signature, prochaine);
+    const signature = settings?.raison_sociale?.trim() || SIGNATURE_PAR_DEFAUT;
 
-      contenu.communication.message_patron = messagePatron;
+    // --- Chantiers en cours de CE tenant -----------------------------------
 
-      const { error: erreurInsertion } = await supabase
+    const { data: chantiers, error: erreurChantiers } = await supabaseAdmin
+      .from("chantiers")
+      .select("id, nom, entreprise_id")
+      .eq("entreprise_id", entrepriseId)
+      .eq("statut", "en_cours");
+
+    if (erreurChantiers) {
+      console.error(
+        "Rapports client /auto : erreur chargement chantiers",
+        erreurChantiers
+      );
+      return NextResponse.json(
+        { success: false, error: erreurChantiers.message },
+        { status: 500 }
+      );
+    }
+
+    const listeChantiers = chantiers ?? [];
+
+    if (listeChantiers.some((chantier) => chantier.entreprise_id !== entrepriseId)) {
+      return NextResponse.json(
+        { success: false, error: "Contexte entreprise invalide" },
+        { status: 500 }
+      );
+    }
+
+    total += listeChantiers.length;
+
+    for (const chantier of listeChantiers) {
+      // --- Doublon, scopé par entreprise ET chantier ----------------------
+
+      const { data: existant, error: erreurExistant } = await supabaseAdmin
         .from("rapports_client")
-        .insert(({
+        .select("id, entreprise_id, chantier_id")
+        .eq("entreprise_id", entrepriseId)
+        .eq("chantier_id", chantier.id)
+        .eq("date_debut", lundiISO)
+        .eq("date_fin", dimancheISO)
+        .maybeSingle();
+
+      if (erreurExistant) {
+        enErreur += 1;
+        console.error(
+          `Rapports client /auto : erreur vérification doublon ${chantier.id}`,
+          erreurExistant
+        );
+        continue;
+      }
+
+      if (existant) {
+        if (
+          existant.entreprise_id !== entrepriseId ||
+          existant.chantier_id !== chantier.id
+        ) {
+          enErreur += 1;
+          console.error(
+            `Rapports client /auto : rapport existant hors entreprise pour ${chantier.id}`
+          );
+          continue;
+        }
+
+        dejaExistants += 1;
+        continue;
+      }
+
+      try {
+        const contenu = await construireSnapshot(chantier.id);
+        const prochaine = await prochaineEtape(entrepriseId, chantier.id);
+
+        const messagePatron = redigerMessage(contenu, signature, prochaine);
+
+        contenu.communication.message_patron = messagePatron;
+
+        // entreprise_id explicite : `rapports_client.entreprise_id` est NOT
+        // NULL, on ne dépend plus du trigger pour le renseigner.
+        const donneesInsertion: TablesInsert<"rapports_client"> = {
+          entreprise_id: entrepriseId,
           chantier_id: chantier.id,
           semaine_label: contenu.periode.semaine,
           date_debut: lundiISO,
@@ -158,28 +315,40 @@ export async function GET(request: NextRequest) {
           contenu,
           statut: "envoye",
           envoye_le: new Date().toISOString(),
-        } as Omit<TablesInsert<"rapports_client">, "entreprise_id">) as TablesInsert<"rapports_client">);
+        };
 
-      if (erreurInsertion) {
+        const { data: rapportCree, error: erreurInsertion } = await supabaseAdmin
+          .from("rapports_client")
+          .insert(donneesInsertion)
+          .select("id, entreprise_id, chantier_id")
+          .single();
+
+        if (
+          erreurInsertion ||
+          !rapportCree ||
+          rapportCree.entreprise_id !== entrepriseId ||
+          rapportCree.chantier_id !== chantier.id
+        ) {
+          enErreur += 1;
+          console.error(
+            `Rapports client /auto : échec insertion pour ${chantier.id}`,
+            erreurInsertion ?? "Rapport créé hors entreprise"
+          );
+          continue;
+        }
+
+        generes += 1;
+      } catch (e: unknown) {
         enErreur += 1;
-        console.error(
-          `Rapports client /auto : échec insertion pour ${chantier.id}`,
-          erreurInsertion
-        );
-        continue;
+        console.error(`Rapports client /auto : erreur snapshot ${chantier.id}`, e);
       }
-
-      generes += 1;
-    } catch (e: unknown) {
-      enErreur += 1;
-      console.error(`Rapports client /auto : erreur snapshot ${chantier.id}`, e);
     }
   }
 
   return NextResponse.json({
     success: true,
     periode: { debut: lundiISO, fin: dimancheISO },
-    total: chantiers?.length ?? 0,
+    total,
     generes,
     dejaExistants,
     enErreur,
