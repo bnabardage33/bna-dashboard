@@ -17,6 +17,13 @@ import { anonymizeText, deanonymizeText } from '@/lib/anonymizeText';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 const FACADES = ['nord', 'sud', 'est', 'ouest'] as const;
 const ETAPES = ['ossature', 'isolation', 'bardage', 'finitions'] as const;
 const MAX_MESSAGES = 12;
@@ -171,6 +178,18 @@ export async function POST(
       return NextResponse.json({ error: "Code d'accès invalide" }, { status: 403 });
     }
 
+    // ISOLATION MULTI-ENTREPRISE (O3-B4) — tenant du portail public.
+    // Le `code_acces` authentifie le chantier, donc son `entreprise_id` est
+    // la SEULE source de tenant : il est dérivé du chantier résolu côté
+    // serveur, jamais lu dans le body. On revalide ici la forme UUID malgré
+    // la garde déjà appliquée dans resoudreChantierParCodeAcces (défense en
+    // profondeur, et contrat explicite de anonymizeText). Réponse identique
+    // au 403 ci-dessus : aucune nouvelle fuite d'information.
+    const entrepriseId = chantier.entrepriseId;
+    if (typeof entrepriseId !== 'string' || !estUuid(entrepriseId)) {
+      return NextResponse.json({ error: "Code d'accès invalide" }, { status: 403 });
+    }
+
     const corps = (await req.json()) as Record<string, unknown> | null;
     if (!corps || typeof corps !== 'object') {
       return NextResponse.json({ error: 'Payload invalide' }, { status: 400 });
@@ -221,14 +240,23 @@ export async function POST(
     const { anonymizedText, mapping } = await anonymizeText(
       brut,
       process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+      process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+      entrepriseId
     );
 
+    // FAIL-CLOSED (O3-B4) : si le JSON anonymisé est illisible, on interrompt.
+    // L'ancien repli renvoyait `{ system: systemPrompt, conversation: messages }`
+    // — c'est-à-dire le payload BRUT (nom/adresse/téléphone du client et nom du
+    // chantier en clair) au fournisseur IA. Aucun repli n'est désormais
+    // possible : ni le système ni la conversation d'origine ne sont réémis.
     let anonymise: { system?: unknown; conversation?: unknown };
     try {
       anonymise = JSON.parse(anonymizedText) as { system?: unknown; conversation?: unknown };
     } catch {
-      anonymise = { system: systemPrompt, conversation: messages };
+      console.error(
+        'Espace Client chat : payload anonymisé non parsable — envoi à Groq refusé (fail-closed).'
+      );
+      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
     }
     const systemOk = typeof anonymise.system === 'string' && anonymise.system.trim() !== ''
       ? anonymise.system

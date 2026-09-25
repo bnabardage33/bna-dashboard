@@ -285,20 +285,25 @@ function fakeCondenser(parsed: { resume_global?: unknown; messages?: MessageSa[]
   }
 }
 
+// O3-B4 : `resoudreChantierParCodeAcces` est fail-closed — un chantier sans
+// `entreprise_id` exploitable (UUID) est rejeté (403). Les fixtures doivent donc
+// porter une entreprise valide, sans quoi plus aucune de ces routes ne répond.
+const ENTREPRISE_TEST = '22222222-2222-4222-8222-222222222222'
+
 function setCircuit(): CircuitState {
   const etat: CircuitState = {
     convRows: [],
     noteRows: [],
     notifRows: [],
     chantierRows: [
-      { id: 'chantier-1', code_acces: 'ACCES-1', client_nom: 'CLIENT-1', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-2', code_acces: 'ACCES-2', client_nom: 'CLIENT-2', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-3', code_acces: 'ACCES-3', client_nom: 'CLIENT-3', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-4', code_acces: 'ACCES-4', client_nom: 'CLIENT-4', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-5', code_acces: 'ACCES-5', client_nom: 'CLIENT-5', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-6', code_acces: 'ACCES-6', client_nom: 'CLIENT-6', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-7', code_acces: 'ACCES-7', client_nom: 'CLIENT-7', created_at: '2026-01-01T00:00:00Z' },
-      { id: 'chantier-8', code_acces: 'ACCES-8', client_nom: 'CLIENT-8', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-1', code_acces: 'ACCES-1', client_nom: 'CLIENT-1', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-2', code_acces: 'ACCES-2', client_nom: 'CLIENT-2', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-3', code_acces: 'ACCES-3', client_nom: 'CLIENT-3', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-4', code_acces: 'ACCES-4', client_nom: 'CLIENT-4', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-5', code_acces: 'ACCES-5', client_nom: 'CLIENT-5', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-6', code_acces: 'ACCES-6', client_nom: 'CLIENT-6', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-7', code_acces: 'ACCES-7', client_nom: 'CLIENT-7', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
+      { id: 'chantier-8', code_acces: 'ACCES-8', client_nom: 'CLIENT-8', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
     ],
     groqCalls: [],
     groqFail: false,
