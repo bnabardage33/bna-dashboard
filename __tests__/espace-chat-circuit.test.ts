@@ -22,6 +22,11 @@ import { estimerTokensMessages } from '../lib/espace-chat-utils'
 type MiniRow = Record<string, unknown>
 type MessageSa = { role: 'user' | 'assistant'; content: string }
 
+// O3-B5 : forme d'une erreur renvoyée par le client Supabase, et journal des
+// `.eq()` émis afin de prouver le scopage dans les assertions.
+type MiniError = { code?: string; message: string }
+type EqJournal = Array<{ table: string; colonne: string; valeur: unknown }>
+
 const holder = vi.hoisted(() => ({
   supabase: undefined as unknown,
 }))
@@ -73,17 +78,25 @@ class FakeQuery {
   private lim: number | null = null
   private pendingUpdate: MiniRow | null = null
   private pendingDelete = false
+  private erreurSimulee: MiniError | null = null
 
   constructor(
     private table: string,
-    private store: { rows: MiniRow[] }
-  ) {}
+    private store: { rows: MiniRow[] },
+    private journal?: EqJournal,
+    private options?: { erreurSelect?: MiniError | null }
+  ) {
+    this.erreurSimulee = options?.erreurSelect ?? null
+  }
 
   select(_colonnes?: string): this {
     return this
   }
 
   eq(col: string, v: unknown): this {
+    // O3-B5 : chaque `.eq()` émis est journalisé pour que les tests puissent
+    // vérifier le scopage réel plutôt que le supposer.
+    this.journal?.push({ table: this.table, colonne: col, valeur: v })
     this.filters.push((r) => r[col] === v)
     return this
   }
@@ -136,8 +149,13 @@ class FakeQuery {
     return resultat
   }
 
-  then(resolve: (value: { data: MiniRow[] | null; error: null }) => void): void {
+  then(resolve: (value: { data: MiniRow[] | null; error: MiniError | null }) => void): void {
     const lignes = this.run()
+    // O3-B5 : le mock peut simuler une erreur serveur sur une lecture.
+    if (this.erreurSimulee) {
+      resolve({ data: null, error: this.erreurSimulee })
+      return
+    }
     if (this.pendingDelete) {
       const cibles = new Set(lignes.map((r) => r.id))
       this.store.rows = this.store.rows.filter((r) => !cibles.has(r.id))
@@ -156,7 +174,21 @@ class FakeQuery {
     return { data: this.run()[0] ?? null, error: null }
   }
 
-  async insert(ligne: MiniRow): Promise<{ data: MiniRow; error: null }> {
+  async insert(ligne: MiniRow): Promise<{ data: MiniRow | null; error: MiniError | null }> {
+    // O3-B5 — le mock applique désormais les contraintes de la vraie base sur
+    // les tables à `entreprise_id NOT NULL`. Auparavant l'INSERT sans
+    // `entreprise_id` aboutissait dans le tableau et les tests passaient alors que
+    // la production échouait silencieusement (faux vert).
+    const exigeTenant = this.table === 'notes_patron' || this.table === 'notifications'
+    if (exigeTenant && (typeof ligne.entreprise_id !== 'string' || ligne.entreprise_id === '')) {
+      return {
+        data: null,
+        error: {
+          code: '23502',
+          message: `null value in column "entreprise_id" of relation "${this.table}" violates not-null constraint`,
+        },
+      }
+    }
     const maintenue: MiniRow = {
       ...ligne,
       id: ligne.id ?? uid('row-'),
@@ -183,6 +215,11 @@ interface CircuitState {
   noteRows: MiniRow[]
   notifRows: MiniRow[]
   chantierRows: MiniRow[]
+  profileRows: MiniRow[]
+  // O3-B5 : journal des `.eq()` émis (preuve de scopage) + erreurs simulables.
+  eqJournal: EqJournal
+  erreurSelectProfiles: MiniError | null
+  erreurSelectConversations: MiniError | null
   groqCalls: { endpoint: 'chat' | 'resume'; body: { messages: Array<{ role: string; content: string }> } }[]
   groqFail: boolean
   supabase: {
@@ -191,16 +228,25 @@ interface CircuitState {
   }
 }
 
-function appliquerAppend(store: { rows: MiniRow[] }, args: Record<string, unknown>): MiniRow {
+function appliquerAppend(
+  store: { rows: MiniRow[] },
+  args: Record<string, unknown>,
+  chantiers: MiniRow[]
+): MiniRow {
   const cle = String(args.p_cle)
   const messages = Array.isArray(args.p_messages) ? args.p_messages : []
   const existante = store.rows.find((r) => r.cle === cle)
   const maintenant = new Date().toISOString()
   if (!existante) {
+    // O3-B5 : le trigger SQL `tg_set_entreprise_par_chantier()` dérive
+    // l'entreprise du chantier parent. Le mock rejoue ce comportement, sinon la
+    // ligne créée n'aurait pas d'entreprise et toute lecture scopée échouerait.
+    const parent = chantiers.find((c) => c.id === args.p_chantier_id)
     const fresh: MiniRow = {
       id: uid('conv-'),
       cle,
       chantier_id: args.p_chantier_id ?? null,
+      entreprise_id: parent?.entreprise_id ?? null,
       client_nom: args.p_client_nom ?? null,
       session_id_en_cours: args.p_session_id ?? null,
       messages_session: messages,
@@ -289,6 +335,7 @@ function fakeCondenser(parsed: { resume_global?: unknown; messages?: MessageSa[]
 // `entreprise_id` exploitable (UUID) est rejeté (403). Les fixtures doivent donc
 // porter une entreprise valide, sans quoi plus aucune de ces routes ne répond.
 const ENTREPRISE_TEST = '22222222-2222-4222-8222-222222222222'
+const ENTREPRISE_BNA = '11111111-1111-4111-8111-111111111111'
 
 function setCircuit(): CircuitState {
   const etat: CircuitState = {
@@ -305,6 +352,16 @@ function setCircuit(): CircuitState {
       { id: 'chantier-7', code_acces: 'ACCES-7', client_nom: 'CLIENT-7', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
       { id: 'chantier-8', code_acces: 'ACCES-8', client_nom: 'CLIENT-8', entreprise_id: ENTREPRISE_TEST, created_at: '2026-01-01T00:00:00Z' },
     ],
+    // O3-B5 : le destinataire doit être résolu DANS le tenant. Deux profils
+    // coexistent, dont un patron BNA créé AVANT le compte TEST : sans le filtre
+    // `.eq("entreprise_id", …)`, `destinatairePatron` aurait renvoyé le mauvais.
+    profileRows: [
+      { id: 'patron-bna', full_name: 'Gaël', role: 'admin', created_at: '2026-01-01T00:00:00Z', entreprise_id: ENTREPRISE_BNA },
+      { id: 'patron-test', full_name: 'Patron TEST', role: 'admin', created_at: '2026-02-01T00:00:00Z', entreprise_id: ENTREPRISE_TEST },
+    ],
+    eqJournal: [],
+    erreurSelectProfiles: null,
+    erreurSelectConversations: null,
     groqCalls: [],
     groqFail: false,
     supabase: undefined as unknown as CircuitState['supabase'],
@@ -313,17 +370,23 @@ function setCircuit(): CircuitState {
   etat.supabase = {
     from(table: string): FakeQuery {
       if (table === 'espace_client_conversations' || table === 'conv') {
-        return new FakeQuery(table, { rows: etat.convRows })
+        return new FakeQuery(table, { rows: etat.convRows }, etat.eqJournal, {
+          erreurSelect: etat.erreurSelectConversations,
+        })
       }
-      if (table === 'notes_patron') return new FakeQuery(table, { rows: etat.noteRows })
-      if (table === 'notifications' || table === 'notifs') return new FakeQuery(table, { rows: etat.notifRows })
-      if (table === 'chantiers') return new FakeQuery(table, { rows: etat.chantierRows })
-      if (table === 'profiles') return new FakeQuery(table, { rows: [{ id: 'patron-test', created_at: '2026-01-01T00:00:00Z' }] })
-      return new FakeQuery(table, { rows: [] })
+      if (table === 'notes_patron') return new FakeQuery(table, { rows: etat.noteRows }, etat.eqJournal)
+      if (table === 'notifications' || table === 'notifs') return new FakeQuery(table, { rows: etat.notifRows }, etat.eqJournal)
+      if (table === 'chantiers') return new FakeQuery(table, { rows: etat.chantierRows }, etat.eqJournal)
+      if (table === 'profiles') {
+        return new FakeQuery(table, { rows: etat.profileRows }, etat.eqJournal, {
+          erreurSelect: etat.erreurSelectProfiles,
+        })
+      }
+      return new FakeQuery(table, { rows: [] }, etat.eqJournal)
     },
     async rpc(fn: string, args: Record<string, unknown>): Promise<{ data: MiniRow; error: null }> {
       if (fn === 'espace_client_append') {
-        return { data: appliquerAppend({ rows: etat.convRows }, args), error: null }
+        return { data: appliquerAppend({ rows: etat.convRows }, args, etat.chantierRows), error: null }
       }
       if (fn === 'espace_client_consolider') {
         return { data: appliquerConsolider({ rows: etat.convRows }, args), error: null }
