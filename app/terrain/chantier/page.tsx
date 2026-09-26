@@ -4,9 +4,31 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import type { TablesInsert } from "@/types/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check, BarChartHorizontal } from "lucide-react";
 import PlanningGantt from "@/components/PlanningGantt";
+
+// O3-B8 : `chantiers` est la RACINE de la hiérarchie entreprise. Depuis la
+// migration d'isolation du 22/09, `chantiers.entreprise_id` est NOT NULL, sans
+// DEFAULT, et — contrairement aux 21 tables ENFANTS — SANS trigger possible :
+// `tg_set_entreprise_par_chantier()` résout la valeur en lisant le parent, or
+// un parent n'existe pas pour la racine. La valeur doit donc venir du client.
+//
+// Ce fichier envoyait un payload SANS `entreprise_id`, sous le double cast
+// `Omit<TablesInsert<"chantiers">, "entreprise_id">` qui neutralisait
+// l'exigence du compilateur. Résultat : création impossible depuis l'interface.
+//
+// Le claim doit être un UUID avant d'être recopié dans une colonne `uuid` :
+// sans cette garde, un claim corrompu produirait une erreur PostgreSQL opaque.
+// Le retour est un PRÉDICAT DE TYPE (`value is string`), ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` et d'exiger
+// `entreprise_id: string` dans l'insert SANS assertion `as`.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 type Client = { id: string; nom: string; societe: string | null };
 
@@ -76,7 +98,29 @@ export default function ChantiersPage() {
     if (!clientId) return;
     setCreationEnCours(true);
 
-    const { error } = await supabase.from("chantiers").insert(({
+    // O3-B8 : `entreprise_id` vient du claim `app_metadata.entreprise_id`, donc
+    // de la MÊME source que `entreprise_courante()` côté PostgREST : la valeur
+    // posée ici est exactement celle que la RLS attend. Aucune constante de
+    // tenant en dur. On passe `null` (pas de `chantier_id`) car on est en train
+    // de CRÉER la racine — il n'y a pas de parent dont hériter.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture. La RLS
+    // (`chantiers_ent_insert`, `with check (entreprise_id =
+    // entreprise_courante())`) refuserait de toute façon ; autant ne rien tenter
+    // et le signaler explicitement plutôt que de renvoyer une erreur opaque.
+    if (!estUuid(entreprise_id)) {
+      console.error(
+        "Chantiers : création refusée — contexte entreprise introuvable ou invalide dans la session."
+      );
+      setCreationEnCours(false);
+      alert(
+        "Impossible de créer le chantier : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
+    const { error } = await supabase.from("chantiers").insert({
       nom: nom || null,
       client_id: clientId,
       adresse_chantier: adresse || null,
@@ -86,7 +130,8 @@ export default function ChantiersPage() {
       statut: "prevu",
       code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
-    } as Omit<TablesInsert<"chantiers">, "entreprise_id">) as TablesInsert<"chantiers">);
+      entreprise_id,
+    });
 
     setCreationEnCours(false);
 

@@ -126,6 +126,19 @@ const LIGNE_VIDE: Ligne = {
   a_chiffrer: false,
 };
 
+// O3-B8 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Le retour est un PRÉDICAT DE TYPE
+// (`value is string`) : c'est ce qui fait rétrécir `string | null` en `string`
+// après l'appel, et donc exige `entreprise_id: string` dans l'insert chantiers
+// SANS assertion `as` — le cast `Omit<TablesInsert<…>, "entreprise_id">` a été
+// supprimé. Cf. le même garde-fou dans app/bureau/fournisseurs/page.tsx (N9).
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
 function DevisContenu() {
   const searchParams = useSearchParams();
   const [devis, setDevis] = useState<Devis[]>([]);
@@ -687,7 +700,27 @@ function DevisContenu() {
   async function transformerEnChantier(d: Devis) {
     if (!confirm(`Transformer le devis ${d.numero} en chantier actif ?`)) return;
 
-    const { error: chantierError } = await supabase.from("chantiers").insert(({
+    // O3-B8 : `chantiers` est la RACINE de la hiérarchie entreprise — NOT NULL
+    // sans DEFAULT, et SANS trigger possible (`tg_set_entreprise_par_chantier()`
+    // résout la valeur en lisant le PARENT, or la racine n'a pas de parent).
+    // `entreprise_id` vient donc du claim, comme partout ailleurs dans ce
+    // fichier (cf. `genererFacture`), et non d'une constante de tenant.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture — et surtout
+    // AUCUN `devis.statut = 'accepte'` ci-dessous, sinon un devis serait marqué
+    // accepté alors qu'aucun chantier n'a été créé.
+    if (!estUuid(entreprise_id)) {
+      console.error(
+        "Devis → chantier : conversion refusée — contexte entreprise introuvable ou invalide dans la session."
+      );
+      alert(
+        "Impossible de transformer le devis en chantier : votre session ne contient pas d'entreprise identifiée. Le devis reste inchangé."
+      );
+      return;
+    }
+
+    const { error: chantierError } = await supabase.from("chantiers").insert({
       nom: d.objet || d.type_travaux || d.numero,
       client_id: d.client_id,
       adresse_chantier: d.adresse_chantier,
@@ -699,7 +732,8 @@ function DevisContenu() {
       surface_m2: d.surface_m2 ?? null,
       code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
-    } as Omit<TablesInsert<"chantiers">, "entreprise_id">) as TablesInsert<"chantiers">);
+      entreprise_id,
+    });
 
     if (chantierError) {
       alert("Erreur création chantier : " + chantierError.message);
