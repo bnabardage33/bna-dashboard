@@ -36,22 +36,40 @@ export default function SearchNav() {
   const notifRef = useRef<HTMLDivElement>(null);
 
   const isClientPage = pathname?.startsWith("/espace-client") || pathname?.startsWith("/demo-client");
-  if (isClientPage) return null;
 
+  // O3-B6 — RULES OF HOOKS (correction).
+  //
+  // Le `if (isClientPage) return null;` était placé AVANT les deux `useEffect`
+  // (l.38-39 de la version précédente) : le NOMBRE DE HOOKS dépendait alors de
+  // `pathname`. Or `usePathname()` change lors d'une navigation client SANS
+  // remontage du layout racine. Passer de `/espace-client/[code_acces]` à une
+  // page `/bureau/*` — par exemple le retour du navigateur après l'ouverture
+  // d'un lien d'espace client — faisait basculer `isClientPage` et React levait
+  // « Rendered fewer hooks than expected » : la page entrait en erreur.
+  //
+  // Aucun outil ne le voyait : `eslint.config.mjs` n'active ni eslint-plugin-react
+  // ni eslint-plugin-react-hooks, et aucun test ne montait ce composant.
+  //
+  // Correction : le garde est appliqué à l'INTÉRIEUR des effets (pas de rendu,
+  // pas de polling, pas d'écouteur sur les pages client) et le `return null` est
+  // descendu APRÈS le dernier hook. Le comportement est strictement inchangé :
+  // SearchNav reste absent de `/espace-client` et de `/demo-client`.
   useEffect(() => {
+    if (isClientPage) return;
     chargerNotifications();
     const interval = setInterval(chargerNotifications, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isClientPage]);
 
   useEffect(() => {
+    if (isClientPage) return;
     function handleClick(e: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [isClientPage]);
 
   async function chargerNotifications() {
     const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(20);
@@ -77,6 +95,9 @@ export default function SearchNav() {
     } catch { setResults(null); }
     finally { setLoading(false); }
   }
+
+  // Return conditionnel APRÈS tous les hooks (cf. commentaire O3-B6 ci-dessus).
+  if (isClientPage) return null;
 
   return (
     <div className="flex items-center gap-3 relative">

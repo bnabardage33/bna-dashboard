@@ -8,8 +8,23 @@ import BonCommandePDF from "@/components/BonCommandePDF";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, AlertTriangle } from "lucide-react";
 import { analyserPerformancesFournisseurs, type AnalytiqueFournisseur } from "@/lib/fournisseursAnalytique";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
+
+// O3-B6/N9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+//
+// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
+// d'exiger `entreprise_id: string` dans l'objet inséré SANS assertion `as`.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 type Fournisseur = {
   id: string;
@@ -149,11 +164,45 @@ export default function FournisseursPage() {
 
     if (retardataires.length === 0) return;
 
-    const { data: existantes } = await supabase
+    // O3-B6/N9 — REGRESSION CORRIGÉE.
+    //
+    // `notifications.entreprise_id` est NOT NULL depuis la migration d'isolation
+    // du 2026-09-22 (part1 §4). Ce producteur, écrit le 2026-09-10, n'a jamais été
+    // mis à jour : l'insert échouait (23502, ou à défaut le `with check` de la
+    // policy `notifications_ent_insert`) et l'alerte « Livraison en retard » ne
+    // partait plus — en silence, car l'erreur n'était ni déstructurée ni loguée.
+    //
+    // On réutilise le résolveur EXISTANT `lib/contexteEntreprise.ts` (déjà utilisé
+    // par `app/bureau/factures` et `app/bureau/devis-factures`), qui lit le claim
+    // `app_metadata.entreprise_id` de la session : c'est la MÊME source que
+    // `entreprise_courante()` côté PostgREST, donc la valeur posée ici est
+    // exactement celle que la RLS attend. Aucune constante de tenant en dur.
+    // Pas de `chantier_id` ici (une notification de retard fournisseur n'est pas
+    // rattachée à un chantier) : on prend donc la seconde branche du résolveur.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture. Une notification
+    // sans tenant serait refusée par la RLS de toute façon ; autant ne rien
+    // tenter et le signaler explicitement.
+    if (!estUuid(entreprise_id)) {
+      console.error(
+        "Fournisseurs : alerte de retard NON émise — contexte entreprise introuvable dans la session."
+      );
+      return;
+    }
+
+    const { data: existantes, error: erreurLecture } = await supabase
       .from("notifications")
       .select("lien")
       .eq("type", "commande_retard")
+      // Double filtrage (RLS + `.eq()` explicite) : même modèle que /api/search.
+      .eq("entreprise_id", entreprise_id)
       .gte("created_at", `${debutSemaine}T00:00:00`);
+
+    if (erreurLecture) {
+      console.error("Fournisseurs : lecture des notifications de retard impossible.", erreurLecture);
+      return;
+    }
 
     const dejaNotifiees = new Set((existantes ?? []).map((n) => n.lien));
 
@@ -161,7 +210,7 @@ export default function FournisseursPage() {
 
     if (aInserer.length === 0) return;
 
-    const rows = aInserer.map((c) => {
+    const rows: TablesInsert<"notifications">[] = aInserer.map((c) => {
       const jours = joursRetard(c.date_livraison_prevue!);
       const fournisseurNom = c.fournisseurs?.nom ?? "—";
       return {
@@ -170,10 +219,19 @@ export default function FournisseursPage() {
         message: `Commande « ${c.designation} » fournisseur ${fournisseurNom} en retard de J+${jours}`,
         lien: `/bureau/fournisseurs?retard=${c.id}`,
         lu: false,
+        entreprise_id,
+        // `destinataire_id` laissé à null : modèle COLLECTIF (O3-B6/N1), la
+        // notification appartient au tenant, pas à un profil.
       };
     });
 
-    await supabase.from("notifications").insert(rows as TablesInsert<"notifications">[]);
+    // Pas d'assertion `as` : le type `Insert` exige `entreprise_id`, donc une
+    // future régression de scopage devient une ERREUR DE COMPILATION.
+    const { error: erreurInsert } = await supabase.from("notifications").insert(rows);
+
+    if (erreurInsert) {
+      console.error("Fournisseurs : alerte de retard NON émise.", erreurInsert);
+    }
   }
 
   useEffect(() => {
