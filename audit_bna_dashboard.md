@@ -501,3 +501,29 @@ Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Fact
 - **Objectif** : Vue macro des chantiers pour le pilotage.
 - **Réalisation** : Création de `PlanningGantt.tsx`. Vue sur 6 mois avec Drag & Drop tactile (Pointer Events) pour décaler les dates d'un chantier. Indicateurs visuels (Aujourd'hui, couleurs de statuts, bordure rouge + icône d'alerte si arrêt météo actif).
 
+## 🔔 Notifications — modèle collectif O3-B6/N1, et correction d'impact (26/09/2026)
+
+**Migration appliquée le 26/09/2026** : `supabase/migrations/20260926_o3b6_notifications_collectif.sql` (O3-B6/N1) — remplace les 4 policies `notifications_ent_*` par un filtrage `entreprise_id = public.entreprise_courante()` seul. Modèle **collectif par tenant** : ni pont `profiles.user_id`, ni table d'état de lecture par utilisateur, ni nouvelle architecture d'identité.
+
+**Contrôle après application** (lecture seule) : les commentaires `O3-B6/N1` sont bien présents en base sur la table et sur `destinataire_id` (le script a donc tourné jusqu'au bout) ; le RLS est actif — le rôle `anon` sans JWT voit **0 des 3** lignes existantes ; les 3 notifications en base sont **toutes collectives** (`destinataire_id = null`), donc l'élargissement du prédicat n'expose aucune donnée supplémentaire et n'introduit aucune régression.
+
+### ⚠️ Correction d'impact — à lire avant de citer le commit `5249fc9`
+
+Le message de ce commit décrit les notifications `client_alert` comme **« écrites puis invisibles de tous »**. Cette formulation est **trop affirmative**. Trois niveaux doivent être distingués :
+
+1. **Défaut structurel — DÉMONTRÉ.** `notifications.destinataire_id` référence `profiles(id)` ; `profiles.id` est un uuid autonome, sans colonne `user_id`, et le schéma ne contient **aucun pont vers `auth.users`** (les 3 autres colonnes nommées `user_id` pointent toutes vers `profiles`). La clause `destinataire_id = auth.uid()` de l'ancienne policy était donc **structurellement invalide** : aucun code applicatif ne pouvait la rendre vraie. C'est une **preuve**, pas une hypothèse.
+2. **Risque fonctionnel — THÉORIQUE.** *Si* une `client_alert` ciblée avait été produite, l'ancienne policy `using (entreprise_id = entreprise_courante() and (destinataire_id is null or destinataire_id = auth.uid()))` l'aurait rendue invisible à tout lecteur. La migration supprime cette exposition. L'élargissement reste **borné au tenant** : `entreprise_id` et le RLS sont intacts.
+3. **Fait observé — 26/09/2026.** **Aucune ligne `client_alert` n'a jamais été produite en PROD** : comptage exhaustif = 3 lignes au total, de types `general` et `commande_retard` uniquement. Le `CHECK` n'est pas en cause (`20260916_fix_notifications_constraints.sql` autorise bien les 9 types, `client_alert` inclus). Le module a bien tourné — `notes_patron` contient les notes du 07/09 (« C'est bon, tout est bon… ») et du 10/09 — mais `client_alert` n'est produite **que** si le sentiment global est négatif **ou** s'il existe une demande en attente, ce qui n'était le cas ni le 07/09 ni le 10/09. **Aucune perte réelle d'une `client_alert` n'est donc démontrée** : la migration corrige un défaut réel, mais **préventif** — elle n'a pas, à ce jour, rétabli la visibilité d'une notification existante.
+
+### Où la formulation forte subsiste — volontairement
+
+Le commentaire d'en-tête de la migration (l.29-33) et le message du commit `5249fc9` conservent la formulation affirmative. **Ils ne sont pas corrigés ici**, pour deux raisons : le commit est immuable sans *amend* suivi d'un *force-push* (hors méthode retenue), et le fichier de migration est **déjà appliqué en base** — le modifier créerait une divergence entre le dépôt et la PROD. **La présente section fait foi.**
+
+### Autres points O3-B6notifications (26/09/2026)
+
+- **N9 (P1) — l'alerte « Livraison en retard » était morte depuis 4 jours.** Le producteur navigateur insérait sans `entreprise_id` (NOT NULL depuis la migration d'isolation du 22/09) et sans déstructurer `error` : échec `23502` totalement muet. Corrigé via `resoudreContexteEntreprise(null)` (le résolveur **existant**, même source de vérité que `entreprise_courante()`), fail-closed si le claim est absent, déduplication scopée par `.eq("entreprise_id")`, erreurs de lecture et d'insert explicites. Le cast `as TablesInsert<"notifications">` a été supprimé : il masquait l'erreur de compilation, donc `tsc` exige désormais réellement `entreprise_id`.
+- **N2/N3 — `/api/notifications` supprimée** : 0 appelant sur tout l'historique (`git log --all -S`, 5 commits, doc et liste blanche middleware uniquement). Elle avait été **publique 12 jours** avant reverrouillage, toujours sans appelant. Son entrée dans la liste blanche de `middleware.test.ts` est **conservée** : garde-fou anti-remise en liste blanche.
+- **SearchNav — Rules of Hooks.** Le `if (isClientPage) return null;` précédait les deux `useEffect` : le nombre de hooks dépendait de `pathname`. Un retour navigateur depuis `/espace-client` vers `/bureau` faisait lever « Rendered fewer hooks than expected » et cassait la page. Ni ESLint ni aucun test ne le voyait. Garde déplacée dans les effets, `return null` après le dernier hook ; aucun élément visuel modifié.
+- **Impact espace client / chatbot : AUCUN.** `lib/espace-chat-summary.server.ts` intact ; ses écritures passent par `service_role`, donc insensibles au changement de RLS ; `SearchNav` n'est pas rendu sur `/espace-client` (désormais prouvé par test).
+- **Réalisation** : Création de `PlanningGantt.tsx`. Vue sur 6 mois avec Drag & Drop tactile (Pointer Events) pour décaler les dates d'un chantier. Indicateurs visuels (Aujourd'hui, couleurs de statuts, bordure rouge + icône d'alerte si arrêt météo actif).
+
