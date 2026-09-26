@@ -382,6 +382,31 @@ export async function GET() {
   }
 }
 
+type LectureMontant =
+  | { etat: 'absent' }
+  | { etat: 'valeur'; valeur: number }
+  | { etat: 'invalide' };
+
+/**
+ * O3-B7 (D2) — lecture STRICTE d'un montant fourni dans le corps de la requête.
+ *
+ * `typeof x === 'number'` confondait trois états qu'il faut distinguer :
+ *   - champ absent  → la colonne ne doit pas être touchée ;
+ *   - `null`        → traité comme absent : la colonne est NOT NULL et aucune
+ *                     valeur nulle n'a de sens métier ;
+ *   - `Infinity`    → `JSON.parse('{"a":1e400}')` vaut `Infinity`, donc la
+ *                     valeur passait le filtre `typeof`, puis supabase-js la
+ *                     sérialisait en `null` (JSON.stringify) : une entrée
+ *                     aberrante devenait une violation NOT NULL (500).
+ * `Number.isFinite` rejette `Infinity`, `-Infinity` et `NaN`.
+ */
+function lireMontant(source: Record<string, unknown>, cle: string): LectureMontant {
+  const brut = source[cle];
+  if (brut === undefined || brut === null) return { etat: 'absent' };
+  if (typeof brut !== 'number' || !Number.isFinite(brut)) return { etat: 'invalide' };
+  return { etat: 'valeur', valeur: brut };
+}
+
 export async function POST(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
@@ -402,29 +427,65 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const tresorerieActuelle =
-      typeof body.tresorerie_actuelle === 'number' ? body.tresorerie_actuelle : undefined;
-    const chargesFixesMensuelles =
-      typeof body.charges_fixes_mensuelles === 'number' ? body.charges_fixes_mensuelles : undefined;
+    // O3-B7 (D3) — motif repris de app/api/admin/rattacher-entreprise/route.ts.
+    // Un corps vide ou non-JSON est une requête invalide (400), pas une panne
+    // serveur : auparavant `await req.json()` levait et tombait dans le catch
+    // final, qui renvoyait 500.
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'JSON invalide' }, { status: 400 });
+    }
 
-    if (tresorerieActuelle === undefined && chargesFixesMensuelles === undefined) {
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Corps JSON objet requis' }, { status: 400 });
+    }
+    const champ = body as Record<string, unknown>;
+
+    const tresorerie = lireMontant(champ, 'tresorerie_actuelle');
+    const chargesFixes = lireMontant(champ, 'charges_fixes_mensuelles');
+
+    // Un montant présent mais non fini (ou non nombre) est un défaut de la
+    // requête : refus explicite, et surtout AUCUNE écriture (fail-closed).
+    const champsInvalides = [
+      tresorerie.etat === 'invalide' ? 'tresorerie_actuelle' : null,
+      chargesFixes.etat === 'invalide' ? 'charges_fixes_mensuelles' : null,
+    ].filter((c): c is string => c !== null);
+
+    if (champsInvalides.length > 0) {
+      return NextResponse.json(
+        { error: 'Montant invalide : un nombre fini est requis', champs: champsInvalides },
+        { status: 400 }
+      );
+    }
+
+    if (tresorerie.etat === 'absent' && chargesFixes.etat === 'absent') {
       return NextResponse.json({ error: 'Aucun paramètre à mettre à jour' }, { status: 400 });
     }
 
+    // O3-B7 (D1) — on n'écrit QUE les colonnes réellement fournies.
+    // Le corps de l'upsert portait auparavant `… ?? 0` sur les deux colonnes,
+    // alors que l'interface n'envoie que `tresorerie_actuelle` : chaque
+    // enregistrement de la trésorerie remettait donc `charges_fixes_mensuelles`
+    // à 0. Conséquence silencieuse : la projection 30 jours du GET
+    // (`chargeParJour`) ignorait les charges fixes du tenant, et l'écran ne
+    // signalait rien puisque l'affichage de cette valeur est conditionnel.
+    const maj: {
+      tresorerie_actuelle?: number;
+      charges_fixes_mensuelles?: number;
+      updated_at: string;
+    } = { updated_at: new Date().toISOString() };
+    if (tresorerie.etat === 'valeur') maj.tresorerie_actuelle = tresorerie.valeur;
+    if (chargesFixes.etat === 'valeur') maj.charges_fixes_mensuelles = chargesFixes.valeur;
+
     // Upsert ciblé par l'entreprise du claim : la ligne écrite/appartenue est
-    // celle du tenant courant. Le client SSR applique aussi la RLS en écriture.
+    // celle du tenant courant. Le client SSR applique aussi la RLS en écriture
+    // (policy `parametres_entreprise_ent_insert` / `_ent_update`, dont le
+    // `with check` exige `entreprise_id = entreprise_courante()`).
     const { error } = await supabase
       .from('parametres_entreprise')
-      .upsert(
-        {
-          entreprise_id,
-          tresorerie_actuelle: tresorerieActuelle ?? DEFAUT_TRESORERIE,
-          charges_fixes_mensuelles: chargesFixesMensuelles ?? 0,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'entreprise_id' }
-      );
+      .upsert({ entreprise_id, ...maj }, { onConflict: 'entreprise_id' });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
