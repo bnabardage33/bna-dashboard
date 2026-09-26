@@ -133,7 +133,15 @@ function installerSupabase(etat: Etat): void {
     },
     async rpc(fn: string, args: Record<string, unknown>) {
       etat.rpc.push({ fn, args })
-      return { data: { ok: true }, error: null }
+      // O3-B6 : le stub renvoie désormais la charge utile RÉELLE de
+      // `espace_client_append` — `{ ok: true, id }`. Le stub précédent retournait
+      // `{ ok: true }` sans `id`, ce qui ne permettait pas de distinguer une
+      // écriture confirmée d'un simple accusé de réception : la route ne pouvait
+      // donc pas vérifier le résultat du RPC (faux vert sur le contrôle F6).
+      if (fn === 'espace_client_append') {
+        return { data: { ok: true, id: `conv-${etat.rpc.length}` }, error: null }
+      }
+      return { data: { ok: true, id: `res-${etat.rpc.length}` }, error: null }
     },
   }
 }

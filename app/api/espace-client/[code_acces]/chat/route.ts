@@ -51,17 +51,31 @@ type ContexteChantier = {
   intemperies: { cree_le: string | null; motif: string | null; jour_arrete: boolean }[];
 };
 
-async function chargerContexte(chantierId: string): Promise<ContexteChantier | null> {
+// ISOLATION MULTI-ENTREPRISE (O3-B6) — le `entrepriseId` est désormais un
+// paramètre OBLIGATOIRE de tout chargement de contexte. Chaque lecture est
+// doublement fermée : filtre `.eq('entreprise_id', …)` PUIS revalidation de la
+// ligne relue. Le résultat est discriminé pour que l'appelant puisse refuser
+// (fail-closed) au lieu de dégrader silencieusement le contexte.
+type ResultatContexte =
+  | { ok: true; contexte: ContexteChantier | null }
+  | { ok: false; motif: 'chantier_introuvable' | 'entreprise_incoherente' };
+
+async function chargerContexte(
+  chantierId: string,
+  entrepriseId: string
+): Promise<ResultatContexte> {
   const [chantierRes, avRes, devisRes, intempRes] = await Promise.all([
     supabaseAdmin
       .from('chantiers')
-      .select('date_fin')
+      .select('date_fin, entreprise_id')
       .eq('id', chantierId)
+      .eq('entreprise_id', entrepriseId)
       .maybeSingle(),
     supabaseAdmin
       .from('avancements_chantier')
       .select('pourcentage, details, created_at')
       .eq('chantier_id', chantierId)
+      .eq('entreprise_id', entrepriseId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -69,31 +83,138 @@ async function chargerContexte(chantierId: string): Promise<ContexteChantier | n
       .from('devis')
       .select('numero, statut')
       .eq('chantier_id', chantierId)
+      .eq('entreprise_id', entrepriseId)
       .in('statut', ['envoye', 'accepte']),
     supabaseAdmin
       .from('rapports_intemperies')
       .select('cree_le, motif, jour_arrete')
       .eq('chantier_id', chantierId)
+      .eq('entreprise_id', entrepriseId)
       .gte('cree_le', new Date(Date.now() - 14 * 86400000).toISOString())
       .order('cree_le', { ascending: false })
       .limit(5),
   ]);
 
+  // Fail-closed (O3-B6) : le chantier a été résolu quelques lignes plus haut par
+  // `resoudreChantierParCodeAcces` avec cette entreprise. Si la relecture ne
+  // retrouve pas exactement cette ligne, c'est une rupture d'invariant (course
+  // concurrente, écriture directe, ligne modifiée entre-temps) : on refuse
+  // tout, plutôt que de servir un contexte reconstruit sans tenant.
+  if (chantierRes.data === null) {
+    return { ok: false, motif: 'chantier_introuvable' };
+  }
+  const entrepriseRelue = (chantierRes.data as { entreprise_id?: unknown }).entreprise_id;
+  if (typeof entrepriseRelue !== 'string' || entrepriseRelue !== entrepriseId) {
+    return { ok: false, motif: 'entreprise_incoherente' };
+  }
+
   const avancement = avRes.data;
   const details = avancement ? compterEtapes(avancement.details) : 0;
 
   return {
-    dateFinEstimee: chantierRes.data?.date_fin ?? null,
-    avancementPct: avancement?.pourcentage ?? null,
-    etapesRealisees: details,
-    dernierAvancementDate: avancement?.created_at ?? null,
-    devis: (devisRes.data ?? []).map((d) => ({ numero: d.numero, statut: d.statut })),
-    intemperies: (intempRes.data ?? []).map((i) => ({
-      cree_le: i.cree_le,
-      motif: i.motif,
-      jour_arrete: i.jour_arrete,
-    })),
+    ok: true,
+    contexte: {
+      dateFinEstimee: chantierRes.data.date_fin ?? null,
+      avancementPct: avancement?.pourcentage ?? null,
+      etapesRealisees: details,
+      dernierAvancementDate: avancement?.created_at ?? null,
+      devis: (devisRes.data ?? []).map((d) => ({ numero: d.numero, statut: d.statut })),
+      intemperies: (intempRes.data ?? []).map((i) => ({
+        cree_le: i.cree_le,
+        motif: i.motif,
+        jour_arrete: i.jour_arrete,
+      })),
+    },
   };
+}
+
+// O3-B6 (F4) — Le `sessionId` transmis par le navigateur est le seul lien entre
+// une session de chat et sa ligne de consolidation : il est écrit dans
+// `session_id_en_cours` par cette route, puis relu par `traiterConsolidation`.
+//
+// Précision issue de l'audit de correction, à ne pas relire de travers : le
+// contrôle d'idempotence de O3-B5 (`sessionDejaConsolide`) exige
+// `stockes.length === 0`. Un client ne peut donc PAS forcer `deja_consolide`
+// tant que sa conversation contient des messages non consolidés — l'auto-DoS
+// décrite dans le rapport d'audit initial est en réalité déjà fermée en amont,
+// et ce correctif ne prétend pas la rouvrir.
+//
+// Ce qui reste réel, et que ces garde-fous tiennent : un `session_id` arbitraire
+// fourni par le navigateur est écrit tel quel en base. Deux conséquences
+// concrètes — (1) un identifiant peut être arbitrairement long ou contenir des
+// caractères hostiles, et il est recopié dans `resumes_sessions` par la
+// consolidation ; (2) rien n'interdisait de remémoriser un `session_id` déjà
+// présent dans `resumes_sessions`, si bien que la même étiquette désignait
+// deux sessions distinctes dans le dossier du patron.
+//
+// On lit donc la liste des sessions DÉJÀ CONSOLIDÉES (lecture scopée par
+// `entreprise_id` puis revalidée) et on substitue un identifiant serveur quand
+// l'identifiant fourni est déjà consommé ou malformé. L'idempotence légitime est
+// intacte : un identifiant bien formé et encore disponible est réutilisé tel quel.
+const SESSION_ID_RE = /^[A-Za-z0-9_-]{8,64}$/;
+
+function genererSessionId(): string {
+  return `srv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+type LectureSessions = { ok: true; consommes: string[] } | { ok: false };
+
+async function lireSessionsConsolidees(
+  cle: string,
+  entrepriseId: string
+): Promise<LectureSessions> {
+  const { data, error } = await supabaseAdmin
+    .from('espace_client_conversations')
+    .select('entreprise_id, resumes_sessions')
+    .eq('cle', cle)
+    .eq('entreprise_id', entrepriseId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      '[O3-B6] lecture des sessions consolidées impossible :',
+      typeof error.message === 'string' ? error.message : 'erreur inconnue'
+    );
+    return { ok: false };
+  }
+  // Aucune conversation pour cette `cle` : rien n'est encore consolidé.
+  if (data === null) return { ok: true, consommes: [] };
+
+  // Fail-closed : revalidation post-lecture, comme partout ailleurs (O3-B5).
+  const relue = (data as { entreprise_id?: unknown }).entreprise_id;
+  if (relue !== entrepriseId) {
+    console.error('[O3-B6] revalidation tenant en échec sur espace_client_conversations.');
+    return { ok: false };
+  }
+
+  const brutes = (data as { resumes_sessions?: unknown }).resumes_sessions;
+  const consommes: string[] = [];
+  for (const item of Array.isArray(brutes) ? (brutes as unknown[]) : []) {
+    if (!item || typeof item !== 'object') continue;
+    const sid = (item as Record<string, unknown>).session_id;
+    if (typeof sid === 'string' && sid !== '') consommes.push(sid);
+  }
+  return { ok: true, consommes };
+}
+
+function resoudreSessionId(brut: string | null, consommes: string[]): string {
+  const candidat = typeof brut === 'string' ? brut.trim() : '';
+  if (candidat === '') return genererSessionId();
+  if (!SESSION_ID_RE.test(candidat)) {
+    console.warn(
+      '[O3-B6] sessionId de format non attendu, identifiant serveur substitué (longueur reçue :',
+      candidat.length,
+      ').'
+    );
+    return genererSessionId();
+  }
+  if (consommes.includes(candidat)) {
+    console.warn(
+      "[O3-B6] sessionId déjà présent dans resumes_sessions : identifiant serveur substitué (la même étiquette ne désignera pas deux sessions)."
+    );
+    return genererSessionId();
+  }
+  return candidat;
 }
 
 function formatContexte(contexte: ContexteChantier): string {
@@ -141,24 +262,58 @@ function validerMessages(valeur: unknown): Message[] {
   return messages.slice(-MAX_MESSAGES);
 }
 
+// O3-B6 (F3 + F6) — Le client Supabase ne lève pas sur une erreur SQL : il la
+// résout dans `{ error }`. L'ancien `try { await supabaseAdmin.rpc(...) } catch`
+// n'attrapait donc jamais l'échec d'écriture, et le `catch` ne servait qu'à
+// masquer les rares exceptions JS. Résultat : une conversation perdue en base
+// renvoyait quand même `200 { texte }` au client, qui croyait son échange
+// mémorisé. Ici, `{ error }` ET la charge utile de retour sont vérifiés, et
+// l'appelant décide du comportement (fail-closed).
+type ResultatAppend =
+  | { ok: true; id: string }
+  | { ok: false; raison: string; isolation: boolean };
+
+// Les gardes-fous SQL de la migration O3-B6 lèvent avec le préfixe
+// `espace_client_append:` ; on les distingue pour journaliser une violation
+// d'invariant d'isolation (bien plus grave qu'une panne).
+const GARDE_APPEND_RE = /espace_client_append\s*:/;
+
 async function persisterMessages(
   cle: string,
   chantierId: string,
   clientName: string,
-  sessionId: string | null,
+  sessionId: string,
   messages: Message[]
-) {
-  try {
-    await supabaseAdmin.rpc('espace_client_append', {
-      p_cle: cle,
-      p_chantier_id: chantierId,
-      p_client_nom: clientName,
-      p_session_id: sessionId as string,
-      p_messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    });
-  } catch (e) {
-    console.error('persisterMessages espace client:', e);
+): Promise<ResultatAppend> {
+  const { data, error } = await supabaseAdmin.rpc('espace_client_append', {
+    p_cle: cle,
+    p_chantier_id: chantierId,
+    p_client_nom: clientName,
+    p_session_id: sessionId,
+    p_messages: messages.map((m) => ({ role: m.role, content: m.content })),
+  });
+
+  if (error) {
+    const raison = typeof error.message === 'string' ? error.message : 'erreur inconnue';
+    const isolation = GARDE_APPEND_RE.test(raison);
+    console.error(
+      isolation
+        ? '[O3-B6] VIOLATION D\'ISOLATION — espace_client_append a rejeté l\'écriture :'
+        : '[O3-B6] espace_client_append a échoué :',
+      raison
+    );
+    return { ok: false, raison, isolation };
   }
+
+  // F6 : le résultat du RPC est réellement vérifié. `{ ok: true, id }` est la
+  // seule preuve d'écriture acceptée — un retour vide ou sans identifiant est
+  // traité comme un échec, jamais comme un succès tacite.
+  const charge = (data ?? null) as unknown as Record<string, unknown> | null;
+  if (charge === null || charge.ok !== true || typeof charge.id !== 'string' || charge.id === '') {
+    console.error("[O3-B6] espace_client_append n'a pas confirmé l'écriture :", { data });
+    return { ok: false, raison: 'resultat_non_confirme', isolation: false };
+  }
+  return { ok: true, id: charge.id };
 }
 
 export async function POST(
@@ -199,13 +354,37 @@ export async function POST(
     if (messages.length === 0) {
       return NextResponse.json({ error: 'Messages manquants ou invalides' }, { status: 400 });
     }
-    const sessionId = typeof corps.sessionId === 'string' ? corps.sessionId : null;
+    const sessionIdBrut = typeof corps.sessionId === 'string' ? corps.sessionId : null;
     const clientName = chantier.clientName || 'Client';
+
+    // O3-B6 (F4) : on résout le `sessionId` AVANT tout appel à Groq, pour ne pas
+    // dépenser de jetons si la lecture de contrôle échoue. Fail-closed : une
+    // lecture impossible ou incohérente interrompt la requête.
+    const sessionsLues = await lireSessionsConsolidees(chantier.id, entrepriseId);
+    if (!sessionsLues.ok) {
+      console.error(
+        '[O3-B6] contrôle des sessions consolidées impossible — envoi à Groq refusé (fail-closed).'
+      );
+      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    }
+    const sessionId = resoudreSessionId(sessionIdBrut, sessionsLues.consommes);
 
     const dernierMsg = messages[messages.length - 1];
     const userInput: Message[] = dernierMsg ? [{ role: 'user', content: dernierMsg.content }] : [];
 
-    const contexte = await chargerContexte(chantier.id);
+    // O3-B6 (F5) : contexte entièrement scopé par `entreprise_id` + revalidation.
+    // Une incohérence interrompt la requête : aucun contexte d'un autre tenant ne
+    // peut atteindre le prompt, ni Groq, ni la réponse.
+    const resultatContexte = await chargerContexte(chantier.id, entrepriseId);
+    if (!resultatContexte.ok) {
+      console.error(
+        '[O3-B6] revalidation du contexte en échec (',
+        resultatContexte.motif,
+        ') — envoi à Groq refusé (fail-closed).'
+      );
+      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    }
+    const contexte = resultatContexte.contexte;
 
     let situation = '';
     if (contexte && contexte.intemperies.length > 0) {
@@ -281,7 +460,20 @@ export async function POST(
     if (!groqResponse.ok) {
       const errBody = await groqResponse.text();
       console.error('Erreur Groq API:', groqResponse.status, errBody);
-      await persisterMessages(chantier.id, chantier.id, clientName, sessionId, userInput);
+      // O3-B6 : l'échec d'écriture n'est plus avalé. La réponse reste 502 (c'est
+      // la cause principale), mais l'incident est journalisé explicitement.
+      const appendEchecGroq = await persisterMessages(
+        chantier.id,
+        chantier.id,
+        clientName,
+        sessionId,
+        userInput
+      );
+      if (!appendEchecGroq.ok) {
+        console.error(
+          "[O3-B6] le message de l'utilisateur n'a PAS pu être mémorisé (échec Groq + échec d'écriture)."
+        );
+      }
       return NextResponse.json({ error: 'Erreur API IA', detail: errBody }, { status: 502 });
     }
 
@@ -289,10 +481,23 @@ export async function POST(
     const brutTexte = String(groqData.choices?.[0]?.message?.content ?? '');
     const texte = deanonymizeText(brutTexte, mapping);
 
-    await persisterMessages(chantier.id, chantier.id, clientName, sessionId, [
+    const append = await persisterMessages(chantier.id, chantier.id, clientName, sessionId, [
       ...userInput,
       { role: 'assistant', content: texte },
     ]);
+
+    // O3-B6 (F3, fail-closed) : on ne renvoie plus `200 { texte }` alors que
+    // l'échange n'a pas été mémorisé — le client croyait le contraire, et le
+    // patron ne recevait jamais la synthèse. Un échec d'écriture est donc
+    // visible côté client. Le garde SQL d'isolation est journalisé comme tel.
+    if (!append.ok) {
+      if (append.isolation) {
+        console.error(
+          '[O3-B6] garde SQL d\'isolation déclenché sur espace_client_append — aucune écriture effectuée.'
+        );
+      }
+      return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    }
 
     return NextResponse.json({ texte });
   } catch (err) {
