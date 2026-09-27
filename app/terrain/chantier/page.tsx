@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check, BarChartHorizontal } from "lucide-react";
 import PlanningGantt from "@/components/PlanningGantt";
+import { Surface } from '@/components/ui/Surface';
 
 // O3-B8 : `chantiers` est la RACINE de la hiérarchie entreprise. Depuis la
 // migration d'isolation du 22/09, `chantiers.entreprise_id` est NOT NULL, sans
@@ -196,7 +197,7 @@ export default function ChantiersPage() {
 
       {/* Barre de recherche & Vues */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex bg-[#1A1D24] border border-white/10 rounded-xl p-1 shrink-0 w-max">
+        <Surface className="flex p-1 shrink-0 w-max">
           <button
             onClick={() => setViewMode("liste")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "liste" ? "bg-white/10 text-white" : "text-gray-400 hover:text-white"}`}
@@ -211,7 +212,7 @@ export default function ChantiersPage() {
             <BarChartHorizontal className="w-4 h-4" />
             Planning Gantt
           </button>
-        </div>
+        </Surface>
       </div>
       
       {/* Barre de recherche */}
@@ -276,9 +277,10 @@ export default function ChantiersPage() {
           {chantiersFiltres.map((ch) => {
             const nomClient = ch.clients?.societe || ch.clients?.nom || "Client direct";
             return (
-              <div
+              <Surface
                 key={ch.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24] hover:shadow-red-600/5"
+                className="group relative flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24] hover:shadow-red-600/5"
+                radius="2xl"
               >
                 <Link href={`/terrain/chantier/${ch.id}`} className="block space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
@@ -369,7 +371,7 @@ export default function ChantiersPage() {
                     <span>{deleting === ch.id ? "Suppression…" : "Supprimer"}</span>
                   </button>
                 </div>
-              </div>
+              </Surface>
             );
           })}
         </div>

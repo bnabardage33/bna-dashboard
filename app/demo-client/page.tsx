@@ -5,6 +5,7 @@ import {
   FileText, CheckCircle2, MessageSquare, Clock, Download,
   AlertCircle, Camera, HardHat, Send, X, Check
 } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type ChantierData = {
@@ -362,7 +363,7 @@ export default function ClientPortalPrototype() {
       </main>
 
       {/* Chatbot Interface */}
-      <div className={`fixed bottom-24 right-6 w-[320px] max-w-[calc(100vw-3rem)] bg-[#1A1D24] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden transition-all duration-300 z-[9998] origin-bottom-right ${isChatOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+      <Surface className={`fixed bottom-24 right-6 w-[320px] max-w-[calc(100vw-3rem)] shadow-2xl flex flex-col overflow-hidden transition-all duration-300 z-[9998] origin-bottom-right ${isChatOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`} radius="2xl">
         <div className="bg-transparent text-white p-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <HardHat size={20} className="text-gray-400" />
@@ -388,11 +389,11 @@ export default function ClientPortalPrototype() {
           ))}
           {isLoading && (
             <div className="flex items-start">
-              <div className="px-4 py-2 rounded-2xl bg-[#1A1D24] border border-white/10 text-gray-500 rounded-bl-sm flex gap-1 items-center h-9">
+              <Surface className="px-4 py-2 text-gray-500 rounded-bl-sm flex gap-1 items-center h-9" radius="2xl">
                 <div className="w-1.5 h-1.5 bg-[#1A1D24] rounded-full animate-bounce"></div>
                 <div className="w-1.5 h-1.5 bg-[#1A1D24] rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
                 <div className="w-1.5 h-1.5 bg-[#1A1D24] rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-              </div>
+              </Surface>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -414,7 +415,7 @@ export default function ClientPortalPrototype() {
             <Send size={18} />
           </button>
         </form>
-      </div>
+      </Surface>
 
       {/* Floating Action Button */}
       <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-[9990]">
@@ -461,7 +462,7 @@ export default function ClientPortalPrototype() {
               <>
                 <div className="p-6 bg-transparent border-b border-white/10 overflow-y-auto">
                   <h3 className="font-bold text-gray-300 mb-2 text-lg">Avenant Devis #DEV-2026-08</h3>
-                  <div className="space-y-3 text-sm text-slate-600 mb-4 bg-[#1A1D24] p-4 rounded-xl border border-white/10">
+                  <Surface className="space-y-3 text-sm text-slate-600 mb-4 p-4">
                     <div className="flex justify-between border-b border-slate-100 pb-2">
                       <span>Fourniture et pose Pare-pluie</span>
                       <span className="font-medium text-gray-300">450 €</span>
@@ -470,7 +471,7 @@ export default function ClientPortalPrototype() {
                       <span className="font-bold text-gray-300">TOTAL TTC</span>
                       <span className="font-black text-red-400 text-lg">450 €</span>
                     </div>
-                  </div>
+                  </Surface>
                   <p className="text-xs text-gray-500 italic">Je soussigné(e) {displayChantier}, donne mon bon pour accord.</p>
                 </div>
 

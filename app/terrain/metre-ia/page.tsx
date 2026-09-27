@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Camera, Image as ImageIcon, Ruler, Square, Scissors, Wand2, Undo, Trash2, Check } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 type Point = { x: number; y: number };
 type Mode = "etalonnage" | "facade" | "deduction" | null;
@@ -251,7 +252,7 @@ export default function MetreIAPage() {
         ) : (
           <div className="space-y-4">
             {/* Barre d'outils */}
-            <div className="flex flex-wrap gap-2 bg-[#1A1D24] p-2 rounded-xl border border-white/10">
+            <Surface className="flex flex-wrap gap-2 p-2">
               <button 
                 onClick={() => { setMode("etalonnage"); setCurrentPoly([]); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-bold transition-all ${mode === "etalonnage" ? "bg-cyan-600 text-white" : "bg-transparent text-gray-400 hover:bg-white/5"}`}
@@ -272,7 +273,7 @@ export default function MetreIAPage() {
               >
                 <Scissors className="h-4 w-4" /> 3. Vides
               </button>
-            </div>
+            </Surface>
 
             {/* Consignes */}
             <div className="text-center text-xs text-gray-400">

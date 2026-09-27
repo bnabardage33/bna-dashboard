@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import { compresserImage } from "@/lib/imageCompress";
 import Image from "next/image";
+import { Surface } from '@/components/ui/Surface';
 
 type Photo = {
   id: string;
@@ -152,7 +153,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
           const photosColonne = photos.filter((p) => p.type === col.type);
           const busy = uploading === col.type;
           return (
-            <div key={col.type} className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+            <Surface key={col.type} className="p-3">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-medium text-white">{col.label}</p>
                 <div className="flex gap-2">
@@ -207,7 +208,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
                   ))}
                 </div>
               )}
-            </div>
+            </Surface>
           );
         })}
       </div>

@@ -15,6 +15,7 @@ import RapportSAVPDF from "@/components/RapportSAVPDF";
 import { Printer, X } from "lucide-react";
 import type { TicketSav, EntrepriseSettings, MaterielPrevu } from "@/types/finance";
 import type { TablesInsert, TablesUpdate } from "@/types/supabase";
+import { Surface } from '@/components/ui/Surface';
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -297,7 +298,7 @@ export default function FicheSAV() {
         </button>
       </div>
 
-      <div className="bg-[#1A1D24] p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <Surface className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4" radius="2xl">
         <div className="flex-1 w-full">
           <label className="text-xs uppercase tracking-wide text-gray-400 mb-1 block">Chantier concerné</label>
           <select 
@@ -325,12 +326,12 @@ export default function FicheSAV() {
             {ticket.sous_garantie ? "Sous Garantie" : "Hors Garantie"}
           </button>
         </div>
-      </div>
+      </Surface>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* TUILE 1 : FICHE SINISTRE */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+        <Surface className="p-5 space-y-4 shadow-sm relative overflow-hidden" radius="2xl">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <AlertTriangle size={18} /> 1. Fiche Sinistre
@@ -365,10 +366,10 @@ export default function FicheSAV() {
               />
             </div>
           </div>
-        </div>
+        </Surface>
 
         {/* TUILE 2 : DIAGNOSTIC DTU */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+        <Surface className="p-5 space-y-4 shadow-sm relative overflow-hidden" radius="2xl">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">
             <FileCheck size={18} /> 2. Diagnostic DTU 41.2
@@ -401,10 +402,10 @@ export default function FicheSAV() {
               <p className="text-[10px] text-gray-400 font-medium">✅ Ce diagnostic protège juridiquement l'entreprise.</p>
             )}
           </div>
-        </div>
+        </Surface>
 
         {/* TUILE 3 : MATÉRIEL */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+        <Surface className="p-5 space-y-4 shadow-sm relative overflow-hidden" radius="2xl">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Wrench size={18} /> 3. Matériel à prévoir
@@ -420,10 +421,10 @@ export default function FicheSAV() {
           <button className="w-full bg-red-600/20 text-gray-400 hover:bg-red-600/30 border border-white/10 py-2 rounded-lg text-xs font-bold transition-all">
             Ajouter au débit atelier (Prochainement)
           </button>
-        </div>
+        </Surface>
 
         {/* TUILE 4 : INTERVENTION */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden">
+        <Surface className="p-5 space-y-4 shadow-sm relative overflow-hidden" radius="2xl">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Calendar size={18} /> 4. Intervention
@@ -473,10 +474,10 @@ export default function FicheSAV() {
               </select>
             </div>
           </div>
-        </div>
+        </Surface>
 
         {/* TUILE 5 : PHOTOS ET SIGNATURE */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2">
+        <Surface className="p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2" radius="2xl">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
             <Camera size={18} /> 5. Photos & Signature Client
@@ -559,10 +560,10 @@ export default function FicheSAV() {
               </div>
             </div>
           </div>
-        </div>
+        </Surface>
 
         {/* TUILE 6 : CLOTURE */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Surface className="p-5 space-y-4 shadow-sm relative overflow-hidden md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4" radius="2xl">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
           
           <div>
@@ -595,7 +596,7 @@ export default function FicheSAV() {
             )}
           </div>
 
-        </div>
+        </Surface>
 
       </div>
 

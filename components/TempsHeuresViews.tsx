@@ -11,6 +11,7 @@ import { validerPointageAvecMeteo, supprimerPointageGlob, reinitialiserPointages
 import { Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Tables } from "@/types/supabase";
+import { Surface } from '@/components/ui/Surface';
 
 const MOCK_CATALOGUE = {
   surface: 0.5,
@@ -49,7 +50,7 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
   const tempsPlanification = calculerTempsPlanification(tempsBudget, coef);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
+    <Surface className="p-6 space-y-4">
       <h3 className="text-lg font-bold text-white">Chantiers & Calepinage</h3>
       <p className="text-sm text-gray-400">
         Entrez les données du calepinage pour calculer le temps budget.
@@ -84,7 +85,7 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
           <p className="text-xl font-bold text-gray-300">{tempsPlanification.toFixed(2)} h</p>
         </div>
       </div>
-    </div>
+    </Surface>
   );
 }
 
@@ -164,7 +165,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
   };
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
+    <Surface className="p-6 space-y-4">
       <h3 className="text-lg font-bold text-white">Pointage Équipe (Mode Confiance)</h3>
       <p className="text-sm text-gray-400">
         Saisissez le volume d&apos;heures global passé sans chronomètre.
@@ -272,7 +273,7 @@ const adjusted = (p.volume_heures_declare || 0) / ((p.coef_meteo || 1.0) || 1.0)
           </div>
         )}
       </div>
-    </div>
+    </Surface>
   );
 }
 
@@ -343,7 +344,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
   const icones = Array.from(new Set(data.pointages.map((p: PointageData) => METEO_ICONS[p.meteo] || '➖'))).join(" ");
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-6 space-y-4">
+    <Surface className="p-6 space-y-4">
       <h3 className="text-lg font-bold text-white">Tableau de Bord / Rentabilité</h3>
       <p className="text-sm text-gray-400">
         Analyse du "Temps Budget" vs "Temps Réel Consommé" (ajusté selon la météo).
@@ -375,6 +376,6 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
           </div>
         </div>
       </div>
-    </div>
+    </Surface>
   );
 }

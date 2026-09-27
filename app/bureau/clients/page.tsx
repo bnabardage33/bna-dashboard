@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
+import { Surface } from '@/components/ui/Surface';
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -474,9 +475,9 @@ export default function ClientsPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {filtres.map((c) => (
-            <div
+            <Surface
               key={c.id}
-              className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 transition-colors hover:border-slate-600"
+              className="p-4 transition-colors hover:border-slate-600"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -537,7 +538,7 @@ export default function ClientsPage() {
                   </a>
                 )}
               </div>
-            </div>
+            </Surface>
           ))}
         </div>
       )}
@@ -548,8 +549,8 @@ export default function ClientsPage() {
           className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/70 p-4"
           onClick={() => setClientSelectionne(null)}
         >
-          <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl"
+          <Surface
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between border-b border-white/10 pb-3">
@@ -707,7 +708,7 @@ export default function ClientsPage() {
                 </div>
               </div>
             )}
-          </div>
+          </Surface>
         </div>
       )}
     </div>

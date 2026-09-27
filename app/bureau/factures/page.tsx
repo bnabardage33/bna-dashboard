@@ -11,6 +11,7 @@ import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
 import { AlertCircle, PenTool } from "lucide-react";
 import { prochainNumero } from "@/lib/documents";
 import { fmtEuro } from "@/lib/financeCalculs";
+import { Surface } from '@/components/ui/Surface';
 
 type CatalogueOuvrage = {
   id: string;
@@ -339,14 +340,14 @@ export default function FacturesPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-sm">
+        <Surface className="p-4 shadow-sm" radius="2xl">
           <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">CA Encaissé (Payé)</p>
           <p className="text-2xl font-black text-white font-mono mt-0.5">{fmtEuro(caEncaisse)}</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-sm">
+        </Surface>
+        <Surface className="p-4 shadow-sm" radius="2xl">
           <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">En attente de règlement</p>
           <p className="text-2xl font-black text-white font-mono mt-0.5">{fmtEuro(enAttente)}</p>
-        </div>
+        </Surface>
       </div>
 
       {loading ? (

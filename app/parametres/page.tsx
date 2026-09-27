@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Building2, ShieldCheck, Scale, FileText, Check, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { Surface } from '@/components/ui/Surface';
 
 export type Settings = {
   raison_sociale: string;
@@ -171,7 +172,7 @@ export default function ParametresPage() {
       </div>
 
       {/* 1. Bloc : Coordonnées de l'entreprise */}
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-md space-y-4">
+      <Surface className="p-5 shadow-md space-y-4" radius="2xl">
         <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-300">
             <Building2 className="h-4 w-4" />
@@ -211,9 +212,9 @@ export default function ParametresPage() {
           </label>
           <div className="mt-3 flex flex-wrap items-center gap-4">
             {form.logo_url ? (
-              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-2.5 shadow-sm">
+              <Surface className="flex items-center gap-3 p-2.5 shadow-sm">
                 <Image src={form.logo_url} alt="Logo entreprise" className="h-16 w-auto object-contain"  width={100} height={100} />
-              </div>
+              </Surface>
             ) : (
               <div className="flex h-16 w-32 items-center justify-center rounded-xl border border-dashed border-slate-600 text-xs text-gray-400">
                 /logo-bna.png (défaut)
@@ -240,10 +241,10 @@ export default function ParametresPage() {
             )}
           </div>
         </div>
-      </div>
+      </Surface>
 
       {/* 2. Bloc : Assurance Décennale & RCP */}
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-md space-y-4">
+      <Surface className="p-5 shadow-md space-y-4" radius="2xl">
         <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-400">
             <ShieldCheck className="h-4 w-4" />
@@ -279,10 +280,10 @@ export default function ParametresPage() {
             placeholder="Ex: France métropolitaine et Corse"
           />
         </div>
-      </div>
+      </Surface>
 
       {/* 3. Bloc : Médiateur de la Consommation */}
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-md space-y-4">
+      <Surface className="p-5 shadow-md space-y-4" radius="2xl">
         <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-400">
             <Scale className="h-4 w-4" />
@@ -309,10 +310,10 @@ export default function ParametresPage() {
             placeholder="Ex: https://www.cm2c.net - 14 rue Saint Jean 75017 Paris"
           />
         </div>
-      </div>
+      </Surface>
 
       {/* 4. Bloc : Mentions Légales */}
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-md space-y-3">
+      <Surface className="p-5 shadow-md space-y-3" radius="2xl">
         <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-300">
             <FileText className="h-4 w-4" />
@@ -330,7 +331,7 @@ export default function ParametresPage() {
           onChange={(e) => update("mentions_legales", e.target.value)}
           placeholder="Ex: TVA non applicable, art. 293 B du CGI (ou numéro TVA intracommunautaire), dispensé d'immatriculation au RCS..."
         />
-      </div>
+      </Surface>
     </form>
   );
 }

@@ -10,6 +10,7 @@ import SignaturePad from "@/components/SignaturePad";
 import { PenTool, AlertTriangle } from "lucide-react";
 import { analyserPerformancesFournisseurs, type AnalytiqueFournisseur } from "@/lib/fournisseursAnalytique";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import { Surface } from '@/components/ui/Surface';
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 
@@ -495,19 +496,19 @@ export default function FournisseursPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+        <Surface className="p-3">
           <p className="text-xs text-gray-400">🏢 Fournisseurs actifs</p>
           <p className="mt-1 text-xl font-semibold text-white">{kpis.fournisseursActifs}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+        </Surface>
+        <Surface className="p-3">
           <p className="text-xs text-gray-400">📦 Commandes en cours</p>
           <p className="mt-1 text-xl font-semibold text-white">{kpis.commandesEnCours}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+        </Surface>
+        <Surface className="p-3">
           <p className="text-xs text-gray-400">🚚 Livraisons attendues</p>
           <p className="mt-1 text-xl font-semibold text-white">{kpis.livraisonsAttendues}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-3">
+        </Surface>
+        <Surface className="p-3">
           <p className="text-xs text-gray-400">💰 Achats du mois</p>
           <p className="mt-1 text-sm text-white">
             Engagé : <span className="font-semibold">{kpis.achatsEngages.toFixed(0)} €</span>
@@ -515,7 +516,7 @@ export default function FournisseursPage() {
           <p className="text-sm text-gray-400">
             Reçu : <span className="font-semibold text-gray-400">{kpis.achatsRecus.toFixed(0)} €</span>
           </p>
-        </div>
+        </Surface>
       </div>
 
       <div className="flex flex-wrap gap-2.5">
@@ -560,7 +561,7 @@ export default function FournisseursPage() {
               {fournisseurs.map((f) => {
                 const relation = RELATIONS.find((r) => r.value === f.statut_relation) ?? RELATIONS[1];
                 return (
-                  <div key={f.id} className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+                  <Surface key={f.id} className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-semibold text-white">{f.nom}</p>
@@ -601,7 +602,7 @@ export default function FournisseursPage() {
                       <p className="mt-2 text-xs text-gray-500">Paiement : {f.conditions_paiement}</p>
                     )}
                     {f.notes && <p className="mt-1 text-xs text-gray-500">{f.notes}</p>}
-                  </div>
+                  </Surface>
                 );
               })}
             </div>

@@ -38,6 +38,7 @@ import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, Sparkles, Loader2 } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 type CatalogueOuvrage = {
   id: string;
@@ -816,9 +817,10 @@ function DevisContenu() {
               (d.marge_ht ?? 0) !== 0;
 
             return (
-              <div
+              <Surface
                 key={d.id}
-                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
+                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
+                radius="2xl"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -913,7 +915,7 @@ function DevisContenu() {
                     🗑️
                   </button>
                 </div>
-              </div>
+              </Surface>
             );
           })}
         </div>

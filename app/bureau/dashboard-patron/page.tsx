@@ -7,6 +7,7 @@ import {
   Wallet, TrendingUp, TrendingDown, AlertTriangle, Landmark, PenLine, Check,
   Loader2, RotateCcw, ArrowRight, Building2, PiggyBank
 } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 type ChantierRentabilite = {
   id: string;
@@ -127,7 +128,7 @@ export default function DashboardPatronPage() {
   }: {
     titre: string; valeur: string; editable?: boolean; negative?: boolean; icone: ReactNode; sous?: string;
   }) => (
-    <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 flex flex-col gap-1">
+    <Surface className="p-4 flex flex-col gap-1" radius="2xl">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wide text-gray-500 flex items-center gap-1.5">
           {icone}
@@ -147,7 +148,7 @@ export default function DashboardPatronPage() {
         )}
       </div>
       {sous && <p className="text-[11px] text-gray-500">{sous}</p>}
-    </div>
+    </Surface>
   );
 
   return (
@@ -167,7 +168,7 @@ export default function DashboardPatronPage() {
       </div>
 
       {editTreso && (
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 flex items-center gap-3">
+        <Surface className="p-4 flex items-center gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Trésorerie actuelle (€)</p>
             <input
@@ -190,7 +191,7 @@ export default function DashboardPatronPage() {
           <button onClick={() => setEditTreso(false)} className="text-xs text-gray-400 hover:text-white">
             Annuler
           </button>
-        </div>
+        </Surface>
       )}
 
       {error && (
@@ -229,7 +230,7 @@ export default function DashboardPatronPage() {
         />
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4">
+      <Surface className="p-4" radius="2xl">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-white flex items-center gap-2">
             <PiggyBank className="h-4 w-4 text-gray-400" />
@@ -261,10 +262,10 @@ export default function DashboardPatronPage() {
           <span>J+22</span>
           <span>J+30</span>
         </div>
-      </div>
+      </Surface>
 
       <div className="grid lg:grid-cols-3 gap-4 items-start">
-        <div className="lg:col-span-1 rounded-2xl border border-white/10 bg-[#1A1D24] p-4">
+        <Surface className="lg:col-span-1 p-4" radius="2xl">
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <Building2 className="h-4 w-4 text-emerald-400" />
             Top 3 chantiers rentables
@@ -285,9 +286,9 @@ export default function DashboardPatronPage() {
               <p className="text-xs text-gray-500 italic">Aucun chantier budgété</p>
             )}
           </div>
-        </div>
+        </Surface>
 
-        <div className="lg:col-span-1 rounded-2xl border border-white/10 bg-[#1A1D24] p-4">
+        <Surface className="lg:col-span-1 p-4" radius="2xl">
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <TrendingDown className="h-4 w-4 text-rose-400" />
             Top 3 qui perdent de l&apos;argent
@@ -308,9 +309,9 @@ export default function DashboardPatronPage() {
               <p className="text-xs text-gray-500 italic">Aucun chantier en perte</p>
             )}
           </div>
-        </div>
+        </Surface>
 
-        <div className="lg:col-span-1 rounded-2xl border border-white/10 bg-[#1A1D24] p-4">
+        <Surface className="lg:col-span-1 p-4" radius="2xl">
           <h2 className="text-sm font-bold text-white mb-3">Dépenses à payer par fournisseur</h2>
           <div className="space-y-2">
             {data.depenses_a_payer_par_fournisseur.slice(0, 6).map((f) => (
@@ -329,10 +330,10 @@ export default function DashboardPatronPage() {
               <span> · dont charges fixes {fmtEuro(parametres.charges_fixes_mensuelles)}/mois (reparties sur la projection)</span>
             )}
           </p>
-        </div>
+        </Surface>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4">
+      <Surface className="p-4" radius="2xl">
         <h2 className="text-sm font-bold text-white mb-3">Alertes</h2>
         <div className="space-y-2">
           {data.alertes.map((a) => {
@@ -369,7 +370,7 @@ export default function DashboardPatronPage() {
             <p className="text-xs text-gray-500 italic">Aucune alerte</p>
           )}
         </div>
-      </div>
+      </Surface>
 
       <div className="flex justify-end">
         <button

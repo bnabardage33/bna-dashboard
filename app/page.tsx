@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, LogIn } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import DashboardAccueil, { type Note } from '@/components/DashboardAccueil';
+import { Surface } from '@/components/ui/Surface';
 
 // Option B (durecissement) : la landing `/` reste PUBLIQUE au niveau proxy
 // (whitelist lib/supabase/middleware.ts), mais aucune donnée privée n'est
@@ -77,7 +78,7 @@ export default async function Home() {
       <div className="relative overflow-hidden w-full">
         <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(227,6,19,0.15),transparent_60%)] pointer-events-none z-0" />
         <main className="relative z-10 px-4 pt-6 pb-[20px] flex flex-col gap-8">
-          <section className="rounded-2xl border border-white/10 bg-[#1A1D24] p-8 text-center shadow-lg">
+          <Surface as="section" className="p-8 text-center shadow-lg" radius="2xl">
             <LogIn className="w-10 h-10 mx-auto text-[#E30613] mb-4" />
             <h2 className="text-xl font-bold text-white mb-2">
               Connectez-vous pour accéder au tableau de bord
@@ -91,7 +92,7 @@ export default async function Home() {
             >
               Se connecter <ArrowRight className="h-4 w-4" />
             </Link>
-          </section>
+          </Surface>
         </main>
       </div>
     );

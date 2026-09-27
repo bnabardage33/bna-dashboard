@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { AlertTriangle, MapPin, Building } from "lucide-react";
 import Link from "next/link";
+import { Surface } from '@/components/ui/Surface';
 
 export type GanttChantier = {
   id: string;
@@ -153,7 +154,7 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
   };
 
   return (
-    <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 overflow-hidden shadow-lg mt-4 flex flex-col relative">
+    <Surface className="p-4 overflow-hidden shadow-lg mt-4 flex flex-col relative" radius="2xl">
       <div 
         ref={containerRef}
         className="overflow-x-auto select-none touch-pan-x"
@@ -273,6 +274,6 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
           </div>
         </div>
       </div>
-    </div>
+    </Surface>
   );
 }

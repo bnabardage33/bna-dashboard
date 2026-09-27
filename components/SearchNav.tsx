@@ -5,6 +5,7 @@ import { Search, Bell, FileText, HardHat, Users, Package, ChevronRight } from "l
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Surface } from '@/components/ui/Surface';
 
 type SearchResult = {
   clients: Array<{ id: string; nom: string; societe: string | null; email: string | null; tel: string | null }>;
@@ -115,7 +116,7 @@ export default function SearchNav() {
           />
         </div>
         {open && (query.length >= 2) && (
-          <div className="absolute top-full left-0 mt-2 w-80 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+          <Surface className="absolute top-full left-0 mt-2 w-80 shadow-2xl overflow-hidden z-50">
             {loading ? (
               <div className="p-4 text-gray-500 text-sm">Recherche...</div>
             ) : results && (results.clients.length + results.chantiers.length + results.devis.length + results.fournisseurs.length > 0) ? (
@@ -164,7 +165,7 @@ export default function SearchNav() {
             ) : (
               <div className="p-4 text-gray-500 text-sm text-center">Aucun résultat</div>
             )}
-          </div>
+          </Surface>
         )}
       </div>
 
@@ -180,7 +181,7 @@ export default function SearchNav() {
           )}
         </button>
         {notifOpen && (
-          <div className="absolute top-full right-0 mt-2 w-80 bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+          <Surface className="absolute top-full right-0 mt-2 w-80 shadow-2xl overflow-hidden z-50">
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">Notifications</h3>
               {unreadCount > 0 && (
@@ -205,7 +206,7 @@ export default function SearchNav() {
                 ))
               )}
             </div>
-          </div>
+          </Surface>
         )}
       </div>
     </div>

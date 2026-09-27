@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import { Loader2, CheckCircle2, Circle, ChevronDown, ChevronUp, Mic, Square } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 const FACADES = [
   { id: "nord", label: "Façade Nord" },
@@ -252,7 +253,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
   if (loading) return <div className="text-sm text-gray-400">Chargement de l'avancement...</div>;
 
   return (
-    <div className="bg-[#1A1D24] border border-white/10 rounded-xl p-5 shadow-lg max-w-2xl">
+    <Surface className="p-5 shadow-lg max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-white">Avancement du Chantier</h2>
         <div className="flex items-center gap-3 bg-[#0B0F19] px-4 py-2 rounded-lg border border-white/10">
@@ -365,6 +366,6 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           Enregistrer l'avancement
         </button>
       </div>
-    </div>
+    </Surface>
   );
 }

@@ -16,6 +16,7 @@ import { FileText, Mic, ArrowRight } from 'lucide-react';
 import BoutonMicroNote from '@/components/BoutonMicroNote';
 import { supabase } from '@/lib/supabase';
 import { resoudreContexteEntreprise } from '@/lib/contexteEntreprise';
+import { Surface } from '@/components/ui/Surface';
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -168,7 +169,7 @@ export default function DashboardAccueil({
       </div>
 
       {/* Assistant Vocal (IA) */}
-      <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-lg relative overflow-hidden">
+      <Surface className="p-6 shadow-lg relative overflow-hidden" radius="2xl">
         <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
           <Mic className="w-48 h-48 text-white" />
         </div>
@@ -191,7 +192,7 @@ export default function DashboardAccueil({
             {isSavingNote ? 'Enregistrement de la note...' : 'Appuyez pour parler'}
           </p>
         </div>
-      </div>
+      </Surface>
 
       {/* Dernières Notes */}
       <div>
@@ -231,9 +232,9 @@ export default function DashboardAccueil({
             </Link>
           ))}
           {dernieresNotes.length === 0 && (
-            <div className="col-span-3 rounded-xl border border-dashed border-white/10 bg-[#1A1D24] p-8 text-center text-gray-500 text-sm">
+            <Surface className="col-span-3 border-dashed p-8 text-center text-gray-500 text-sm">
               Aucune note récente. Utilisez le micro ci-dessus !
-            </div>
+            </Surface>
           )}
         </div>
       </div>

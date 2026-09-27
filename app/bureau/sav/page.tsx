@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search, Plus, Wrench, CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { TicketSav } from "@/types/finance";
+import { Surface } from '@/components/ui/Surface';
 
 export default function SAVPage() {
   const [tickets, setTickets] = useState<TicketSav[]>([]);
@@ -64,7 +65,7 @@ export default function SAVPage() {
         </Link>
       </div>
 
-      <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 justify-between">
+      <Surface className="p-4 flex flex-col sm:flex-row gap-4 justify-between" radius="2xl">
         <div className="relative max-w-sm w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -99,7 +100,7 @@ export default function SAVPage() {
             </button>
           ))}
         </div>
-      </div>
+      </Surface>
 
       {loading ? (
         <div className="text-center p-12 text-gray-400 animate-pulse">Chargement des tickets...</div>

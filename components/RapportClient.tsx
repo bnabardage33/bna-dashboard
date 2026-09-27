@@ -36,6 +36,7 @@ import {
   Printer,
   X,
 } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -319,7 +320,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
       )}
 
       {/* Action principale : générer */}
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+      <Surface className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-white">Rapport hebdomadaire client</h3>
@@ -348,10 +349,10 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
             )}
           </button>
         </div>
-      </div>
+      </Surface>
 
       {/* Liste des rapports */}
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+      <Surface className="p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
           Rapports existants ({rapports.length})
         </p>
@@ -398,13 +399,13 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
             })}
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Aperçu du rapport sélectionné */}
       {rapportSelectionne && snapshotSelectionne && (
         <div className="space-y-4">
           {/* En-tête du rapport */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-bold text-white">
@@ -476,7 +477,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 Rapport envoyé : aperçu en lecture seule.
               </p>
             )}
-          </div>
+          </Surface>
 
           {/* Avertissement si mot du patron vide */}
           {!estEnvoye && motPatron.trim() === "" && (
@@ -488,7 +489,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
 
           {/* Delta d'avancement */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Avancement période</p>
               <p className="mt-1 text-3xl font-black text-white">
                 {snapshotSelectionne.avancement.delta > 0 ? "+" : ""}
@@ -498,9 +499,9 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 {snapshotSelectionne.avancement.pct_debut.toFixed(0)}% →{" "}
                 {snapshotSelectionne.avancement.pct_fin.toFixed(0)}%
               </p>
-            </div>
+            </Surface>
 
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Avancement global</p>
               <p className="mt-1 text-3xl font-black text-white">
                 {snapshotSelectionne.avancement.pct_fin.toFixed(0)}%
@@ -508,9 +509,9 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
               <p className="mt-0.5 text-xs text-gray-500">
                 {snapshotSelectionne.avancement.cases_cochees} case(s) cochée(s)
               </p>
-            </div>
+            </Surface>
 
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Temps de la semaine</p>
               <p className="mt-1 text-3xl font-black text-white">
                 {snapshotSelectionne.pointages.total_heures.toFixed(1)}
@@ -518,11 +519,11 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
               <p className="mt-0.5 text-xs text-gray-500">
                 h · {snapshotSelectionne.pointages.jours_pointes} jour(s) travaillé(s)
               </p>
-            </div>
+            </Surface>
           </div>
 
           {/* Badges façades */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <p className="mb-2 text-xs uppercase tracking-wide text-gray-400">Façades</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {FACADES.map((f) => {
@@ -541,10 +542,10 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 );
               })}
             </div>
-          </div>
+          </Surface>
 
           {/* Photos de la semaine */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <p className="mb-2 text-xs uppercase tracking-wide text-gray-400">
               Photos de la semaine
             </p>
@@ -576,11 +577,11 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 ))}
               </div>
             )}
-          </div>
+          </Surface>
 
           {/* Météo & pointages */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Météo relevée</p>
               {snapshotSelectionne.pointages.meteo_relevee.length === 0 ? (
                 <p className="mt-1 text-sm text-gray-500">Aucun relevé cette semaine.</p>
@@ -600,9 +601,9 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 {snapshotSelectionne.pointages.nb_pointages} pointage(s) · Coef météo moyen :{" "}
                 {snapshotSelectionne.pointages.coef_meteo_moyen ?? "—"}
               </p>
-            </div>
+            </Surface>
 
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Intempéries</p>
                 {snapshotSelectionne.intemperies.vigilance_max && (
@@ -637,12 +638,12 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   </div>
                 </>
               )}
-            </div>
+            </Surface>
           </div>
 
           {/* Observations + mot du patron */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Observations de la semaine</p>
               {snapshotSelectionne.communication.observations ? (
                 <p className="mt-1 whitespace-pre-wrap text-sm text-gray-300">
@@ -651,9 +652,9 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
               ) : (
                 <p className="mt-1 text-sm text-gray-500">Aucune observation enregistrée.</p>
               )}
-            </div>
+            </Surface>
 
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">
                 Mot du patron pour le client
               </p>
@@ -679,7 +680,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   Modifiable uniquement avant l&apos;envoi.
                 </p>
               )}
-            </div>
+            </Surface>
           </div>
         </div>
       )}
@@ -687,7 +688,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
       {/* Modale de confirmation d'envoi */}
       {modaleEnvoiOuverte && (
         <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#1A1D24] p-5 shadow-2xl">
+          <Surface className="w-full max-w-md p-5 shadow-2xl">
             <h3 className="text-sm font-bold text-white">Envoyer le rapport au client ?</h3>
             <p className="mt-2 text-xs text-gray-400">
               {rapportSelectionne?.semaine_label} sera transmis au client avec votre mot
@@ -716,7 +717,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 Confirmer l&apos;envoi
               </button>
             </div>
-          </div>
+          </Surface>
         </div>
       )}
     {/* Overlay : aperçu PDF (rendu clair client) */}

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Check, Loader2, Trash2, ChevronDown } from 'lucide-react';
 import Image from "next/image";
+import { Surface } from '@/components/ui/Surface';
 
 interface Photo {
   id: string;
@@ -147,7 +148,7 @@ export default function PhotosChantierAdmin() {
         
 
         {/* Form card */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 mb-4 space-y-4">
+        <Surface className="p-4 mb-4 space-y-4" radius="2xl">
 
           {/* SELECT CHANTIER */}
           <div>
@@ -241,11 +242,11 @@ export default function PhotosChantierAdmin() {
               : <><Upload size={20} /> Envoyer la photo</>
             }
           </button>
-        </div>
+        </Surface>
 
         {/* GALERIE */}
         {chantier_id && (
-          <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4">
+          <Surface className="p-4" radius="2xl">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-white">Photos envoyées</h2>
               <span className="bg-[#1A1D24] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{photos.length}</span>
@@ -273,7 +274,7 @@ export default function PhotosChantierAdmin() {
                 ))}
               </div>
             )}
-          </div>
+          </Surface>
         )}
 
         {/* SQL HINT SI ERREUR SUPABASE */}

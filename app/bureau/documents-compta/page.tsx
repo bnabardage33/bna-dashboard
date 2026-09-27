@@ -11,6 +11,7 @@ import {
   serialiserTauxTva,
   estNombreTauxTva,
 } from "@/lib/tauxTva";
+import { Surface } from '@/components/ui/Surface';
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -353,7 +354,7 @@ export default function DocumentsComptaPage() {
         </div>
 
         {onglet === 'scanner' && (
-          <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 space-y-4">
+          <Surface className="p-4 space-y-4" radius="2xl">
             <div>
               <label className="text-xs font-bold text-white mb-1 block">Type de document</label>
               <div className="flex gap-2">
@@ -533,7 +534,7 @@ export default function DocumentsComptaPage() {
                 : <><Upload size={20} /> Enregistrer</>
               }
             </button>
-          </div>
+          </Surface>
         )}
 
         {/* O3-B9 / 13e : les deux bandeaux ci-dessous étaient PRÉCÉDEMMENT
@@ -558,7 +559,7 @@ export default function DocumentsComptaPage() {
         )}
 
         {onglet === 'documents' && (
-          <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4">
+          <Surface className="p-4" radius="2xl">
             {loadingDocs ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="animate-spin text-white" size={24} />
@@ -619,7 +620,7 @@ export default function DocumentsComptaPage() {
                 ))}
               </div>
             )}
-          </div>
+          </Surface>
         )}
       </div>
     </div>

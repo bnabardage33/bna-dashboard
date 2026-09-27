@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CloudSun, Mail, ShieldAlert } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 type JourIntemperie = {
   date: string;
@@ -121,9 +122,9 @@ export default function BureauMeteoPage() {
       </div>
 
       {feedback && (
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-3 text-sm font-semibold text-gray-200">
+        <Surface className="px-4 py-3 text-sm font-semibold text-gray-200">
           {feedback}
-        </div>
+        </Surface>
       )}
 
       {nbIntemp > 0 && (

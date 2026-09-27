@@ -23,6 +23,7 @@ import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteView } from "@/components/TempsHeuresViews";
+import { Surface } from '@/components/ui/Surface';
 
 type Chantier = {
   id: string;
@@ -670,12 +671,12 @@ function ChantierDetailContent() {
             )}
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Client</p>
             <p className="text-white">{chantier.clients?.nom}</p>
-          </div>
+          </Surface>
 
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">
               Adresse du chantier
             </p>
@@ -701,9 +702,9 @@ function ChantierDetailContent() {
                 📍 Ouvrir dans Maps / Waze
               </a>
             )}
-          </div>
+          </Surface>
 
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Statut</p>
             <select
               value={chantier.statut}
@@ -714,9 +715,9 @@ function ChantierDetailContent() {
               <option value="en_cours">En cours</option>
               <option value="termine">Terminé</option>
             </select>
-          </div>
+          </Surface>
 
-          <div className="grid gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-2">
+          <Surface className="grid gap-3 p-4 sm:grid-cols-2">
             <div>
               <label className="text-xs uppercase tracking-wide text-gray-500">
                 Matériau structurel
@@ -785,9 +786,9 @@ function ChantierDetailContent() {
               Utilisés pour calculer l&apos;alerte météo/sécurité dans l&apos;onglet Météo &amp;
               Alertes.
             </p>
-          </div>
+          </Surface>
 
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <p className="text-xs uppercase tracking-wide text-gray-500">Checklist</p>
             <div className="mt-2 space-y-2">
               {["tasseaux", "pare_pluie", "pose", "finition"].map((tache) => (
@@ -801,7 +802,7 @@ function ChantierDetailContent() {
                 </label>
               ))}
             </div>
-          </div>
+          </Surface>
 
           {/* Clôture & PV de Réception */}
           <div className="rounded-xl border border-red-500/30 bg-red-950/10 p-4 flex flex-wrap items-center justify-between gap-3">
@@ -848,7 +849,7 @@ function ChantierDetailContent() {
 
       {tab === "Métrés & Technique" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wide text-gray-300">Générer un devis</p>
               <p className="mt-0.5 text-[11px] text-gray-500">
@@ -861,9 +862,9 @@ function ChantierDetailContent() {
             >
               Générer un devis →
             </Link>
-          </div>
+          </Surface>
 
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <div 
               className="flex items-center justify-between cursor-pointer"
               onClick={() => setConfigOpen(!configOpen)}
@@ -1013,15 +1014,15 @@ function ChantierDetailContent() {
             </div>
             </>
             )}
-          </div>
+          </Surface>
 
-          <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4 sm:grid-cols-5">
+          <Surface className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-5">
             <Resume label="Brut façades" value={totaux.bruteFacade} />
             <Resume label="Brut pignons" value={totaux.brutePignon} />
             <Resume label="Ouvertures" value={totaux.ouvertures} />
             <Resume label="Total net" value={totaux.nette} />
             <Resume label="À commander" value={totaux.aCommander} highlight />
-          </div>
+          </Surface>
 
           <button
             onClick={handleCreerCommandeQuincaillerie}
@@ -1063,7 +1064,7 @@ function ChantierDetailContent() {
       {tab === "Météo & Intempéries" && (
         <div className="space-y-6">
           {/* Météo en direct pour le chantier */}
-          <div className="space-y-4 rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="space-y-4 p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wide text-gray-300">
@@ -1166,12 +1167,12 @@ function ChantierDetailContent() {
                 Impossible de charger la météo en direct pour cette adresse.
               </p>
             )}
-          </div>
+          </Surface>
 
           {/* Liste et génération des Rapports Intempéries */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+          <Surface className="p-4">
             <RapportsIntemperiesListe chantierId={id} />
-          </div>
+          </Surface>
         </div>
       )}
 
@@ -1181,7 +1182,7 @@ function ChantierDetailContent() {
         <div className="space-y-6">
           {/* Synthèse financière du chantier */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Total Devisé HT</p>
               <p className="mt-1 text-xl font-bold text-white">
                 {fmtEuro(
@@ -1192,9 +1193,9 @@ function ChantierDetailContent() {
                 )}
               </p>
               <p className="text-xs text-gray-500">{devisLies.length} devis rattaché(s)</p>
-            </div>
+            </Surface>
 
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Total Facturé TTC</p>
               <p className="mt-1 text-xl font-bold text-gray-400">
                 {fmtEuro(
@@ -1205,15 +1206,15 @@ function ChantierDetailContent() {
                 )}
               </p>
               <p className="text-xs text-gray-500">{facturesLiees.length} facture(s)</p>
-            </div>
+            </Surface>
 
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
+            <Surface className="p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Achats Matériaux HT</p>
               <p className="mt-1 text-xl font-bold text-gray-300">
                 {fmtEuro(commandesLiees.reduce((s, c) => s + (c.montant_ht || 0), 0))}
               </p>
               <p className="text-xs text-gray-500">{commandesLiees.length} commande(s) fournisseur</p>
-            </div>
+            </Surface>
           </div>
 
           {loadingDocs ? (
@@ -1236,7 +1237,7 @@ function ChantierDetailContent() {
                 {devisLies.length === 0 ? (
                   <p className="text-xs text-gray-500">Aucun devis lié pour ce client.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
+                  <Surface className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-white/10 text-gray-400">
@@ -1286,7 +1287,7 @@ function ChantierDetailContent() {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </Surface>
                 )}
               </div>
 
@@ -1306,7 +1307,7 @@ function ChantierDetailContent() {
                 {facturesLiees.length === 0 ? (
                   <p className="text-xs text-gray-500">Aucune facture pour ce client.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
+                  <Surface className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-white/10 text-gray-400">
@@ -1355,7 +1356,7 @@ function ChantierDetailContent() {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </Surface>
                 )}
               </div>
               {/* Procès-Verbaux de Réception (Fin de chantier) */}
@@ -1373,7 +1374,7 @@ function ChantierDetailContent() {
                 </div>
 
                 {pvsLies.length === 0 ? (
-                  <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 text-xs text-gray-400 flex items-center justify-between">
+                  <Surface className="p-4 text-xs text-gray-400 flex items-center justify-between">
                     <span>Aucun PV de réception émis pour ce chantier.</span>
                     <Link
                       href={`/bureau/fin-chantier?chantierId=${id}`}
@@ -1381,9 +1382,9 @@ function ChantierDetailContent() {
                     >
                       Établir le PV →
                     </Link>
-                  </div>
+                  </Surface>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
+                  <Surface className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-white/10 text-gray-400">
@@ -1437,7 +1438,7 @@ function ChantierDetailContent() {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </Surface>
                 )}
               </div>
 
@@ -1464,7 +1465,7 @@ function ChantierDetailContent() {
                 {commandesLiees.length === 0 ? (
                   <p className="text-xs text-gray-500">Aucune commande fournisseur pour ce chantier.</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#1A1D24]">
+                  <Surface className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-white/10 text-gray-400">
@@ -1511,7 +1512,7 @@ function ChantierDetailContent() {
                         ))}
                       </tbody>
                     </table>
-                  </div>
+                  </Surface>
                 )}
               </div>
             </div>

@@ -19,6 +19,7 @@ import PVReceptionPDF, {
   NoticeEntretien,
 } from "@/components/PVReceptionPDF";
 import Image from "next/image";
+import { Surface } from '@/components/ui/Surface';
 
 type PVRow = {
   id: string;
@@ -618,11 +619,11 @@ export default function FinChantierPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-sm">
+        <Surface className="p-4 shadow-sm" radius="2xl">
           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total PV Émis</p>
           <p className="mt-0.5 text-2xl font-black text-white font-mono">{totalPV}</p>
           <p className="text-[11px] text-gray-500">Chantiers clôturés</p>
-        </div>
+        </Surface>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Sans Réserve</p>
@@ -726,9 +727,10 @@ export default function FinChantierPage() {
             const nbPhotos = (pv.photos || []).length;
 
             return (
-              <div
+              <Surface
                 key={pv.id}
-                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
+                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
+                radius="2xl"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -834,7 +836,7 @@ export default function FinChantierPage() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </Surface>
             );
           })}
         </div>
@@ -1507,7 +1509,7 @@ export default function FinChantierPage() {
       {/* ============================================================ */}
       {modalPdfOuvert && pvSelectionne && (
         <div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center bg-black/80 p-0 sm:p-4 overflow-y-auto">
-          <div className="relative w-full max-w-4xl rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-4 my-auto max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto">
+          <Surface className="relative w-full max-w-4xl p-6 shadow-2xl space-y-4 my-auto max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto" radius="2xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-3 print:hidden">
               <div className="flex items-center gap-3">
                 <h3 className="text-base font-bold text-white">
@@ -1543,7 +1545,7 @@ export default function FinChantierPage() {
             </div>
 
             {/* Document PDF rendu */}
-            <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-2 shadow-2xl print:border-none print:p-0">
+            <Surface className="p-2 shadow-2xl print:border-none print:p-0">
               <PVReceptionPDF
                 pv={pvSelectionne}
                 entreprise={DEFAULT_ENTREPRISE}
@@ -1559,8 +1561,8 @@ export default function FinChantierPage() {
                   devis_numero: pvSelectionne.devis?.numero,
                 }}
               />
-            </div>
-          </div>
+            </Surface>
+          </Surface>
         </div>
       )}
     </div>

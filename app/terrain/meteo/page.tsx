@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import ChantiersMeteoCards from "@/components/ChantiersMeteoCards";
 import { Search, Sun, Cloud, CloudSun, CloudFog, Snowflake, Wind, CloudRain, Building } from "lucide-react";
+import { Surface } from '@/components/ui/Surface';
 
 const COULEURS = {
   vert:   "border-white/10 bg-white/5 text-gray-400",
@@ -84,7 +85,7 @@ export default function MeteoPage() {
 
       {/* CARTE MÉTÉO PRINCIPALE */}
       <div className="max-w-md mx-auto w-full">
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24] overflow-hidden flex flex-col shadow-lg">
+        <Surface className="overflow-hidden flex flex-col shadow-lg" radius="2xl">
 
           {/* RECHERCHE */}
           <form onSubmit={handleRechercherVille} className="p-4 border-b border-white/[0.06] flex gap-2">
@@ -169,7 +170,7 @@ export default function MeteoPage() {
           ) : (
             <p className="text-sm text-gray-500 p-6 text-center">Météo indisponible pour cette ville.</p>
           )}
-        </div>
+        </Surface>
       </div>
 
       {/* MÉTÉO CHANTIERS */}

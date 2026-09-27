@@ -7,6 +7,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import RapportIntemperiesPDF, { RapportIntemperiesData, Chantier } from "@/components/RapportIntemperiesPDF";
 import { Entreprise } from "@/types/entreprise";
+import { Surface } from '@/components/ui/Surface';
 
 function RapportDetailContent() {
   const params = useParams();
@@ -199,13 +200,13 @@ function RapportDetailContent() {
       </div>
 
       {/* Rendu PDF A4 */}
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-2 shadow-2xl print:border-none print:bg-[#1A1D24] print:p-0">
+      <Surface className="p-2 shadow-2xl print:border-none print:bg-[#1A1D24] print:p-0">
         <RapportIntemperiesPDF
           rapport={rapport}
           entreprise={entreprise}
           chantier={chantier || { nom: "Chantier", adresse: null, code_postal: null, ville: null }}
         />
-      </div>
+      </Surface>
     </div>
   );
 }

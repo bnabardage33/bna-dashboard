@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, TrendingUp, CheckCircle, Info, Activity, AlertOctagon } from "lucide-react";
 import { ChantierHealthData, ChantierHealthAnalysis } from "@/lib/bna-analyzer";
+import { Surface } from '@/components/ui/Surface';
 
 export default function ChantierHealthCard({ 
   chantierName, 
@@ -41,7 +42,7 @@ export default function ChantierHealthCard({
 
   if (loading) {
     return (
-      <div className="bg-[#1A1D24] border border-white/10 rounded-xl p-5 flex flex-col gap-4 animate-pulse">
+      <Surface className="p-5 flex flex-col gap-4 animate-pulse">
         <div className="flex items-center justify-between">
           <div className="h-5 bg-slate-700 rounded w-1/3"></div>
           <div className="h-6 bg-slate-700 rounded-full w-24"></div>
@@ -51,15 +52,15 @@ export default function ChantierHealthCard({
           <div className="h-3 bg-slate-700 rounded w-full"></div>
           <div className="h-3 bg-slate-700 rounded w-5/6"></div>
         </div>
-      </div>
+      </Surface>
     );
   }
 
   if (error || !analysis) {
     return (
-      <div className="bg-[#1A1D24] border border-white/10 rounded-xl p-5 text-center text-gray-500 text-sm">
+      <Surface className="p-5 text-center text-gray-500 text-sm">
         Impossible de charger le diagnostic pour {chantierName}
-      </div>
+      </Surface>
     );
   }
 
