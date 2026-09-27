@@ -335,7 +335,7 @@ export default function FicheTechniquePage() {
               <button
                 type="submit"
                 disabled={uploading}
-                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 disabled:opacity-50 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 shadow-md"
               >
                 {uploading ? "Envoi du PDF…" : "Enregistrer"}
               </button>

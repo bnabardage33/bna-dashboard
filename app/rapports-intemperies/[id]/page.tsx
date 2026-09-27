@@ -191,7 +191,7 @@ function RapportDetailContent() {
 
           <button
             onClick={imprimer}
-            className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
+            className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
           >
             <span>🖨️</span> Imprimer / Exporter PDF
           </button>

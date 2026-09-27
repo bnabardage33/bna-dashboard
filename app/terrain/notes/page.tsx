@@ -160,7 +160,7 @@ export default function NotesPage() {
 
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <Plus className="h-4 w-4 stroke-[3]" />
           <span>Nouvelle Note</span>
@@ -178,7 +178,7 @@ export default function NotesPage() {
           <p className="text-sm font-medium text-gray-400">Aucune note pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
           >
             + Rédiger ou dicter une note
           </button>
@@ -221,7 +221,7 @@ export default function NotesPage() {
                     </button>
                     <button
                       onClick={() => enregistrerEdition(note.id)}
-                      className="flex items-center gap-1 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-red-700"
+                      className="flex items-center gap-1 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700"
                     >
                       <Check className="h-3.5 w-3.5" />
                       <span>Enregistrer</span>
@@ -283,7 +283,7 @@ export default function NotesPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Créer une note"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
+        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <Plus className="h-7 w-7 stroke-[2.5]" />
       </button>
@@ -363,7 +363,7 @@ export default function NotesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
+                  className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 shadow-md"
                 >
                   Enregistrer la note
                 </button>

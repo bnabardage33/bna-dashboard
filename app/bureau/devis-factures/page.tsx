@@ -783,7 +783,7 @@ function DevisContenu() {
         </div>
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <span>+</span> Nouveau Devis
         </button>
@@ -798,7 +798,7 @@ function DevisContenu() {
           <p className="text-sm font-medium text-gray-400">Aucun devis pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
           >
             + Créer un premier devis
           </button>
@@ -1023,7 +1023,7 @@ function DevisContenu() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Créer un devis"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
+        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
@@ -1424,7 +1424,7 @@ function DevisContenu() {
               </button>
               <button
                 type="submit"
-                className="flex-1 min-w-[0] sm:flex-none min-h-[44px] sm:min-h-0 rounded-xl bg-red-600 px-3 sm:px-5 py-2 text-sm sm:py-2.5 sm:text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md whitespace-nowrap"
+                className="flex-1 min-w-[0] sm:flex-none min-h-[44px] sm:min-h-0 rounded-xl bg-red-600 px-3 sm:px-5 py-2 text-sm sm:py-2.5 sm:text-xs font-bold text-white hover:bg-red-700 shadow-md whitespace-nowrap"
               >
                 Enregistrer le Devis
               </button>
@@ -1450,7 +1450,7 @@ function DevisContenu() {
               </button>
               <button
                 onClick={imprimer}
-                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
               >
                 <span>🖨️</span> Imprimer / Exporter PDF
               </button>

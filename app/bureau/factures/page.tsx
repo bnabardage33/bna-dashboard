@@ -331,7 +331,7 @@ export default function FacturesPage() {
         </div>
         <button
           onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
         >
           <span>+</span> Nouvelle Facture
         </button>
@@ -357,7 +357,7 @@ export default function FacturesPage() {
           <p className="text-sm font-medium text-gray-400">Aucune facture pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
-            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-red-700"
+            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
           >
             + Créer une première facture
           </button>
@@ -446,7 +446,7 @@ export default function FacturesPage() {
       <button
         onClick={() => setModalOuvert(true)}
         aria-label="Créer une facture"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-slate-950 shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
+        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </button>
@@ -671,7 +671,7 @@ export default function FacturesPage() {
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-red-700 shadow-md"
+                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 shadow-md"
               >
                 Générer la Facture
               </button>
@@ -695,7 +695,7 @@ export default function FacturesPage() {
               </button>
               <button
                 onClick={imprimer}
-                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
               >
                 <span>🖨️</span> Imprimer / Exporter PDF
               </button>

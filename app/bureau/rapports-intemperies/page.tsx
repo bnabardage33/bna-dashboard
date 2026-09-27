@@ -184,7 +184,7 @@ export default function BureauRapportsIntemperiesPage() {
         <button
           onClick={() => setFiltre("a_valider")}
           className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-            filtre === "a_valider" ? "bg-red-600 text-slate-950" : "border border-slate-600 text-gray-300"
+            filtre === "a_valider" ? "bg-red-600 text-white" : "border border-slate-600 text-gray-300"
           }`}
         >
           À valider ({aValiderCount})

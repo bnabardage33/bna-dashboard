@@ -304,7 +304,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 type="button"
                 onClick={regenerer}
                 disabled={generationEnCours}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {generationEnCours ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -333,7 +333,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
             type="button"
             onClick={generer}
             disabled={generationEnCours}
-            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {generationEnCours ? (
               <>
@@ -458,7 +458,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     type="button"
                     onClick={ouvrirModaleEnvoi}
                     disabled={envoiEnCours}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {envoiEnCours ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -706,7 +706,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 type="button"
                 onClick={confirmerEnvoi}
                 disabled={envoiEnCours}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-500 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {envoiEnCours ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -732,7 +732,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 onClick={() => {
                   void preparerEtImprimer();
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-500"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
               >
                 <Printer className="h-3.5 w-3.5" />
                 Imprimer / Export PDF

@@ -234,7 +234,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         <button 
           onClick={handleReset}
           disabled={loading}
-          className="mb-4 flex items-center justify-center w-full gap-2 text-sm font-bold text-white bg-red-600 hover:bg-red-500 transition-colors px-4 py-3 rounded-lg"
+          className="mb-4 flex items-center justify-center w-full gap-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors px-4 py-3 rounded-lg"
         >
           🗑️ Remettre à zéro les heures
         </button>

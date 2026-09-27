@@ -359,7 +359,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 bg-red-600 hover:bg-gray-300 disabled:opacity-50 text-slate-900 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-red-600/20 transition-all"
+          className="flex items-center gap-2 bg-red-600 hover:bg-gray-300 disabled:opacity-50 text-white hover:text-slate-900 px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-red-600/20 transition-all"
         >
           {saving && <Loader2 size={16} className="animate-spin" />}
           Enregistrer l'avancement

@@ -113,7 +113,7 @@ export default function BureauMeteoPage() {
         <button
           onClick={verifier}
           disabled={verificationEnCours}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 transition-all hover:bg-red-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700 disabled:opacity-50"
         >
           <CloudSun size={16} />
           {verificationEnCours ? "Vérification…" : "Vérifier intempéries du jour"}

@@ -163,7 +163,7 @@ export default function ParametresPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-lg shadow-red-600/10 hover:bg-red-700 disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 disabled:opacity-50 transition-all"
           >
             {saving ? "Enregistrement…" : "Enregistrer les modifications"}
           </button>

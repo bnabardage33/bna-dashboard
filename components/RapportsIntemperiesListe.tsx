@@ -144,7 +144,7 @@ export default function RapportsIntemperiesListe({
           type="button"
           onClick={genererRapportAujourdhui}
           disabled={generationEnCours}
-          className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {generationEnCours
             ? "⏳ Analyse Météo..."

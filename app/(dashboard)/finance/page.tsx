@@ -109,7 +109,7 @@ export default function FinanceDashboard() {
             </Link>
             <Link
               href="/finance/saisie/depense"
-              className="flex items-center gap-2 rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"
+              className="flex items-center gap-2 rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
             >
               <Receipt className="h-4 w-4" />
               + Dépense
