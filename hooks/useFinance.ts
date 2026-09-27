@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import type { TablesInsert } from "@/types/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import {
   ChantierFinance,
   DepenseFinance,
@@ -25,6 +25,34 @@ import {
   calculerMontantTTCFacture,
   calculerMontantTTCCommande,
 } from "@/lib/financeCalculs";
+
+// O3-B10 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu
+// produirait une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et
+// sans écriture.
+//
+// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
+// d'exiger `entreprise_id: string` dans le payload SANS assertion `as`.
+// C'est exactement ce qui manquait au correctif d'origine : le cast
+// `as TablesInsert<"parametres_finance">` neutralisait au compilateur le champ
+// requis, et le `tsc` ne pouvait donc pas voir l'omission.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
+/**
+ * O3-B10 — issue d'une écriture à `parametres_finance`.
+ *
+ * L'union discriminée oblige l'appelant à traiter l'échec : `updateValeur`
+ * renvoyait `void`, donc `TresorerieWidget` refermait l'édition et affichait la
+ * nouvelle valeur sans savoir si l'écriture avait eu lieu. Un montant financier
+ * non persisté était ainsi présenté comme enregistré.
+ */
+export type ResultatEcriture = { ok: true } | { ok: false; erreur: string };
 
 export type RentabiliteChantierExt = RentabiliteResult & {
   id: string;
@@ -328,6 +356,19 @@ export function useParametreFinance(cle: string) {
     let isMounted = true;
     const fetchParam = async () => {
       try {
+        // O3-B10 — LA LECTURE EST LAISSÉE INCHANGÉE, délibérément.
+        //
+        // Elle ne porte pas de `.eq("entreprise_id", …)`, mais elle n'en a pas
+        // besoin : le client est navigateur, donc la session porte le claim, et
+        // `parametres_finance_ent_select` filtre par
+        // `using (entreprise_id = entreprise_courante())`. Vérifié en PROD :
+        // une requête avec la clé `anon` rend 0 ligne.
+        //
+        // C'est ce qui rend `maybeSingle()` sûr malgré l'unicité
+        // `(entreprise_id, cle)` : sous RLS, un tenant ne voit qu'une ligne
+        // pour une `cle` donnée. Ajouter un filtre ici exigerait de résoudre
+        // le tenant dans le chemin de lecture, ce qui n'est pas nécessaire à
+        // la cohérence du flux et élargirait le périmètre au-delà du défaut.
         const { data, error } = await supabase
           .from("parametres_finance")
           .select("valeur")
@@ -348,11 +389,60 @@ export function useParametreFinance(cle: string) {
     };
   }, [cle]);
 
-  const updateValeur = async (newVal: number) => {
-    setValeur(newVal);
-    await supabase
+  const updateValeur = async (newVal: number): Promise<ResultatEcriture> => {
+    // O3-B10 — `parametres_finance` est un SINGLETON par tenant : pas de
+    // `chantier_id`, donc AUCUN trigger `tg_set_entreprise_par_chantier()`
+    // ne peut dériver `entreprise_id`. Aucun trigger de la part4 §7 ne la
+    // couvre. Le tenant ne peut donc venir que du claim
+    // `app_metadata.entreprise_id`, résolu par le résolveur EXISTANT — la même
+    // source que `entreprise_courante()` côté PostgREST, donc exactement la
+    // valeur qu'attend la policy `parametres_finance_ent_insert`.
+    //
+    // Ce module est `"use client"` : le résolveur y fonctionne tel quel, sans
+    // adaptation (contrairement au cas serveur de `documents_compta`).
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise exploitable, AUCUNE écriture.
+    if (!estUuid(entreprise_id)) {
+      return {
+        ok: false,
+        erreur:
+          "Enregistrement impossible : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez.",
+      };
+    }
+
+    // Cible de conflit : la contrainte d'unicité réelle est
+    // `unique (entreprise_id, cle)` (migration part1 §271). `onConflict: "cle"`
+    // ne correspondait à aucun index — la migration avait SUPPRIMÉ
+    // l'ancienne contrainte sur `cle` (part1 §258-268) — donc PostgreSQL ne
+    // pouvait pas inférer la cible et l'appel échouait.
+    //
+    // La RLS n'est PAS contournée : le client reste le client navigateur, et
+    // `parametres_finance_ent_insert` impose
+    // `with check (entreprise_id = entreprise_courante())`.
+    const { error } = await supabase
       .from("parametres_finance")
-      .upsert({ cle, valeur: newVal } as TablesInsert<"parametres_finance">, { onConflict: "cle" });
+      .upsert(
+        { cle, valeur: newVal, entreprise_id },
+        { onConflict: "entreprise_id,cle" }
+      );
+
+    // L'erreur PostgREST ne lève pas : elle est renvoyée dans `{ error }`.
+    // Sans ce test, un refus d'écriture était INDISCERNABLE d'un succès — c'est
+    // ce qui rendait l'upsert « inopérant » sans le moindre feedback.
+    if (error) {
+      return {
+        ok: false,
+        erreur: "Enregistrement du solde impossible : " + error.message,
+      };
+    }
+
+    // L'état n'est mis à jour qu'APRÈS écriture confirmée. L'ancienne mise à
+    // jour optimiste (`setValeur` AVANT l'await) affichait le nouveau montant
+    // même quand l'écriture avait échoué, et disparaissait au rechargement :
+    // une fausse confirmation sur une valeur financière.
+    setValeur(newVal);
+    return { ok: true };
   };
 
   return { valeur, updateValeur, isLoading };

@@ -11,6 +11,11 @@ export default function TresorerieWidget() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  // O3-B10 : le composant n'avait AUCUN état d'erreur. L'aperçu optimiste du
+  // hook faisait qu'un montant non persisté s'affichait comme enregistré, puis
+  // disparaissait au rechargement. Un seul message, dans la palette déjà
+  // présente dans ce composant (`text-rose-400`) : pas de nouvelle UI.
+  const [erreur, setErreur] = useState<string | null>(null);
 
   const isLoading = tresoLoading || paramLoading;
 
@@ -20,9 +25,20 @@ export default function TresorerieWidget() {
 
   const handleSave = async () => {
     const val = parseFloat(inputValue);
-    if (!isNaN(val)) {
-      await updateValeur(val);
+    if (isNaN(val)) return;
+
+    setErreur(null);
+    const res = await updateValeur(val);
+
+    // O3-B10 : `updateValeur` distingue désormais succès et échec. L'édition
+    // reste OUVERTE et le message est affiché : la saisie n'est jamais
+    // présentée comme acquise. Avant, `setIsEditing(false)` s'exécutait
+    // inconditionnellement.
+    if (!res.ok) {
+      setErreur(res.erreur);
+      return;
     }
+
     setIsEditing(false);
   };
 
@@ -76,6 +92,7 @@ export default function TresorerieWidget() {
                 <button
                   onClick={() => {
                     setInputValue(soldeBancaire === null ? "" : soldeBancaire.toString());
+                    setErreur(null);
                     setIsEditing(true);
                   }}
                   className="text-gray-500 hover:text-gray-400 transition-colors"
@@ -91,6 +108,18 @@ export default function TresorerieWidget() {
             )}
           </div>
         </div>
+
+        {/* O3-B10 : message d'échec de l'écriture.
+            Placé HORS du conditionnel `isEditing` : aujourd'hui un échec n'est
+            atteignable que depuis une édition restée ouverte, mais si un
+            chemin futur signale une erreur alors que l'édition est fermée, le
+            message doit malgré tout s'afficher. `text-rose-400` est déjà
+            utilisé deux fois dans ce composant : pas de nouvelle UI. */}
+        {erreur && (
+          <p role="alert" className="text-xs text-rose-400">
+            {erreur}
+          </p>
+        )}
 
         {/* Flux 30j */}
         <div className="rounded-lg bg-transparent/50 p-3 space-y-3">
