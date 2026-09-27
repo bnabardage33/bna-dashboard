@@ -353,7 +353,7 @@ export default function DocumentsComptaPage() {
         </div>
 
         {onglet === 'scanner' && (
-          <div className="bg-[#1A1D24] border border-white/10 rounded-[16px] p-4 space-y-4">
+          <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 space-y-4">
             <div>
               <label className="text-xs font-bold text-white mb-1 block">Type de document</label>
               <div className="flex gap-2">
@@ -558,7 +558,7 @@ export default function DocumentsComptaPage() {
         )}
 
         {onglet === 'documents' && (
-          <div className="bg-[#1A1D24] border border-white/10 rounded-[16px] p-4">
+          <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4">
             {loadingDocs ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="animate-spin text-white" size={24} />

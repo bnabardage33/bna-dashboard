@@ -147,7 +147,7 @@ export default function PhotosChantierAdmin() {
         
 
         {/* Form card */}
-        <div className="bg-[#1A1D24] border border-white/10 rounded-[16px] p-4 mb-4 space-y-4">
+        <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4 mb-4 space-y-4">
 
           {/* SELECT CHANTIER */}
           <div>
@@ -245,7 +245,7 @@ export default function PhotosChantierAdmin() {
 
         {/* GALERIE */}
         {chantier_id && (
-          <div className="bg-[#1A1D24] border border-white/10 rounded-[16px] p-4">
+          <div className="bg-[#1A1D24] border border-white/10 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-white">Photos envoyées</h2>
               <span className="bg-[#1A1D24] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{photos.length}</span>
@@ -277,7 +277,7 @@ export default function PhotosChantierAdmin() {
         )}
 
         {/* SQL HINT SI ERREUR SUPABASE */}
-        <div className="mt-6 bg-[#1A1D24] border border-dashed border-white/20 rounded-[16px] p-4">
+        <div className="mt-6 bg-[#1A1D24] border border-dashed border-white/20 rounded-2xl p-4">
           <p className="text-[10px] font-bold text-gray-400 mb-2">🔒 Si l'upload échoue (RLS), exécute ce SQL dans Supabase :</p>
           <pre className="text-[10px] text-gray-400 bg-white/5 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">{`-- TABLE: autorise tout depuis le serveur (service_role bypasse déjà)
 -- Si tu veux aussi l'accès depuis le navigateur (anon):

@@ -465,14 +465,14 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       <main className="p-4 pt-2 max-w-3xl mx-auto space-y-6 relative z-10">
         
         {/* CARTE TITRE */}
-        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
           <span className="bg-[#E30613] text-[#FFFFFF] px-3 py-1 rounded-full text-xs font-bold inline-block mb-3">★ CLIENT PREMIUM</span>
           <h1 className="font-black text-2xl text-[#111111] mb-1 leading-tight">Bardage métallique — {chantierData?.nom || "Villa Arcachon"}</h1>
           <p className="text-xs text-gray-500 font-medium">Résidence privée • {chantierData?.adresse_chantier || "33380 Arcachon"} • Chantier #{chantierData?.id?.substring(0,6).toUpperCase() || 'BNA-7429'}</p>
         </section>
 
         {/* CARTE PROGRESSION */}
-        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-[#111111]">Progression du chantier</h2>
             <span className="bg-[#E30613] text-white text-sm font-bold px-3 py-1 rounded-full">{avancementDynamique}%</span>
@@ -491,7 +491,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
         {/* PHOTOS RÉCENTES - Carrousel */}
         {photos.length > 0 && (
-          <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-[#111111]">📸 Photos récentes</h3>
               <span className="text-xs text-gray-500 font-medium">{photos.length} photo{photos.length > 1 ? 's' : ''}</span>
@@ -542,7 +542,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         )}
 
         {/* DOCUMENTS CARD (Détails du chantier) */}
-        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
           <h3 className="font-bold mb-4 text-[#111111]">Détails du chantier</h3>
           <div className="space-y-3">
             {devisData.length === 0 && facturesData.length === 0 ? (
@@ -669,7 +669,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
 
         {/* RAPPORTS HEBDOMADAIRES */}
         {rapportsClient.length > 0 && (
-          <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+          <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
             <h3 className="font-bold mb-4 text-[#111111]">Rapports hebdomadaires</h3>
             <div className="space-y-3">
               {rapportsClient.map((rapport) => {
@@ -719,7 +719,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         )}
 
         {/* INTEMPÉRIES (justificatifs auto) */}
-        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
           <h3 className="font-bold mb-1 text-[#111111]">Intempéries & justificatifs</h3>
           <p className="text-xs text-[#111111]/70 mb-4">Arrêts de chantier dus à la météo, relevés automatiquement — envoyables à votre assurance en cas de besoin.</p>
           {intemperies.filter((intemp) => intemp.jour_arrete === true).length === 0 ? (
@@ -757,7 +757,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         </section>
 
         {/* PROCHAINES ETAPES */}
-        <section className="bg-[#FFFFFF] border border-[#111111] rounded-[16px] p-4 shadow-sm">
+        <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
           <h3 className="font-bold mb-4 text-[#111111]">Prochaines étapes</h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-[#F2F2F2] rounded-xl border border-[#111111]">
