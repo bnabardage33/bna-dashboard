@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { TablesInsert, TablesUpdate } from "@/types/supabase";
 import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
+import { fmtEuro } from "@/lib/financeCalculs";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, AlertTriangle } from "lucide-react";
 import { analyserPerformancesFournisseurs, type AnalytiqueFournisseur } from "@/lib/fournisseursAnalytique";
@@ -665,7 +666,7 @@ export default function FournisseursPage() {
                         {c.fournisseurs?.nom ?? "—"} ·{" "}
                         {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
                         {c.quantite ? ` · ${c.quantite} ${c.unite}` : ""}
-                        {c.montant_ht ? ` · ${c.montant_ht.toFixed(2)} € HT` : ""}
+                        {c.montant_ht ? ` · ${fmtEuro(c.montant_ht)} HT` : ""}
                       </p>
                       <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
                         Commande passée le :

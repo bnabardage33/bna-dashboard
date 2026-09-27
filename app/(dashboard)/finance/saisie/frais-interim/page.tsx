@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import { fmtEuro } from "@/lib/financeCalculs";
 import type { TablesInsert } from "@/types/supabase";
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
@@ -237,15 +238,15 @@ export default function FraisInterimPage() {
             <div className="rounded-xl border border-white/10 bg-red-600/5 p-4 grid grid-cols-3 gap-3 text-center">
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">Total HT</p>
-                <p className="text-lg font-black text-white">{totalHT.toFixed(2)} €</p>
+                <p className="text-lg font-black text-white">{fmtEuro(totalHT)}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">TVA</p>
-                <p className="text-lg font-black text-gray-300">{montantTva.toFixed(2)} €</p>
+                <p className="text-lg font-black text-gray-300">{fmtEuro(montantTva)}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">Total TTC</p>
-                <p className="text-lg font-black text-gray-400">{totalTTC.toFixed(2)} €</p>
+                <p className="text-lg font-black text-gray-400">{fmtEuro(totalTTC)}</p>
               </div>
             </div>
 

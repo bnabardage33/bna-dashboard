@@ -1047,7 +1047,7 @@ export default function CataloguePage() {
                           <div className="mt-3 flex items-center justify-between rounded bg-violet-900/30 px-3 py-2 border border-violet-500/20">
                             <span className="text-xs font-medium text-violet-300">Marge brute estimée</span>
                             <span className={`text-sm font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                              {marge.toFixed(2)} € <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
+                              {fmtEuro(marge)} <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
                             </span>
                           </div>
                         );

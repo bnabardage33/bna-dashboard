@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { analyserRentabiliteMainOeuvre, type RentabilitePhase } from "@/lib/mainOeuvreAnalytique";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 export default function RentabiliteMainOeuvreWidget() {
   const [chantiers, setChantiers] = useState<{ id: string; nom: string }[]>([]);
@@ -83,7 +84,7 @@ export default function RentabiliteMainOeuvreWidget() {
                 <p className="text-xs font-semibold text-emerald-400 uppercase">Phase la plus rentable</p>
                 <p className="mt-1 text-lg font-bold text-emerald-100">{phaseRentable.nom_affichage}</p>
                 <p className="text-xs text-emerald-300/70 mt-1">
-                  +{phaseRentable.ecart.toFixed(2)} € générés
+                  +{fmtEuro(phaseRentable.ecart)} générés
                 </p>
               </div>
             )}
@@ -92,7 +93,7 @@ export default function RentabiliteMainOeuvreWidget() {
                 <p className="text-xs font-semibold text-orange-400 uppercase">Phase à optimiser</p>
                 <p className="mt-1 text-lg font-bold text-orange-100">{phaseCritique.nom_affichage}</p>
                 <p className="text-xs text-orange-300/70 mt-1">
-                  {phaseCritique.ecart > 0 ? "+" : ""}{phaseCritique.ecart.toFixed(2)} € sur le budget
+                  {phaseCritique.ecart > 0 ? "+" : ""}{fmtEuro(phaseCritique.ecart)} sur le budget
                 </p>
               </div>
             )}
@@ -114,11 +115,11 @@ export default function RentabiliteMainOeuvreWidget() {
                 {data.filter(d => d.budget_vendu > 0 || d.cout_reel > 0).map((d) => (
                   <tr key={d.phase} className="hover:bg-white/5">
                     <td className="p-4 font-medium text-gray-200">{d.nom_affichage}</td>
-                    <td className="p-4 text-right text-gray-400">{d.budget_vendu.toFixed(2)} €</td>
-                    <td className="p-4 text-right text-gray-400">{d.cout_reel.toFixed(2)} €</td>
+                    <td className="p-4 text-right text-gray-400">{fmtEuro(d.budget_vendu)}</td>
+                    <td className="p-4 text-right text-gray-400">{fmtEuro(d.cout_reel)}</td>
                     <td className="p-4 text-right">
                       <span className={`font-bold ${d.ecart < 0 ? "text-rose-400" : d.ecart > 0 ? "text-emerald-400" : "text-gray-500"}`}>
-                        {d.ecart > 0 ? "+" : ""}{d.ecart.toFixed(2)} €
+                        {d.ecart > 0 ? "+" : ""}{fmtEuro(d.ecart)}
                       </span>
                     </td>
                     <td className="p-4 text-right">

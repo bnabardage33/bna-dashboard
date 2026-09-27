@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { verifierSession } from '@/lib/auth';
+import { fmtEuro } from '@/lib/financeCalculs';
 
 export const dynamic = 'force-dynamic';
 
@@ -320,7 +321,7 @@ export async function GET() {
           niveau: c.marge < 0 ? 'rouge' : 'orange',
           type: 'chantier_budget',
           message: `${c.nom} — ${pctDep}% du budget consommé`,
-          sous_message: `Dépenses ${fmtMontant(c.depenses)} / budget ${fmtMontant(c.budget)}`,
+          sous_message: `Dépenses ${fmtEuro(c.depenses)} / budget ${fmtEuro(c.budget)}`,
           montant: c.marge < 0 ? -c.marge : undefined,
           action: { label: 'Voir chantier', href: `/terrain/chantier/${c.id}` },
         });
@@ -334,7 +335,7 @@ export async function GET() {
         niveau: 'rouge',
         type: 'treso_negative',
         message: 'Trésorerie prévisionnelle négative à J+15',
-        sous_message: `Découvert estimé de ${fmtMontant(Math.abs(tresoJ15))} si tout est confirmé`,
+        sous_message: `Découvert estimé de ${fmtEuro(Math.abs(tresoJ15))} si tout est confirmé`,
         montant: Math.abs(tresoJ15),
         action: { label: 'Voir factures', href: '/bureau/factures' },
       });
@@ -499,10 +500,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function fmtMontant(n: number): string {
-  try {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n);
-  } catch {
-    return `${n.toFixed(2)} €`;
-  }
-}
+// LOT 2C — `fmtMontant()` etait un doublon local de fmtEuro() : meme
+// Intl.NumberFormat currency, meme repli toFixed(2). Supprime au profit de
+// fmtEuro(), qui traite en plus null/undefined/NaN au lieu de lever.

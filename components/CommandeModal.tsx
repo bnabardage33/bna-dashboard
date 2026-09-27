@@ -8,6 +8,7 @@ import { LigneCommande } from "@/components/ZoneCard";
 import { useRouter } from "next/navigation";
 import BonCommandePDF, { BonCommandeData } from "@/components/BonCommandePDF";
 import { Entreprise } from "@/types/entreprise";
+import { fmtEuro } from "@/lib/financeCalculs";
 import { construireLignesCommande } from "@/lib/lignesCommande";
 
 type Article = {
@@ -374,7 +375,7 @@ export default function CommandeModal({
                                         >
                                           <span className="text-white text-xs font-semibold">{a.designation}</span>
                                           <span className="text-gray-500 text-[10px] mt-1">
-                                            Réf: {getRef(a)} - {getPrix(a).toFixed(2)}€ HT
+                                            Réf: {getRef(a)} - {fmtEuro(getPrix(a))} HT
                                           </span>
                                         </button>
                                       ))}
@@ -401,10 +402,10 @@ export default function CommandeModal({
                           </div>
                         </td>
                         <td className="p-3 text-right text-gray-300 whitespace-nowrap">
-                          {ligne.articleSelectionne ? `${getPrix(ligne.articleSelectionne).toFixed(2)} €` : "—"}
+                          {ligne.articleSelectionne ? `${fmtEuro(getPrix(ligne.articleSelectionne))}` : "—"}
                         </td>
                         <td className="p-3 text-right font-bold text-white whitespace-nowrap">
-                          {ligne.totalHT ? `${ligne.totalHT.toFixed(2)} €` : "—"}
+                          {ligne.totalHT ? `${fmtEuro(ligne.totalHT)}` : "—"}
                         </td>
                       </tr>
                     )
@@ -432,7 +433,7 @@ export default function CommandeModal({
             </div>
             <div className="flex items-center gap-4 sm:border-r border-white/10 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">
               <span className="text-sm uppercase tracking-wide text-gray-500">Total Général HT</span>
-              <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">{totalGeneralHT.toFixed(2)} €</span>
+              <span className="text-2xl font-black text-emerald-400 whitespace-nowrap">{fmtEuro(totalGeneralHT)}</span>
             </div>
             <button 
               onClick={handleEnregistrer} 

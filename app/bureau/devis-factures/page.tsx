@@ -18,6 +18,7 @@ declare global {
 import { Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { calculerAidesITE, ProfilRevenu, extraireCodePostal } from "@/lib/primesCalcul";
+import { fmtEuro } from "@/lib/financeCalculs";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
@@ -693,7 +694,7 @@ function DevisContenu() {
       return;
     }
 
-    afficherToast(`✓ Facture d'acompte ${pct}% générée : ${montantHT.toLocaleString("fr-FR")}€`);
+    afficherToast(`✓ Facture d'acompte ${pct}% générée : ${fmtEuro(montantHT)}`);
     fetchTout();
   }
 
@@ -853,11 +854,11 @@ function DevisContenu() {
                   <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-gray-500">Montant HT</p>
-                      <p className="text-xs font-semibold text-gray-300">{totalHT.toFixed(2)} €</p>
+                      <p className="text-xs font-semibold text-gray-300">{fmtEuro(totalHT)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-wide text-gray-500">Total TTC ({d.tva_pct}%)</p>
-                      <p className="text-sm font-bold text-gray-300 font-mono">{totalTTC.toFixed(2)} €</p>
+                      <p className="text-sm font-bold text-gray-300 font-mono">{fmtEuro(totalTTC)}</p>
                     </div>
                   </div>
                   
@@ -865,7 +866,7 @@ function DevisContenu() {
                     <div className="flex items-center justify-between gap-2 text-[10px]">
                       {margeConnue && (
                         <span className="font-semibold text-emerald-400/90">
-                          Marge : {Math.round((d.marge_pct ?? 0) * 100) / 100}% · {(d.marge_ht ?? 0).toFixed(2)} €
+                          Marge : {Math.round((d.marge_pct ?? 0) * 100) / 100}% · {fmtEuro(d.marge_ht)}
                         </span>
                       )}
                       {nbACHiffrer > 0 && (
@@ -983,7 +984,7 @@ function DevisContenu() {
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 space-y-1">
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>Total devis HT</span>
-                <span className="font-mono text-gray-200">{(devisToBill.total_ht && devisToBill.total_ht > 0 ? devisToBill.total_ht : calculerDevis(devisToBill.lignes || []).total_ht).toFixed(2)} €</span>
+                <span className="font-mono text-gray-200">{fmtEuro(devisToBill.total_ht && devisToBill.total_ht > 0 ? devisToBill.total_ht : calculerDevis(devisToBill.lignes || []).total_ht)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase text-gray-300">
@@ -993,8 +994,8 @@ function DevisContenu() {
                   {(() => {
                     const base = devisToBill.total_ht && devisToBill.total_ht > 0 ? devisToBill.total_ht : calculerDevis(devisToBill.lignes || []).total_ht;
                     const montant = billType === "totale" ? base : Math.round(base * (billPct / 100) * 100) / 100;
-                    return montant.toFixed(2);
-                  })()} €
+                    return fmtEuro(montant);
+                  })()}
                 </span>
               </div>
               <p className="text-[10px] text-gray-500">TVA {devisToBill.tva_pct}% appliquée</p>
@@ -1362,7 +1363,7 @@ function DevisContenu() {
                     </option>
                     {catalogue.map((ouv) => (
                       <option key={ouv.id} value={ouv.id}>
-                        [{ouv.famille_label}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                        [{ouv.famille_label}] {ouv.designation} ({fmtEuro(ouv.pu_ht)}/{ouv.unite})
                       </option>
                     ))}
                   </select>
@@ -1372,22 +1373,22 @@ function DevisContenu() {
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 space-y-1.5 sm:px-4 sm:py-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Coût matière</span>
-                  <span className="text-sm sm:text-xs font-mono text-gray-200">{apercuCalculs.cout_matiere_ht.toFixed(2)} €</span>
+                  <span className="text-sm sm:text-xs font-mono text-gray-200">{fmtEuro(apercuCalculs.cout_matiere_ht)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Main d&apos;œuvre</span>
-                  <span className="text-sm sm:text-xs font-mono text-gray-200">{apercuCalculs.cout_main_oeuvre_ht.toFixed(2)} €</span>
+                  <span className="text-sm sm:text-xs font-mono text-gray-200">{fmtEuro(apercuCalculs.cout_main_oeuvre_ht)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Marge estimée</span>
                   <span className="text-sm sm:text-xs font-mono text-emerald-400 font-bold">
-                    {apercuCalculs.marge_ht.toFixed(2)} € ({apercuCalculs.marge_pct.toFixed(1)}%)
+                    {fmtEuro(apercuCalculs.marge_ht)} ({apercuCalculs.marge_pct.toFixed(1)}%)
                   </span>
                 </div>
                 <div className="h-px bg-white/10/60" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm sm:text-sm font-bold uppercase text-gray-100">Total HT</span>
-                  <span className="text-lg sm:text-base font-black font-mono text-white">{totalHT.toFixed(2)} €</span>
+                  <span className="text-lg sm:text-base font-black font-mono text-white">{fmtEuro(totalHT)}</span>
                 </div>
                 {profilRevenu !== 'aucun' && (
                   (() => {
@@ -1400,12 +1401,12 @@ function DevisContenu() {
                       <>
                         <div className="flex items-center justify-between text-cyan-300 mt-2">
                           <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide">Aides estimées (MPR + CEE)</span>
-                          <span className="text-sm sm:text-xs font-mono">- {aides.totalAides.toFixed(2)} €</span>
+                          <span className="text-sm sm:text-xs font-mono">- {fmtEuro(aides.totalAides)}</span>
                         </div>
                         <div className="h-px bg-white/10/60 my-1" />
                         <div className="flex items-center justify-between">
                           <span className="text-sm sm:text-sm font-bold uppercase text-cyan-100">Reste à charge TTC</span>
-                          <span className="text-xl sm:text-lg font-black font-mono text-cyan-400">{reste.toFixed(2)} €</span>
+                          <span className="text-xl sm:text-lg font-black font-mono text-cyan-400">{fmtEuro(reste)}</span>
                         </div>
                       </>
                     );

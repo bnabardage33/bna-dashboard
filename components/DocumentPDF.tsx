@@ -4,6 +4,7 @@
 import { Scissors } from "lucide-react";
 import { Entreprise } from "@/types/entreprise";
 import Image from "next/image";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 export type { Entreprise };
 
@@ -40,9 +41,13 @@ export type DocumentData = {
   signataire_client_nom?: string | null;
 };
 
-function euros(n: number) {
-  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-}
+// LOT 2C — la fonction `euros()` locale est supprimee au profit de fmtEuro().
+// Les deux produisaient exactement la meme chaine sur toutes les valeurs
+// testees (0 ; 12,5 ; 1 234,5 ; 1 234,56 ; 10 000 ; -12,5 ; -1 234,56) : meme
+// separateur de milliers, meme virgule decimale, meme symbole. Seul change
+// l'espace avant le €, qui devient insecable — le montant ne peut plus passer
+// a la ligne. fmtEuro() apporte en plus la gestion de null/undefined/NaN, que
+// `euros()` laissait lever en TypeError.
 
 export default function DocumentPDF({
   doc,
@@ -203,8 +208,8 @@ export default function DocumentPDF({
                 </td>
                 <td className="p-2 text-right text-slate-700">{l.qte}</td>
                 <td className="p-2 text-right text-slate-700">{l.unite}</td>
-                <td className="p-2 text-right text-slate-700">{euros(l.pu_ht)}</td>
-                <td className="p-2 text-right font-bold text-slate-900">{euros(l.qte * l.pu_ht)}</td>
+                <td className="p-2 text-right text-slate-700">{fmtEuro(l.pu_ht)}</td>
+                <td className="p-2 text-right font-bold text-slate-900">{fmtEuro(l.qte * l.pu_ht)}</td>
               </tr>
             ))}
           </tbody>
@@ -215,20 +220,20 @@ export default function DocumentPDF({
           <div className="w-72 space-y-1.5 text-xs">
             <div className="flex justify-between text-slate-700">
               <span>Total HT</span>
-              <span className="font-semibold">{euros(totalHT)}</span>
+              <span className="font-semibold">{fmtEuro(totalHT)}</span>
             </div>
             <div className="flex justify-between text-slate-700">
               <span>TVA ({doc.tva_pct} %)</span>
-              <span className="font-semibold">{euros(tva)}</span>
+              <span className="font-semibold">{fmtEuro(tva)}</span>
             </div>
             <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
               <span className="text-slate-100">TOTAL TTC</span>
-              <span className="text-amber-400 font-mono font-black text-base">{euros(totalTTC)}</span>
+              <span className="text-amber-400 font-mono font-black text-base">{fmtEuro(totalTTC)}</span>
             </div>
             {acompte !== null && (
               <div className="flex justify-between text-slate-600 text-[11px] pt-1">
                 <span>Acompte à la commande ({doc.acompte_pct} %)</span>
-                <span className="font-semibold text-slate-900">{euros(acompte)}</span>
+                <span className="font-semibold text-slate-900">{fmtEuro(acompte)}</span>
               </div>
             )}
             {doc.kind === "facture" && doc.echeance && (

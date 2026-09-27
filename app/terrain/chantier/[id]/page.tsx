@@ -11,6 +11,7 @@ import ZoneCard, { Zone, LigneCommande, ConfigTechnique, calculerZone } from "@/
 import type { ResultatMetre } from "@/lib/metre-serialization";
 import type { Json } from "@/types/supabase";
 import { PVReceptionData } from "@/components/PVReceptionPDF";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 type PvReceptionListe = PVReceptionData & { id: string };
 import AvancementFacades from "@/components/AvancementFacadesWrapper";
@@ -1183,13 +1184,12 @@ function ChantierDetailContent() {
             <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Total Devisé HT</p>
               <p className="mt-1 text-xl font-bold text-white">
-                {devisLies
-                  .reduce(
+                {fmtEuro(
+                  devisLies.reduce(
                     (s, d) => s + (d.lignes || []).reduce((acc, l) => acc + l.qte * l.pu_ht, 0),
                     0
                   )
-                  .toFixed(2)}{" "}
-                €
+                )}
               </p>
               <p className="text-xs text-gray-500">{devisLies.length} devis rattaché(s)</p>
             </div>
@@ -1197,13 +1197,12 @@ function ChantierDetailContent() {
             <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Total Facturé TTC</p>
               <p className="mt-1 text-xl font-bold text-gray-400">
-                {facturesLiees
-                  .reduce((s, f) => {
+                {fmtEuro(
+                  facturesLiees.reduce((s, f) => {
                     const ht = (f.lignes || []).reduce((acc, l) => acc + l.qte * l.pu_ht, 0);
                     return s + ht * (1 + (f.tva_pct || 10) / 100);
                   }, 0)
-                  .toFixed(2)}{" "}
-                €
+                )}
               </p>
               <p className="text-xs text-gray-500">{facturesLiees.length} facture(s)</p>
             </div>
@@ -1211,10 +1210,7 @@ function ChantierDetailContent() {
             <div className="rounded-xl border border-white/10 bg-[#1A1D24] p-4">
               <p className="text-xs uppercase tracking-wide text-gray-400">Achats Matériaux HT</p>
               <p className="mt-1 text-xl font-bold text-gray-300">
-                {commandesLiees
-                  .reduce((s, c) => s + (c.montant_ht || 0), 0)
-                  .toFixed(2)}{" "}
-                €
+                {fmtEuro(commandesLiees.reduce((s, c) => s + (c.montant_ht || 0), 0))}
               </p>
               <p className="text-xs text-gray-500">{commandesLiees.length} commande(s) fournisseur</p>
             </div>
@@ -1261,7 +1257,7 @@ function ChantierDetailContent() {
                               <td className="p-3 text-gray-400">
                                 {new Date(d.date_emission).toLocaleDateString("fr-FR")}
                               </td>
-                              <td className="p-3 text-right font-medium">{ht.toFixed(2)} €</td>
+                              <td className="p-3 text-right font-medium">{fmtEuro(ht)}</td>
                               <td className="p-3">
                                 <span
                                   className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
@@ -1339,7 +1335,7 @@ function ChantierDetailContent() {
                                 {new Date(f.date_emission).toLocaleDateString("fr-FR")}
                               </td>
                               <td className="p-3 text-right font-medium text-gray-400">
-                                {ttc.toFixed(2)} €
+                                {fmtEuro(ttc)}
                               </td>
                               <td className="p-3">
                                 <span
@@ -1491,7 +1487,7 @@ function ChantierDetailContent() {
                               {c.quantite ? `${c.quantite} ${c.unite || ""}` : "—"}
                             </td>
                             <td className="p-3 text-right font-medium">
-                              {c.montant_ht ? `${c.montant_ht.toFixed(2)} €` : "—"}
+                              {c.montant_ht ? fmtEuro(c.montant_ht) : "—"}
                             </td>
                             <td className="p-3 text-gray-400">
                               {c.date_livraison_prevue

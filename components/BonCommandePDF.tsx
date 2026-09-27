@@ -1,5 +1,6 @@
 import { Entreprise } from "@/types/entreprise";
 import Image from "next/image";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 type FournisseurInfo = {
   nom: string;
@@ -143,7 +144,7 @@ export default function BonCommandePDF({
                 <td className="p-2.5 text-slate-600">{l.unite}</td>
                 {commande.montant_ht !== null && (
                   <td className="p-2.5 text-right text-slate-800">
-                    {l.montant_ht ? `${l.montant_ht.toFixed(2)} €` : "—"}
+                    {l.montant_ht ? fmtEuro(l.montant_ht) : "—"}
                   </td>
                 )}
               </tr>
@@ -157,7 +158,7 @@ export default function BonCommandePDF({
         <div className="mt-4 flex justify-end">
           <div className="w-60 rounded-lg border border-slate-200 bg-slate-50 p-3 text-right">
             <p className="text-xs text-slate-500">Total estimé HT</p>
-            <p className="text-xl font-bold text-slate-900">{commande.montant_ht.toFixed(2)} €</p>
+            <p className="text-xl font-bold text-slate-900">{fmtEuro(commande.montant_ht)}</p>
           </div>
         </div>
       )}

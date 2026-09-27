@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -649,7 +650,7 @@ export default function ClientsPage() {
                               <tr key={d.id}>
                                 <td className="p-2 font-medium text-white">{d.numero}</td>
                                 <td className="p-2">{d.objet || "—"}</td>
-                                <td className="p-2 text-right">{ht.toFixed(2)} €</td>
+                                <td className="p-2 text-right">{fmtEuro(ht)}</td>
                                 <td className="p-2">
                                   <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase">
                                     {d.statut}
@@ -689,7 +690,7 @@ export default function ClientsPage() {
                               <tr key={f.id}>
                                 <td className="p-2 font-medium text-white">{f.numero}</td>
                                 <td className="p-2 text-right font-semibold text-gray-400">
-                                  {ttc.toFixed(2)} €
+                                  {fmtEuro(ttc)}
                                 </td>
                                 <td className="p-2">
                                   <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase">

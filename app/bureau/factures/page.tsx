@@ -10,6 +10,7 @@ import SignaturePad from "@/components/SignaturePad";
 import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
 import { AlertCircle, PenTool } from "lucide-react";
 import { prochainNumero } from "@/lib/documents";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 type CatalogueOuvrage = {
   id: string;
@@ -340,11 +341,11 @@ export default function FacturesPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-sm">
           <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">CA Encaissé (Payé)</p>
-          <p className="text-2xl font-black text-white font-mono mt-0.5">{caEncaisse.toFixed(2)} €</p>
+          <p className="text-2xl font-black text-white font-mono mt-0.5">{fmtEuro(caEncaisse)}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#1A1D24] p-4 shadow-sm">
           <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">En attente de règlement</p>
-          <p className="text-2xl font-black text-white font-mono mt-0.5">{enAttente.toFixed(2)} €</p>
+          <p className="text-2xl font-black text-white font-mono mt-0.5">{fmtEuro(enAttente)}</p>
         </div>
       </div>
 
@@ -411,11 +412,11 @@ export default function FacturesPage() {
                   <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-gray-500">Montant HT</p>
-                      <p className="text-xs font-semibold text-gray-300">{ht.toFixed(2)} €</p>
+                      <p className="text-xs font-semibold text-gray-300">{fmtEuro(ht)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-wide text-gray-500">Total TTC ({f.tva_pct}%)</p>
-                      <p className="text-sm font-bold text-gray-300 font-mono">{ttc.toFixed(2)} €</p>
+                      <p className="text-sm font-bold text-gray-300 font-mono">{fmtEuro(ttc)}</p>
                     </div>
                   </div>
                 </div>
@@ -488,15 +489,15 @@ export default function FacturesPage() {
                 <div className="flex items-center justify-between rounded-xl border border-red-700/30 bg-red-700/10 p-3 text-xs">
                   <div>
                     <p className="text-gray-300">
-                      Total devis HT : <span className="font-semibold text-white">{totalDevisHT.toFixed(2)} €</span>
+                      Total devis HT : <span className="font-semibold text-white">{fmtEuro(totalDevisHT)}</span>
                     </p>
                     <p className="text-gray-300">
-                      Déjà facturé HT : <span className="font-semibold text-white">{dejaFactureHT.toFixed(2)} €</span>
+                      Déjà facturé HT : <span className="font-semibold text-white">{fmtEuro(dejaFactureHT)}</span>
                     </p>
                     <p className="text-gray-300">
                       Reste à facturer :{" "}
                       <span className="font-semibold text-gray-400">
-                        {Math.max(0, totalDevisHT - dejaFactureHT).toFixed(2)} €
+                        {fmtEuro(Math.max(0, totalDevisHT - dejaFactureHT))}
                       </span>
                     </p>
                   </div>
@@ -649,7 +650,7 @@ export default function FacturesPage() {
                     </option>
                     {catalogue.map((ouv) => (
                       <option key={ouv.id} value={ouv.id}>
-                        [{ouv.famille_label}] {ouv.designation} ({ouv.pu_ht} €/{ouv.unite})
+                        [{ouv.famille_label}] {ouv.designation} ({fmtEuro(ouv.pu_ht)}/{ouv.unite})
                       </option>
                     ))}
                   </select>
@@ -657,7 +658,7 @@ export default function FacturesPage() {
               </div>
 
               <p className="text-right text-sm font-bold text-white pt-2">
-                Total HT : <span className="font-mono text-gray-400">{totalHT.toFixed(2)} €</span>
+                Total HT : <span className="font-mono text-gray-400">{fmtEuro(totalHT)}</span>
               </p>
             </div>
 
