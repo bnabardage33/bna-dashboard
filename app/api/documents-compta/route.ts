@@ -121,6 +121,107 @@ async function ligneAppartientAuTenant(
   return !error && data !== null;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// F1 — le chemin Stockage n'est JAMAIS lu dans une valeur fournie par le client
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// `url_image` est écrit par le POST (l.246) à partir de `file_url`, un champ
+// FORMULAIRE que le client contrôle entièrement (l.153) : rien n'y garantit que
+// l'URL désigne un objet de CE document, ni même un objet du tout. L'ancien
+// DELETE en dérivait le chemin à supprimer par `doc.url_image.split('/tickets/')[1]`
+// puis supprimait en `service_role` — donc hors de toute policy Storage. Un
+// tenant pouvait ainsi faire disparaître un objet arbitraire du bucket, y
+// compris le fichier d'un autre tenant.
+//
+// Règle appliquée : le chemin à supprimer n'est produit que si l'URL désigne un
+// emplacement que CE DÉPÔT écrit, avec un nom conforme à la grammaire des deux
+// générateurs. Sinon `storage.remove` n'est JAMAIS appelé.
+
+/** Bucket des deux sites d'écriture (ce fichier l.219/l.230, ia-ocr-ticket l.78). */
+const BUCKET_STOCKAGE = 'tickets';
+
+/**
+ * Les DEUX préfixes que ce dépôt écrit dans ce bucket. Chaque entrée cite le
+ * site qui la produit : la convention est LUE dans le code, jamais inventée ici.
+ *   `documents-compta/` → `app/api/documents-compta/route.ts:212`
+ *   `ia-ocr/`           → `app/api/ia-ocr-ticket/route.ts:76`
+ */
+const PREFIXES_STOCKAGE_AUTORISES = ['documents-compta/', 'ia-ocr/'] as const;
+
+/**
+ * Grammaire du nom produit par ces deux sites, tous deux de la forme
+ * `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}` :
+ * 10 à 17 chiffres, `-`, 6 caractères base36, `.`, une extension.
+ * Ni `/` ni séquence `.` isolée n'y passent : le nom ne peut donc ni sortir du
+ * préfixe autorisé, ni remonter (`..`), ni viser un autre segment.
+ */
+const NOM_STOCKAGE_RE = /^\d{10,17}-[0-9a-z]{6}\.[a-z0-9]{1,16}$/i;
+
+type ResultatCheminStockage =
+  | { ok: true; chemin: string }
+  | { ok: false; code: string };
+
+/**
+ * Origine des URL publiques émises par ce déploiement, ou `null` si la
+ * configuration manque — auquel cas le DELETE échoue fermé : mieux vaut un
+ * document à effacer à la main qu'une suppression fondée sur une origine
+ * supposée. Source unique : `supabaseAdmin` construit son client, donc son
+ * `getPublicUrl`, avec la même variable.
+ */
+function origineStockageAttendue(): string | null {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (typeof base !== 'string' || base.trim() === '') return null;
+  try {
+    return new URL(base.trim()).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extrait le chemin de l'objet Stockage désigné par une URL, ou échoue fermé.
+ *
+ * Trois conditions cumulatives, toutes vérifiables et sans état :
+ *   1. l'URL est une URL ABSOLUE émise par ce déploiement (origine) ;
+ *   2. son chemin est celui d'un objet PUBLIC du bucket attendu (marqueur
+ *      `/storage/v1/object/public/tickets/`, même convention que
+ *      `app/api/photos-chantier/route.ts:64`) ;
+ *   3. le reste est un préfixe autorisé suivi d'un nom conforme.
+ *
+ * `pathname` reste percent-ENCODÉ et exclut query et fragment : `%2e%2e%2f` ne
+ * redevient donc jamais `../`, et un `?…` collé à l'URL ne peut pas viser un
+ * autre objet. On ne déCODE rien — contrairement à `photos-chantier`, qui décode
+ * le chemin ; ici la grammaire du nom rend ce décodage inutile et dangereux.
+ */
+function cheminStockageDepuisUrl(urlImage: string): ResultatCheminStockage {
+  let url: URL;
+  try {
+    // `new URL` est appelé SANS base : une URL relative ou protocol-relative
+    // (`//hôte/…`) lève, elle est donc refusée au lieu d'être devinée.
+    url = new URL(urlImage);
+  } catch {
+    return { ok: false, code: 'url_invalide' };
+  }
+
+  const attendue = origineStockageAttendue();
+  if (!attendue || url.origin !== attendue) return { ok: false, code: 'origine_inconnue' };
+
+  const marqueur = `/storage/v1/object/public/${BUCKET_STOCKAGE}/`;
+  const debut = url.pathname.indexOf(marqueur);
+  if (debut < 0 || url.pathname.indexOf(marqueur, debut + 1) !== -1) {
+    return { ok: false, code: 'bucket_inconnu' };
+  }
+
+  const reste = url.pathname.slice(debut + marqueur.length);
+  const prefixe = PREFIXES_STOCKAGE_AUTORISES.find((p) => reste.startsWith(p));
+  if (!prefixe) return { ok: false, code: 'prefixe_non_autorise' };
+  if (!NOM_STOCKAGE_RE.test(reste.slice(prefixe.length))) {
+    return { ok: false, code: 'nom_non_conforme' };
+  }
+
+  return { ok: true, chemin: reste };
+}
+
 export async function GET() {
   const tenant = await resoudreTenant();
   if (!tenant.ok) return tenant.reponse;
@@ -344,21 +445,39 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  // Suppression du fichier : meilleur effort, comme avant. Un échec ici ne
-  // doit pas empêcher la suppression de la ligne (l'inverse laisserait un
-  // document pointant vers une image disparue).
+  // Suppression du fichier : le chemin est validé AVANT tout appel.
+  //
+  // Fail-closed. Un `url_image` qui ne désigne pas un emplacement écrit par ce
+  // dépôt (URL externe, autre préfixe, `..`, nom forgé, query smugglée) est
+  // REFUSÉ : `storage.remove` n'est pas appelé, et la ligne n'est pas
+  // supprimée non plus. Mieux vaut un document à effacer à la main qu'un objet
+  // d'autrui disparu — et surtout, une suppression annoncée qui n'a pas eu
+  // lieu serait un mensonge.
   if (doc.url_image) {
-    const path = doc.url_image.split('/tickets/')[1];
-    if (path) {
-      const { error: erreurStockage } = await supabaseAdmin.storage
-        .from('tickets')
-        .remove([path]);
-      if (erreurStockage) {
-        console.error(
-          `Documents compta : fichier ${path} non supprimé alors que la ligne l'est.`,
-          erreurStockage
-        );
-      }
+    const stockage = cheminStockageDepuisUrl(doc.url_image);
+    if (!stockage.ok) {
+      return NextResponse.json(
+        {
+          error:
+            "Suppression refusée : le fichier de ce document n'est pas dans un " +
+            `emplacement de stockage autorisé (${stockage.code}). Aucun fichier n'a ` +
+            'été touché ; le document reste en base.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Suppression effective : meilleur effort, comme avant. Un échec ici ne
+    // doit pas empêcher la suppression de la ligne (l'inverse laisserait un
+    // document pointant vers une image disparue).
+    const { error: erreurStockage } = await supabaseAdmin.storage
+      .from('tickets')
+      .remove([stockage.chemin]);
+    if (erreurStockage) {
+      console.error(
+        `Documents compta : fichier ${stockage.chemin} non supprimé alors que la ligne l'est.`,
+        erreurStockage
+      );
     }
   }
 

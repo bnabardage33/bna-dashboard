@@ -65,7 +65,11 @@ vi.mock('@/lib/supabaseAdmin', () => ({
           return { error: etat.erreurRemove }
         },
         getPublicUrl: (chemin: string) => ({
-          data: { publicUrl: `${BASE}/${bucket}/${chemin}` },
+          // Forme RÉELLE d'une URL publique Supabase : c'est ce que la route
+          // doit savoir relire pour en déduire un chemin de suppression.
+          data: {
+            publicUrl: `${BASE}/storage/v1/object/public/${bucket}/${chemin}`,
+          },
         }),
       }),
     },
@@ -205,14 +209,14 @@ function creerEtat(): Etat {
           id: DOC_BNA,
           entreprise_id: BNA,
           chantier_id: null,
-          url_image: `${BASE}/tickets/documents-compta/bna.png`,
+          url_image: `${BASE}/storage/v1/object/public/tickets/documents-compta/1758345600000-a1b2c3.jpg`,
           date: '2026-09-20',
         },
         {
           id: DOC_TEST,
           entreprise_id: TEST,
           chantier_id: null,
-          url_image: `${BASE}/tickets/documents-compta/test.png`,
+          url_image: `${BASE}/storage/v1/object/public/tickets/documents-compta/1758421999999-z9y8x7.jpg`,
           date: '2026-09-21',
         },
       ],
@@ -289,6 +293,9 @@ const route = {
 
 beforeEach(() => {
   etat = creerEtat()
+  // La route compare l'origine de `url_image` à celle de ce déploiement pour
+  // n'accepter que les URL qu'ELLE a émises. On aligne donc `BASE` dessus.
+  process.env.NEXT_PUBLIC_SUPABASE_URL = BASE
   spies.getUser.mockReset()
   spies.from.mockReset()
   spies.from.mockImplementation((table: string) => {
@@ -574,7 +581,7 @@ describe('D) Storage — pas d’orphelin', () => {
     // Le serveur ne possède pas ce fichier : il ne doit surtout pas le supprimer.
     sessioner(BNA)
     const fd = formData(true)
-    fd.append('file_url', `${BASE}/tickets/ia-ocr/existe.jpg`)
+    fd.append('file_url', `${BASE}/storage/v1/object/public/tickets/ia-ocr/existe.jpg`)
     etat.erreurInsert = { table: 'documents_compta', message: 'boom' }
     const res = await route.post(fd)
 
@@ -597,7 +604,9 @@ describe('D) Storage — pas d’orphelin', () => {
     await route.delete(DOC_BNA)
 
     expect(etat.removes).toHaveLength(1)
-    expect(etat.removes[0].chemins).toEqual(['documents-compta/bna.png'])
+    expect(etat.removes[0].chemins).toEqual([
+      'documents-compta/1758345600000-a1b2c3.jpg',
+    ])
   })
 })
 
@@ -731,5 +740,324 @@ describe('F) Garde structurel auto-vérifié', () => {
       /['"][0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}['"]/gi
     )
     expect(litteraux).toBeNull()
+  })
+})
+
+// ───────────────────────────────────────────────────────────────────────────
+// G) F1 — le chemin Stockage ne doit JAMAIS être lu dans `url_image`
+// ───────────────────────────────────────────────────────────────────────────
+//
+// Rappel du défaut : le POST écrit `url_image` depuis `file_url`, un champ de
+// formulaire LIBRE (route l.153). Le DELETE en dérivait le chemin à supprimer
+// par `doc.url_image.split('/tickets/')[1]`, puis supprimait en `service_role`
+// (donc hors de toute policy Storage). Un tenant pouvait donc faire supprimer
+// un objet arbitraire du bucket `tickets`, y compris le fichier d'un autre
+// tenant.
+//
+// Règle testée ici : `storage.remove` n'est appelé QUE si l'URL désigne
+//   * le segment de bucket `tickets`, exactement une fois ;
+//   * l'un des DEUX préfixes que ce dépôt écrit (`documents-compta/`, `ia-ocr/`) ;
+//   * un nom conforme à la grammaire des deux générateurs
+//     (`${Date.now()}-${6 base36}.${ext}`).
+// Sinon : 400, `storage.remove` JAMAIS appelé, et la ligne reste en base.
+//
+// Ces tests n'ont de valeur que parce qu'ils vérifient l'ABSENCE d'appel à
+// `storage.remove` (le journal `etat.removes`) et pas seulement le code HTTP.
+
+/** Noms conformes au générateur : 13 chiffres + 6 caractères base36 + extension. */
+const NOM_OK = '1758345600000-a1b2c3'
+const NOM_AUTRE = '1758421999999-z9y8x7'
+
+/** Force l'`url_image` du document BNA et renvoie l'URL complète correspondante. */
+function avecUrlImage(urlImage: string): string {
+  const doc = etat.tables.documents_compta.find((d) => d.id === DOC_BNA)
+  if (!doc) throw new Error('fixture DOC_BNA absente')
+  doc.url_image = urlImage
+  return urlImage
+}
+
+/** DELETE du document BNA en session BNA, avec une `url_image` donnée. */
+async function supprimerAvec(urlImage: string) {
+  avecUrlImage(urlImage)
+  return route.delete(DOC_BNA)
+}
+
+/** URL publique de référence : la forme exacte émise par `getPublicUrl`. */
+const url = (chemin: string) => `${BASE}/storage/v1/object/public/tickets/${chemin}`
+
+describe('G) F1 — chemin Stockage dérivé de `url_image` (client)', () => {
+  describe('G.a — les chemins légitimes continuent de fonctionner', () => {
+    it('G1 — `documents-compta/` (upload direct) ⇒ suppression NORMALE', async () => {
+      sessioner(BNA)
+      const res = await supprimerAvec(url(`documents-compta/${NOM_OK}.jpg`))
+
+      expect(res.status).toBe(200)
+      expect(etat.removes).toHaveLength(1)
+      expect(etat.removes[0].bucket).toBe('tickets')
+      // EXACTEMENT un chemin, et le chemin PROPRE (ni URL, ni bucket, ni `/` initial)
+      expect(etat.removes[0].chemins).toEqual([`documents-compta/${NOM_OK}.jpg`])
+      expect(etat.tables.documents_compta.map((d) => d.id)).toEqual([DOC_TEST])
+    })
+
+    it('G2 — `ia-ocr/` (document issu de l’OCR, donc `file_url`) ⇒ suppression NORMALE', async () => {
+      sessioner(BNA)
+      const res = await supprimerAvec(url(`ia-ocr/${NOM_OK}.png`))
+
+      expect(res.status).toBe(200)
+      expect(etat.removes).toHaveLength(1)
+      expect(etat.removes[0].chemins).toEqual([`ia-ocr/${NOM_OK}.png`])
+      expect(etat.tables.documents_compta.map((d) => d.id)).toEqual([DOC_TEST])
+    })
+
+    it('G3 — une query string est IGNORÉE : le chemin envoyé reste propre', async () => {
+      sessioner(BNA)
+      const res = await supprimerAvec(`${url(`documents-compta/${NOM_OK}.jpg`)}?token=x&y=1`)
+
+      expect(res.status).toBe(200)
+      expect(etat.removes[0].chemins).toEqual([`documents-compta/${NOM_OK}.jpg`])
+    })
+
+    it('G4 — le tenant supprime le sien : non-régression du nominal (BNA)', async () => {
+      sessioner(BNA)
+      const res = await route.delete(DOC_BNA)
+
+      expect(res.status).toBe(200)
+      expect(etat.removes).toHaveLength(1)
+      expect(etat.deletes).toHaveLength(1)
+      expect(etat.tables.documents_compta.map((d) => d.id)).toEqual([DOC_TEST])
+    })
+
+    it('G5 — un document SANS fichier : ligne supprimée, `storage.remove` JAMAIS appelé', async () => {
+      sessioner(BNA)
+      const res = await supprimerAvec('')
+
+      expect(res.status).toBe(200)
+      expect(etat.removes).toHaveLength(0)
+      expect(etat.tables.documents_compta.map((d) => d.id)).toEqual([DOC_TEST])
+    })
+
+    it('G6 — échec de `storage.remove` : la ligne est QUAND MÊME supprimée (non-régression)', async () => {
+      sessioner(BNA)
+      etat.erreurRemove = { message: 'stockage indisponible' }
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        const res = await supprimerAvec(url(`documents-compta/${NOM_OK}.jpg`))
+
+        expect(res.status).toBe(200)
+        expect(etat.removes).toHaveLength(1)
+        expect(etat.tables.documents_compta.map((d) => d.id)).toEqual([DOC_TEST])
+        // L'échec est SIGNALÉ, jamais masqué
+        expect(spy).toHaveBeenCalled()
+      } finally {
+        spy.mockRestore()
+      }
+    })
+  })
+
+  describe('G.b — tout chemin non conforme est REFUSÉ, sans toucher au Stockage', () => {
+    // Chaque cas doit produire : 400 explicite, `storage.remove` JAMAIS appelé,
+    // et la ligne TOUJOURS en base.
+    const cas: Array<{ nom: string; urlImage: string }> = [
+      {
+        nom: 'G7 — autre préfixe du bucket (`factures/`) ⇒ refus',
+        urlImage: url(`factures/${NOM_OK}.pdf`),
+      },
+      {
+        nom: 'G8 — `ia-ocr/` avec un nom FORGÉ (pas la grammaire du générateur)',
+        urlImage: url('ia-ocr/fichier-du-voisin.jpg'),
+      },
+      {
+        nom: 'G9 — TRAVERSAL : `..` pour remonter hors du préfixe',
+        urlImage: url(`documents-compta/../../photos/${NOM_OK}.jpg`),
+      },
+      {
+        nom: 'G10 — TRAVERSAL : sortie du bucket puis remontée',
+        urlImage: `${BASE}/storage/v1/object/public/tickets/documents-compta/../../../${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G11 — TRAVERSAL percent-ENCODÉ (`%2e%2e%2f`)',
+        urlImage: url(`documents-compta/%2e%2e%2f%2e%2e%2f${NOM_OK}.jpg`),
+      },
+      {
+        nom: 'G12 — un `tickets/` supplémentaire dans le reste du chemin (smuggling)',
+        urlImage: url(`ia-ocr/tickets/${NOM_OK}.jpg`),
+      },
+      {
+        nom: 'G12b — le marqueur de bucket apparaît DEUX fois',
+        urlImage:
+          `${BASE}/storage/v1/object/public/tickets/documents-compta/` +
+          `storage/v1/object/public/tickets/${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G13 — un AUTRE bucket, préfixe et nom pourtant valides (isole le garde-fou de bucket)',
+        urlImage: `${BASE}/storage/v1/object/public/photos/documents-compta/${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G14 — `xtickets/` : un segment qui CONTIENT le nom du bucket',
+        urlImage: `${BASE}/xtickets/documents-compta/${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G15 — URL externe (aucun rapport avec le bucket)',
+        urlImage: `https://ailleurs.test/tickets/documents-compta/${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G16 — URL protocol-relative : le reste du chemin est pourtant VALIDABLE',
+        urlImage: `//stockage.test/storage/v1/object/public/tickets/documents-compta/${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G16b — URLRelative (chemin seul) : refusée faute de base, jamais devinée',
+        urlImage: `/storage/v1/object/public/tickets/documents-compta/${NOM_OK}.jpg`,
+      },
+      {
+        nom: 'G16c — nom percent-ENCODÉ (`.%2Ejpg`) : on ne déCODE rien',
+        urlImage: url('documents-compta/1758345600000-a1b2c3%2Ejpg'),
+      },
+      {
+        nom: 'G17 — nom sans le couple horodate/hasard attendu',
+        urlImage: url('documents-compta/photo.jpg'),
+      },
+      {
+        nom: 'G18 — extension absente',
+        urlImage: url(`documents-compta/${NOM_OK}`),
+      },
+      {
+        nom: 'G19 — segment supplémentaire après le nom',
+        urlImage: url(`documents-compta/${NOM_OK}.jpg/extra`),
+      },
+      {
+        nom: 'G20 — prefixe autorise en apparence mais chemin incomplet',
+        urlImage: url('documents-compta/'),
+      },
+      {
+        nom: 'G20b — préfixe autorisé + nom conforme, mais le reste du chemin est vide',
+        urlImage: `${BASE}/storage/v1/object/public/tickets`,
+      },
+    ]
+
+    for (const { nom, urlImage } of cas) {
+      it(nom, async () => {
+        sessioner(BNA)
+        const res = await supprimerAvec(urlImage)
+
+        // 1) refus EXPLICITE
+        expect(res.status).toBe(400)
+        expect(corps(await res.json()).error).toMatch(/Suppression refusée/)
+        // 2) AUCUN objet Storage touché
+        expect(etat.removes).toHaveLength(0)
+        // 3) la ligne survit : le refus est fail-closed, pas une demi-suppression
+        expect(etat.tables.documents_compta.map((d) => d.id)).toContain(DOC_BNA)
+        expect(etat.deletes).toHaveLength(0)
+      })
+    }
+  })
+
+  describe('G.c — le cloisonnement tenant reste priorsitaire', () => {
+    it('G21 — document d’un AUTRE tenant ⇒ 404, `storage.remove` JAMAIS appelé', async () => {
+      sessioner(BNA)
+      // `url_image` parfaitement CONFORME : c'est bien le cloisonnement, et non
+      // la grammaire, qui doit arrêter la suppression.
+      const res = await route.delete(DOC_TEST)
+
+      expect(res.status).toBe(404)
+      expect(etat.removes).toHaveLength(0)
+      expect(etat.deletes).toHaveLength(0)
+      expect(etat.tables.documents_compta.map((d) => d.id)).toContain(DOC_TEST)
+    })
+
+    it('G22 — contexte absent ⇒ 403, ZÉRO suppression, ZÉRO requête', async () => {
+      sessioner(undefined)
+      const res = await supprimerAvec(url(`documents-compta/${NOM_OK}.jpg`))
+
+      expect(res.status).toBe(403)
+      expect(etat.removes).toHaveLength(0)
+      expect(etat.selects).toHaveLength(0)
+    })
+
+    it('G22b — `NEXT_PUBLIC_SUPABASE_URL` ABSENTE ⇒ fail-closed, `remove` JAMAIS appelé', async () => {
+      sessioner(BNA)
+      // Sans origine de référence, l'URL ne peut pas être jugée fiable :
+      // on refuse plutôt que de supposer.
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+      const res = await supprimerAvec(url(`documents-compta/${NOM_OK}.jpg`))
+
+      expect(res.status).toBe(400)
+      expect(corps(await res.json()).error).toMatch(/origine_inconnue/)
+      expect(etat.removes).toHaveLength(0)
+      expect(etat.tables.documents_compta.map((d) => d.id)).toContain(DOC_BNA)
+    })
+
+    it('G22c — l’ORIGINE est vérifiée : même chemin, autre hôte ⇒ refus', async () => {
+      sessioner(BNA)
+      // Tout est conforme SAUF l'hôte : c'est bien le garde-fou d'origine qui parle.
+      const res = await supprimerAvec(
+        `https://projet-attaquant.test/storage/v1/object/public/tickets/documents-compta/${NOM_OK}.jpg`
+      )
+
+      expect(res.status).toBe(400)
+      expect(corps(await res.json()).error).toMatch(/origine_inconnue/)
+      expect(etat.removes).toHaveLength(0)
+    })
+  })
+
+  describe('G.d — garde structurel AUTO-VÉRIFIÉ', () => {
+    it('G23 — le DELETE ne dérive PLUS aucun chemin par `split(`/indexOf(` sur l’URL', () => {
+      const bloc = sansCommentaires(blocHandler('DELETE'))
+
+      expect(bloc).not.toMatch(/split\(\s*['"]\/tickets\//)
+      expect(bloc).not.toMatch(/\.url_image\s*\.\s*(split|substring|slice|replace)\s*\(/)
+      expect(bloc).not.toMatch(/\.url_image\s*\.\s*match\s*\(/)
+    })
+
+    it('G24 — le DELETE passe bien par le validateur, et `remove` reçoit son résultat', () => {
+      const bloc = blocHandler('DELETE')
+
+      expect(bloc).toMatch(/cheminStockageDepuisUrl\(\s*doc\.url_image\s*\)/)
+      expect(bloc).toMatch(/\.remove\(\s*\[\s*stockage\.chemin\s*\]\s*\)/)
+    })
+
+    it('G25 — AUTO-VÉRIFICATION : G23 détecte la réintroduction du `split(`/tickets/`)', () => {
+      // Contre-exemple construit DANS le test, sur la VRAIE source.
+      const reintroduit = sansCommentaires(
+        sourceRoute.replace(
+          /const stockage = cheminStockageDepuisUrl\(doc\.url_image\);/,
+          "const stockage = { ok: true as const, chemin: doc.url_image.split('/tickets/')[1] };"
+        )
+      )
+      const bloc = blocHandler('DELETE', reintroduit)
+
+      // 1) le remplacement a bien eu lieu…
+      expect(bloc).not.toBe(blocHandler('DELETE'))
+      // 2) …et le détecteur le voit (sinon G23 passerait à vide).
+      expect(bloc).toMatch(/split\(\s*['"]\/tickets\//)
+    })
+
+    it('G26 — la liste des préfixes autorisés ne contient QUE les 2 préfixes écrits', () => {
+      const bloc = sansCommentaires(sourceRoute)
+      const declare = bloc.match(/PREFIXES_STOCKAGE_AUTORISES\s*=\s*\[([^\]]*)\]/)?.[1] ?? ''
+
+      expect(declare).toMatch(/['"]documents-compta\/['"]/)
+      expect(declare).toMatch(/['"]ia-ocr\/['"]/)
+      // Aucun troisième préfixe ne peut être glissé dans l'allowlist.
+      expect(declare.match(/['"][^'"]+['"]/g) ?? []).toHaveLength(2)
+    })
+
+    it('G27 — la grammaire du nom interdit `/` et `.` isolés (anti-traversal par construction)', () => {
+      const motif = sansCommentaires(sourceRoute).match(/NOM_STOCKAGE_RE\s*=\s*(\/.*\/[a-z]*)/)?.[1]
+      expect(motif).toBeDefined()
+
+      const re = new RegExp(motif!.slice(1, motif!.lastIndexOf('/')))
+      const nom = (s: string) => re.test(s)
+
+      // conformes
+      expect(nom(`${NOM_OK}.jpg`)).toBe(true)
+      expect(nom('1000000000-000000.png')).toBe(true)
+      // NON conformes
+      expect(nom('../../x.jpg')).toBe(false)
+      expect(nom('a/b.jpg')).toBe(false)
+      expect(nom('x.jpg/extra')).toBe(false)
+      expect(nom('1758345600000-a1b2c3')).toBe(false)
+      expect(nom('1758345600000-a1b2c3.')).toBe(false)
+      expect(nom('1758345600000-a1b2c34.jpg')).toBe(false)
+    })
   })
 })
