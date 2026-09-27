@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import {
   ArrowLeft, Camera, FileCheck, Wrench, Calendar, CheckCircle,
   AlertTriangle, Save, Loader2
@@ -14,6 +15,20 @@ import RapportSAVPDF from "@/components/RapportSAVPDF";
 import { Printer, X } from "lucide-react";
 import type { TicketSav, EntrepriseSettings, MaterielPrevu } from "@/types/finance";
 import type { TablesInsert, TablesUpdate } from "@/types/supabase";
+
+// O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+//
+// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
+// d'exiger `entreprise_id: string` dans l'objet inséré SANS assertion `as`.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 export default function FicheSAV() {
   const params = useParams();
@@ -170,9 +185,31 @@ export default function FicheSAV() {
       }
     ];
 
+    // O3-B9 : `devis` est une table RACINE — elle n'est dans AUCUNE liste de
+    // triggers de la migration part4 §7 (ni `par_chantier`, ni `par_devis`).
+    // Le `chantier_id` ci-dessous n'aide donc pas : `entreprise_id` est NOT NULL
+    // sans défaut et rien ne peut le poser côté base. On le résout donc depuis le
+    // claim `app_metadata.entreprise_id`, même source que `entreprise_courante()`.
+    // On passe `null` au résolveur (et non `ticket.chantier_id`) parce que la
+    // branche « chantier présent » ne poserait RIEN : elle réserve le remplissage
+    // au trigger, qui n'existe pas sur `devis`.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture. Le numéro SAV
+    // vient d'être consommé par la RPC ci-dessus ; on rend explicitement l'échec
+    // plutôt que de laisser croire à une création.
+    if (!estUuid(entreprise_id)) {
+      setSaving(false);
+      alert(
+        "Impossible de créer le devis : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
     const payload = {
       numero,
       client_id,
+      entreprise_id,
       chantier_id: ticket.chantier_id,
       objet: "Intervention SAV - " + (ticket.chantiers?.nom || ""),
       adresse_chantier: ticket.chantiers?.adresse_chantier || "",
@@ -183,9 +220,13 @@ export default function FicheSAV() {
       tva_pct: 20,
       statut: "brouillon",
       lignes
-    } as Omit<TablesInsert<"devis">, "entreprise_id">;
+    };
 
-    const { data, error } = await supabase.from("devis").insert(payload as TablesInsert<"devis">).select().single();
+    // O3-B9 : plus aucune assertion `as`. `entreprise_id` est rétréci en `string`
+    // par `estUuid`, donc le type `Insert` de `devis` est réellement satisfait —
+    // et une future régression de scopage redevient une ERREUR DE COMPILATION
+    // au lieu d'être masquée par un cast.
+    const { data, error } = await supabase.from("devis").insert(payload).select().single();
     setSaving(false);
 
     if (error) {

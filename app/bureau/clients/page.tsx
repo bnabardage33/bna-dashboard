@@ -3,7 +3,21 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import type { TablesInsert } from "@/types/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+
+// O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+//
+// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
+// d'exiger `entreprise_id: string` dans l'objet inséré SANS assertion `as`.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 type Client = {
   id: string;
@@ -158,6 +172,24 @@ export default function ClientsPage() {
     e.preventDefault();
     if (!nom) return;
 
+    // O3-B9 : `clients` est une table RACINE (aucun `chantier_id`, donc aucun
+    // trigger `tg_auto_entreprise` possible) dont `entreprise_id` est NOT NULL
+    // sans défaut depuis le 2026-09-22 (part1 §4). On résout donc le tenant
+    // explicitement, via le claim `app_metadata.entreprise_id` — la MÊME source
+    // que `entreprise_courante()` côté PostgREST, donc exactement la valeur que
+    // la policy `clients_ent_insert` attend. Aucune constante de tenant en dur.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture. La RLS
+    // (`with check (entreprise_id = entreprise_courante())`) refuserait de toute
+    // façon ; autant ne rien tenter et le signaler explicitement.
+    if (!estUuid(entreprise_id)) {
+      alert(
+        "Impossible de créer le client : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
     const { error } = await supabase.from("clients").insert({
       type,
       nom,
@@ -168,7 +200,8 @@ export default function ClientsPage() {
       ville: ville || null,
       tel: tel || null,
       email: email || null,
-    } as TablesInsert<"clients">);
+      entreprise_id,
+    });
 
     if (error) {
       alert("Erreur : " + error.message);

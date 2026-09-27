@@ -3,7 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import type { TablesInsert } from "@/types/supabase";
+
+// O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 type Chantier = { id: string; nom: string | null };
 
@@ -50,14 +61,39 @@ export default function FraisInterimPage() {
     setIsSaving(true);
     setMessage(null);
 
+    // O3-B9 — `frais_interim` ET la dépense miroir `depenses_chantier` sont des
+    // tables ENFANT : le trigger `tg_set_entreprise_par_chantier()` en dérive
+    // `entreprise_id`… MAIS il est un NO-OP silencieux quand
+    // `chantier_id IS NULL`. Or cet écran propose explicitement
+    // « -- Sans affectation -- » : le mode sans chantier est une règle métier
+    // existante, on ne la rend PAS obligatoire.
+    //
+    // Une SEULE résolution pour les deux inserts : même chantier, même tenant.
+    const { chantier_id: chantierCtx, entreprise_id } =
+      await resoudreContexteEntreprise(formData.chantier_id || null);
+
+    // Fail-closed sur la SEULE combinaison réellement bloquante : pas de parent
+    // ET pas de claim.
+    if (!chantierCtx && !estUuid(entreprise_id)) {
+      setIsSaving(false);
+      setMessage(
+        "❌ Impossible d'enregistrer : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
+    // Assertion justifiée, et PROUVÉE SÛRE par la garde ci-dessus : le type
+    // généré déclare `entreprise_id` requis, or on ne l'omet QUE dans la
+    // branche où `chantierCtx` est non-null — donc où le trigger le pose.
     const { error } = await supabase.from("frais_interim").insert({
-      chantier_id: formData.chantier_id || null,
+      chantier_id: chantierCtx,
       date: formData.date,
       agence_nom: formData.agence_nom.trim(),
       interimaire_nom: formData.interimaire_nom.trim(),
       salaire_brut: salaireBrut,
       coefficient,
       taux_tva: tauxTva,
+      ...(entreprise_id ? { entreprise_id } : {}),
     } as TablesInsert<"frais_interim">);
 
     if (!error) {
@@ -68,12 +104,22 @@ export default function FraisInterimPage() {
         montant_tva: montantTva,
         date: formData.date,
         statut: "Engagé",
-        ...(formData.chantier_id ? { chantier_id: formData.chantier_id } : {}),
+        chantier_id: chantierCtx,
+        ...(entreprise_id ? { entreprise_id } : {}),
       };
 
       const { error: depenseError } = await supabase.from("depenses_chantier").insert(depenseData as TablesInsert<"depenses_chantier">);
       if (depenseError) {
+        // O3-B9 : ce `console.error` seul était la SEULE trace d'un échec.
+        // L'utilisateur croyait la dépense sous-traitance enregistrée. On le
+        // signale dans le bandeau, sans toucher au reste du flux.
         console.error("Erreur insertion depense miroir frais interim:", depenseError);
+        setMessage(
+          "⚠️ Frais d'intérim enregistrés, mais la dépense miroir n'a pas pu être créée : " +
+            depenseError.message
+        );
+        setIsSaving(false);
+        return;
       }
     }
 

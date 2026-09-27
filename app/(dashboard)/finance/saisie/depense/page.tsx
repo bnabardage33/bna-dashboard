@@ -2,8 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { useRouter } from "next/navigation";
 import type { TablesInsert } from "@/types/supabase";
+
+// O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 export default function SaisieDepense() {
   const router = useRouter();
@@ -62,6 +73,28 @@ export default function SaisieDepense() {
       const ht = parseFloat(formData.montant_ht);
       if (isNaN(ht) || ht <= 0) throw new Error("Montant HT invalide.");
 
+      // O3-B9 — `depenses_chantier` est une table ENFANT : le trigger
+      // `tg_set_entreprise_par_chantier()` en dérive `entreprise_id`… MAIS il est
+      // un NO-OP silencieux quand `chantier_id IS NULL`
+      // (`if new.chantier_id is not null then … end if`). Or cet écran propose
+      // explicitement « -- Sans affectation -- » : le mode sans chantier est une
+      // règle métier existante, on ne la rend PAS obligatoire.
+      //
+      // Le résolveur EXISTANT couvre exactement ce cas :
+      //   chantier présent → `{entreprise_id: null}`, le trigger pose la valeur ;
+      //   chantier absent   → `{entreprise_id: <claim>}`, on la pose nous-mêmes.
+      const { chantier_id: chantierCtx, entreprise_id } =
+        await resoudreContexteEntreprise(formData.chantier_id || null);
+
+      // Fail-closed sur la SEULE combinaison réellement bloquante : pas de parent
+      // ET pas de claim. Si le chantier est présent, le trigger garantit le
+      // remplissage ; sinon le claim doit être valide.
+      if (!chantierCtx && !estUuid(entreprise_id)) {
+        throw new Error(
+          "Impossible d'enregistrer la dépense : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+        );
+      }
+
       const insertData = {
         nature: formData.nature,
         montant_ht: ht,
@@ -69,11 +102,15 @@ export default function SaisieDepense() {
         montant_tva: parseFloat(formData.montant_tva) || (ht * formData.taux_tva / 100),
         date: formData.date,
         statut: formData.statut,
-        ...(formData.chantier_id ? { chantier_id: formData.chantier_id } : {}),
+        chantier_id: chantierCtx,
+        ...(entreprise_id ? { entreprise_id } : {}),
         ...(formData.fournisseur_id ? { fournisseur_id: formData.fournisseur_id } : {}),
       };
-      
 
+      // Assertion justifiée, et PROUVÉE SÛRE par la garde ci-dessus : le type
+      // généré déclare `entreprise_id` requis, or on ne l'omet QUE dans la
+      // branche où `chantierCtx` est non-null — donc où le trigger le pose.
+      // Le chemin sans chantier, lui, fournit bien une valeur.
       const { error: insertError } = await supabase.from("depenses_chantier").insert(insertData as TablesInsert<"depenses_chantier">);
 
       if (insertError) throw insertError;

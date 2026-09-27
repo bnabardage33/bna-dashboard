@@ -3,9 +3,23 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { TablesInsert } from "@/types/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import BoutonMicroNote from "@/components/BoutonMicroNote";
 import { Mic, Pin, Plus, Trash2, Edit3, X, Check, Building } from "lucide-react";
+
+// O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+//
+// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
+// d'exiger `entreprise_id: string` dans l'objet inséré SANS assertion `as`.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 type Note = {
   id: string;
@@ -67,10 +81,26 @@ export default function NotesPage() {
       titreFinal = titreFinal ? `[${chNom}] ${titreFinal}` : `[${chNom}] Note chantier`;
     }
 
+    // O3-B9 : `notes_patron` est une table RACINE (`entreprise_id` NOT NULL
+    // sans défaut depuis le 2026-09-22, aucun trigger possible car pas de
+    // `chantier_id`). Le préfixe `[chantier]` dans le titre est cosmétique :
+    // il ne pose rien en base. On résout donc le tenant via le claim
+    // `app_metadata.entreprise_id`, même source que `entreprise_courante()`.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture.
+    if (!estUuid(entreprise_id)) {
+      alert(
+        "Impossible d'enregistrer la note : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
     const { error } = await supabase.from("notes_patron").insert({
       titre: titreFinal || null,
       contenu: contenu.trim(),
-    } as TablesInsert<"notes_patron">);
+      entreprise_id,
+    });
     if (error) {
       alert("Erreur : " + error.message);
       return;

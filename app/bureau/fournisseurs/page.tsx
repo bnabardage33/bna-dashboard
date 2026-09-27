@@ -324,6 +324,24 @@ export default function FournisseursPage() {
   async function creerFournisseur(e: React.FormEvent) {
     e.preventDefault();
     if (!fNom) return;
+
+    // O3-B9 : `fournisseurs` est une table RACINE (`entreprise_id` NOT NULL sans
+    // défaut depuis le 2026-09-22, aucun trigger possible car pas de
+    // `chantier_id`). Même source de vérité que le chemin N9 plus haut dans ce
+    // fichier (claim `app_metadata.entreprise_id` = `entreprise_courante()`).
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture.
+    if (!estUuid(entreprise_id)) {
+      alert(
+        "Impossible de créer le fournisseur : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
+    // Pas d'assertion `as` : `entreprise_id` est rétréci en `string`, donc le type
+    // `Insert` est réellement satisfait et une régression de scopage
+    // redeviendrait une ERREUR DE COMPILATION.
     const { error } = await supabase.from("fournisseurs").insert({
       nom: fNom,
       specialite: fSpecialite,
@@ -333,7 +351,8 @@ export default function FournisseursPage() {
       conditions_paiement: fConditions || null,
       notes: fNotes || null,
       statut_relation: fStatutRelation,
-    } as TablesInsert<"fournisseurs">);
+      entreprise_id,
+    });
     if (error) {
       alert("Erreur : " + error.message);
       return;
@@ -378,18 +397,44 @@ export default function FournisseursPage() {
   async function creerCommande(e: React.FormEvent) {
     e.preventDefault();
 
+    // O3-B9 — `commandes` est une table ENFANT : le trigger
+    // `tg_set_entreprise_par_chantier()` en dérive `entreprise_id`… MAIS il est
+    // un NO-OP silencieux quand `chantier_id IS NULL`. Or ce formulaire propose
+    // explicitement « -- Chantier (optionnel) -- » : le mode sans chantier est une
+    // règle métier existante, on ne la rend PAS obligatoire.
+    //
+    // Le résolveur EXISTANT couvre exactement ce cas :
+    //   chantier présent → `{entreprise_id: null}`, le trigger pose la valeur ;
+    //   chantier absent   → `{entreprise_id: <claim>}`, on la pose nous-mêmes.
+    const { chantier_id: chantierCtx, entreprise_id } =
+      await resoudreContexteEntreprise(cChantierId || null);
+
+    // Fail-closed sur la SEULE combinaison réellement bloquante : pas de parent
+    // ET pas de claim. Si le chantier est présent, le trigger garantit le
+    // remplissage ; sinon le claim doit être valide.
+    if (!chantierCtx && !estUuid(entreprise_id)) {
+      alert(
+        "Impossible de créer la commande : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
+      );
+      return;
+    }
+
     if (lignesMultiples) {
       if (lignesMultiples.length === 0) return;
       const inserts = lignesMultiples.map((l) => ({
         fournisseur_id: cFournisseurId || null,
-        chantier_id: cChantierId || null,
+        chantier_id: chantierCtx,
         designation: l.designation,
         quantite: l.quantite || null,
         unite: l.unite,
         montant_ht: null,
         date_livraison_prevue: cDateLivraison || null,
         statut: "a_commander",
+        ...(entreprise_id ? { entreprise_id } : {}),
       }));
+      // Assertion justifiée, et PROUVÉE SÛRE par la garde ci-dessus : le type
+      // généré déclare `entreprise_id` requis, or on ne l'omet QUE dans la
+      // branche où `chantierCtx` est non-null — donc où le trigger le pose.
       const { error } = await supabase.from("commandes").insert(inserts as TablesInsert<"commandes">[]);
       if (error) {
         alert("Erreur : " + error.message);
@@ -399,13 +444,14 @@ export default function FournisseursPage() {
       if (!cDesignation) return;
       const { error } = await supabase.from("commandes").insert({
         fournisseur_id: cFournisseurId || null,
-        chantier_id: cChantierId || null,
+        chantier_id: chantierCtx,
         designation: cDesignation,
         quantite: cQuantite ? parseFloat(cQuantite) : null,
         unite: cUnite,
         montant_ht: cMontant ? parseFloat(cMontant) : null,
         date_livraison_prevue: cDateLivraison || null,
         statut: "a_commander",
+        ...(entreprise_id ? { entreprise_id } : {}),
       } as TablesInsert<"commandes">);
       if (error) {
         alert("Erreur : " + error.message);
