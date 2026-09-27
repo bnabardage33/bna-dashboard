@@ -5,7 +5,21 @@ import { Upload, Check, Loader2, Trash2, Paperclip, Sparkles } from 'lucide-reac
 import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import type { TablesInsert } from "@/types/supabase";
+import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+
+// O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
+// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
+// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
+//
+// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
+// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
+// d'exiger `entreprise_id: string` dans l'objet inséré SANS assertion `as`.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string | null): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
 
 interface Chantier { id: string; nom: string | null; clients?: { nom: string | null; societe: string | null } | null; }
 interface Fournisseur { id: string; nom: string; }
@@ -55,6 +69,11 @@ export default function DocumentsComptaPage() {
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentCompta[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  // O3-B9 / 13e : distingue « la liste est vide » de « la liste n'a pas pu être
+  // lue ». Sans cet état, un GET fail-closed (403) produisait l'affichage de
+  // « Aucun document enregistré » — une affirmation FAUSSE, alors que la liste
+  // n'a jamais été lue. Le bandeau d'explication est déjà rendu plus bas.
+  const [listeLisible, setListeLisible] = useState(false);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [ocrEnCours, setOcrEnCours] = useState(false);
@@ -75,13 +94,28 @@ export default function DocumentsComptaPage() {
         fetch('/api/documents-compta'),
         fetch('/api/chantiers-fournisseurs'),
       ]);
-      const docsData = await docsRes.json();
-      setDocuments(docsData.documents || []);
+      const docsData: Record<string, unknown> = await docsRes.json().catch(() => ({}));
+      const listData: Record<string, unknown> = await listRes.json().catch(() => ({}));
 
-      const listData = await listRes.json();
-      setChantiers(listData.chantiers || []);
-      setFournisseurs(listData.fournisseurs || []);
-    } catch {
+      // O3-B9 / 13e : le GET est désormais fail-closed (403 si le contexte
+      // entreprise est absent). Ignorer ce code rendrait l'échec SILENCIEUX —
+      // l'écran afficherait « Aucun document enregistré », ce qui est un mensonge
+      // alors que la liste n'a jamais été lue. L'erreur remonte dans le bandeau
+      // EXISTANT (aucune UI ajoutée).
+      if (!docsRes.ok || docsData.error) {
+        setDocuments([]);
+        setListeLisible(false);
+        throw new Error(
+          String(docsData.error ?? `Liste des documents illisible (HTTP ${docsRes.status})`)
+        );
+      }
+
+      setListeLisible(true);
+      setDocuments(Array.isArray(docsData.documents) ? (docsData.documents as DocumentCompta[]) : []);
+      setChantiers(Array.isArray(listData.chantiers) ? (listData.chantiers as Chantier[]) : []);
+      setFournisseurs(Array.isArray(listData.fournisseurs) ? (listData.fournisseurs as Fournisseur[]) : []);
+    } catch (e) {
+      setError(`Documents compta : ${(e as Error).message}`);
     } finally {
       setLoadingDocs(false);
     }
@@ -157,9 +191,30 @@ export default function DocumentsComptaPage() {
 
   const creerFournisseur = async () => {
     if (!fpPropose) return;
+
+    // O3-B9 : `fournisseurs` est une table RACINE (`entreprise_id` NOT NULL
+    // sans défaut depuis le 2026-09-22, aucun trigger possible car pas de
+    // `chantier_id`). Le fournisseur proposé par l'OCR n'a aucun parent dont
+    // hériter : on résout le tenant via le claim `app_metadata.entreprise_id`,
+    // même source que `entreprise_courante()` côté PostgREST.
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+
+    // Fail-closed : sans contexte entreprise, AUCUNE écriture. Sans cette garde
+    // l'insert échouait (NOT NULL) et l'affectation du document comptable était
+    // bloquée, l'utilisateur ne pouvait donc pas utiliser le flux OCR.
+    if (!estUuid(entreprise_id)) {
+      setError(
+        'Impossible de créer le fournisseur : votre session ne contient pas d\'entreprise identifiée. Reconnectez-vous et réessayez.'
+      );
+      console.error(
+        'Documents compta : fournisseur OCR NON créé — contexte entreprise introuvable ou invalide dans la session.'
+      );
+      return;
+    }
+
     const { data, error } = await supabase
       .from('fournisseurs')
-      .insert({ nom: fpPropose } as TablesInsert<"fournisseurs">)
+      .insert({ nom: fpPropose, entreprise_id })
       .select()
       .single();
     if (error) {
@@ -219,6 +274,11 @@ export default function DocumentsComptaPage() {
       loadData();
     } catch (e) {
       setError(`Echec de l'envoi : ${(e as Error).message}`);
+      // O3-B9 / 13e : quand seul le MIROIR `depenses_chantier` échoue, le
+      // document EST créé et la route répond 500 (masquer cela par un 2xx
+      // mentirait sur la prise en compte de la dépense). On rafraîchit donc la
+      // liste pour que le document réellement créé apparaisse malgré l'erreur.
+      loadData();
     } finally {
       setUploading(false);
     }
@@ -227,7 +287,17 @@ export default function DocumentsComptaPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer ce document definitivement ?')) return;
     try {
-      await fetch(`/api/documents-compta?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/documents-compta?id=${id}`, { method: 'DELETE' });
+      // O3-B9 / 13e : la réponse était IGNORÉE. Or le DELETE est désormais
+      // fail-closed (404 hors tenant, 403 sans contexte) : sans ce contrôle,
+      // un échec de suppression se traduisait par un simple rechargement de la
+      // liste, le document restant visible et l'utilisateur sans aucune
+      // information. L'erreur va dans le bandeau EXISTANT.
+      if (!res.ok) {
+        const data: Record<string, unknown> = await res.json().catch(() => ({}));
+        throw new Error(String(data.error ?? `Erreur serveur HTTP ${res.status}`));
+      }
+      setError(null);
       loadData();
     } catch (e) {
       setError(`Erreur suppression : ${(e as Error).message}`);
@@ -436,19 +506,6 @@ export default function DocumentsComptaPage() {
               </div>
             )}
 
-            {error && (
-              <div className="bg-red-900/20 border border-[#E30613] rounded-xl p-3">
-                <p className="text-xs text-[#E30613] font-bold leading-relaxed">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-900/20 border border-white/10 rounded-xl p-3 flex items-center gap-2">
-                <Check size={16} className="text-red-400 shrink-0" />
-                <p className="text-xs text-red-400 font-bold">Document enregistré !{chantierId && ' Dépense chantier créée.'}</p>
-              </div>
-            )}
-
             <button
               onClick={handleUpload}
               disabled={uploading || !file}
@@ -462,6 +519,27 @@ export default function DocumentsComptaPage() {
           </div>
         )}
 
+        {/* O3-B9 / 13e : les deux bandeaux ci-dessous étaient PRÉCÉDEMMENT
+            à l'INTÉRIEUR du bloc de l'onglet « scanner » (ils fermaient avant
+            le bouton « Enregistrer »). Or la suppression d'un document se
+            déclenche depuis l'onglet « documents » : son erreur était donc
+            écrite dans l'état `error` mais JAMAIS affichée — un échec de
+            suppression invisible. Les avoir remontés hors des deux onglets les
+            rend visibles partout. Même JSX, mêmes classes, UNE seule instance :
+            ce n'est pas une UI ajoutée. */}
+        {error && (
+          <div className="bg-red-900/20 border border-[#E30613] rounded-xl p-3">
+            <p className="text-xs text-[#E30613] font-bold leading-relaxed">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-900/20 border border-white/10 rounded-xl p-3 flex items-center gap-2">
+            <Check size={16} className="text-red-400 shrink-0" />
+            <p className="text-xs text-red-400 font-bold">Document enregistré !{chantierId && ' Dépense chantier créée.'}</p>
+          </div>
+        )}
+
         {onglet === 'documents' && (
           <div className="bg-[#1A1D24] border border-white/10 rounded-[16px] p-4">
             {loadingDocs ? (
@@ -469,7 +547,12 @@ export default function DocumentsComptaPage() {
                 <Loader2 className="animate-spin text-white" size={24} />
               </div>
             ) : documents.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6 italic">Aucun document enregistré</p>
+              // O3-B9 / 13e : « aucun document » n'est affiché que si la lecture
+              // a RÉUSSI. Sinon l'affirmation serait fausse, et le bandeau
+              // d'erreur (au-dessus, hors onglets) explique déjà la situation.
+              listeLisible ? (
+                <p className="text-sm text-gray-400 text-center py-6 italic">Aucun document enregistré</p>
+              ) : null
             ) : (
               <div className="space-y-2">
                 {documents.map((d) => (
