@@ -6,6 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import {
+  normaliserTauxTva,
+  serialiserTauxTva,
+  estNombreTauxTva,
+} from "@/lib/tauxTva";
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -83,7 +88,11 @@ export default function DocumentsComptaPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const ht = parseFloat(montantHt) || 0;
-  const tva = parseFloat(tauxTva) || 0;
+  // F3 : même règle que le serveur (`lib/tauxTva.ts`). `parseFloat(x) || 0`
+  // renvoyait 0 par ACCIDENT (0 est falsy) et non par choix — invisible tant
+  // que le serveur, lui, faisait `|| 20` et stockait 20. Règle explicite pour que
+  // l'affichage et le stockage ne puissent plus diverger.
+  const tva = normaliserTauxTva(tauxTva);
   const montantTvaCalcule = ht * (tva / 100);
   const montantTtcCalcule = ht + montantTvaCalcule;
 
@@ -161,11 +170,16 @@ export default function DocumentsComptaPage() {
 
       if (data.montant_ht) {
         setMontantHt(String(data.montant_ht));
-      } else if (data.montant_ttc && data.tva) {
-        const ht = Number(data.montant_ttc) / (1 + (Number(data.tva) || 20) / 100);
+      } else if (estNombreTauxTva(data.tva) && Number(data.montant_ttc) > 0) {
+        // F3 : `data.tva` vaut 0 pour un ticket à 0 % — un test de VÉRITÉ
+        // (`&& data.tva`) écartait alors ce ticket ET recalculait le HT avec
+        // 20 %. Ici on teste l'EXISTENCE d'un nombre fini.
+        const ht = Number(data.montant_ttc) / (1 + normaliserTauxTva(data.tva) / 100);
         setMontantHt(String(Math.round(ht * 100) / 100));
       }
-      if (data.tva) setTauxTva(String(data.tva));
+      // F3 : `if (data.tva)` ignorait un taux de 0 % (falsy) et laissait l'ancien
+      // taux dans le formulaire. Test d'existence, pas de vérité.
+      if (estNombreTauxTva(data.tva)) setTauxTva(String(data.tva));
       if (data.date_facture) setDate(String(data.date_facture));
       if (data.categorie) setCategorie(mapperCategorie(String(data.categorie)));
 
@@ -240,7 +254,10 @@ export default function DocumentsComptaPage() {
       fd.append('date', date);
       fd.append('note', note.trim());
       fd.append('montant_ht', montantHt || '0');
-      fd.append('taux_tva', tauxTva || '20');
+      // F3 : `tauxTva || '20'` envoyait la chaîne vide à l'API (qui retombait
+      // alors sur 20 de son côté). On sérialise la valeur DÉJÀ normalisée : le
+      // payload est donc toujours un taux valide, "0" compris.
+      fd.append('taux_tva', serialiserTauxTva(tauxTva));
       if (ocrImageUrl) fd.append('file_url', ocrImageUrl);
       if (chantierId) fd.append('chantier_id', chantierId);
       if (fournisseurId) fd.append('fournisseur_id', fournisseurId);

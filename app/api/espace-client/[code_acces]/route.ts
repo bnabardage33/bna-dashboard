@@ -56,7 +56,11 @@ const SENSITIVE_KEYS = [
 // `as const` : requis pour que la typographie générée par Supabase vérifie la requête.
 
 // Chantier : affichage (nom, adresse) + avancement / date estimée de fin.
-const SELECT_CHANTIER = `id, nom, adresse_chantier, statut, surface_m2, created_at, date_debut, date_fin, client_id, clients(id, nom, societe, email, tel, adresse_facturation, code_postal, ville)` as const;
+//
+// `entreprise_id` est lu UNIQUEMENT pour dériver l'entreprise à afficher (voir
+// étape 1 du GET) : il est retiré du payload public avant l'envoi, exactement
+// comme si la colonne n'avait jamais été sélectionnée.
+const SELECT_CHANTIER = `id, nom, adresse_chantier, statut, surface_m2, created_at, date_debut, date_fin, client_id, entreprise_id, clients(id, nom, societe, email, tel, adresse_facturation, code_postal, ville)` as const;
 
 // Devis : ne sort que la désignation, les quantités, les prix de vente
 // unitaires (lignes) + en-tête du document et son taux de TVA.
@@ -68,7 +72,11 @@ const SELECT_FACTURES = `id, numero, statut, date_emission, echeance, objet, adr
 // Entreprise : uniquement les champs nécessaires à l'affichage du document
 // (coordonnées, assurance, IBAN, mentions). Les indicateurs financiers
 // internes (seuil_ca, taux_cotisations) restent au serveur.
-const SELECT_ENTREPRISE = `id, raison_sociale, siret, telephone, email, adresse, code_postal, ville, assurance, assurance_nom, assurance_numero_police, assurance_zone_geo, mediateur_nom, mediateur_contact, iban, bic, mentions_legales, logo_url` as const;
+//
+// `entreprise_id` est sélectionné pour PERMETTRE LA REVALIDATION côté serveur
+// (la ligne renvoyée doit porter exactement le tenant du chantier) ; il est
+// retiré du payload public avant l'envoi, comme pour le chantier.
+const SELECT_ENTREPRISE = `id, raison_sociale, siret, telephone, email, adresse, code_postal, ville, assurance, assurance_nom, assurance_numero_police, assurance_zone_geo, mediateur_nom, mediateur_contact, iban, bic, mentions_legales, logo_url, entreprise_id` as const;
 
 // Photos de chantier : uniquement ce que le client doit voir (image + titre + date).
 // Serties ici (et non via /api/photos-chantier, désormais réservé à l'admin
@@ -78,6 +86,17 @@ const SELECT_PHOTOS = `id, url_image, titre, date_ajout` as const;
 // Lignes renvoyées telles quelles au client (type opaque volontaire :
 // ces données ne sont jamais lues structurellement côté serveur).
 type LignePassePartout = Record<string, unknown>;
+
+// Garde de forme UUID — copie locale, convention du dépôt (cf. les autres
+// routes de l'espace client). `entreprise_id` alimente un `.eq()` sur une
+// colonne `uuid` : une valeur mal formée produirait soit une erreur PostgreSQL
+// opaque, soit pire, un prédicat qui ne filtre plus rien.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function estUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // (L'encart "aides d'État" de l'espace client a été retiré : il dépendait de
@@ -111,26 +130,85 @@ export async function GET(
     return NextResponse.json({ error: "Code d'accès manquant" }, { status: 400 });
   }
 
-  // 1. Paramètres entreprise (affichage logo, coordonnées) — whitelist stricte
-  const { data: entreprise } = await supabaseAdmin
-    .from("entreprise_settings")
-    .select(SELECT_ENTREPRISE)
-    .eq("id", 1)
-    .single();
-
-  // 2. Chantier correspondant au code d'accès — whitelist stricte
+  // ── ÉTAPE 1 — CHANTIER (source de VÉRITÉ du tenant) ──────────────────────
+  // L'entreprise affichée est DÉRIVÉE du chantier rattaché au `code_acces`.
+  // Avant correction, cette étape venait en SECOND : l'entreprise était lue
+  // avant tout, via `.eq("id", 1)` — une valeur CONSTANTE, indépendante du code
+  // d'accès. Le portail renvoyait donc les coordonnées bancaires (iban, bic) et
+  // l'assurance de BNA à tout détenteur d'un `code_acces`, y compris d'un autre
+  // tenant. Cette route est par ailleurs sans session : l'accès ne repose que
+  // sur le code.
   const { data: chantiers, error: erreurChantier } = await supabaseAdmin
     .from("chantiers")
     .select(SELECT_CHANTIER)
     .eq("code_acces", code_acces)
-    .limit(1);
+    .limit(2);
 
   if (erreurChantier || !chantiers || chantiers.length === 0) {
     // Code invalide : on ne donne aucun indice, juste "introuvable"
     return NextResponse.json({ error: "Code d'accès invalide" }, { status: 404 });
   }
 
-  const chantier = chantiers[0];
+  // Fail-closed sur ambiguïté : deux chantiers pour un même `code_acces`
+  // désignent deux entreprises potentiellement différentes. Choisir « le
+  // premier » exposerait alors l'une d'elles par erreur. On refuse.
+  if (chantiers.length > 1) {
+    console.error(
+      `Espace client : code d'accès ambigu (${chantiers.length} chantiers) — aucun dossier renvoyé.`
+    );
+    return NextResponse.json({ error: "Code d'accès invalide" }, { status: 404 });
+  }
+
+  const chantierBrut = chantiers[0];
+
+  // `entreprise_id` est une donnée de SCOPING, pas d'affichage : on la retire
+  // du payload public tout de suite, pour que le chantier renvoyé au client
+  // reste strictement identique à celui d'avant correction.
+  const { entreprise_id: entrepriseDuChantier, ...chantierPublique } = chantierBrut;
+
+  if (!estUuid(entrepriseDuChantier)) {
+    // Chantier sans tenant exploitable : fail-closed, aucune donnée d'entreprise.
+    console.error("Espace client : chantier sans `entreprise_id` exploitable — dossier refusé.");
+    return NextResponse.json({ error: "Code d'accès invalide" }, { status: 404 });
+  }
+
+  const chantier = chantierPublique;
+
+  // ── ÉTAPE 2 — ENTREPRISE (strictement celle de ce chantier) ─────────────
+  // `entreprise_settings_entreprise_unicite` (migration part1 §6) garantit
+  // l'unicité de `entreprise_id` : la requête ne peut donc pas renvoyer plus
+  // d'une ligne. Le filtre est porté par la requête elle-même — `supabaseAdmin`
+  // contourne la RLS, aucun garde-fou n'existe en base pour cette route.
+  const { data: entrepriseSettings, error: erreurEntreprise } = await supabaseAdmin
+    .from("entreprise_settings")
+    .select(SELECT_ENTREPRISE)
+    .eq("entreprise_id", entrepriseDuChantier)
+    .limit(2);
+
+  let entreprise: Record<string, unknown> | null = null;
+
+  if (erreurEntreprise) {
+    // Fail-closed : on ne retombe JAMAIS sur une autre ligne d'entreprise.
+    console.error("Espace client : lecture des paramètres entreprise impossible.", erreurEntreprise);
+  } else if (entrepriseSettings && entrepriseSettings.length > 1) {
+    console.error("Espace client : plusieurs lignes de paramètres pour un même tenant — ignorées.");
+  } else if (entrepriseSettings && entrepriseSettings.length === 1) {
+    const { entreprise_id: entrepriseParametres, ...lignePublique } = entrepriseSettings[0];
+    // Revalidation côté serveur : la ligne renvoyée doit porter EXACTEMENT le
+    // tenant du chantier. Défense en profondeur — si le prédicat `.eq()` était
+    // un jour altéré, cette comparaison stopperait encore la fuite.
+    if (entrepriseParametres === entrepriseDuChantier) {
+      entreprise = lignePublique;
+    } else {
+      console.error(
+        "Espace client : ligne de paramètres entreprise incohérente avec le chantier — ignorée."
+      );
+    }
+  }
+  // Aucune ligne de paramètres pour ce tenant : `entreprise` reste `null`. Le
+  // portail fonctionne (chantier, devis, factures, photos…), seul le bloc
+  // coordonnées est vide. C'est fail-closed : rien n'est renvoyé d'un autre
+  // tenant.
 
   // On récupère toutes les entrées d'avancement pour ce chantier sans ORDER BY SQL
   // (pour éviter tout bug lié aux colonnes de tri absentes ou mal indexées)

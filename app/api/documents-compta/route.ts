@@ -25,6 +25,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createClient } from '@/lib/supabase/server';
+import { normaliserTauxTva } from '@/lib/tauxTva';
 import type { TablesInsert } from '@/types/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -256,7 +257,10 @@ export async function POST(request: NextRequest) {
     const date = (formData.get('date') as string) || new Date().toISOString().slice(0, 10);
     const note = (formData.get('note') as string) || '';
     const montantHt = parseFloat(formData.get('montant_ht') as string) || 0;
-    const tauxTva = parseFloat(formData.get('taux_tva') as string) || 20;
+    // F3 : `parseFloat(x) || 20` transformait un taux de 0 % (valeur VALIDE) en
+    // 20 %, divergence silencieuse entre ce que l'UI affichait et ce qui était
+    // stocké. La règle vit dans `lib/tauxTva.ts` et est partagée avec l'UI.
+    const tauxTva = normaliserTauxTva(formData.get('taux_tva'));
     const chantierId = (formData.get('chantier_id') as string) || null;
     const fournisseurId = (formData.get('fournisseur_id') as string) || null;
     const categorie = (formData.get('categorie') as string) || 'materiaux';
