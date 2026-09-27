@@ -18,7 +18,11 @@
 //   1. le RENDU : la classe émise, `aria-label`, `children`, le passe-plat ;
 //   2. l'INTERDICTION de `className` (lue dans la source, pas dans le rendu) ;
 //   3. l'ÉQUIVALENCE : la classe constante du composant est exactement celle
-//      qu'il y avait à HEAD sur chacun des 7 sites ;
+//      qu'il y avait AVANT la conversion sur chacun des 7 sites — comparaison
+//      faite sur un commit de référence ÉPINGLÉ, jamais sur `HEAD` (voir
+//      `COMMIT_AVANT_CONVERSION` : `HEAD` désigne l'état courant, donc le
+//      changement lui-même, et l'assertion cessait de trouver le bouton le
+//      jour où la conversion a été committée) ;
 //   4. l'INVENTAIRE : 7 appels, et plus aucun bouton flottant en littéral ;
 //   5. ce que l'audit a écarté, pour qu'un lot ultérieur ne le redécouvre pas
 //      en croyant innover.
@@ -109,8 +113,29 @@ function classeDuComposant(): string {
   return m![1]
 }
 
-/** Début de la classe littérale du bouton flottant, telle qu'elle est à HEAD. */
+/** Début de la classe littérale du bouton flottant, telle qu'elle est avant conversion. */
 const DEBUT_CLASSE_FAB = 'fixed bottom-4 right-4 z-40 flex h-14 w-14'
+
+/**
+ * Commit dont l'état constitue la référence d'équivalence : celui qui précède
+ * la conversion du LOT 2E, c'est-à-dire le parent du commit qui l'introduit.
+ *
+ * Il est ÉPINGLÉ, et `HEAD` ne doit pas servir de référence. `HEAD` désigne
+ * l'état courant, donc le changement lui-même : le jour où la conversion est
+ * committée, `HEAD` ne contient plus aucun bouton flottant littéral et
+ * l'assertion échoue en searches — c'est exactement ce qui s'est produit. La
+ * propriété à vérifier est un fait historique (« la classe de la primitive est
+ * celle que portait chaque site avant »), pas une comparaison au présent.
+ */
+const COMMIT_AVANT_CONVERSION = '96e502c1a6e5e183561aa98e561d5c97359b8102'
+
+/** Contenu d'un fichier tel qu'il était avant la conversion. */
+function avantConversion(chemin: string): string {
+  return execFileSync('git', ['show', `${COMMIT_AVANT_CONVERSION}:${chemin}`], {
+    cwd: RACINE,
+    encoding: 'utf-8',
+  })
+}
 
 /**
  * Index du `>` qui ferme la balise d'ouverture commencée à `i`.
@@ -194,7 +219,7 @@ function attributs(balise: string): Array<[string, string]> {
 
 /**
  * Attributs du bouton flottant, `className` exclu — la seule chose que ce lot
- * déplace. À HEAD la balise s'identifie par son littéral de classe ; après le
+ * déplace. Avant conversion la balise s'identifie par son littéral de classe ; après le
  * lot, par le nom de la primitive. Le même extracteur sert pour les deux, ce qui
  * rend la comparaison homogène au lieu de juxtaposer deux méthodes.
  */
@@ -203,7 +228,7 @@ function attributsDeFab(src: string): Array<[string, string]> | null {
   const j = src.indexOf('<FloatingActionButton')
   let debut: number
   if (i !== -1) {
-    // HEAD : remonter au `<button` qui porte cette classe.
+    // Avant conversion : remonter au `<button` qui porte cette classe.
     debut = src.lastIndexOf('<button', i)
     if (debut === -1) return null
     const fin = finDeBalise(src, debut + '<button'.length)
@@ -328,19 +353,27 @@ describe('LOT 2E — FloatingActionButton', () => {
     })
   })
 
-  describe('équivalence avec HEAD', () => {
+  describe("équivalence avec l'état d'avant la conversion", () => {
+    it('le commit de référence est bien accessible', () => {
+      // Garde-fou : si l'ancre disparaît — clone superficiel, `git gc` — le
+      // test doit échouer bruyamment, pas comparer des chaînes vides et
+      // valider une absence de bouton flottant.
+      expect(() =>
+        execFileSync('git', ['cat-file', '-e', COMMIT_AVANT_CONVERSION], {
+          cwd: RACINE,
+        })
+      ).not.toThrow()
+    })
+
     it("la classe du composant est celle des 7 sites d'origine, au caractère près", () => {
       const actuel = classeDuComposant()
       for (const chemin of SITES) {
-        const avant = execFileSync('git', ['show', `HEAD:${chemin}`], {
-          cwd: RACINE,
-          encoding: 'utf-8',
-        })
-        // HEAD contient la classe sur une seule ligne, en littéral.
+        const avant = avantConversion(chemin)
+        // Avant la conversion, la classe est écrite en dur, sur une seule ligne.
         const m = avant.match(
           /className="(fixed bottom-4 right-4 z-40 flex h-14 w-14[^"]*)"/
         )
-        expect(m, `${chemin} : bouton flottant introuvable à HEAD`).toBeTruthy()
+        expect(m, `${chemin} : bouton flottant introuvable avant la conversion`).toBeTruthy()
         expect(m![1], `${chemin} : la classe a changé`).toBe(actuel)
       }
     })
@@ -352,13 +385,10 @@ describe('LOT 2E — FloatingActionButton', () => {
       // six des sept fichiers ont plusieurs boutons, et une régression
       // supprimant le `onClick` du bouton flottant passerait quand même.
       for (const chemin of SITES) {
-        const avant = execFileSync('git', ['show', `HEAD:${chemin}`], {
-          cwd: RACINE,
-          encoding: 'utf-8',
-        })
+        const avant = avantConversion(chemin)
         const a = attributsDeFab(avant)
         const b = attributsDeFab(lire(chemin))
-        expect(a, `${chemin} : bouton flottant introuvable à HEAD`).not.toBeNull()
+        expect(a, `${chemin} : bouton flottant introuvable avant la conversion`).not.toBeNull()
         expect(b, `${chemin} : primitive introuvable`).not.toBeNull()
         expect(b, `${chemin} : attributs modifiés`).toEqual(a)
 
