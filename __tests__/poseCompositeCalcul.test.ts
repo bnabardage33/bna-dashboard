@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { simulerPoseComposite } from "./poseCompositeCalcul";
+import { simulerPoseComposite } from "../lib/poseCompositeCalcul";
 
 describe("poseCompositeCalcul", () => {
   it("Mur Droit 6x4m - lames 2.09 x 0.187", () => {
