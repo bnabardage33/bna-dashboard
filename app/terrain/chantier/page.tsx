@@ -8,6 +8,7 @@ import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { Plus, MapPin, Calendar, HardHat, Building, Trash2, X, ArrowRight, List, LayoutGrid, Copy, Check, BarChartHorizontal } from "lucide-react";
 import PlanningGantt from "@/components/PlanningGantt";
 import { Surface } from '@/components/ui/Surface';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 
 // O3-B8 : `chantiers` est la RACINE de la hiérarchie entreprise. Depuis la
 // migration d'isolation du 22/09, `chantiers.entreprise_id` est NOT NULL, sans
@@ -379,13 +380,12 @@ export default function ChantiersPage() {
       )}
 
       {/* Bouton Flottant FAB (+) */}
-      <button
+      <FloatingActionButton
         onClick={() => setModalOuvert(true)}
         aria-label="Ajouter un chantier"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <Plus className="h-7 w-7 stroke-[2.5]" />
-      </button>
+      </FloatingActionButton>
 
       {/* Bottom Sheet / Modal pour Nouveau Chantier */}
       {modalOuvert && (

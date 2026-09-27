@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import BoutonMicroNote from "@/components/BoutonMicroNote";
 import { Mic, Pin, Plus, Trash2, Edit3, X, Check, Building } from "lucide-react";
+import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
 // recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
@@ -280,13 +281,12 @@ export default function NotesPage() {
       )}
 
       {/* FAB (+) */}
-      <button
+      <FloatingActionButton
         onClick={() => setModalOuvert(true)}
         aria-label="Créer une note"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <Plus className="h-7 w-7 stroke-[2.5]" />
-      </button>
+      </FloatingActionButton>
 
       {/* Bottom Sheet / Modal Nouvelle Note */}
       {modalOuvert && (

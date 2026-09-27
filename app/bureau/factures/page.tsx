@@ -12,6 +12,7 @@ import { AlertCircle, PenTool } from "lucide-react";
 import { prochainNumero } from "@/lib/documents";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Surface } from '@/components/ui/Surface';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 
 type CatalogueOuvrage = {
   id: string;
@@ -445,13 +446,12 @@ export default function FacturesPage() {
       )}
 
       {/* FAB (+) */}
-      <button
+      <FloatingActionButton
         onClick={() => setModalOuvert(true)}
         aria-label="Créer une facture"
-        className="fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700"
       >
         <span className="text-2xl font-bold leading-none">+</span>
-      </button>
+      </FloatingActionButton>
 
       {modalOuvert && (
         <div
