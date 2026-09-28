@@ -204,6 +204,7 @@ export default function FicheTechniquePage() {
               <button
                 onClick={() => setFiche(null)}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                aria-label="Fermer"
               >
                 ✕
               </button>
@@ -261,7 +262,7 @@ export default function FicheTechniquePage() {
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouvelle Fiche Technique</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>

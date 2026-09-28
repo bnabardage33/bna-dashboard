@@ -206,7 +206,7 @@ export default function ParametresPage() {
         </div>
 
         {/* Téléversement du Logo */}
-        <div className="rounded-xl border border-white/10/80 bg-transparent/60 p-4">
+        <div className="rounded-xl border border-white/10/80 bg-transparent p-4">
           <label className="text-xs font-bold uppercase tracking-wide text-gray-400">
             Logo Officiel de l&apos;entreprise (PDF &amp; Écran)
           </label>

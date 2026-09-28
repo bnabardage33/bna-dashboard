@@ -656,7 +656,7 @@ function ChantierDetailContent() {
               )}
             </div>
             {consignesSecurite ? (
-              <div className="mt-4 space-y-2 text-sm text-gray-300 bg-transparent/50 p-4 rounded-lg border border-white/10 whitespace-pre-wrap">
+              <div className="mt-4 space-y-2 text-sm text-gray-300 bg-transparent p-4 rounded-lg border border-white/10 whitespace-pre-wrap">
                 {consignesSecurite}
                 <div className="mt-4 flex justify-end">
                   <button onClick={() => setConsignesSecurite(null)} className="text-xs text-gray-500 hover:text-gray-300 underline">
@@ -1112,24 +1112,24 @@ function ChantierDetailContent() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                  <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Matin</p>
                     <p className="text-lg font-bold text-white">{meteo.matin.temp}°C</p>
                     <p className="text-3xs text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                  <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Après-midi</p>
                     <p className="text-lg font-bold text-white">{meteo.apresMidi.temp}°C</p>
                     <p className="text-3xs text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                  <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Rafales Max</p>
                     <p className="text-lg font-bold text-gray-300">
                       {Math.max(meteo.matin.rafales, meteo.apresMidi.rafales)} km/h
                     </p>
                     <p className="text-3xs text-gray-400">Sur la journée</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
+                  <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Précipitations</p>
                     <p className="text-lg font-bold text-gray-400">
                       {meteo.heures.reduce((s, h) => s + h.pluie, 0).toFixed(1)} mm
@@ -1151,7 +1151,7 @@ function ChantierDetailContent() {
                     {meteo.heures.map((h) => (
                       <div
                         key={h.heure}
-                        className="rounded-lg border border-white/10 bg-transparent/60 p-2 text-center"
+                        className="rounded-lg border border-white/10 bg-transparent p-2 text-center"
                       >
                         <p className="text-2xs text-gray-500">{h.heure}</p>
                         <p className="text-xs font-bold text-white">{h.temp}°C</p>

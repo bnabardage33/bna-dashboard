@@ -407,6 +407,7 @@ export default function ChantiersPage() {
                 type="button"
                 onClick={() => setModalOuvert(false)}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
               </button>

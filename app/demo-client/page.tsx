@@ -441,7 +441,7 @@ export default function ClientPortalPrototype() {
 
       {/* Signature Modal */}
       {isDevisOpen && (
-        <div className="fixed inset-0 z-[9999] bg-transparent/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[9999] bg-transparent flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
           <div className="w-full max-w-md bg-[#1A1D24] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-4 bg-transparent text-white flex justify-between items-center">
               <h2 className="font-bold">Signature du document</h2>

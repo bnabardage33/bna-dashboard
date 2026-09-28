@@ -487,7 +487,7 @@ export default function FicheSAV() {
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-400">PHOTOS D'INTERVENTION</p>
               <div className="flex gap-3 max-w-md">
-                <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
+                <label className="flex-1 border border-dashed border-slate-600 bg-transparent hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
                   {uploading.avant ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
@@ -499,7 +499,7 @@ export default function FicheSAV() {
                   <span className="text-2xs font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Avant</span>
                 </label>
                 
-                <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
+                <label className="flex-1 border border-dashed border-slate-600 bg-transparent hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'apres')} disabled={uploading.apres} />
                   {uploading.apres ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
@@ -601,7 +601,7 @@ export default function FicheSAV() {
       </div>
 
       {showPDF && (
-        <div className="fixed inset-0 z-[100] bg-transparent/90 flex flex-col backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] bg-transparent flex flex-col backdrop-blur-sm">
           <div className="flex justify-between items-center p-4 bg-transparent border-b border-slate-800 print:hidden">
             <h2 className="text-xl font-bold text-white">Rapport SAV</h2>
             <div className="flex gap-4">

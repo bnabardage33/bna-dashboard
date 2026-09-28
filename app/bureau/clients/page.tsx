@@ -307,6 +307,7 @@ export default function ClientsPage() {
                 type="button"
                 onClick={() => setModalOuvert(false)}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                aria-label="Fermer"
               >
                 ✕
               </button>
@@ -331,7 +332,7 @@ export default function ClientsPage() {
               </div>
 
               {type === "professionnel" && (
-                <div className="space-y-2 rounded-xl border border-white/10 bg-transparent/80 p-3">
+                <div className="space-y-2 rounded-xl border border-white/10 bg-transparent p-3">
                   <div className="relative">
                     <label className="text-3xs font-semibold uppercase tracking-wide text-gray-400">
                       🔍 Recherche SIRET (API Officielle)
@@ -581,7 +582,7 @@ export default function ClientsPage() {
             ) : (
               <div className="mt-4 space-y-5 text-sm">
                 {/* Coordonnées */}
-                <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/10 bg-transparent/50 p-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 rounded-lg border border-white/10 bg-transparent p-3 text-xs">
                   <div>
                     <p className="text-gray-500">Adresse</p>
                     <p className="font-medium text-gray-200">

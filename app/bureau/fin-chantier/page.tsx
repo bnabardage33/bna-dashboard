@@ -765,7 +765,7 @@ export default function FinChantierPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent/60 p-2.5 border border-white/10/60 text-center">
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent p-2.5 border border-white/10/60 text-center">
                     <div>
                       <p className="text-2xs uppercase tracking-wide text-gray-500">Surface</p>
                       <p className="text-xs font-bold text-gray-200 mt-0.5">
@@ -869,6 +869,7 @@ export default function FinChantierPage() {
               <button
                 onClick={() => setModalFormOuvert(false)}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                aria-label="Fermer"
               >
                 ✕
               </button>
@@ -932,7 +933,7 @@ export default function FinChantierPage() {
               </div>
 
               {/* SECTION 3 : PRONONCIATION DE LA RÉCEPTION */}
-              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-transparent p-3.5 space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wide text-gray-300">
                   Type de Réception prononcée
                 </label>
@@ -979,7 +980,7 @@ export default function FinChantierPage() {
               </div>
 
               {/* SECTION 4 : TABLEAU DES SURFACES & MÉTRÉS EXÉCUTÉS */}
-              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-3">
+              <div className="rounded-xl border border-white/10 bg-transparent p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
@@ -1183,7 +1184,7 @@ export default function FinChantierPage() {
               )}
 
               {/* SECTION 6 : NOTICE, FICHES TECHNIQUES & ENTRETIEN */}
-              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-3">
+              <div className="rounded-xl border border-white/10 bg-transparent p-3.5 space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
                   <span>📚</span> Notice, Fiches Techniques &amp; Entretien
                 </p>
@@ -1233,7 +1234,7 @@ export default function FinChantierPage() {
               </div>
 
               {/* SECTION 7 : ANNEXES PHOTOS (2 À 4 CLICHÉS) */}
-              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-3">
+              <div className="rounded-xl border border-white/10 bg-transparent p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
@@ -1299,7 +1300,7 @@ export default function FinChantierPage() {
               </div>
 
               {/* SECTION 8 : CHECKLIST REPLI DE CHANTIER */}
-              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3.5 space-y-2">
+              <div className="rounded-xl border border-white/10 bg-transparent p-3.5 space-y-2">
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-300">
                   🧹 Checklist Propreté &amp; Repli du Chantier
                 </p>
@@ -1435,6 +1436,7 @@ export default function FinChantierPage() {
               <button
                 onClick={() => setModalReservesOuvert(false)}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                aria-label="Fermer"
               >
                 ✕
               </button>
@@ -1452,7 +1454,7 @@ export default function FinChantierPage() {
                   className={`flex items-center justify-between rounded-xl border p-3 cursor-pointer transition-colors ${
                     r.levee
                       ? "border-white/10 bg-white/5 text-gray-400"
-                      : "border-white/10 bg-transparent/60 text-gray-200 hover:border-white/10"
+                      : "border-white/10 bg-transparent text-gray-200 hover:border-white/10"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1538,6 +1540,7 @@ export default function FinChantierPage() {
                 <button
                   onClick={() => setModalPdfOuvert(false)}
                   className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                  aria-label="Fermer"
                 >
                   ✕
                 </button>

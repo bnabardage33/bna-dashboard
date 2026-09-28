@@ -122,7 +122,7 @@ export default function TresorerieWidget() {
         )}
 
         {/* Flux 30j */}
-        <div className="rounded-lg bg-transparent/50 p-3 space-y-3">
+        <div className="rounded-lg bg-transparent p-3 space-y-3">
           <h3 className="text-xs font-semibold uppercase text-gray-500">Flux à 30 jours</h3>
           
           <div className="space-y-1">

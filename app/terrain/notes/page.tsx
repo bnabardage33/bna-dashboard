@@ -300,6 +300,7 @@ export default function NotesPage() {
               <button
                 onClick={() => setModalOuvert(false)}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -344,7 +345,7 @@ export default function NotesPage() {
                 />
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-transparent/60 p-3">
+              <div className="rounded-xl border border-white/10 bg-transparent p-3">
                 <BoutonMicroNote
                   onTexteReformule={(texte) =>
                     setContenu((prev) => (prev.trim() ? prev.trim() + " " + texte : texte))

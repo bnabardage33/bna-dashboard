@@ -854,7 +854,7 @@ function DevisContenu() {
                     </select>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
+                  <div className="flex items-center justify-between rounded-xl bg-transparent p-2.5 border border-white/10/60">
                     <div>
                       <p className="text-2xs uppercase tracking-wide text-gray-500">Montant HT</p>
                       <p className="text-xs font-semibold text-gray-300">{fmtEuro(totalHT)}</p>

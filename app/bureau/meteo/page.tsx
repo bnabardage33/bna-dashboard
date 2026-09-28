@@ -173,7 +173,7 @@ export default function BureauMeteoPage() {
                     <div
                       key={j.date}
                       className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs ${
-                        j.intemperie ? "border-red-500/30 bg-red-950/20" : "border-white/10 bg-transparent/60"
+                        j.intemperie ? "border-red-500/30 bg-red-950/20" : "border-white/10 bg-transparent"
                       }`}
                     >
                       <div className={j.intemperie ? "font-bold text-red-400" : "font-semibold text-gray-300"}>

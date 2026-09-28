@@ -737,7 +737,7 @@ export default function FournisseursPage() {
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouveau Fournisseur</h2>
-              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
+              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>
@@ -850,7 +850,7 @@ export default function FournisseursPage() {
               <h2 className="text-base font-bold text-white">
                 {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
               </h2>
-              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
+              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>

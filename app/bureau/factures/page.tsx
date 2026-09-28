@@ -411,7 +411,7 @@ export default function FacturesPage() {
                     </select>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
+                  <div className="flex items-center justify-between rounded-xl bg-transparent p-2.5 border border-white/10/60">
                     <div>
                       <p className="text-2xs uppercase tracking-wide text-gray-500">Montant HT</p>
                       <p className="text-xs font-semibold text-gray-300">{fmtEuro(ht)}</p>
@@ -465,7 +465,7 @@ export default function FacturesPage() {
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouvelle Facture</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white">
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>

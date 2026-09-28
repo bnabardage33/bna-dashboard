@@ -244,7 +244,7 @@ export default function FeuilleHeuresPage() {
                   <div
                     key={o.id}
                     className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-colors ${
-                      ligne.coche ? "border-white/10 bg-red-600/5" : "border-white/10 bg-transparent/30"
+                      ligne.coche ? "border-white/10 bg-red-600/5" : "border-white/10 bg-transparent"
                     }`}
                   >
                     <input
