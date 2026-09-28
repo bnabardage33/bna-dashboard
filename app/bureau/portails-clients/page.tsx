@@ -66,7 +66,7 @@ export default function PortailsClientsPage() {
           {isLoading ? (
             <div className="text-center py-12 text-gray-400">Chargement des portails...</div>
           ) : chantiers.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 bg-[#1A1D24]/30 rounded-xl border border-white/10/50">
+            <div className="text-center py-12 text-gray-500 bg-[#1A1D24]/30 rounded-xl border border-white/10">
               Aucun espace client actif. Générez un code d'accès depuis une fiche chantier.
             </div>
           ) : (

@@ -658,7 +658,7 @@ export default function FournisseursPage() {
                       <p className="font-medium text-white">
                         {c.designation}
                         {enRetard && (
-                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-2xs font-bold text-white">
                             <AlertTriangle className="h-3 w-3" />
                             EN RETARD J+{retardJours}
                           </span>
@@ -763,7 +763,7 @@ export default function FournisseursPage() {
               </select>
 
               <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase text-gray-400">Statut du fournisseur</label>
+                <label className="mb-1 block text-3xs font-semibold uppercase text-gray-400">Statut du fournisseur</label>
                 <div className="grid grid-cols-3 gap-2">
                   {RELATIONS.map((r) => (
                     <button
@@ -891,7 +891,7 @@ export default function FournisseursPage() {
                       </button>
                     </div>
                   ))}
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-3xs text-gray-400">
                     Complète le fournisseur ci-dessous. Les prix sont à ajouter ensuite sur chaque commande.
                   </p>
                 </div>
@@ -957,7 +957,7 @@ export default function FournisseursPage() {
               )}
 
               <div>
-                <label className="text-[11px] font-semibold uppercase text-gray-400">Date livraison prévue</label>
+                <label className="text-3xs font-semibold uppercase text-gray-400">Date livraison prévue</label>
                 <input
                   type="date"
                   value={cDateLivraison}

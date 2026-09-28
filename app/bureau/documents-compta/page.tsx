@@ -410,11 +410,11 @@ export default function DocumentsComptaPage() {
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3 grid grid-cols-2 gap-3 text-center">
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">TVA</p>
+                <p className="text-2xs uppercase tracking-wide text-gray-400 font-bold">TVA</p>
                 <p className="text-sm font-black text-white">{montantTvaCalcule.toFixed(2)} EUR</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-red-400 font-bold">Total TTC</p>
+                <p className="text-2xs uppercase tracking-wide text-red-400 font-bold">Total TTC</p>
                 <p className="text-sm font-black text-red-400">{montantTtcCalcule.toFixed(2)} EUR</p>
               </div>
             </div>
@@ -432,7 +432,7 @@ export default function DocumentsComptaPage() {
                 ))}
               </select>
               {chantierId && (
-                <p className="mt-1 text-[10px] text-emerald-400 font-bold">+ La dépense sera créée automatiquement dans Finance</p>
+                <p className="mt-1 text-2xs text-emerald-400 font-bold">+ La dépense sera créée automatiquement dans Finance</p>
               )}
             </div>
 
@@ -517,7 +517,7 @@ export default function DocumentsComptaPage() {
                 </span>
                 <button
                   onClick={creerFournisseur}
-                  className="ml-auto shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-400 hover:bg-emerald-600/30"
+                  className="ml-auto shrink-0 rounded-lg bg-emerald-600/20 border border-emerald-500/40 px-2.5 py-1 text-3xs font-bold text-emerald-400 hover:bg-emerald-600/30"
                 >
                   + Créer (« {fpPropose} »)
                 </button>
@@ -584,12 +584,12 @@ export default function DocumentsComptaPage() {
                     <Image src={d.url_image} alt={d.type} className="w-14 h-14 rounded-lg object-cover shrink-0" width={100} height={100} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${d.type === 'bl' ? 'bg-blue-600/30 text-blue-300' : 'bg-emerald-600/30 text-emerald-300'}`}>
+                        <span className={`text-2xs font-bold px-1.5 py-0.5 rounded ${d.type === 'bl' ? 'bg-blue-600/30 text-blue-300' : 'bg-emerald-600/30 text-emerald-300'}`}>
                           {d.type === 'bl' ? 'BL' : 'Ticket'}
                         </span>
                         <span className="text-xs text-gray-400">{new Date(d.date).toLocaleDateString('fr-FR')}</span>
                         {d.chantier_id && d.chantiers && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600/20 text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-2xs font-bold px-1.5 py-0.5 rounded bg-emerald-600/20 text-emerald-400">
                             <Paperclip className="h-3 w-3" />
                             Lié à {d.chantiers?.nom || 'chantier'}
                           </span>

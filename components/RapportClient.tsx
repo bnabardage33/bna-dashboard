@@ -382,7 +382,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   <p className="truncate text-xs font-semibold text-white">{r.semaine_label}</p>
                   <div className="mt-1.5 flex items-center justify-between gap-2">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                      className={`rounded-full px-2 py-0.5 text-2xs font-semibold uppercase ${
                         r.statut === "envoye"
                           ? "bg-emerald-500/15 text-emerald-300"
                           : "bg-amber-500/15 text-amber-300"
@@ -390,7 +390,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     >
                       {r.statut === "envoye" ? "Envoyé" : "Brouillon"}
                     </span>
-                    <span className="text-[10px] text-gray-500">
+                    <span className="text-2xs text-gray-500">
                       {formatDateFr(r.created_at)}
                     </span>
                   </div>
@@ -412,12 +412,12 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   {snapshotSelectionne.periode.semaine || rapportSelectionne.semaine_label}
                 </h3>
                 {estEnvoye ? (
-                  <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
+                  <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-3xs font-semibold text-emerald-300">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Envoyé le {formatDateFr(rapportSelectionne.envoye_le)}
                   </div>
                 ) : (
-                  <span className="mt-1 inline-flex rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300">
+                  <span className="mt-1 inline-flex rounded-full bg-amber-500/15 px-2.5 py-0.5 text-3xs font-semibold text-amber-300">
                     Brouillon — lecture seule pour le client après envoi
                   </span>
                 )}
@@ -534,8 +534,8 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     key={f.id}
                     className={`rounded-lg px-3 py-2 text-center ${statut.className}`}
                   >
-                    <p className="text-[11px] font-semibold">{f.label}</p>
-                    <p className="text-[10px] opacity-70">
+                    <p className="text-3xs font-semibold">{f.label}</p>
+                    <p className="text-2xs opacity-70">
                       {statut.label} · {compteur}/4
                     </p>
                   </div>
@@ -570,7 +570,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       height={180}
                       className="aspect-video w-full rounded-lg object-cover transition-transform group-hover:scale-[1.02]"
                     />
-                    <span className="mt-1 block truncate text-[10px] text-gray-400">
+                    <span className="mt-1 block truncate text-2xs text-gray-400">
                       {photo.legende || (photo.date ? `Photo du ${formatDateFr(photo.date)}` : "Photo de chantier")}
                     </span>
                   </a>
@@ -590,7 +590,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   {snapshotSelectionne.pointages.meteo_relevee.map((m) => (
                     <span
                       key={m}
-                      className="rounded-full border border-white/10 bg-[#0B0F19] px-2 py-0.5 text-[10px] font-medium text-gray-300"
+                      className="rounded-full border border-white/10 bg-[#0B0F19] px-2 py-0.5 text-2xs font-medium text-gray-300"
                     >
                       {m}
                     </span>
@@ -628,7 +628,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       .map((j) => (
                         <div
                           key={j.date}
-                          className="rounded-lg border border-white/10 bg-[#0B0F19]/50 px-2.5 py-1.5 text-[11px] text-gray-300"
+                          className="rounded-lg border border-white/10 bg-[#0B0F19]/50 px-2.5 py-1.5 text-3xs text-gray-300"
                         >
                           <span className="font-semibold text-white">{j.date}</span>
                           <span className="ml-2">{EMOJI_VIGILANCE[j.vigilance] ?? ""}</span>

@@ -342,11 +342,11 @@ export default function FacturesPage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Surface className="p-4 shadow-sm" radius="2xl">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">CA Encaissé (Payé)</p>
+          <p className="text-2xs uppercase font-bold tracking-wider text-gray-400">CA Encaissé (Payé)</p>
           <p className="text-2xl font-black text-white font-mono mt-0.5">{fmtEuro(caEncaisse)}</p>
         </Surface>
         <Surface className="p-4 shadow-sm" radius="2xl">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">En attente de règlement</p>
+          <p className="text-2xs uppercase font-bold tracking-wider text-gray-400">En attente de règlement</p>
           <p className="text-2xl font-black text-white font-mono mt-0.5">{fmtEuro(enAttente)}</p>
         </Surface>
       </div>
@@ -383,7 +383,7 @@ export default function FacturesPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-gray-300">{f.numero}</span>
                         {f.type_facture !== "totale" && (
-                          <span className="rounded-full bg-red-600/15 border border-red-600/40 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-400">
+                          <span className="rounded-full bg-red-600/15 border border-red-600/40 px-2 py-0.5 text-2xs font-bold uppercase text-gray-400">
                             {f.type_facture}
                           </span>
                         )}
@@ -413,11 +413,11 @@ export default function FacturesPage() {
 
                   <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Montant HT</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Montant HT</p>
                       <p className="text-xs font-semibold text-gray-300">{fmtEuro(ht)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Total TTC ({f.tva_pct}%)</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Total TTC ({f.tva_pct}%)</p>
                       <p className="text-sm font-bold text-gray-300 font-mono">{fmtEuro(ttc)}</p>
                     </div>
                   </div>
@@ -558,7 +558,7 @@ export default function FacturesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-gray-400">Échéance</label>
+                  <label className="text-3xs font-semibold uppercase text-gray-400">Échéance</label>
                   <input
                     type="date"
                     value={echeance}
@@ -567,7 +567,7 @@ export default function FacturesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-gray-400">TVA (%)</label>
+                  <label className="text-3xs font-semibold uppercase text-gray-400">TVA (%)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -579,7 +579,7 @@ export default function FacturesPage() {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold uppercase text-gray-400">Type de facture</label>
+                <label className="text-3xs font-semibold uppercase text-gray-400">Type de facture</label>
                 <select
                   value={typeFacture}
                   onChange={(e) => setTypeFacture(e.target.value as typeof typeFacture)}
@@ -592,7 +592,7 @@ export default function FacturesPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Lignes de prestation</p>
+                <p className="text-3xs font-semibold uppercase tracking-wide text-gray-400">Lignes de prestation</p>
                 {lignes.map((l, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2">
                     <input

@@ -41,10 +41,26 @@
   --font-sans: var(--font-inter);
 }
 
+/*
+ * Anneau de focus global.
+ *
+ * Volontairement HORS de tout `@layer` : c'est ce qui lui permet de l'emporter
+ * sur les 120 `outline-none` du dépôt. Le placer dans `@layer base` — solution
+ * naturelle pour que `rounded-*` puisse gagner — ferait perdre l'anneau de
+ * focus à tous ces sites, ce qui est inacceptable.
+ *
+ * Cette règle NE DOIT PAS déclarer `border-radius`. Elle est non couchée, donc
+ * de priorité supérieure à `@layer utilities` : un `border-radius` ici
+ * écrasait le `rounded-*` de l'élément au moment du focus, transformant les
+ * cartes (rounded-xl) et les boutons ronds (rounded-full) en carrés à 4 px.
+ * Le rayon de chaque élément est donc laissé entièrement à ses propres classes.
+ *
+ * L'`outline` suit nativement le `border-radius` de l'élément : aucune valeur
+ * de repli n'est nécessaire ici.
+ */
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 .skip-link {

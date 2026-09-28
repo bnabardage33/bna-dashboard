@@ -36,7 +36,7 @@ export default function UrsaafWidget({ mois }: { mois?: string }) {
             <span>{fmtEuro(masseSalariale)}</span>
           </div>
           
-          <div className="my-2 border-t border-white/10/50"></div>
+          <div className="my-2 border-t border-white/10"></div>
           
           <div className="flex items-center justify-between text-gray-300">
             <span>Charges patronales (45%)</span>

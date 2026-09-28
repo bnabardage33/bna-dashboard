@@ -207,7 +207,7 @@ export default function RapportsIntemperiesListe({
 
                 <div className="flex shrink-0 items-center gap-2">
                   {r.a_valider && (
-                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-amber-400">
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-2xs font-semibold uppercase text-amber-400">
                       À valider
                     </span>
                   )}
@@ -237,7 +237,7 @@ export default function RapportsIntemperiesListe({
               </p>
 
               {/* Origine */}
-              <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-600">
+              <div className="mt-2 flex items-center gap-2 text-2xs text-slate-600">
                 <span>
                   {r.cree_par === "auto" ? "⚡ Généré automatiquement" : "✎ Manuel"}
                 </span>

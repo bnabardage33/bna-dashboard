@@ -296,7 +296,7 @@ export default function ChantiersPage() {
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      className={`rounded-full px-2.5 py-0.5 text-2xs font-bold uppercase tracking-wider ${
                         ch.statut === "en_cours"
                           ? "border border-red-600/40 bg-sky-950/40 text-gray-400"
                           : ch.statut === "termine"
@@ -316,7 +316,7 @@ export default function ChantiersPage() {
                   )}
 
                   <div className="flex items-center justify-between pt-2 border-t border-white/10/60 text-xs text-gray-400">
-                    <div className="flex items-center gap-1.5 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-3xs">
                       <Calendar className="h-3.5 w-3.5 text-gray-500" />
                       <span>
                         {ch.date_debut ? new Date(ch.date_debut).toLocaleDateString("fr-FR") : "Début non fixé"}
@@ -340,7 +340,7 @@ export default function ChantiersPage() {
                       setCopiedId(ch.id);
                       setTimeout(() => setCopiedId(null), 2000);
                     }}
-                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1A1D24]/80 px-2 py-1 text-[10px] font-bold text-gray-300 hover:bg-red-700 hover:text-white transition-all backdrop-blur-sm"
+                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1A1D24]/80 px-2 py-1 text-2xs font-bold text-gray-300 hover:bg-red-700 hover:text-white transition-all backdrop-blur-sm"
                   >
                     {copiedId === ch.id ? <Check size={12} /> : <Copy size={12} />}
                     {copiedId === ch.id ? "Copié" : "Lien client"}
@@ -355,7 +355,7 @@ export default function ChantiersPage() {
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] font-medium text-gray-300 hover:text-gray-400 flex items-center gap-1"
+                      className="text-3xs font-medium text-gray-300 hover:text-gray-400 flex items-center gap-1"
                     >
                       🗺️ GPS Itinéraire
                     </a>
@@ -366,7 +366,7 @@ export default function ChantiersPage() {
                   <button
                     onClick={(e) => supprimerChantier(e, ch)}
                     disabled={deleting === ch.id}
-                    className="text-[11px] font-medium text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors"
+                    className="text-3xs font-medium text-gray-500 hover:text-red-400 flex items-center gap-1 transition-colors"
                   >
                     <Trash2 className="h-3 w-3" />
                     <span>{deleting === ch.id ? "Suppression…" : "Supprimer"}</span>

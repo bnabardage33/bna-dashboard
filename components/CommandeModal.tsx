@@ -345,7 +345,7 @@ export default function CommandeModal({
                                             setCategoryFilters({ ...categoryFilters, [index]: cat });
                                             setDropdownOpen({ ...dropdownOpen, [index]: true });
                                           }}
-                                          className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${
+                                          className={`px-3 py-1 rounded-full text-2xs font-bold uppercase whitespace-nowrap transition-colors ${
                                             isActive ? "bg-red-700 text-white" : "bg-[#1A1D24] text-gray-400 hover:bg-slate-700 border border-white/10"
                                           }`}
                                         >
@@ -371,10 +371,10 @@ export default function CommandeModal({
                                         <button
                                           key={a.id}
                                           onClick={() => handleSelectArticle(index, a)}
-                                          className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-white/10/50 last:border-0"
+                                          className="flex w-full flex-col items-start px-3 py-2 text-left hover:bg-slate-700 transition-colors border-b border-white/10 last:border-0"
                                         >
                                           <span className="text-white text-xs font-semibold">{a.designation}</span>
-                                          <span className="text-gray-500 text-[10px] mt-1">
+                                          <span className="text-gray-500 text-2xs mt-1">
                                             Réf: {getRef(a)} - {fmtEuro(getPrix(a))} HT
                                           </span>
                                         </button>

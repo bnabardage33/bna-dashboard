@@ -158,7 +158,7 @@ export default function BureauMeteoPage() {
                     <p className="text-xs text-gray-400">{ch.location}</p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                    className={`shrink-0 rounded-full border px-2.5 py-1 text-2xs font-bold uppercase tracking-wider ${
                       ch.intemperieAujourdhui
                         ? "border-red-500/40 text-red-400"
                         : "border-emerald-500/40 text-emerald-400"
@@ -179,12 +179,12 @@ export default function BureauMeteoPage() {
                       <div className={j.intemperie ? "font-bold text-red-400" : "font-semibold text-gray-300"}>
                         {fmtDate(j.date)}
                       </div>
-                      <div className="flex items-center gap-3 font-mono text-[11px] text-gray-400">
+                      <div className="flex items-center gap-3 font-mono text-3xs text-gray-400">
                         <span title="Précipitations">💧 {j.pluie}mm</span>
                         <span title="Vent">💨 {j.vent} km/h</span>
                         <span title="Température min">🌡️ {j.tempMin}°C</span>
                       </div>
-                      <div className="max-w-[40%] text-right text-[10px] font-bold text-red-400">
+                      <div className="max-w-[40%] text-right text-2xs font-bold text-red-400">
                         {j.intemperie ? j.raisons.join(" · ") : "OK"}
                       </div>
                     </div>

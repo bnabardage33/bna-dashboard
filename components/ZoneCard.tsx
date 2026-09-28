@@ -905,7 +905,7 @@ export default function ZoneCard({
           </div>
         )}
         {zone.famille_pose === "composite" && (
-          <div className="text-[11px] text-gray-500 mt-1 italic px-1">
+          <div className="text-3xs text-gray-500 mt-1 italic px-1">
             Note: La largeur utile calculée déduit automatiquement 15mm pour l'emboîtement de la languette.
           </div>
         )}
@@ -920,13 +920,13 @@ export default function ZoneCard({
                 🧱 Isolation ITE & Équerres Isolco
               </p>
               {pose && pose.isolant.actif && (
-                <span className="rounded bg-emerald-900/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                <span className="rounded bg-emerald-900/80 px-2 py-0.5 text-2xs font-semibold text-emerald-300">
                   {pose.isolant.nbPaquetsACommander} paquets ({pose.isolant.surfaceACommanderM2} m²)
                 </span>
               )}
             </div>
 
-            <div className="rounded-md border border-slate-700 bg-slate-900/60 p-2.5 text-[11px] text-slate-400">
+            <div className="rounded-md border border-slate-700 bg-slate-900/60 p-2.5 text-3xs text-slate-400">
               Configuration technique du chantier (onglet « Métrés &amp; Technique ») :
               isolant{" "}
               <span className="font-semibold text-slate-200">
@@ -952,7 +952,7 @@ export default function ZoneCard({
 
             {/* Badge de synthèse technique */}
             {pose && (
-              <div className="rounded-md border border-slate-700 bg-slate-900/80 p-2 text-[11px] text-slate-300 space-y-1">
+              <div className="rounded-md border border-slate-700 bg-slate-900/80 p-2 text-3xs text-slate-300 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Modèle d'équerre auto :</span>
                   <span className="font-semibold text-sky-400">{pose.isolant.modeleEquerreIsolco}</span>
@@ -985,11 +985,11 @@ export default function ZoneCard({
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
                   📦 Plaque brute (Approvisionnement / Stock)
                 </p>
-                <span className="text-[10px] text-slate-400">Matière première</span>
+                <span className="text-2xs text-slate-400">Matière première</span>
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400">Format standard fabricant</label>
+                <label className="text-3xs text-slate-400">Format standard fabricant</label>
                 <select
                   value={plaqueFormatValeur}
                   onChange={(e) => {
@@ -1047,11 +1047,11 @@ export default function ZoneCard({
                 <p className="text-xs font-bold uppercase tracking-wide text-red-300">
                   🧱 Modules posés en façade (Trame esthétique)
                 </p>
-                <span className="text-[10px] text-red-400">Dimensions maniables</span>
+                <span className="text-2xs text-red-400">Dimensions maniables</span>
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400">Trame cible des modules</label>
+                <label className="text-3xs text-slate-400">Trame cible des modules</label>
                 <select
                   value={moduleTrameValeur}
                   onChange={(e) => {
@@ -1155,10 +1155,10 @@ export default function ZoneCard({
                     className="mt-0.5 rounded border-slate-600 bg-slate-900 text-amber-500 focus:ring-amber-500 h-3.5 w-3.5"
                   />
                   <div>
-                    <span className="text-[11px] font-bold text-slate-300 block">
+                    <span className="text-3xs font-bold text-slate-300 block">
                       Décor directionnel (Fil du bois imposé)
                     </span>
-                    <span className="text-[9px] text-slate-400 block leading-tight">
+                    <span className="text-4xs text-slate-400 block leading-tight">
                       Cocher si le décor a un sens. Interdit le pivot des plaques à 90° dans l'atelier.
                     </span>
                   </div>
@@ -1308,7 +1308,7 @@ export default function ZoneCard({
 
           {afficherSimulationLames && (
             <div className="rounded-md border border-sky-500/20 bg-sky-950/20 p-2.5">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-sky-300">
+              <p className="mb-2 text-3xs font-bold uppercase tracking-wide text-sky-300">
                 🪚 Calpinage lames — réutilisation des chutes
               </p>
               <div className="grid grid-cols-3 gap-2 text-sm">

@@ -144,7 +144,7 @@ export default function DashboardAccueil({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
           <p className="text-2xl font-black text-white">{stats.notes}</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
+          <p className="text-2xs text-gray-500 uppercase tracking-wider font-medium">
             Notes récentes
           </p>
         </div>
@@ -154,17 +154,17 @@ export default function DashboardAccueil({
           >
             {isSavingNote ? '✓' : '○'}
           </p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Micro</p>
+          <p className="text-2xs text-gray-500 uppercase tracking-wider font-medium">Micro</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
           <p className="text-2xl font-black text-white">{stats.chantiers}</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
+          <p className="text-2xs text-gray-500 uppercase tracking-wider font-medium">
             Chantiers
           </p>
         </div>
         <div className="rounded-xl border border-white/10 bg-[#1A1D24]/80 p-4 text-center">
           <p className="text-2xl font-black text-white">{stats.devis}</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Devis</p>
+          <p className="text-2xs text-gray-500 uppercase tracking-wider font-medium">Devis</p>
         </div>
       </div>
 
@@ -226,7 +226,7 @@ export default function DashboardAccueil({
                 {n.titre || 'Note sans titre'}
               </h4>
               <p className="text-xs text-gray-400 line-clamp-3">{n.contenu}</p>
-              <span className="mt-auto pt-2 text-[10px] text-gray-500 font-medium">
+              <span className="mt-auto pt-2 text-2xs text-gray-500 font-medium">
                 {n.created_at ? new Date(n.created_at).toLocaleDateString('fr-FR') : ''}
               </span>
             </Link>

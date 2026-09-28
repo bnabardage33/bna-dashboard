@@ -135,7 +135,7 @@ export default function TresorerieWidget() {
                 <span className="truncate max-w-[110px]">{f.client_nom}</span>
                 <span className="flex items-center gap-1.5 shrink-0">
                   {f.statut === "payee" && (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-red-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-red-600/15 px-1.5 py-0.5 text-2xs font-semibold text-gray-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       Payée
                     </span>
@@ -149,7 +149,7 @@ export default function TresorerieWidget() {
             )}
           </div>
 
-          <div className="space-y-1 pt-2 border-t border-white/10/50">
+          <div className="space-y-1 pt-2 border-t border-white/10">
             <div className="flex justify-between text-sm">
               <span className="text-gray-300">Sorties (Achats + URSSAF)</span>
               <span className="text-rose-400 font-medium">-{fmtEuro(totalSorties)}</span>

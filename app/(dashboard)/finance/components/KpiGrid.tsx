@@ -74,7 +74,7 @@ export default function KpiGrid({ mois }: { mois?: string }) {
           {fmtEuro(kpis?.reste_a_facturer ?? 0)}
         </div>
         {(kpis?.reste_a_facturer ?? 0) > 50000 && (
-          <div className="absolute top-4 right-4 flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium text-gray-400">
+          <div className="absolute top-4 right-4 flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-2xs font-medium text-gray-400">
             <AlertTriangle className="h-3 w-3" />
             Important
           </div>

@@ -75,7 +75,7 @@ export default function OutilsPage() {
                   >
                     <Icon className="h-6 w-6" />
                   </div>
-                  <span className="rounded-full border border-white/10 bg-transparent px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-300">
+                  <span className="rounded-full border border-white/10 bg-transparent px-2.5 py-1 text-2xs font-bold uppercase tracking-wider text-gray-300">
                     {outil.badge}
                   </span>
                 </div>

@@ -121,7 +121,7 @@ export default function ChantierRentabilite() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex rounded-full bg-[#1A1D24] px-2 py-1 text-[10px] font-semibold uppercase text-gray-300">
+                      <span className="inline-flex rounded-full bg-[#1A1D24] px-2 py-1 text-2xs font-semibold uppercase text-gray-300">
                         {r.statut || "en_cours"}
                       </span>
                     </td>

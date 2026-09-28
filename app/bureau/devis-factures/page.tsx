@@ -856,17 +856,17 @@ function DevisContenu() {
 
                   <div className="flex items-center justify-between rounded-xl bg-transparent/60 p-2.5 border border-white/10/60">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Montant HT</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Montant HT</p>
                       <p className="text-xs font-semibold text-gray-300">{fmtEuro(totalHT)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Total TTC ({d.tva_pct}%)</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Total TTC ({d.tva_pct}%)</p>
                       <p className="text-sm font-bold text-gray-300 font-mono">{fmtEuro(totalTTC)}</p>
                     </div>
                   </div>
                   
                   {(nbACHiffrer > 0 || margeConnue) && (
-                    <div className="flex items-center justify-between gap-2 text-[10px]">
+                    <div className="flex items-center justify-between gap-2 text-2xs">
                       {margeConnue && (
                         <span className="font-semibold text-emerald-400/90">
                           Marge : {Math.round((d.marge_pct ?? 0) * 100) / 100}% · {fmtEuro(d.marge_ht)}
@@ -1001,7 +1001,7 @@ function DevisContenu() {
                   })()}
                 </span>
               </div>
-              <p className="text-[10px] text-gray-500">TVA {devisToBill.tva_pct}% appliquée</p>
+              <p className="text-2xs text-gray-500">TVA {devisToBill.tva_pct}% appliquée</p>
             </div>
 
             <div className="flex gap-2 pt-1">
@@ -1157,7 +1157,7 @@ function DevisContenu() {
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
+                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
                   <input
                     type="number"
                     value={validite}
@@ -1166,7 +1166,7 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Délai (j)</label>
+                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Délai (j)</label>
                   <input
                     type="number"
                     value={delai}
@@ -1175,7 +1175,7 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">Acompte (%)</label>
+                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Acompte (%)</label>
                   <input
                     type="number"
                     value={acompte}
@@ -1184,7 +1184,7 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-gray-400 sm:text-xs">TVA (%)</label>
+                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">TVA (%)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1194,7 +1194,7 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold uppercase text-cyan-400 sm:text-xs">MaPrimeRénov'</label>
+                  <label className="text-3xs font-semibold uppercase text-cyan-400 sm:text-xs">MaPrimeRénov'</label>
                   <select
                     value={profilRevenu}
                     onChange={(e) => setProfilRevenu(e.target.value as ProfilRevenu)}
@@ -1210,20 +1210,20 @@ function DevisContenu() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 sm:text-[11px]">Lignes de prestation</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 sm:text-3xs">Lignes de prestation</p>
                 {lignes.map((l, i) => (
                   <div key={i} className="grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] p-2 sm:grid-cols-12 sm:items-center sm:gap-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
                     {l.a_chiffrer && (
                       <div className="col-span-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 sm:col-span-12">
                         <span className="text-xs">⚠️</span>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-amber-300 sm:text-[11px]">À CHIFFRER</p>
-                          <p className="text-[10px] text-amber-200/80 sm:text-[11px]">Cette prestation doit être complétée manuellement.</p>
+                          <p className="text-2xs font-bold uppercase tracking-wide text-amber-300 sm:text-3xs">À CHIFFRER</p>
+                          <p className="text-2xs text-amber-200/80 sm:text-3xs">Cette prestation doit être complétée manuellement.</p>
                         </div>
                       </div>
                     )}
                     <div className="col-span-3 sm:col-span-4">
-                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Désignation</label>
+                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Désignation</label>
                       <input
                         value={l.designation}
                         onChange={(e) => updateLigne(i, { designation: e.target.value })}
@@ -1231,13 +1231,13 @@ function DevisContenu() {
                         className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                       {l.justification && (
-                        <p className="mt-1 text-[10px] leading-tight text-emerald-300/80 sm:text-[10px]" title={`Confiance : ${Math.round((l.confiance ?? 0) * 100)} %`}>
+                        <p className="mt-1 text-2xs leading-tight text-emerald-300/80 sm:text-2xs" title={`Confiance : ${Math.round((l.confiance ?? 0) * 100)} %`}>
                           {l.justification}
                         </p>
                       )}
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
+                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
                       <input
                         type="number"
                         value={l.qte ?? ""}
@@ -1247,7 +1247,7 @@ function DevisContenu() {
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Unité</label>
+                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Unité</label>
                       <input
                         value={l.unite}
                         onChange={(e) => updateLigne(i, { unite: e.target.value })}
@@ -1256,7 +1256,7 @@ function DevisContenu() {
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-3">
-                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Prix u. HT</label>
+                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Prix u. HT</label>
                       <input
                         type="number"
                         value={l.pu_ht ?? ""}
@@ -1374,15 +1374,15 @@ function DevisContenu() {
 
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 space-y-1.5 sm:px-4 sm:py-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Coût matière</span>
+                  <span className="text-xs sm:text-3xs font-semibold uppercase tracking-wide text-gray-400">Coût matière</span>
                   <span className="text-sm sm:text-xs font-mono text-gray-200">{fmtEuro(apercuCalculs.cout_matiere_ht)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Main d&apos;œuvre</span>
+                  <span className="text-xs sm:text-3xs font-semibold uppercase tracking-wide text-gray-400">Main d&apos;œuvre</span>
                   <span className="text-sm sm:text-xs font-mono text-gray-200">{fmtEuro(apercuCalculs.cout_main_oeuvre_ht)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide text-gray-400">Marge estimée</span>
+                  <span className="text-xs sm:text-3xs font-semibold uppercase tracking-wide text-gray-400">Marge estimée</span>
                   <span className="text-sm sm:text-xs font-mono text-emerald-400 font-bold">
                     {fmtEuro(apercuCalculs.marge_ht)} ({apercuCalculs.marge_pct.toFixed(1)}%)
                   </span>
@@ -1402,7 +1402,7 @@ function DevisContenu() {
                     return (
                       <>
                         <div className="flex items-center justify-between text-cyan-300 mt-2">
-                          <span className="text-xs sm:text-[11px] font-semibold uppercase tracking-wide">Aides estimées (MPR + CEE)</span>
+                          <span className="text-xs sm:text-3xs font-semibold uppercase tracking-wide">Aides estimées (MPR + CEE)</span>
                           <span className="text-sm sm:text-xs font-mono">- {fmtEuro(aides.totalAides)}</span>
                         </div>
                         <div className="h-px bg-white/10/60 my-1" />

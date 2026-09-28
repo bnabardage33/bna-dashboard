@@ -105,7 +105,7 @@ export default function SAVPage() {
       {loading ? (
         <div className="text-center p-12 text-gray-400 animate-pulse">Chargement des tickets...</div>
       ) : tickets.length === 0 ? (
-        <div className="bg-[#1A1D24]/50 border border-white/10/50 rounded-2xl p-12 text-center">
+        <div className="bg-[#1A1D24]/50 border border-white/10 rounded-2xl p-12 text-center">
           <div className="w-16 h-16 bg-[#1A1D24]/50 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-gray-400" />
           </div>
@@ -125,7 +125,7 @@ export default function SAVPage() {
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    className={`px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider ${
                       ticket.statut === "ouvert"
                         ? "bg-white/5 text-gray-400 border border-white/10"
                         : ticket.statut === "planifie"
@@ -136,7 +136,7 @@ export default function SAVPage() {
                     {ticket.statut}
                   </span>
                   {ticket.sous_garantie === false && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-400 bg-red-950/30 px-2 py-1 rounded-lg border border-red-500/20">
+                    <span className="flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-red-400 bg-red-950/30 px-2 py-1 rounded-lg border border-red-500/20">
                       <AlertTriangle size={12} /> Hors Garantie
                     </span>
                   )}
@@ -150,7 +150,7 @@ export default function SAVPage() {
                 </p>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-white/10/50 flex justify-between items-end">
+              <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-end">
                 <div>
                   <p className="text-xs text-gray-500 uppercase font-semibold">Problème</p>
                   <p className="text-sm font-medium text-gray-300 truncate max-w-[180px]">

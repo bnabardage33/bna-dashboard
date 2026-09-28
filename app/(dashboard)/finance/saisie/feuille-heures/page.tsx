@@ -255,10 +255,10 @@ export default function FeuilleHeuresPage() {
                     />
                     <div className="flex-1 min-w-[120px]">
                       <p className="font-semibold text-gray-200 text-sm">{o.full_name}</p>
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-3xs text-gray-500">
                         {o.qualification || "—"}
                         {o.statut_emploi === "interimaire" && (
-                          <span className="ml-1.5 rounded bg-red-600/20 text-gray-400 px-1.5 py-0.5 text-[10px] font-bold uppercase">
+                          <span className="ml-1.5 rounded bg-red-600/20 text-gray-400 px-1.5 py-0.5 text-2xs font-bold uppercase">
                             Intérim
                           </span>
                         )}

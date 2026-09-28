@@ -122,7 +122,7 @@ export default function SearchNav() {
             ) : results && (results.clients.length + results.chantiers.length + results.devis.length + results.fournisseurs.length > 0) ? (
               <div className="py-2">
                 {results.clients.length > 0 && (
-                  <div className="px-4 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-bold">Clients</div>
+                  <div className="px-4 py-1 text-2xs text-gray-500 uppercase tracking-wider font-bold">Clients</div>
                 )}
                 {results.clients.map(c => (
                   <Link key={c.id} href="/bureau/clients" onClick={() => { setOpen(false); setQuery(""); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
@@ -132,7 +132,7 @@ export default function SearchNav() {
                   </Link>
                 ))}
                 {results.chantiers.length > 0 && (
-                  <div className="px-4 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-2">Chantiers</div>
+                  <div className="px-4 py-1 text-2xs text-gray-500 uppercase tracking-wider font-bold mt-2">Chantiers</div>
                 )}
                 {results.chantiers.map(c => (
                   <Link key={c.id} href={`/terrain/chantier/${c.id}`} onClick={() => { setOpen(false); setQuery(""); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
@@ -142,7 +142,7 @@ export default function SearchNav() {
                   </Link>
                 ))}
                 {results.devis.length > 0 && (
-                  <div className="px-4 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-2">Devis</div>
+                  <div className="px-4 py-1 text-2xs text-gray-500 uppercase tracking-wider font-bold mt-2">Devis</div>
                 )}
                 {results.devis.map(d => (
                   <Link key={d.id} href={`/bureau/devis-factures`} onClick={() => { setOpen(false); setQuery(""); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
@@ -152,7 +152,7 @@ export default function SearchNav() {
                   </Link>
                 ))}
                 {results.fournisseurs.length > 0 && (
-                  <div className="px-4 py-1 text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-2">Fournisseurs</div>
+                  <div className="px-4 py-1 text-2xs text-gray-500 uppercase tracking-wider font-bold mt-2">Fournisseurs</div>
                 )}
                 {results.fournisseurs.map(f => (
                   <Link key={f.id} href={`/bureau/fournisseurs`} onClick={() => { setOpen(false); setQuery(""); }} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
@@ -177,7 +177,7 @@ export default function SearchNav() {
         >
           <Bell size={16} className="text-white/60" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E30613] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E30613] text-white text-2xs font-bold rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
           )}
         </button>
         {notifOpen && (
@@ -185,7 +185,7 @@ export default function SearchNav() {
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">Notifications</h3>
               {unreadCount > 0 && (
-                <button onClick={() => marquerLu(notifications.filter(n => !n.lu).map(n => n.id))} className="text-[10px] text-[#E30613] hover:text-red-400 font-medium">Tout marquer lu</button>
+                <button onClick={() => marquerLu(notifications.filter(n => !n.lu).map(n => n.id))} className="text-2xs text-[#E30613] hover:text-red-400 font-medium">Tout marquer lu</button>
               )}
             </div>
             <div className="max-h-64 overflow-y-auto">
@@ -201,7 +201,7 @@ export default function SearchNav() {
                   >
                     <p className="text-sm font-medium text-white">{n.titre}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
-                    <p className="text-[10px] text-gray-600 mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString("fr-FR") : ""}</p>
+                    <p className="text-2xs text-gray-600 mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString("fr-FR") : ""}</p>
                   </Link>
                 ))
               )}

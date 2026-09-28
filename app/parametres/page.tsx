@@ -179,7 +179,7 @@ export default function ParametresPage() {
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Coordonnées &amp; Identité de l&apos;Entreprise</h2>
-            <p className="text-[11px] text-gray-400">Informations affichées sur les devis, factures, PV et commandes</p>
+            <p className="text-3xs text-gray-400">Informations affichées sur les devis, factures, PV et commandes</p>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export default function ParametresPage() {
                 accept="image/*"
                 onChange={(e) => handleLogoUpload(e.target.files?.[0])}
                 disabled={uploadingLogo}
-                className="w-full text-xs text-gray-400 file:mr-3 file:rounded-xl file:border-0 file:bg-red-700 file:px-3.5 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-red-600 cursor-pointer"
+                className="w-full text-xs text-gray-400 file:mr-3 file:rounded-xl file:border-0 file:bg-red-700 file:px-3.5 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-red-600 cursor-pointer disabled:cursor-not-allowed"
               />
               {uploadingLogo && <p className="mt-1 text-xs text-gray-400 font-semibold">Téléversement du logo…</p>}
             </div>
@@ -251,7 +251,7 @@ export default function ParametresPage() {
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Assurance Décennale &amp; Responsabilité Civile Pro</h2>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-3xs text-gray-400">
               Obligations légales (Loi Spinetta / Art. L.241-1 C. Assurances) injectées automatiquement dans les CGV et devis
             </p>
           </div>
@@ -290,7 +290,7 @@ export default function ParametresPage() {
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Médiateur de la Consommation (Art. L.616-1)</h2>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-3xs text-gray-400">
               Médiation BTP obligatoire pour les clients particuliers, mentionnée dans les Conditions Générales de Vente
             </p>
           </div>
@@ -320,7 +320,7 @@ export default function ParametresPage() {
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Mentions Légales &amp; Pied de Page des Documents</h2>
-            <p className="text-[11px] text-gray-400">Texte libre imprimé en bas des devis et factures</p>
+            <p className="text-3xs text-gray-400">Texte libre imprimé en bas des devis et factures</p>
           </div>
         </div>
 

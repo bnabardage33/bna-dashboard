@@ -147,7 +147,7 @@ export default function DashboardPatronPage() {
           </button>
         )}
       </div>
-      {sous && <p className="text-[11px] text-gray-500">{sous}</p>}
+      {sous && <p className="text-3xs text-gray-500">{sous}</p>}
     </Surface>
   );
 
@@ -255,7 +255,7 @@ export default function DashboardPatronPage() {
             );
           })}
         </div>
-        <div className="flex justify-between text-[10px] text-gray-500 mt-2">
+        <div className="flex justify-between text-2xs text-gray-500 mt-2">
           <span>J+1</span>
           <span>J+7</span>
           <span>J+15</span>
@@ -277,7 +277,7 @@ export default function DashboardPatronPage() {
                   <span className="text-xs font-medium text-white truncate">{i + 1}. {c.nom}</span>
                   <span className="text-xs font-bold text-emerald-400">{fmtEuro(c.marge)}</span>
                 </div>
-                <div className="text-[10px] text-gray-500 mt-0.5">
+                <div className="text-2xs text-gray-500 mt-0.5">
                   Budget {fmtEuro(c.budget)} · Consommé {fmtEuro(c.depenses)}
                 </div>
               </div>
@@ -300,7 +300,7 @@ export default function DashboardPatronPage() {
                   <span className="text-xs font-medium text-white truncate">{i + 1}. {c.nom}</span>
                   <span className="text-xs font-bold text-rose-400">-{fmtEuro(Math.abs(c.marge))}</span>
                 </div>
-                <div className="text-[10px] text-gray-500 mt-0.5">
+                <div className="text-2xs text-gray-500 mt-0.5">
                   Budget {fmtEuro(c.budget)} · Consommé {fmtEuro(c.depenses)}
                 </div>
               </div>
@@ -324,7 +324,7 @@ export default function DashboardPatronPage() {
               <p className="text-xs text-gray-500 italic">Aucune dépense en attente</p>
             )}
           </div>
-          <p className="text-[10px] text-gray-500 mt-3 border-t border-white/10 pt-2">
+          <p className="text-2xs text-gray-500 mt-3 border-t border-white/10 pt-2">
             Total à payer : <span className="text-rose-400 font-bold">{fmtEuro(depenses_a_payer)}</span>
             {parametres.charges_fixes_mensuelles > 0 && (
               <span> · dont charges fixes {fmtEuro(parametres.charges_fixes_mensuelles)}/mois (reparties sur la projection)</span>

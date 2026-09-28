@@ -72,7 +72,7 @@ window.location.href = "/login";
         <div className="flex items-center justify-between px-5 pt-12 pb-5 border-b border-white/[0.06]">
           <div>
             <p className="text-white font-black text-[15px] tracking-tight">BNA Bardage</p>
-            <p className="text-white text-[11px] mt-0.5">Dashboard Pro</p>
+            <p className="text-white text-3xs mt-0.5">Dashboard Pro</p>
           </div>
           <button
             onClick={() => setOpen(false)}
@@ -151,7 +151,7 @@ window.location.href = "/login";
             </div>
             <span>Deconnexion</span>
           </button>
-          <p className="text-white/30 text-[10px] text-center pt-3">© 2026 BNA Bardage</p>
+          <p className="text-white/30 text-2xs text-center pt-3">© 2026 BNA Bardage</p>
         </div>
       </aside>
     </>

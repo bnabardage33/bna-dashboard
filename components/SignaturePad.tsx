@@ -132,7 +132,7 @@ export default function SignaturePad({
           <button
             type="button"
             onClick={handleClear}
-            className="text-[11px] font-medium text-red-400 hover:text-red-300"
+            className="text-3xs font-medium text-red-400 hover:text-red-300"
           >
             Effacer 🗑️
           </button>

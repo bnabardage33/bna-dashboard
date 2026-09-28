@@ -223,7 +223,7 @@ export default function BureauRapportsIntemperiesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {r.a_valider && (
-                    <span className="rounded-full bg-red-600/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-gray-400">
+                    <span className="rounded-full bg-red-600/15 px-2 py-0.5 text-2xs font-semibold uppercase text-gray-400">
                       À valider
                     </span>
                   )}

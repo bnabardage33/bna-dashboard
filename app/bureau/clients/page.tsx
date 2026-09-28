@@ -333,7 +333,7 @@ export default function ClientsPage() {
               {type === "professionnel" && (
                 <div className="space-y-2 rounded-xl border border-white/10 bg-transparent/80 p-3">
                   <div className="relative">
-                    <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    <label className="text-3xs font-semibold uppercase tracking-wide text-gray-400">
                       🔍 Recherche SIRET (API Officielle)
                     </label>
                     <input
@@ -356,7 +356,7 @@ export default function ClientsPage() {
                             className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-[#1A1D24]"
                           >
                             <p className="font-bold text-white">{item.nom_complet}</p>
-                            <p className="text-gray-400 text-[11px]">
+                            <p className="text-gray-400 text-3xs">
                               SIRET : {item.siege?.siret || item.siren} · {item.siege?.libelle_commune} (
                               {item.siege?.code_postal})
                             </p>
@@ -653,7 +653,7 @@ export default function ClientsPage() {
                                 <td className="p-2">{d.objet || "—"}</td>
                                 <td className="p-2 text-right">{fmtEuro(ht)}</td>
                                 <td className="p-2">
-                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase">
+                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-2xs uppercase">
                                     {d.statut}
                                   </span>
                                 </td>
@@ -694,7 +694,7 @@ export default function ClientsPage() {
                                   {fmtEuro(ttc)}
                                 </td>
                                 <td className="p-2">
-                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase">
+                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-2xs uppercase">
                                     {f.statut}
                                   </span>
                                 </td>

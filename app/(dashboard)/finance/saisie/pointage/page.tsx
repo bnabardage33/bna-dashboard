@@ -91,7 +91,7 @@ export default function SaisiePointage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm text-gray-400 mb-1">Chantier</label>
-          <select required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
+          <select required className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
             <option value="">Sélectionner un chantier</option>
             {chantiers.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
           </select>
@@ -100,11 +100,11 @@ export default function SaisiePointage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Date</label>
-            <input type="date" required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            <input type="date" required className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Ouvrier</label>
-            <select required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.ouvrier_id} onChange={e => setFormData({...formData, ouvrier_id: e.target.value})}>
+            <select required className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.ouvrier_id} onChange={e => setFormData({...formData, ouvrier_id: e.target.value})}>
               <option value="">Sélectionner</option>
               {ouvriers.map(o => <option key={o.id} value={o.id}>{o.full_name || o.id}</option>)}
             </select>
@@ -114,18 +114,18 @@ export default function SaisiePointage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Heures</label>
-            <input type="number" step="0.5" min="0.5" max="24" required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.heures} onChange={e => setFormData({...formData, heures: parseFloat(e.target.value)})} />
+            <input type="number" step="0.5" min="0.5" max="24" required className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.heures} onChange={e => setFormData({...formData, heures: parseFloat(e.target.value)})} />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Taux horaire chargé (€)</label>
-            <input type="number" step="0.01" min="0" required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_horaire_charge} onChange={e => setFormData({...formData, taux_horaire_charge: parseFloat(e.target.value)})} />
+            <input type="number" step="0.01" min="0" required className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.taux_horaire_charge} onChange={e => setFormData({...formData, taux_horaire_charge: parseFloat(e.target.value)})} />
           </div>
         </div>
 
         
         <div>
           <label className="block text-sm text-gray-400 mb-1">Phase de travail</label>
-          <select required className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.phase_travail} onChange={e => setFormData({...formData, phase_travail: e.target.value})}>
+          <select required className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.phase_travail} onChange={e => setFormData({...formData, phase_travail: e.target.value})}>
             <option value="ossature">🏗️ Pose Ossature (DTU 45.4)</option>
             <option value="isolation">🌡️ Pose Isolation (ITE)</option>
             <option value="bardage">🪵 Pose Bardage (DTU 41.2)</option>

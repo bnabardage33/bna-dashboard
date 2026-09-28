@@ -57,7 +57,7 @@ export default function HistoriquePage() {
                       <td className="px-2 py-2">{p.profiles?.full_name || "Inconnu"}</td>
                       <td className="px-2 py-2 truncate max-w-[120px]" title={p.chantiers?.nom}>{p.chantiers?.nom}
                         <br />
-                        <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
+                        <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded text-2xs font-medium border ${
                           p.phase_travail === "ossature" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
                           p.phase_travail === "isolation" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
                           p.phase_travail === "bardage" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :

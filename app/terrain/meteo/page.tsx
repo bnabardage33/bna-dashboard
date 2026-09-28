@@ -142,14 +142,14 @@ export default function MeteoPage() {
               {/* MATIN / APRÈS-MIDI */}
               <div className="px-4 pt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Matin</p>
+                  <p className="text-2xs uppercase tracking-wider text-gray-500 font-bold">Matin</p>
                   <p className="text-lg font-black text-white">{meteo.matin.temp}°C</p>
-                  <p className="text-[10px] text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
+                  <p className="text-2xs text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Après-midi</p>
+                  <p className="text-2xs uppercase tracking-wider text-gray-500 font-bold">Après-midi</p>
                   <p className="text-lg font-black text-white">{meteo.apresMidi.temp}°C</p>
-                  <p className="text-[10px] text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                  <p className="text-2xs text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
                 </div>
               </div>
 
@@ -157,12 +157,12 @@ export default function MeteoPage() {
               <div className="mt-4 px-2 pb-4 grid grid-cols-4 gap-1">
                 {meteo.prochainsJours.map((j) => (
                   <div key={j.date} className="flex flex-col items-center gap-1 rounded-lg py-3 px-1 hover:bg-white/[0.04] transition-colors">
-                    <p className="text-[10px] font-bold text-gray-400 truncate w-full text-center">
+                    <p className="text-2xs font-bold text-gray-400 truncate w-full text-center">
                       {nomJour(j.date).slice(0, 3)}
                     </p>
                     <IconeMeteo icon={j.icon} conditions={j.conditions} className="h-6 w-6" />
                     <p className="text-xs font-bold text-white">{j.tempMax}°</p>
-                    <p className="text-[10px] text-gray-500">{j.tempMin}°</p>
+                    <p className="text-2xs text-gray-500">{j.tempMin}°</p>
                   </div>
                 ))}
               </div>

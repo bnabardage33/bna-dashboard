@@ -41,46 +41,46 @@ export default function VisualiseurDebitPlaques({
       {/* 1. KPIs & Bilan Matière Débit */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plaques Mères</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-slate-400">Plaques Mères</p>
           <p className="mt-0.5 text-lg font-black text-slate-100">{calepinage.nbPlaquesNecessaires} pcs</p>
-          <p className="text-[10px] text-slate-400 font-mono">
+          <p className="text-2xs text-slate-400 font-mono">
             {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
           </p>
         </div>
 
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Modules Posés</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-slate-400">Modules Posés</p>
           <p className="mt-0.5 text-lg font-black text-sky-400">{calepinage.nbPiecesPosees} modules</p>
-          <p className="text-[10px] text-slate-400 font-mono">
+          <p className="text-2xs text-slate-400 font-mono">
             Net: {calepinage.surfaceZoneM2.toFixed(2)} m²
           </p>
         </div>
 
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rendement Moyen</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-slate-400">Rendement Moyen</p>
           <p className="mt-0.5 text-lg font-black text-slate-100">
             {(
               plaques.reduce((s, p) => s + p.tauxRendementPct, 0) / plaques.length
             ).toFixed(1)}{" "}
             %
           </p>
-          <p className="text-[10px] text-slate-400">Surface brute: {calepinage.surfacePlaquesAchetesM2.toFixed(2)} m²</p>
+          <p className="text-2xs text-slate-400">Surface brute: {calepinage.surfacePlaquesAchetesM2.toFixed(2)} m²</p>
         </div>
 
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Chutes Réemployables</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-emerald-400">Chutes Réemployables</p>
           <p className="mt-0.5 text-lg font-black text-emerald-400">
             {calepinage.totalChutesReutilisablesM2.toFixed(2)} m²
           </p>
-          <p className="text-[10px] text-emerald-300">Rives &amp; ébrasements</p>
+          <p className="text-2xs text-emerald-300">Rives &amp; ébrasements</p>
         </div>
 
         <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 col-span-2 sm:col-span-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Perte Nette Résiduelle</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-amber-400">Perte Nette Résiduelle</p>
           <p className="mt-0.5 text-lg font-black text-amber-400">
             {calepinage.tauxChuteNettePct.toFixed(1)} %
           </p>
-          <p className="text-[10px] text-amber-300">
+          <p className="text-2xs text-amber-300">
             {calepinage.totalDechetsPerteM2.toFixed(2)} m² sciure/perte
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function VisualiseurDebitPlaques({
               <Layers className="h-3.5 w-3.5" />
               <span>Plaque #{plaque.index}</span>
               <span
-                className={`rounded-full px-1.5 py-0.2 text-[9px] ${
+                className={`rounded-full px-1.5 py-0.2 text-4xs ${
                   plaqueIndex === idx ? "bg-slate-950 text-amber-400" : "bg-slate-900 text-slate-400"
                 }`}
               >
@@ -122,7 +122,7 @@ export default function VisualiseurDebitPlaques({
           </button>
           <button
             onClick={() => setZoom(1)}
-            className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] font-bold text-slate-400 hover:text-white"
+            className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-2xs font-bold text-slate-400 hover:text-white"
           >
             100%
           </button>
@@ -147,7 +147,7 @@ export default function VisualiseurDebitPlaques({
               Plan de Découpe — Plaque Brute {rawL} × {rawH} mm
             </p>
           </div>
-          <div className="flex items-center gap-3 text-[11px]">
+          <div className="flex items-center gap-3 text-3xs">
             <span className="text-slate-400">
               Rendement : <strong className="text-emerald-400">{plaqueActive.tauxRendementPct.toFixed(1)} %</strong>
             </span>
@@ -311,7 +311,7 @@ export default function VisualiseurDebitPlaques({
         </div>
 
         {/* Légende du plan de coupe */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3 text-[11px]">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3 text-3xs">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1.5">
               <div className="h-3.5 w-3.5 rounded bg-sky-600 border border-sky-400" />
@@ -331,7 +331,7 @@ export default function VisualiseurDebitPlaques({
             </div>
           </div>
 
-          <p className="text-[10px] text-slate-500 italic">Épaisseur trait de scie : 3 mm inclus</p>
+          <p className="text-2xs text-slate-500 italic">Épaisseur trait de scie : 3 mm inclus</p>
         </div>
       </div>
 
@@ -344,7 +344,7 @@ export default function VisualiseurDebitPlaques({
               Tableau des Découpes — Plaque #{plaqueActive.index}
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400 font-mono">
+          <span className="text-3xs text-slate-400 font-mono">
             {plaqueActive.pieces.length} coupes à effectuer
           </span>
         </div>
@@ -352,7 +352,7 @@ export default function VisualiseurDebitPlaques({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-slate-700 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <tr className="border-b border-slate-700 text-2xs font-bold uppercase tracking-wider text-slate-400">
                 <th className="pb-2">Repère Pièce</th>
                 <th className="pb-2">Type</th>
                 <th className="pb-2 text-right">Longueur</th>
@@ -367,7 +367,7 @@ export default function VisualiseurDebitPlaques({
                   <td className="py-2 font-mono font-bold text-amber-400">{p.repere}</td>
                   <td className="py-2">
                     <span
-                      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      className={`inline-block rounded px-2 py-0.5 text-2xs font-bold uppercase ${
                         p.type === "pignon"
                           ? "bg-amber-500/20 text-amber-400"
                           : p.type === "coupe"

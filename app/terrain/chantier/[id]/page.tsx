@@ -852,7 +852,7 @@ function ChantierDetailContent() {
           <Surface className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wide text-gray-300">Générer un devis</p>
-              <p className="mt-0.5 text-[11px] text-gray-500">
+              <p className="mt-0.5 text-3xs text-gray-500">
                 Chiffre ce chantier sur la base des résultats techniques persistés, sans nouveau calcul.
               </p>
             </div>
@@ -873,14 +873,14 @@ function ChantierDetailContent() {
                 🧱 Configuration technique du chantier
                 <span className="text-gray-500">{configOpen ? '▲' : '▼'}</span>
               </p>
-              <span className="hidden sm:inline-block rounded bg-white/5 px-2 py-0.5 text-[10px] text-gray-400">
+              <span className="hidden sm:inline-block rounded bg-white/5 px-2 py-0.5 text-2xs text-gray-400">
                 Persistée · utilisée par tous les calculs
               </span>
             </div>
             
             {configOpen && (
               <>
-            <p className="mt-2 text-[11px] text-gray-500">
+            <p className="mt-2 text-3xs text-gray-500">
               Saisie au niveau du chantier. Les zones appliquent ces valeurs pour leur
               calcul d&apos;isolant et d&apos;équerrerie. Les zones en attente (brouillon) utilisent
               les mêmes valeurs de secours qu&apos;avant tant que rien n&apos;est configuré.
@@ -889,7 +889,7 @@ function ChantierDetailContent() {
             {configDraft ? (
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
-                  <label className="text-[11px] text-gray-500">Type d&apos;isolant</label>
+                  <label className="text-3xs text-gray-500">Type d&apos;isolant</label>
                   <select
                     value={configDraft.type_isolant ?? ""}
                     onChange={(e) =>
@@ -907,7 +907,7 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-gray-500">Épaisseur isolant</label>
+                  <label className="text-3xs text-gray-500">Épaisseur isolant</label>
                   <select
                     value={configDraft.epaisseur_isolant_mm ?? ""}
                     onChange={(e) =>
@@ -931,7 +931,7 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-gray-500">Surface / Paquet (m²)</label>
+                  <label className="text-3xs text-gray-500">Surface / Paquet (m²)</label>
                   <input
                     type="number"
                     min={0.1}
@@ -949,7 +949,7 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-gray-500">Rives renforcées (40 cm)</label>
+                  <label className="text-3xs text-gray-500">Rives renforcées (40 cm)</label>
                   <div className="mt-1 flex gap-1 rounded-lg border border-white/10 p-0.5">
                     {[
                       { v: null, l: "Auto" },
@@ -960,7 +960,7 @@ function ChantierDetailContent() {
                         key={String(opt.v)}
                         type="button"
                         onClick={() => majConfigTechnique({ zone_vent_rive: opt.v })}
-                        className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                        className={`flex-1 rounded-md px-2 py-1 text-3xs font-medium transition-colors ${
                           configDraft.zone_vent_rive === opt.v
                             ? "bg-sky-600 text-white"
                             : "text-gray-400 hover:text-white"
@@ -970,13 +970,13 @@ function ChantierDetailContent() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-gray-600">
+                  <p className="mt-0.5 text-2xs text-gray-600">
                     Auto = suit l&apos;angle de chaque zone
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-gray-500 font-bold text-amber-500/80">Multiplicateur de chute (Matériaux)</label>
+                  <label className="text-3xs text-gray-500 font-bold text-amber-500/80">Multiplicateur de chute (Matériaux)</label>
                   <input
                     type="number"
                     min={1}
@@ -991,7 +991,7 @@ function ChantierDetailContent() {
                     }
                     className="mt-1 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 px-2.5 py-1.5 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
-                  <p className="mt-0.5 text-[10px] text-amber-500/70">
+                  <p className="mt-0.5 text-2xs text-amber-500/70">
                     ex: 1.1 = +10% de marge. Par défaut: 1.10
                   </p>
                 </div>
@@ -1002,7 +1002,7 @@ function ChantierDetailContent() {
 
             <div className="mt-3 flex items-center justify-end gap-2">
               {configSaved && (
-                <span className="text-[11px] font-semibold text-emerald-400">✓ Enregistré</span>
+                <span className="text-3xs font-semibold text-emerald-400">✓ Enregistré</span>
               )}
               <button
                 type="button"
@@ -1115,26 +1115,26 @@ function ChantierDetailContent() {
                   <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
                     <p className="text-xs text-gray-500">Matin</p>
                     <p className="text-lg font-bold text-white">{meteo.matin.temp}°C</p>
-                    <p className="text-[11px] text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
+                    <p className="text-3xs text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
                     <p className="text-xs text-gray-500">Après-midi</p>
                     <p className="text-lg font-bold text-white">{meteo.apresMidi.temp}°C</p>
-                    <p className="text-[11px] text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                    <p className="text-3xs text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
                     <p className="text-xs text-gray-500">Rafales Max</p>
                     <p className="text-lg font-bold text-gray-300">
                       {Math.max(meteo.matin.rafales, meteo.apresMidi.rafales)} km/h
                     </p>
-                    <p className="text-[11px] text-gray-400">Sur la journée</p>
+                    <p className="text-3xs text-gray-400">Sur la journée</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent/60 p-3">
                     <p className="text-xs text-gray-500">Précipitations</p>
                     <p className="text-lg font-bold text-gray-400">
                       {meteo.heures.reduce((s, h) => s + h.pluie, 0).toFixed(1)} mm
                     </p>
-                    <p className="text-[11px] text-gray-400">Cumul journalier</p>
+                    <p className="text-3xs text-gray-400">Cumul journalier</p>
                   </div>
                 </div>
 
@@ -1153,10 +1153,10 @@ function ChantierDetailContent() {
                         key={h.heure}
                         className="rounded-lg border border-white/10 bg-transparent/60 p-2 text-center"
                       >
-                        <p className="text-[10px] text-gray-500">{h.heure}</p>
+                        <p className="text-2xs text-gray-500">{h.heure}</p>
                         <p className="text-xs font-bold text-white">{h.temp}°C</p>
-                        <p className="text-[10px] text-gray-400">{h.vent}·{h.rafales} km/h</p>
-                        {h.pluie > 0 && <p className="text-[10px] text-gray-300">{h.pluie} mm</p>}
+                        <p className="text-2xs text-gray-400">{h.vent}·{h.rafales} km/h</p>
+                        {h.pluie > 0 && <p className="text-2xs text-gray-300">{h.pluie} mm</p>}
                       </div>
                     ))}
                   </div>
@@ -1261,7 +1261,7 @@ function ChantierDetailContent() {
                               <td className="p-3 text-right font-medium">{fmtEuro(ht)}</td>
                               <td className="p-3">
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                  className={`rounded-full px-2 py-0.5 text-2xs font-semibold uppercase ${
                                     d.statut === "accepte"
                                       ? "bg-red-600/20 text-gray-400"
                                       : d.statut === "refuse"
@@ -1276,7 +1276,7 @@ function ChantierDetailContent() {
                                 {d.statut !== "signe" && d.statut !== "accepte" && (
                                   <button
                                     onClick={() => setSigningDevis({ id: d.id, numero: d.numero })}
-                                    className="bg-sky-600/20 text-sky-400 hover:bg-sky-600/30 text-[10px] font-bold px-2 py-1 rounded transition"
+                                    className="bg-sky-600/20 text-sky-400 hover:bg-sky-600/30 text-2xs font-bold px-2 py-1 rounded transition"
                                   >
                                     ✍️ Signer par SMS
                                   </button>
@@ -1327,7 +1327,7 @@ function ChantierDetailContent() {
                             <tr key={f.id}>
                               <td className="p-3 font-semibold text-white">{f.numero}</td>
                               <td className="p-3">
-                                <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-[10px] uppercase text-gray-300">
+                                <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-2xs uppercase text-gray-300">
                                   {f.type_facture || "totale"}
                                 </span>
                               </td>
@@ -1340,7 +1340,7 @@ function ChantierDetailContent() {
                               </td>
                               <td className="p-3">
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                  className={`rounded-full px-2 py-0.5 text-2xs font-semibold uppercase ${
                                     f.statut === "payee"
                                       ? "bg-red-600/20 text-gray-400"
                                       : f.statut === "envoyee"
@@ -1407,7 +1407,7 @@ function ChantierDetailContent() {
                               </td>
                               <td className="p-3">
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                  className={`rounded-full px-2 py-0.5 text-2xs font-semibold uppercase ${
                                     p.statut === "sans_reserve"
                                       ? "bg-red-600/20 text-gray-400"
                                       : p.statut === "reserves_levees"
@@ -1497,7 +1497,7 @@ function ChantierDetailContent() {
                             </td>
                             <td className="p-3">
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                className={`rounded-full px-2 py-0.5 text-2xs font-semibold uppercase ${
                                   c.statut === "livree"
                                     ? "bg-red-600/20 text-gray-400"
                                     : c.statut === "commandee"

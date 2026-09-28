@@ -399,7 +399,7 @@ export default function FicheSAV() {
               </label>
             </div>
             {ticket.respect_dtu && (
-              <p className="text-[10px] text-gray-400 font-medium">✅ Ce diagnostic protège juridiquement l'entreprise.</p>
+              <p className="text-2xs text-gray-400 font-medium">✅ Ce diagnostic protège juridiquement l'entreprise.</p>
             )}
           </div>
         </Surface>
@@ -496,7 +496,7 @@ export default function FicheSAV() {
                   ) : (
                     <Camera size={24} className="mb-1" />
                   )}
-                  <span className="text-[10px] font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Avant</span>
+                  <span className="text-2xs font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Avant</span>
                 </label>
                 
                 <label className="flex-1 border border-dashed border-slate-600 bg-transparent/50 hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
@@ -508,7 +508,7 @@ export default function FicheSAV() {
                   ) : (
                     <Camera size={24} className="mb-1" />
                   )}
-                  <span className="text-[10px] font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Après</span>
+                  <span className="text-2xs font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Après</span>
                 </label>
               </div>
             </div>
@@ -517,13 +517,13 @@ export default function FicheSAV() {
               <p className="text-xs font-semibold text-gray-400">VALIDATION (FIN D'INTERVENTION)</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-transparent rounded-xl border border-white/10 p-2 relative min-h-[120px]">
-                  <p className="text-[10px] uppercase text-gray-500 font-bold mb-2">Visa du Technicien</p>
+                  <p className="text-2xs uppercase text-gray-500 font-bold mb-2">Visa du Technicien</p>
                   {ticket.signature_technicien ? (
                     <div className="relative">
                       <Image src={ticket.signature_technicien} alt="Signature Technicien" className="h-20 w-auto mx-auto filter invert opacity-80"  width={100} height={100} />
                       <button 
                         onClick={() => setTicket({...ticket, signature_technicien: null})}
-                        className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
+                        className="absolute top-0 right-0 text-2xs text-red-400 hover:underline"
                       >
                         Effacer
                       </button>
@@ -538,13 +538,13 @@ export default function FicheSAV() {
                 </div>
                 
                 <div className="bg-transparent rounded-xl border border-white/10 p-2 relative min-h-[120px]">
-                  <p className="text-[10px] uppercase text-gray-500 font-bold mb-2">Signature du Client</p>
+                  <p className="text-2xs uppercase text-gray-500 font-bold mb-2">Signature du Client</p>
                   {ticket.signature_client ? (
                     <div className="relative">
                       <Image src={ticket.signature_client} alt="Signature Client" className="h-20 w-auto mx-auto filter invert opacity-80"  width={100} height={100} />
                       <button 
                         onClick={() => setTicket({...ticket, signature_client: null})}
-                        className="absolute top-0 right-0 text-[10px] text-red-400 hover:underline"
+                        className="absolute top-0 right-0 text-2xs text-red-400 hover:underline"
                       >
                         Effacer
                       </button>

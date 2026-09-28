@@ -671,11 +671,11 @@ const positionsX =
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-[10px] uppercase text-slate-400">Lignes montants</p>
+              <p className="text-2xs uppercase text-slate-400">Lignes montants</p>
               <p className="text-base font-bold text-white">
                 {pose ? pose.nbMontants : chevrons.length}
               </p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-2xs text-slate-500">
                 Entraxe HPL : {pose && pose.entraxeHorizontal
                   ? `${(pose.entraxeHorizontal * 100).toFixed(0)} cm`
                   : "—"}
@@ -683,37 +683,37 @@ const positionsX =
             </div>
 
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-[10px] uppercase text-slate-400">Chevrons (max 3m)</p>
+              <p className="text-2xs uppercase text-slate-400">Chevrons (max 3m)</p>
               <p className="text-base font-bold text-sky-400">
                 {chevrons.length} chevrons
               </p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-2xs text-slate-500">
                 ~{pose ? pose.lineaireChevronsM.toFixed(1) : 0} ml total
               </p>
             </div>
 
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-[10px] uppercase text-slate-400">Équerres Isolco</p>
+              <p className="text-2xs uppercase text-slate-400">Équerres Isolco</p>
               <p className="text-base font-bold text-red-400">
                 {equerres.length} équerres
               </p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-2xs text-slate-500">
                 {equerres.length * 2} chevilles Spit MP3-S
               </p>
             </div>
 
             <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-[10px] uppercase text-slate-400">Bande EPDM (80mm)</p>
+              <p className="text-2xs uppercase text-slate-400">Bande EPDM (80mm)</p>
               <p className="text-base font-bold text-emerald-400">
                 {pose ? pose.lineaireBandeEPDMM : 0} ml
               </p>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-2xs text-slate-500">
                 Entraxe vert. {pose ? `${Math.round(pose.entraxeVertical * 100)} cm` : "135 cm"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+          <div className="flex items-center gap-4 text-3xs text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-2.5 w-2.5 rounded-full border border-red-200 bg-red-500"></span>
               Équerre Porteuse (Point Fixe en tête) : {pose ? pose.nbEquerresPorteuses : chevrons.length}
@@ -735,27 +735,27 @@ const positionsX =
           <div className="space-y-2.5">
             <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
               <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-[10px] uppercase text-slate-400">Plaques brutes à cder</p>
+                <p className="text-2xs uppercase text-slate-400">Plaques brutes à cder</p>
                 <p className="text-base font-bold text-white">
                   {calepinage.nbPlaquesNecessaires}
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-2xs text-slate-500">
                   {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
                 </p>
               </div>
 
               <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-[10px] uppercase text-slate-400">Modules posés</p>
+                <p className="text-2xs uppercase text-slate-400">Modules posés</p>
                 <p className="text-base font-bold text-sky-400">
                   {calepinage.nbPiecesPosees}
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-2xs text-slate-500">
                   Trame {calepinage.moduleCibleLargeurMm}×{calepinage.moduleCibleHauteurMm} mm
                 </p>
               </div>
 
               <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-[10px] uppercase text-slate-400">Taux de chute réel</p>
+                <p className="text-2xs uppercase text-slate-400">Taux de chute réel</p>
                 <p
                   className={`text-base font-bold ${
                     calepinage.tauxChutePct <= 15 ? "text-emerald-400" : "text-amber-400"
@@ -763,23 +763,23 @@ const positionsX =
                 >
                   {calepinage.tauxChutePct.toFixed(1)} %
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-2xs text-slate-500">
                   {(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chute
                 </p>
               </div>
 
               <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-[10px] uppercase text-slate-400">Rendement de débit</p>
+                <p className="text-2xs uppercase text-slate-400">Rendement de débit</p>
                 <p className="text-base font-bold text-white">
                   ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-slate-400">mod./plaque</span>
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-2xs text-slate-500">
                   {calepinage.nbJoints} joints façade
                 </p>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 italic">
+            <p className="text-3xs text-slate-400 italic">
               💡 Imbrication 2D : {calepinage.nbPiecesPosees} modules débités dans {calepinage.nbPlaquesNecessaires} plaques brutes ({calepinage.surfacePlaquesAchetesM2.toFixed(1)} m² bruts pour {calepinage.surfaceZoneM2.toFixed(1)} m² nets posés).
             </p>
           </div>

@@ -593,7 +593,7 @@ export default function CataloguePage() {
                 <button
                   key={sub}
                   onClick={() => setActiveSubCategory(sub)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-full text-3xs font-semibold transition-colors ${
                     activeSubCategory === sub
                       ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/30"
                       : "bg-[#1A1D24] text-gray-500 border border-white/5 hover:border-slate-600"
@@ -682,7 +682,7 @@ export default function CataloguePage() {
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex flex-col gap-1">
                     <span
-                      className={`inline-block px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded w-fit ${
+                      className={`inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit ${
                         o.type_cout === "main_oeuvre"
                           ? "bg-violet-600/30 text-violet-300"
                           : "bg-emerald-600/20 text-emerald-300"
@@ -690,7 +690,7 @@ export default function CataloguePage() {
                     >
                       {o.type_cout === "main_oeuvre" ? "Main-d'œuvre" : "Matériau"}
                     </span>
-                    <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded w-fit">
+                    <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-2xs font-bold uppercase tracking-wider rounded w-fit">
                       {mapToMainFamily(o.famille_label || o.categorie, o.type_cout)}
                     </span>
                   </div>
@@ -743,7 +743,7 @@ export default function CataloguePage() {
                   }
 
                   return text ? (
-                    <p className="text-[11px] text-gray-400 font-mono mb-2 opacity-90">
+                    <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">
                       {text}
                     </p>
                   ) : <div className="mb-2"></div>;
@@ -855,7 +855,7 @@ export default function CataloguePage() {
                       {isScraping ? "Recherche..." : "Importer"}
                     </button>
                   </div>
-                  <p className="text-[10px] text-cyan-300 mt-2 opacity-70">
+                  <p className="text-2xs text-cyan-300 mt-2 opacity-70">
                     Copiez le lien depuis votre navigateur mobile et collez-le ici.
                   </p>
                 </div>
@@ -1026,7 +1026,7 @@ export default function CataloguePage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Coût de revient HT (€) — pu_revient
-                        <span className="ml-1 text-[10px] font-normal text-gray-500">(optionnel)</span>
+                        <span className="ml-1 text-2xs font-normal text-gray-500">(optionnel)</span>
                       </label>
                       <input
                         type="text"
@@ -1163,7 +1163,7 @@ export default function CataloguePage() {
                       <div key={idx} className="flex items-center gap-3 bg-[#1A1D24]/50 p-3 rounded-lg border border-white/10">
                         <div className="flex-1 grid grid-cols-3 gap-3">
                           <div>
-                            <label className="block text-[10px] uppercase text-gray-500 mb-1">Longueur (mm)</label>
+                            <label className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
                             <input
                               type="number"
                               min="0"
@@ -1178,7 +1178,7 @@ export default function CataloguePage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase text-gray-500 mb-1">Largeur (mm)</label>
+                            <label className="block text-2xs uppercase text-gray-500 mb-1">Largeur (mm)</label>
                             <input
                               type="number"
                               min="0"
@@ -1193,7 +1193,7 @@ export default function CataloguePage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
+                            <label className="block text-2xs uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
                             <input
                               type="number"
                               min="0"
@@ -1304,7 +1304,7 @@ export default function CataloguePage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Coût de revient HT (€)
-                        <span className="ml-1 text-[10px] font-normal text-gray-500">(optionnel)</span>
+                        <span className="ml-1 text-2xs font-normal text-gray-500">(optionnel)</span>
                       </label>
                       <input
                         type="text"
@@ -1321,7 +1321,7 @@ export default function CataloguePage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-400 mb-1">
                         Prix TTC (€)
-                        <span className="ml-1 text-[10px] font-normal text-gray-500">(TVA 20%)</span>
+                        <span className="ml-1 text-2xs font-normal text-gray-500">(TVA 20%)</span>
                       </label>
                       <input
                         type="text"

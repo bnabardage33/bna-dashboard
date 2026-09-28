@@ -237,15 +237,15 @@ export default function FraisInterimPage() {
             {/* Récapitulatif calculé */}
             <div className="rounded-xl border border-white/10 bg-red-600/5 p-4 grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">Total HT</p>
+                <p className="text-2xs uppercase tracking-wide text-gray-400 font-bold">Total HT</p>
                 <p className="text-lg font-black text-white">{fmtEuro(totalHT)}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">TVA</p>
+                <p className="text-2xs uppercase tracking-wide text-gray-400 font-bold">TVA</p>
                 <p className="text-lg font-black text-gray-300">{fmtEuro(montantTva)}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-bold">Total TTC</p>
+                <p className="text-2xs uppercase tracking-wide text-gray-400 font-bold">Total TTC</p>
                 <p className="text-lg font-black text-gray-400">{fmtEuro(totalTTC)}</p>
               </div>
             </div>

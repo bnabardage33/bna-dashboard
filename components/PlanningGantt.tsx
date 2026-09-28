@@ -192,7 +192,7 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
             style={{ left: todayIndex * DAY_WIDTH_PX, width: 2 }}
           />
           <div 
-            className="absolute top-[28px] bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-md z-10"
+            className="absolute top-[28px] bg-red-600 text-white text-2xs font-bold px-1.5 py-0.5 rounded shadow-md z-10"
             style={{ left: (todayIndex * DAY_WIDTH_PX) - 30 }}
           >
             Aujourd'hui
@@ -253,7 +253,7 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
                       <div className="relative z-10 whitespace-nowrap text-white text-xs font-bold truncate select-none pointer-events-none flex-1 flex items-center gap-2">
                         <span>{ch.nom || nomClient}</span>
                         {avancements[ch.id] !== undefined && width > 100 && (
-                          <span className="text-[10px] bg-black/40 px-1.5 py-0.5 rounded-md font-medium">
+                          <span className="text-2xs bg-black/40 px-1.5 py-0.5 rounded-md font-medium">
                             {avancements[ch.id]}%
                           </span>
                         )}

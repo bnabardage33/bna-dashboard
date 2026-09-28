@@ -621,27 +621,27 @@ export default function FinChantierPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Surface className="p-4 shadow-sm" radius="2xl">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total PV Émis</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Total PV Émis</p>
           <p className="mt-0.5 text-2xl font-black text-white font-mono">{totalPV}</p>
-          <p className="text-[11px] text-gray-500">Chantiers clôturés</p>
+          <p className="text-3xs text-gray-500">Chantiers clôturés</p>
         </Surface>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Sans Réserve</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Sans Réserve</p>
           <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbSansReserve}</p>
-          <p className="text-[11px] text-gray-400/80">GPA &amp; Décennale actives</p>
+          <p className="text-3xs text-gray-400/80">GPA &amp; Décennale actives</p>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Avec Réserves</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Avec Réserves</p>
           <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbAvecReserves}</p>
-          <p className="text-[11px] text-gray-400/80">En cours de levée</p>
+          <p className="text-3xs text-gray-400/80">En cours de levée</p>
         </div>
 
         <div className="rounded-2xl border border-red-600/30 bg-sky-950/20 p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Réserves Levées</p>
+          <p className="text-2xs font-bold uppercase tracking-wider text-gray-300">Réserves Levées</p>
           <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbReservesLevees}</p>
-          <p className="text-[11px] text-red-600/80">Solde déblocable</p>
+          <p className="text-3xs text-red-600/80">Solde déblocable</p>
         </div>
       </div>
 
@@ -745,7 +745,7 @@ export default function FinChantierPage() {
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      className={`rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-wider ${
                         pv.statut === "sans_reserve"
                           ? "bg-red-600/20 text-gray-400 border border-white/10"
                           : pv.statut === "reserves_levees"
@@ -767,19 +767,19 @@ export default function FinChantierPage() {
 
                   <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent/60 p-2.5 border border-white/10/60 text-center">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Surface</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Surface</p>
                       <p className="text-xs font-bold text-gray-200 mt-0.5">
                         {surfaceTotale > 0 ? `${surfaceTotale.toFixed(1)} m²` : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Réserves</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Réserves</p>
                       <p className="text-xs font-bold text-gray-200 mt-0.5">
                         {nbRes === 0 ? "0" : `${nbLevees}/${nbRes}`}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500">Photos</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">Photos</p>
                       <p className="text-xs font-bold text-gray-200 mt-0.5">
                         {nbPhotos > 0 ? `📷 ${nbPhotos}` : "0"}
                       </p>
@@ -947,7 +947,7 @@ export default function FinChantierPage() {
                     }`}
                   >
                     <p className="font-bold">✓ Sans Réserve</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Ouvrage 100% conforme</p>
+                    <p className="text-2xs text-gray-400 mt-0.5">Ouvrage 100% conforme</p>
                   </button>
 
                   <button
@@ -960,7 +960,7 @@ export default function FinChantierPage() {
                     }`}
                   >
                     <p className="font-bold">⚠️ Avec Réserves</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Retouches consignées</p>
+                    <p className="text-2xs text-gray-400 mt-0.5">Retouches consignées</p>
                   </button>
 
                   <button
@@ -973,7 +973,7 @@ export default function FinChantierPage() {
                     }`}
                   >
                     <p className="font-bold">✓ Réserves Levées</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Travaux repris et validés</p>
+                    <p className="text-2xs text-gray-400 mt-0.5">Travaux repris et validés</p>
                   </button>
                 </div>
               </div>
@@ -985,7 +985,7 @@ export default function FinChantierPage() {
                     <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
                       <span>📐</span> Métrés &amp; Surfaces Posées ({formZonesMetres.length} zone(s))
                     </p>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-3xs text-gray-400">
                       Surfaces nettes exécutées et réceptionnées sur ce chantier
                     </p>
                   </div>
@@ -1019,7 +1019,7 @@ export default function FinChantierPage() {
                   <div className="overflow-x-auto rounded-lg border border-white/10 bg-transparent">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-white/10 text-gray-400 font-semibold uppercase text-[10px]">
+                        <tr className="border-b border-white/10 text-gray-400 font-semibold uppercase text-2xs">
                           <th className="p-2">Zone</th>
                           <th className="p-2">Type</th>
                           <th className="p-2">Largeur (m)</th>
@@ -1115,7 +1115,7 @@ export default function FinChantierPage() {
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
                         <span>📝</span> Tableau des Réserves Constatées ({formReserves.length})
                       </p>
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-3xs text-gray-400">
                         Désignation, emplacement précis et date limite convenue de levée
                       </p>
                     </div>
@@ -1239,7 +1239,7 @@ export default function FinChantierPage() {
                     <p className="text-xs font-bold uppercase tracking-wide text-gray-300 flex items-center gap-1.5">
                       <span>📷</span> Annexes Photographiques ({formPhotos.length}/4 clichés)
                     </p>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-3xs text-gray-400">
                       Photos contradictoires de l&apos;ouvrage achevé pour l&apos;annexe au PV
                     </p>
                   </div>
@@ -1283,12 +1283,12 @@ export default function FinChantierPage() {
                           value={p.titre || ""}
                           onChange={(e) => modifierTitrePhoto(p.id, e.target.value)}
                           placeholder="Légende photo"
-                          className="w-full rounded border border-white/10 bg-transparent px-1.5 py-1 text-[11px] text-white"
+                          className="w-full rounded border border-white/10 bg-transparent px-1.5 py-1 text-3xs text-white"
                         />
                         <button
                           type="button"
                           onClick={() => supprimerPhoto(p.id)}
-                          className="absolute -top-1.5 -right-1.5 rounded-full bg-red-600 p-1 text-white shadow hover:bg-red-900/200 text-[10px]"
+                          className="absolute -top-1.5 -right-1.5 rounded-full bg-red-600 p-1 text-white shadow hover:bg-red-900/200 text-2xs"
                         >
                           ✕
                         </button>
@@ -1466,13 +1466,13 @@ export default function FinChantierPage() {
                       <p className={`text-xs font-semibold ${r.levee ? "line-through text-gray-400" : "text-white"}`}>
                         {r.designation}
                       </p>
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-3xs text-gray-500">
                         {r.localisation} · Échéance : {r.date_limite ? new Date(r.date_limite).toLocaleDateString("fr-FR") : "—"}
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-semibold">
+                  <span className="text-3xs font-semibold">
                     {r.levee ? (
                       <span className="text-gray-400">
                         ✓ Levée {r.date_levee ? `(${new Date(r.date_levee).toLocaleDateString("fr-FR")})` : ""}
@@ -1516,7 +1516,7 @@ export default function FinChantierPage() {
                   Procès-Verbal Officiel {pvSelectionne.numero}
                 </h3>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                  className={`rounded-full px-2 py-0.5 text-2xs font-semibold uppercase ${
                     pvSelectionne.statut === "sans_reserve"
                       ? "bg-red-600/20 text-gray-400"
                       : pvSelectionne.statut === "reserves_levees"

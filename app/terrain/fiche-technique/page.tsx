@@ -312,7 +312,7 @@ export default function FicheTechniquePage() {
               />
 
               <div>
-                <label className="text-[11px] font-semibold uppercase text-gray-400 block mb-1">
+                <label className="text-3xs font-semibold uppercase text-gray-400 block mb-1">
                   Joindre un fichier PDF (optionnel)
                 </label>
                 <input

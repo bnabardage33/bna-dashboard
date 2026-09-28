@@ -410,7 +410,7 @@ export default function ClientPortalPrototype() {
           <button 
             type="submit" 
             disabled={!inputValue.trim() || isLoading}
-            className="bg-red-600 hover:bg-[#1A1D24] disabled:opacity-50 text-white p-2 rounded-xl flex items-center justify-center transition cursor-pointer"
+            className="bg-red-600 hover:bg-[#1A1D24] disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-xl flex items-center justify-center transition cursor-pointer"
           >
             <Send size={18} />
           </button>

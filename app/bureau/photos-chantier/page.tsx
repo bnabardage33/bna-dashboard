@@ -177,7 +177,7 @@ export default function PhotosChantierAdmin() {
               </div>
             )}
             {selectedChantier && (
-              <p className="text-[10px] text-gray-400 mt-1 font-mono px-1 truncate">ID: {selectedChantier.id}</p>
+              <p className="text-2xs text-gray-400 mt-1 font-mono px-1 truncate">ID: {selectedChantier.id}</p>
             )}
           </div>
 
@@ -249,7 +249,7 @@ export default function PhotosChantierAdmin() {
           <Surface className="p-4" radius="2xl">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-white">Photos envoyées</h2>
-              <span className="bg-[#1A1D24] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{photos.length}</span>
+              <span className="bg-[#1A1D24] text-white text-2xs font-bold px-2 py-0.5 rounded-full">{photos.length}</span>
             </div>
             {loadingPhotos ? (
               <div className="flex justify-center py-8">
@@ -262,7 +262,7 @@ export default function PhotosChantierAdmin() {
                 {photos.map(p => (
                   <div key={p.id} className="relative rounded-xl overflow-hidden border border-white/10 group">
                     <Image src={p.url_image} alt={p.titre} className="w-full aspect-square object-cover"  width={100} height={100} />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] px-2 py-1 font-bold truncate">{p.titre}</div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-2xs px-2 py-1 font-bold truncate">{p.titre}</div>
                     {/* Bouton delete visible sur mobile tap */}
                     <button
                       onClick={() => handleDelete(p.id)}
@@ -279,8 +279,8 @@ export default function PhotosChantierAdmin() {
 
         {/* SQL HINT SI ERREUR SUPABASE */}
         <div className="mt-6 bg-[#1A1D24] border border-dashed border-white/20 rounded-2xl p-4">
-          <p className="text-[10px] font-bold text-gray-400 mb-2">🔒 Si l'upload échoue (RLS), exécute ce SQL dans Supabase :</p>
-          <pre className="text-[10px] text-gray-400 bg-white/5 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">{`-- TABLE: autorise tout depuis le serveur (service_role bypasse déjà)
+          <p className="text-2xs font-bold text-gray-400 mb-2">🔒 Si l'upload échoue (RLS), exécute ce SQL dans Supabase :</p>
+          <pre className="text-2xs text-gray-400 bg-white/5 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">{`-- TABLE: autorise tout depuis le serveur (service_role bypasse déjà)
 -- Si tu veux aussi l'accès depuis le navigateur (anon):
 ALTER TABLE photos_chantier ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "insert_photos" ON photos_chantier

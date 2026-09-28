@@ -254,7 +254,7 @@ export default function NotesPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-white/10/60 pt-3 text-[11px] text-gray-500">
+                  <div className="flex items-center justify-between border-t border-white/10/60 pt-3 text-3xs text-gray-500">
                     <span>{new Date(note.updated_at).toLocaleDateString("fr-FR")}</span>
                     <div className="flex items-center gap-1">
                       <button
