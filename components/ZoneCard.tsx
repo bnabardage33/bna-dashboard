@@ -1109,10 +1109,10 @@ export default function ZoneCard({
 
               {/* SENS DE POSE */}
               <div className="pt-1">
-                <label className="text-xs uppercase tracking-wide text-slate-400">
+                <label id={`grp-orientation-de-pose-${zone.id}`} className="text-xs uppercase tracking-wide text-slate-400">
                   Orientation de pose
                 </label>
-                <div className="mt-1 flex gap-2">
+                <div role="group" aria-labelledby="grp-orientation-de-pose-${zone.id}" className="mt-1 flex gap-2">
                   {(["horizontal", "vertical"] as const).map((s) => {
                     const actif = (zone.sens_pose ?? "horizontal").toString().toLowerCase() === s;
                     return (

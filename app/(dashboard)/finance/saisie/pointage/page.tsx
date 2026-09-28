@@ -135,8 +135,8 @@ export default function SaisiePointage() {
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Type d'heure</label>
-          <div className="flex gap-2">
+          <label id="grp-type-d-heure" className="block text-sm text-gray-400 mb-1">Type d'heure</label>
+          <div role="group" aria-labelledby="grp-type-d-heure" className="flex gap-2">
             {["Normale", "Supplémentaire", "Intempéries"].map(type => (
               <button
                 key={type}

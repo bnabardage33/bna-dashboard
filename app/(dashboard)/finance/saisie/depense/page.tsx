@@ -197,8 +197,8 @@ export default function SaisieDepense() {
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Statut</label>
-          <div className="flex gap-2">
+          <label id="grp-statut" className="block text-sm text-gray-400 mb-1">Statut</label>
+          <div role="group" aria-labelledby="grp-statut" className="flex gap-2">
             {["Prévu", "Engagé", "Payé"].map(statut => (
               <button
                 key={statut}

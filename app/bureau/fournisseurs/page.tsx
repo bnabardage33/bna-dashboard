@@ -768,8 +768,8 @@ export default function FournisseursPage() {
               </select>
 
               <div>
-                <label className="mb-1 block text-3xs font-semibold uppercase text-gray-400">Statut du fournisseur</label>
-                <div className="grid grid-cols-3 gap-2">
+                <label id="grp-statut-du-fournisseur" className="mb-1 block text-3xs font-semibold uppercase text-gray-400">Statut du fournisseur</label>
+                <div role="group" aria-labelledby="grp-statut-du-fournisseur" className="grid grid-cols-3 gap-2">
                   {RELATIONS.map((r) => (
                     <button
                       key={r.value}

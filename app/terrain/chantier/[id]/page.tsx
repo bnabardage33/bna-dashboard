@@ -752,10 +752,10 @@ function ChantierDetailContent() {
               </select>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wide text-gray-500">
+              <label id="grp-zone-de-vent" className="text-xs uppercase tracking-wide text-gray-500">
                 Zone de vent
               </label>
-              <div className="mt-1 flex gap-2">
+              <div role="group" aria-labelledby="grp-zone-de-vent" className="mt-1 flex gap-2">
                 <button
                   type="button"
                   onClick={() => changerZoneVent(1)}
@@ -950,8 +950,8 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-3xs text-gray-500">Rives renforcées (40 cm)</label>
-                  <div className="mt-1 flex gap-1 rounded-lg border border-white/10 p-0.5">
+                  <label id="grp-rives-renforcees-40-cm" className="text-3xs text-gray-500">Rives renforcées (40 cm)</label>
+                  <div role="group" aria-labelledby="grp-rives-renforcees-40-cm" className="mt-1 flex gap-1 rounded-lg border border-white/10 p-0.5">
                     {[
                       { v: null, l: "Auto" },
                       { v: true, l: "Oui" },

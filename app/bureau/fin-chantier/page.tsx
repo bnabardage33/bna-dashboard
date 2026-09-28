@@ -936,10 +936,10 @@ export default function FinChantierPage() {
 
               {/* SECTION 3 : PRONONCIATION DE LA RÉCEPTION */}
               <div className="rounded-xl border border-white/10 bg-transparent p-3.5 space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wide text-gray-300">
+                <label id="grp-type-de-reception-prononcee" className="text-xs font-bold uppercase tracking-wide text-gray-300">
                   Type de Réception prononcée
                 </label>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div role="group" aria-labelledby="grp-type-de-reception-prononcee" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <button
                     type="button"
                     onClick={() => setFormStatut("sans_reserve")}

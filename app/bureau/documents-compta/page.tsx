@@ -356,8 +356,8 @@ export default function DocumentsComptaPage() {
         {onglet === 'scanner' && (
           <Surface className="p-4 space-y-4" radius="2xl">
             <div>
-              <label className="text-xs font-bold text-white mb-1 block">Type de document</label>
-              <div className="flex gap-2">
+              <label id="grp-type-de-document" className="text-xs font-bold text-white mb-1 block">Type de document</label>
+              <div role="group" aria-labelledby="grp-type-de-document" className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setType('bl')}
