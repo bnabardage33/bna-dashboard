@@ -352,7 +352,7 @@ export default function FacturesPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des factures…
         </div>
       ) : factures.length === 0 ? (
@@ -412,7 +412,7 @@ export default function FacturesPage() {
                     </select>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl bg-transparent p-2.5 border border-white/10/60">
+                  <div className="flex items-center justify-between rounded-xl bg-transparent p-2.5 border border-white/10">
                     <div>
                       <p className="text-2xs uppercase tracking-wide text-gray-500">Montant HT</p>
                       <p className="text-xs font-semibold text-gray-300">{fmtEuro(ht)}</p>
@@ -424,7 +424,7 @@ export default function FacturesPage() {
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex items-center justify-between border-t border-white/10/60 pt-3">
+                <div className="mt-3.5 flex items-center justify-between border-t border-white/10 pt-3">
                   <button
                     onClick={() => setApercu(f)}
                     className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] flex items-center gap-1"

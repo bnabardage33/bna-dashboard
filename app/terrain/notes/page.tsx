@@ -170,7 +170,7 @@ export default function NotesPage() {
 
       {/* Liste des Notes */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des notes…
         </div>
       ) : notes.length === 0 ? (
@@ -255,7 +255,7 @@ export default function NotesPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-white/10/60 pt-3 text-3xs text-gray-500">
+                  <div className="flex items-center justify-between border-t border-white/10 pt-3 text-3xs text-gray-500">
                     <span>{new Date(note.updated_at).toLocaleDateString("fr-FR")}</span>
                     <div className="flex items-center gap-1">
                       <button

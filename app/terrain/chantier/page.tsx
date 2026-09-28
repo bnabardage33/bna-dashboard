@@ -229,7 +229,7 @@ export default function ChantiersPage() {
 
       {/* Liste des Chantiers en Cartes Mobiles Modernes */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des chantiers en cours…
         </div>
       ) : chantiersFiltres.length === 0 ? (
@@ -315,7 +315,7 @@ export default function ChantiersPage() {
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/10/60 text-xs text-gray-400">
+                  <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs text-gray-400">
                     <div className="flex items-center gap-1.5 text-3xs">
                       <Calendar className="h-3.5 w-3.5 text-gray-500" />
                       <span>
@@ -347,7 +347,7 @@ export default function ChantiersPage() {
                   </button>
                 )}
 
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-white/10/40">
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-white/10">
                   {ch.adresse_chantier ? (
                     <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

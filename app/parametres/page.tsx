@@ -173,7 +173,7 @@ export default function ParametresPage() {
 
       {/* 1. Bloc : Coordonnées de l'entreprise */}
       <Surface className="p-5 shadow-md space-y-4" radius="2xl">
-        <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
+        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-300">
             <Building2 className="h-4 w-4" />
           </div>
@@ -206,7 +206,7 @@ export default function ParametresPage() {
         </div>
 
         {/* Téléversement du Logo */}
-        <div className="rounded-xl border border-white/10/80 bg-transparent p-4">
+        <div className="rounded-xl border border-white/10 bg-transparent p-4">
           <label className="text-xs font-bold uppercase tracking-wide text-gray-400">
             Logo Officiel de l&apos;entreprise (PDF &amp; Écran)
           </label>
@@ -246,7 +246,7 @@ export default function ParametresPage() {
 
       {/* 2. Bloc : Assurance Décennale & RCP */}
       <Surface className="p-5 shadow-md space-y-4" radius="2xl">
-        <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
+        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-400">
             <ShieldCheck className="h-4 w-4" />
           </div>
@@ -285,7 +285,7 @@ export default function ParametresPage() {
 
       {/* 3. Bloc : Médiateur de la Consommation */}
       <Surface className="p-5 shadow-md space-y-4" radius="2xl">
-        <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
+        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-400">
             <Scale className="h-4 w-4" />
           </div>
@@ -315,7 +315,7 @@ export default function ParametresPage() {
 
       {/* 4. Bloc : Mentions Légales */}
       <Surface className="p-5 shadow-md space-y-3" radius="2xl">
-        <div className="flex items-center gap-2.5 border-b border-white/10/80 pb-3">
+        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600/15 text-gray-300">
             <FileText className="h-4 w-4" />
           </div>

@@ -703,7 +703,7 @@ export default function FinChantierPage() {
 
       {/* Liste des PV en Cartes Mobiles */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement des procès-verbaux…
         </div>
       ) : pvsFiltres.length === 0 ? (
@@ -765,7 +765,7 @@ export default function FinChantierPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent p-2.5 border border-white/10/60 text-center">
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent p-2.5 border border-white/10 text-center">
                     <div>
                       <p className="text-2xs uppercase tracking-wide text-gray-500">Surface</p>
                       <p className="text-xs font-bold text-gray-200 mt-0.5">
@@ -787,7 +787,7 @@ export default function FinChantierPage() {
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10/60 pt-3">
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
                       onClick={() => {

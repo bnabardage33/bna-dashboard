@@ -27,18 +27,23 @@
 // CE QUI RESTE OUVERT, ET QUE CE TEST EMPÊCHE D'OUBLIER. Le même défaut existe
 // ailleurs, et ce lot n'a PAS mandat pour le corriger :
 //
-//   border-white/10/60   14 occurrences   (6 fichiers)
-//   border-white/10/80    5 occurrences   (1 fichier)
-//   border-white/10/40    1 occurrence    (1 fichier)
 //   bg-white/10/60        2 occurrences   (1 fichier)   <- FOND, pas bordure
 //                        ---
-//                        22 occurrences
+//                        2 occurrences
 //
 // Elles sont comptées et verrouillées en fin de fichier. `bg-white/10/60` est le
 // cas le plus différent : faute de règle émise, le fond reste à sa valeur
 // initiale `transparent`, et le corriger ferait APPARAÎTRE un fond blanc à 10 %
 // là où il n'y a rien aujourd'hui. Ce n'est pas la même correction que pour une
 // bordure, et cela demande un arbitrage à part.
+//
+// LOT 2G P3, DEPUIS. Les 20 occurrences de bordure que ce lot laissait en
+// attente ont ete corrigees en `border-white/10`, la classe deja dominante
+// du depot : `border-white/10/60` (14), `border-white/10/80` (5),
+// `border-white/10/40` (1). Le reliquat ci-dessus se reduit donc a
+// `bg-white/10/60`, qui demeure VERROUILLE pour un sous-lot distinct :
+// corriger un fond vide d effet n est pas la meme operation que corriger
+// une bordure au texte.
 // =============================================================================
 
 import { describe, it, expect } from 'vitest'
@@ -162,18 +167,15 @@ describe('2F-2 · les six sites corrigés', () => {
 // -----------------------------------------------------------------------------
 
 describe('2F-2 · reliquat à double opacité, hors mandat', () => {
-  it('les 22 occurrences restantes sont exactement celles mesurées', () => {
+  it('les 2 occurrences restantes sont exactement celles mesurées', () => {
     const parClasse = occurrencesRestantes(DOUBLE_OPACITE)
     const attendu = new Map([
-      ['border-white/10/60', 14],
-      ['border-white/10/80', 5],
-      ['border-white/10/40', 1],
       ['bg-white/10/60', 2],
     ])
     expect([...parClasse.entries()].sort()).toEqual([...attendu.entries()].sort())
 
     const total = [...parClasse.values()].reduce((a, b) => a + b, 0)
-    expect(total).toBe(22)
+    expect(total).toBe(2)
   })
 
   it('aucune n\'est dans une vue d\'impression ou espace-client', () => {

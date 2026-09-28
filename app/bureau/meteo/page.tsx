@@ -135,7 +135,7 @@ export default function BureauMeteoPage() {
       )}
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10/60 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
           Chargement de la météo des chantiers…
         </div>
       ) : chantiers.length === 0 ? (
