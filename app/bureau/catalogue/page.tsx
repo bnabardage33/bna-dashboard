@@ -626,8 +626,8 @@ export default function CataloguePage() {
           </div>
           {/* Fabricant */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-400">Fabricant</label>
-            <select
+            <label htmlFor="chp-fabricant" className="text-xs text-gray-400">Fabricant</label>
+            <select id="chp-fabricant"
               value={activeFabricant}
               onChange={(e) => setActiveFabricant(e.target.value)}
               className="rounded border border-slate-600 bg-transparent p-1 text-xs text-gray-200"
@@ -695,10 +695,10 @@ export default function CataloguePage() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleOpenModal(o)} className="text-gray-500 hover:text-gray-400">
+                    <button onClick={() => handleOpenModal(o)} className="text-gray-500 hover:text-gray-400" aria-label="Modifier l'ouvrage">
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(o.id)} className="text-gray-500 hover:text-rose-400">
+                    <button onClick={() => handleDelete(o.id)} className="text-gray-500 hover:text-rose-400" aria-label="Supprimer l'ouvrage">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -794,7 +794,7 @@ export default function CataloguePage() {
                       ? "Nouvelle Main-d'œuvre"
                       : "Nouveau matériau"}
                 </h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white" aria-label="Fermer">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -864,8 +864,8 @@ export default function CataloguePage() {
                 {/* ── Type de prestation : Matériau / Main-d'œuvre ───────── */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Type de prestation</label>
-                    <select
+                    <label htmlFor="chp-type-de-prestation" className="block text-xs font-semibold text-gray-400 mb-1">Type de prestation</label>
+                    <select id="chp-type-de-prestation"
                       value={formData.type_cout}
                       onChange={(e) => set("type_cout", e.target.value === "main_oeuvre" ? "main_oeuvre" : "matiere")}
                       className={`w-full rounded border bg-transparent p-2 text-sm text-white ${
@@ -879,10 +879,10 @@ export default function CataloguePage() {
                     </select>
                   </div>
                   <div>
-                    <label className={`block text-xs font-semibold mb-1 ${formData.type_cout === "main_oeuvre" ? "text-violet-300" : "text-gray-400"}`}>
+                    <label htmlFor="chp-famille-professionnelle" className={`block text-xs font-semibold mb-1 ${formData.type_cout === "main_oeuvre" ? "text-violet-300" : "text-gray-400"}`}>
                       Famille Professionnelle
                     </label>
-                    <select
+                    <select id="chp-famille-professionnelle"
                       required
                       value={formData.famille_label}
                       onChange={(e) => {
@@ -986,8 +986,8 @@ export default function CataloguePage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
-                        <select
+                        <label htmlFor="chp-unite-de-vente" className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
+                        <select id="chp-unite-de-vente"
                           required
                           value={formData.unite}
                           onChange={(e) => set("unite", e.target.value)}
@@ -1080,9 +1080,9 @@ export default function CataloguePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Gamme / Sous-Famille</label>
+                      <label htmlFor="chp-gamme-sous-famille" className="block text-xs font-semibold text-gray-400 mb-1">Gamme / Sous-Famille</label>
                       {formData.famille_label === "Parements & Bardages" ? (
-                        <select
+                        <select id="chp-gamme-sous-famille"
                           value={formData.gamme ?? ""}
                           onChange={(e) => set("gamme", e.target.value)}
                           className="w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white"
@@ -1217,6 +1217,7 @@ export default function CataloguePage() {
                             setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
                           }}
                           className="mt-5 p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-md transition-colors"
+                          aria-label="Supprimer la dimension"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1264,8 +1265,8 @@ export default function CataloguePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
-                      <select
+                      <label htmlFor="chp-unite-de-vente-2" className="block text-xs font-semibold text-gray-400 mb-1">Unité de vente</label>
+                      <select id="chp-unite-de-vente-2"
                         required
                         value={formData.unite}
                         onChange={(e) => set("unite", e.target.value)}

@@ -911,6 +911,7 @@ function DevisContenu() {
                   <button
                     onClick={() => supprimerDevis(d)}
                     className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
+                    aria-label="Supprimer le devis"
                     title="Supprimer le devis"
                   >
                     🗑️
@@ -938,7 +939,7 @@ function DevisContenu() {
                 <h2 className="text-base font-bold text-white">Générer une facture</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Devis {devisToBill.numero} · {devisToBill.clients?.societe || devisToBill.clients?.nom || "—"}</p>
               </div>
-              <button type="button" onClick={() => setDevisToBill(null)} className="text-gray-400 hover:text-white p-1.5">✕</button>
+              <button type="button" onClick={() => setDevisToBill(null)} className="text-gray-400 hover:text-white p-1.5" aria-label="Fermer">✕</button>
             </div>
 
             {/* Type de facture */}
@@ -965,11 +966,11 @@ function DevisContenu() {
             {/* Pourcentage (si acompte ou situation) */}
             {(billType === "acompte" || billType === "situation") && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                <label htmlFor="chp-bill-pct" className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   {billType === "acompte" ? "% d'acompte" : "% d'avancement"}
                 </label>
                 <div className="flex items-center gap-3">
-                  <input
+                  <input id="chp-bill-pct"
                     type="range"
                     min={5}
                     max={100}
@@ -1157,8 +1158,8 @@ function DevisContenu() {
 
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
-                  <input
+                  <label htmlFor="chp-validite-j" className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
+                  <input id="chp-validite-j"
                     type="number"
                     value={validite}
                     onChange={(e) => setValidite(parseInt(e.target.value) || 0)}
@@ -1166,8 +1167,8 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Délai (j)</label>
-                  <input
+                  <label htmlFor="chp-delai-j" className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Délai (j)</label>
+                  <input id="chp-delai-j"
                     type="number"
                     value={delai}
                     onChange={(e) => setDelai(parseInt(e.target.value) || 0)}
@@ -1175,8 +1176,8 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Acompte (%)</label>
-                  <input
+                  <label htmlFor="chp-acompte" className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Acompte (%)</label>
+                  <input id="chp-acompte"
                     type="number"
                     value={acompte}
                     onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
@@ -1184,8 +1185,8 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">TVA (%)</label>
-                  <input
+                  <label htmlFor="chp-tva" className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">TVA (%)</label>
+                  <input id="chp-tva"
                     type="number"
                     step="0.1"
                     value={tva}
@@ -1194,8 +1195,8 @@ function DevisContenu() {
                   />
                 </div>
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-cyan-400 sm:text-xs">MaPrimeRénov'</label>
-                  <select
+                  <label htmlFor="chp-maprimerenov" className="text-3xs font-semibold uppercase text-cyan-400 sm:text-xs">MaPrimeRénov'</label>
+                  <select id="chp-maprimerenov"
                     value={profilRevenu}
                     onChange={(e) => setProfilRevenu(e.target.value as ProfilRevenu)}
                     className="mt-1 w-full min-h-[42px] rounded-xl border border-cyan-600/50 bg-cyan-900/10 px-3 py-2 text-sm text-cyan-100 focus:border-cyan-400 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
@@ -1329,6 +1330,7 @@ function DevisContenu() {
                         }
                       }}
                       className="absolute right-2 text-violet-400 hover:text-violet-300 transition-colors p-2 sm:p-1 disabled:opacity-40 text-lg sm:text-base"
+                      aria-label="Dicter avec le micro"
                       title={ecouteEnCours ? "Ecoute en cours..." : "Dicter avec le micro"}
                     >
                       🎙️

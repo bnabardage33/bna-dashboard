@@ -58,20 +58,20 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Surface (m²)</label>
-          <input type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <label htmlFor="chp-surface-m" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Surface (m²)</label>
+          <input id="chp-surface-m" type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coupes (ml)</label>
-          <input type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <label htmlFor="chp-coupes-ml" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coupes (ml)</label>
+          <input id="chp-coupes-ml" type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Singularités (nb)</label>
-          <input type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <label htmlFor="chp-singularites-nb" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Singularités (nb)</label>
+          <input id="chp-singularites-nb" type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coef. de perte de rendement</label>
-          <input type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <label htmlFor="chp-coef-de-perte-de-rendement" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coef. de perte de rendement</label>
+          <input id="chp-coef-de-perte-de-rendement" type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
         </div>
       </div>
 
@@ -181,8 +181,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
 
         {ouvriers.length > 0 && (
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Ouvrier</label>
-            <select 
+            <label htmlFor="chp-ouvrier" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Ouvrier</label>
+            <select id="chp-ouvrier"
               value={ouvrierId} 
               onChange={(e) => setOuvrierId(e.target.value)} 
               className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
@@ -202,8 +202,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         )}
         
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Date du pointage</label>
-          <input 
+          <label htmlFor="chp-date-du-pointage" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Date du pointage</label>
+          <input id="chp-date-du-pointage"
             type="date" 
             value={dateSaisie} 
             onChange={(e) => setDateSaisie(e.target.value)} 

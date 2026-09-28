@@ -2,7 +2,7 @@
 
 import type { Materiau } from "@/lib/meteoAlerte";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useId } from "react";
 import {
   calculerPose,
   FamillePose,
@@ -819,11 +819,11 @@ export default function ZoneCard({
         )}
 
         <div>
-          <label className="text-xs uppercase tracking-wide text-slate-500">
+          <label htmlFor={`chp-materiau-marge-commande-${zone.id}`} className="text-xs uppercase tracking-wide text-slate-500">
             Matériau (marge commande)
           </label>
 
-          <select
+          <select id={`chp-materiau-marge-commande-${zone.id}`}
             value={zone.materiau as Materiau}
             onChange={(e) =>
               update({
@@ -850,11 +850,11 @@ export default function ZoneCard({
 
       <div className="space-y-2 border-t border-slate-700 pt-3">
 
-        <label className="text-xs uppercase tracking-wide text-slate-500">
+        <label htmlFor={`chp-famille-de-pose-calcul-technique-${zone.id}`} className="text-xs uppercase tracking-wide text-slate-500">
           Famille de pose (calcul technique)
         </label>
 
-        <select
+        <select id={`chp-famille-de-pose-calcul-technique-${zone.id}`}
           value={
             zone.famille_pose ??
             ""
@@ -989,8 +989,8 @@ export default function ZoneCard({
               </div>
 
               <div>
-                <label className="text-3xs text-slate-400">Format standard fabricant</label>
-                <select
+                <label htmlFor={`chp-format-standard-fabricant-${zone.id}`} className="text-3xs text-slate-400">Format standard fabricant</label>
+                <select id={`chp-format-standard-fabricant-${zone.id}`}
                   value={plaqueFormatValeur}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -1051,8 +1051,8 @@ export default function ZoneCard({
               </div>
 
               <div>
-                <label className="text-3xs text-slate-400">Trame cible des modules</label>
-                <select
+                <label htmlFor={`chp-trame-cible-des-modules-${zone.id}`} className="text-3xs text-slate-400">Trame cible des modules</label>
+                <select id={`chp-trame-cible-des-modules-${zone.id}`}
                   value={moduleTrameValeur}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -1278,6 +1278,7 @@ export default function ZoneCard({
                   )
                 }
                 className="ml-auto text-xs text-red-400 hover:text-red-300"
+                aria-label="Supprimer l'ouverture"
               >
                 ✕
               </button>
@@ -1605,13 +1606,14 @@ function Field({
     onChange(Number.isFinite(n) ? n : 0);
   }
 
+  const fieldId = useId();
   return (
     <div>
-      <label className="text-xs uppercase tracking-wide text-slate-500">
+      <label htmlFor={fieldId} className="text-xs uppercase tracking-wide text-slate-500">
         {label}
       </label>
 
-      <input
+      <input id={fieldId}
         type="text"
         inputMode="decimal"
         value={texte}

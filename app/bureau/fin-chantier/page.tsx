@@ -823,6 +823,7 @@ export default function FinChantierPage() {
                     <button
                       onClick={() => ouvrirEditionPV(pv)}
                       className="rounded-xl border border-white/10 bg-transparent p-1.5 text-xs text-gray-300 hover:bg-[#1A1D24]"
+                      aria-label="Modifier le PV"
                       title="Modifier le PV"
                     >
                       ✏️
@@ -831,6 +832,7 @@ export default function FinChantierPage() {
                     <button
                       onClick={() => handleSupprimerPV(pv.id, pv.numero)}
                       className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
+                      aria-label="Supprimer le PV"
                       title="Supprimer le PV"
                     >
                       🗑️
@@ -879,8 +881,8 @@ export default function FinChantierPage() {
               {/* SECTION 1 : CHANTIER & CLIENT */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Chantier concerné *</label>
-                  <select
+                  <label htmlFor="chp-chantier-concerne" className="text-xs font-semibold text-gray-300">Chantier concerné <span aria-hidden="true">*</span></label>
+                  <select id="chp-chantier-concerne"
                     value={formChantierId}
                     onChange={(e) => handleChantierChange(e.target.value)}
                     required
@@ -896,8 +898,8 @@ export default function FinChantierPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Date de réception *</label>
-                  <input
+                  <label htmlFor="chp-date-de-reception" className="text-xs font-semibold text-gray-300">Date de réception <span aria-hidden="true">*</span></label>
+                  <input id="chp-date-de-reception"
                     type="date"
                     value={formDateReception}
                     onChange={(e) => setFormDateReception(e.target.value)}
@@ -1096,6 +1098,7 @@ export default function FinChantierPage() {
                                   setFormZonesMetres(formZonesMetres.filter((_, i) => i !== idx))
                                 }
                                 className="text-red-400 hover:text-red-300"
+                                aria-label="Supprimer la zone"
                               >
                                 ✕
                               </button>
@@ -1172,6 +1175,7 @@ export default function FinChantierPage() {
                               type="button"
                               onClick={() => supprimerReserve(r.id)}
                               className="text-red-400 hover:text-red-300 text-xs"
+                              aria-label="Supprimer la réserve"
                             >
                               ✕
                             </button>
@@ -1290,6 +1294,7 @@ export default function FinChantierPage() {
                           type="button"
                           onClick={() => supprimerPhoto(p.id)}
                           className="absolute -top-1.5 -right-1.5 rounded-full bg-red-600 p-1 text-white shadow hover:bg-red-900/200 text-2xs"
+                          aria-label="Supprimer la photo"
                         >
                           ✕
                         </button>

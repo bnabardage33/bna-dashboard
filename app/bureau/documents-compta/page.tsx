@@ -376,8 +376,8 @@ export default function DocumentsComptaPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-white mb-1 block">Date</label>
-              <input
+              <label htmlFor="chp-date" className="text-xs font-bold text-white mb-1 block">Date</label>
+              <input id="chp-date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -387,8 +387,8 @@ export default function DocumentsComptaPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-white mb-1 block">Montant HT</label>
-                <input
+                <label htmlFor="chp-montant-ht" className="text-xs font-bold text-white mb-1 block">Montant HT</label>
+                <input id="chp-montant-ht"
                   type="number"
                   step="0.01"
                   value={montantHt}
@@ -397,8 +397,8 @@ export default function DocumentsComptaPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-white mb-1 block">TVA (%)</label>
-                <input
+                <label htmlFor="chp-tva" className="text-xs font-bold text-white mb-1 block">TVA (%)</label>
+                <input id="chp-tva"
                   type="number"
                   step="0.1"
                   value={tauxTva}
@@ -420,8 +420,8 @@ export default function DocumentsComptaPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-white mb-1 block">Rattacher à un chantier</label>
-              <select
+              <label htmlFor="chp-rattacher-a-un-chantier" className="text-xs font-bold text-white mb-1 block">Rattacher à un chantier</label>
+              <select id="chp-rattacher-a-un-chantier"
                 value={chantierId}
                 onChange={(e) => setChantierId(e.target.value)}
                 className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
@@ -438,8 +438,8 @@ export default function DocumentsComptaPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-white mb-1 block">Fournisseur</label>
-                <select
+                <label htmlFor="chp-fournisseur" className="text-xs font-bold text-white mb-1 block">Fournisseur</label>
+                <select id="chp-fournisseur"
                   value={fournisseurId}
                   onChange={(e) => setFournisseurId(e.target.value)}
                   className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
@@ -451,8 +451,8 @@ export default function DocumentsComptaPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-white mb-1 block">Catégorie</label>
-                <select
+                <label htmlFor="chp-categorie" className="text-xs font-bold text-white mb-1 block">Catégorie</label>
+                <select id="chp-categorie"
                   value={categorie}
                   onChange={(e) => setCategorie(e.target.value)}
                   className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
@@ -612,6 +612,7 @@ export default function DocumentsComptaPage() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
                         className="w-8 h-8 shrink-0 bg-[#E30613] rounded-full flex items-center justify-center"
+                        aria-label="Supprimer le document"
                       >
                         <Trash2 size={14} className="text-white" />
                       </button>

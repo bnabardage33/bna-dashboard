@@ -582,6 +582,7 @@ export default function FournisseursPage() {
                       <button
                         onClick={() => supprimerFournisseur(f)}
                         className="text-xs text-gray-500 hover:text-red-400"
+                        aria-label="Supprimer le fournisseur"
                       >
                         🗑️
                       </button>
@@ -713,6 +714,7 @@ export default function FournisseursPage() {
                       <button
                         onClick={() => supprimerCommande(c)}
                         className="text-xs text-gray-500 hover:text-red-400"
+                        aria-label="Supprimer la commande"
                       >
                         🗑️
                       </button>
@@ -886,6 +888,7 @@ export default function FournisseursPage() {
                         type="button"
                         onClick={() => supprimerLigneMultiple(i)}
                         className="text-xs text-gray-500 hover:text-red-400 font-bold"
+                        aria-label="Supprimer la ligne"
                       >
                         ✕
                       </button>
@@ -957,8 +960,8 @@ export default function FournisseursPage() {
               )}
 
               <div>
-                <label className="text-3xs font-semibold uppercase text-gray-400">Date livraison prévue</label>
-                <input
+                <label htmlFor="chp-date-livraison-prevue" className="text-3xs font-semibold uppercase text-gray-400">Date livraison prévue</label>
+                <input id="chp-date-livraison-prevue"
                   type="date"
                   value={cDateLivraison}
                   onChange={(e) => setCDateLivraison(e.target.value)}

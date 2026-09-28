@@ -142,8 +142,8 @@ export default function FeuilleHeuresPage() {
         {/* Paramètres du jour */}
         <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Chantier</label>
-            <select
+            <label htmlFor="chp-chantier" className="block text-sm text-gray-400 mb-1">Chantier</label>
+            <select id="chp-chantier"
               value={chantierId}
               onChange={(e) => setChantierId(e.target.value)}
               className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
@@ -154,8 +154,8 @@ export default function FeuilleHeuresPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Date</label>
-            <input
+            <label htmlFor="chp-date" className="block text-sm text-gray-400 mb-1">Date</label>
+            <input id="chp-date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -163,8 +163,8 @@ export default function FeuilleHeuresPage() {
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Taux horaire chargé (€)</label>
-            <input
+            <label htmlFor="chp-taux-horaire-charge" className="block text-sm text-gray-400 mb-1">Taux horaire chargé (€)</label>
+            <input id="chp-taux-horaire-charge"
               type="number"
               step="0.01"
               value={tauxHoraire}

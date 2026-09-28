@@ -94,7 +94,7 @@ export default function SignatureModal({
         {/* HEADER */}
         <div className="flex items-center justify-between border-b border-white/10 p-4">
           <h3 className="text-sm font-semibold text-white">Signer {numero}</h3>
-          <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-white/10">
+          <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-white/10" aria-label="Fermer">
             <X className="h-5 w-5" />
           </button>
         </div>

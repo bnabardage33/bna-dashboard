@@ -223,7 +223,7 @@ export default function CommandeModal({
             <h2 className="text-xl font-bold text-white">Chiffrage / Commande</h2>
             <p className="text-sm text-gray-400">{chantierNom} — {zoneNom}</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-[#1A1D24] hover:text-white transition-colors">
+          <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-[#1A1D24] hover:text-white transition-colors" aria-label="Fermer">
             <X size={20} />
           </button>
         </div>
@@ -329,7 +329,7 @@ export default function CommandeModal({
                                     newLignes[index].articleSelectionne = null;
                                     newLignes[index].totalHT = 0;
                                     setLignes(newLignes);
-                                  }} className="hover:text-emerald-300 ml-2 shrink-0"><X size={16} /></button>
+                                  }} className="hover:text-emerald-300 ml-2 shrink-0" aria-label="Retirer l'article"><X size={16} /></button>
                                 </div>
                               ) : (
                                 <div>
@@ -423,8 +423,8 @@ export default function CommandeModal({
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             <div className="flex items-center gap-2 sm:border-r border-white/10 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">
-              <label className="text-xs text-gray-500 whitespace-nowrap">Livraison souhaitee</label>
-              <input
+              <label htmlFor="chp-livraison-souhaitee" className="text-xs text-gray-500 whitespace-nowrap">Livraison souhaitee</label>
+              <input id="chp-livraison-souhaitee"
                 type="date"
                 value={dateLivraisonPrevue}
                 onChange={(e) => setDateLivraisonPrevue(e.target.value)}

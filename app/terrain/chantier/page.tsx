@@ -426,8 +426,8 @@ export default function ChantiersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-300">Client associé *</label>
-                <select
+                <label htmlFor="chp-client-associe" className="text-xs font-semibold text-gray-300">Client associé <span aria-hidden="true">*</span></label>
+                <select id="chp-client-associe"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   required
@@ -453,8 +453,8 @@ export default function ChantiersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-300">Matériau prédominant</label>
-                <select
+                <label htmlFor="chp-materiau-predominant" className="text-xs font-semibold text-gray-300">Matériau prédominant</label>
+                <select id="chp-materiau-predominant"
                   value={materiauStructurel}
                   onChange={(e) => setMateriauStructurel(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-white/10 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
@@ -468,8 +468,8 @@ export default function ChantiersPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Date début prévue</label>
-                  <input
+                  <label htmlFor="chp-date-debut-prevue" className="text-xs font-semibold text-gray-300">Date début prévue</label>
+                  <input id="chp-date-debut-prevue"
                     type="date"
                     value={dateDebut}
                     onChange={(e) => setDateDebut(e.target.value)}
@@ -477,8 +477,8 @@ export default function ChantiersPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Date fin estimée</label>
-                  <input
+                  <label htmlFor="chp-date-fin-estimee" className="text-xs font-semibold text-gray-300">Date fin estimée</label>
+                  <input id="chp-date-fin-estimee"
                     type="date"
                     value={dateFin}
                     onChange={(e) => setDateFin(e.target.value)}

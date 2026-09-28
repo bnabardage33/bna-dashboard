@@ -369,7 +369,7 @@ export default function ClientPortalPrototype() {
             <HardHat size={20} className="text-gray-400" />
             <span className="font-semibold text-sm">Assistant BNA</span>
           </div>
-          <button onClick={closeChat} className="text-gray-400 hover:text-white transition cursor-pointer">
+          <button onClick={closeChat} className="text-gray-400 hover:text-white transition cursor-pointer" aria-label="Fermer">
             <X size={20} />
           </button>
         </div>
@@ -411,6 +411,7 @@ export default function ClientPortalPrototype() {
             type="submit" 
             disabled={!inputValue.trim() || isLoading}
             className="bg-red-600 hover:bg-[#1A1D24] disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-xl flex items-center justify-center transition cursor-pointer"
+            aria-label="Envoyer le message"
           >
             <Send size={18} />
           </button>
@@ -445,7 +446,7 @@ export default function ClientPortalPrototype() {
           <div className="w-full max-w-md bg-[#1A1D24] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-4 bg-transparent text-white flex justify-between items-center">
               <h2 className="font-bold">Signature du document</h2>
-              <button onClick={() => setIsDevisOpen(false)} className="text-gray-400 hover:text-white transition">
+              <button onClick={() => setIsDevisOpen(false)} className="text-gray-400 hover:text-white transition" aria-label="Fermer">
                 <X size={24} />
               </button>
             </div>

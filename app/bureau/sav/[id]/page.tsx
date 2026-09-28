@@ -300,8 +300,8 @@ export default function FicheSAV() {
 
       <Surface className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4" radius="2xl">
         <div className="flex-1 w-full">
-          <label className="text-xs uppercase tracking-wide text-gray-400 mb-1 block">Chantier concerné</label>
-          <select 
+          <label htmlFor="chp-chantier-concerne" className="text-xs uppercase tracking-wide text-gray-400 mb-1 block">Chantier concerné</label>
+          <select id="chp-chantier-concerne"
             className="w-full bg-transparent border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-red-600"
             value={ticket.chantier_id}
             onChange={(e) => setTicket({...ticket, chantier_id: e.target.value})}
@@ -339,8 +339,8 @@ export default function FicheSAV() {
           
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Type de problème</label>
-              <select 
+              <label htmlFor="chp-type-de-probleme" className="text-xs text-gray-400 block mb-1">Type de problème</label>
+              <select id="chp-type-de-probleme"
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.type_sinistre}
                 onChange={(e) => setTicket({...ticket, type_sinistre: e.target.value})}
@@ -431,8 +431,8 @@ export default function FicheSAV() {
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Date prévue</label>
-              <input 
+              <label htmlFor="chp-date-prevue" className="text-xs text-gray-400 block mb-1">Date prévue</label>
+              <input id="chp-date-prevue"
                 type="date" 
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.date_intervention}
@@ -460,8 +460,8 @@ export default function FicheSAV() {
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Accès</label>
-              <select 
+              <label htmlFor="chp-acces" className="text-xs text-gray-400 block mb-1">Accès</label>
+              <select id="chp-acces"
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 value={ticket.moyen_acces}
                 onChange={(e) => setTicket({...ticket, moyen_acces: e.target.value})}
@@ -608,7 +608,7 @@ export default function FicheSAV() {
               <button onClick={() => window.print()} className="flex items-center gap-2 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold">
                 <Printer size={18} /> Imprimer / PDF
               </button>
-              <button onClick={() => setShowPDF(false)} className="p-2 bg-[#1A1D24] hover:bg-[#1A1D24] rounded-xl text-gray-300">
+              <button onClick={() => setShowPDF(false)} className="p-2 bg-[#1A1D24] hover:bg-[#1A1D24] rounded-xl text-gray-300" aria-label="Fermer">
                 <X size={20} />
               </button>
             </div>

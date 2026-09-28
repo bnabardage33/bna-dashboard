@@ -719,10 +719,10 @@ function ChantierDetailContent() {
 
           <Surface className="grid gap-3 p-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs uppercase tracking-wide text-gray-500">
+              <label htmlFor="chp-materiau-structurel" className="text-xs uppercase tracking-wide text-gray-500">
                 Matériau structurel
               </label>
-              <select
+              <select id="chp-materiau-structurel"
                 value={chantier.materiau_structurel}
                 onChange={(e) => changerMateriau(e.target.value as Materiau)}
                 className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
@@ -735,10 +735,10 @@ function ChantierDetailContent() {
               </select>
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wide text-gray-500">
+              <label htmlFor="chp-moyen-d-acces" className="text-xs uppercase tracking-wide text-gray-500">
                 Moyen d&apos;accès
               </label>
-              <select
+              <select id="chp-moyen-d-acces"
                 value={chantier.moyen_acces}
                 onChange={(e) => changerAcces(e.target.value as Acces)}
                 className="mt-1 w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
@@ -889,8 +889,8 @@ function ChantierDetailContent() {
             {configDraft ? (
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
-                  <label className="text-3xs text-gray-500">Type d&apos;isolant</label>
-                  <select
+                  <label htmlFor="chp-type-d-isolant" className="text-3xs text-gray-500">Type d&apos;isolant</label>
+                  <select id="chp-type-d-isolant"
                     value={configDraft.type_isolant ?? ""}
                     onChange={(e) =>
                       majConfigTechnique({
@@ -907,8 +907,8 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-3xs text-gray-500">Épaisseur isolant</label>
-                  <select
+                  <label htmlFor="chp-epaisseur-isolant" className="text-3xs text-gray-500">Épaisseur isolant</label>
+                  <select id="chp-epaisseur-isolant"
                     value={configDraft.epaisseur_isolant_mm ?? ""}
                     onChange={(e) =>
                       majConfigTechnique({

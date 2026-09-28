@@ -153,8 +153,8 @@ export default function FraisInterimPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Chantier (optionnel)</label>
-                <select
+                <label htmlFor="chp-chantier-optionnel" className="block text-sm text-gray-400 mb-1">Chantier (optionnel)</label>
+                <select id="chp-chantier-optionnel"
                   value={formData.chantier_id}
                   onChange={(e) => setFormData({ ...formData, chantier_id: e.target.value })}
                   className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
@@ -166,8 +166,8 @@ export default function FraisInterimPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Date</label>
-                <input
+                <label htmlFor="chp-date" className="block text-sm text-gray-400 mb-1">Date</label>
+                <input id="chp-date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -189,8 +189,8 @@ export default function FraisInterimPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nom de l'intérimaire</label>
-                <input
+                <label htmlFor="chp-nom-de-l-interimaire" className="block text-sm text-gray-400 mb-1">Nom de l'intérimaire</label>
+                <input id="chp-nom-de-l-interimaire"
                   type="text"
                   required
                   value={formData.interimaire_nom}
@@ -202,8 +202,8 @@ export default function FraisInterimPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Salaire brut (€)</label>
-                <input
+                <label htmlFor="chp-salaire-brut" className="block text-sm text-gray-400 mb-1">Salaire brut (€)</label>
+                <input id="chp-salaire-brut"
                   type="number"
                   step="0.01"
                   required
@@ -213,8 +213,8 @@ export default function FraisInterimPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Coefficient agence</label>
-                <input
+                <label htmlFor="chp-coefficient-agence" className="block text-sm text-gray-400 mb-1">Coefficient agence</label>
+                <input id="chp-coefficient-agence"
                   type="number"
                   step="0.01"
                   value={formData.coefficient}
@@ -223,8 +223,8 @@ export default function FraisInterimPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">TVA (%)</label>
-                <input
+                <label htmlFor="chp-tva" className="block text-sm text-gray-400 mb-1">TVA (%)</label>
+                <input id="chp-tva"
                   type="number"
                   step="0.1"
                   value={formData.taux_tva}

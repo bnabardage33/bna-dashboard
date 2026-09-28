@@ -434,6 +434,7 @@ export default function FacturesPage() {
                   <button
                     onClick={() => supprimerFacture(f)}
                     className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
+                    aria-label="Supprimer la facture"
                     title="Supprimer la facture"
                   >
                     🗑️
@@ -558,8 +559,8 @@ export default function FacturesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-gray-400">Échéance</label>
-                  <input
+                  <label htmlFor="chp-echeance" className="text-3xs font-semibold uppercase text-gray-400">Échéance</label>
+                  <input id="chp-echeance"
                     type="date"
                     value={echeance}
                     onChange={(e) => setEcheance(e.target.value)}
@@ -567,8 +568,8 @@ export default function FacturesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-3xs font-semibold uppercase text-gray-400">TVA (%)</label>
-                  <input
+                  <label htmlFor="chp-tva" className="text-3xs font-semibold uppercase text-gray-400">TVA (%)</label>
+                  <input id="chp-tva"
                     type="number"
                     step="0.1"
                     value={tva}
@@ -579,8 +580,8 @@ export default function FacturesPage() {
               </div>
 
               <div>
-                <label className="text-3xs font-semibold uppercase text-gray-400">Type de facture</label>
-                <select
+                <label htmlFor="chp-type-de-facture" className="text-3xs font-semibold uppercase text-gray-400">Type de facture</label>
+                <select id="chp-type-de-facture"
                   value={typeFacture}
                   onChange={(e) => setTypeFacture(e.target.value as typeof typeFacture)}
                   className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
@@ -625,6 +626,7 @@ export default function FacturesPage() {
                       type="button"
                       onClick={() => supprimerLigne(i)}
                       className="col-span-1 text-gray-500 hover:text-red-400 font-bold"
+                      aria-label="Supprimer la ligne"
                     >
                       ✕
                     </button>

@@ -313,10 +313,10 @@ export default function FicheTechniquePage() {
               />
 
               <div>
-                <label className="text-3xs font-semibold uppercase text-gray-400 block mb-1">
+                <label htmlFor="chp-joindre-un-fichier-pdf-optionnel" className="text-3xs font-semibold uppercase text-gray-400 block mb-1">
                   Joindre un fichier PDF (optionnel)
                 </label>
-                <input
+                <input id="chp-joindre-un-fichier-pdf-optionnel"
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}

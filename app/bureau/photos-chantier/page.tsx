@@ -152,14 +152,14 @@ export default function PhotosChantierAdmin() {
 
           {/* SELECT CHANTIER */}
           <div>
-            <label className="text-xs font-bold text-white mb-1 block">Chantier</label>
+            <label htmlFor="chp-chantier" className="text-xs font-bold text-white mb-1 block">Chantier</label>
             {loadingChantiers ? (
               <div className="w-full bg-transparent rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-gray-400">
                 <Loader2 size={14} className="animate-spin" /> Chargement des chantiers...
               </div>
             ) : (
               <div className="relative">
-                <select
+                <select id="chp-chantier"
                   className="w-full bg-transparent rounded-xl px-4 py-3 text-sm font-bold border border-transparent focus:border-white/10 outline-none appearance-none cursor-pointer"
                   value={chantier_id}
                   onChange={e => setChantier_id(e.target.value)}
@@ -267,6 +267,7 @@ export default function PhotosChantierAdmin() {
                     <button
                       onClick={() => handleDelete(p.id)}
                       className="absolute top-2 right-2 w-8 h-8 bg-[#E30613] rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer shadow"
+                      aria-label="Supprimer la photo"
                     >
                       <Trash2 size={14} className="text-white" />
                     </button>

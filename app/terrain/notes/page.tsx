@@ -308,8 +308,8 @@ export default function NotesPage() {
 
             <form onSubmit={ajouterNote} className="space-y-3.5 pb-20 sm:pb-6">
               <div>
-                <label className="text-xs font-semibold text-gray-300">Chantier lié (optionnel)</label>
-                <select
+                <label htmlFor="chp-chantier-lie-optionnel" className="text-xs font-semibold text-gray-300">Chantier lié (optionnel)</label>
+                <select id="chp-chantier-lie-optionnel"
                   value={chantierId}
                   onChange={(e) => setChantierId(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"

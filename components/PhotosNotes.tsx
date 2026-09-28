@@ -221,28 +221,28 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="text-xs uppercase tracking-wide text-gray-500">
+            <label htmlFor="chp-code-d-acces" className="text-xs uppercase tracking-wide text-gray-500">
               Code d&apos;accès
             </label>
-            <input
+            <input id="chp-code-d-acces"
               value={notes.code_acces ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, code_acces: e.target.value }))}
               className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wide text-gray-500">
+            <label htmlFor="chp-contact-sur-place" className="text-xs uppercase tracking-wide text-gray-500">
               Contact sur place
             </label>
-            <input
+            <input id="chp-contact-sur-place"
               value={notes.contact_chantier ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, contact_chantier: e.target.value }))}
               className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wide text-gray-500">Horaires</label>
-            <input
+            <label htmlFor="chp-horaires" className="text-xs uppercase tracking-wide text-gray-500">Horaires</label>
+            <input id="chp-horaires"
               value={notes.horaires ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, horaires: e.target.value }))}
               className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
@@ -251,10 +251,10 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
         </div>
 
         <div>
-          <label className="text-xs uppercase tracking-wide text-gray-500">
+          <label htmlFor="chp-bloc-notes-terrain" className="text-xs uppercase tracking-wide text-gray-500">
             Bloc-notes terrain
           </label>
-          <textarea
+          <textarea id="chp-bloc-notes-terrain"
             value={notes.notes_terrain ?? ""}
             onChange={(e) => setNotes((n) => ({ ...n, notes_terrain: e.target.value }))}
             rows={4}
