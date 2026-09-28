@@ -1094,7 +1094,7 @@ export default function CataloguePage() {
                           <option value="Fibrociment">Fibrociment</option>
                         </select>
                       ) : (
-                        <input
+                        <input id="chp-gamme-sous-famille"
                           type="text"
                           placeholder="ex&nbsp;: Reysipur"
                           value={formData.gamme ?? ""}

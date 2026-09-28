@@ -310,7 +310,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
 
       <div className="space-y-2 mb-6">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Observations du jour</label>
+          <label htmlFor="chp-observations-du-jour" className="text-xs font-bold uppercase tracking-wider text-gray-400">Observations du jour</label>
           <button
             type="button"
             onClick={etatDictee === "enregistrement" ? arreterDictee : demarrerDictee}
@@ -336,7 +336,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
               : "🎙️ Dicter"}
           </button>
         </div>
-        <textarea
+        <textarea id="chp-observations-du-jour"
           value={observations}
           onChange={(e) => setObservations(e.target.value)}
           placeholder="Ex: Tempête de vent, impossible de poser le bardage sur la façade Nord..."
