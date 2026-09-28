@@ -415,8 +415,8 @@ export default function ChantiersPage() {
 
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
               <div>
-                <label className="text-xs font-semibold text-gray-300">Nom du chantier *</label>
-                <input
+                <label htmlFor="chp-nom-du-chantier" className="text-xs font-semibold text-gray-300">Nom du chantier *</label>
+                <input id="chp-nom-du-chantier"
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
@@ -443,8 +443,8 @@ export default function ChantiersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-300">Adresse du site des travaux</label>
-                <input
+                <label htmlFor="chp-adresse-du-site-des-travaux" className="text-xs font-semibold text-gray-300">Adresse du site des travaux</label>
+                <input id="chp-adresse-du-site-des-travaux"
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   placeholder="Ex. 14 Route des Plages, 33120 Arcachon"

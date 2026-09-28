@@ -178,8 +178,8 @@ export default function FraisInterimPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nom de l'agence</label>
-                <input
+                <label htmlFor="chp-nom-de-l-agence" className="block text-sm text-gray-400 mb-1">Nom de l'agence</label>
+                <input id="chp-nom-de-l-agence"
                   type="text"
                   required
                   placeholder="ex: Adecco, Manpower..."

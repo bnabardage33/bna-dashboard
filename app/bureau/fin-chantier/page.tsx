@@ -912,8 +912,8 @@ export default function FinChantierPage() {
               {/* SECTION 2 : ADRESSE & MATÉRIAUX */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Adresse d&apos;exécution du chantier</label>
-                  <input
+                  <label htmlFor="chp-adresse-d-execution-du-chantier" className="text-xs font-semibold text-gray-300">Adresse d&apos;exécution du chantier</label>
+                  <input id="chp-adresse-d-execution-du-chantier"
                     type="text"
                     value={formAdresseChantier}
                     onChange={(e) => setFormAdresseChantier(e.target.value)}
@@ -923,8 +923,8 @@ export default function FinChantierPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Matériaux &amp; Systèmes posés</label>
-                  <input
+                  <label htmlFor="chp-materiaux-systemes-poses" className="text-xs font-semibold text-gray-300">Matériaux &amp; Systèmes posés</label>
+                  <input id="chp-materiaux-systemes-poses"
                     type="text"
                     value={formMateriauxUtilises}
                     onChange={(e) => setFormMateriauxUtilises(e.target.value)}
@@ -1359,8 +1359,8 @@ export default function FinChantierPage() {
 
               {/* SECTION 9 : OBSERVATIONS */}
               <div>
-                <label className="text-xs font-semibold text-gray-300">Observations Particulières</label>
-                <textarea
+                <label htmlFor="chp-observations-particulieres" className="text-xs font-semibold text-gray-300">Observations Particulières</label>
+                <textarea id="chp-observations-particulieres"
                   value={formObservations}
                   onChange={(e) => setFormObservations(e.target.value)}
                   rows={2}

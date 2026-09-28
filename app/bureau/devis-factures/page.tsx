@@ -1117,10 +1117,10 @@ function DevisContenu() {
                   return (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
                       <div className="flex-1 w-full min-w-[160px]">
-                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        <label htmlFor="chp-surface-metre-m" className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                           Surface métré (m²)
                         </label>
-                        <input
+                        <input id="chp-surface-metre-m"
                           type="number"
                           value={surfacePonctuelle}
                           onChange={(e) => setSurfacePonctuelle(e.target.value)}
@@ -1227,8 +1227,8 @@ function DevisContenu() {
                       </div>
                     )}
                     <div className="col-span-3 sm:col-span-4">
-                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Désignation</label>
-                      <input
+                      <label htmlFor="chp-designation" className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Désignation</label>
+                      <input id="chp-designation"
                         value={l.designation}
                         onChange={(e) => updateLigne(i, { designation: e.target.value })}
                         placeholder="Désignation"
@@ -1241,8 +1241,8 @@ function DevisContenu() {
                       )}
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
-                      <input
+                      <label htmlFor="chp-quantite" className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Quantité</label>
+                      <input id="chp-quantite"
                         type="number"
                         value={l.qte ?? ""}
                         onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
@@ -1251,8 +1251,8 @@ function DevisContenu() {
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Unité</label>
-                      <input
+                      <label htmlFor="chp-unite" className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Unité</label>
+                      <input id="chp-unite"
                         value={l.unite}
                         onChange={(e) => updateLigne(i, { unite: e.target.value })}
                         placeholder="Unité"
@@ -1260,8 +1260,8 @@ function DevisContenu() {
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-3">
-                      <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Prix u. HT</label>
-                      <input
+                      <label htmlFor="chp-prix-u-ht" className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-gray-500 sm:hidden">Prix u. HT</label>
+                      <input id="chp-prix-u-ht"
                         type="number"
                         value={l.pu_ht ?? ""}
                         onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}

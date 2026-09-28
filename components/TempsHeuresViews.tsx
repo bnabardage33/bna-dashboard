@@ -212,8 +212,8 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Heures globales (Forfait)</label>
-          <input 
+          <label htmlFor="chp-heures-globales-forfait" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Heures globales (Forfait)</label>
+          <input id="chp-heures-globales-forfait"
             type="number" 
             placeholder="Ex: 35"
             value={heures || ""} 

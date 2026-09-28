@@ -334,10 +334,10 @@ export default function ClientsPage() {
               {type === "professionnel" && (
                 <div className="space-y-2 rounded-xl border border-white/10 bg-transparent p-3">
                   <div className="relative">
-                    <label className="text-3xs font-semibold uppercase tracking-wide text-gray-400">
+                    <label htmlFor="chp-recherche-siret-api-officielle" className="text-3xs font-semibold uppercase tracking-wide text-gray-400">
                       🔍 Recherche SIRET (API Officielle)
                     </label>
-                    <input
+                    <input id="chp-recherche-siret-api-officielle"
                       className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
                       placeholder="Tapez un nom de société ou numéro SIRET..."
                       value={rechercheGouv}
@@ -398,8 +398,8 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-300">Adresse de facturation</label>
-                <input
+                <label htmlFor="chp-adresse-de-facturation" className="text-xs font-semibold text-gray-300">Adresse de facturation</label>
+                <input id="chp-adresse-de-facturation"
                   className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                   placeholder="Ex: 12 Rue des Chênes"
                   value={adresse}
@@ -409,8 +409,8 @@ export default function ClientsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Code postal</label>
-                  <input
+                  <label htmlFor="chp-code-postal" className="text-xs font-semibold text-gray-300">Code postal</label>
+                  <input id="chp-code-postal"
                     className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="33000"
                     value={codePostal}
@@ -418,8 +418,8 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Ville</label>
-                  <input
+                  <label htmlFor="chp-ville" className="text-xs font-semibold text-gray-300">Ville</label>
+                  <input id="chp-ville"
                     className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="Bordeaux"
                     value={ville}
@@ -430,8 +430,8 @@ export default function ClientsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Téléphone</label>
-                  <input
+                  <label htmlFor="chp-telephone" className="text-xs font-semibold text-gray-300">Téléphone</label>
+                  <input id="chp-telephone"
                     className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="06 00 00 00 00"
                     value={tel}
@@ -439,8 +439,8 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-300">Email</label>
-                  <input
+                  <label htmlFor="chp-email" className="text-xs font-semibold text-gray-300">Email</label>
+                  <input id="chp-email"
                     className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
                     placeholder="contact@exemple.fr"
                     value={email}

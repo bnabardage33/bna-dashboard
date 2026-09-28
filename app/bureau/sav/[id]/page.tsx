@@ -356,8 +356,8 @@ export default function FicheSAV() {
             </div>
             
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Localisation (Façade, Pignon...)</label>
-              <input 
+              <label htmlFor="chp-localisation-facade-pignon" className="text-xs text-gray-400 block mb-1">Localisation (Façade, Pignon...)</label>
+              <input id="chp-localisation-facade-pignon"
                 type="text" 
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
                 placeholder="Ex: Façade Sud, entre M-12 et M-14"
@@ -377,8 +377,8 @@ export default function FicheSAV() {
 
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Diagnostic & Cause probable</label>
-              <textarea 
+              <label htmlFor="chp-diagnostic-cause-probable" className="text-xs text-gray-400 block mb-1">Diagnostic & Cause probable</label>
+              <textarea id="chp-diagnostic-cause-probable"
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white h-20 resize-none"
                 placeholder="Ex: Entraxe 400mm OK. Cause: choc mécanique client."
                 value={ticket.diagnostic_dtu}
@@ -440,8 +440,8 @@ export default function FicheSAV() {
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Temps estimé</label>
-              <input 
+              <label htmlFor="chp-temps-estime" className="text-xs text-gray-400 block mb-1">Temps estimé</label>
+              <input id="chp-temps-estime"
                 type="text" 
                 placeholder="Ex: 1h30"
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
@@ -450,8 +450,8 @@ export default function FicheSAV() {
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 block mb-1">Équipe</label>
-              <input 
+              <label htmlFor="chp-equipe" className="text-xs text-gray-400 block mb-1">Équipe</label>
+              <input id="chp-equipe"
                 type="text" 
                 placeholder="Ex: Gaël"
                 className="w-full bg-transparent border border-white/10 rounded-lg px-3 py-2 text-sm text-white"

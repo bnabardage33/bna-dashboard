@@ -932,8 +932,8 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-3xs text-gray-500">Surface / Paquet (m²)</label>
-                  <input
+                  <label htmlFor="chp-surface-paquet-m" className="text-3xs text-gray-500">Surface / Paquet (m²)</label>
+                  <input id="chp-surface-paquet-m"
                     type="number"
                     min={0.1}
                     step={0.1}
@@ -977,8 +977,8 @@ function ChantierDetailContent() {
                 </div>
 
                 <div>
-                  <label className="text-3xs text-gray-500 font-bold text-amber-500/80">Multiplicateur de chute (Matériaux)</label>
-                  <input
+                  <label htmlFor="chp-multiplicateur-de-chute-materiaux" className="text-3xs text-gray-500 font-bold text-amber-500/80">Multiplicateur de chute (Matériaux)</label>
+                  <input id="chp-multiplicateur-de-chute-materiaux"
                     type="number"
                     min={1}
                     step={0.01}

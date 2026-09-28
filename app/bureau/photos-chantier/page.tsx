@@ -183,8 +183,8 @@ export default function PhotosChantierAdmin() {
 
           {/* TITRE */}
           <div>
-            <label className="text-xs font-bold text-white mb-1 block">Titre / Description</label>
-            <input
+            <label htmlFor="chp-titre-description" className="text-xs font-bold text-white mb-1 block">Titre / Description</label>
+            <input id="chp-titre-description"
               className="w-full bg-transparent rounded-xl px-4 py-3 text-sm border border-transparent focus:border-white/10 outline-none"
               placeholder="ex: Pose de l'isolant — Façade Nord"
               value={titre}

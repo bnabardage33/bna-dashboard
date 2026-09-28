@@ -465,8 +465,8 @@ export default function DocumentsComptaPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-white mb-1 block">Note (optionnel)</label>
-              <input
+              <label htmlFor="chp-note-optionnel" className="text-xs font-bold text-white mb-1 block">Note (optionnel)</label>
+              <input id="chp-note-optionnel"
                 className="w-full bg-transparent rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:border-white/30 outline-none"
                 placeholder="ex: Materiaux Leroy Merlin"
                 value={note}

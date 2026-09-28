@@ -325,8 +325,8 @@ export default function NotesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-300">Titre</label>
-                <input
+                <label htmlFor="chp-titre" className="text-xs font-semibold text-gray-300">Titre</label>
+                <input id="chp-titre"
                   value={titre}
                   onChange={(e) => setTitre(e.target.value)}
                   placeholder="Ex. Réunion pose ossature bois"
@@ -335,8 +335,8 @@ export default function NotesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-300">Contenu de la note *</label>
-                <textarea
+                <label htmlFor="chp-contenu-de-la-note" className="text-xs font-semibold text-gray-300">Contenu de la note *</label>
+                <textarea id="chp-contenu-de-la-note"
                   value={contenu}
                   onChange={(e) => setContenu(e.target.value)}
                   placeholder="Tapez votre note ou utilisez le dictaphone ci-dessous…"

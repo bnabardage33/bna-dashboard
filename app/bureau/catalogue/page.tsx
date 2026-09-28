@@ -835,11 +835,11 @@ export default function CataloguePage() {
                 {/* ── Auto-remplissage ─────────── */}
                 {formData.type_cout === "matiere" && (
                 <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
-                  <label className="block text-xs font-semibold text-cyan-400 mb-2">
+                  <label htmlFor="chp-auto-remplir-via-une-adresse-web-optionnel" className="block text-xs font-semibold text-cyan-400 mb-2">
                     ⚡ Auto-remplir via une adresse Web (Optionnel)
                   </label>
                   <div className="flex gap-2">
-                    <input
+                    <input id="chp-auto-remplir-via-une-adresse-web-optionnel"
                       type="url"
                       placeholder="Collez l'URL d'un produit (Leroy Merlin, Point.P...)"
                       value={importUrl}
@@ -906,8 +906,8 @@ export default function CataloguePage() {
                   {/* ── En-tête : Désignation ─────────── */}
                   <div className="grid grid-cols-1 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
-                      <input
+                      <label htmlFor="chp-designation-titre-de-la-fiche" className="block text-xs font-semibold text-gray-400 mb-1">Désignation (titre de la fiche)</label>
+                      <input id="chp-designation-titre-de-la-fiche"
                         required
                         type="text"
                         placeholder="ex&nbsp;: Trespa Meteon – Blanc Ménuires B015"
@@ -918,8 +918,8 @@ export default function CataloguePage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Description (courte, pour la carte)</label>
-                    <textarea
+                    <label htmlFor="chp-description-courte-pour-la-carte" className="block text-xs font-semibold text-gray-400 mb-1">Description (courte, pour la carte)</label>
+                    <textarea id="chp-description-courte-pour-la-carte"
                       rows={2}
                       placeholder="ex : Panneau HPL avec fixation apparente..."
                       value={formData.description ?? ""}
@@ -928,8 +928,8 @@ export default function CataloguePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-cyan-400 mb-1">Désignation complète pour le devis (Normes DTU, ACERMI...)</label>
-                    <textarea
+                    <label htmlFor="chp-designation-complete-pour-le-devis-normes-dtu-acermi" className="block text-xs font-semibold text-cyan-400 mb-1">Désignation complète pour le devis (Normes DTU, ACERMI...)</label>
+                    <textarea id="chp-designation-complete-pour-le-devis-normes-dtu-acermi"
                       rows={3}
                       placeholder="ex : Panneaux stratifiés compacts (HPL) conformes à la norme EN 438..."
                       value={formData.designation_devis ?? ""}
@@ -941,8 +941,8 @@ export default function CataloguePage() {
                 ) : (
                   <>
                   <div>
-                    <label className="block text-xs font-semibold text-violet-300 mb-1">Désignation (titre de la fiche)</label>
-                    <input
+                    <label htmlFor="chp-designation-titre-de-la-fiche-2" className="block text-xs font-semibold text-violet-300 mb-1">Désignation (titre de la fiche)</label>
+                    <input id="chp-designation-titre-de-la-fiche-2"
                       required
                       type="text"
                       placeholder="ex&nbsp;: Pose vêture HPL"
@@ -952,8 +952,8 @@ export default function CataloguePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-400 mb-1">Description (détail de la prestation)</label>
-                    <textarea
+                    <label htmlFor="chp-description-detail-de-la-prestation" className="block text-xs font-semibold text-gray-400 mb-1">Description (détail de la prestation)</label>
+                    <textarea id="chp-description-detail-de-la-prestation"
                       rows={2}
                       placeholder="ex&nbsp;: Pose des panneaux vêture HPL sur ossature bois, fixation inox, finition soignée."
                       value={formData.description ?? ""}
@@ -962,8 +962,8 @@ export default function CataloguePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-violet-300 mb-1">Désignation complète pour le devis (Normes DTU, ACERMI...)</label>
-                    <textarea
+                    <label htmlFor="chp-designation-complete-pour-le-devis-normes-dtu-acermi-2" className="block text-xs font-semibold text-violet-300 mb-1">Désignation complète pour le devis (Normes DTU, ACERMI...)</label>
+                    <textarea id="chp-designation-complete-pour-le-devis-normes-dtu-acermi-2"
                       rows={3}
                       placeholder="ex : Pose de panneaux selon la norme DTU 41.2, avec fixations agrées..."
                       value={formData.designation_devis ?? ""}
@@ -1002,8 +1002,8 @@ export default function CataloguePage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-1">Prix de vente HT (€) — pu_ht</label>
-                        <input
+                        <label htmlFor="chp-prix-de-vente-ht-pu-ht" className="block text-xs font-semibold text-gray-400 mb-1">Prix de vente HT (€) — pu_ht</label>
+                        <input id="chp-prix-de-vente-ht-pu-ht"
                           required
                           type="text"
                           inputMode="decimal"
@@ -1024,11 +1024,11 @@ export default function CataloguePage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">
+                      <label htmlFor="chp-cout-de-revient-ht-pu-revient-optionnel" className="block text-xs font-semibold text-gray-400 mb-1">
                         Coût de revient HT (€) — pu_revient
                         <span className="ml-1 text-2xs font-normal text-gray-500">(optionnel)</span>
                       </label>
-                      <input
+                      <input id="chp-cout-de-revient-ht-pu-revient-optionnel"
                         type="text"
                         inputMode="decimal"
                         placeholder="0.00"
@@ -1070,8 +1070,8 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Fabricant</label>
-                      <input
+                      <label htmlFor="chp-fabricant-2" className="block text-xs font-semibold text-gray-400 mb-1">Fabricant</label>
+                      <input id="chp-fabricant-2"
                         type="text"
                         placeholder="ex&nbsp;: Polyrey, Trespa"
                         value={formData.fabricant ?? ""}
@@ -1107,8 +1107,8 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Code Décor</label>
-                      <input
+                      <label htmlFor="chp-code-decor" className="block text-xs font-semibold text-gray-400 mb-1">Code Décor</label>
+                      <input id="chp-code-decor"
                         type="text"
                         placeholder="ex&nbsp;: B015"
                         value={formData.code_decor ?? ""}
@@ -1117,8 +1117,8 @@ export default function CataloguePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Nom / Couleur du Décor</label>
-                      <input
+                      <label htmlFor="chp-nom-couleur-du-decor" className="block text-xs font-semibold text-gray-400 mb-1">Nom / Couleur du Décor</label>
+                      <input id="chp-nom-couleur-du-decor"
                         type="text"
                         placeholder="ex&nbsp;: Blanc Ménuires"
                         value={formData.couleur ?? ""}
@@ -1130,8 +1130,8 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Code RAL</label>
-                      <input
+                      <label htmlFor="chp-code-ral" className="block text-xs font-semibold text-gray-400 mb-1">Code RAL</label>
+                      <input id="chp-code-ral"
                         type="text"
                         placeholder="ex&nbsp;: RAL 7016"
                         value={formData.code_ral ?? ""}
@@ -1140,8 +1140,8 @@ export default function CataloguePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Finition</label>
-                      <input
+                      <label htmlFor="chp-finition" className="block text-xs font-semibold text-gray-400 mb-1">Finition</label>
+                      <input id="chp-finition"
                         type="text"
                         placeholder="ex&nbsp;: FA Satin"
                         value={formData.finition ?? ""}
@@ -1163,8 +1163,8 @@ export default function CataloguePage() {
                       <div key={idx} className="flex items-center gap-3 bg-[#1A1D24]/50 p-3 rounded-lg border border-white/10">
                         <div className="flex-1 grid grid-cols-3 gap-3">
                           <div>
-                            <label className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
-                            <input
+                            <label htmlFor="chp-longueur-mm" className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
+                            <input id="chp-longueur-mm"
                               type="number"
                               min="0"
                               placeholder="ex: 3050"
@@ -1178,8 +1178,8 @@ export default function CataloguePage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-2xs uppercase text-gray-500 mb-1">Largeur (mm)</label>
-                            <input
+                            <label htmlFor="chp-largeur-mm" className="block text-2xs uppercase text-gray-500 mb-1">Largeur (mm)</label>
+                            <input id="chp-largeur-mm"
                               type="number"
                               min="0"
                               placeholder="ex: 1310"
@@ -1193,8 +1193,8 @@ export default function CataloguePage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-2xs uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
-                            <input
+                            <label htmlFor="chp-epaisseur-mm" className="block text-2xs uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
+                            <input id="chp-epaisseur-mm"
                               type="number"
                               min="0"
                               step="0.5"
@@ -1255,8 +1255,8 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Fournisseur</label>
-                      <input
+                      <label htmlFor="chp-fournisseur-2" className="block text-xs font-semibold text-gray-400 mb-1">Fournisseur</label>
+                      <input id="chp-fournisseur-2"
                         type="text"
                         placeholder="ex&nbsp;: Dispano, Barillet"
                         value={formData.fournisseur ?? ""}
@@ -1283,8 +1283,8 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">Prix Unitaire HT (€)</label>
-                      <input
+                      <label htmlFor="chp-prix-unitaire-ht" className="block text-xs font-semibold text-gray-400 mb-1">Prix Unitaire HT (€)</label>
+                      <input id="chp-prix-unitaire-ht"
                         required
                         type="text"
                         inputMode="decimal"
@@ -1303,11 +1303,11 @@ export default function CataloguePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">
+                      <label htmlFor="chp-cout-de-revient-ht-optionnel" className="block text-xs font-semibold text-gray-400 mb-1">
                         Coût de revient HT (€)
                         <span className="ml-1 text-2xs font-normal text-gray-500">(optionnel)</span>
                       </label>
-                      <input
+                      <input id="chp-cout-de-revient-ht-optionnel"
                         type="text"
                         inputMode="decimal"
                         placeholder="0.00"
@@ -1320,11 +1320,11 @@ export default function CataloguePage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 mb-1">
+                      <label htmlFor="chp-prix-ttc-tva-20" className="block text-xs font-semibold text-gray-400 mb-1">
                         Prix TTC (€)
                         <span className="ml-1 text-2xs font-normal text-gray-500">(TVA 20%)</span>
                       </label>
-                      <input
+                      <input id="chp-prix-ttc-tva-20"
                         type="text"
                         inputMode="decimal"
                         placeholder="0.00"
