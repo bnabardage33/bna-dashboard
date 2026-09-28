@@ -209,6 +209,7 @@ export default function FeuilleHeuresPage() {
                   value={nouveauStatut}
                   onChange={(e) => setNouveauStatut(e.target.value as "embauche" | "interimaire")}
                   className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  aria-label="Statut"
                 >
                   <option value="embauche">Embauché</option>
                   <option value="interimaire">Intérimaire</option>
@@ -252,6 +253,7 @@ export default function FeuilleHeuresPage() {
                       checked={ligne.coche}
                       onChange={() => toggleCoche(o.id)}
                       className="h-5 w-5 accent-cyan-500"
+                      aria-label={`Cocher ${o.full_name}`}
                     />
                     <div className="flex-1 min-w-[120px]">
                       <p className="font-semibold text-gray-200 text-sm">{o.full_name}</p>
@@ -273,6 +275,7 @@ export default function FeuilleHeuresPage() {
                       onChange={(e) => majLigne(o.id, "heures", parseFloat(e.target.value) || 0)}
                       disabled={!ligne.coche}
                       className="w-20 bg-[#242830] border border-white/10 rounded-md p-1.5 text-sm text-center focus:border-white/10 outline-none disabled:opacity-40"
+                      aria-label="Heures"
                     />
                     <span className="text-xs text-gray-500">h</span>
                     <select
@@ -280,6 +283,7 @@ export default function FeuilleHeuresPage() {
                       onChange={(e) => majLigne(o.id, "type_heure", e.target.value)}
                       disabled={!ligne.coche}
                       className="bg-[#242830] border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
+                      aria-label="Type d'heure"
                     >
                       <option value="normale">Normale</option>
                       <option value="supplementaire">Supplémentaire</option>

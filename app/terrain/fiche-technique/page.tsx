@@ -281,6 +281,7 @@ export default function FicheTechniquePage() {
                   value={form.categorie}
                   onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
                   className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                  aria-label="Catégorie"
                 >
                   {CATEGORIES.filter((c) => c.value !== "toutes").map((c) => (
                     <option key={c.value} value={c.value}>

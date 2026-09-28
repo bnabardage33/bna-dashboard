@@ -710,6 +710,7 @@ function ChantierDetailContent() {
               value={chantier.statut}
               onChange={(e) => changerStatut(e.target.value)}
               className="mt-1 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white"
+              aria-label="Statut"
             >
               <option value="prevu">Prévu</option>
               <option value="en_cours">En cours</option>

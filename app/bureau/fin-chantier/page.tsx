@@ -1047,6 +1047,7 @@ export default function FinChantierPage() {
                                   );
                                 }}
                                 className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                                aria-label="Zone"
                               />
                             </td>
                             <td className="p-2 capitalize text-gray-400">{z.type}</td>
@@ -1067,6 +1068,7 @@ export default function FinChantierPage() {
                                   );
                                 }}
                                 className="w-16 rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                                aria-label="Largeur (m)"
                               />
                             </td>
                             <td className="p-2">
@@ -1086,6 +1088,7 @@ export default function FinChantierPage() {
                                   );
                                 }}
                                 className="w-16 rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                                aria-label="Hauteur (m)"
                               />
                             </td>
                             <td className="p-2 text-right font-bold text-gray-400">
@@ -1168,6 +1171,7 @@ export default function FinChantierPage() {
                               value={r.date_limite}
                               onChange={(e) => updateReserve(r.id, { date_limite: e.target.value })}
                               className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                              aria-label="Date limite"
                             />
                           </div>
                           <div className="sm:col-span-1 text-right">
@@ -1468,6 +1472,7 @@ export default function FinChantierPage() {
                       checked={r.levee}
                       onChange={() => {}}
                       className="h-4 w-4 rounded border-slate-600 bg-[#1A1D24] text-red-400"
+                      aria-label={`Constater la levée de la réserve ${r.designation}`}
                     />
                     <div>
                       <p className={`text-xs font-semibold ${r.levee ? "line-through text-gray-400" : "text-white"}`}>

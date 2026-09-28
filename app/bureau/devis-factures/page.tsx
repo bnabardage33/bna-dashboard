@@ -846,6 +846,7 @@ function DevisContenu() {
                           ? "border-red-600/40 bg-sky-950/40 text-gray-400"
                           : "border-slate-600 bg-transparent text-gray-300"
                       }`}
+                      aria-label="Statut du devis"
                     >
                       <option value="brouillon" className="bg-transparent text-white">Brouillon</option>
                       <option value="envoye" className="bg-transparent text-white">Envoyé</option>
@@ -1074,6 +1075,7 @@ function DevisContenu() {
                 }}
                 required
                 className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                aria-label="Client"
               >
                 <option value="">-- Choisir un client --</option>
                 {clients.map((c) => (
@@ -1094,6 +1096,7 @@ function DevisContenu() {
                     if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
                   }}
                   className="w-full min-h-[42px] rounded-xl border border-red-700 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                  aria-label="Chantier"
                 >
                   <option value="">-- Lier à un chantier (optionnel) --</option>
                   {chantiersClient.map((c) => (
@@ -1361,6 +1364,7 @@ function DevisContenu() {
                       e.target.value = "";
                     }}
                     className="w-full sm:flex-1 min-h-[42px] sm:min-h-0 rounded-xl border border-red-600/50 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs text-gray-400 font-medium hover:border-gray-300"
+                    aria-label="Insérer un ouvrage depuis le catalogue standard"
                   >
                     <option value="" disabled>
                       📦 + Insérer un ouvrage depuis le catalogue standard...

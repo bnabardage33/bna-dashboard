@@ -393,6 +393,7 @@ export default function CommandeModal({
                               value={ligne.fournisseurSelectionneId || ""}
                               onChange={(e) => handleSelectFournisseur(index, e.target.value)}
                               className="w-full rounded-lg border border-white/10 bg-[#1A1D24] px-3 py-1.5 text-xs text-gray-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none appearance-none"
+                              aria-label="Fournisseur"
                             >
                               <option value="">-- Choisir un fournisseur --</option>
                               {fournisseursList.map(f => (

@@ -178,6 +178,7 @@ export default function DashboardPatronPage() {
               onChange={(e) => setInputTreso(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && enregistrerTreso()}
               className="mt-1 rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white w-40"
+              aria-label="Trésorerie actuelle"
             />
           </div>
           <button

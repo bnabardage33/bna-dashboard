@@ -694,6 +694,7 @@ export default function ZoneCard({
             type="button"
             onClick={() => setReplie(!replie)}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-sky-400 hover:bg-slate-750 transition-colors"
+            aria-label={replie ? "Déplier la zone" : "Replier la zone"}
             title={replie ? "Déplier la zone" : "Replier la zone"}
           >
             <span className="text-xs">{replie ? "▶" : "▼"}</span>

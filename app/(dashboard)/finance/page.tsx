@@ -63,6 +63,7 @@ export default function FinanceDashboard() {
                 value={selectedMois}
                 onChange={(e) => setSelectedMois(e.target.value)}
                 className="rounded-md border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-sm font-medium text-gray-200 outline-none focus:border-white/10"
+                aria-label="Mois"
               />
               <button
                 onClick={() => setPrintingRapport(true)}

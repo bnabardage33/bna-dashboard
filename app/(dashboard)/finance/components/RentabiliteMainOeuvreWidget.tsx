@@ -60,6 +60,7 @@ export default function RentabiliteMainOeuvreWidget() {
           value={chantierId}
           onChange={(e) => setChantierId(e.target.value)}
           className="bg-[#242830] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/20 w-full sm:w-auto"
+          aria-label="Chantier"
         >
           <option value="">Sélectionner un chantier</option>
           {chantiers.map((c) => (

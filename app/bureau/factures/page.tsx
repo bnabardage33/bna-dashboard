@@ -403,6 +403,7 @@ export default function FacturesPage() {
                           ? "border-white/10 bg-white/5 text-gray-400"
                           : "border-slate-600 bg-transparent text-gray-300"
                       }`}
+                      aria-label="Statut de la facture"
                     >
                       <option value="brouillon" className="bg-transparent text-white">Brouillon</option>
                       <option value="en_attente" className="bg-transparent text-white">En attente</option>
@@ -477,6 +478,7 @@ export default function FacturesPage() {
                   value={depuisDevis}
                   onChange={(e) => chargerDepuisDevis(e.target.value)}
                   className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                  aria-label="Créer depuis un devis accepté"
                 >
                   <option value="">-- Créer depuis un devis accepté (optionnel) --</option>
                   {devisAcceptes.filter(d => !d.is_avenant).map((d) => (
@@ -527,6 +529,7 @@ export default function FacturesPage() {
                 onChange={(e) => setClientId(e.target.value)}
                 required
                 className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                aria-label="Client"
               >
                 <option value="">-- Choisir un client --</option>
                 {clients.map((c) => (
@@ -647,6 +650,7 @@ export default function FacturesPage() {
                       e.target.value = "";
                     }}
                     className="flex-1 rounded-xl border border-red-600/50 bg-transparent px-3 py-1.5 text-xs text-gray-400 font-medium hover:border-gray-300"
+                    aria-label="Insérer un ouvrage depuis le catalogue standard"
                   >
                     <option value="" disabled>
                       📦 + Insérer un ouvrage depuis le catalogue standard...

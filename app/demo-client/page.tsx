@@ -435,6 +435,7 @@ export default function ClientPortalPrototype() {
             }
           }}
           className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-105 cursor-pointer ${isChatOpen ? 'bg-[#1A1D24] text-slate-600' : 'bg-transparent text-white hover:bg-[#1A1D24]'}`}
+          aria-label="Assistant BNA"
         >
           {isChatOpen ? <X size={24} /> : <MessageSquare size={24} />}
         </button>

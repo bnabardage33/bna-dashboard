@@ -72,6 +72,7 @@ export default function TresorerieWidget() {
                 <input
                   type="number"
                   className="w-24 rounded-md border border-slate-600 bg-transparent px-2 py-1 text-sm text-white outline-none focus:border-white/10"
+                  aria-label="Solde actuel"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSave()}

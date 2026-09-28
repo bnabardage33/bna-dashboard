@@ -505,6 +505,7 @@ export default function ClientsPage() {
                     onClick={() => supprimerClient(c)}
                     disabled={deleting === c.id}
                     className="text-xs font-medium text-gray-500 hover:text-red-400"
+                    aria-label="Supprimer le client"
                     title="Supprimer"
                   >
                     {deleting === c.id ? "…" : "🗑️"}

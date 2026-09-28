@@ -212,6 +212,7 @@ export default function NotesPage() {
                     onChange={(e) => setEditContenu(e.target.value)}
                     rows={4}
                     className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    aria-label="Contenu"
                   />
                   <div className="flex justify-end gap-2">
                     <button

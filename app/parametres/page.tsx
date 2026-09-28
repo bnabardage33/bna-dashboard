@@ -227,6 +227,7 @@ export default function ParametresPage() {
                 onChange={(e) => handleLogoUpload(e.target.files?.[0])}
                 disabled={uploadingLogo}
                 className="w-full text-xs text-gray-400 file:mr-3 file:rounded-xl file:border-0 file:bg-red-700 file:px-3.5 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-red-600 cursor-pointer disabled:cursor-not-allowed"
+                aria-label="Logo officiel de l'entreprise"
               />
               {uploadingLogo && <p className="mt-1 text-xs text-gray-400 font-semibold">Téléversement du logo…</p>}
             </div>

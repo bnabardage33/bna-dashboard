@@ -200,6 +200,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
                         onClick={() => supprimerPhoto(p)}
                         disabled={deleting === p.id}
                         className="absolute right-1 top-1 rounded-full bg-black/70 px-1.5 py-0.5 text-xs text-white hover:bg-red-600"
+                        aria-label="Supprimer la photo"
                         title="Supprimer"
                       >
                         {deleting === p.id ? "…" : "✕"}

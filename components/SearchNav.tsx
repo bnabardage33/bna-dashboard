@@ -174,6 +174,7 @@ export default function SearchNav() {
         <button
           onClick={() => { setNotifOpen(!notifOpen); setOpen(false); }}
           className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 transition-all"
+          aria-label="Notifications"
         >
           <Bell size={16} className="text-white/60" />
           {unreadCount > 0 && (

@@ -678,6 +678,7 @@ export default function FournisseursPage() {
                           value={c.date_commande ?? ""}
                           onChange={(e) => definirDateCommande(c, e.target.value)}
                           className="rounded border border-slate-600 bg-transparent px-1.5 py-0.5 text-xs text-gray-300"
+                          aria-label="Date de commande"
                         />
                       </p>
                       {c.date_livraison_prevue && (
@@ -704,6 +705,7 @@ export default function FournisseursPage() {
                         value={c.statut}
                         onChange={(e) => changerStatutCommande(c, e.target.value)}
                         className={`rounded-lg border bg-transparent px-2 py-1 text-xs ${statutInfo.couleur}`}
+                        aria-label="Statut de la commande"
                       >
                         {STATUTS.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -756,6 +758,7 @@ export default function FournisseursPage() {
                 value={fSpecialite}
                 onChange={(e) => setFSpecialite(e.target.value)}
                 className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                aria-label="Spécialité"
               >
                 {SPECIALITES.map((s) => (
                   <option key={s} value={s}>
@@ -872,17 +875,20 @@ export default function FournisseursPage() {
                         value={l.designation}
                         onChange={(e) => updateLigneMultiple(i, { designation: e.target.value })}
                         className="flex-1 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                        aria-label="Désignation"
                       />
                       <input
                         type="number"
                         value={l.quantite}
                         onChange={(e) => updateLigneMultiple(i, { quantite: parseFloat(e.target.value) || 0 })}
                         className="w-20 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                        aria-label="Quantité"
                       />
                       <input
                         value={l.unite}
                         onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
                         className="w-16 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                        aria-label="Unité"
                       />
                       <button
                         type="button"
@@ -912,6 +918,7 @@ export default function FournisseursPage() {
                 value={cFournisseurId}
                 onChange={(e) => setCFournisseurId(e.target.value)}
                 className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                aria-label="Fournisseur"
               >
                 <option value="">-- Fournisseur (optionnel) --</option>
                 {fournisseurs.map((f) => (
@@ -925,6 +932,7 @@ export default function FournisseursPage() {
                 value={cChantierId}
                 onChange={(e) => setCChantierId(e.target.value)}
                 className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                aria-label="Chantier"
               >
                 <option value="">-- Chantier (optionnel) --</option>
                 {chantiers.map((c) => (
