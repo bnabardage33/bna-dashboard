@@ -1217,7 +1217,7 @@ export default function CataloguePage() {
                             setFormData(prev => ({ ...prev, dimensions_disponibles: newDims }));
                           }}
                           className="mt-5 p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-400/10 rounded-md transition-colors"
-                          aria-label="Supprimer la dimension"
+                          aria-label={`Supprimer la dimension ${idx + 1}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
