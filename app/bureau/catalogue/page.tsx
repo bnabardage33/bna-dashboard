@@ -695,10 +695,10 @@ export default function CataloguePage() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleOpenModal(o)} className="text-gray-500 hover:text-gray-400" aria-label="Modifier l'ouvrage">
+                    <button onClick={() => handleOpenModal(o)} className="text-gray-500 hover:text-gray-400" aria-label={`Modifier ${o.designation}`}>
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(o.id)} className="text-gray-500 hover:text-rose-400" aria-label="Supprimer l'ouvrage">
+                    <button onClick={() => handleDelete(o.id)} className="text-gray-500 hover:text-rose-400" aria-label={`Supprimer ${o.designation}`}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
