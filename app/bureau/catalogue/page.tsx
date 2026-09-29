@@ -979,10 +979,10 @@ export default function CataloguePage() {
                 {activeTab === 'tarifs' && formData.type_cout === 'main_oeuvre' && (
                 <>
                   {/* ── Section Prestation : Unité + Prix vente + Coût de revient ── */}
-                  <fieldset className="rounded-lg border border-violet-500/40 p-3 space-y-3">
-                    <legend className="px-2 text-xs font-bold uppercase tracking-widest text-violet-300">
+                  <div role="group" aria-labelledby="grp-prestation-vente-cout-de-revient" className="rounded-lg border border-violet-500/40 p-3 space-y-3">
+                    <div id="grp-prestation-vente-cout-de-revient" className="px-2 text-xs font-bold uppercase tracking-widest text-violet-300">
                       Prestation · Vente &amp; Coût de revient
-                    </legend>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -1054,7 +1054,7 @@ export default function CataloguePage() {
                       }
                       return null;
                     })()}
-                  </fieldset>
+                  </div>
                   </>
                 )}
 
@@ -1063,10 +1063,10 @@ export default function CataloguePage() {
                 {activeTab === 'dimensions' && formData.type_cout === "matiere" && (
                 <>
                 {/* ── Section 1 : Marque & Décor ─────────────────────────── */}
-                <fieldset className="rounded-lg border border-slate-600 p-3 space-y-3">
-                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <div role="group" aria-labelledby="grp-1-marque-decor" className="rounded-lg border border-slate-600 p-3 space-y-3">
+                  <div id="grp-1-marque-decor" className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     1 · Marque &amp; Décor
-                  </legend>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -1150,13 +1150,13 @@ export default function CataloguePage() {
                       />
                     </div>
                   </div>
-                </fieldset>
+                </div>
 
                 {/* ── Section 2 : Dimensions & Spécifications ────────────── */}
-                <fieldset className="rounded-lg border border-slate-600 p-3 space-y-3">
-                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <div role="group" aria-labelledby="grp-2-dimensions-specifications" className="rounded-lg border border-slate-600 p-3 space-y-3">
+                  <div id="grp-2-dimensions-specifications" className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     2 · Dimensions &amp; Spécifications
-                  </legend>
+                  </div>
 
                   <div className="space-y-3">
                     {(formData.dimensions_disponibles || []).map((dim, idx) => (
@@ -1240,7 +1240,7 @@ export default function CataloguePage() {
                       <Plus className="h-4 w-4" /> Ajouter une dimension
                     </button>
                   </div>
-                </fieldset>
+                </div>
                 </>
                 )}
 
@@ -1248,10 +1248,10 @@ export default function CataloguePage() {
                   <>
 
                 {/* ── Section 3 : Fournisseur & Tarifs ──────────────────── */}
-                <fieldset className="rounded-lg border border-slate-600 p-3 space-y-3">
-                  <legend className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <div role="group" aria-labelledby="grp-3-fournisseur-tarifs" className="rounded-lg border border-slate-600 p-3 space-y-3">
+                  <div id="grp-3-fournisseur-tarifs" className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                     3 · Fournisseur &amp; Tarifs
-                  </legend>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -1342,7 +1342,7 @@ export default function CataloguePage() {
                       />
                     </div>
                   </div>
-                </fieldset>
+                </div>
                 </>
                 )}
 
