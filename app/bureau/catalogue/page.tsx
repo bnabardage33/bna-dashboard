@@ -1161,7 +1161,7 @@ export default function CataloguePage() {
                   <div className="space-y-3">
                     {(formData.dimensions_disponibles || []).map((dim, idx) => (
                       <div key={idx} className="flex items-center gap-3 bg-[#1A1D24]/50 p-3 rounded-lg border border-white/10">
-                        <div className="flex-1 grid grid-cols-3 gap-3">
+                        <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
                           <div>
                             <label htmlFor={`chp-longueur-mm-${idx}`} className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
                             <input id={`chp-longueur-mm-${idx}`}
