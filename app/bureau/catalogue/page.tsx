@@ -1163,8 +1163,8 @@ export default function CataloguePage() {
                       <div key={idx} className="flex items-center gap-3 bg-[#1A1D24]/50 p-3 rounded-lg border border-white/10">
                         <div className="flex-1 grid grid-cols-3 gap-3">
                           <div>
-                            <label htmlFor="chp-longueur-mm" className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
-                            <input id="chp-longueur-mm"
+                            <label htmlFor={`chp-longueur-mm-${idx}`} className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
+                            <input id={`chp-longueur-mm-${idx}`}
                               type="number"
                               min="0"
                               placeholder="ex: 3050"
@@ -1178,8 +1178,8 @@ export default function CataloguePage() {
                             />
                           </div>
                           <div>
-                            <label htmlFor="chp-largeur-mm" className="block text-2xs uppercase text-gray-500 mb-1">Largeur (mm)</label>
-                            <input id="chp-largeur-mm"
+                            <label htmlFor={`chp-largeur-mm-${idx}`} className="block text-2xs uppercase text-gray-500 mb-1">Largeur (mm)</label>
+                            <input id={`chp-largeur-mm-${idx}`}
                               type="number"
                               min="0"
                               placeholder="ex: 1310"
@@ -1193,8 +1193,8 @@ export default function CataloguePage() {
                             />
                           </div>
                           <div>
-                            <label htmlFor="chp-epaisseur-mm" className="block text-2xs uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
-                            <input id="chp-epaisseur-mm"
+                            <label htmlFor={`chp-epaisseur-mm-${idx}`} className="block text-2xs uppercase text-gray-500 mb-1">Épaisseur (mm)</label>
+                            <input id={`chp-epaisseur-mm-${idx}`}
                               type="number"
                               min="0"
                               step="0.5"
