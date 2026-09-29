@@ -24,6 +24,7 @@ import { fetchMeteo, JourMeteo } from "@/lib/meteo";
 import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteView } from "@/components/TempsHeuresViews";
 import { Surface } from '@/components/ui/Surface';
+import FraisDeplacementTab from "@/components/FraisDeplacementTab";
 
 type Chantier = {
   id: string;
@@ -92,7 +93,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Avancement", "Rapport Client", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents"] as const;
+const TABS = ["Général", "Avancement", "Rapport Client", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents", "Déplacements"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -1520,6 +1521,8 @@ function ChantierDetailContent() {
           )}
         </div>
       )}
+
+      {tab === "Déplacements" && <FraisDeplacementTab chantierId={id} adresseChantier={chantier.adresse_chantier} devisLies={devisLies} />}
 
       {/* MODAL DE CHIFFRAGE / COMMANDE */}
       <CommandeModal

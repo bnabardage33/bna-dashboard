@@ -1,0 +1,228 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createRoot, type Root } from "react-dom/client";
+import { act, createElement } from "react";
+import FraisDeplacementTab from "../components/FraisDeplacementTab";
+
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
+
+let conteneur: HTMLDivElement;
+let root: Root;
+
+beforeEach(() => {
+  conteneur = document.createElement("div");
+  document.body.appendChild(conteneur);
+  root = createRoot(conteneur);
+  vi.clearAllMocks();
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: async () => []
+  });
+  window.confirm = vi.fn().mockReturnValue(true);
+  window.alert = vi.fn();
+});
+
+afterEach(() => {
+  act(() => {
+    root.unmount();
+  });
+  conteneur.remove();
+});
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function getButton(text: string): HTMLButtonElement | null {
+  return Array.from(conteneur.querySelectorAll("button")).find(b => b.textContent?.includes(text)) || null;
+}
+
+function getByTitle(title: string): HTMLElement | null {
+  return conteneur.querySelector(`[title="${title}"]`) as HTMLElement | null;
+}
+
+async function renderComponent(props: any) {
+  await act(async () => {
+    root.render(createElement(FraisDeplacementTab, props));
+  });
+  await act(async () => { await sleep(10); });
+}
+
+async function saisir(placeholder: string, valeur: string): Promise<void> {
+  const el = Array.from(conteneur.querySelectorAll("input")).find(i => i.placeholder.includes(placeholder));
+  expect(el, `input ${placeholder} introuvable`).toBeTruthy();
+  const proto = Object.getPrototypeOf(el as HTMLInputElement);
+  const descripteur = Object.getOwnPropertyDescriptor(proto, "value");
+  descripteur?.set?.call(el, valeur);
+  await act(async () => {
+    el!.dispatchEvent(new Event("input", { bubbles: true }));
+    el!.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(0);
+  });
+}
+
+async function cliquer(el: Element | null): Promise<void> {
+  expect(el, "element à cliquer introuvable").toBeTruthy();
+  await act(async () => {
+    (el as HTMLElement).click();
+    await sleep(10);
+  });
+}
+
+describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
+  it("rend initialement les champs et le bouton d'évaluation", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "123 Rue Principale" });
+    
+    expect(conteneur.textContent).toContain("Calculer un trajet");
+    
+    const inputs = conteneur.querySelectorAll("input");
+    const departInput = Array.from(inputs).find(i => i.placeholder.includes("12 rue de la Paix"))!;
+    const arriveeInput = Array.from(inputs).find(i => i.placeholder.includes("Adresse du chantier"))!;
+    
+    expect(arriveeInput.value).toBe("123 Rue Principale");
+    expect(departInput.value).toBe("");
+
+    const btnEval = getButton("Calculer le trajet");
+    expect(btnEval).not.toBeNull();
+    expect(btnEval!.disabled).toBe(true);
+
+    expect(mockFetch).toHaveBeenCalledWith("/api/deplacements?chantier_id=c-123");
+  });
+
+  it("déclenche POST /evaluer uniquement au clic et affiche le résultat retourné", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "123 Rue Principale" });
+    
+    await saisir("12 rue de la Paix", "Mon Entrepôt");
+
+    const btnEval = getButton("Calculer le trajet");
+    expect(btnEval!.disabled).toBe(false);
+    
+    mockFetch.mockImplementation((url: string, options: any) => {
+      if (url === "/api/deplacements/evaluer" && options?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            distanceAllerKm: 15,
+            distanceRetourKm: 15,
+            tarifKm: 1.0,
+            montantHt: 30.0
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    await cliquer(btnEval);
+
+    expect(conteneur.textContent).toContain("30.00 €");
+    
+    const btnEnregistrer = getButton("Enregistrer ce déplacement");
+    expect(btnEnregistrer).not.toBeNull();
+    
+    await saisir("12 rue de la Paix", "Autre adresse");
+    expect(getButton("Enregistrer ce déplacement")).toBeNull();
+  });
+
+  it("POST sur /api/deplacements puis refait un GET historique", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); 
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris" });
+    
+    await saisir("12 rue de la Paix", "Marseille");
+    
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ distanceAllerKm: 10, distanceRetourKm: 10, tarifKm: 1.0, montantHt: 20.0 })
+    });
+    
+    await cliquer(getButton("Calculer le trajet"));
+    
+    const btnEnregistrer = getButton("Enregistrer ce déplacement");
+    
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "dep-999" })
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: "dep-999", date: "2026-09-29", distance_aller_km: 10, distance_retour_km: 10, tarif_km: 1.0, montant_ht: 20.0 }]
+    });
+
+    await cliquer(btnEnregistrer);
+
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+    expect(conteneur.textContent).toContain("20.00 €");
+  });
+
+  it("supprime avec confirmation et rafraîchit l'historique", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ id: "dep-1", date: "2026-09-29", distance_aller_km: 5, distance_retour_km: 5, tarif_km: 1.0, montant_ht: 10.0 }]
+    });
+
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris" });
+    
+    const btnTrash = getByTitle("Supprimer");
+    
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) }); 
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); 
+
+    await cliquer(btnTrash);
+    
+    expect(window.confirm).toHaveBeenCalledWith("Voulez-vous vraiment supprimer ce déplacement ?");
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("affiche le composant de liaison et déclenche POST /lier", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { id: "dep-non-lie", date: "2026-09-29", distance_aller_km: 10, distance_retour_km: 10, tarif_km: 1.0, montant_ht: 20.0, devis_id: null }
+      ]
+    });
+    const devisMock = [{ id: "devis-1", numero: "DEV-123" }];
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", devisLies: devisMock });
+
+    const selects = conteneur.querySelectorAll("select");
+    expect(selects.length).toBe(1);
+    
+    const select = selects[0] as HTMLSelectElement;
+    expect(select.options.length).toBe(2);
+    
+    await act(async () => {
+      select.value = "devis-1";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      await sleep(10);
+    });
+
+    const btnLier = getButton("Lier");
+    expect(btnLier).not.toBeNull();
+    expect(btnLier!.disabled).toBe(false);
+
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); 
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] }); 
+
+    await cliquer(btnLier);
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining("Cette action est irréversible"));
+    expect(mockFetch).toHaveBeenCalledWith("/api/deplacements/dep-non-lie/lier", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ devis_id: "devis-1" })
+    }));
+  });
+
+  it("masque les actions pour un déplacement déjà lié", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { id: "dep-lie", date: "2026-09-29", distance_aller_km: 10, distance_retour_km: 10, tarif_km: 1.0, montant_ht: 20.0, devis_id: "devis-1" }
+      ]
+    });
+    
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris" });
+    
+    expect(conteneur.textContent).toContain("Inclus dans devis");
+    
+    const btnTrash = getByTitle("Supprimer");
+    expect(btnTrash).toBeNull();
+    
+    expect(conteneur.querySelectorAll("select").length).toBe(0);
+  });
+});

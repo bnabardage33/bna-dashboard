@@ -26,6 +26,7 @@ export type LigneDevis = {
   // Chaque ligne issue d'une zone conserve l'identifiant zone.id ; les lignes
   // issues de zones différentes ne sont jamais fusionnées silencieusement.
   zone_id?: string | null;
+  type_ligne?: "standard" | "frais_deplacement" | null;
 };
 
 export type CalculsDevis = {

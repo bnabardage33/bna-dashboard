@@ -39,6 +39,7 @@ function normaliserLigne(brute: LigneBrute, catalogue: Map<string, CatalogueRow>
   const id = typeof brute.catalogue_id === "string" ? brute.catalogue_id.trim() : "";
   // Traçabilité par zone (additif) : préservé si fourni par l'IA / le client.
   const zone_id = texte(brute.zone_id) || null;
+  const type_ligne = brute.type_ligne === "frais_deplacement" ? "frais_deplacement" : null;
 
   if (!id) {
     // Ligne manuelle : saisie directe et complète par le patron (fonctionnalité
@@ -59,6 +60,7 @@ function normaliserLigne(brute: LigneBrute, catalogue: Map<string, CatalogueRow>
           type_cout: null,
           a_chiffrer: false,
           zone_id,
+          type_ligne,
         };
       }
     }
