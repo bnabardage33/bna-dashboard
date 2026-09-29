@@ -636,7 +636,7 @@ export default function ClientsPage() {
                   {devis360.length === 0 ? (
                     <p className="text-xs text-gray-500">Aucun devis émis.</p>
                   ) : (
-                    <div className="overflow-hidden rounded-lg border border-white/10">
+                    <div className="overflow-x-auto rounded-lg border border-white/10">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-transparent text-gray-400">
                           <tr>

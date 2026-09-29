@@ -598,32 +598,32 @@ export default function FacturesPage() {
               <div className="space-y-2">
                 <p className="text-3xs font-semibold uppercase tracking-wide text-gray-400">Lignes de prestation</p>
                 {lignes.map((l, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2">
+                  <div key={i} className="grid grid-cols-2 sm:grid-cols-12 gap-2">
                     <input
                       value={l.designation}
                       onChange={(e) => updateLigne(i, { designation: e.target.value })}
                       placeholder="Désignation"
-                      className="col-span-4 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
+                      className="min-w-0 col-span-2 sm:col-span-4 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <input
                       type="number"
                       value={l.qte}
                       onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
                       placeholder="Qté"
-                      className="col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
+                      className="min-w-0 col-span-1 sm:col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <input
                       value={l.unite}
                       onChange={(e) => updateLigne(i, { unite: e.target.value })}
                       placeholder="Unité"
-                      className="col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
+                      className="min-w-0 col-span-1 sm:col-span-2 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <input
                       type="number"
                       value={l.pu_ht}
                       onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
                       placeholder="PU HT"
-                      className="col-span-3 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
+                      className="min-w-0 col-span-1 sm:col-span-3 rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-xs text-white"
                     />
                     <button
                       type="button"
