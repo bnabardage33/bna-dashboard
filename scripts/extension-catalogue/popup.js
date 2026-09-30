@@ -1,75 +1,121 @@
-// Remplacez ces valeurs par celles de votre fichier .env.local
-const SUPABASE_URL = "https://onhygmsxfdjkcjjnhabo.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uaHlnbXN4ZmRqa2Nqam5oYWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0MzA4MTksImV4cCI6MjEwMjAwNjgxOX0._s08ESsY5jVNkCBUaJxTAt-IaupseSmRhOa4YVA6MS4";
+// POPUP — pré-remplit un formulaire de relecture, puis ouvre la page
+// catalogue de l'app pour l'enregistrement.
+//
+// IMPORTANT — pourquoi on n'écrit plus dans Supabase ici :
+// une écriture directe depuis le navigateur utilise la clé anon, et
+// `catalogue_ouvrages` n'a pas de colonne `entreprise_id`. Depuis la mise en
+// place du RLS multi-entreprise (22/09), tout insert anon est refusé :
+//     42501 — new row violates row-level security policy
+// L'extension échouait donc sur TOUS les sites, pas seulement ceux qui
+// bloquent le scraping. On délègue l'enregistrement à l'app, qui possède la
+// session et la ligne à créer. C'est exactement le chemin du favori.
 
-// Quand le popup s'ouvre, on demande au script de la page de nous envoyer les données trouvées
-chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-  chrome.tabs.sendMessage(tabs[0].id, {action: "extract"}, function(response) {
-    if (response) {
-      document.getElementById('designation').value = response.designation || "";
-      document.getElementById('pu_ht').value = response.pu_ht || "";
-      document.getElementById('fabricant').value = response.fabricant || "";
-      
-      // On peut aussi essayer de deviner le fournisseur en fonction de l'URL
-      if (response.url) {
-        if (response.url.includes("dispano")) document.getElementById('fournisseur').value = "Dispano";
-        else if (response.url.includes("pointp")) document.getElementById('fournisseur').value = "Point.P";
-        else if (response.url.includes("barillet")) document.getElementById('fournisseur').value = "Barillet";
-      }
-    }
-  });
-});
+const APP_URL = 'https://bna-dashboard.vercel.app';
+const CLE_APPLICATION = 'catalogue_ouvrages';
 
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  const statusEl = document.getElementById('status');
-  statusEl.textContent = "Enregistrement...";
-  statusEl.className = "";
+function el(id) {
+  return document.getElementById(id);
+}
 
-  const pu_ht_str = document.getElementById('pu_ht').value.replace(',', '.');
-  const pu_ht = parseFloat(pu_ht_str) || 0;
-  const prix_ttc = parseFloat((pu_ht * 1.2).toFixed(2));
-  const epaisseur = document.getElementById('epaisseur_mm').value;
+function afficherStatut(texte, classe = '') {
+  const s = el('status');
+  if (!s) return;
+  s.textContent = texte;
+  s.className = classe;
+}
 
-  const payload = {
-    categorie: document.getElementById('categorie').value,
-    famille_label: document.getElementById('famille_label').value || "Import Web",
-    designation: document.getElementById('designation').value,
-    fabricant: document.getElementById('fabricant').value || null,
-    fournisseur: document.getElementById('fournisseur').value || null,
-    code_decor: document.getElementById('code_decor').value || null,
-    unite: document.getElementById('unite').value,
-    pu_ht: pu_ht,
-    prix_ttc: prix_ttc,
-    // On met l'épaisseur dans le nouveau format ou l'ancien si besoin
-    epaisseur_mm: epaisseur ? parseFloat(epaisseur) : null,
-    dimensions_disponibles: epaisseur ? [{ epaisseur_mm: parseFloat(epaisseur) }] : []
-  };
-
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/catalogue_ouvrages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (response.ok) {
-      statusEl.textContent = "✔ Ajouté avec succès !";
-      statusEl.className = "success";
-      setTimeout(() => window.close(), 1500);
-    } else {
-      const errorData = await response.json();
-      console.error(errorData);
-      statusEl.textContent = "Erreur: " + (errorData.message || "Impossible d'ajouter");
-      statusEl.className = "error";
-    }
-  } catch (error) {
-    console.error("Erreur réseau:", error);
-    statusEl.textContent = "Erreur de connexion";
-    statusEl.className = "error";
+// Remplit le formulaire avec ce que la page a donné.
+function remplir(d) {
+  if (el('designation')) el('designation').value = d.designation || '';
+  if (el('fabricant')) el('fabricant').value = d.fabricant || '';
+  if (el('fournisseur')) el('fournisseur').value = d.fournisseur || '';
+  if (el('reference')) el('reference').value = d.reference || '';
+  if (el('description')) el('description').value = d.description || '';
+  if (el('unite') && d.unite) {
+    // n'écrase la valeur que si l'option existe dans le <select>
+    const existe = [...el('unite').options].some((o) => o.value === d.unite);
+    if (existe) el('unite').value = d.unite;
   }
+
+  // L'app attend un prix TTC et en déduit le HT (page.tsx:272-273).
+  // L'extensionhistoriquement envoyait pu_ht + prix_ttc. On garde les deux
+  // champs pour la relecture, en partant du prix scrapé traité comme TTC.
+  const p = d.prix ? parseFloat(String(d.prix).replace(',', '.')) : null;
+  if (el('prix_ttc')) el('prix_ttc').value = p !== null && !isNaN(p) ? String(p).replace('.', ',') : '';
+  if (el('pu_ht')) el('pu_ht').value = p !== null && !isNaN(p) ? (p / 1.2).toFixed(2).replace('.', ',') : '';
+
+  // Dimensions trouvées dans le titre ou la description.
+  if (el('epaisseur_mm')) {
+    const texte = `${d.designation || ''} ${d.description || ''}`;
+    const m = texte.match(/(?:ep|epaisseur|ép|épaisseur)\s*[-_:]?\s*(\d+[.,]?\d*)/i)
+      || texte.match(/(?<![x*\d])(\d+[.,]?\d*)\s*mm/i);
+    el('epaisseur_mm').value = m ? m[1].replace(',', '.') : '';
+  }
+
+  afficherStatut(
+    d.prix ? 'Données trouvées — vérifie puis ouvre l\'application.' : 'Prix non trouvé — vérifie à la main.',
+    d.prix ? 'ok' : 'warn'
+  );
+}
+
+// Demande les données à la page active et pré-remplit.
+function auDemarrage() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || !tabs[0]) {
+      afficherStatut('Aucun onglet actif.', 'error');
+      return;
+    }
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'extract' }, (reponse) => {
+      const err = chrome.runtime.lastError;
+      if (err || !reponse) {
+        // Cause la plus fréquente : la page était déjà ouverte avant
+        // l'installation de l'extension, donc content.js n'y a jamais été
+        // injecté. Recharger la page règle le problème.
+        afficherStatut(
+          'Extension inactive sur cet onglet — recharge la page (F5) puis réessaie.',
+          'error'
+        );
+        return;
+      }
+      if (reponse.error) {
+        afficherStatut('Erreur de lecture : ' + reponse.error, 'error');
+        return;
+      }
+      remplir(reponse);
+    });
+  });
+}
+
+// Ouvre l'app avec les valeurs du formulaire.
+// On passe par les memes paramètres que le favori (page.tsx:217-219) :
+// l'app refait la conversion TTC/HT, détecte les dimensions et le
+// fournisseur, puis ouvre sa modale de saisie pour validation.
+function ouvrirDansLApp() {
+  const designation = el('designation') ? el('designation').value.trim() : '';
+  const ttc = el('prix_ttc') ? el('prix_ttc').value.trim().replace(',', '.') : '';
+  if (!designation) {
+    afficherStatut('La désignation est obligatoire.', 'error');
+    return;
+  }
+  const params = new URLSearchParams({
+    importUrl: currentUrl || '',
+    importTitle: designation,
+    importPrice: ttc,
+  });
+  chrome.tabs.create({ url: `${APP_URL}/bureau/catalogue?${params.toString()}` });
+  afficherStatut('Ouverture de l\'application…', 'ok');
+}
+
+let currentUrl = '';
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  if (tabs && tabs[0]) currentUrl = tabs[0].url || '';
 });
+auDemarrage();
+
+const bouton = el('saveBtn');
+if (bouton) {
+  bouton.textContent = 'Ouvrir dans BNA Dashboard';
+  bouton.addEventListener('click', ouvrirDansLApp);
+}
+
+document.addEventListener('DOMContentLoaded', auDemarrage);

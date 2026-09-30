@@ -69,6 +69,29 @@
     }
     .success { color: #4ade80; }
     .error { color: #f87171; }
+    .ok { color: #4ade80; }
+    .warn { color: #fbbf24; }
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      background-color: #0f1115;
+      border: 1px solid #334155;
+      color: white;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+    }
+    input[readonly] { opacity: 0.7; cursor: not-allowed; }
+    .note {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.5;
+      margin: 12px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid #333;
+    }
   </style>
 </head>
 <body>
@@ -108,9 +131,16 @@
 
   <div class="grid-2">
     <div class="form-group">
-      <label>Prix Unitaire HT (€)</label>
-      <input type="text" id="pu_ht" placeholder="0.00" required>
+      <label>Prix TTC (€)</label>
+      <input type="text" id="prix_ttc" placeholder="0.00">
     </div>
+    <div class="form-group">
+      <label>Prix Unitaire HT (€)</label>
+      <input type="text" id="pu_ht" placeholder="0.00" readonly>
+    </div>
+  </div>
+
+  <div class="grid-2">
     <div class="form-group">
       <label>Unité</label>
       <select id="unite">
@@ -118,7 +148,14 @@
         <option value="U">Unité (U)</option>
         <option value="ml">ml</option>
         <option value="forfait">Forfait</option>
+        <option value="kg">kg</option>
+        <option value="L">Litre</option>
+        <option value="Pièce">Pièce</option>
       </select>
+    </div>
+    <div class="form-group">
+      <label>Référence</label>
+      <input type="text" id="reference">
     </div>
   </div>
 
@@ -133,8 +170,18 @@
     </div>
   </div>
 
-  <button id="saveBtn">Enregistrer dans Supabase</button>
+  <div class="form-group">
+    <label>Description</label>
+    <textarea id="description" rows="3" placeholder="Rempli automatiquement depuis la page"></textarea>
+  </div>
+
+  <button id="saveBtn">Ouvrir dans BNA Dashboard</button>
   <div id="status"></div>
+
+  <p class="note">
+    L'enregistrement se fait dans l'application, après contrôle : c'est elle
+    qui tient la session et la ligne à créer. Le popup ne touche pas à la base.
+  </p>
 
   <script src="popup.js"></script>
 </body>
