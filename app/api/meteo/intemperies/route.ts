@@ -7,6 +7,7 @@ import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
 import type { VigilancePhenomene } from "@/lib/meteoVigilance";
 import { verifierSession } from "@/lib/auth";
+import { userAgentNominatim } from "@/lib/deplacement/geocodage";
 
 // ─── Seuils communs ───────────────────────────────────────────────────────────
 const SEUIL_PLUIE_MM = 5;
@@ -172,7 +173,7 @@ async function geocoderAdresse(adresse: string): Promise<{ lat: number; lng: num
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=fr&q=${encodeURIComponent(q + ", France")}`,
       {
-        headers: { "User-Agent": "BNA-Dashboard/1.0", Accept: "application/json" },
+        headers: { "User-Agent": userAgentNominatim(), Accept: "application/json" },
         next: { revalidate: 21600 },
       }
     );

@@ -4,6 +4,18 @@ export type ResultatService<T> =
 
 export type Coordonnees = { lat: number; lon: number };
 
+// User-Agent pour tous les appels a Nominatim (openstreetmap).
+// Leur politique d'utilisation exige un contact identifiable dans le
+// User-Agent, sans quoi le service peut bloquer l'appel sans preavis.
+// Centralise ici parce que deux modules appellent Nominatim : le calcul de
+// trajet des frais de deplacement, et la meteo des chantiers. Sans ce
+// partage, la variable d'environnement NOMINATIM_EMAIL risque d'etre
+// appliquee a l'un et pas a l'autre.
+export function userAgentNominatim(): string {
+  const email = process.env.NOMINATIM_EMAIL;
+  return email ? `BNA-Dashboard/1.0 (${email})` : "BNA-Dashboard/1.0";
+}
+
 export async function geocoderAdresse(adresse: string): Promise<ResultatService<Coordonnees>> {
   if (!adresse.trim()) return { ok: false, erreur: "Adresse vide." };
 
@@ -16,11 +28,8 @@ export async function geocoderAdresse(adresse: string): Promise<ResultatService<
     url.searchParams.append("format", "json");
     url.searchParams.append("limit", "1");
 
-    const email = process.env.NOMINATIM_EMAIL;
-    const userAgent = email ? `BNA-Dashboard/1.0 (${email})` : "BNA-Dashboard/1.0";
-
     const res = await fetch(url.toString(), {
-      headers: { "User-Agent": userAgent },
+      headers: { "User-Agent": userAgentNominatim() },
       signal: controller.signal
     });
 
