@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "../app/api/deplacements/utils";
 
 const mockGetUser = vi.fn();
+// B1 — la RPC est désormais appelée par le client PORTÉ PAR LA SESSION
+// (cookies, clé anon), pas par supabaseAdmin (service_role) : c'est la seule
+// façon pour que entreprise_courante() lise le claim app_metadata.entreprise_id
+// du JWT de l'utilisateur. Le mock expose donc `rpc` sur createClient().
+const mockRpc = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({
-    auth: { getUser: () => mockGetUser() }
+    auth: { getUser: () => mockGetUser() },
+    rpc: (...args: any[]) => mockRpc(...args)
   })
 }));
 
@@ -68,9 +74,6 @@ vi.mock("@/lib/auth", () => ({
   verifierSession: vi.fn()
 }));
 
-const mockRpc = vi.fn();
-(supabaseAdmin as any).rpc = mockRpc;
-
 describe("API Liaison au Devis (LOT 6)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -86,16 +89,20 @@ describe("API Liaison au Devis (LOT 6)", () => {
       body: JSON.stringify({ devis_id: "dev-999" })
     });
     
-    const res = await LierPOST(req, { params: { id: "dep-1" } });
+    const res = await LierPOST(req, { params: Promise.resolve({ id: "dep-1" }) });
     expect(res.status).toBe(200);
     
     const json = await res.json();
     expect(json).toEqual({ ok: true, devis_id: "dev-999" });
+    // B1 — contrat de sécurité : la RPC ne reçoit PLUS de paramètre tenant.
+    // Le tenant est résolu côté base depuis la session (entreprise_courante()).
+    // Ce test verrouillerait une régression si p_entreprise_id revenait.
     expect(mockRpc).toHaveBeenCalledWith("lier_deplacement_devis", {
       p_deplacement_id: "dep-1",
-      p_devis_id: "dev-999",
-      p_entreprise_id: "ent-123"
+      p_devis_id: "dev-999"
     });
+    const argsEnvoyes = mockRpc.mock.calls[0][1] as Record<string, unknown>;
+    expect(argsEnvoyes).not.toHaveProperty("p_entreprise_id");
   });
 
   it("POST /lier - traduit HTTP_409_CONFLICT", async () => {
@@ -106,7 +113,7 @@ describe("API Liaison au Devis (LOT 6)", () => {
       body: JSON.stringify({ devis_id: "dev-999" })
     });
     
-    const res = await LierPOST(req, { params: { id: "dep-1" } });
+    const res = await LierPOST(req, { params: Promise.resolve({ id: "dep-1" }) });
     expect(res.status).toBe(409);
     
     const json = await res.json();
@@ -125,7 +132,7 @@ describe("API Suppression Immutabilité (LOT 4 corrigé)", () => {
     mockMaybeSingle.mockResolvedValue({ data: { id: "dep-1", devis_id: "dev-999" }, error: null });
     
     const req = new NextRequest("http://localhost/api/deplacements/dep-1", { method: "DELETE" });
-    const res = await DeleteDeplacement(req, { params: { id: "dep-1" } });
+    const res = await DeleteDeplacement(req, { params: Promise.resolve({ id: "dep-1" }) });
     
     expect(res.status).toBe(403);
     const json = await res.json();

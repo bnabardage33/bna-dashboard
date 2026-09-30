@@ -1308,6 +1308,94 @@ export type Database = {
         }
         Relationships: []
       }
+      frais_deplacement: {
+        Row: {
+          adresse_arrivee: string | null
+          adresse_depart: string | null
+          chantier_id: string
+          commentaire: string | null
+          created_at: string | null
+          date: string
+          devis_id: string | null
+          distance_aller_km: number
+          distance_retour_km: number
+          entreprise_id: string
+          id: string
+          montant_ht: number
+          montant_ttc: number | null
+          montant_tva: number | null
+          motif: string
+          statut: string
+          tarif_km: number
+          taux_tva: number
+          updated_at: string | null
+        }
+        Insert: {
+          adresse_arrivee?: string | null
+          adresse_depart?: string | null
+          chantier_id: string
+          commentaire?: string | null
+          created_at?: string | null
+          date: string
+          devis_id?: string | null
+          distance_aller_km: number
+          distance_retour_km: number
+          entreprise_id: string
+          id?: string
+          montant_ht: number
+          montant_ttc?: number | null
+          montant_tva?: number | null
+          motif?: string
+          statut?: string
+          tarif_km: number
+          taux_tva?: number
+          updated_at?: string | null
+        }
+        Update: {
+          adresse_arrivee?: string | null
+          adresse_depart?: string | null
+          chantier_id?: string
+          commentaire?: string | null
+          created_at?: string | null
+          date?: string
+          devis_id?: string | null
+          distance_aller_km?: number
+          distance_retour_km?: number
+          entreprise_id?: string
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number | null
+          montant_tva?: number | null
+          motif?: string
+          statut?: string
+          tarif_km?: number
+          taux_tva?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frais_deplacement_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frais_deplacement_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frais_deplacement_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fournisseurs: {
         Row: {
           conditions_paiement: string | null
@@ -2550,6 +2638,18 @@ export type Database = {
       generer_prochain_numero_sit_ctx: {
         Args: { p_entreprise_id: string }
         Returns: string
+      }
+      lier_deplacement_devis: {
+        Args: { p_deplacement_id: string; p_devis_id: string }
+        Returns: Json
+      }
+      lier_deplacement_devis_ctx: {
+        Args: {
+          p_deplacement_id: string
+          p_devis_id: string
+          p_entreprise_id: string
+        }
+        Returns: Json
       }
       rattacher_entreprise: {
         Args: { p_entreprise_id: string; p_user_id: string }
