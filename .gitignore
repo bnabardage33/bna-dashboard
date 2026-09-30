@@ -45,13 +45,18 @@ next-env.d.ts
 **/.creds.json
 
 # dev scripts (one-off patches, do not commit)
-patch_*.js
-fix_*.js
+# Les motifs à joker sont bornés à /.archive-scripts/ : sans « / » initial
+# ils s'appliqueraient à TOUT le dépôt, et un futur app/lib/fix_bruit.js
+# serait ignoré SANS PRÉVENIR (ni commité, ni visible dans git status).
+/.archive-scripts/patch_*.js
+/.archive-scripts/fix_*.js
+/.archive-scripts/check_*.js
+/.archive-scripts/count_*.js
+/.archive-scripts/find_*.js
+/.archive-scripts/trace_*.js
+/.archive-scripts/print_*.js
+# Noms fixes, sans joker : le risque de collision avec un fichier source
+# est nul, ils restent donc valables partout.
 inject_ui.js
-check_*.js
-count_*.js
-find_*.js
-trace_*.js
-print_*.js
 globalCalepinage.js
 .env.check
