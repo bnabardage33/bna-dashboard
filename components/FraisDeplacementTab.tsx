@@ -180,23 +180,27 @@ export default function FraisDeplacementTab({
           ) : (
             <div className="space-y-3">
               {historique.map((dep) => (
-                <div key={dep.id} className="bg-[#2A2D35] p-4 rounded-lg flex flex-col gap-3 group">
+                <div key={dep.id} className="bg-[#2A2D35] p-4 rounded-lg flex flex-col gap-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-white text-sm font-medium">{new Date(dep.date).toLocaleDateString("fr-FR")}</div>
                       <div className="text-gray-400 text-xs">{(dep.distance_aller_km + dep.distance_retour_km)} km à {fmtEuro(dep.tarif_km)}/km</div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <span className="text-white font-bold">{fmtEuro(dep.montant_ht)}</span>
-                      {!dep.devis_id && (
-                        <button
-                          onClick={() => handleDelete(dep.id, dep.devis_id)}
-                          className="text-gray-500 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-1"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      {/* Toujours visible. Avant : `md:opacity-0 md:group-hover:opacity-100`,
+                          ce qui le rendait invisible au repos sur ordinateur (mobile
+                          était servi par `opacity-100`) ; et conditionné à `!dep.devis_id`,
+                          ce qui le faisait disparaître des lignes liées à un devis.
+                          Sur ces lignes le bouton reste là mais handleDelete refuse,
+                          avec un message expliquant pourquoi. */}
+                      <button
+                        onClick={() => handleDelete(dep.id, dep.devis_id)}
+                        className="text-gray-400 hover:text-red-400 transition-colors p-1 shrink-0"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 

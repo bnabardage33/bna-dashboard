@@ -215,21 +215,37 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
     }));
   });
 
-  it("masque les actions pour un déplacement déjà lié", async () => {
+  it("masque la liaison et refuse la suppression pour un déplacement déjà lié", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => [
         { id: "dep-lie", date: "2026-09-29", distance_aller_km: 10, distance_retour_km: 10, tarif_km: 1.0, montant_ht: 20.0, devis_id: "devis-1" }
       ]
     });
-    
+
     await renderComponent({ chantierId: "c-123", adresseChantier: "Paris" });
-    
+
     expect(conteneur.textContent).toContain("Inclus dans devis");
-    
-    const btnTrash = getByTitle("Supprimer");
-    expect(btnTrash).toBeNull();
-    
+
+    // La liaison disparaît : un déplacement déjà inclus n'a plus de sélecteur.
     expect(conteneur.querySelectorAll("select").length).toBe(0);
+
+    // Le bouton Supprimer reste présent — il était masqué au survol sur
+    // ordinateur, donc invisible au repos, et absent des lignes liées. Il doit
+    // maintenant s'afficher et expliquer le refus plutôt que disparaître.
+    const btnTrash = getByTitle("Supprimer");
+    expect(btnTrash).toBeTruthy();
+
+    const confirmMock = window.confirm as unknown as ReturnType<typeof vi.fn>;
+    const alertMock = window.alert as unknown as ReturnType<typeof vi.fn>;
+    confirmMock.mockClear();
+    alertMock.mockClear();
+
+    await cliquer(btnTrash);
+
+    // Refus motivé, et surtout aucune requête de suppression émise.
+    expect(alertMock).toHaveBeenCalledWith("Action impossible : déplacement déjà lié au devis.");
+    expect(confirmMock).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
