@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculerMontantDeplacement, calculerTaxesDeplacement } from "../lib/deplacement/calcul";
+import { calculerMontantDeplacement, calculerTaxesDeplacement } from "../../lib/deplacement/calcul";
 
 describe("Moteur de calcul de déplacement", () => {
   it("calcule correctement l'aller + retour × tarif", () => {

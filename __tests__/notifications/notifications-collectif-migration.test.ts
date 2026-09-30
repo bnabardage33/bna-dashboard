@@ -134,7 +134,7 @@ describe("O3-B6/N2-N3 — la route /api/notifications est supprimée", () => {
     expect(referencing).toEqual([]);
     // ...et la seule mention qui subsiste, dans l'arbre des tests, est bien la
     // liste négative « anciennes routes API privées ».
-    const middlewareTest = readFileSync("./__tests__/middleware.test.ts", "utf-8");
+    const middlewareTest = readFileSync("./__tests__/securite/middleware.test.ts", "utf-8");
     expect(middlewareTest).toContain("anciennes routes API privées");
   });
 

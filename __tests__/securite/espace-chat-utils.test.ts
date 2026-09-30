@@ -6,7 +6,7 @@ import {
   estimerTokensMessages,
   estimerTokensTexte,
   resumeVide,
-} from '../lib/espace-chat-utils'
+} from '../../lib/espace-chat-utils'
 
 function message(content: string, role: 'user' | 'assistant' = 'user'): MessageChat {
   return { role, content }

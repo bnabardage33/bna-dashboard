@@ -238,10 +238,10 @@ function ctx(code: string): Ctx {
 }
 
 async function chatRoute() {
-  return (await import('../app/api/espace-client/[code_acces]/chat/route')).POST
+  return (await import('../../app/api/espace-client/[code_acces]/chat/route')).POST
 }
 async function reformulerRoute() {
-  return (await import('../app/api/reformuler-note/route')).POST
+  return (await import('../../app/api/reformuler-note/route')).POST
 }
 
 function conversationsEcrites(etat: Etat): number {
@@ -525,7 +525,7 @@ describe('O3-B4 — fail-closed : le JSON anonymisé illisible ne part pas à Gr
   it('H2. le repli fail-open du catch a bien disparu du code source', async () => {
     const { readFileSync } = await import('node:fs')
     const source = readFileSync(
-      new URL('../app/api/espace-client/[code_acces]/chat/route.ts', import.meta.url),
+      new URL('../../app/api/espace-client/[code_acces]/chat/route.ts', import.meta.url),
       'utf8'
     )
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { geocoderAdresse } from "../lib/deplacement/geocodage";
-import { calculerDistanceRoute } from "../lib/deplacement/itineraire";
-import { evaluerDistances } from "../lib/deplacement/service";
+import { geocoderAdresse } from "../../lib/deplacement/geocodage";
+import { calculerDistanceRoute } from "../../lib/deplacement/itineraire";
+import { evaluerDistances } from "../../lib/deplacement/service";
 
 // Mock global pour intercepter les requêtes HTTP (zéro appel réseau réel)
 const originalFetch = global.fetch;

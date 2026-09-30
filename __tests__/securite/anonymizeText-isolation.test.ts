@@ -19,7 +19,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createClient } from '@supabase/supabase-js'
-import { anonymizeText, deanonymizeText } from '../lib/anonymizeText'
+import { anonymizeText, deanonymizeText } from '../../lib/anonymizeText'
 
 vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn() }))
 
@@ -359,7 +359,7 @@ describe('O3-B4 — anonymizeText : dictionnaire dynamique cloisonné par entrep
   })
 
   it('G2. aucune valeur par défaut ni paramètre optionnel dans le contrat', () => {
-    const source = readFileSync(new URL('../lib/anonymizeText.ts', import.meta.url), 'utf8')
+    const source = readFileSync(new URL('../../lib/anonymizeText.ts', import.meta.url), 'utf8')
 
     // Ni `entrepriseId?` (optionnel) ni `entrepriseId = …` (défaut) nulle part.
     expect(source).not.toMatch(/entrepriseId\?/)
@@ -384,7 +384,7 @@ describe('O3-B4 — anonymizeText : dictionnaire dynamique cloisonné par entrep
   })
 
   it('G4. TOUS les appels de anonymizeText du dépôt passent bien 4 arguments', () => {
-    const racine = fileURLToPath(new URL('../', import.meta.url))
+    const racine = fileURLToPath(new URL('../../', import.meta.url))
     const cibles = [
       ...collecterSources(join(racine, 'app')),
       ...collecterSources(join(racine, 'lib')),

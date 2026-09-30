@@ -276,7 +276,7 @@ function installerSupabase(): void {
 // ---------------------------------------------------------------------------
 
 async function routeChat() {
-  return (await import('../app/api/espace-client/[code_acces]/chat/route')).POST
+  return (await import('../../app/api/espace-client/[code_acces]/chat/route')).POST
 }
 
 function post(code: string, corps: unknown): NextRequest {

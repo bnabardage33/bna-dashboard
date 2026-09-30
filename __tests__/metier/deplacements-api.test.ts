@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "../app/api/deplacements/utils";
+import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "../../app/api/deplacements/utils";
 
 const mockGetUser = vi.fn();
 // B1 — la RPC est désormais appelée par le client PORTÉ PAR LA SESSION
@@ -64,8 +64,8 @@ describe("Utils de l'API Déplacements", () => {
   });
 });
 
-import { POST as LierPOST } from "../app/api/deplacements/[id]/lier/route";
-import { DELETE as DeleteDeplacement } from "../app/api/deplacements/[id]/route";
+import { POST as LierPOST } from "../../app/api/deplacements/[id]/lier/route";
+import { DELETE as DeleteDeplacement } from "../../app/api/deplacements/[id]/route";
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { verifierSession } from "@/lib/auth";

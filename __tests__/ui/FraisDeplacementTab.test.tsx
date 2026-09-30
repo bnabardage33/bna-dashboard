@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { act, createElement } from "react";
-import FraisDeplacementTab from "../components/FraisDeplacementTab";
+import FraisDeplacementTab from "../../components/FraisDeplacementTab";
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;

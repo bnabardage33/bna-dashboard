@@ -341,7 +341,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
 
   it('A1. le tenant du claim est appliqué à la lecture des conversations', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
     expect(res.status).toBe(200)
     const lecture = exec('select', 'espace_client_conversations')[0]
@@ -351,7 +351,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
 
   it('A2. un chantierId HOSTILE dans le body ne change pas le tenant', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     // `chantierId` pointe la conversation BNA ; le tenant reste TEST.
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_BNA, messages: MESSAGES_DEMO }))
     const charge = await corps(res)
@@ -367,7 +367,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
 
   it('A3. entreprise_id non-UUID → 403, et AUCUNE requête émise', async () => {
     etat.user = { app_metadata: { entreprise_id: 'pas-un-uuid' } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_BNA, messages: MESSAGES_DEMO }))
     expect(res.status).toBe(403)
     expect(etat.execLog).toHaveLength(0)
@@ -376,7 +376,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
 
   it('A4. entreprise_id absent du claim → 403', async () => {
     etat.user = { app_metadata: {} }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { messages: MESSAGES_DEMO }))
     expect(res.status).toBe(403)
     expect(etat.execLog).toHaveLength(0)
@@ -385,7 +385,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
   it('A5. entreprise_id non-string (null / nombre) → 403', async () => {
     for (const valeur of [null, 42, { a: 1 }, [TEST]]) {
       etat.user = { app_metadata: { entreprise_id: valeur } }
-      const { POST } = await import('../app/api/chat-client-summary/route')
+      const { POST } = await import('../../app/api/chat-client-summary/route')
       const res = await POST(post('/api/chat-client-summary', { messages: MESSAGES_DEMO }))
       expect(res.status).toBe(403)
     }
@@ -394,7 +394,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
 
   it('A6. le tenant est résolu AVANT la lecture du corps (body piégé sans effet)', async () => {
     etat.user = { app_metadata: {} }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     // Corps hostile qui tente d'imposer un tenant.
     const res = await POST(
       post('/api/chat-client-summary', { entrepriseId: BNA, entreprise_id: BNA, chantierId: CH_BNA })
@@ -405,7 +405,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
 
   it('A7. sans session → 401, aucun travail', async () => {
     etat.sessionActive = false
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { messages: MESSAGES_DEMO }))
     expect(res.status).toBe(401)
     expect(etat.execLog).toHaveLength(0)
@@ -416,7 +416,7 @@ describe('A. /api/chat-client-summary — tenant issu du claim', () => {
     // État BNA de référence (fixture : 1 note legacy BNA, 0 notification).
     const notesBnaAvant = etat.tables.notes_patron.filter((n) => n.entreprise_id === BNA).length
     const notifsBnaAvant = etat.tables.notifications.filter((n) => n.entreprise_id === BNA).length
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     // Le corps tente d'imposer le tenant BNA par tous les alias possibles.
     const res = await POST(
       post('/api/chat-client-summary', {
@@ -461,7 +461,7 @@ describe('B. /api/espace-client/:code/chat-summary — tenant issu du chantier',
   })
 
   it('B1. le tenant appliqué est celui du chantier résolu par code_acces', async () => {
-    const { POST } = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
+    const { POST } = await import('../../app/api/espace-client/[code_acces]/chat-summary/route')
     const res = await POST(post('/api/espace-client/CODE-TEST/chat-summary', { messages: MESSAGES_DEMO }), {
       params: Promise.resolve({ code_acces: 'CODE-TEST' }),
     })
@@ -471,7 +471,7 @@ describe('B. /api/espace-client/:code/chat-summary — tenant issu du chantier',
   })
 
   it('B2. un chantier BNA via son code_accès reçoit le tenant BNA', async () => {
-    const { POST } = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
+    const { POST } = await import('../../app/api/espace-client/[code_acces]/chat-summary/route')
     const res = await POST(post('/api/espace-client/CODE-BNA/chat-summary', { messages: MESSAGES_DEMO }), {
       params: Promise.resolve({ code_acces: 'CODE-BNA' }),
     })
@@ -484,7 +484,7 @@ describe('B. /api/espace-client/:code/chat-summary — tenant issu du chantier',
   })
 
   it('B3. le body ne peut PAS modifier le tenant', async () => {
-    const { POST } = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
+    const { POST } = await import('../../app/api/espace-client/[code_acces]/chat-summary/route')
     const res = await POST(
       post('/api/espace-client/CODE-TEST/chat-summary', {
         messages: MESSAGES_DEMO,
@@ -507,7 +507,7 @@ describe('B. /api/espace-client/:code/chat-summary — tenant issu du chantier',
   })
 
   it('B4. code d\'accès inconnu → 403 générique, aucun travail', async () => {
-    const { POST } = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
+    const { POST } = await import('../../app/api/espace-client/[code_acces]/chat-summary/route')
     const res = await POST(post('/api/espace-client/INCONNU/chat-summary', { messages: MESSAGES_DEMO }), {
       params: Promise.resolve({ code_acces: 'INCONNU' }),
     })
@@ -517,7 +517,7 @@ describe('B. /api/espace-client/:code/chat-summary — tenant issu du chantier',
 
   it('B5. chantier SANS entreprise_id exploitable → 403 identique au code inconnu', async () => {
     etat.tables.chantiers = [{ id: CH_BNA, code_acces: 'CODE-ORPHELIN', client_nom: 'X', entreprise_id: null }]
-    const { POST } = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
+    const { POST } = await import('../../app/api/espace-client/[code_acces]/chat-summary/route')
     const res = await POST(post('/api/espace-client/CODE-ORPHELIN/chat-summary', { messages: MESSAGES_DEMO }), {
       params: Promise.resolve({ code_acces: 'CODE-ORPHELIN' }),
     })
@@ -539,7 +539,7 @@ describe('C. Cloisonnement effectif des conversations', () => {
 
   it('C1. un tenant TEST ne charge JAMAIS la conversation BNA (clé étrangère)', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_BNA, messages: MESSAGES_DEMO }))
     const charge = await corps(res)
 
@@ -551,7 +551,7 @@ describe('C. Cloisonnement effectif des conversations', () => {
 
   it('C2. un tenant BNA ne charge JAMAIS la conversation TEST', async () => {
     etat.user = { app_metadata: { entreprise_id: BNA } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
     const charge = await corps(res)
 
@@ -561,7 +561,7 @@ describe('C. Cloisonnement effectif des conversations', () => {
 
   it('C3. le balayage legacy ne touche que les notes du tenant courant', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
 
     const legacy = exec('select', 'notes_patron').filter((e) => e.filtres.some((f) => f.op === 'ilike'))
@@ -591,7 +591,7 @@ describe('D. destinatairePatron — strictement intra-entreprise', () => {
 
   it('D1. la lecture des profils est scopée par entreprise_id', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
     const lecture = exec('select', 'profiles')[0]
     expect(lecture).toBeDefined()
@@ -604,7 +604,7 @@ describe('D. destinatairePatron — strictement intra-entreprise', () => {
     etat.tables.espace_client_conversations[1].messages_session = [
       { role: 'user', content: `${PII_TEST} le client TEST est très mécontent du retard et exige un rappel` },
     ]
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
 
     const notifs = etat.tables.notifications.filter((n) => n.type === 'client_alert')
@@ -620,7 +620,7 @@ describe('D. destinatairePatron — strictement intra-entreprise', () => {
     etat.tables.espace_client_conversations[0].messages_session = [
       { role: 'user', content: `${PII_BNA} le client BNA est très mécontent du rendu et exige un rappel` },
     ]
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_BNA, messages: MESSAGES_DEMO }))
 
     const notifs = etat.tables.notifications.filter((n) => n.type === 'client_alert')
@@ -642,7 +642,7 @@ describe('E. Scoping des requêtes et projections', () => {
 
   it('E1. chaque lecture tenant-sensitive porte .eq("entreprise_id", …)', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
 
     for (const table of ['espace_client_conversations', 'notes_patron', 'profiles']) {
@@ -656,7 +656,7 @@ describe('E. Scoping des requêtes et projections', () => {
 
   it('E2. entreprise_id figure dans les projections lues pour revalidation', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
 
     for (const table of ['espace_client_conversations', 'notes_patron', 'profiles']) {
@@ -667,7 +667,7 @@ describe('E. Scoping des requêtes et projections', () => {
 
   it('E3. les UPDATE/DELETE de notes portent le couple (identifiant, entreprise_id)', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     // Deux notes legacy TEST ⇒ suppression de l'ancienne + adoption de la récente.
     etat.tables.notes_patron.push({
       id: 'note-legacy-test-2',
@@ -702,7 +702,7 @@ describe('F. Écritures — entreprise_id explicite et erreurs contrôlées', ()
     etat.user = { app_metadata: { entreprise_id: TEST } }
     // Aucune note préexistante ⇒ branche INSERT (pas d'adoption legacy).
     etat.tables.notes_patron = []
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_INCONNUE_TEST, messages: MESSAGES_DEMO }))
 
     const insert = exec('insert', 'notes_patron')[0]
@@ -716,7 +716,7 @@ describe('F. Écritures — entreprise_id explicite et erreurs contrôlées', ()
     etat.tables.espace_client_conversations[1].messages_session = [
       { role: 'user', content: `${PII_TEST} le client TEST est très mécontent et exige un rappel urgent` },
     ]
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
 
     const insert = exec('insert', 'notifications')[0]
@@ -727,7 +727,7 @@ describe('F. Écritures — entreprise_id explicite et erreurs contrôlées', ()
   it('F3. un INSERT sans entreprise_id (NOT NULL) ne peut pas aboutir en 200 silencieux', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
     etat.tables.notes_patron = []
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     // Le mock applique la contrainte NOT NULL de la production. Si le code
     // rectifié ne portait pas l'entreprise, l'INSERT serait refusé : la route ne
     // doit PAS annoncer `alert_created` dans ce cas, et surtout pas le faire
@@ -750,7 +750,7 @@ describe('F. Écritures — entreprise_id explicite et erreurs contrôlées', ()
   it('F4. le corps 500 ne fuit aucun détail interne', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
     etat.tablesIgnorantLeFiltre = ['notes_patron']
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
     expect(res.status).toBe(500)
     const charge = await corps(res)
@@ -763,7 +763,7 @@ describe('F. Écritures — entreprise_id explicite et erreurs contrôlées', ()
     etat.user = { app_metadata: { entreprise_id: TEST } }
     etat.tables.notes_patron = []
     etat.tablesRefusantInsert = ['notes_patron']
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_INCONNUE_TEST, messages: MESSAGES_DEMO }))
     const charge = await corps(res)
 
@@ -781,7 +781,7 @@ describe('F. Écritures — entreprise_id explicite et erreurs contrôlées', ()
       { role: 'user', content: `${PII_TEST} le client TEST est très mécontent et exige un rappel urgent` },
     ]
     etat.tablesRefusantInsert = ['notifications']
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_TEST, messages: MESSAGES_DEMO }))
     const charge = await corps(res)
 
@@ -807,7 +807,7 @@ describe('G. Fail-closed', () => {
   })
 
   it('G1. entrepriseId invalide passé AU CŒUR → refus, aucune requête, aucun Groq', async () => {
-    const { traiterConsolidation } = await import('../lib/espace-chat-summary.server')
+    const { traiterConsolidation } = await import('../../lib/espace-chat-summary.server')
     for (const invalide of ['', ' ', 'pas-un-uuid', '11111111-1111-4111-8111', null as unknown as string, undefined as unknown as string]) {
       await expect(traiterConsolidation({ chantierId: CH_BNA, messages: MESSAGES_DEMO }, invalide)).rejects.toThrow(
         /Contexte entreprise invalide/
@@ -821,7 +821,7 @@ describe('G. Fail-closed', () => {
     // La table est renvoyée en ignorant le filtre : seule la revalidation
     // fail-closed peut encore arrêter la fuite.
     etat.tablesIgnorantLeFiltre = ['espace_client_conversations']
-    const { traiterConsolidation } = await import('../lib/espace-chat-summary.server')
+    const { traiterConsolidation } = await import('../../lib/espace-chat-summary.server')
     await expect(traiterConsolidation({ chantierId: CH_BNA, messages: MESSAGES_DEMO }, TEST)).rejects.toThrow(
       /Incoherence|Incohérence/
     )
@@ -830,7 +830,7 @@ describe('G. Fail-closed', () => {
 
   it('G3. serveur non coopératif : note hors entreprise → refus', async () => {
     etat.tablesIgnorantLeFiltre = ['notes_patron']
-    const { traiterConsolidation } = await import('../lib/espace-chat-summary.server')
+    const { traiterConsolidation } = await import('../../lib/espace-chat-summary.server')
     await expect(traiterConsolidation({ chantierId: CH_TEST, messages: MESSAGES_DEMO }, TEST)).rejects.toThrow(
       /Incoherence|Incohérence/
     )
@@ -838,7 +838,7 @@ describe('G. Fail-closed', () => {
 
   it('G4. serveur non coopératif : profil hors entreprise → refus', async () => {
     etat.tablesIgnorantLeFiltre = ['profiles']
-    const { traiterConsolidation } = await import('../lib/espace-chat-summary.server')
+    const { traiterConsolidation } = await import('../../lib/espace-chat-summary.server')
     await expect(traiterConsolidation({ chantierId: CH_TEST, messages: MESSAGES_DEMO }, TEST)).rejects.toThrow(
       /Incoherence|Incohérence/
     )
@@ -849,7 +849,7 @@ describe('G. Fail-closed', () => {
       { cle: CH_TEST, entreprise_id: null, messages_session: [{ role: 'user', content: `${PII_TEST} donnee sans entreprise` }] },
     ]
     etat.tablesIgnorantLeFiltre = ['espace_client_conversations']
-    const { traiterConsolidation } = await import('../lib/espace-chat-summary.server')
+    const { traiterConsolidation } = await import('../../lib/espace-chat-summary.server')
     await expect(traiterConsolidation({ chantierId: CH_TEST, messages: MESSAGES_DEMO }, TEST)).rejects.toThrow(
       /Incoherence|Incohérence/
     )
@@ -859,7 +859,7 @@ describe('G. Fail-closed', () => {
   it('G6. aucune donnée étrangère n\'atteint Groq, même en cas de fuite de filtre', async () => {
     etat.user = { app_metadata: { entreprise_id: TEST } }
     etat.tablesIgnorantLeFiltre = ['espace_client_conversations']
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_BNA, messages: MESSAGES_DEMO }))
     expect(res.status).toBe(500)
     expect(etat.groqCalls).toHaveLength(0)
@@ -867,7 +867,7 @@ describe('G. Fail-closed', () => {
 
   it('G7. un tenant inconnu mais valide ne charge rien', async () => {
     etat.user = { app_metadata: { entreprise_id: INCONNUE } }
-    const { POST } = await import('../app/api/chat-client-summary/route')
+    const { POST } = await import('../../app/api/chat-client-summary/route')
     const res = await POST(post('/api/chat-client-summary', { chantierId: CH_BNA, messages: MESSAGES_DEMO }))
     const charge = await corps(res)
     expect(res.status).toBe(200)

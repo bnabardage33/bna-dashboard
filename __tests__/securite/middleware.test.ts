@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PUBLIC_PATHS, PUBLIC_PREFIXES } from '../lib/supabase/middleware'
+import { PUBLIC_PATHS, PUBLIC_PREFIXES } from '../../lib/supabase/middleware'
 
 describe('Middleware — bouclier PUBLIC_PATHS', () => {
   it('n\'autorise QUE le login comme route publique exacte', () => {

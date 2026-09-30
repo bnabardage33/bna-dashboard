@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { validerFraisDeplacement } from "../lib/deplacement/validation";
-import { FraisDeplacementInsert } from "../lib/deplacement/types";
+import { validerFraisDeplacement } from "../../lib/deplacement/validation";
+import { FraisDeplacementInsert } from "../../lib/deplacement/types";
 
 describe("Validation de FraisDeplacement", () => {
   const validPayload: Partial<FraisDeplacementInsert> = {

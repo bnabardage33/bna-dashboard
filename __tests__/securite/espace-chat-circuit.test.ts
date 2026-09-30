@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { estimerTokensMessages } from '../lib/espace-chat-utils'
+import { estimerTokensMessages } from '../../lib/espace-chat-utils'
 
 // --- Stub Supabase : réplique de la logique de la migration SQL ---
 
@@ -550,8 +550,8 @@ async function chargerRoutes(): Promise<{
   chatClient: { POST: (req: NextRequest, ctx: { params: Promise<{ code_acces: string }> }) => Promise<Response> }
   resume: { POST: (req: NextRequest, ctx: { params: Promise<{ code_acces: string }> }) => Promise<Response> }
 }> {
-  const chatClient = await import('../app/api/espace-client/[code_acces]/chat/route')
-  const resume = await import('../app/api/espace-client/[code_acces]/chat-summary/route')
+  const chatClient = await import('../../app/api/espace-client/[code_acces]/chat/route')
+  const resume = await import('../../app/api/espace-client/[code_acces]/chat-summary/route')
   return { chatClient, resume }
 }
 

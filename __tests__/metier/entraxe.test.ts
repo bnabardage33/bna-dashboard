@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { calculerPose, LIMITE_DTU_MM } from "../lib/poseCalcul";
-import { calculerEntraxeReel, calculerCalepinage } from "../lib/calepinageCalcul";
+import { calculerPose, LIMITE_DTU_MM } from "../../lib/poseCalcul";
+import { calculerEntraxeReel, calculerCalepinage } from "../../lib/calepinageCalcul";
 
 function verifierJonctions(calepinage: ReturnType<typeof calculerCalepinage>, largeurM: number) {
   const cols = calepinage.colonnesLargeursM;

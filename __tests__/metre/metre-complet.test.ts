@@ -42,7 +42,7 @@ vi.mock("@/lib/supabaseAdmin", () => ({
   },
 }));
 
-import { GET } from "../app/api/chantiers/[id]/metre-complet/route";
+import { GET } from "../../app/api/chantiers/[id]/metre-complet/route";
 import type { NextRequest } from "next/server";
 
 /* ==================================================================
