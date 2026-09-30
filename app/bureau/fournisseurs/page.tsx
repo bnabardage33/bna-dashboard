@@ -8,7 +8,6 @@ import BonCommandePDF from "@/components/BonCommandePDF";
 import { fmtEuro } from "@/lib/financeCalculs";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, AlertTriangle } from "lucide-react";
-import { analyserPerformancesFournisseurs, type AnalytiqueFournisseur } from "@/lib/fournisseursAnalytique";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -96,8 +95,6 @@ function estMemeMois(dateStr: string | null, ref: Date) {
 
 export default function FournisseursPage() {
   const [tab, setTab] = useState<"fournisseurs" | "commandes" | "analyse">("fournisseurs");
-  const [devis, setDevis] = useState<any[]>([]);
-  const [catalogue, setCatalogue] = useState<any[]>([]);
 
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);

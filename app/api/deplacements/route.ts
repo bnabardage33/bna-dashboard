@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const validChantier = await verifierChantier(chantierId, entrepriseId);
     if (!validChantier) return NextResponse.json({ error: "Chantier invalide ou non autorisé." }, { status: 403 });
 
-    const { data, error } = await (supabaseAdmin as any)
+    const { data, error } = await supabaseAdmin
       .from("frais_deplacement")
       .select("*")
       .eq("entreprise_id", entrepriseId)
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       entreprise_id: entrepriseId
     };
 
-    const { data: inserted, error } = await (supabaseAdmin as any)
+    const { data: inserted, error } = await supabaseAdmin
       .from("frais_deplacement")
       .insert(insertData)
       .select()

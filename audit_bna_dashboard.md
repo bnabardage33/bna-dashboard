@@ -527,3 +527,124 @@ Le commentaire d'en-tête de la migration (l.29-33) et le message du commit `524
 - **Impact espace client / chatbot : AUCUN.** `lib/espace-chat-summary.server.ts` intact ; ses écritures passent par `service_role`, donc insensibles au changement de RLS ; `SearchNav` n'est pas rendu sur `/espace-client` (désormais prouvé par test).
 - **Réalisation** : Création de `PlanningGantt.tsx`. Vue sur 6 mois avec Drag & Drop tactile (Pointer Events) pour décaler les dates d'un chantier. Indicateurs visuels (Aujourd'hui, couleurs de statuts, bordure rouge + icône d'alerte si arrêt météo actif).
 
+---
+
+## État au 30/09/2026 — Corrections issues de l'audit complet
+
+Cette section ne refait pas l'audit : elle consigne l'état **réel** du dépôt après une passe de corrections portant sur les points **B1, B2, B3, C1, C3, E13, E14**. Elle s'ajoute au contenu fonctionnel ci-dessus, qui décrit l'architecture et les pages et n'a pas été refondu.
+
+### Corrections appliquées
+
+**B1 — RPC `lier_deplacement_devis` durcie.**
+
+*Défaut.* `public.lier_deplacement_devis(p_deplacement_id, p_devis_id, p_entreprise_id)` était `SECURITY DEFINER` **et** paramétrée par le tenant fourni par l'appelant. `CREATE FUNCTION` accorde `EXECUTE` à `PUBLIC` par défaut et PostgREST expose le schéma `public` : un utilisateur authentifié pouvait appeler directement la RPC avec un `p_entreprise_id` appartenant à un autre tenant. Les policies RLS de `frais_deplacement` sont `auth.role() = 'authenticated'` **sans filtre `entreprise_id`** : rien ne bloquait l'appel.
+
+*Correctif.* Décomposition suivant la convention **déjà utilisée par le dépôt** (`generer_prochain_numero_{ri,sav,sit,avenant}`) :
+
+- `lier_deplacement_devis_ctx(p_deplacement_id, p_devis_id, p_entreprise_id)` — implémentation interne, tenant explicite, `EXECUTE` réservé au `service_role` ;
+- `lier_deplacement_devis(p_deplacement_id, p_devis_id)` — wrapper public **sans aucun paramètre tenant**, qui résout `public.entreprise_courante()` (GUC `app.entreprise_id`, sinon claim JWT `app_metadata.entreprise_id`) et **échoue fermé** si le contexte est absent.
+
+**L'ancienne signature à 3 arguments est `DROPée`, et pas seulement `REVOKE`ée** : PostgREST résout par (nom, nombre d'arguments), une surcharge restante demeurerait une surface d'élévation que le moindre `GRANT` futur rouvrirait par accident.
+
+Le **corps métier est inchangé** : les deux verrous `FOR UPDATE`, le contrôle de chantier partagé entre le devis et le déplacement, le recalcul atomique des totaux du devis et la mise à jour du déplacement sont conservés à l'identique.
+
+* Côté application, `app/api/deplacements/[id]/lier/route.ts` appelle désormais la RPC **en 2 arguments**, via le client **porté par la session** (`createClient()`, cookies, clé `anon`) et non via `supabaseAdmin`. C'est indispensable : `entreprise_courante()` lit le claim du JWT de l'appelant, absent du JWT `service_role` ; en `service_role` la RPC tournerait sans contexte et échouerait fermée.
+
+*Vérification.* Un seul appel applicatif à la RPC dans tout le dépôt, en 2 arguments ; `p_entreprise_id` n'est plus transmis à cette RPC nulle part ; `lier_deplacement_devis_ctx` n'est appelée par aucun code.
+
+**B2 — `devis_id` n'est plus modifiable par `PATCH`.**
+
+Le bloc `if (body.devis_id !== undefined)` a été retiré de `app/api/deplacements/[id]/route.ts`. Le corps de mise à jour est désormais une **liste blanche** : `statut` (validé contre `prevu | effectue | annule`) et `updated_at`, typé `Database["public"]["Tables"]["frais_deplacement"]["Update"]`.
+
+Le rattachement à un devis passe **exclusivement** par `POST /api/deplacements/[id]/lier` et la RPC : seule voie qui vérifie que le devis et le déplacement partagent le même chantier, verrouille les deux lignes et recalcule atomiquement les totaux. Accepter `devis_id` par `PATCH` aurait permis de lier un devis d'un **autre chantier** sans mettre à jour le devis.
+
+*Vérification.* Aucun client de l'application n'émet de `PATCH` sur cette route.
+
+**C1 — `search_path` des fonctions `SECURITY DEFINER`.**
+
+*Inventaire préalable* (exigence de ne rien modifier sans vérification) : **26 fonctions `SECURITY DEFINER`** dans `supabase/migrations` — dont **8 portaient déjà** `set search_path = public`, **7 sont superseded** par un `create or replace` ultérieur, et **11 sont vivantes sans `search_path`** : ce sont les seules traitées.
+
+*Méthode.* `alter function … set search_path = public`, et **non** `create or replace`. Retranscrire les 11 corps dans une migration serait une source de dérive silencieuse ; l'`ALTER` est une opération de **catalogue** — il ne lit ni ne réécrit le corps de la fonction, le risque de transcription est nul.
+
+*Contrôle de sûreté, fonction par fonction.* Chaque référence du corps a été classée : **0 alerte**. Dans ces 11 corps, toute référence non qualifiée est soit une fonction ou un type de `pg_catalog` (toujours implicitement en tête du `search_path`), soit un objet de `public` (table ou fonction présente dans `types/supabase.ts`). Aucun appel à une extension hors de `public`, aucune table d'un autre schéma écrite sans qualification, aucun type composite d'un autre schéma. Fixer le `search_path` ne peut donc rien faire échouer.
+
+*Robustesse — sélection par `oid`.* Le traitement est une boucle de catalogue alimentée par `select p.oid, n.nspname from pg_proc p join pg_namespace n on n.oid = p.pronamespace`, filtrée par `nspname = 'public'`, `proname = any (array[…])` et `p.prosecdef` (une fonction `SECURITY INVOKER` n'exécute rien avec des droits-CoPI : le `search_path` n'y est pas un vecteur). L'`ALTER` est construit par `format('alter function %I.%s set search_path = public', r.nspname, r.oid::regprocedure::text)`. **Aucune signature n'est écrite à la main** : ce sont les OID qui sont les cibles, et `regprocedure` restitue la signature exacte, correctement échappée — aucune désynchronisation possible entre la cible testée et la cible modifiée. La boucle couvre **toutes les surcharges** d'un nom, donc aucune ne peut être omise par un oubli dans une liste. Chaque fonction traitée émet un `raise notice` : un no-op devient visible dans la sortie du SQL Editor au lieu d'être silencieux.
+
+*Défaut corrigé dans cette migration.* Une première version comparait `pg_get_function_identity_arguments()` à une liste de signatures littérales. Cette fonction restitue la signature **avec les noms de paramètres** — pour `generer_prochain_numero_ri(p_entreprise_id uuid)` elle renvoie `p_entreprise_id uuid`, et non `uuid`. Une garde comparant l'identité à la chaîne `uuid` n'était donc satisfaite que pour les fonctions **sans** argument, et laissait passer silencieusement les autres : la migration réussissait en n'ayant corrigé qu'une fraction de ses cibles, **sans lever la moindre erreur**, puisque « fonction absente » et « cible non retenue » sont indiscernables dans ce code. La sélection par `oid` supprime le risque.
+
+*L'idempotence.* Portée par le filtre `coalesce(p.proconfig, '{}'::text[]) is distinct from array['search_path=public']` — et non par un test d'existence. Une fonction déjà corrigée est simplement sautée ; une fonction absente n'apparaît pas dans le jeu de résultats et son corps de boucle n'est jamais atteint. **Aucun `ALTER` nu n'est exécuté**, donc le lot ne peut pas échouer sur *function does not exist* sur une base où certaines fonctions n'ont jamais été créées — ce qui importait, plusieurs migrations du dépôt portant la mention « NON EXÉCUTÉ ».
+
+**C3 — typage Supabase de `frais_deplacement` et des RPC.**
+
+Ajout dans `types/supabase.ts` du bloc complet `frais_deplacement` (`Row` / `Insert` / `Update` / `Relationships`), inséré entre `fiches_techniques` et `fournisseurs` (rang 22, ordre alphabétique), ainsi que des `Args` / `Returns` de `lier_deplacement_devis` (2 arguments) et `lier_deplacement_devis_ctx` (3 arguments).
+
+**Nettoyage des `any` — 28 → 0 en production.**
+
+Aucun `any` n'a été remplacé par `unknown`, par `object`, par une interface inventée ou par un cast arbitraire : chaque occurrence a été résolue par le type réel du projet (types Supabase générés, types métier existants).
+
+- `devis.lignes` est un `Json`. Le `as any` de `lib/mainOeuvreAnalytique.ts` a été remplacé par **`mapperLignesPersistees`** (`lib/devisAnalyse.ts`), mappeur **sûr déjà utilisé** par le projet vers `LigneDevis`, sans cast. Effet de bord favorable : il écarte les entrées `null` qui faisaient lever `ligne.catalogue_id` sur `null`.
+- `lib/fournisseursAnalytique.ts` : les 4 paramètres `any[]` deviennent `Tables<"fournisseurs">[]`, `Tables<"commandes">[]`, `Tables<"devis">[]`, `Tables<"catalogue_ouvrages">[]`.
+- `app/(dashboard)/finance/components/RentabiliteMainOeuvreWidget.tsx` : le type d'état annonçait `nom: string` alors que la colonne est `string | null` — c'est ce **mensonge de type** qui imposait le `as any`. L'état est corrigé ; le rendu (`{c.nom}`) affiche `null` comme un nœud vide, **comportement visible inchangé**.
+- `app/api/meteo/intemperies/route.ts` : `(p: any)` → `VigilancePhenomene`, type déjà exporté par `lib/meteoVigilance`.
+- `catch (err: any)` de `components/SignatureModal.tsx`, `hooks/useDeplacements.ts` et `app/api/deplacements/[id]/lier/route.ts` : passés en `unknown` avec un repli explicite. Ces branches étaient **muettes** — sur une valeur qui n'est pas une `Error`, `err.message` vaut `undefined` et l'UI affichait un message vide au lieu du motif réel.
+
+**Les 19 `any` restants sont tous dans `__tests__/`** et sont **conservés** : ils servent de casting sur des `vi.fn()` et des mocks, où ils sont idiomatiques.
+
+**B3 — conventions UI rétablies dans `components/FraisDeplacementTab.tsx`.**
+
+- **5 monetary conversions** vers `fmtEuro` (`lib/financeCalculs`) : `tarifKm`, `montantHt`, `totalHT`, `tarif_km`, `montant_ht`.
+- **2 surfaces littérales** `<div className="bg-[#1A1D24] border border-white/10 rounded-xl …">` converties en `<Surface className="…">`, composant qui émet exactement ces classes.
+
+Aucun élément d'UI n'a été refait. **Effet de bord assumé** : `fmtEuro` produit la virgule décimale française et une **espace insécable U+00A0** avant le `€` — l'affichage passe donc de `12.50 €` à `12,50 €`. C'est le comportement voulu par la charte ; les assertions de `__tests__/FraisDeplacementTab.test.tsx` ont été mises à jour en conséquence (`"30,00\u00A0€"`, `"20,00\u00A0€"`), l'échappement `\u00A0` étant explicite pour qu'une espace ordinaire ne fasse pas passer le test sans rien garantir.
+
+**E14 — code mort supprimé dans `app/bureau/fournisseurs/page.tsx`.**
+
+Suppression de **2 états morts** (`devis`, `catalogue`) **et** de l'import mort associé (`analyserPerformancesFournisseurs`) — 0 usage prouvé sur l'ensemble du dépôt par `grep`. Retirer l'import mort était nécessaire : il aurait laissé un avertissement ESLint et un `any` implicite.
+
+### Migrations créées — NON appliquées
+
+| Fichier | Objet | État |
+|---|---|---|
+| `supabase/migrations/20260929_harden_lier_deplacement_devis.sql` | B1 | **créée, non appliquée** |
+| `supabase/migrations/20260930_c1_search_path_security_definer.sql` | C1 | **créée, non appliquée** |
+
+**Aucune migration n'a été jouée sur aucune base.** Les deux fichiers sont idempotents et rejouables sur n'importe quel état de la base.
+
+- `20260929` : `create or replace` des deux signatures, `revoke`/`grant` explicites, et `drop function if exists` de l'ancienne signature à 3 arguments. Réexécutable sans effet de bord.
+- `20260930` : n'exécute **aucun** `ALTER` direct et ne porte **aucune** garde d'existence. Sa boucle est alimentée par `pg_proc` et filtrée par `coalesce(p.proconfig, '{}'::text[]) is distinct from array['search_path=public']` : une fonction déjà corrigée est sautée, une fonction absente n'apparaît pas dans le jeu de résultats et son corps n'est jamais atteint. Une fonction porteuse d'un `search_path` différent de `public` reste, elle, traitée — c'est le seul cas où le filtre ne l'exclut pas.
+
+> ⚠️ **Ordre de mise en ligne.** Tant que `20260929_harden_lier_deplacement_devis.sql` n'est pas jouée, `/api/deplacements/[id]/lier` appellera une signature à 2 arguments qui n'existe pas encore en base et échouera en `400 HTTP_400_CONTEXTE_ENTREPRISE`. La migration doit être jouée **avant** toute mise en ligne du code correspondant, par intervention humaine au SQL Editor.
+
+### Portes de qualité
+
+| Porte | Résultat |
+|---|---|
+| `tsc --noEmit` | **0 erreur** |
+| ESLint — production (`app components hooks lib types`) | **0 erreur / 0 `no-explicit-any`** |
+| ESLint — dépôt entier | 0 erreur / **19 warnings**, tous des `no-explicit-any` dans `__tests__/` |
+| `vitest run` | **947 réussis / 1 échec** (948 tests, 62 fichiers) |
+| `git diff --check` | vide |
+
+**L'unique échec est `__tests__/champs-style-commun.test.ts`** — « aucun autre changement : les 13 champs ne diffèrent que par cette classe ». Il est **préexistant et hors périmètre** : il ne cite que `app/(dashboard)/finance/saisie/depense/page.tsx`, **jamais modifié** par cette passe. Le diff de `RentabiliteMainOeuvreWidget.tsx` qu'il scanne par ailleurs est purement typographique (ajout d'un type de retour, aucun changement de rendu).
+
+### Points laissés ouverts
+
+**B4 — schéma réel Supabase non entièrement versionné.** Un `supabase db dump` du schéma réellement en base est nécessaire pour clore l'écart entre migrations et PROD. **Bloqué** : accès à la base indisponible depuis l'environnement d'audit. Aucune conclusion n'est affirmée sur ce point tant qu'il n'est pas vérifié.
+
+**C4 — validation Zod des routes JSON.** **C5 — timeouts des fetch externes.** **C6 — dépendances ESLint / npm.** Ces trois chantiers sont **volontairement en attente**, hors du périmètre de cette passe.
+
+**E13 — types `DevisLie` / `FactureLiee` non fusionnés — NON RÉSOLU, par choix.**
+Les deux `DevisLie` (idem `FactureLiee`) qui coexistent dans le dépôt sont des **homonymes de forme différente**, pas des doublons. Les fusionner serait un **changement fonctionnel**, pas un nettoyage : cela imposerait de choisir une forme canonique et de migrer les appelants, sans analyse fonctionnelle préalable. La passe ne l'a donc **pas forcé**.
+Conséquence assumée et à arbitrer : la prop `devisLies` de `FraisDeplacementTab` est typée par un **contrat local minimal** `{ id: string; numero: string }[]` — les seuls champs réellement consommés par la liste de sélection (clé React, valeur d'option, libellé). Ce composant ne dépend ainsi plus d'un type privé d'une autre page.
+
+**Autres dettes techniques non traitées.** L'onglet « 📊 Analyse des Marges » (`tab === "analyse"`) de `app/bureau/fournisseurs/page.tsx` **n'a aucun bloc de rendu** : l'onglet existe dans l'état d'onglet mais affiche un contenu vide. Le contenu manquant reste à concevoir ; ce n'est pas une régression de la passe (E14 a supprimé des états morts, pas l'onglet).
+
+### État du dépôt au 30/09/2026
+
+- `HEAD` : `22b32cc` — **aucun commit créé** par cette passe.
+- `origin/main` : `11e892d` — **aucun push**. La branche locale est 2 commits d'avance (`5fd23fd`, `22b32cc`), situation **antérieure** à cette passe.
+- **Index vide** : aucun fichier n'est staged.
+- Arbre de travail : 17 fichiers applicatifs modifiés + 2 migrations non suivies, **en attente de commit**.
+- **P7-B intact** : aucun fichier P7-B dans le diff.
+- Aucun secret, `.env`, `package.json` ou `package-lock.json` modifié ; aucun fichier supprimé.
+

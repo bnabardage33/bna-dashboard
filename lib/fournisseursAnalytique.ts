@@ -1,3 +1,6 @@
+import { mapperLignesPersistees } from "@/lib/devisAnalyse";
+import type { Tables } from "@/types/supabase";
+
 export type AnalytiqueFournisseur = {
   fournisseur_id: string;
   nom: string;
@@ -10,10 +13,10 @@ export type AnalytiqueFournisseur = {
 };
 
 export function analyserPerformancesFournisseurs(
-  fournisseurs: any[],
-  commandes: any[],
-  devis: any[],
-  catalogue: any[]
+  fournisseurs: Tables<"fournisseurs">[],
+  commandes: Tables<"commandes">[],
+  devis: Tables<"devis">[],
+  catalogue: Tables<"catalogue_ouvrages">[]
 ): AnalytiqueFournisseur[] {
   // Map catalogue -> fournisseur nom & pu_revient
   const catalogueFournisseurMap = new Map<string, { fournisseur: string; pu_revient: number }>();
@@ -41,22 +44,25 @@ export function analyserPerformancesFournisseurs(
     let coutAchatTheorique = 0;
 
     for (const d of devisValides) {
-      if (Array.isArray(d.lignes)) {
-        for (const ligne of d.lignes) {
-          if (ligne.catalogue_id) {
-            const articleData = catalogueFournisseurMap.get(ligne.catalogue_id);
-            if (
-              articleData &&
-              articleData.fournisseur.toLowerCase() === f.nom.toLowerCase()
-            ) {
-              const qte = ligne.qte || 0;
-              const prixVente = ligne.pu_ht || 0;
-              // Si la ligne a mémorisé son pu_revient, on l'utilise, sinon on prend celui du catalogue
-              const prixAchat = typeof ligne.pu_revient === "number" ? ligne.pu_revient : articleData.pu_revient;
+      // `devis.lignes` est un `Json` en base. `mapperLignesPersistees` est le
+      // mappeur SÛR déjà utilisé par le reste du projet vers `LigneDevis` : il
+      // écarte les entrées non-objet et coerce les montants en `number | null`.
+      // On l'utilise plutôt qu'un `as` : sans lui, une ligne `null` dans le JSON
+      // faisait lever `ligne.catalogue_id` sur `null`.
+      for (const ligne of mapperLignesPersistees(d.lignes)) {
+        if (ligne.catalogue_id) {
+          const articleData = catalogueFournisseurMap.get(ligne.catalogue_id);
+          if (
+            articleData &&
+            articleData.fournisseur.toLowerCase() === f.nom.toLowerCase()
+          ) {
+            const qte = ligne.qte || 0;
+            const prixVente = ligne.pu_ht || 0;
+            // Si la ligne a mémorisé son pu_revient, on l'utilise, sinon on prend celui du catalogue
+            const prixAchat = typeof ligne.pu_revient === "number" ? ligne.pu_revient : articleData.pu_revient;
 
-              totalVentes += qte * prixVente;
-              coutAchatTheorique += qte * prixAchat;
-            }
+            totalVentes += qte * prixVente;
+            coutAchatTheorique += qte * prixAchat;
           }
         }
       }

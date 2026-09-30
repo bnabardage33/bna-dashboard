@@ -1,5 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
 
+// `catch (e: any)` laissait passer une branche d'erreur muette : sur une valeur
+// qui n'est pas une Error, `e.message` vaut undefined, l'affichage retombait
+// silencieusement sur le repli et la vraie cause disparaissait des logs.
+const messageErreur = (e: unknown, repli: string): string =>
+  e instanceof Error ? e.message : repli;
+
 export type FraisDeplacement = {
   id: string;
   date: string;
@@ -33,8 +39,8 @@ export function useDeplacements(chantierId: string) {
       if (!res.ok) throw new Error("Erreur lors du chargement de l'historique.");
       const data = await res.json();
       setHistorique(data);
-    } catch (e: any) {
-      setErrorHistorique(e.message || "Erreur réseau.");
+    } catch (e: unknown) {
+      setErrorHistorique(messageErreur(e, "Erreur réseau."));
     } finally {
       setIsLoadingHistorique(false);
     }
@@ -61,8 +67,8 @@ export function useDeplacements(chantierId: string) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur lors de l'évaluation.");
       setEvaluation(data);
-    } catch (e: any) {
-      setEvalError(e.message || "Erreur réseau.");
+    } catch (e: unknown) {
+      setEvalError(messageErreur(e, "Erreur réseau."));
     } finally {
       setIsEvaluating(false);
     }
@@ -97,8 +103,8 @@ export function useDeplacements(chantierId: string) {
       
       setEvaluation(null);
       await fetchHistorique();
-    } catch (e: any) {
-      setSaveError(e.message || "Erreur réseau.");
+    } catch (e: unknown) {
+      setSaveError(messageErreur(e, "Erreur réseau."));
     } finally {
       setIsSaving(false);
     }
@@ -110,8 +116,8 @@ export function useDeplacements(chantierId: string) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur lors de la suppression.");
       await fetchHistorique();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(messageErreur(e, "Erreur lors de la suppression."));
     }
   };
 
@@ -129,8 +135,8 @@ export function useDeplacements(chantierId: string) {
       if (!res.ok) throw new Error(data.error || "Erreur lors de la liaison au devis.");
       alert("Déplacement lié au devis avec succès.");
       await fetchHistorique();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e: unknown) {
+      alert(messageErreur(e, "Erreur lors de la liaison au devis."));
     } finally {
       setIsLinking(false);
     }

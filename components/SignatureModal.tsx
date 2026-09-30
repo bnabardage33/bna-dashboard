@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import { X, Smartphone, CheckCircle, Loader2 } from "lucide-react";
 
+// `catch (err: any)` laissait passer une branche d'erreur muette : sur une valeur
+// qui n'est pas une Error, `err.message` vaut undefined et l'UI affichait un
+// message vide au lieu du motif réel.
+const messageErreur = (err: unknown, repli: string): string =>
+  err instanceof Error ? err.message : repli;
+
 export default function SignatureModal({
   devisId,
   numero,
@@ -48,8 +54,8 @@ export default function SignatureModal({
       if (!res.ok) throw new Error(data.error || "Erreur lors de l'envoi");
       setStep("OTP");
       setTimeLeft(600);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(messageErreur(err, "Erreur lors de l'envoi"));
     } finally {
       setLoading(false);
     }
@@ -74,8 +80,8 @@ export default function SignatureModal({
       setTimeout(() => {
         onSuccess();
       }, 2000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(messageErreur(err, "Code invalide"));
     } finally {
       setLoading(false);
     }

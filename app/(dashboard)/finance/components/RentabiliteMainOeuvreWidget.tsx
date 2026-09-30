@@ -6,7 +6,12 @@ import { analyserRentabiliteMainOeuvre, type RentabilitePhase } from "@/lib/main
 import { fmtEuro } from "@/lib/financeCalculs";
 
 export default function RentabiliteMainOeuvreWidget() {
-  const [chantiers, setChantiers] = useState<{ id: string; nom: string }[]>([]);
+  // `chantiers.nom` est `string | null` en base (colonne nullable). Le type
+  // d'état annonçait `nom: string`, et c'est ce mensonge qui obligeait au
+  // `as any` ligne 23 pour-y faire entrer une valeur réellement nullable.
+  // Le rendu (ligne 68) fait `{c.nom}` : React affiche `null` comme un noeud
+  // vide, le comportement visible est donc inchangé.
+  const [chantiers, setChantiers] = useState<{ id: string; nom: string | null }[]>([]);
   const [chantierId, setChantierId] = useState<string>("");
   const [data, setData] = useState<RentabilitePhase[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +25,7 @@ export default function RentabiliteMainOeuvreWidget() {
       .limit(20)
       .then((res) => {
         if (res.data) {
-          setChantiers(res.data as any);
+          setChantiers(res.data);
           if (res.data.length > 0) setChantierId(res.data[0].id);
         }
       });

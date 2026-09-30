@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
+import type { VigilancePhenomene } from "@/lib/meteoVigilance";
 import { verifierSession } from "@/lib/auth";
 
 // ─── Seuils communs ───────────────────────────────────────────────────────────
@@ -233,11 +234,11 @@ async function fetchVigilanceDepartement(departement: string): Promise<{ niveau:
     if (!resultat) return null;
 
     const phenomenesCritiques = resultat.phenomenes
-      .filter((p: any) =>
+      .filter((p: VigilancePhenomene) =>
         PHENOMENES_CRITIQUES.some((nom) => p.nom.toLowerCase().includes(nom)) &&
         ["orange", "rouge"].includes(p.couleur)
       )
-      .map((p: any) => `${p.nom} ${p.couleur}`);
+      .map((p: VigilancePhenomene) => `${p.nom} ${p.couleur}`);
 
     return { niveau: resultat.couleurMax, phenomenes: phenomenesCritiques };
   } catch {

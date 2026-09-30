@@ -4,7 +4,10 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export async function getEntrepriseCouranteId(): Promise<string | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return (user?.app_metadata as any)?.entreprise_id || null;
+  // Même forme que lib/contexteEntreprise.ts : le claim est un objet applicatif
+  // libre (UserMetadata), pas une colonne typée par le générateur Supabase.
+  const claim = user?.app_metadata as { entreprise_id?: string } | null | undefined;
+  return claim?.entreprise_id || null;
 }
 
 export async function verifierChantier(chantierId: string, entrepriseId: string): Promise<boolean> {

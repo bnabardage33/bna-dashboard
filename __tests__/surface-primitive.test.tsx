@@ -298,8 +298,13 @@ describe('LOT 2D — inventaire de la conversion', () => {
   })
 
   it('91 cartes ont été converties', () => {
-    expect(APPELS).toHaveLength(91)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(27)
+    // 91 cartes à la fin du LOT 2D, + 2 dans components/FraisDeplacementTab.tsx
+    // = 93 appels sur 28 fichiers (le fichier rejoignait la liste des 27).
+    // Comme pour fmtEuro, c'est un décompte de lot : le contrat de fond est
+    // « il ne reste AUCUNE carte en littéral dans le périmètre », vérifié juste
+    // après, et c'est lui qui était rouge avant cette conversion.
+    expect(APPELS).toHaveLength(93)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(28)
   })
 
   it('il ne reste AUCUNE carte en littéral dans le périmètre', () => {

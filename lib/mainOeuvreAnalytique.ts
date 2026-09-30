@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { calculerTempsConsommeMeteo } from "@/lib/gaelLogic";
+import { mapperLignesPersistees } from "@/lib/devisAnalyse";
 
 export type RentabilitePhase = {
   phase: string;
@@ -61,14 +62,15 @@ export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise
 
   if (devisList) {
     for (const d of devisList) {
-      if (Array.isArray(d.lignes)) {
-        for (const l of d.lignes) {
-          const ligne = l as any;
-          const designation = (ligne.designation || "").toLowerCase();
-          const isMainOeuvre = ligne.type_cout === "main_oeuvre" || /pose|main\s*d['’]oeuvre/i.test(designation);
-          
-          if (isMainOeuvre) {
-            const montantHT = (ligne.qte || 0) * (ligne.pu_ht || 0);
+      // `devis.lignes` est un `Json`. `mapperLignesPersistees` est le mappeur SÛR
+      // déjà utilisé par le projet vers `LigneDevis` ; il remplace le
+      // `as any` qui laissait passer n'importe quelle forme de ligne.
+      for (const ligne of mapperLignesPersistees(d.lignes)) {
+        const designation = (ligne.designation || "").toLowerCase();
+        const isMainOeuvre = ligne.type_cout === "main_oeuvre" || /pose|main\s*d['’]oeuvre/i.test(designation);
+
+        if (isMainOeuvre) {
+          const montantHT = (ligne.qte || 0) * (ligne.pu_ht || 0);
             
             if (/ossature|tasseau|liteau|chevron/i.test(designation)) {
               budgetVendu.ossature += montantHT;
@@ -85,7 +87,6 @@ export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise
         }
       }
     }
-  }
 
   // 5. Synthèse
   const phases = [

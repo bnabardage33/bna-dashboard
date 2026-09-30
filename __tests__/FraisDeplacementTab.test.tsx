@@ -112,8 +112,14 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
 
     await cliquer(btnEval);
 
-    expect(conteneur.textContent).toContain("30.00 €");
-    
+    // Le montant passe par fmtEuro() (LOT 2C) : virgule décimale française et
+    // espace INSECABLE (U+00A0) avant le €. L'ancienne assertion attendait
+    // « 30.00 € », c'est-à-dire exactement le format artisanal que
+    // __tests__/format-monetaire.test.ts interdit — les deux tests se
+    // contredisaient depuis l'introduction du composant. L'échappement est
+    // explicite : une espace ordinaire passerait le test sans rien garantir.
+    expect(conteneur.textContent).toContain("30,00\u00A0€");
+
     const btnEnregistrer = getButton("Enregistrer ce déplacement");
     expect(btnEnregistrer).not.toBeNull();
     
@@ -148,7 +154,8 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
     await cliquer(btnEnregistrer);
 
     expect(mockFetch).toHaveBeenCalledTimes(4);
-    expect(conteneur.textContent).toContain("20.00 €");
+    // Même règle qu'au test précédent : format monétaire français via fmtEuro().
+    expect(conteneur.textContent).toContain("20,00\u00A0€");
   });
 
   it("supprime avec confirmation et rafraîchit l'historique", async () => {

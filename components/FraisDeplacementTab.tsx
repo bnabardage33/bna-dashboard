@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { useDeplacements } from "@/hooks/useDeplacements";
 import { MapPin, Calculator, Trash2, Car, Link as LinkIcon, CheckCircle } from "lucide-react";
+import { Surface } from "@/components/ui/Surface";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 export default function FraisDeplacementTab({
   chantierId,
@@ -10,7 +12,12 @@ export default function FraisDeplacementTab({
 }: {
   chantierId: string;
   adresseChantier: string | null;
-  devisLies?: any[];
+  // Contrat MINIMAL réellement consommé par la liste de sélection : l'identifiant
+  // (clé React + valeur de l'option) et le numéro (libellé). Ni `lignes`, ni
+  // `objet`, ni `montant_ht` ne sont lus ici — le type local `DevisLie` de
+  // app/terrain/chantier/[id]/page.tsx les fournit bien, mais ce composant ne doit
+  // pas dépendre d'un type privé d'une autre page pour deux champs.
+  devisLies?: { id: string; numero: string }[];
 }) {
   const {
     historique,
@@ -72,7 +79,7 @@ export default function FraisDeplacementTab({
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-4">
       {/* Colonne Gauche : Évaluation */}
-      <div className="bg-[#1A1D24] border border-white/10 rounded-xl p-6 shadow-sm space-y-6">
+      <Surface className="p-6 shadow-sm space-y-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <MapPin className="w-5 h-5 text-gray-400" /> 
           Calculer un trajet
@@ -125,11 +132,11 @@ export default function FraisDeplacementTab({
               </div>
               <div>
                 <span className="text-gray-400 block">Tarif applicable</span>
-                <span className="text-white font-medium">{evaluation.tarifKm.toFixed(2)} €/km</span>
+                <span className="text-white font-medium">{fmtEuro(evaluation.tarifKm)}/km</span>
               </div>
               <div className="col-span-2 pt-2 border-t border-green-500/20">
                 <span className="text-gray-400 block">Montant estimé HT</span>
-                <span className="text-green-400 text-xl font-bold">{evaluation.montantHt.toFixed(2)} €</span>
+                <span className="text-green-400 text-xl font-bold">{fmtEuro(evaluation.montantHt)}</span>
               </div>
             </div>
 
@@ -148,10 +155,10 @@ export default function FraisDeplacementTab({
             </button>
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Colonne Droite : Historique */}
-      <div className="bg-[#1A1D24] border border-white/10 rounded-xl p-6 shadow-sm flex flex-col min-h-[300px]">
+      <Surface className="p-6 shadow-sm flex flex-col min-h-[300px]">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
             <Car className="w-5 h-5 text-gray-400" /> 
@@ -159,7 +166,7 @@ export default function FraisDeplacementTab({
           </h3>
           <div className="text-right">
             <span className="text-sm text-gray-400 block">Total engagé HT</span>
-            <span className="text-white font-bold text-lg">{totalHT.toFixed(2)} €</span>
+            <span className="text-white font-bold text-lg">{fmtEuro(totalHT)}</span>
           </div>
         </div>
 
@@ -177,10 +184,10 @@ export default function FraisDeplacementTab({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-white text-sm font-medium">{new Date(dep.date).toLocaleDateString("fr-FR")}</div>
-                      <div className="text-gray-400 text-xs">{(dep.distance_aller_km + dep.distance_retour_km)} km à {dep.tarif_km.toFixed(2)} €/km</div>
+                      <div className="text-gray-400 text-xs">{(dep.distance_aller_km + dep.distance_retour_km)} km à {fmtEuro(dep.tarif_km)}/km</div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-white font-bold">{dep.montant_ht.toFixed(2)} €</span>
+                      <span className="text-white font-bold">{fmtEuro(dep.montant_ht)}</span>
                       {!dep.devis_id && (
                         <button
                           onClick={() => handleDelete(dep.id, dep.devis_id)}
@@ -228,7 +235,7 @@ export default function FraisDeplacementTab({
             </div>
           )}
         </div>
-      </div>
+      </Surface>
     </div>
   );
 }
