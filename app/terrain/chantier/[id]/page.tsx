@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Sparkles, Loader2, Copy, Check } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import CommandeModal from "@/components/CommandeModal";
@@ -119,6 +119,14 @@ function ChantierDetailContent() {
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
   const [pvsLies, setPvsLies] = useState<PvReceptionListe[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  // Mémorise le chantier dont les documents (dont la liste des devis) ont
+  // déjà été chargés. Deux onglets consomment cet état : « Documents » et
+  // « Déplacements ». Sans cette garde, le select de liaison d'un frais de
+  // déplacement resterait vide tant que l'utilisateur n'aurait pas ouvert
+  // « Documents » — et le simple aller-retour entre onglets relancerait les
+  // 4 requêtes à chaque fois. On mémorise l'IDENTIFIANT et non un booléen :
+  // changer de chantier doit bien invalider le cache.
+  const docsChargesPour = useRef<string | null>(null);
   const [pointages, setPointages] = useState<Pointage[]>([]);
   const [loadingPointages, setLoadingPointages] = useState(false);
   const [ouvriers, setOuvriers] = useState<{id: string, full_name: string}[]>([]);
@@ -250,6 +258,7 @@ function ChantierDetailContent() {
       );
     }
     setLoadingDocs(false);
+    return true;
   }, [id, chantier?.client_id]);
 
   
@@ -283,8 +292,17 @@ function ChantierDetailContent() {
       : chantier?.coef_perte_rendement ?? 1.10);
 
   useEffect(() => {
-    if (tab === "Documents" && chantier) {
-      fetchDocuments();
+    if (
+      (tab === "Documents" || tab === "Déplacements") &&
+      chantier &&
+      docsChargesPour.current !== chantier.id
+    ) {
+      // La garde n'est posée qu'APRÈS un chargement réussi : si les requêtes
+      // échouent, la prochaine visite de l'onglet réessaiera au lieu de
+      // laisser une liste vide considérée comme définitive.
+      fetchDocuments().then((ok) => {
+        if (ok) docsChargesPour.current = chantier.id;
+      });
     }
     if (tab === "Météo & Intempéries" && chantier) {
       const adresse = chantier.adresse_chantier || chantier.nom || "Ajaccio, Corse";
