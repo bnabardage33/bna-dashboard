@@ -32,7 +32,16 @@ export async function geocoderAdresse(adresse: string): Promise<ResultatService<
 
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) {
-      return { ok: false, erreur: "Adresse introuvable ou imprécise." };
+      // Nominatim ne répond rien quand il ne reconnaît pas la chaîne. La cause
+      // la plus fréquente n'est pas une adresse fausse mais un séparant
+      // manquant : « 12 rue des Lilas 20000 Ajaccio » ne trouve rien, alors que
+      // « 12 rue des Lilas, 20000 Ajaccio » trouve. On le dit explicitement,
+      // sinon l'utilisateur ne voit qu'un « introuvable » et ne devine pas.
+      return {
+        ok: false,
+        erreur:
+          "Adresse introuvable ou imprécise. Vérifiez la virgule entre la rue et le code postal, et que la commune est bien écrite."
+      };
     }
 
     const lat = parseFloat(data[0].lat);
