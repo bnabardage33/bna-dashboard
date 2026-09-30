@@ -12,7 +12,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './setup-tests.ts',
     include: ['__tests__/**/*.test.{ts,tsx}'],
     // O3-B6 : chaque fichier de test ouvre son propre environnement jsdom.
     // Avec le pool `forks` par défaut (1 worker par cœur, 8 sur cette machine)
