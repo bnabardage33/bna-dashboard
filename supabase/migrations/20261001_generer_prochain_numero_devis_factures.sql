@@ -179,17 +179,35 @@ create unique index if not exists factures_entreprise_numero_uniq
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Grants — alignes sur les grants part3 (lignes 190-197)
+-- Privileges — alignes sur part3 (lignes 186-197)
 --
--- `authenticated` suffit : la numerotation est appelee depuis le navigateur par
--- les pages bureau. `service_role` ajoute pour les crons et imports serveur.
--- Rien n'est accorde a `anon`.
+-- PostgreSQL accorde EXECUTE a PUBLIC par defaut sur toute fonction creee.
+-- L'absence de `grant` n'est donc PAS un refus : sans `revoke`, `anon` pourrait
+-- appeler les six fonctions. D'ou l'ordre revoke-puis-grant de part3, qu'on
+-- reproduit a l'identique.
+--
+-- Les variantes `_ctx` ne sont Deliberement JAMAIS accordees a personne
+-- (`revoke ... from public` seul). Elles recoivent un `p_entreprise_id`
+-- explicite : les laisser joignables permettrait a n'importe quel utilisateur
+-- authentifie de numeroter pour une AUTRE entreprise, et d'en deduire le
+-- nombre de devis qu'elle a emis. Elles restent des helpers internes, appeles
+-- uniquement par les deux enveloppeures, qui resoluent elles-memes le tenant.
+--
+-- `authenticated` suffit pour les enveloppeures : la numerotation est appelee
+-- depuis le navigateur par les pages bureau. `service_role` est ajoute pour les
+-- crons et imports serveur.
 -- ─────────────────────────────────────────────────────────────────────────────
 
-grant execute on function public.generer_prochain_numero_dev_ctx(uuid) to authenticated, service_role;
+-- dev
+revoke all on function public.generer_prochain_numero_dev() from public, anon, authenticated, service_role;
+revoke all on function public.generer_prochain_numero_dev(uuid) from public, anon, authenticated, service_role;
+revoke all on function public.generer_prochain_numero_dev_ctx(uuid) from public;
 grant execute on function public.generer_prochain_numero_dev() to authenticated, service_role;
 grant execute on function public.generer_prochain_numero_dev(uuid) to authenticated, service_role;
 
-grant execute on function public.generer_prochain_numero_fac_ctx(uuid) to authenticated, service_role;
+-- fac
+revoke all on function public.generer_prochain_numero_fac() from public, anon, authenticated, service_role;
+revoke all on function public.generer_prochain_numero_fac(uuid) from public, anon, authenticated, service_role;
+revoke all on function public.generer_prochain_numero_fac_ctx(uuid) from public;
 grant execute on function public.generer_prochain_numero_fac() to authenticated, service_role;
 grant execute on function public.generer_prochain_numero_fac(uuid) to authenticated, service_role;

@@ -141,12 +141,31 @@ describe("migration de numérotation devis/factures — préflight", () => {
     expect((corps.match(/set search_path = public/g) ?? []).length).toBe(6);
   });
 
-  it("n'accorde l'exécution qu'à authenticated et service_role, jamais à anon", () => {
+  it("revoque PUBLIC avant d'accorder, sinon anon peut appeler les six fonctions", () => {
+    // PostgreSQL accorde EXECUTE a PUBLIC par defaut. L'absence de `grant`
+    // n'est pas un refus : sans `revoke`, `anon` execute les six fonctions.
+    // C'est pourquoi part3 revoke d'abord, puis accorde. On exige les 6.
+    const revokes = corps.match(/revoke all on function public\.generer_prochain_numero_(?:dev|fac)[^\n]+/g) ?? [];
+    expect(revokes.length).toBe(6);
+    // 2 enveloppeures par prefixe, revokees de TOUT le monde…
+    const enveloppe = revokes.filter((r) => r.includes(") from public, anon, authenticated, service_role;"));
+    expect(enveloppe.length).toBe(4);
+    // … et la variante _ctx, revokee de PUBLIC seule.
+    const ctx = revokes.filter((r) => r.includes("_ctx(uuid) from public;"));
+    expect(ctx.length).toBe(2);
+  });
+
+  it("n'accorde l'exécution qu'aux enveloppes, jamais aux variantes _ctx", () => {
+    // Une variante _ctx est directement appelable avec un p_entreprise_id
+    // choisi par l'appelant : l'accorder a `authenticated` permettrait de
+    // numeroter pour une autre entreprise et d'en deduire son volume de devis.
+    // Les _ctx doivent donc n'avoir AUCUN grant.
     const grants = corps.match(/grant execute on function [^\n]+/g) ?? [];
-    expect(grants.length).toBe(6);
+    expect(grants.length).toBe(4);
     for (const g of grants) {
       expect(g).toMatch(/to authenticated, service_role;$/);
       expect(g).not.toMatch(/\banon\b/);
+      expect(g).not.toMatch(/_ctx/);
     }
   });
 });
