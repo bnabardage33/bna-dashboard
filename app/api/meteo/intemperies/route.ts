@@ -7,7 +7,7 @@ import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
 import type { VigilancePhenomene } from "@/lib/meteoVigilance";
 import { verifierSession } from "@/lib/auth";
-import { userAgentNominatim } from "@/lib/deplacement/geocodage";
+import { extraireCodePostal, userAgentNominatim } from "@/lib/deplacement/geocodage";
 
 // ─── Seuils communs ───────────────────────────────────────────────────────────
 const SEUIL_PLUIE_MM = 5;
@@ -166,12 +166,29 @@ function seuilVentCritique(materiau: Materiau, acces: Acces): number {
 }
 
 // Point n°1 : géocodage depuis l'adresse du chantier (cache 6h)
+//
+// La version précédente faisait `limit=1` sans vérifier le code postal, ce qui
+// exposait la meteo au meme defaut que les frais de deplacement : Nominatim
+// classe par importance, et deux homonymes peuvent etre separes de moins de
+// 3e-7 d'ecart. Mesure sur « 8 lotissement Bellevue, 33920 » :
+//
+//   Branne      cp 33420  importance 0,0533973472   <-- arrivait en tete
+//   Saint-Savin cp 33920  importance 0,0533971092
+//
+// soit 40 km d'ecart, et le premier arrivant en tete etait le mauvais : la
+// meteo affichee etait celle de Branne, pour un chantier a Saint-Savin.
+//
+// Contrairement aux frais de deplacement, on ne refuse pas ici : l'echec ne
+// coute pas d'argent mais une prevision meteo absente ou approximative. On
+// prefere donc le candidat dont le code postal correspond a la saisie, et a
+// defaut le plus important — l'exactitude reste amelioree sans risque de
+// laisser un chantier sans meteo.
 async function geocoderAdresse(adresse: string): Promise<{ lat: number; lng: number } | null> {
   const q = normalize(adresse);
   if (!q) return null;
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=fr&q=${encodeURIComponent(q + ", France")}`,
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&countrycodes=fr&q=${encodeURIComponent(q + ", France")}`,
       {
         headers: { "User-Agent": userAgentNominatim(), Accept: "application/json" },
         next: { revalidate: 21600 },
@@ -179,13 +196,33 @@ async function geocoderAdresse(adresse: string): Promise<{ lat: number; lng: num
     );
     if (!res.ok) return null;
     const data = await res.json();
-    if (Array.isArray(data) && data.length > 0 && data[0].lat && data[0].lon) {
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    }
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    // Le code postal est extrait de l'adresse SAISIE, pas de la requete
+    // enrichie « , France » : sinon la commune ajoutee fausserait le
+    // rapprochement.
+    const codePostal = extraireCodePostal(q);
+    const eligibles = data.filter(
+      (c: { lat?: string; lon?: string }) => c.lat && c.lon
+    );
+    // Nominatim renvoie ses resultats tries par importance decroissante : le
+    // premier candidat valide est donc le plus pertinent, et le premier
+    // candidat compatible avec le code postal bat cette importance.
+    const candidat = codePostal
+      ? eligibles.find(
+          (c: { address?: { postcode?: string } }) => c.address?.postcode === codePostal
+        )
+      : undefined;
+    const retenu = candidat ?? eligibles[0];
+    if (!retenu) return null;
+
+    const lat = parseFloat(retenu.lat);
+    const lng = parseFloat(retenu.lon);
+    if (isNaN(lat) || isNaN(lng)) return null;
+    return { lat, lng };
   } catch {
     return null;
   }
-  return null;
 }
 
 // Open-Meteo avec seuil vent dynamique
