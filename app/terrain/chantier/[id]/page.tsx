@@ -62,6 +62,7 @@ type Pointage = {
 type DevisLie = {
   id: string;
   client_id: string | null;
+  chantier_id: string | null;
   numero: string;
   objet: string | null;
   date_emission: string;
@@ -114,6 +115,11 @@ function ChantierDetailContent() {
   const [configOpen, setConfigOpen] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [devisLies, setDevisLies] = useState<DevisLie[]>([]);
+  // Devis réellement acceptés par la RPC lier_deplacement_devis, qui refuse
+  // toute liaison si chantier_id diffère entre le devis et le déplacement.
+  // Liste distincte de devisLies : celle-ci est celle du CLIENT et alimente le
+  // total dévisé de l'onglet Documents, qui ne doit pas être re-filtré ici.
+  const [devisLikables, setDevisLikables] = useState<DevisLie[]>([]);
   const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
@@ -243,12 +249,14 @@ function ChantierDetailContent() {
 
     if (coRes.data) setCommandesLiees(coRes.data as unknown as CommandeLiee[]);
     if (pvsRes.data) setPvsLies(pvsRes.data as unknown as PvReceptionListe[]);
-    if (devisRes.data && chantier?.client_id) {
-      setDevisLies(
-        (devisRes.data as unknown as DevisLie[]).filter(
-          (d) => d.client_id === chantier.client_id
-        )
-      );
+    if (devisRes.data) {
+      const tousLesDevis = devisRes.data as unknown as DevisLie[];
+      if (chantier?.client_id) {
+        setDevisLies(tousLesDevis.filter((d) => d.client_id === chantier.client_id));
+      }
+      // Même prédicat que la RPC : un devis sans chantier (chantier_id NULL)
+      // n'est jamais likable, et ne passe donc pas le filtre.
+      setDevisLikables(tousLesDevis.filter((d) => d.chantier_id === id));
     }
     if (facturesRes.data && chantier) {
       setFacturesLiees(
@@ -1540,7 +1548,7 @@ function ChantierDetailContent() {
         </div>
       )}
 
-      {tab === "Déplacements" && <FraisDeplacementTab chantierId={id} adresseChantier={chantier.adresse_chantier} devisLies={devisLies} />}
+      {tab === "Déplacements" && <FraisDeplacementTab chantierId={id} adresseChantier={chantier.adresse_chantier} devisLikables={devisLikables} />}
 
       {/* MODAL DE CHIFFRAGE / COMMANDE */}
       <CommandeModal

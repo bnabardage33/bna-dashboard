@@ -8,16 +8,19 @@ import { fmtEuro } from "@/lib/financeCalculs";
 export default function FraisDeplacementTab({
   chantierId,
   adresseChantier,
-  devisLies = []
+  devisLikables = []
 }: {
   chantierId: string;
   adresseChantier: string | null;
-  // Contrat MINIMAL réellement consommé par la liste de sélection : l'identifiant
-  // (clé React + valeur de l'option) et le numéro (libellé). Ni `lignes`, ni
-  // `objet`, ni `montant_ht` ne sont lus ici — le type local `DevisLie` de
-  // app/terrain/chantier/[id]/page.tsx les fournit bien, mais ce composant ne doit
-  // pas dépendre d'un type privé d'une autre page pour deux champs.
-  devisLies?: { id: string; numero: string }[];
+  // Devis que la RPC lier_deplacement_devis acceptera réellement : ceux dont
+  // chantier_id vaut exactement celui du chantier courant. La page les filtre
+  // déjà ainsi. Ne pas élargir à « les devis du client » — la RPC rejette
+  // alors avec « Le devis et le déplacement n'appartiennent pas au même
+  // chantier », ce qui est une impasse pour l'utilisateur.
+  // Contrat MINIMAL : l'identifiant (clé React + valeur de l'option) et le
+  // numéro (libellé) suffisent, le composant ne dépend pas du type privé
+  // `DevisLie` d'une autre page pour deux champs.
+  devisLikables?: { id: string; numero: string }[];
 }) {
   const {
     historique,
@@ -211,6 +214,15 @@ export default function FraisDeplacementTab({
                         <CheckCircle className="w-3.5 h-3.5" />
                         Inclus dans devis
                       </div>
+                    ) : devisLikables.length === 0 ? (
+                      // Aucun devis sur ce chantier : proposer un sélecteur vide
+                      // force l'utilisateur à choisir "-- Lier à un devis --",
+                      // bouton Lier inactif, sans explication. La RPC refuserait
+                      // de toute façon. On dit la cause, et on ne propose rien.
+                      <p className="text-xs text-gray-500">
+                        Aucun devis n’est rattaché à ce chantier, impossible d’y rattacher
+                        ce déplacement.
+                      </p>
                     ) : (
                       <div className="flex items-center gap-2">
                         <select
@@ -219,7 +231,7 @@ export default function FraisDeplacementTab({
                           onChange={(e) => setSelectedDevisId(prev => ({ ...prev, [dep.id]: e.target.value }))}
                         >
                           <option value="">-- Lier à un devis --</option>
-                          {devisLies.map(d => (
+                          {devisLikables.map(d => (
                             <option key={d.id} value={d.id}>{d.numero || "Devis sans numéro"}</option>
                           ))}
                         </select>

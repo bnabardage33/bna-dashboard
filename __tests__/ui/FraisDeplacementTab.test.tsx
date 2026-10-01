@@ -185,7 +185,7 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
       ]
     });
     const devisMock = [{ id: "devis-1", numero: "DEV-123" }];
-    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", devisLies: devisMock });
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", devisLikables: devisMock });
 
     const selects = conteneur.querySelectorAll("select");
     expect(selects.length).toBe(1);
@@ -213,6 +213,23 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
       method: "POST",
       body: JSON.stringify({ devis_id: "devis-1" })
     }));
+  });
+
+  it("n'affiche aucun sélecteur quand le chantier n'a pas de devis", async () => {
+    // Sans devis sur le chantier, un sélecteur vide ne pourrait aboutir qu'à un
+    // refus de la RPC (« même chantier »). Le composant doit l'expliquer et ne
+    // rien proposer, plutôt que d'afficher un sélecteur inerte.
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { id: "dep-seul", date: "2026-09-29", distance_aller_km: 10, distance_retour_km: 10, tarif_km: 1.0, montant_ht: 20.0, devis_id: null }
+      ]
+    });
+
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", devisLikables: [] });
+
+    expect(conteneur.querySelectorAll("select").length).toBe(0);
+    expect(conteneur.textContent).toContain("Aucun devis n’est rattaché à ce chantier");
   });
 
   it("masque la liaison et refuse la suppression pour un déplacement déjà lié", async () => {
