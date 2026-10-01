@@ -55,6 +55,110 @@ describe("geocoderAdresse (Nominatim)", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.erreur).toContain("500");
   });
+
+  // Les deux homonymes ci-dessous sont les valeurs réellement mesurées sur
+  // Nominatim pour « 8 lotissement Bellevue, 33920 ». Leur écart d'importance
+  // est de 2,4e-7 : `limit=1` renvoyait Branne, à 40 km de Saint-Savin, et
+  // produisait un chiffrage 4,4 fois trop élevé sans aucun signal.
+  const BELLEVUE_BRANNE = {
+    lat: "44.8267278",
+    lon: "-0.1854268",
+    type: "residential",
+    importance: 0.053397347219043226,
+    display_name:
+      "Lotissement Bellevue, Le Plantier du Maine, Branne, Libourne, Gironde, 33420, France",
+    address: { postcode: "33420", city: "Branne", country: "France" }
+  };
+  const BELLEVUE_SAINT_SAVIN = {
+    lat: "45.1370583",
+    lon: "-0.4440939",
+    type: "residential",
+    importance: 0.053397109178301636,
+    display_name:
+      "Lotissement les Portes de Bellevue, La Chaise, Saint-Savin, Blaye, Gironde, 33920, France",
+    address: { postcode: "33920", city: "Saint-Savin", country: "France" }
+  };
+
+  it("retient le homonyme dont le code postal correspond à la saisie, malgré son importance plus faible", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      // Nominatim classe par importance décroissante : Branne arrive en premier.
+      json: async () => [BELLEVUE_BRANNE, BELLEVUE_SAINT_SAVIN]
+    });
+
+    const result = await geocoderAdresse("8 lotissement Bellevue, 33920");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.lat).toBe(45.1370583);
+      expect(result.data.codePostal).toBe("33920");
+      expect(result.data.libelle).toContain("Saint-Savin");
+    }
+  });
+
+  it("refuse de deviner quand aucun candidat n'est dans le code postal saisi, et nomme les codes trouvés", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [BELLEVUE_BRANNE, BELLEVUE_SAINT_SAVIN]
+    });
+
+    const result = await geocoderAdresse("8 lotissement Bellevue, 33000");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.erreur).toContain("33000");
+      // Les codes réellement trouvés doivent être nommés, sinon
+      // l'utilisateur ne peut pas corriger sa saisie.
+      expect(result.erreur).toContain("33420");
+      expect(result.erreur).toContain("33920");
+    }
+  });
+
+  it("refuse une adresse sans code postal dont les candidats s'étalent sur plusieurs communes", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [BELLEVUE_BRANNE, BELLEVUE_SAINT_SAVIN]
+    });
+
+    const result = await geocoderAdresse("8 lotissement Bellevue");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.erreur).toContain("ambiguë");
+      expect(result.erreur).toContain("Branne");
+      expect(result.erreur).toContain("Saint-Savin");
+    }
+  });
+
+  it("accepte une adresse sans code postal quand tous les candidats sont dans la même commune", async () => {
+    const memeCommune = {
+      ...BELLEVUE_SAINT_SAVIN,
+      lat: "45.1380",
+      importance: 0.01,
+      display_name: "Rue Bellevue, Saint-Savin, 33920, France"
+    };
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [BELLEVUE_SAINT_SAVIN, memeCommune]
+    });
+
+    const result = await geocoderAdresse("Rue Bellevue");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.libelle).toContain("Saint-Savin");
+  });
+
+  it("demande plusieurs candidats avec addressdetails et restreint la recherche à la France", async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [BELLEVUE_SAINT_SAVIN]
+    });
+
+    await geocoderAdresse("8 lotissement Bellevue, 33920");
+
+    const url = (global.fetch as any).mock.calls[0][0] as string;
+    // limit=1 rendait le filtrage par code postal impossible : il faut voir
+    // tous les homonymes pour pouvoir choisir.
+    expect(url).toContain("limit=5");
+    expect(url).toContain("addressdetails=1");
+    expect(url).toContain("countrycodes=fr");
+  });
 });
 
 describe("calculerDistanceRoute (OSRM)", () => {
@@ -64,7 +168,10 @@ describe("calculerDistanceRoute (OSRM)", () => {
       json: async () => ({ code: "Ok", routes: [{ distance: 15500.4 }] })
     });
 
-    const result = await calculerDistanceRoute({ lat: 44, lon: -0.5 }, { lat: 44.1, lon: -0.6 });
+    const result = await calculerDistanceRoute(
+      { lat: 44, lon: -0.5, libelle: "Bordeaux", codePostal: "33000" },
+      { lat: 44.1, lon: -0.6, libelle: "Mérignac", codePostal: "33700" }
+    );
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data).toBe(15500.4);
     

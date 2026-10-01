@@ -143,6 +143,16 @@ export default function FraisDeplacementTab({
               </div>
             </div>
 
+            {(evaluation.libelleDepart || evaluation.libelleArrivee) && (
+              <div className="text-xs text-gray-400 border-t border-green-500/20 pt-3 space-y-1">
+                <p className="text-gray-500">
+                  Lieux retenus pour le calcul — vérifie que ce sont bien les tiens :
+                </p>
+                {evaluation.libelleDepart && <p>Départ : {evaluation.libelleDepart}</p>}
+                {evaluation.libelleArrivee && <p>Arrivée : {evaluation.libelleArrivee}</p>}
+              </div>
+            )}
+
             {saveError && (
               <div className="text-red-500 text-sm bg-red-500/10 p-2 rounded-lg border border-red-500/20 mt-2">
                 {saveError}

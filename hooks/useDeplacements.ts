@@ -24,6 +24,10 @@ export type EvaluationResult = {
   distanceRetourKm: number;
   tarifKm: number;
   montantHt: number;
+  // Lieu retenu pour chaque extrémité du trajet (optionnels : absents si le
+  // serveur répond sans, ce qui ne doit pas masquer un résultat valide).
+  libelleDepart?: string;
+  libelleArrivee?: string;
 };
 
 export function useDeplacements(chantierId: string) {

@@ -87,6 +87,38 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
     expect(mockFetch).toHaveBeenCalledWith("/api/deplacements?chantier_id=c-123");
   });
 
+  it("affiche les lieux que le serveur a retenus pour le calcul", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "8 lotissement Bellevue, 33920" });
+
+    await saisir("12 rue de la Paix", "82 route du Prat, 33920");
+
+    mockFetch.mockImplementation((url: string, options: any) => {
+      if (url === "/api/deplacements/evaluer" && options?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            distanceAllerKm: 12.47,
+            distanceRetourKm: 12.47,
+            tarifKm: 1.0,
+            montantHt: 24.94,
+            libelleDepart: "33920 Générac",
+            libelleArrivee: "33920 Saint-Savin"
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    await cliquer(getButton("Calculer le trajet"));
+
+    // Le lieu retenu doit être visible AVANT enregistrement : c'est le seul
+    // moyen pour l'utilisateur de repérer un homonyme géocodé dans la
+    // mauvaise commune, qui produirait un chiffrage sans aucun autre signal.
+    expect(conteneur.textContent).toContain("33920 Générac");
+    expect(conteneur.textContent).toContain("33920 Saint-Savin");
+    expect(conteneur.textContent).not.toContain("Branne");
+  });
+
   it("déclenche POST /evaluer uniquement au clic et affiche le résultat retourné", async () => {
     await renderComponent({ chantierId: "c-123", adresseChantier: "123 Rue Principale" });
     

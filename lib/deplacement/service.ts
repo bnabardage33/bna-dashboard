@@ -5,6 +5,10 @@ import { calculerDistanceRoute } from "./itineraire";
 export type DistanceDeplacement = {
   distanceAllerKm: number;
   distanceRetourKm: number;
+  // Lieu réellement retenu pour chaque extrémité. Affiché à l'utilisateur :
+  // un montant chiffré ne doit pas reposer sur une adresse qu'il n'a pas vue.
+  libelleDepart: string;
+  libelleArrivee: string;
 };
 
 // Utilitaire de pause pour respecter les limites de rate limiting
@@ -39,7 +43,9 @@ export async function evaluerDistances(adresseDepart: string, adresseArrivee: st
     data: {
       distanceAllerKm,
       // Le modèle suppose par défaut que le retour est égal à l'aller.
-      distanceRetourKm: distanceAllerKm
+      distanceRetourKm: distanceAllerKm,
+      libelleDepart: geoDepart.data.libelle,
+      libelleArrivee: geoArrivee.data.libelle
     }
   };
 }

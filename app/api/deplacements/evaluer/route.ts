@@ -34,7 +34,11 @@ export async function POST(req: NextRequest) {
       tarifKm,
       montantHt,
       montantTva,
-      montantTtc
+      montantTtc,
+      // Lieu retenu pour chaque extrémité, pour que l'utilisateur puisse
+      // vérifier que le trajet a été calculé vers le bon endroit.
+      libelleDepart: distanceRes.data.libelleDepart,
+      libelleArrivee: distanceRes.data.libelleArrivee
     });
   } catch (err) {
     return NextResponse.json({ error: "Erreur interne" }, { status: 500 });
