@@ -2618,6 +2618,20 @@ export type Database = {
         Args: { p_entreprise_id?: string; p_parent_id: string }
         Returns: string
       }
+      generer_prochain_numero_dev:
+        | { Args: never; Returns: string }
+        | { Args: { p_entreprise_id: string }; Returns: string }
+      generer_prochain_numero_dev_ctx: {
+        Args: { p_entreprise_id: string }
+        Returns: string
+      }
+      generer_prochain_numero_fac:
+        | { Args: never; Returns: string }
+        | { Args: { p_entreprise_id: string }; Returns: string }
+      generer_prochain_numero_fac_ctx: {
+        Args: { p_entreprise_id: string }
+        Returns: string
+      }
       generer_prochain_numero_ri:
         | { Args: never; Returns: string }
         | { Args: { p_entreprise_id: string }; Returns: string }

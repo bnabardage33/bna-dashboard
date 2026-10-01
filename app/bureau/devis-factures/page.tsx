@@ -33,7 +33,7 @@ import {
   ZONE_VENT_DEFAUT,
 } from "@/lib/chantierDefaults";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
-import { prochainNumero } from "@/lib/documents";
+import { prochainNumero, prochainNumeroDevis, prochainNumeroFacture } from "@/lib/documents";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { calculerBesoinsBardage } from "@/lib/poseCalcul";
 import SignaturePad from "@/components/SignaturePad";
@@ -330,7 +330,17 @@ function DevisContenu() {
   }
 
   async function creerDevisViergeIA(): Promise<string | null> {
-    const numero = await prochainNumero("devis", "DEV");
+    let numero: string;
+    try {
+      numero = await prochainNumeroDevis();
+    } catch (e) {
+      // Aucun repli sur un numéro calculé en JS : la RPC refuse quand le
+      // contexte entreprise manque, et c'est cette information qu'il faut
+      // remonter. Un « DEV-2026-001 » fabriqué ici masquerait la panne et
+      // produirait un doublon silencieux.
+      alert("Impossible de numéroter le devis : " + (e as Error).message);
+      return null;
+    }
     const ponctuelle = parseFloat(surfacePonctuelle.replace(",", "."));
     const lignesNettoyees = lignes.filter(
       (l) =>
@@ -471,7 +481,15 @@ function DevisContenu() {
     e.preventDefault();
     if (!clientId) return;
 
-    const numero = await prochainNumero("devis", "DEV");
+    let numero: string;
+    try {
+      numero = await prochainNumeroDevis();
+    } catch (err) {
+      // Voir creerDevisViergeIA : on remonte le refus de la RPC au lieu de
+      // fabriquer un numéro, sinon le doublon reste silencieux.
+      alert("Impossible de numéroter le devis : " + (err as Error).message);
+      return;
+    }
 
     // Ligne vierge jamais alimentée → écartée. Les lignes « À CHIFFRER » sont conservées
     // (le patron doit les compléter ensuite) mais n'entrent jamais dans les totaux.
@@ -538,14 +556,26 @@ function DevisContenu() {
     if (!devisToBill) return;
     const d = devisToBill;
     
-    // Numérotation : situation → RPC generer_prochain_numero_sit (SIT-YYYY-###,
-    // persistée/atomique/scopée entreprise+année ; source factures.type_facture='situation') ;
-    // acompte/solde → FAC-YYYY-### (prochainNumero). RPC typée dans types/supabase.ts
-    // (overload 0-arg → Returns: string).
-    const numero =
-      billType === "situation"
-        ? (((await supabase.rpc("generer_prochain_numero_sit")).data) ?? "")
-        : await prochainNumero("factures", "FAC");
+    // Numérotation : les trois cas passent désormais par une RPC verrouillée et
+    // scopée entreprise (migration 20261001). Avant, l'acompte et le solde
+    // Passaient par un max+1 calculé en JS, sans contrainte UNIQUE en base.
+    //   situation  → generer_prochain_numero_sit (SIT-YYYY-###)
+    //   acompte    → generer_prochain_numero_fac (FAC-YYYY-###)
+    //   solde       → idem
+    let numero: string;
+    try {
+      if (billType === "situation") {
+        const { data, error } = await supabase.rpc("generer_prochain_numero_sit");
+        if (error) throw error;
+        if (!data) throw new Error("la RPC n'a renvoyé aucun numéro");
+        numero = data;
+      } else {
+        numero = await prochainNumeroFacture();
+      }
+    } catch (err) {
+      alert("Impossible de numéroter la facture : " + (err as Error).message);
+      return;
+    }
     let lignesFacture: Ligne[] = [];
     
     if (billType === "totale") {
@@ -656,7 +686,15 @@ function DevisContenu() {
     const pct = d.acompte_pct ?? 30;
     const montantHT = Math.round(totalHT * (pct / 100) * 100) / 100;
 
-    const numero = await prochainNumero("factures", "FAC");
+    let numero: string;
+    try {
+      numero = await prochainNumeroFacture();
+    } catch (e) {
+      // Voir handleGenererFacture : la RPC est la seule source du numéro, on ne
+      // fabrique pas de repli qui pourrait entrer en collision.
+      afficherToast("Impossible de numéroter la facture d'acompte : " + (e as Error).message);
+      return;
+    }
 
     const echeance = new Date();
     echeance.setDate(echeance.getDate() + 15);

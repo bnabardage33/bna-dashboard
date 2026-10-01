@@ -9,7 +9,7 @@ import DocumentPDF from "@/components/DocumentPDF";
 import SignaturePad from "@/components/SignaturePad";
 import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
 import { AlertCircle, PenTool } from "lucide-react";
-import { prochainNumero } from "@/lib/documents";
+import { prochainNumeroFacture } from "@/lib/documents";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -257,7 +257,17 @@ export default function FacturesPage() {
     e.preventDefault();
     if (!clientId) return;
 
-    const numero = await prochainNumero("factures", "FAC");
+    let numero: string;
+    try {
+      numero = await prochainNumeroFacture();
+    } catch (e) {
+      // La RPC refuse si le contexte entreprise manque. On remonte ce refus
+      // plutôt que de retomber sur un max+1 calculé en JS : sans contrainte
+      // UNIQUE sur (entreprise_id, numero), un numéro fabriqué ici produirait
+      // un doublon que rien ne signalerait.
+      alert("Impossible de numéroter la facture : " + (e as Error).message);
+      return;
+    }
 
     const devisChoisi = depuisDevis
       ? devisAcceptes.find((d) => d.id === depuisDevis)
