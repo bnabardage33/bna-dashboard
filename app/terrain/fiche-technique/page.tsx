@@ -133,7 +133,7 @@ export default function FicheTechniquePage() {
         value={recherche}
         onChange={(e) => setRecherche(e.target.value)}
         placeholder="Rechercher une info technique..."
-        className="w-full rounded-lg border border-slate-600 bg-[#1A1D24] px-3 py-2 text-sm text-white"
+        className="w-full rounded-lg border border-slate-600 bg-[#1E1E1E] px-3 py-2 text-sm text-white"
       />
 
       <div className="flex flex-wrap gap-2">
@@ -144,7 +144,7 @@ export default function FicheTechniquePage() {
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               categorie === c.value
                 ? "bg-red-600 text-white"
-                : "border border-slate-600 text-gray-300 hover:bg-[#1A1D24]"
+                : "border border-slate-600 text-gray-300 hover:bg-[#1E1E1E]"
             }`}
           >
             {c.label}
@@ -163,7 +163,7 @@ export default function FicheTechniquePage() {
           <button
             key={f.id}
             onClick={() => setFiche(f)}
-            className="rounded-xl border border-white/10 bg-[#1A1D24] p-4 text-left hover:border-red-600/40"
+            className="rounded-xl border border-white/10 bg-[#1E1E1E] p-4 text-left hover:border-red-600/40"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-red-400">
               {f.categorie}
@@ -188,7 +188,7 @@ export default function FicheTechniquePage() {
           onClick={() => setFiche(null)}
         >
           <div
-            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
+            className="max-h-[85vh] sm:max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1E1E1E] p-6 pb-20 sm:pb-6 shadow-2xl animate-in fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between border-b border-white/10 pb-3">
@@ -203,7 +203,7 @@ export default function FicheTechniquePage() {
               </div>
               <button
                 onClick={() => setFiche(null)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                 aria-label="Fermer"
               >
                 ✕
@@ -237,11 +237,11 @@ export default function FicheTechniquePage() {
               </div>
             )}
 
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-end shadow-lg">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 bg-[#1E1E1E] px-6 py-3 border-t border-white/10 flex items-center justify-end shadow-lg">
               <button
                 type="button"
                 onClick={() => setFiche(null)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Fermer
               </button>
@@ -258,11 +258,11 @@ export default function FicheTechniquePage() {
           <form
             onSubmit={onSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouvelle Fiche Technique</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>
@@ -321,16 +321,16 @@ export default function FicheTechniquePage() {
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white file:mr-3 file:rounded-lg file:border-0 file:bg-[#1A1D24] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-gray-200"
+                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white file:mr-3 file:rounded-lg file:border-0 file:bg-[#1E1E1E] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-gray-200"
                 />
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Annuler
               </button>

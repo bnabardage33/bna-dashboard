@@ -541,7 +541,7 @@ export default function CataloguePage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isImporting}
-              className="flex items-center gap-2 rounded-lg bg-[#1A1D24] px-4 py-2 text-sm font-bold text-white hover:bg-[#1A1D24] transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-[#1E1E1E] px-4 py-2 text-sm font-bold text-white hover:bg-[#1E1E1E] transition-colors disabled:opacity-50"
             >
               {isImporting ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -569,7 +569,7 @@ export default function CataloguePage() {
         </header>
 
         {/* Filtres */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1A1D24]/50 p-4 rounded-xl border border-white/10">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1E1E1E]/50 p-4 rounded-xl border border-white/10">
           {/* Catégorie */}
           <div className="flex flex-wrap gap-2">
             {displayCategories.map((cat) => (
@@ -579,7 +579,7 @@ export default function CataloguePage() {
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
                   activeCategory === cat
                     ? "bg-red-600/20 text-gray-400 border border-white/10"
-                    : "bg-[#1A1D24] text-gray-400 border border-white/10 hover:border-slate-500"
+                    : "bg-[#1E1E1E] text-gray-400 border border-white/10 hover:border-slate-500"
                 }`}
               >
                 {cat}
@@ -596,7 +596,7 @@ export default function CataloguePage() {
                   className={`px-3 py-1 rounded-full text-3xs font-semibold transition-colors ${
                     activeSubCategory === sub
                       ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/30"
-                      : "bg-[#1A1D24] text-gray-500 border border-white/5 hover:border-slate-600"
+                      : "bg-[#1E1E1E] text-gray-500 border border-white/5 hover:border-slate-600"
                   }`}
                 >
                   {sub}
@@ -617,7 +617,7 @@ export default function CataloguePage() {
                     ? t === "main_oeuvre"
                       ? "bg-violet-600/30 border-violet-500/50 text-violet-300"
                       : "bg-emerald-600/20 border-emerald-500/40 text-emerald-300"
-                    : "bg-[#1A1D24] text-gray-400 border-white/10 hover:border-slate-500"
+                    : "bg-[#1E1E1E] text-gray-400 border-white/10 hover:border-slate-500"
                 }`}
               >
                 {t === "tous" ? "Tous" : t === "matiere" ? "Matériaux" : "Main-d'œuvre"}
@@ -664,7 +664,7 @@ export default function CataloguePage() {
               setActiveSubCategory('Tous');
               setTypeFiltre('tous');
             }}
-            className="ml-2 rounded bg-[#1A1D24] px-3 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
+            className="ml-2 rounded bg-[#1E1E1E] px-3 py-1 text-xs text-gray-200 hover:bg-[#1E1E1E]"
           >
             Réinitialiser
           </button>
@@ -678,7 +678,7 @@ export default function CataloguePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredOuvrages.map((o) => (
-              <div key={o.id} className={`flex flex-col rounded-xl border p-5 transition-colors ${o.type_cout === "main_oeuvre" ? "border-violet-500/40 bg-violet-500/[0.06] hover:border-violet-500/60" : "border-white/10 bg-[#1A1D24]/50 hover:border-white/10"}`}>
+              <div key={o.id} className={`flex flex-col rounded-xl border p-5 transition-colors ${o.type_cout === "main_oeuvre" ? "border-violet-500/40 bg-violet-500/[0.06] hover:border-violet-500/60" : "border-white/10 bg-[#1E1E1E]/50 hover:border-white/10"}`}>
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex flex-col gap-1">
                     <span
@@ -690,7 +690,7 @@ export default function CataloguePage() {
                     >
                       {o.type_cout === "main_oeuvre" ? "Main-d'œuvre" : "Matériau"}
                     </span>
-                    <span className="inline-block px-2 py-1 bg-[#1A1D24] text-gray-300 text-2xs font-bold uppercase tracking-wider rounded w-fit">
+                    <span className="inline-block px-2 py-1 bg-[#1E1E1E] text-gray-300 text-2xs font-bold uppercase tracking-wider rounded w-fit">
                       {mapToMainFamily(o.famille_label || o.categorie, o.type_cout)}
                     </span>
                   </div>
@@ -800,7 +800,7 @@ export default function CataloguePage() {
               </div>
 
               {/* Onglets de navigation */}
-              <div className="flex px-4 pt-2 border-b border-gray-700/50 space-x-4 bg-[#1A1D24]">
+              <div className="flex px-4 pt-2 border-b border-gray-700/50 space-x-4 bg-[#1E1E1E]">
                 <button
                   type="button"
                   onClick={() => setActiveTab('general')}
@@ -1160,7 +1160,7 @@ export default function CataloguePage() {
 
                   <div className="space-y-3">
                     {(formData.dimensions_disponibles || []).map((dim, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-[#1A1D24]/50 p-3 rounded-lg border border-white/10">
+                      <div key={idx} className="flex items-center gap-3 bg-[#1E1E1E]/50 p-3 rounded-lg border border-white/10">
                         <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
                           <div>
                             <label htmlFor={`chp-longueur-mm-${idx}`} className="block text-2xs uppercase text-gray-500 mb-1">Longueur (mm)</label>
@@ -1349,11 +1349,11 @@ export default function CataloguePage() {
                 </div> {/* Fin du contenu scrollable */}
 
                 {/* ── Boutons (Static Footer) ─────────────────────────────── */}
-                <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
+                <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-300 hover:bg-[#1E1E1E] disabled:opacity-50"
                     disabled={isSubmitting}
                   >
                     Annuler

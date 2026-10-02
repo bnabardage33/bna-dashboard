@@ -8,13 +8,13 @@ export default function UrsaafWidget({ mois }: { mois?: string }) {
   const { masseSalariale, isLoading } = useUrssaf();
 
   if (isLoading) {
-    return <div className="animate-pulse h-64 rounded-xl border border-white/10 bg-[#1A1D24]/50"></div>;
+    return <div className="animate-pulse h-64 rounded-xl border border-white/10 bg-[#1E1E1E]/50"></div>;
   }
 
   const { charges_patronales, cibtp, total_charges, taux_global_pct } = estimerChargesSociales(masseSalariale);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 flex flex-col h-full">
+    <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 flex flex-col h-full">
       <div className="flex items-center gap-3 border-b border-white/10 p-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-gray-400">
           <Users className="h-5 w-5" />

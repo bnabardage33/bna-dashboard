@@ -112,7 +112,7 @@ export default function SearchNav() {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setOpen(true); chercher(); }}
             onFocus={() => { if (query.length >= 2) chercher(); }}
-            className="bg-[#1A1D24] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-40 focus:w-56 focus:outline-none focus:border-[#E30613]/50 transition-all"
+            className="bg-[#1E1E1E] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-40 focus:w-56 focus:outline-none focus:border-[#E53935]/50 transition-all"
           />
         </div>
         {open && (query.length >= 2) && (
@@ -178,7 +178,7 @@ export default function SearchNav() {
         >
           <Bell size={16} className="text-white/60" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E30613] text-white text-2xs font-bold rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#E53935] text-white text-2xs font-bold rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
           )}
         </button>
         {notifOpen && (
@@ -186,7 +186,7 @@ export default function SearchNav() {
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">Notifications</h3>
               {unreadCount > 0 && (
-                <button onClick={() => marquerLu(notifications.filter(n => !n.lu).map(n => n.id))} className="text-2xs text-[#E30613] hover:text-red-400 font-medium">Tout marquer lu</button>
+                <button onClick={() => marquerLu(notifications.filter(n => !n.lu).map(n => n.id))} className="text-2xs text-[#E53935] hover:text-red-400 font-medium">Tout marquer lu</button>
               )}
             </div>
             <div className="max-h-64 overflow-y-auto">

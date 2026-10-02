@@ -218,8 +218,8 @@ export default function PhotosChantierAdmin() {
 
           {/* ERREUR */}
           {error && (
-            <div className="bg-red-900/20 border border-[#E30613] rounded-xl p-3">
-              <p className="text-xs text-[#E30613] font-bold leading-relaxed">{error}</p>
+            <div className="bg-red-900/20 border border-[#E53935] rounded-xl p-3">
+              <p className="text-xs text-[#E53935] font-bold leading-relaxed">{error}</p>
             </div>
           )}
 
@@ -249,7 +249,7 @@ export default function PhotosChantierAdmin() {
           <Surface className="p-4" radius="2xl">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-white">Photos envoyées</h2>
-              <span className="bg-[#1A1D24] text-white text-2xs font-bold px-2 py-0.5 rounded-full">{photos.length}</span>
+              <span className="bg-[#1E1E1E] text-white text-2xs font-bold px-2 py-0.5 rounded-full">{photos.length}</span>
             </div>
             {loadingPhotos ? (
               <div className="flex justify-center py-8">
@@ -266,7 +266,7 @@ export default function PhotosChantierAdmin() {
                     {/* Bouton delete visible sur mobile tap */}
                     <button
                       onClick={() => handleDelete(p.id)}
-                      className="absolute top-2 right-2 w-8 h-8 bg-[#E30613] rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer shadow"
+                      className="absolute top-2 right-2 w-8 h-8 bg-[#E53935] rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer shadow"
                       aria-label="Supprimer la photo"
                     >
                       <Trash2 size={14} className="text-white" />
@@ -279,7 +279,7 @@ export default function PhotosChantierAdmin() {
         )}
 
         {/* SQL HINT SI ERREUR SUPABASE */}
-        <div className="mt-6 bg-[#1A1D24] border border-dashed border-white/20 rounded-2xl p-4">
+        <div className="mt-6 bg-[#1E1E1E] border border-dashed border-white/20 rounded-2xl p-4">
           <p className="text-2xs font-bold text-gray-400 mb-2">🔒 Si l'upload échoue (RLS), exécute ce SQL dans Supabase :</p>
           <pre className="text-2xs text-gray-400 bg-white/5 p-2 rounded-lg overflow-x-auto whitespace-pre-wrap">{`-- TABLE: autorise tout depuis le serveur (service_role bypasse déjà)
 -- Si tu veux aussi l'accès depuis le navigateur (anon):

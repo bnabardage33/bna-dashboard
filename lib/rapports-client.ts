@@ -215,7 +215,7 @@ export function statutFacade(n: number): { label: string; className: string } {
   }
   return {
     label: "À commencer",
-    className: "border border-white/10 bg-[#1A1D24] text-gray-400",
+    className: "border border-white/10 bg-[#1E1E1E] text-gray-400",
   };
 }
 

@@ -653,7 +653,7 @@ export default function FinChantierPage() {
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "tous"
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             Tous ({pvs.length})
@@ -663,7 +663,7 @@ export default function FinChantierPage() {
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "sans_reserve"
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             Sans réserve ({nbSansReserve})
@@ -673,7 +673,7 @@ export default function FinChantierPage() {
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "avec_reserves"
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             Avec réserves ({nbAvecReserves})
@@ -683,7 +683,7 @@ export default function FinChantierPage() {
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
               filtre === "reserves_levees"
                 ? "bg-gray-300 text-slate-950 font-bold"
-                : "border border-white/10 bg-[#1A1D24] text-gray-300 hover:bg-[#1A1D24]"
+                : "border border-white/10 bg-[#1E1E1E] text-gray-300 hover:bg-[#1E1E1E]"
             }`}
           >
             Réserves levées ({nbReservesLevees})
@@ -696,18 +696,18 @@ export default function FinChantierPage() {
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             placeholder="Rechercher par n°, chantier, client…"
-            className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
+            className="w-full rounded-xl border border-white/10 bg-[#1E1E1E] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
           />
         </div>
       </div>
 
       {/* Liste des PV en Cartes Mobiles */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des procès-verbaux…
         </div>
       ) : pvsFiltres.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
           <p className="text-sm font-medium text-gray-400">Aucun procès-verbal de réception pour ce filtre.</p>
           <button
             onClick={() => ouvrirNouveauPV()}
@@ -730,7 +730,7 @@ export default function FinChantierPage() {
             return (
               <Surface
                 key={pv.id}
-                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
+                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1E1E1E]"
                 radius="2xl"
               >
                 <div className="space-y-3">
@@ -794,14 +794,14 @@ export default function FinChantierPage() {
                         setPvSelectionne(pv);
                         setModalPdfOuvert(true);
                       }}
-                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] flex items-center gap-1"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] flex items-center gap-1"
                     >
                       📄 PDF
                     </button>
 
                     <button
                       onClick={() => handleCreerFactureSolde(pv)}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40 flex items-center gap-1"
+                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1E1E1E]/40 flex items-center gap-1"
                     >
                       🧾 Solde
                     </button>
@@ -812,7 +812,7 @@ export default function FinChantierPage() {
                           setPvSelectionne(pv);
                           setModalReservesOuvert(true);
                         }}
-                        className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40"
+                        className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1E1E1E]/40"
                       >
                         🔧 Réserves
                       </button>
@@ -822,7 +822,7 @@ export default function FinChantierPage() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => ouvrirEditionPV(pv)}
-                      className="rounded-xl border border-white/10 bg-transparent p-1.5 text-xs text-gray-300 hover:bg-[#1A1D24]"
+                      className="rounded-xl border border-white/10 bg-transparent p-1.5 text-xs text-gray-300 hover:bg-[#1E1E1E]"
                       aria-label="Modifier le PV"
                       title="Modifier le PV"
                     >
@@ -858,7 +858,7 @@ export default function FinChantierPage() {
       {/* ============================================================ */}
       {modalFormOuvert && (
         <div className="fixed inset-0 z-[210] pt-48 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-5 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
+          <div className="relative w-full max-w-4xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1E1E1E] p-6 shadow-2xl space-y-5 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white">
@@ -870,7 +870,7 @@ export default function FinChantierPage() {
               </div>
               <button
                 onClick={() => setModalFormOuvert(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                 aria-label="Fermer"
               >
                 ✕
@@ -1008,7 +1008,7 @@ export default function FinChantierPage() {
                       };
                       setFormZonesMetres([...formZonesMetres, nouvelleZone]);
                     }}
-                    className="rounded bg-[#1A1D24] px-2.5 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
+                    className="rounded bg-[#1E1E1E] px-2.5 py-1 text-xs text-gray-200 hover:bg-[#1E1E1E]"
                   >
                     + Ajouter une zone
                   </button>
@@ -1046,7 +1046,7 @@ export default function FinChantierPage() {
                                     )
                                   );
                                 }}
-                                className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                                className="w-full rounded border border-white/10 bg-[#1E1E1E] px-2 py-1 text-xs text-white"
                                 aria-label="Zone"
                               />
                             </td>
@@ -1067,7 +1067,7 @@ export default function FinChantierPage() {
                                     )
                                   );
                                 }}
-                                className="w-16 rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                                className="w-16 rounded border border-white/10 bg-[#1E1E1E] px-2 py-1 text-xs text-white"
                                 aria-label="Largeur (m)"
                               />
                             </td>
@@ -1087,7 +1087,7 @@ export default function FinChantierPage() {
                                     )
                                   );
                                 }}
-                                className="w-16 rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                                className="w-16 rounded border border-white/10 bg-[#1E1E1E] px-2 py-1 text-xs text-white"
                                 aria-label="Hauteur (m)"
                               />
                             </td>
@@ -1153,7 +1153,7 @@ export default function FinChantierPage() {
                               onChange={(e) => updateReserve(r.id, { designation: e.target.value })}
                               placeholder={`Réserve #${index + 1} (ex: Retouche joint d'angle)`}
                               required
-                              className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                              className="w-full rounded border border-white/10 bg-[#1E1E1E] px-2 py-1 text-xs text-white"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -1162,7 +1162,7 @@ export default function FinChantierPage() {
                               value={r.localisation}
                               onChange={(e) => updateReserve(r.id, { localisation: e.target.value })}
                               placeholder="Emplacement (ex: Façade Sud - Angle haut)"
-                              className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                              className="w-full rounded border border-white/10 bg-[#1E1E1E] px-2 py-1 text-xs text-white"
                             />
                           </div>
                           <div className="sm:col-span-3">
@@ -1170,7 +1170,7 @@ export default function FinChantierPage() {
                               type="date"
                               value={r.date_limite}
                               onChange={(e) => updateReserve(r.id, { date_limite: e.target.value })}
-                              className="w-full rounded border border-white/10 bg-[#1A1D24] px-2 py-1 text-xs text-white"
+                              className="w-full rounded border border-white/10 bg-[#1E1E1E] px-2 py-1 text-xs text-white"
                               aria-label="Date limite"
                             />
                           </div>
@@ -1197,7 +1197,7 @@ export default function FinChantierPage() {
                   <span>📚</span> Notice, Fiches Techniques &amp; Entretien
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <label className="flex items-center gap-2 text-gray-300 bg-[#1A1D24]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
+                  <label className="flex items-center gap-2 text-gray-300 bg-[#1E1E1E]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formNoticeEntretien.remise_fiches_techniques}
@@ -1211,7 +1211,7 @@ export default function FinChantierPage() {
                     <span>Fiches techniques fabricants remises</span>
                   </label>
 
-                  <label className="flex items-center gap-2 text-gray-300 bg-[#1A1D24]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
+                  <label className="flex items-center gap-2 text-gray-300 bg-[#1E1E1E]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formNoticeEntretien.remise_guide_entretien}
@@ -1225,7 +1225,7 @@ export default function FinChantierPage() {
                     <span>Guide d&apos;entretien remis</span>
                   </label>
 
-                  <label className="flex items-center gap-2 text-gray-300 bg-[#1A1D24]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
+                  <label className="flex items-center gap-2 text-gray-300 bg-[#1E1E1E]/80 p-2.5 rounded-lg border border-white/10 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formNoticeEntretien.remise_attestation_decennale}
@@ -1282,7 +1282,7 @@ export default function FinChantierPage() {
                     {formPhotos.map((p, idx) => (
                       <div
                         key={p.id || idx}
-                        className="relative rounded-lg border border-white/10 bg-[#1A1D24] p-2 space-y-1.5"
+                        className="relative rounded-lg border border-white/10 bg-[#1E1E1E] p-2 space-y-1.5"
                       >
                         <div className="aspect-[4/3] w-full overflow-hidden rounded bg-transparent">
                           <Image src={p.url} alt="Aperçu" className="h-full w-full object-cover"  width={100} height={100} />
@@ -1405,11 +1405,11 @@ export default function FinChantierPage() {
               </div>
 
               {/* BOUTONS D'ACTION */}
-              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-end gap-3 shadow-lg">
+              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1E1E1E] px-6 py-3 border-t border-white/10 flex items-center justify-end gap-3 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setModalFormOuvert(false)}
-                  className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                  className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
                 >
                   Annuler
                 </button>
@@ -1432,7 +1432,7 @@ export default function FinChantierPage() {
       {/* ============================================================ */}
       {modalReservesOuvert && pvSelectionne && (
         <div className="fixed inset-0 z-[210] pt-48 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 pb-20 sm:pb-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
+          <div className="relative w-full max-w-xl rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1E1E1E] p-6 pb-20 sm:pb-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h3 className="text-base font-bold text-white">
@@ -1444,7 +1444,7 @@ export default function FinChantierPage() {
               </div>
               <button
                 onClick={() => setModalReservesOuvert(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                 aria-label="Fermer"
               >
                 ✕
@@ -1471,7 +1471,7 @@ export default function FinChantierPage() {
                       type="checkbox"
                       checked={r.levee}
                       onChange={() => {}}
-                      className="h-4 w-4 rounded border-slate-600 bg-[#1A1D24] text-red-400"
+                      className="h-4 w-4 rounded border-slate-600 bg-[#1E1E1E] text-red-400"
                       aria-label={`Constater la levée de la réserve ${r.designation}`}
                     />
                     <div>
@@ -1497,7 +1497,7 @@ export default function FinChantierPage() {
               ))}
             </div>
 
-            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-between shadow-lg">
+            <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1E1E1E] px-6 py-3 border-t border-white/10 flex items-center justify-between shadow-lg">
               <button
                 onClick={() => handleCreerFactureSolde(pvSelectionne)}
                 className="text-xs font-semibold text-gray-400 hover:text-gray-400"
@@ -1507,7 +1507,7 @@ export default function FinChantierPage() {
 
               <button
                 onClick={() => setModalReservesOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Fermer
               </button>
@@ -1549,7 +1549,7 @@ export default function FinChantierPage() {
                 </button>
                 <button
                   onClick={() => setModalPdfOuvert(false)}
-                  className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                  className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                   aria-label="Fermer"
                 >
                   ✕

@@ -192,7 +192,7 @@ export default function BureauRapportsIntemperiesPage() {
         <button
           onClick={() => setFiltre("arretes")}
           className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-            filtre === "arretes" ? "bg-[#1A1D24] text-white" : "border border-slate-600 text-gray-300"
+            filtre === "arretes" ? "bg-[#1E1E1E] text-white" : "border border-slate-600 text-gray-300"
           }`}
         >
           Journées arrêtées
@@ -209,7 +209,7 @@ export default function BureauRapportsIntemperiesPage() {
             <Link
               key={r.id}
               href={`/rapports-intemperies/${r.id}`}
-              className={`block rounded-xl border bg-[#1A1D24] p-4 hover:border-red-600/40 ${
+              className={`block rounded-xl border bg-[#1E1E1E] p-4 hover:border-red-600/40 ${
                 COULEUR_BORDURE[r.vigilance_officielle] ?? "border-white/10"
               }`}
             >

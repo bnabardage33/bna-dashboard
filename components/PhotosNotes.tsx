@@ -218,7 +218,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
 
       <form
         onSubmit={enregistrerNotes}
-        className="space-y-3 rounded-xl border border-white/10 bg-[#1A1D24] p-4"
+        className="space-y-3 rounded-xl border border-white/10 bg-[#1E1E1E] p-4"
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
@@ -228,7 +228,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
             <input id="chp-code-d-acces"
               value={notes.code_acces ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, code_acces: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white"
             />
           </div>
           <div>
@@ -238,7 +238,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
             <input id="chp-contact-sur-place"
               value={notes.contact_chantier ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, contact_chantier: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white"
             />
           </div>
           <div>
@@ -246,7 +246,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
             <input id="chp-horaires"
               value={notes.horaires ?? ""}
               onChange={(e) => setNotes((n) => ({ ...n, horaires: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white"
             />
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function PhotosNotes({ chantierId }: { chantierId: string }) {
             value={notes.notes_terrain ?? ""}
             onChange={(e) => setNotes((n) => ({ ...n, notes_terrain: e.target.value }))}
             rows={4}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white"
           />
         </div>
 

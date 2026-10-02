@@ -141,7 +141,7 @@ export default function FraisInterimPage() {
   return (
     <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
       <div className="mx-auto max-w-2xl">
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/50 p-6">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/50 p-6">
           <h1 className="text-xl font-bold text-white mb-6">Frais d'Agence Intérim</h1>
 
           {message && (
@@ -157,7 +157,7 @@ export default function FraisInterimPage() {
                 <select id="chp-chantier-optionnel"
                   value={formData.chantier_id}
                   onChange={(e) => setFormData({ ...formData, chantier_id: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 >
                   <option value="">-- Sans affectation --</option>
                   {chantiers.map((c) => (
@@ -171,7 +171,7 @@ export default function FraisInterimPage() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
             </div>
@@ -185,7 +185,7 @@ export default function FraisInterimPage() {
                   placeholder="ex: Adecco, Manpower..."
                   value={formData.agence_nom}
                   onChange={(e) => setFormData({ ...formData, agence_nom: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
               <div>
@@ -195,7 +195,7 @@ export default function FraisInterimPage() {
                   required
                   value={formData.interimaire_nom}
                   onChange={(e) => setFormData({ ...formData, interimaire_nom: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function FraisInterimPage() {
                   required
                   value={formData.salaire_brut}
                   onChange={(e) => setFormData({ ...formData, salaire_brut: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
               <div>
@@ -219,7 +219,7 @@ export default function FraisInterimPage() {
                   step="0.01"
                   value={formData.coefficient}
                   onChange={(e) => setFormData({ ...formData, coefficient: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
               <div>
@@ -229,7 +229,7 @@ export default function FraisInterimPage() {
                   step="0.1"
                   value={formData.taux_tva}
                   onChange={(e) => setFormData({ ...formData, taux_tva: e.target.value })}
-                  className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+                  className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
                 />
               </div>
             </div>

@@ -135,11 +135,11 @@ export default function BureauMeteoPage() {
       )}
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement de la météo des chantiers…
         </div>
       ) : chantiers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
           <p className="text-sm font-medium text-gray-400">Aucun chantier en cours. La veille intempéries reprendra dès qu'un chantier démarrera.</p>
         </div>
       ) : (
@@ -147,7 +147,7 @@ export default function BureauMeteoPage() {
           {chantiers.map((ch) => (
             <div
               key={ch.id}
-              className={`flex flex-col justify-between rounded-2xl border bg-[#1A1D24] p-4.5 shadow-md transition-all ${
+              className={`flex flex-col justify-between rounded-2xl border bg-[#1E1E1E] p-4.5 shadow-md transition-all ${
                 ch.intemperieAujourdhui ? "border-red-500/60 bg-red-950/10" : "border-white/10"
               }`}
             >

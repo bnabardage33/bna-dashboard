@@ -11,7 +11,7 @@ export default function KpiGrid({ mois }: { mois?: string }) {
     return (
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="animate-pulse rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 h-28"></div>
+          <div key={i} className="animate-pulse rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4 h-28"></div>
         ))}
       </div>
     );
@@ -23,7 +23,7 @@ export default function KpiGrid({ mois }: { mois?: string }) {
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {/* CA Facturé */}
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 flex flex-col justify-between">
+      <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4 flex flex-col justify-between">
         <div className="flex items-center gap-2 text-gray-400">
           <Receipt className="h-4 w-4 text-gray-400" />
           <span className="text-xs uppercase tracking-wider">CA Facturé HT</span>
@@ -34,7 +34,7 @@ export default function KpiGrid({ mois }: { mois?: string }) {
       </div>
 
       {/* Dépenses */}
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 flex flex-col justify-between">
+      <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4 flex flex-col justify-between">
         <div className="flex items-center gap-2 text-gray-400">
           <Package className="h-4 w-4 text-rose-400" />
           <span className="text-xs uppercase tracking-wider">Dépenses du mois</span>
@@ -45,7 +45,7 @@ export default function KpiGrid({ mois }: { mois?: string }) {
       </div>
 
       {/* Marge brute */}
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 flex flex-col justify-between">
+      <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4 flex flex-col justify-between">
         <div className="flex items-center gap-2 text-gray-400">
           {margePositive ? (
             <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -65,7 +65,7 @@ export default function KpiGrid({ mois }: { mois?: string }) {
       </div>
 
       {/* Reste à facturer */}
-      <div className="relative rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 flex flex-col justify-between">
+      <div className="relative rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4 flex flex-col justify-between">
         <div className="flex items-center gap-2 text-gray-400">
           <Wallet className="h-4 w-4 text-gray-400" />
           <span className="text-xs uppercase tracking-wider">Reste à facturer</span>

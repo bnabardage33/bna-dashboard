@@ -376,7 +376,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   className={`rounded-lg border p-3 text-left transition-colors ${
                     actif
                       ? "border-red-600/60 bg-red-600/10"
-                      : "border-white/10 bg-[#0B0F19]/50 hover:border-white/25"
+                      : "border-white/10 bg-[#121212]/50 hover:border-white/25"
                   }`}
                 >
                   <p className="truncate text-xs font-semibold text-white">{r.semaine_label}</p>
@@ -590,7 +590,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   {snapshotSelectionne.pointages.meteo_relevee.map((m) => (
                     <span
                       key={m}
-                      className="rounded-full border border-white/10 bg-[#0B0F19] px-2 py-0.5 text-2xs font-medium text-gray-300"
+                      className="rounded-full border border-white/10 bg-[#121212] px-2 py-0.5 text-2xs font-medium text-gray-300"
                     >
                       {m}
                     </span>
@@ -628,7 +628,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       .map((j) => (
                         <div
                           key={j.date}
-                          className="rounded-lg border border-white/10 bg-[#0B0F19]/50 px-2.5 py-1.5 text-3xs text-gray-300"
+                          className="rounded-lg border border-white/10 bg-[#121212]/50 px-2.5 py-1.5 text-3xs text-gray-300"
                         >
                           <span className="font-semibold text-white">{j.date}</span>
                           <span className="ml-2">{EMOJI_VIGILANCE[j.vigilance] ?? ""}</span>
@@ -667,7 +667,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 disabled={estEnvoye}
                 rows={4}
                 placeholder="Un mot personnel pour accompagner ce rapport…"
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-red-600 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-1 w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-red-600 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
               />
               {statutSauvegarde === "ok" && (
                 <p className="mt-1 text-xs font-medium text-emerald-400">✓ Mot enregistré.</p>
@@ -722,7 +722,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
       )}
     {/* Overlay : aperçu PDF (rendu clair client) */}
       {apercu && (
-        <div className="fixed inset-0 z-[220] overflow-y-auto bg-[#0B0F19]/95 p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0">
+        <div className="fixed inset-0 z-[220] overflow-y-auto bg-[#121212]/95 p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0">
           <style>{STYLES_PRINT_RAPPORT}</style>
 
           <div className="mx-auto mb-4 flex max-w-[860px] items-center justify-between gap-3 print:hidden">

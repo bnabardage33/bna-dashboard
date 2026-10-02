@@ -13,7 +13,11 @@ export default function OutilsPage() {
         "Vigilance officielle Météo-France DPVigilance, vitesse du vent, rafales max, pluie horaire et alertes sécurité travail en hauteur.",
       href: "/terrain/meteo",
       icon: CloudSun,
-      couleur: "border-red-600/40 bg-sky-950/20 text-gray-300",
+      // Ce module reste NEUTRE (§8 de la charte) : la météo est une carte
+      // d'INFORMATION, pas une alerte. La bordure ROUGE qu'elle portait
+      // signalait une urgence qui n'existe pas — et cohabitait avec un fond
+      // bleu, deux couleurs opposees sur la même carte.
+      couleur: "border-[#42A5F5]/40 bg-[#42A5F5]/10 text-[#42A5F5]",
       badge: "Météo-France",
     },
     {
@@ -66,7 +70,7 @@ export default function OutilsPage() {
             <Link
               key={outil.id}
               href={outil.href}
-              className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1A1D24] p-5 shadow-lg transition-all hover:border-red-600 hover:bg-[#1A1D24] hover:shadow-red-600/10"
+              className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1E1E1E] p-5 shadow-lg transition-all hover:border-[#42A5F5] hover:bg-[#1E1E1E] hover:shadow-[#42A5F5]/10"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

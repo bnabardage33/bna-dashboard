@@ -92,8 +92,8 @@ export default function SAVPage() {
               onClick={() => setFiltre(f.id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 filtre === f.id
-                  ? "bg-[#1A1D24] text-white shadow-sm border border-slate-600"
-                  : "text-gray-400 hover:bg-[#1A1D24] hover:text-gray-200 border border-transparent"
+                  ? "bg-[#1E1E1E] text-white shadow-sm border border-slate-600"
+                  : "text-gray-400 hover:bg-[#1E1E1E] hover:text-gray-200 border border-transparent"
               }`}
             >
               {f.label}
@@ -105,8 +105,8 @@ export default function SAVPage() {
       {loading ? (
         <div className="text-center p-12 text-gray-400 animate-pulse">Chargement des tickets...</div>
       ) : tickets.length === 0 ? (
-        <div className="bg-[#1A1D24]/50 border border-white/10 rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 bg-[#1A1D24]/50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-[#1E1E1E]/50 border border-white/10 rounded-2xl p-12 text-center">
+          <div className="w-16 h-16 bg-[#1E1E1E]/50 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-bold text-gray-200">Aucun SAV en cours</h3>
@@ -120,7 +120,7 @@ export default function SAVPage() {
             <Link
               href={`/bureau/sav/${ticket.id}`}
               key={ticket.id}
-              className="group bg-[#1A1D24] border border-white/10 rounded-2xl p-5 hover:border-red-600/50 hover:shadow-lg hover:shadow-red-600/10 transition-all flex flex-col justify-between h-48"
+              className="group bg-[#1E1E1E] border border-white/10 rounded-2xl p-5 hover:border-red-600/50 hover:shadow-lg hover:shadow-red-600/10 transition-all flex flex-col justify-between h-48"
             >
               <div>
                 <div className="flex justify-between items-start mb-3">

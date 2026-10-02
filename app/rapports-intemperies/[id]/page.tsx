@@ -183,7 +183,7 @@ function RapportDetailContent() {
               <button
                 onClick={() => validerArretChantier(false)}
                 disabled={validentEnCours}
-                className="rounded-lg border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
+                className="rounded-lg border border-slate-600 bg-[#1E1E1E] px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-[#1E1E1E] disabled:opacity-50"
               >
                 Travail maintenu
               </button>
@@ -200,7 +200,7 @@ function RapportDetailContent() {
       </div>
 
       {/* Rendu PDF A4 */}
-      <Surface className="p-2 shadow-2xl print:border-none print:bg-[#1A1D24] print:p-0">
+      <Surface className="p-2 shadow-2xl print:border-none print:bg-[#1E1E1E] print:p-0">
         <RapportIntemperiesPDF
           rapport={rapport}
           entreprise={entreprise}

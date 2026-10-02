@@ -8,6 +8,11 @@ export type JourPrevu = {
   icon: string;
   conditions: string;
 };
+// Origine de la prévision. `icon` n'a pas le même sens selon la source : un
+// NOM d'icône chez VisualCrossing, un CODE WMO chez Open-Meteo. Voir
+// `lib/meteoOpenMeteo.ts` pour pourquoi la route accepte les deux.
+export type SourceMeteo = "visualcrossing" | "open-meteo";
+
 export type JourMeteo = {
   matin: PeriodeMeteo;
   apresMidi: PeriodeMeteo;
@@ -15,9 +20,12 @@ export type JourMeteo = {
   alerte: AlerteMeteo;
   icon: string;
   conditions: string;
+  source?: SourceMeteo;
   tempActuelle: number;
   tempMaxJour: number;
   tempMinJour: number;
+  /** Cumul de pluie de la journée, en mm. */
+  cumulPluie?: number;
   prochainsJours: JourPrevu[];
 };
 

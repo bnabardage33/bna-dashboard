@@ -62,13 +62,13 @@ export default function FinanceDashboard() {
                 type="month"
                 value={selectedMois}
                 onChange={(e) => setSelectedMois(e.target.value)}
-                className="rounded-md border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-sm font-medium text-gray-200 outline-none focus:border-white/10"
+                className="rounded-md border border-slate-600 bg-[#1E1E1E] px-3 py-1.5 text-sm font-medium text-gray-200 outline-none focus:border-white/10"
                 aria-label="Mois"
               />
               <button
                 onClick={() => setPrintingRapport(true)}
                 disabled={printingRapport}
-                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] disabled:opacity-50"
               >
                 <FileText className="h-4 w-4" />
                 Rapport mensuel
@@ -76,7 +76,7 @@ export default function FinanceDashboard() {
               <button
                 onClick={handleExportCsv}
                 disabled={exportingCsv}
-                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] disabled:opacity-50"
+                className="flex items-center gap-2 rounded border border-slate-600 px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] disabled:opacity-50"
                 title="Export Tableur pour le Comptable"
               >
                 <Download className="h-4 w-4" />
@@ -88,7 +88,7 @@ export default function FinanceDashboard() {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/finance/historique"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1A1D24]"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1E1E1E]"
               title="Historique & Corrections"
             >
               <History className="h-4 w-4" />
@@ -96,14 +96,14 @@ export default function FinanceDashboard() {
             </Link>
             <Link
               href="/finance/saisie/frais-interim"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1A1D24]"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1E1E1E]"
             >
               <Clock className="h-4 w-4" />
               Frais Intérim
             </Link>
             <Link
               href="/finance/saisie/feuille-heures"
-              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1A1D24]"
+              className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-[#1E1E1E]"
             >
               <Users className="h-4 w-4" />
               Feuille d'heures

@@ -362,11 +362,11 @@ export default function FacturesPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des factures…
         </div>
       ) : factures.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
           <p className="text-sm font-medium text-gray-400">Aucune facture pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
@@ -385,7 +385,7 @@ export default function FacturesPage() {
             return (
               <div
                 key={f.id}
-                className={`flex flex-col justify-between rounded-2xl border bg-[#1A1D24] p-4.5 shadow-md transition-all ${f.statut === "envoyee" && f.echeance && new Date(f.echeance) < new Date() ? "border-rose-500/60 hover:border-rose-400 bg-rose-950/10" : "border-white/10 hover:border-red-600/60 hover:bg-[#1A1D24]"}`}
+                className={`flex flex-col justify-between rounded-2xl border bg-[#1E1E1E] p-4.5 shadow-md transition-all ${f.statut === "envoyee" && f.echeance && new Date(f.echeance) < new Date() ? "border-rose-500/60 hover:border-rose-400 bg-rose-950/10" : "border-white/10 hover:border-red-600/60 hover:bg-[#1E1E1E]"}`}
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -437,7 +437,7 @@ export default function FacturesPage() {
                 <div className="mt-3.5 flex items-center justify-between border-t border-white/10 pt-3">
                   <button
                     onClick={() => setApercu(f)}
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] flex items-center gap-1"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] flex items-center gap-1"
                   >
                     👁️ Aperçu Facture
                   </button>
@@ -473,11 +473,11 @@ export default function FacturesPage() {
           <form
             onSubmit={creerFacture}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouvelle Facture</h2>
-              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
+              <button type="button" onClick={() => setModalOuvert(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>
@@ -649,7 +649,7 @@ export default function FacturesPage() {
                   <button
                     type="button"
                     onClick={ajouterLigne}
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-200 hover:bg-[#1A1D24]"
+                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-200 hover:bg-[#1E1E1E]"
                   >
                     + Ajouter une ligne vierge
                   </button>
@@ -679,11 +679,11 @@ export default function FacturesPage() {
               </p>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Annuler
               </button>
@@ -719,7 +719,7 @@ export default function FacturesPage() {
               </button>
               <button
                 onClick={() => { setApercu(null); setModeSignature(false); setSignatureData(null); }}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Fermer
               </button>
@@ -753,7 +753,7 @@ export default function FacturesPage() {
             />
 
             {modeSignature && (
-              <div className="mt-4 bg-[#1A1D24] border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
+              <div className="mt-4 bg-[#1E1E1E] border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
                 <h3 className="text-sm font-bold text-gray-200">✍️ Signature de la facture (Acquittée)</h3>
                 <SignaturePad
                   label="Signature"
@@ -781,7 +781,7 @@ export default function FacturesPage() {
                   </button>
                   <button
                     onClick={() => setModeSignature(false)}
-                    className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] transition-all"
+                    className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] transition-all"
                   >
                     Annuler
                   </button>

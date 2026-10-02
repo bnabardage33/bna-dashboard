@@ -108,12 +108,12 @@ export default function ChantierHealthCard({
   }
 
   return (
-    <div className={`bg-[#1A1D24] border ${borderColor} rounded-xl p-5 transition-all ${glowColor}`}>
+    <div className={`bg-[#1E1E1E] border ${borderColor} rounded-xl p-5 transition-all ${glowColor}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <h3 className="font-bold text-white text-lg truncate pr-4" title={chantierName}>
           {chantierName}
         </h3>
-        <div className="flex items-center gap-2 shrink-0 bg-[#0B0F19] px-3 py-1.5 rounded-full border border-white/5">
+        <div className="flex items-center gap-2 shrink-0 bg-[#121212] px-3 py-1.5 rounded-full border border-white/5">
           <Icon className={`h-4 w-4 ${iconColor}`} />
           <span className={`text-xs font-bold uppercase tracking-wider ${iconColor}`}>
             {analysis.statusLabel}

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { act, createElement } from "react";
@@ -295,6 +296,240 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
     // Refus motivé, et surtout aucune requête de suppression émise.
     expect(alertMock).toHaveBeenCalledWith("Action impossible : déplacement déjà lié au devis.");
     expect(confirmMock).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Adresse de départ reprise des Paramètres.
+ *
+ * La page `app/terrain/chantier/[id]/page.tsx` lit la ligne `id = 1` de
+ * `entreprise_settings` et transmet le résultat via `adresseDepartDefaut`. Ce
+ * bloc verrouille le comportement du FORMULAIRE ; la mise en forme de la ligne
+ * est couverte par `__tests__/metier/deplacement-adresse.test.ts`, et le fait
+ * que la page lit bien cette table est vérifié en fin de fichier.
+ */
+describe("Adresse de départ reprise des Paramètres", () => {
+  const ADRESSE = "12 rue de la Paix, 75002 Paris";
+
+  function champDepart(): HTMLInputElement {
+    const el = Array.from(conteneur.querySelectorAll("input"))
+      .find(i => i.placeholder.includes("12 rue de la Paix"));
+    expect(el, "champ de départ introuvable").toBeTruthy();
+    return el as HTMLInputElement;
+  }
+
+  function champArrivee(): HTMLInputElement {
+    const el = Array.from(conteneur.querySelectorAll("input"))
+      .find(i => i.placeholder.includes("Adresse du chantier"));
+    expect(el, "champ d'arrivée introuvable").toBeTruthy();
+    return el as HTMLInputElement;
+  }
+
+  it("1 — une adresse enregistrée préremplit le champ de départ", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(champDepart().value).toBe(ADRESSE);
+  });
+
+  it("1b — l'adresse qui n'arrive qu'APRÈS le montage préremplit quand même", async () => {
+    // Le cas réel : la page ne lit `entreprise_settings` qu'après avoir rendu
+    // le composant. Un `useState(adresseDepartDefaut || "")` ne verrait jamais
+    // la valeur et laisserait le champ vide — la correction serait invisible.
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: null });
+    expect(champDepart().value).toBe("");
+
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(champDepart().value).toBe(ADRESSE);
+  });
+
+  it("2 — sans adresse enregistrée, le champ reste vide ET garde son placeholder", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: null });
+    expect(champDepart().value).toBe("");
+    expect(champDepart().placeholder).toBe("Ex: 12 rue de la Paix, Paris");
+  });
+
+  it("2b — une adresse vide ne préremplit rien non plus", async () => {
+    // Ce que renvoie `composerAdresseDepart(...) || null` quand les Paramètres
+    // n'enregistrent aucune adresse.
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: "" });
+    expect(champDepart().value).toBe("");
+    expect(champDepart().placeholder).toBe("Ex: 12 rue de la Paix, Paris");
+  });
+
+  it("3 — le champ reste modifiable après le préremplissage", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    await saisir("12 rue de la Paix", "Entrepôt annexe, 33000 Bordeaux");
+    expect(champDepart().value).toBe("Entrepôt annexe, 33000 Bordeaux");
+  });
+
+  it("3b — une saisie faite AVANT l'arrivée de l'adresse n'est pas écrasée", async () => {
+    // La course : l'utilisateur tape pendant que la lecture est en vol. Sans
+    // le garde `departSaisi`, l'adresse des Paramètres écraserait sa saisie
+    // quelques centaines de millisecondes plus tard.
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: null });
+    await saisir("12 rue de la Paix", "Saisie avant chargement");
+
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(champDepart().value).toBe("Saisie avant chargement");
+  });
+
+  it("4 — l'adresse d'arrivée reste celle du chantier", async () => {
+    // Exigence explicite : le préremplissage ne touche que le DÉPART.
+    await renderComponent({
+      chantierId: "c-123",
+      adresseChantier: "8 lotissement Bellevue, 33920",
+      adresseDepartDefaut: ADRESSE,
+    });
+    expect(champArrivee().value).toBe("8 lotissement Bellevue, 33920");
+    // Et les deux champs ne se contaminent pas.
+    expect(champDepart().value).toBe(ADRESSE);
+  });
+
+  it("5 — le composant n'émet aucune requête pour obtenir l'adresse", async () => {
+    // L'adresse arrive par prop : le composant ne lit pas Supabase. Cette
+    // assertion est aussi le fil qui garde les comptes d'appels des tests
+    // existants — si quelqu'un déplaçait la lecture ici, elle échouerait au
+    // lieu de gonfler silencieusement les compteurs voisins.
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith("/api/deplacements?chantier_id=c-123");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Câblage de la source.
+ *
+ * Les tests comportementaux ci-dessus parties d'une PROPRE et vérifient le
+ * formulaire. Ceux-ci vérifient que la prop est bien alimentée par les
+ * Paramètres — sinon le préremplissage serait du code mort parfaitement vert.
+ */
+describe("Adresse de départ — source unique et câblage", () => {
+  const PAGE = readFileSync("app/terrain/chantier/[id]/page.tsx", "utf8");
+  const COMPOSANT = readFileSync("components/FraisDeplacementTab.tsx", "utf8");
+  const PARAMETRES = readFileSync("app/parametres/page.tsx", "utf8");
+
+  it("la fiche chantier lit la ligne id = 1 de entreprise_settings", () => {
+    expect(PAGE).toMatch(/from\("entreprise_settings"\)/);
+    expect(PAGE).toMatch(/\.eq\("id", 1\)/);
+  });
+
+  it("elle ne sélectionne que les trois colonnes d'adresse", () => {
+    // Aucune colonne nouvelle n'est requise : les trois existent déjà, le
+    // préremplissage ne demande qu'à les lire.
+    expect(PAGE).toMatch(/select\("adresse, code_postal, ville"\)/);
+  });
+
+  it("la valeur transmise provient bien du composeur, pas d'une autre source", () => {
+    expect(PAGE).toMatch(/setAdresseDepartDefaut\(composerAdresseDepart\(data\) \|\| null\)/);
+    expect(PAGE).toMatch(/adresseDepartDefaut=\{adresseDepartDefaut\}/);
+  });
+
+  it("c'est exactement la table que les Paramètres lisent ET écrivent", () => {
+    // Source UNIQUE : si les Paramètres changeaient de table ou de clé, le
+    // préremplissage suivrait la même ligne par construction.
+    expect(PARAMETRES).toMatch(/from\("entreprise_settings"\)/);
+    expect(PARAMETRES).toMatch(/\.eq\("id", 1\)/);
+    expect(PARAMETRES).toMatch(/\.update\(payload\)\.eq\("id", 1\)/);
+  });
+
+  it("la lecture n'écrit rien : aucune duplication dans le chantier", () => {
+    const debut = PAGE.indexOf('from("entreprise_settings")');
+    expect(debut).toBeGreaterThan(-1);
+    // Une fois la lecture engagée, aucune écriture ne doit suivre dans le bloc.
+    expect(PAGE.slice(debut, debut + 400)).not.toMatch(/\.update\(|\.insert\(/);
+  });
+
+  it("le composant ne lit pas Supabase : l'accès reste dans la page", () => {
+    // invariant d'architecture. Il protège aussi les comptes d'appels réseau des
+    // tests ci-dessus, qui comptent chaque requête au `fetch` global.
+    expect(COMPOSANT).not.toMatch(/@\/lib\/supabase/);
+  });
+
+  it("le composant ne touche pas à l'adresse d'arrivée", () => {
+    // Elle reste initialisée depuis le chantier, et rien n'y écrit d'autre.
+    expect(COMPOSANT).toMatch(/useState\(adresseChantier \|\| ""\)/);
+  });
+});
+
+
+/**
+ * Indication d'origine sous le champ de départ.
+ *
+ * Elle ne doit afficher que ce qui est VRAI : l'adresse est-elle encore celle
+ * des Paramètres ? Dès que l'utilisateur la remplace, l'affirmation devient
+ * fausse et le texte a disparu de l'écran. Ces tests verrouillent les deux
+ * moitiés — apparaître et disparaître — parce qu'une indication qui reste
+ * après une saisie manuelle est pire que pas d'indication du tout : elle
+ * affirme une origine qui n'est plus celle du lieu.
+ */
+describe("Adresse de départ — indication d'origine", () => {
+  const ADRESSE = "12 rue de la Paix, 75002 Paris";
+  const TEXTE = "Adresse de départ récupérée depuis vos paramètres";
+
+  function indication(): HTMLElement | null {
+    return Array.from(conteneur.querySelectorAll("p"))
+      .find(p => p.textContent?.trim() === TEXTE) ?? null;
+  }
+
+  it("6 — l'indication s'affiche quand l'adresse vient des Paramètres", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(indication()).toBeTruthy();
+  });
+
+  it("6b — elle s'affiche aussi quand l'adresse n'arrive qu'après le montage", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: null });
+    expect(indication()).toBeNull();
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(indication()).toBeTruthy();
+  });
+
+  it("7 — aucune adresse dans les Paramètres → aucune indication", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: null });
+    expect(indication()).toBeNull();
+  });
+
+  it("8 — l'indication disparaît dès que l'utilisateur remplace l'adresse", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(indication()).toBeTruthy();
+    await saisir("12 rue de la Paix", "Entrepôt annexe, 33000 Bordeaux");
+    expect(indication()).toBeNull();
+  });
+
+  it("8b — une saisie faite AVANT l'arrivée de l'adresse n'affiche aucune indication", async () => {
+    // L'indication ne doit pas dependre du seul chargement : c'est la VALEUR
+    // affichee qui commande, sinon elle mentirait sur une saisie manuelle.
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: null });
+    await saisir("12 rue de la Paix", "Saisie avant chargement");
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    expect(indication()).toBeNull();
+  });
+
+  it("9 — le libellé est discret et sans rouge", async () => {
+    await renderComponent({ chantierId: "c-123", adresseChantier: "Paris", adresseDepartDefaut: ADRESSE });
+    const el = indication();
+    expect(el, "indication introuvable").toBeTruthy();
+    expect(el!.textContent?.trim()).toBe(TEXTE);
+    const cls = el!.className;
+    expect(cls).toContain("text-xs");
+    expect(cls).toContain("text-gray-500");
+    // Cohérence palette : la couleur de marque n'a rien à faire sur une
+    // indication d'origine, qui n'est pas une action ni une alerte.
+    expect(cls).not.toMatch(/red|e53935|e30613/i);
+  });
+
+  it("10 — l'indication est purement cosmétique", async () => {
+    await renderComponent({
+      chantierId: "c-123",
+      adresseChantier: "8 lotissement Bellevue, 33920",
+      adresseDepartDefaut: ADRESSE,
+    });
+    const champ = Array.from(conteneur.querySelectorAll("input"))
+      .find(i => i.placeholder.includes("12 rue de la Paix")) as HTMLInputElement;
+    expect(champ.value).toBe(ADRESSE);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });

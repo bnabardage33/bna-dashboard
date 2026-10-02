@@ -7,12 +7,15 @@ import { cn } from '@/lib/cn'
  * ── Pourquoi ce composant existe (LOT 2D) ──────────────────────────────────
  *
  * Mesure sur le périmètre hors vues d'impression et hors `espace-client` : sur
- * 159 éléments au fond de base `#1A1D24`, 95 portaient le même habillage de
+ * 159 éléments au fond de base `#1E1E1E`, 95 portaient le même habillage de
  * carte — un arrondi, une bordure translucide, et ce fond. C'est le seul groupe
  * réellement homogène qu'il fallait extraire : 91 de ces 95 sont des conteneurs
  * neutres, et 27 fichiers les portent. `Surface` définit l'habillage une fois ;
  * le fond passe par le token `--color-surface` du LOT 2A, dont la valeur est
- * identique au littéral.
+ * identique au littéral. (La charte graphique a ensuite fait passer ce fond de
+ * `#1A1D24` à `#1E1E1E` : la VALEUR a changé, mais l'équivalence entre le token
+ * et le littéral n'a pas bougé d'un iota — c'est elle que ce lot avait
+ * extraite, et c'est elle que son test continue de vérifier.)
  *
  * Vérifié sur ces 91 sites avant extraction :
  *  - 90 sont des `<div>`, 1 un `<section>` purement présentiel → d'où la prop
@@ -25,7 +28,7 @@ import { cn } from '@/lib/cn'
  *  - les classes voisines ne sont pas concurrentes mais complémentaires :
  *    `border-dashed` fixe le *style* de bordure, `border-white/10` sa *couleur* ;
  *    `rounded-bl-sm` ne redéfinit que l'angle inférieur gauche ; un
- *    `hover:bg-[#1A1D24]` est un état, pas une valeur de base. Elles se
+ *    `hover:bg-[#1E1E1E]` est un état, pas une valeur de base. Elles se
  *    composent, quel que soit l'ordre.
  *
  * ── Ce qui a été laissé de côté, et pourquoi ───────────────────────────────
@@ -40,7 +43,7 @@ import { cn } from '@/lib/cn'
  *   faux positif du filtre : la vue imprimable est
  *   `components/rapports/RapportClientPrint.tsx`. Les 13 cartes de l'onglet
  *   font donc partie des 91.
- * - les 64 autres éléments au fond `#1A1D24` : surimpressions d'états vides
+ * - les 64 autres éléments au fond `#1E1E1E` : surimpressions d'états vides
  *    (`/50`, `/80`), champs (`border-slate-600`), en-têtes de tableau, pastilles
  *    et pastilles d'avatar. Les encoder demanderait autant d'axes que de
  *    variantes, c'est-à-dire réécrire `class-variance-authority` sans la
@@ -59,12 +62,12 @@ import { cn } from '@/lib/cn'
  * contenter d'émettre `rounded-xl rounded-2xl` et laisser Tailwind trancher sur
  * l'ordre du CSS, mais faire confiance à cet ordre pour un rayon est fragile.
  *
- * `bg-surface` est le token du LOT 2A (`--color-surface: #1A1D24`, valeur
+ * `bg-surface` est le token du LOT 2A (`--color-surface: #1E1E1E`, valeur
  * identique au littéral). Ce choix déplace la position de l'utilitaire dans le
- * CSS — `bg-surface` sort après les couleurs de palette, `bg-[#1A1D24]` avant —
+ * CSS — `bg-surface` sort après les couleurs de palette, `bg-[#1E1E1E]` avant —
  * ce qui ne changerait le rendu que sur un élément portant DEUX classes de fond
  * de base. Vérifié : aucun des 91 sites n'est dans ce cas. En revanche 4 d'entre
- * eux conservent un `hover:bg-[#1A1D24]` : c'est un état, résolu par la règle
+ * eux conservent un `hover:bg-[#1E1E1E]` : c'est un état, résolu par la règle
  * `&:hover`, donc sans rapport avec cet ordre.
  */
 

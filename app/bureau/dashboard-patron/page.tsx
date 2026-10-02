@@ -177,7 +177,7 @@ export default function DashboardPatronPage() {
               value={inputTreso}
               onChange={(e) => setInputTreso(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && enregistrerTreso()}
-              className="mt-1 rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white w-40"
+              className="mt-1 rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white w-40"
               aria-label="Trésorerie actuelle"
             />
           </div>
@@ -273,7 +273,7 @@ export default function DashboardPatronPage() {
           </h2>
           <div className="space-y-2">
             {data.top_chantiers_rentables.map((c, i) => (
-              <div key={c.id} className="rounded-lg border border-white/10 bg-[#0B0F19]/50 p-3">
+              <div key={c.id} className="rounded-lg border border-white/10 bg-[#121212]/50 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-white truncate">{i + 1}. {c.nom}</span>
                   <span className="text-xs font-bold text-emerald-400">{fmtEuro(c.marge)}</span>
@@ -296,7 +296,7 @@ export default function DashboardPatronPage() {
           </h2>
           <div className="space-y-2">
             {data.top_chantiers_pertes.map((c, i) => (
-              <div key={c.id} className="rounded-lg border border-rose-500/20 bg-[#0B0F19]/50 p-3">
+              <div key={c.id} className="rounded-lg border border-rose-500/20 bg-[#121212]/50 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-white truncate">{i + 1}. {c.nom}</span>
                   <span className="text-xs font-bold text-rose-400">-{fmtEuro(Math.abs(c.marge))}</span>

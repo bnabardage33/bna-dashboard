@@ -25,6 +25,7 @@ import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteView } from "@/components/TempsHeuresViews";
 import { Surface } from '@/components/ui/Surface';
 import FraisDeplacementTab from "@/components/FraisDeplacementTab";
+import { composerAdresseDepart } from "@/lib/deplacement/adresse";
 
 type Chantier = {
   id: string;
@@ -120,6 +121,11 @@ function ChantierDetailContent() {
   // Liste distincte de devisLies : celle-ci est celle du CLIENT et alimente le
   // total dévisé de l'onglet Documents, qui ne doit pas être re-filtré ici.
   const [devisLikables, setDevisLikables] = useState<DevisLie[]>([]);
+  // Adresse de départ par défaut du calcul de trajet, lue dans les Paramètres
+  // (`entreprise_settings`, ligne `id = 1`). `null` tant que la lecture n'a pas
+  // abouti, ET quand les Paramètres n'enregistrent aucune adresse : dans les
+  // deux cas l'onglet Déplacements laisse le champ de départ vide.
+  const [adresseDepartDefaut, setAdresseDepartDefaut] = useState<string | null>(null);
   const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
   const [facturesLiees, setFacturesLiees] = useState<FactureLiee[]>([]);
   const [commandesLiees, setCommandesLiees] = useState<CommandeLiee[]>([]);
@@ -274,6 +280,39 @@ function ChantierDetailContent() {
     setLoading(true);
     Promise.all([fetchChantier(), fetchZones()]).finally(() => setLoading(false));
   }, [fetchChantier, fetchZones]);
+
+  // Adresse de départ par défaut de l'onglet Déplacements, prise dans les
+  // Paramètres pour éviter de la ressaisir à chaque chantier.
+  //
+  // SOURCE UNIQUE : la ligne `id = 1` de `entreprise_settings`, exactement celle
+  // que lit et écrit `app/parametres/page.tsx`. Aucune colonne n'est ajoutée,
+  // et l'adresse n'est PAS copiée dans le chantier : le champ reste un champ
+  // de formulaire, dont la valeur n'est enregistrée que dans
+  // `frais_deplacement.adresse_depart` au moment où l'utilisateur valide un
+  // trajet, comme avant.
+  //
+  // Ce `useEffect` est VOLONTAIREMENT à côté du chargement du chantier et non
+  // dans son `Promise.all` : l'adresse par défaut ne conditionne ni
+  // `setLoading` ni l'affichage du chantier. Un Paramètres lent ou injoignable
+  // ne doit surtout pas retarder l'ouverture de la fiche.
+  useEffect(() => {
+    let annule = false;
+    supabase
+      .from("entreprise_settings")
+      .select("adresse, code_postal, ville")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (annule) return;
+        // Pas de ligne, ou adresse vide : on laisse `null`, et l'onglet
+        // Déplacements affichera un champ de départ VIDE avec son
+        // placeholder d'origine.
+        setAdresseDepartDefaut(composerAdresseDepart(data) || null);
+      });
+    return () => {
+      annule = true;
+    };
+  }, []);
 
   // Initialise le brouillon de la config technique depuis les valeurs persistées
   useEffect(() => {
@@ -613,8 +652,16 @@ function ChantierDetailContent() {
   if (loading) return <p className="text-sm text-gray-400">Chargement…</p>;
   if (!chantier) return <p className="text-sm text-red-400">Chantier introuvable.</p>;
 
+  // Plus de `pt-44` ici (retiré le 02/10) — même cause et même raison que
+  // `app/terrain/chantier/page.tsx` : le header BNA est `relative` et en
+  // flux, il ne masque rien, donc ce `padding-top` de 176 px ne décalait
+  // que du vide. Le contenu (« ← Chantiers », titre, onglets Général /
+  // Avancement, Rapport Client) remonte directement sous le header, avec le
+  // seul espacement du layout. Commentaire en `//` et non en `{/* */}` car un
+  // commentaire JSX place AVANT l'element racine serait un second enfant sans
+  // parent (TS1005).
   return (
-    <div className="space-y-4 pt-44">
+    <div className="space-y-4">
       <Link href="/terrain/chantier" className="text-sm text-gray-400 hover:text-white">
         ← Chantiers
       </Link>
@@ -653,7 +700,7 @@ function ChantierDetailContent() {
             className={`whitespace-nowrap transition-all ${
               tab === t
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             {t}
@@ -665,7 +712,7 @@ function ChantierDetailContent() {
         <div className="space-y-4">
 
           {/* Bloc Sécurité IA */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-[#1A1D24] to-[#0B0F19] p-4 shadow-lg">
+          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-[#1E1E1E] to-[#121212] p-4 shadow-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-gray-400" />
@@ -1294,7 +1341,7 @@ function ChantierDetailContent() {
                                       ? "bg-red-600/20 text-gray-400"
                                       : d.statut === "refuse"
                                       ? "bg-red-900/200/20 text-red-400"
-                                      : "bg-[#1A1D24] text-gray-300"
+                                      : "bg-[#1E1E1E] text-gray-300"
                                   }`}
                                 >
                                   {d.statut}
@@ -1355,7 +1402,7 @@ function ChantierDetailContent() {
                             <tr key={f.id}>
                               <td className="p-3 font-semibold text-white">{f.numero}</td>
                               <td className="p-3">
-                                <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-2xs uppercase text-gray-300">
+                                <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 text-2xs uppercase text-gray-300">
                                   {f.type_facture || "totale"}
                                 </span>
                               </td>
@@ -1373,7 +1420,7 @@ function ChantierDetailContent() {
                                       ? "bg-red-600/20 text-gray-400"
                                       : f.statut === "envoyee"
                                       ? "bg-red-600/20 text-gray-400"
-                                      : "bg-[#1A1D24] text-gray-300"
+                                      : "bg-[#1E1E1E] text-gray-300"
                                   }`}
                                 >
                                   {f.statut}
@@ -1456,7 +1503,7 @@ function ChantierDetailContent() {
                               <td className="p-3 text-right">
                                 <Link
                                   href={`/bureau/fin-chantier`}
-                                  className="rounded bg-[#1A1D24] px-2.5 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
+                                  className="rounded bg-[#1E1E1E] px-2.5 py-1 text-xs text-gray-200 hover:bg-[#1E1E1E]"
                                 >
                                   Gérer / PDF →
                                 </Link>
@@ -1530,7 +1577,7 @@ function ChantierDetailContent() {
                                     ? "bg-red-600/20 text-gray-400"
                                     : c.statut === "commandee"
                                     ? "bg-red-600/20 text-gray-300"
-                                    : "bg-[#1A1D24] text-gray-300"
+                                    : "bg-[#1E1E1E] text-gray-300"
                                 }`}
                               >
                                 {c.statut}
@@ -1548,7 +1595,7 @@ function ChantierDetailContent() {
         </div>
       )}
 
-      {tab === "Déplacements" && <FraisDeplacementTab chantierId={id} adresseChantier={chantier.adresse_chantier} devisLikables={devisLikables} />}
+      {tab === "Déplacements" && <FraisDeplacementTab chantierId={id} adresseChantier={chantier.adresse_chantier} adresseDepartDefaut={adresseDepartDefaut} devisLikables={devisLikables} />}
 
       {/* MODAL DE CHIFFRAGE / COMMANDE */}
       <CommandeModal

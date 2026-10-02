@@ -496,13 +496,27 @@ export async function traiterConsolidation(
   // O3-B5 : le destinataire est résolu DANS le tenant du chantier, et non plus
   // comme « premier profil créé toutes entreprises confondues ».
   const patronId = await destinatairePatron(entrepriseId);
+  // PHASE 2 — lien de notification.
+  //
+  // Ce chemin pointait vers `/bureau/chantiers?id=<id>`, route qui N'EXISTE
+  // PAS : elle est absente du manifeste de build (`.next/server/
+  // app-paths-manifest.json`), et `app/bureau/chantiers/` n'a jamais existé.
+  // La notification « Client mécontent » et « Réponse client en attente » menait
+  // donc au 404 de `app/not-found.tsx`, ce qui est le pire endroit pour
+  // annoncer un client mécontent.
+  //
+  // La cible réelle est la fiche chantier, dont le segment dynamique est
+  // `/terrain/chantier/[id]`. L'URL est conservée telle quelle en phase 2 (les
+  // routes ne sont pas déplacées) : on ne corrige que le chemin, ce qui répare
+  // les notifications à venir sans migration des lignes déjà écrites.
+  const lienChantier = chantierId ? `/terrain/chantier/${chantierId}` : null;
   if (resumeGlobalFinal.sentiment_global === 'negatif') {
     const { error: erreurNotif } = await supabaseAdmin.from('notifications').insert({
       type: 'client_alert',
       titre: '🔴 Client mécontent (Espace Web)',
       message:
         `Client : ${clientNom}\n${resumeGlobalFinal.texte}`,
-      lien: chantierId ? `/bureau/chantiers?id=${chantierId}` : null,
+      lien: lienChantier,
       destinataire_id: patronId,
       entreprise_id: entrepriseId,
     } as TablesInsert<"notifications">);
@@ -517,7 +531,7 @@ export async function traiterConsolidation(
       message:
         `Client : ${clientNom}\n` +
         resumeGlobalFinal.demandes_en_attente.map((d) => `- ${d}`).join('\n'),
-      lien: chantierId ? `/bureau/chantiers?id=${chantierId}` : null,
+      lien: lienChantier,
       destinataire_id: patronId,
       entreprise_id: entrepriseId,
     } as TablesInsert<"notifications">);

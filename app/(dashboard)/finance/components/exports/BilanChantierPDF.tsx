@@ -23,7 +23,7 @@ export default function BilanChantierPDF({
   const dateStr = new Date().toLocaleDateString("fr-FR");
 
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-4xl bg-[#1A1D24] p-8 text-white text-sm leading-relaxed font-sans">
+    <div id="document-pdf-content" className="mx-auto max-w-4xl bg-[#1E1E1E] p-8 text-white text-sm leading-relaxed font-sans">
       {/* En-tête */}
       <div className="flex justify-between items-start mb-8 border-b-2 border-slate-900 pb-4">
         <div>

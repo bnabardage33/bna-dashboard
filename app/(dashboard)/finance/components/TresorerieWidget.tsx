@@ -20,7 +20,7 @@ export default function TresorerieWidget() {
   const isLoading = tresoLoading || paramLoading;
 
   if (isLoading) {
-    return <div className="animate-pulse h-64 rounded-xl border border-white/10 bg-[#1A1D24]/50"></div>;
+    return <div className="animate-pulse h-64 rounded-xl border border-white/10 bg-[#1E1E1E]/50"></div>;
   }
 
   const handleSave = async () => {
@@ -52,7 +52,7 @@ export default function TresorerieWidget() {
   const enDecouvert = soldePrevisionnel < 0;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 flex flex-col h-full">
+    <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 flex flex-col h-full">
       <div className="flex items-center gap-3 border-b border-white/10 p-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-gray-400">
           <Landmark className="h-5 w-5" />
@@ -100,7 +100,7 @@ export default function TresorerieWidget() {
                   title="Saisir le solde"
                 >
                   {soldeBancaire === null ? (
-                    <span className="text-xs rounded-md bg-[#1A1D24] px-2 py-1 text-gray-300 hover:bg-[#1A1D24]">Saisir</span>
+                    <span className="text-xs rounded-md bg-[#1E1E1E] px-2 py-1 text-gray-300 hover:bg-[#1E1E1E]">Saisir</span>
                   ) : (
                     <PenLine className="h-4 w-4" />
                   )}

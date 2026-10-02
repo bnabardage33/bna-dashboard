@@ -217,13 +217,13 @@ export default function CommandeModal({
 
   return (
     <div className="fixed inset-0 z-[210] flex items-start justify-center overflow-y-auto bg-black/80 p-4 py-8 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-[#0B0F19] p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+      <div className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
           <div>
             <h2 className="text-xl font-bold text-white">Chiffrage / Commande</h2>
             <p className="text-sm text-gray-400">{chantierNom} — {zoneNom}</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-[#1A1D24] hover:text-white transition-colors" aria-label="Fermer">
+          <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-[#1E1E1E] hover:text-white transition-colors" aria-label="Fermer">
             <X size={20} />
           </button>
         </div>
@@ -284,7 +284,7 @@ export default function CommandeModal({
           ) : (
             <div className="w-full overflow-x-auto pb-4">
               <table className="w-full text-left text-sm text-gray-300 min-w-[700px]">
-                <thead className="bg-[#1A1D24]/50 text-gray-400 sticky top-0 z-10">
+                <thead className="bg-[#1E1E1E]/50 text-gray-400 sticky top-0 z-10">
                   <tr>
                     <th className="p-3 font-medium rounded-tl-lg whitespace-nowrap">Besoin (Calepinage)</th>
                     <th className="p-3 font-medium w-32 whitespace-nowrap">Quantité</th>
@@ -315,7 +315,7 @@ export default function CommandeModal({
                     }).slice(0, 15);
 
                     return (
-                      <tr key={index} className="hover:bg-[#1A1D24]/30 transition-colors">
+                      <tr key={index} className="hover:bg-[#1E1E1E]/30 transition-colors">
                         <td className="p-3 font-medium text-white">{ligne.designation}</td>
                         <td className="p-3 text-gray-300 font-bold">{ligne.quantite} {ligne.unite}</td>
                         <td className="p-3">
@@ -346,7 +346,7 @@ export default function CommandeModal({
                                             setDropdownOpen({ ...dropdownOpen, [index]: true });
                                           }}
                                           className={`px-3 py-1 rounded-full text-2xs font-bold uppercase whitespace-nowrap transition-colors ${
-                                            isActive ? "bg-red-700 text-white" : "bg-[#1A1D24] text-gray-400 hover:bg-slate-700 border border-white/10"
+                                            isActive ? "bg-red-700 text-white" : "bg-[#1E1E1E] text-gray-400 hover:bg-slate-700 border border-white/10"
                                           }`}
                                         >
                                           {cat}
@@ -362,11 +362,11 @@ export default function CommandeModal({
                                       value={term}
                                       onChange={e => setSearchTerms({...searchTerms, [index]: e.target.value})}
                                       onFocus={() => setDropdownOpen({...dropdownOpen, [index]: true})}
-                                      className="w-full rounded-lg border border-white/10 bg-[#0B0F19] pl-9 pr-3 py-2 text-sm text-white focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none"
+                                      className="w-full rounded-lg border border-white/10 bg-[#121212] pl-9 pr-3 py-2 text-sm text-white focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none"
                                     />
                                   </div>
                                   {dropdownOpen[index] && (
-                                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-[#1A1D24] shadow-xl">
+                                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-[#1E1E1E] shadow-xl">
                                       {filteredCatalog.map(a => (
                                         <button
                                           key={a.id}
@@ -392,7 +392,7 @@ export default function CommandeModal({
                             <select 
                               value={ligne.fournisseurSelectionneId || ""}
                               onChange={(e) => handleSelectFournisseur(index, e.target.value)}
-                              className="w-full rounded-lg border border-white/10 bg-[#1A1D24] px-3 py-1.5 text-xs text-gray-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none appearance-none"
+                              className="w-full rounded-lg border border-white/10 bg-[#1E1E1E] px-3 py-1.5 text-xs text-gray-300 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none appearance-none"
                               aria-label="Fournisseur"
                             >
                               <option value="">-- Choisir un fournisseur --</option>
@@ -429,7 +429,7 @@ export default function CommandeModal({
                 type="date"
                 value={dateLivraisonPrevue}
                 onChange={(e) => setDateLivraisonPrevue(e.target.value)}
-                className="rounded-lg border border-white/10 bg-[#1A1D24] px-2 py-1.5 text-xs text-gray-300"
+                className="rounded-lg border border-white/10 bg-[#1E1E1E] px-2 py-1.5 text-xs text-gray-300"
               />
             </div>
             <div className="flex items-center gap-4 sm:border-r border-white/10 sm:pr-6 w-full sm:w-auto justify-between sm:justify-start">

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDeplacements } from "@/hooks/useDeplacements";
 import { MapPin, Calculator, Trash2, Car, Link as LinkIcon, CheckCircle } from "lucide-react";
 import { Surface } from "@/components/ui/Surface";
@@ -8,10 +8,15 @@ import { fmtEuro } from "@/lib/financeCalculs";
 export default function FraisDeplacementTab({
   chantierId,
   adresseChantier,
+  adresseDepartDefaut = null,
   devisLikables = []
 }: {
   chantierId: string;
   adresseChantier: string | null;
+  // Adresse de départ proposée, lue par la PAGE dans les Paramètres
+  // (`entreprise_settings`) : ce composant ne lit aucune donnée par lui-même.
+  // `null`/absente = aucune adresse enregistrée, et le champ reste vide.
+  adresseDepartDefaut?: string | null;
   // Devis que la RPC lier_deplacement_devis acceptera réellement : ceux dont
   // chantier_id vaut exactement celui du chantier courant. La page les filtre
   // déjà ainsi. Ne pas élargir à « les devis du client » — la RPC rejette
@@ -42,6 +47,25 @@ export default function FraisDeplacementTab({
   const [adresseDepart, setAdresseDepart] = useState("");
   const [adresseArrivee, setAdresseArrivee] = useState(adresseChantier || "");
   const [selectedDevisId, setSelectedDevisId] = useState<Record<string, string>>({});
+
+  // L'utilisateur a-t-il PRIS LA MAIN sur le champ de départ ? Une fois que
+  // c'est vrai, plus rien ne doit écraser sa saisie — pas même l'adresse des
+  // Paramètres qui arrive après coup.
+  const departSaisi = useRef(false);
+
+  // L'adresse des Paramètres est lue de façon ASYNCHRONE par la page : la prop
+  // est donc `null` au premier rendu, puis renseignée. `useState` ne lit sa
+  // valeur initiale qu'une seule fois — sans cet effet, le champ ne se
+  // préremplirait jamais et la correction serait invisible.
+  //
+  // La garde `!departSaisi.current` est ce qui rend le champ réellement
+  // EDITABLE : entre le montage et la fin de la lecture, l'utilisateur peut
+  // deja saisir son adresse pour un trajet exceptionnel, et elle doit survivre.
+  useEffect(() => {
+    if (adresseDepartDefaut && !departSaisi.current) {
+      setAdresseDepart(adresseDepartDefaut);
+    }
+  }, [adresseDepartDefaut]);
 
   const totalHT = historique.reduce((acc, curr) => acc + (curr.montant_ht || 0), 0);
 
@@ -74,7 +98,8 @@ export default function FraisDeplacementTab({
     }
   };
 
-  const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>) => {
+  const handleChangeInput = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string>>, avantSaisie?: () => void) => {
+    avantSaisie?.();
     setter(e.target.value);
     if (evaluation) resetEvaluation();
   };
@@ -94,10 +119,23 @@ export default function FraisDeplacementTab({
             <input
               type="text"
               value={adresseDepart}
-              onChange={(e) => handleChangeInput(e, setAdresseDepart)}
-              className="w-full bg-[#2A2D35] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+              onChange={(e) => handleChangeInput(e, setAdresseDepart, () => { departSaisi.current = true; })}
+              className="w-full bg-[#252525] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
               placeholder="Ex: 12 rue de la Paix, Paris"
             />
+            {/* Indication d'ORIGINE, pas une aide à la saisie : elle ne
+                s'affiche que tant que la valeur affichée est encore
+                exactement celle des Paramètres. Dès que l'utilisateur la
+                remplace, l'affirmation deviendrait fausse et le texte doit
+                disparaître. Comparer à `adresseDepartDefaut` suffit — aucun
+                état supplémentaire, aucune minuterie — et la course (saisie
+                avant la fin de la lecture) est déjà couverte : dans ce cas la
+                saisie de l'utilisateur diffère de la valeur des Paramètres. */}
+            {adresseDepartDefaut && adresseDepart === adresseDepartDefaut && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                Adresse de départ récupérée depuis vos paramètres
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Adresse du chantier (Arrivée)</label>
@@ -105,7 +143,7 @@ export default function FraisDeplacementTab({
               type="text"
               value={adresseArrivee}
               onChange={(e) => handleChangeInput(e, setAdresseArrivee)}
-              className="w-full bg-[#2A2D35] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+              className="w-full bg-[#252525] border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
               placeholder="Adresse du chantier"
             />
           </div>
@@ -193,7 +231,7 @@ export default function FraisDeplacementTab({
           ) : (
             <div className="space-y-3">
               {historique.map((dep) => (
-                <div key={dep.id} className="bg-[#2A2D35] p-4 rounded-lg flex flex-col gap-3">
+                <div key={dep.id} className="bg-[#252525] p-4 rounded-lg flex flex-col gap-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-white text-sm font-medium">{new Date(dep.date).toLocaleDateString("fr-FR")}</div>
@@ -236,7 +274,7 @@ export default function FraisDeplacementTab({
                     ) : (
                       <div className="flex items-center gap-2">
                         <select
-                          className="text-xs bg-[#1A1D24] text-white border border-white/10 rounded px-2 py-1 outline-none focus:border-gray-400"
+                          className="text-xs bg-[#1E1E1E] text-white border border-white/10 rounded px-2 py-1 outline-none focus:border-gray-400"
                           value={selectedDevisId[dep.id] || ""}
                           onChange={(e) => setSelectedDevisId(prev => ({ ...prev, [dep.id]: e.target.value }))}
                         >

@@ -96,6 +96,9 @@ function estMemeMois(dateStr: string | null, ref: Date) {
 export default function FournisseursPage() {
   const [tab, setTab] = useState<"fournisseurs" | "commandes" | "analyse">("fournisseurs");
 
+  // Commande à mettre en évidence, déduite de `?retard=<id>`.
+  const [commandeMiseEnAvant, setCommandeMiseEnAvant] = useState<string | null>(null);
+
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
   const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [commandes, setCommandes] = useState<Commande[]>([]);
@@ -128,6 +131,44 @@ export default function FournisseursPage() {
   const [prefillInfo, setPrefillInfo] = useState<{ chantierNom: string; zoneNom: string } | null>(null);
   const [maintenant, setMaintenant] = useState<Date | null>(null);
   const [filtreCommandes, setFiltreCommandes] = useState<"toutes" | "en_retard">("toutes");
+
+  // ── Deep-lien (PHASE 2) ────────────────────────────────────────────────────
+  //
+  // Deux choses doivent fonctionner ici, et aucune ne fonctionnait avant :
+  //
+  // 1. `?tab=` — le Drawer expose « Suivi des commandes » et « Contacts
+  //    fournisseurs » comme entrées distinctes de la catégorie Fournisseurs.
+  //    Sans lecture de l'URL, les deux ouvraient le même onglet par défaut :
+  //    c'était de la navigation factice, l'un des reproches faits aux anciens
+  //    onglets.
+  // 2. `?retard=<id>` — c'est le chemin écrit dans `notifications.lien` par
+  //    l'alerte « Livraison en retard » (ligne ~220). Ce chemin existe en base
+  //    DEPUIS LA MISE EN SERVICE mais n'était jamais lu : cliquer sur la
+  //    notification atterrissait sur l'onglet Fournisseurs, sans jamais
+  //    montrer la commande en retard. Le paramètre est donc promu ici en
+  //    onglet + mise en avant.
+  //
+  // `useSearchParams()` est volontairement évité : il impose une frontière
+  // `<Suspense>` à la compilation, et une page client n'en a pas besoin pour
+  // lire sa propre URL une fois au montage.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const tabUrl = params.get("tab");
+    if (tabUrl === "fournisseurs" || tabUrl === "commandes" || tabUrl === "analyse") {
+      setTab(tabUrl);
+    }
+
+    const retardId = params.get("retard");
+    if (retardId) {
+      // On force l'onglet Commandes et on laisse le filtre sur « Toutes » :
+      // la notification désigne UNE commande, la masquer derrière un filtre
+      // de retard la ferait disparaître si son statut avait changé depuis
+      // l'émission de l'alerte.
+      setTab("commandes");
+      setCommandeMiseEnAvant(retardId);
+    }
+  }, []);
 
   async function fetchTout() {
     setLoading(true);
@@ -299,16 +340,30 @@ export default function FournisseursPage() {
   }, [fournisseurs, commandes]);
 
   const commandesFiltrees = useMemo(() => {
-    if (filtreCommandes === "toutes") return commandes;
-    const today = new Date().toISOString().slice(0, 10);
-    return commandes.filter(
-      (c) =>
-        c.statut !== "livree" &&
-        c.statut !== "annulee" &&
-        c.date_livraison_prevue &&
-        c.date_livraison_prevue < today
-    );
-  }, [commandes, filtreCommandes]);
+    const base =
+      filtreCommandes === "toutes"
+        ? commandes
+        : (() => {
+            const today = new Date().toISOString().slice(0, 10);
+            return commandes.filter(
+              (c) =>
+                c.statut !== "livree" &&
+                c.statut !== "annulee" &&
+                c.date_livraison_prevue &&
+                c.date_livraison_prevue < today
+            );
+          })();
+
+    // La commande visée par `?retard=` passe en tête SANS être retirée de la
+    // liste : la liste reste l'inventaire complet, la notification est juste
+    // amenée sous les yeux de l'utilisateur.
+    if (!commandeMiseEnAvant) return base;
+    return [...base].sort((a, b) => {
+      if (a.id === commandeMiseEnAvant) return -1;
+      if (b.id === commandeMiseEnAvant) return 1;
+      return 0;
+    });
+  }, [commandes, filtreCommandes, commandeMiseEnAvant]);
 
   const nbRetards = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -526,7 +581,7 @@ export default function FournisseursPage() {
         </button>
         <button
           onClick={() => setModalCommande(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-200 hover:bg-[#1A1D24]"
+          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-200 hover:bg-[#1E1E1E]"
         >
           <span>📦</span> Nouvelle Commande
         </button>
@@ -540,7 +595,7 @@ export default function FournisseursPage() {
             className={`text-sm whitespace-nowrap transition-all ${
               tab === t
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
             }`}
           >
             {t === "fournisseurs" ? "🏢 Fournisseurs" : t === "commandes" ? "📦 Commandes Matériaux" : "📊 Analyse des Marges"}
@@ -621,7 +676,7 @@ export default function FournisseursPage() {
                     ? f === "en_retard"
                       ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
                       : "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                    : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                    : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
                 }`}
               >
                 {f === "toutes" ? "Toutes" : `⚠️ En retard (${nbRetards})`}
@@ -645,16 +700,27 @@ export default function FournisseursPage() {
                   c.date_livraison_prevue &&
                   c.date_livraison_prevue < today;
                 const retardJours = enRetard ? joursRetard(c.date_livraison_prevue!) : 0;
+                const miseEnAvant = c.id === commandeMiseEnAvant;
                 return (
                   <div
                     key={c.id}
-                    className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-[#1A1D24] p-4 ${
-                      enRetard ? "border-red-500/40" : "border-white/10"
+                    id={miseEnAvant ? "commande-notification" : undefined}
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-[#1E1E1E] p-4 ${
+                      miseEnAvant
+                        ? "border-[#E53935] ring-1 ring-[#E53935]/40"
+                        : enRetard
+                          ? "border-red-500/40"
+                          : "border-white/10"
                     }`}
                   >
                     <div>
                       <p className="font-medium text-white">
                         {c.designation}
+                        {miseEnAvant && (
+                          <span className="ml-2 rounded-full bg-[#E53935]/20 px-2 py-0.5 text-2xs font-bold text-red-200">
+                            Ouvert depuis une notification
+                          </span>
+                        )}
                         {enRetard && (
                           <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-2xs font-bold text-white">
                             <AlertTriangle className="h-3 w-3" />
@@ -693,7 +759,7 @@ export default function FournisseursPage() {
                       <button
                         type="button"
                         onClick={() => setApercuCommande(c)}
-                        className="rounded-lg border border-slate-600 bg-transparent px-2.5 py-1 text-xs text-gray-300 hover:bg-[#1A1D24] hover:text-gray-400"
+                        className="rounded-lg border border-slate-600 bg-transparent px-2.5 py-1 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-gray-400"
                         title="Voir et imprimer le bon de commande officiel"
                       >
                         📄 Bon de commande
@@ -734,11 +800,11 @@ export default function FournisseursPage() {
           <form
             onSubmit={creerFournisseur}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">Nouveau Fournisseur</h2>
-              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
+              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>
@@ -775,7 +841,7 @@ export default function FournisseursPage() {
                       className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
                         fStatutRelation === r.value
                           ? r.couleurActif
-                          : "border-white/10 bg-transparent text-gray-400 hover:bg-[#1A1D24]"
+                          : "border-white/10 bg-transparent text-gray-400 hover:bg-[#1E1E1E]"
                       }`}
                     >
                       {r.label}
@@ -819,11 +885,11 @@ export default function FournisseursPage() {
               />
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl">
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Annuler
               </button>
@@ -846,13 +912,13 @@ export default function FournisseursPage() {
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <h2 className="text-base font-bold text-white">
                 {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
               </h2>
-              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white" aria-label="Fermer">
+              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white" aria-label="Fermer">
                 ✕
               </button>
             </div>
@@ -975,11 +1041,11 @@ export default function FournisseursPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl">
               <button
                 type="button"
                 onClick={fermerModalCommande}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Annuler
               </button>
@@ -1012,7 +1078,7 @@ export default function FournisseursPage() {
               <button
                 type="button"
                 onClick={() => setApercuCommande(null)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Fermer
               </button>

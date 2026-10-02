@@ -281,7 +281,7 @@ export default function FicheSAV() {
     <div className="p-4 sm:p-8 space-y-6 pb-32">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/bureau/sav" className="p-2 bg-[#1A1D24] rounded-xl hover:bg-[#1A1D24] text-gray-300">
+          <Link href="/bureau/sav" className="p-2 bg-[#1E1E1E] rounded-xl hover:bg-[#1E1E1E] text-gray-300">
             <ArrowLeft size={20} />
           </Link>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -395,7 +395,7 @@ export default function FicheSAV() {
                   checked={ticket.respect_dtu}
                   onChange={(e) => setTicket({...ticket, respect_dtu: e.target.checked})}
                 />
-                <div className="w-11 h-6 bg-[#1A1D24] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1A1D24] after:border-white/20 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                <div className="w-11 h-6 bg-[#1E1E1E] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#1E1E1E] after:border-white/20 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
               </label>
             </div>
             {ticket.respect_dtu && (
@@ -487,7 +487,7 @@ export default function FicheSAV() {
             <div className="space-y-3">
               <p className="text-xs font-semibold text-gray-400">PHOTOS D'INTERVENTION</p>
               <div className="flex gap-3 max-w-md">
-                <label className="flex-1 border border-dashed border-slate-600 bg-transparent hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
+                <label className="flex-1 border border-dashed border-slate-600 bg-transparent hover:bg-[#1E1E1E] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'avant')} disabled={uploading.avant} />
                   {uploading.avant ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
@@ -499,7 +499,7 @@ export default function FicheSAV() {
                   <span className="text-2xs font-bold uppercase tracking-widest relative z-10 drop-shadow-md">Avant</span>
                 </label>
                 
-                <label className="flex-1 border border-dashed border-slate-600 bg-transparent hover:bg-[#1A1D24] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
+                <label className="flex-1 border border-dashed border-slate-600 bg-transparent hover:bg-[#1E1E1E] rounded-xl h-24 flex flex-col items-center justify-center text-gray-400 transition-all cursor-pointer relative overflow-hidden">
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFileUpload(e, 'apres')} disabled={uploading.apres} />
                   {uploading.apres ? (
                     <Loader2 size={24} className="animate-spin mb-1 text-gray-300" />
@@ -590,7 +590,7 @@ export default function FicheSAV() {
               <Save size={18} /> {ticket.statut === "cloture" ? "Ticket Clôturé" : "Clôturer le SAV"}
             </button>
             {ticket.statut === "cloture" && (
-              <button onClick={() => setShowPDF(true)} className="bg-[#1A1D24] hover:bg-[#1A1D24] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center gap-2">
+              <button onClick={() => setShowPDF(true)} className="bg-[#1E1E1E] hover:bg-[#1E1E1E] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all flex items-center gap-2">
                 <FileCheck size={18} /> Voir le Rapport
               </button>
             )}
@@ -608,12 +608,12 @@ export default function FicheSAV() {
               <button onClick={() => window.print()} className="flex items-center gap-2 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold">
                 <Printer size={18} /> Imprimer / PDF
               </button>
-              <button onClick={() => setShowPDF(false)} className="p-2 bg-[#1A1D24] hover:bg-[#1A1D24] rounded-xl text-gray-300" aria-label="Fermer">
+              <button onClick={() => setShowPDF(false)} className="p-2 bg-[#1E1E1E] hover:bg-[#1E1E1E] rounded-xl text-gray-300" aria-label="Fermer">
                 <X size={20} />
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#1A1D24]/50 flex justify-center print:bg-[#1A1D24] print:p-0 print:block">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#1E1E1E]/50 flex justify-center print:bg-[#1E1E1E] print:p-0 print:block">
             <RapportSAVPDF ticket={ticket as TicketSav} entreprise={entreprise} />
           </div>
         </div>

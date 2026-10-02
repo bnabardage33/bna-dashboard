@@ -275,7 +275,7 @@ export default function ClientsPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom, société, ville, téléphone..."
-          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1E1E1E] px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
         />
       </div>
 
@@ -296,7 +296,7 @@ export default function ClientsPage() {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <div>
@@ -306,7 +306,7 @@ export default function ClientsPage() {
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                 aria-label="Fermer"
               >
                 ✕
@@ -323,7 +323,7 @@ export default function ClientsPage() {
                     className={`flex-1 transition-colors ${
                       type === t
                         ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                        : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                        : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
                     }`}
                   >
                     {t === "particulier" ? "👤 Particulier" : "🏢 Professionnel"}
@@ -348,13 +348,13 @@ export default function ClientsPage() {
                     )}
 
                     {resultatsGouv.length > 0 && (
-                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-[#0B0F19] shadow-2xl">
+                      <div className="absolute left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-600 bg-[#121212] shadow-2xl">
                         {resultatsGouv.map((item, idx) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => appliquerEntrepriseGouv(item)}
-                            className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-[#1A1D24]"
+                            className="w-full border-b border-slate-800 p-2.5 text-left text-xs hover:bg-[#1E1E1E]"
                           >
                             <p className="font-bold text-white">{item.nom_complet}</p>
                             <p className="text-gray-400 text-3xs">
@@ -450,11 +450,11 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Annuler
               </button>
@@ -496,7 +496,7 @@ export default function ClientsPage() {
                   </span>
                   <button
                     onClick={() => ouvrirFiche360(c)}
-                    className="rounded-lg bg-[#1A1D24] px-2 py-1 text-xs text-gray-200 hover:bg-[#1A1D24]"
+                    className="rounded-lg bg-[#1E1E1E] px-2 py-1 text-xs text-gray-200 hover:bg-[#1E1E1E]"
                     title="Voir l'historique 360°"
                   >
                     👁️ Fiche
@@ -572,7 +572,7 @@ export default function ClientsPage() {
               </div>
               <button
                 onClick={() => setClientSelectionne(null)}
-                className="rounded-lg border border-slate-600 px-3 py-1 text-xs text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-lg border border-slate-600 px-3 py-1 text-xs text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Fermer
               </button>
@@ -619,7 +619,7 @@ export default function ClientsPage() {
                             <p className="font-semibold text-white">{ch.nom || "Chantier"}</p>
                             <p className="text-xs text-gray-400">{ch.adresse_chantier || "—"}</p>
                           </div>
-                          <span className="rounded-full bg-[#1A1D24] px-2 py-0.5 text-xs text-gray-300">
+                          <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-xs text-gray-300">
                             {ch.statut} →
                           </span>
                         </Link>
@@ -655,7 +655,7 @@ export default function ClientsPage() {
                                 <td className="p-2">{d.objet || "—"}</td>
                                 <td className="p-2 text-right">{fmtEuro(ht)}</td>
                                 <td className="p-2">
-                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-2xs uppercase">
+                                  <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 text-2xs uppercase">
                                     {d.statut}
                                   </span>
                                 </td>
@@ -696,7 +696,7 @@ export default function ClientsPage() {
                                   {fmtEuro(ttc)}
                                 </td>
                                 <td className="p-2">
-                                  <span className="rounded bg-[#1A1D24] px-1.5 py-0.5 text-2xs uppercase">
+                                  <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 text-2xs uppercase">
                                     {f.statut}
                                   </span>
                                 </td>

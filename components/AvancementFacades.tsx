@@ -256,7 +256,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
     <Surface className="p-5 shadow-lg max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-white">Avancement du Chantier</h2>
-        <div className="flex items-center gap-3 bg-[#0B0F19] px-4 py-2 rounded-lg border border-white/10">
+        <div className="flex items-center gap-3 bg-[#121212] px-4 py-2 rounded-lg border border-white/10">
           <span className="text-sm text-gray-400 uppercase tracking-wider font-bold">Global</span>
           <span className={`text-2xl font-black ${pct === 100 ? 'text-emerald-400' : 'text-gray-300'}`}>{pct}%</span>
         </div>
@@ -268,14 +268,14 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           const etapesCochees = ETAPES.filter(e => etat[facade.id][e.id]).length;
 
           return (
-            <div key={facade.id} className="border border-white/10 rounded-lg overflow-hidden bg-[#0B0F19]/50">
+            <div key={facade.id} className="border border-white/10 rounded-lg overflow-hidden bg-[#121212]/50">
               <button
                 onClick={() => toggleFacade(facade.id)}
-                className="w-full flex items-center justify-between p-4 bg-[#1A1D24]/80 hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-[#1E1E1E]/80 hover:bg-slate-700 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-white">{facade.label}</span>
-                  <span className="text-xs px-2 py-1 bg-[#0B0F19] rounded-md text-gray-400 font-medium">
+                  <span className="text-xs px-2 py-1 bg-[#121212] rounded-md text-gray-400 font-medium">
                     {etapesCochees} / 4
                   </span>
                 </div>
@@ -283,7 +283,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
               </button>
 
               {isExpanded && (
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#0B0F19]/30">
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#121212]/30">
                   {ETAPES.map((etape) => {
                     const isChecked = etat[facade.id][etape.id];
                     return (
@@ -293,7 +293,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
                         className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
                           isChecked
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                            : "bg-[#1A1D24] border-white/10 text-gray-400 hover:bg-slate-700"
+                            : "bg-[#1E1E1E] border-white/10 text-gray-400 hover:bg-slate-700"
                         }`}
                       >
                         {isChecked ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> : <Circle size={18} className="text-gray-500 shrink-0" />}
@@ -341,7 +341,7 @@ export default function AvancementFacades({ chantierId }: { chantierId: string }
           onChange={(e) => setObservations(e.target.value)}
           placeholder="Ex: Tempête de vent, impossible de poser le bardage sur la façade Nord..."
           rows={3}
-          className="w-full bg-[#0B0F19] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-600"
+          className="w-full bg-[#121212] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-600"
         />
         {etatDictee === "ia" && (
           <p className="text-xs text-gray-500">Remplissage automatique des 16 cases d'avancement en cours…</p>

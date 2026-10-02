@@ -312,7 +312,7 @@ export default function MetreIAPage() {
 
             {/* Résultats */}
             {etalonnage && (
-              <div className="bg-[#1A1D24] border border-cyan-500/30 p-4 rounded-xl mt-4">
+              <div className="bg-[#1E1E1E] border border-cyan-500/30 p-4 rounded-xl mt-4">
                 <h3 className="font-bold text-white mb-3 text-lg">Résultat du métré</h3>
                 <div className="flex justify-between items-center text-sm mb-1 text-gray-300">
                   <span>Surface brute (Façades) :</span>

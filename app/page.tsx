@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, LogIn } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import DashboardAccueil, { type Note } from '@/components/DashboardAccueil';
+import ChantiersMeteoCards from '@/components/ChantiersMeteoCards';
 import { Surface } from '@/components/ui/Surface';
 
 // Option B (durecissement) : la landing `/` reste PUBLIQUE au niveau proxy
@@ -14,36 +15,66 @@ import { Surface } from '@/components/ui/Surface';
 // pas de cache statique ni du CTA anonyme ni du tableau de bord.
 export const dynamic = 'force-dynamic';
 
-type Stats = { notes: number; chantiers: number; devis: number };
+type ChantierAPreparer = {
+  id: string;
+  nom: string | null;
+  adresse: string | null;
+};
 
-const STATUTS_CHANTIERS_ACTIFS = [
-  'en_cours',
-  'En cours',
-  'prevu',
-  'Actif',
-  'Préparation',
-  'preparation',
-  'nouveau',
-];
+type Notification = {
+  id: string;
+  titre: string;
+  message: string | null;
+  lien: string | null;
+  lu: boolean | null;
+  created_at: string | null;
+};
 
-async function chargerStats(supabase: Awaited<ReturnType<typeof createClient>>): Promise<Stats> {
+/**
+ * Chantiers à préparer.
+ *
+ * Le statut `prevu` est le SEUL que le formulaire de la fiche chantier écrit
+ * pour un chantier qui n'a pas démarré (les trois valeurs réelles du modèle
+ * sont `prevu`, `en_cours`, `termine`). On filtre donc sur `prevu` seul, sans
+ * la liste de variantes défensives recopiée ailleurs dans le dépôt : ces
+ * variantes ne sont écrites par aucun code, les garder ici n'ajouterait que
+ * du bruit.
+ */
+async function chargerChantiersAPreparer(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<ChantierAPreparer[]> {
   try {
-    const [notesRes, chantiersRes, devisRes] = await Promise.all([
-      supabase.from('notes_patron').select('*', { count: 'exact', head: true }),
-      supabase
-        .from('chantiers')
-        .select('*', { count: 'exact', head: true })
-        .in('statut', STATUTS_CHANTIERS_ACTIFS),
-      supabase.from('devis').select('*', { count: 'exact', head: true }),
-    ]);
-    return {
-      notes: notesRes.count ?? 0,
-      chantiers: chantiersRes.count ?? 0,
-      devis: devisRes.count ?? 0,
-    };
+    const { data, error } = await supabase
+      .from('chantiers')
+      .select('id, nom, adresse_chantier')
+      .eq('statut', 'prevu')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (error) return [];
+    return (data ?? []).map((c) => ({
+      id: c.id,
+      nom: c.nom,
+      adresse: c.adresse_chantier,
+    }));
   } catch {
-    // stats à 0 si échec (fail-soft, la page reste fonctionnelle)
-    return { notes: 0, chantiers: 0, devis: 0 };
+    return [];
+  }
+}
+
+/** Dernières notifications de l'entreprise, pour le bloc « Alertes ». */
+async function chargerNotifications(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<Notification[]> {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('id, titre, message, lien, lu, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (error) return [];
+    return (data ?? []) as Notification[];
+  } catch {
+    return [];
   }
 }
 
@@ -76,10 +107,11 @@ export default async function Home() {
   if (!user) {
     return (
       <div className="relative overflow-hidden w-full">
-        <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(227,6,19,0.15),transparent_60%)] pointer-events-none z-0" />
-        <main className="relative z-10 px-4 pt-6 pb-[20px] flex flex-col gap-8">
-          <Surface as="section" className="p-8 text-center shadow-lg" radius="2xl">
-            <LogIn className="w-10 h-10 mx-auto text-[#E30613] mb-4" />
+        {/* Le reflet rouge du fond global est désormais porté par le `<main>`
+            de `app/layout.tsx` : plus rien à dupliquer ici. */}
+        <main className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-6 pb-[20px] flex flex-col gap-8">
+          <Surface as="section" className="mx-auto w-full max-w-lg p-8 text-center shadow-lg" radius="2xl">
+            <LogIn className="w-10 h-10 mx-auto text-[#E53935] mb-4" />
             <h2 className="text-xl font-bold text-white mb-2">
               Connectez-vous pour accéder au tableau de bord
             </h2>
@@ -88,7 +120,7 @@ export default async function Home() {
             </p>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#E30613] px-6 py-3 text-sm font-bold text-white hover:bg-red-600 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#E53935] px-6 py-3 text-sm font-bold text-white hover:bg-red-600 transition-colors"
             >
               Se connecter <ArrowRight className="h-4 w-4" />
             </Link>
@@ -99,13 +131,34 @@ export default async function Home() {
   }
 
   // ── Session active : données chargées CÔTÉ SERVEUR (cookie de session). ─
-  const [stats, notes] = await Promise.all([chargerStats(supabase), chargerNotes(supabase)]);
+  // Aucune requête de comptage ici : le bloc « Chiffres clés » qui les lisait a
+  // été retiré de l'accueil. Les trois requêtes restantes alimentent chacune un
+  // bloc du cockpit.
+  const [notes, chantiersAPreparer, notifications] = await Promise.all([
+    chargerNotes(supabase),
+    chargerChantiersAPreparer(supabase),
+    chargerNotifications(supabase),
+  ]);
 
   return (
     <div className="relative overflow-hidden w-full">
-      <div className="absolute top-0 inset-x-0 h-[380px] bg-[radial-gradient(ellipse_at_top,_rgba(227,6,19,0.15),transparent_60%)] pointer-events-none z-0" />
-      <main className="relative z-10 px-4 pt-6 pb-[20px] flex flex-col gap-8">
-        <DashboardAccueil notesInitiales={notes} statsInitiales={stats} />
+      {/* Le reflet rouge du fond global est désormais porté par le `<main>`
+          de `app/layout.tsx` : plus rien à dupliquer ici. */}
+      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-6 pb-[20px] flex flex-col gap-8">
+        {/* `ChantiersMeteoCards` est monté ICI, dans l'arbre serveur, et
+            transmis au composant client sous forme de nœud déjà rendu. Il ne
+            réécrit donc ni sa logique ni son accès à Supabase : il lit
+            `chantiers` en direct, demande la prévision à `GET /api/meteo` et
+            applique `evaluerAlerteChantier`, comme avant. Le passer en
+            propriété (plutôt que l'importer dans `DashboardAccueil`) évite
+            aussi de le monter dans les tests du composant, qui n'ont rien à
+            voir avec la météo. */}
+        <DashboardAccueil
+          notesInitiales={notes}
+          chantiersAPreparer={chantiersAPreparer}
+          notifications={notifications}
+          blocMeteo={<ChantiersMeteoCards />}
+        />
       </main>
     </div>
   );

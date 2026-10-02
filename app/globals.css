@@ -13,14 +13,92 @@
  * tant que la valeur résolue est identique.
  */
 @theme {
-  /* Surfaces — la trame de fond de l'application. */
-  --color-surface: #1A1D24; /* carte, modale, zone vide, survol secondaire */
-  --color-surface-page: #0B0F19; /* fond d'application (body) */
-  --color-surface-raised: #242830; /* champ de saisie, en-tête de tableau */
+  /*
+   * PALETTE PREMIUM BNA BARDAGE.
+   *
+   * Ce bloc est le point d'entrée UNIQUE de la nouvelle palette. Les entrées
+   * `--color-red-*` et `--color-gray-*` ci-dessous REDÉFINISSENT des classes
+   * Tailwind déjà utilisées partout dans le dépôt : les ~190 `bg-red-600`,
+   * ~525 `text-gray-400` et ~498 `border-white` suivent donc la nouvelle
+   * palette SANS qu'aucun de leurs fichiers ait à être touché.
+   *
+   * C'est ce qui permet d'appliquer une palette en n'intervenant sur aucun
+   * composant : la classe garde son nom, sa position et sa fonction, seule sa
+   * valeur résolue change.
+   */
 
-  /* Marque — teinte d'accent BNA. Ne pas confondre avec la couleur d'action
-     Tailwind (red-600) : leur unification est un arbitrage produit en cours. */
-  --color-brand: #E30613;
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --color-surface: #1E1E1E; /* carte, modale, zone vide, survol secondaire */
+  --color-surface-page: #121212; /* fond d'application (body) */
+  --color-surface-raised: #252525; /* champ de saisie, en-tête de tableau */
+  --color-surface-drawer: #1A1A1A; /* fond du menu hamburger */
+  --color-surface-mobile: #232323; /* carte sur petit écran */
+
+  /* ── Bordures et séparateurs ──────────────────────────────────────────── */
+  --color-border: #2E2E2E; /* bordure standard */
+  --color-divider: #3A3A3A; /* séparateur interne */
+
+  /* ── Marque ───────────────────────────────────────────────────────────── */
+  --color-brand: #E53935; /* action principale */
+  --color-brand-dark: #C62828; /* survol / variante sombre */
+  --color-brand-light: #FF6F60; /* notification / variante claire */
+
+  /* ── Encre (textes) ───────────────────────────────────────────────────── */
+  --color-ink-title: #F5F5F5; /* titres */
+  --color-ink: #E0E0E0; /* texte principal */
+  --color-ink-muted: #BDBDBD; /* texte secondaire */
+  --color-ink-disabled: #757575; /* texte désactivé */
+
+  /* ── Couleurs d'état ──────────────────────────────────────────────────── */
+  /* Introduites pour que l'interface ne soit pas intégralement rouge. */
+  --color-state-success: #4CAF50;
+  --color-state-info: #42A5F5;
+  --color-state-warning: #FB8C00;
+  --color-state-neutral: #9E9E9E;
+
+  /*
+   * ── Rouge BNA : ÉCHELLE REDÉFINIE ──────────────────────────────────────
+   *
+   * Le rouge reste un ACCENT : il est porté par les actions, les alertes
+   * critiques et les états actifs, jamais par les titres ni les surfaces.
+   *
+   *   red-300 / red-400  teintes de texte d'alerte (danger, « Annulée », …)
+   *   red-500            variante claire  → notifications
+   *   red-600            ACTION PRINCIPALE  (bg-red-600, border-red-600)
+   *   red-700            survol           (bg-red-700)
+   *   red-900 / red-950  fond d'alerte, accordé aux nouvelles surfaces
+   *
+   * Les paliers 100 à 800 de l'échelle Tailwind d'origine sont volontairement
+   * laissés intacts : seuls ceux que le dépôt emploie sont redefinis, pour ne
+   * pas redefinir une couleur que rien n'utilise.
+   */
+  --color-red-300: #EF9A9A;
+  --color-red-400: #EF5350;
+  --color-red-500: #FF6F60;
+  --color-red-600: #E53935;
+  --color-red-700: #C62828;
+  --color-red-900: #3A1512;
+  --color-red-950: #2B1210;
+
+  /*
+   * ── Gris : RAMPE DE TEXTE REDÉFINIE ────────────────────────────────────
+   *
+   * Surfaces sombres, l'ancien gris Tailwind (légèrement bleuté) laisse le
+   * texte froid et le contraste irrégulier. Les quatre paliers employés par le
+   * dépôt sont calés sur la rampe d'encre demandée :
+   *
+   *   gray-300 → #E0E0E0  texte principal / titres de section
+   *   gray-400 → #BDBDBD  texte secondaire (le plus employé du dépôt)
+   *   gray-500 → #9E9E9E  texte discret, labels
+   *   gray-600 → #757575  texte désactivé
+   *
+   * Les paliers clairs (100, 200, 700, 800, 900) sont laissés intacts : ils servent les vues
+   * claires (espace client, impression), qui conservent leur identité propre.
+   */
+  --color-gray-300: #E0E0E0;
+  --color-gray-400: #BDBDBD;
+  --color-gray-500: #9E9E9E;
+  --color-gray-600: #757575;
 
   /*
    * Échelle typographique dense. L'échelle Tailwind saute de text-xs (12px)
@@ -33,7 +111,10 @@
 }
 
 :root {
-  --foreground: #f1f5f9;
+  /* Texte par défaut du document : l'encre principale. Les titres montent
+     seuls à `--color-ink-title` (#F5F5F5). Le blanc pur est évité comme
+     couleur générale de texte. */
+  --foreground: #E0E0E0;
 }
 
 @theme inline {
@@ -69,7 +150,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: var(--color-brand);
-  color: white;
+  color: #FFFFFF; /* fond plein : le contraste doit rester maximal */
   padding: 8px 16px;
   border-radius: 8px;
   z-index: 99999;
@@ -80,7 +161,31 @@
   top: 8px;
 }
 
+/*
+ * Barres d'onglets à défilement horizontal.
+ *
+ * `scrollbar-hide` était UTILISÉE depuis le début par `components/SubNav.tsx`
+ * et par la barre d'onglets de la fiche chantier, sans jamais être déclarée
+ * dans ce fichier : la classe ne produisait rien et la barre de défilement
+ * restait visible sous les onglets. Tailwind v4 ne fournit pas cet utilitaire
+ * — il fait partie des plugins — il faut donc l'écrire ici.
+ *
+ * `scrollbar-width` / `-ms-overflow-style` sont les propriétés standard ;
+ * `::-webkit-scrollbar` couvre Safari et Chrome Android, qui n'appliquent pas
+ * les premières à un conteneur. Le pseudo-élément est déclaré sur les DEUX
+ * faces, sinon Chrome Android laisse une piste de 1 px.
+ */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 body {
+  /* `--foreground` suit l'encre principale : #E0E0E0, pas le blanc pur. */
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   background-color: var(--color-surface-page);

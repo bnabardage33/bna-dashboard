@@ -170,11 +170,11 @@ export default function NotesPage() {
 
       {/* Liste des Notes */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des notes…
         </div>
       ) : notes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
           <Mic className="mx-auto h-10 w-10 text-gray-500" />
           <p className="text-sm font-medium text-gray-400">Aucune note pour l&apos;instant.</p>
           <button
@@ -191,12 +191,12 @@ export default function NotesPage() {
               key={note.id}
               className={`flex flex-col justify-between rounded-2xl border p-4.5 shadow-md transition-all ${
                 note.titre?.includes('🟢')
-                  ? "border-white/10 bg-[#1A1D24]/90 shadow-red-600/10"
+                  ? "border-white/10 bg-[#1E1E1E]/90 shadow-red-600/10"
                   : note.titre?.includes('🔴')
-                  ? "border-red-500/80 bg-[#1A1D24]/90 shadow-red-500/10"
+                  ? "border-red-500/80 bg-[#1E1E1E]/90 shadow-red-500/10"
                   : note.epingle
-                  ? "border-red-600/50 bg-[#1A1D24] shadow-red-600/5"
-                  : "border-white/10 bg-[#1A1D24] hover:border-slate-600"
+                  ? "border-red-600/50 bg-[#1E1E1E] shadow-red-600/5"
+                  : "border-white/10 bg-[#1E1E1E] hover:border-slate-600"
               }`}
             >
               {editId === note.id ? (
@@ -217,7 +217,7 @@ export default function NotesPage() {
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => setEditId(null)}
-                      className="rounded-xl border border-slate-600 bg-[#1A1D24] px-3 py-1.5 text-xs text-gray-300 hover:bg-[#1A1D24]"
+                      className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-3 py-1.5 text-xs text-gray-300 hover:bg-[#1E1E1E]"
                     >
                       Annuler
                     </button>
@@ -242,7 +242,7 @@ export default function NotesPage() {
                         className={`rounded-lg p-1.5 transition-colors ${
                           note.epingle
                             ? "text-gray-300 bg-sky-950/40"
-                            : "text-gray-500 hover:text-gray-300 hover:bg-[#1A1D24]"
+                            : "text-gray-500 hover:text-gray-300 hover:bg-[#1E1E1E]"
                         }`}
                         title={note.epingle ? "Désépingler" : "Épingler en haut"}
                       >
@@ -292,7 +292,7 @@ export default function NotesPage() {
       {/* Bottom Sheet / Modal Nouvelle Note */}
       {modalOuvert && (
         <div className="fixed inset-0 z-[210] pt-48 flex items-end sm:items-center justify-center bg-black/80 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1A1D24] p-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
+          <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#1E1E1E] p-6 shadow-2xl space-y-4 max-h-[85vh] sm:max-h-[90dvh] overflow-y-auto animate-in fade-in slide-in-from-bottom-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white">Nouvelle Note Patron</h2>
@@ -300,7 +300,7 @@ export default function NotesPage() {
               </div>
               <button
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
@@ -355,11 +355,11 @@ export default function NotesPage() {
                 />
               </div>
 
-              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1A1D24] px-6 py-3 border-t border-white/10 flex items-center justify-end gap-3 shadow-lg">
+              <div className="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#1E1E1E] px-6 py-3 border-t border-white/10 flex items-center justify-end gap-3 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setModalOuvert(false)}
-                  className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                  className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
                 >
                   Annuler
                 </button>

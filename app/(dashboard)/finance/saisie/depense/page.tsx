@@ -133,7 +133,7 @@ export default function SaisieDepense() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-[#1A1D24]/50 rounded-xl border border-white/10 mt-8 text-white">
+    <div className="max-w-xl mx-auto p-6 bg-[#1E1E1E]/50 rounded-xl border border-white/10 mt-8 text-white">
       <h1 className="text-2xl font-bold mb-6">Saisie Dépense</h1>
       
       {error && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md text-sm">{error}</div>}
@@ -204,7 +204,7 @@ export default function SaisieDepense() {
                 key={statut}
                 type="button"
                 onClick={() => setFormData({...formData, statut})}
-                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.statut === statut ? 'bg-red-600/20 border-white/10 text-gray-400' : 'border-white/10 bg-transparent text-gray-400 hover:bg-[#1A1D24]'}`}
+                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.statut === statut ? 'bg-red-600/20 border-white/10 text-gray-400' : 'border-white/10 bg-transparent text-gray-400 hover:bg-[#1E1E1E]'}`}
               >
                 {statut}
               </button>

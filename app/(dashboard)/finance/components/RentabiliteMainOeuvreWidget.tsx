@@ -51,7 +51,7 @@ export default function RentabiliteMainOeuvreWidget() {
   const phaseCritique = data.reduce((prev, curr) => (curr.ecart < prev.ecart ? curr : prev), data[0]);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-6 flex flex-col gap-6">
+    <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-6 flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -64,7 +64,7 @@ export default function RentabiliteMainOeuvreWidget() {
         <select
           value={chantierId}
           onChange={(e) => setChantierId(e.target.value)}
-          className="bg-[#242830] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/20 w-full sm:w-auto"
+          className="bg-[#252525] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/20 w-full sm:w-auto"
           aria-label="Chantier"
         >
           <option value="">Sélectionner un chantier</option>
@@ -107,7 +107,7 @@ export default function RentabiliteMainOeuvreWidget() {
 
           <div className="overflow-x-auto rounded-xl border border-white/5">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#242830] text-xs uppercase text-gray-400">
+              <thead className="bg-[#252525] text-xs uppercase text-gray-400">
                 <tr>
                   <th className="p-4">Phase Technique</th>
                   <th className="p-4 text-right">Budget Vendu (€)</th>

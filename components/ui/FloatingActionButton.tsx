@@ -23,7 +23,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react'
  * qui n'existe que pour cela.
  *
  * La deuxième famille presque homogène — les 11 boutons de fermeture de modale,
- * `rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white`, 66
+ * `rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white`, 66
  * caractères et 5 jetons — n'est PAS extraite. Ses 11 gestionnaires `onClick`
  * sont tous différents, et surtout aucun des 11 ne porte de `aria-label` : ces
  * boutons n'ont pas de nom accessible. Les factoriser aujourd'hui reviendrait
@@ -47,11 +47,23 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react'
  * donc la valeur par défaut `submit` est inoffensive ici. L'ajouter serait un
  * changement de comportement non demandé.
  *
- * `bg-red-600` n'est PAS remplacé par le token `bg-brand`. Mesuré sur le CSS
- * réellement émis par Tailwind 4.3.3 : `bg-red-600` vaut `#E7000B`, tandis que
- * `--color-brand` vaut `#E30613`. Les substituer changerait le rendu de 4 unités
- * sur le rouge, 6 sur le vert et 8 sur le bleu. C'est l'arbitrage produit D2-a/b,
- * non tranché, donc hors périmètre.
+ * `bg-red-600` n'est PAS remplacé par le token `bg-brand`, mais la raison a
+ * changé.
+ *
+ * Mesuré sur le CSS émis par Tailwind 4.3.3, les deux valeurs divergeaient :
+ * `bg-red-600` valait `#E7000B` et `--color-brand` `#E30613`, soit 4 unités
+ * d'écart sur le rouge, 6 sur le vert et 8 sur le bleu. L'arbitrage produit
+ * D2-a/b — unifier ou non — était resté non tranché, et les deux coexistaient.
+ *
+ * La charte graphique l'a résolu SANS toucher ce composant : `--color-red-600`
+ * a été redéfini à `#E53935`, ce qui fait converger `bg-red-600` et
+ * `--color-brand` sur une valeur identique. La divergence décrite ci-dessus
+ * n'existe donc plus.
+ *
+ * On garde malgré tout `bg-red-600` plutôt que `bg-brand` : ce choix porte sur
+ * la lisibilité du gabarit, pas sur la teinte. Inverser les deux pour un
+ * résultat identique serait absurde, et l'arbitrage D2 reste ouvert pour le
+ * jour où quelqu'un voudra le trancher autrement.
  */
 const HABILLAGE =
   'fixed bottom-4 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl shadow-red-600/10 transition-transform active:scale-95 hover:scale-105 hover:bg-red-700'

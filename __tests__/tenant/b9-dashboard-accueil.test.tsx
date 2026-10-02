@@ -150,7 +150,13 @@ beforeEach(async () => {
     root.render(
       createElement(mod.default as never, {
         notesInitiales: [],
-        statsInitiales: { notes: 0, chantiers: 0, devis: 0 },
+        // `statsInitiales` n'est plus passé : la propriété a été SUPPRIMÉE de
+        // `DashboardAccueil` avec le bloc « Chiffres clés », seul lecteur de ces
+        // compteurs. La laisser en place ferait croire que le composant consomme
+        // encore des compteurs — il n'en consomme aucun. Aucun comportement
+        // observable par CE fichier n'est modifié : ce test ne porte que sur
+        // l'assistance vocale (insertion `notes_patron`, fin de l'échec
+        // silencieux), qui ne dépendait d'aucun compteur.
       }),
     );
   });

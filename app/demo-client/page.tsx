@@ -257,7 +257,7 @@ export default function ClientPortalPrototype() {
             <HardHat className="text-gray-400" size={28} />
             <span className="text-xl font-bold tracking-tight">BNA Espace Client</span>
           </div>
-          <div className="w-10 h-10 bg-[#1A1D24] rounded-full flex items-center justify-center border border-white/10">
+          <div className="w-10 h-10 bg-[#1E1E1E] rounded-full flex items-center justify-center border border-white/10">
             <span className="font-semibold text-sm">{initials}</span>
           </div>
         </div>
@@ -271,7 +271,7 @@ export default function ClientPortalPrototype() {
       <main className="p-4 max-w-3xl mx-auto space-y-6 -mt-4 relative z-10">
         
         {/* Progress Card */}
-        <section className="bg-[#1A1D24] rounded-2xl p-5 shadow-sm border border-slate-100">
+        <section className="bg-[#1E1E1E] rounded-2xl p-5 shadow-sm border border-slate-100">
           <div className="flex justify-between items-start mb-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-red-400 bg-blue-50 px-2 py-1 rounded-md mb-2 inline-block">Chantier en cours</span>
@@ -285,7 +285,7 @@ export default function ClientPortalPrototype() {
           
           <div className="w-full bg-transparent rounded-full h-3 mb-6 overflow-hidden">
             <div className="bg-red-600 h-3 rounded-full relative transition-all duration-1000" style={{ width: `${avancement}%` }}>
-              <div className="absolute top-0 right-0 bottom-0 left-0 bg-[#1A1D24]/20" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', animation: 'shimmer 2s infinite' }}></div>
+              <div className="absolute top-0 right-0 bottom-0 left-0 bg-[#1E1E1E]/20" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', animation: 'shimmer 2s infinite' }}></div>
             </div>
           </div>
           
@@ -327,7 +327,7 @@ export default function ClientPortalPrototype() {
             <h3 className="font-bold text-gray-300">Vos documents</h3>
             <button className="text-red-400 text-sm font-medium">Tout voir</button>
           </div>
-          <div className="bg-[#1A1D24] rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-[#1E1E1E] rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-4 border-b border-slate-50 flex items-center justify-between group hover:bg-transparent transition cursor-pointer">
               <div className="flex items-center gap-3">
                 <div className="bg-red-900/20 text-red-400 p-2 rounded-lg">
@@ -382,7 +382,7 @@ export default function ClientPortalPrototype() {
           `}} />
           {chatMessages.map((msg, idx) => (
             <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`px-4 py-2 rounded-2xl max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-red-600 text-white rounded-br-sm' : 'bg-[#1A1D24] border border-white/10 text-gray-400 rounded-bl-sm'}`}>
+              <div className={`px-4 py-2 rounded-2xl max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-red-600 text-white rounded-br-sm' : 'bg-[#1E1E1E] border border-white/10 text-gray-400 rounded-bl-sm'}`}>
                 {msg.content}
               </div>
             </div>
@@ -390,27 +390,27 @@ export default function ClientPortalPrototype() {
           {isLoading && (
             <div className="flex items-start">
               <Surface className="px-4 py-2 text-gray-500 rounded-bl-sm flex gap-1 items-center h-9" radius="2xl">
-                <div className="w-1.5 h-1.5 bg-[#1A1D24] rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-1.5 bg-[#1A1D24] rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                <div className="w-1.5 h-1.5 bg-[#1A1D24] rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                <div className="w-1.5 h-1.5 bg-[#1E1E1E] rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-[#1E1E1E] rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                <div className="w-1.5 h-1.5 bg-[#1E1E1E] rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
               </Surface>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSendMessage} className="p-3 bg-[#1A1D24] border-t border-slate-100 flex gap-2">
+        <form onSubmit={handleSendMessage} className="p-3 bg-[#1E1E1E] border-t border-slate-100 flex gap-2">
           <input 
             type="text" 
             placeholder="Posez votre question..." 
-            className="flex-1 bg-transparent border-transparent focus:bg-[#1A1D24] focus:border-white/10 focus:ring-2 focus:ring-blue-200 rounded-xl px-3 py-2 text-sm outline-none transition"
+            className="flex-1 bg-transparent border-transparent focus:bg-[#1E1E1E] focus:border-white/10 focus:ring-2 focus:ring-blue-200 rounded-xl px-3 py-2 text-sm outline-none transition"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
           />
           <button 
             type="submit" 
             disabled={!inputValue.trim() || isLoading}
-            className="bg-red-600 hover:bg-[#1A1D24] disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-xl flex items-center justify-center transition cursor-pointer"
+            className="bg-red-600 hover:bg-[#1E1E1E] disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-xl flex items-center justify-center transition cursor-pointer"
             aria-label="Envoyer le message"
           >
             <Send size={18} />
@@ -421,7 +421,7 @@ export default function ClientPortalPrototype() {
       {/* Floating Action Button */}
       <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-[9990]">
         {!isChatOpen && (
-          <div className="bg-[#1A1D24] p-3 rounded-2xl rounded-br-sm shadow-lg border border-slate-100 max-w-[200px] animate-bounce pointer-events-none">
+          <div className="bg-[#1E1E1E] p-3 rounded-2xl rounded-br-sm shadow-lg border border-slate-100 max-w-[200px] animate-bounce pointer-events-none">
             <p className="text-xs text-slate-600 font-medium">Une question sur vos travaux ? L'assistant BNA est là ! 👋</p>
           </div>
         )}
@@ -434,7 +434,7 @@ export default function ClientPortalPrototype() {
               hasSummarized.current = false;
             }
           }}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-105 cursor-pointer ${isChatOpen ? 'bg-[#1A1D24] text-slate-600' : 'bg-transparent text-white hover:bg-[#1A1D24]'}`}
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-105 cursor-pointer ${isChatOpen ? 'bg-[#1E1E1E] text-slate-600' : 'bg-transparent text-white hover:bg-[#1E1E1E]'}`}
           aria-label="Assistant BNA"
         >
           {isChatOpen ? <X size={24} /> : <MessageSquare size={24} />}
@@ -444,7 +444,7 @@ export default function ClientPortalPrototype() {
       {/* Signature Modal */}
       {isDevisOpen && (
         <div className="fixed inset-0 z-[9999] bg-transparent flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
-          <div className="w-full max-w-md bg-[#1A1D24] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="w-full max-w-md bg-[#1E1E1E] rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
             <div className="p-4 bg-transparent text-white flex justify-between items-center">
               <h2 className="font-bold">Signature du document</h2>
               <button onClick={() => setIsDevisOpen(false)} className="text-gray-400 hover:text-white transition" aria-label="Fermer">
@@ -507,7 +507,7 @@ export default function ClientPortalPrototype() {
                   <button 
                     onClick={submitSignature}
                     disabled={!signatureData}
-                    className={`mt-6 w-full py-4 rounded-xl font-bold text-white transition-all text-lg ${signatureData ? 'bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/10' : 'bg-[#1A1D24] cursor-not-allowed'}`}
+                    className={`mt-6 w-full py-4 rounded-xl font-bold text-white transition-all text-lg ${signatureData ? 'bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/10' : 'bg-[#1E1E1E] cursor-not-allowed'}`}
                   >
                     Valider ma signature
                   </button>

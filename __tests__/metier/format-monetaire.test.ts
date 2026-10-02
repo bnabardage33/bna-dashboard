@@ -304,15 +304,23 @@ describe('LOT 2C — plus aucun formatage monétaire artisanal', () => {
     )
     // 76 appels réels à HEAD, + 55 convertis ici = 131, puis + 5 dans
     // components/FraisDeplacementTab.tsx (5 `.toFixed(2) + " €"` convertis) =
-    // 136. 15 fichiers importaient fmtEuro à HEAD, + 11 dans ce lot = 26, puis
-    // + 1 (FraisDeplacementTab) = 27.
+    // 136, puis − 1 en PHASE 2 = 135. Les 15 fichiers qui importaient fmtEuro
+    // à HEAD, + 11 dans ce lot = 26, + 1 (FraisDeplacementTab) = 27, puis
+    // − 1 en PHASE 2 = 26.
+    //
+    // PHASE 2 : `app/bureau/page.tsx` est devenu une redirection vers `/`. Ce
+    // cockpit était le dernier à porter à la fois un `fmtEuro()` (le montant
+    // des factures en retard, ligne 63) et l'import correspondant : les deux
+    // disparaissent avec lui. Aucun autre fichier n'est affecté, et le bloc
+    // « Chiffres clés » de l'accueil n'affiche que des compteurs, jamais des
+    // montants — donc aucun formatage monétaire n'a été perdu en route.
     //
     // Ces deux nombres sont un DÉCOMPTE DE LOT, pas un contrat : toute conversion
     // correcte ultérieure les déplace mécaniquement. Le contrat de fond est
     // « ne subsistent que les exceptions documentées », vérifié plus bas — c'est
     // lui qui a Tickets, et lui qui était rouge avant cette conversion.
-    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(136)
-    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(27)
+    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(135)
+    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(26)
   })
 
   it('la référence définit fmtEuro() une seule fois, et l’exporte', () => {

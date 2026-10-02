@@ -25,7 +25,7 @@ export default function CoutRepartitionChart({ mois }: { mois?: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1E1E1E]/50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent"></div>
       </div>
     );
@@ -33,7 +33,7 @@ export default function CoutRepartitionChart({ mois }: { mois?: string }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1E1E1E]/50">
         <span className="text-gray-500">Aucune dépense enregistrée</span>
       </div>
     );
@@ -42,7 +42,7 @@ export default function CoutRepartitionChart({ mois }: { mois?: string }) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+    <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4">
       <h3 className="mb-4 text-sm font-semibold text-gray-300">
         Répartition des coûts
       </h3>

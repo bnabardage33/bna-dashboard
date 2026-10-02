@@ -18,7 +18,7 @@ export default function TresoreriePrevisionChart() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1E1E1E]/50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent"></div>
       </div>
     );
@@ -26,7 +26,7 @@ export default function TresoreriePrevisionChart() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+      <div className="flex h-[300px] items-center justify-center rounded-xl border border-white/10 bg-[#1E1E1E]/50">
         <span className="text-gray-500">Aucune donnée prévisionnelle</span>
       </div>
     );
@@ -40,7 +40,7 @@ export default function TresoreriePrevisionChart() {
   const zeroOffset = max <= 0 ? 0 : min >= 0 ? 1 : max / (max - min);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+    <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4">
       <h3 className="mb-4 text-sm font-semibold text-gray-300">
         Trésorerie prévisionnelle (90 jours)
       </h3>

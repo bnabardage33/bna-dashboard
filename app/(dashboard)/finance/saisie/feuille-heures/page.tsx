@@ -140,13 +140,13 @@ export default function FeuilleHeuresPage() {
         <h1 className="text-2xl font-bold text-white">Feuille d'heures</h1>
 
         {/* Paramètres du jour */}
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label htmlFor="chp-chantier" className="block text-sm text-gray-400 mb-1">Chantier</label>
             <select id="chp-chantier"
               value={chantierId}
               onChange={(e) => setChantierId(e.target.value)}
-              className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+              className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             >
               {chantiers.map((c) => (
                 <option key={c.id} value={c.id}>{c.nom}</option>
@@ -159,7 +159,7 @@ export default function FeuilleHeuresPage() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+              className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
           <div>
@@ -169,16 +169,16 @@ export default function FeuilleHeuresPage() {
               step="0.01"
               value={tauxHoraire}
               onChange={(e) => setTauxHoraire(parseFloat(e.target.value) || 0)}
-              className="w-full bg-[#242830] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
+              className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
         </div>
 
         {/* Formulaire ajout ouvrier (dépliable) */}
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 overflow-hidden">
+        <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 overflow-hidden">
           <button
             onClick={() => setFormOuvrierOuvert(!formOuvrierOuvert)}
-            className="w-full flex items-center justify-between p-4 text-sm font-semibold text-gray-400 hover:bg-[#1A1D24]/30 transition-colors"
+            className="w-full flex items-center justify-between p-4 text-sm font-semibold text-gray-400 hover:bg-[#1E1E1E]/30 transition-colors"
           >
             <span className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
@@ -196,19 +196,19 @@ export default function FeuilleHeuresPage() {
                   required
                   value={nouveauNom}
                   onChange={(e) => setNouveauNom(e.target.value)}
-                  className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  className="bg-[#252525] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 />
                 <input
                   type="text"
                   placeholder="Qualification (ex: bardeur confirmé)"
                   value={nouvelleQualif}
                   onChange={(e) => setNouvelleQualif(e.target.value)}
-                  className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  className="bg-[#252525] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                 />
                 <select
                   value={nouveauStatut}
                   onChange={(e) => setNouveauStatut(e.target.value as "embauche" | "interimaire")}
-                  className="bg-[#242830] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
+                  className="bg-[#252525] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                   aria-label="Statut"
                 >
                   <option value="embauche">Embauché</option>
@@ -227,7 +227,7 @@ export default function FeuilleHeuresPage() {
         </div>
 
         {/* Tableau des ouvriers */}
-        <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+        <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4">
           <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wide mb-3">
             Équipe ({ouvriers.length})
           </h2>
@@ -274,7 +274,7 @@ export default function FeuilleHeuresPage() {
                       value={ligne.heures}
                       onChange={(e) => majLigne(o.id, "heures", parseFloat(e.target.value) || 0)}
                       disabled={!ligne.coche}
-                      className="w-20 bg-[#242830] border border-white/10 rounded-md p-1.5 text-sm text-center focus:border-white/10 outline-none disabled:opacity-40"
+                      className="w-20 bg-[#252525] border border-white/10 rounded-md p-1.5 text-sm text-center focus:border-white/10 outline-none disabled:opacity-40"
                       aria-label="Heures"
                     />
                     <span className="text-xs text-gray-500">h</span>
@@ -282,7 +282,7 @@ export default function FeuilleHeuresPage() {
                       value={ligne.type_heure}
                       onChange={(e) => majLigne(o.id, "type_heure", e.target.value)}
                       disabled={!ligne.coche}
-                      className="bg-[#242830] border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
+                      className="bg-[#252525] border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
                       aria-label="Type d'heure"
                     >
                       <option value="normale">Normale</option>

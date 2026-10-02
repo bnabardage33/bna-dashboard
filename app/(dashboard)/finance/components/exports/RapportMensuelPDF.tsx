@@ -37,7 +37,7 @@ export default function RapportMensuelPDF({ onReady }: { onReady: () => void }) 
   const soldePrevisionnel = tresoData && tresoData.length > 0 ? tresoData[tresoData.length - 1].solde : 0;
 
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-4xl bg-[#1A1D24] p-8 text-white text-sm leading-relaxed font-sans">
+    <div id="document-pdf-content" className="mx-auto max-w-4xl bg-[#1E1E1E] p-8 text-white text-sm leading-relaxed font-sans">
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4 mb-6">
         <div>

@@ -66,12 +66,12 @@ export default function PortailsClientsPage() {
           {isLoading ? (
             <div className="text-center py-12 text-gray-400">Chargement des portails...</div>
           ) : chantiers.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 bg-[#1A1D24]/30 rounded-xl border border-white/10">
+            <div className="text-center py-12 text-gray-500 bg-[#1E1E1E]/30 rounded-xl border border-white/10">
               Aucun espace client actif. Générez un code d'accès depuis une fiche chantier.
             </div>
           ) : (
             chantiers.map((chantier) => (
-              <div key={chantier.id} className="flex flex-col sm:flex-row items-center justify-between p-5 rounded-xl bg-[#1A1D24]/50 border border-white/10 hover:border-white/10 transition-colors">
+              <div key={chantier.id} className="flex flex-col sm:flex-row items-center justify-between p-5 rounded-xl bg-[#1E1E1E]/50 border border-white/10 hover:border-white/10 transition-colors">
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="font-bold text-lg text-gray-200">{chantier.nom}</h3>
@@ -90,7 +90,7 @@ export default function PortailsClientsPage() {
                 <div className="flex items-center gap-3 mt-4 sm:mt-0 w-full sm:w-auto">
                   <button 
                     onClick={() => copyLink(chantier.code_acces || '')}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#1A1D24] hover:bg-[#1A1D24] text-sm font-medium transition-colors"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#1E1E1E] hover:bg-[#1E1E1E] text-sm font-medium transition-colors"
                   >
                     <LinkIcon className="h-4 w-4" />
                     {isCopied === chantier.code_acces ? "Lien copié !" : "Copier le lien"}

@@ -122,9 +122,9 @@ export default function BoutonMicroNote({ onTexteReformule, onErreur }: BoutonMi
         onClick={etat === 'enregistrement' ? arreterEnregistrement : demarrerEnregistrement}
         disabled={enCours}
         className={`flex items-center justify-center gap-2 rounded-full px-5 py-3 font-medium transition-colors
-          ${etat === 'enregistrement' ? 'bg-[#E30613]/80 text-white animate-pulse' : ''}
+          ${etat === 'enregistrement' ? 'bg-[#E53935]/80 text-white animate-pulse' : ''}
           ${enCours ? 'bg-white/10 text-gray-400 cursor-not-allowed' : ''}
-          ${etat === 'inactif' || etat === 'erreur' ? 'bg-[#E30613] text-white hover:bg-red-700' : ''}
+          ${etat === 'inactif' || etat === 'erreur' ? 'bg-[#E53935] text-white hover:bg-red-700' : ''}
         `}
       >
         {enCours && <Loader2 className="h-5 w-5 animate-spin" />}

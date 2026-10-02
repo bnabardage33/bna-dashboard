@@ -176,8 +176,16 @@ export default function ChantiersPage() {
     );
   });
 
+  // Plus de `pt-44` ici (retiré le 02/10). Le header BNA est en flux normal —
+  // `position: relative` dans `app/layout.tsx`, hauteur fixe `h-[120px]` — il
+  // ne recouvre donc jamais le contenu, et rien ne demande de pousser le
+  // contenu vers le bas. Ce `pt-44` (176 px) a été introduit en `5a32e26`
+  // comme réflexe de style, alors que le header était déjà `relative`, et
+  // n'a jamais existé sur les autres pages du groupe terrain. Résultat : une
+  // bande morte de 176 px sous le header. Le seul espacement restant est
+  // celui du layout : `mt-4` (main) + `py-6` (`app/terrain/layout.tsx`).
   return (
-    <div className="space-y-5 pt-44">
+    <div className="space-y-5">
       {/* En-tête principal */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -223,21 +231,21 @@ export default function ChantiersPage() {
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
           placeholder="Rechercher par nom de chantier, client, adresse..."
-          className="w-full rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:border-red-600 focus:outline-none shadow-sm"
+          className="w-full rounded-xl border border-white/10 bg-[#1E1E1E] px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:border-red-600 focus:outline-none shadow-sm"
         />
       </div>
 
       {/* Liste des Chantiers en Cartes Mobiles Modernes */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des chantiers en cours…
         </div>
       ) : chantiersFiltres.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
           <HardHat className="mx-auto h-10 w-10 text-gray-500" />
           <p className="text-sm font-medium text-gray-400">Aucun chantier trouvé.</p>
           
-          <div className="flex items-center gap-2 bg-[#1A1D24] p-1 rounded-lg border border-white/10">
+          <div className="flex items-center gap-2 bg-[#1E1E1E] p-1 rounded-lg border border-white/10">
             <button
               onClick={() => setViewMode("liste")}
               className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${viewMode === "liste" ? "bg-red-600 text-white" : "text-gray-400 hover:text-gray-200"}`}
@@ -280,7 +288,7 @@ export default function ChantiersPage() {
             return (
               <Surface
                 key={ch.id}
-                className="group relative flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24] hover:shadow-red-600/5"
+                className="group relative flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1E1E1E] hover:shadow-red-600/5"
                 radius="2xl"
               >
                 <Link href={`/terrain/chantier/${ch.id}`} className="block space-y-2.5">
@@ -297,11 +305,20 @@ export default function ChantiersPage() {
 
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-2xs font-bold uppercase tracking-wider ${
+                        // Palette d'etat (§9 de la charte) : on lit l'etat en
+                        // une fraction de seconde, sans rendre la carte rouge.
+                        // Avant, « en cours » etait en bordure ROUGE sur fond
+                        // bleu ciel, et son texte etait en gris — le meme gris
+                        // que l'etat inactif : le statut n'etait donc pas
+                        // lisible. « En pause » n'a pas de valeur dans le
+                        // code (les statuts sont prevu / en_cours / termine) :
+                        // aucune branche n'est ajoutee pour une valeur qui
+                        // n'existe pas.
                         ch.statut === "en_cours"
-                          ? "border border-red-600/40 bg-sky-950/40 text-gray-400"
+                          ? "border border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50]"
                           : ch.statut === "termine"
-                          ? "border border-white/10 bg-white/5 text-gray-400"
-                          : "border border-white/10 bg-transparent text-gray-300"
+                          ? "border border-[#9E9E9E]/40 bg-[#9E9E9E]/10 text-[#9E9E9E]"
+                          : "border border-[#42A5F5]/40 bg-[#42A5F5]/10 text-[#42A5F5]"
                       }`}
                     >
                       {ch.statut.replace("_", " ")}
@@ -340,7 +357,7 @@ export default function ChantiersPage() {
                       setCopiedId(ch.id);
                       setTimeout(() => setCopiedId(null), 2000);
                     }}
-                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1A1D24]/80 px-2 py-1 text-2xs font-bold text-gray-300 hover:bg-red-700 hover:text-white transition-all backdrop-blur-sm"
+                    className="absolute bottom-4 right-20 z-10 flex items-center gap-1 rounded-lg bg-[#1E1E1E]/80 px-2 py-1 text-2xs font-bold text-gray-300 hover:bg-red-700 hover:text-white transition-all backdrop-blur-sm"
                   >
                     {copiedId === ch.id ? <Check size={12} /> : <Copy size={12} />}
                     {copiedId === ch.id ? "Copié" : "Lien client"}
@@ -396,7 +413,7 @@ export default function ChantiersPage() {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-lg max-h-[80vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
               <div>
@@ -406,7 +423,7 @@ export default function ChantiersPage() {
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
@@ -488,11 +505,11 @@ export default function ChantiersPage() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">
+            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-white/10 bg-[#1A1D24] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-white/10 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Annuler
               </button>

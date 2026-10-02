@@ -2,7 +2,7 @@
 // LOT 2D — primitive `Surface` : habillage de carte centralisé
 // =============================================================================
 //
-// Contexte. Sur les 159 éléments au fond de base `#1A1D24` du périmètre (hors
+// Contexte. Sur les 159 éléments au fond de base `#1E1E1E` du périmètre (hors
 // les 8 vues d'impression et le portail `espace-client`), 95 portaient le même
 // habillage de carte : un arrondi, `border border-white/10`, et ce fond. C'est le
 // seul groupe réellement homogène du dépôt, et le seul que ce lot extrait — 91 de
@@ -101,7 +101,7 @@ const RAYONS_ATTENDUS: Record<string, string> = {
   xl: 'rounded-xl',
   '2xl': 'rounded-2xl',
 }
-const FOND_LITTERAL = '#1A1D24'
+const FOND_LITTERAL = '#1E1E1E'
 
 /**
  * Les 4 cartes que le lot a laissé en littéral, et pourquoi.
@@ -180,7 +180,7 @@ function cartes(): Carte[] {
       const arrondi = jetons.find((t) => t === 'rounded-xl' || t === 'rounded-2xl')
       if (!arrondi) continue
       if (!jetons.includes('border-white/10')) continue
-      if (!jetons.some((t) => t === 'bg-[#1A1D24]')) continue
+      if (!jetons.some((t) => t === 'bg-[#1E1E1E]')) continue
       trouvees.push({
         fichier,
         ligne: src.slice(0, m.index).split('\n').length,
@@ -237,7 +237,7 @@ describe('LOT 2D — cn()', () => {
     // Deux rayons complémentaires : le second ne redéfinit qu'un angle.
     expect(cn('rounded-2xl', 'rounded-bl-sm')).toBe('rounded-2xl rounded-bl-sm')
     // Deux fonds de base :Tailwind tranchera sur l'ordre du CSS, pas nous.
-    expect(cn('bg-surface', 'bg-[#1A1D24]')).toBe('bg-surface bg-[#1A1D24]')
+    expect(cn('bg-surface', 'bg-[#1E1E1E]')).toBe('bg-surface bg-[#1E1E1E]')
   })
 
   it("ne déduplique rien et ne réordonne rien", () => {
@@ -297,14 +297,21 @@ describe('LOT 2D — inventaire de la conversion', () => {
     expect(VUES_IMPRESSION).toHaveLength(8)
   })
 
-  it('91 cartes ont été converties', () => {
+  it('96 cartes ont été converties', () => {
     // 91 cartes à la fin du LOT 2D, + 2 dans components/FraisDeplacementTab.tsx
     // = 93 appels sur 28 fichiers (le fichier rejoignait la liste des 27).
+    //
+    // PHASE 2 : + 4 sur components/DashboardAccueil.tsx (deux états vides, et
+    // deux cartes en `Surface as="li"` pour « Chantiers à préparer » et
+    // « Alertes »), − 1 sur app/terrain/meteo/page.tsx, devenue une
+    // redirection. Bilan : 93 + 4 − 1 = 96 appels, et 27 fichiers — le
+    // périmètre perd un fichier, pas un habitat.
+    //
     // Comme pour fmtEuro, c'est un décompte de lot : le contrat de fond est
     // « il ne reste AUCUNE carte en littéral dans le périmètre », vérifié juste
     // après, et c'est lui qui était rouge avant cette conversion.
-    expect(APPELS).toHaveLength(93)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(28)
+    expect(APPELS).toHaveLength(96)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(27)
   })
 
   it('il ne reste AUCUNE carte en littéral dans le périmètre', () => {
@@ -322,9 +329,9 @@ describe('LOT 2D — inventaire de la conversion', () => {
   })
 
   it('chaque appel porte le fond par token, jamais en littéral', () => {
-    // Seules les classes de BASE comptent. Un `hover:bg-[#1A1D24]` est un
+    // Seules les classes de BASE comptent. Un `hover:bg-[#1E1E1E]` est un
     // ÉTAT, pas une valeur : il peut légitimement rester en littéral, et
-    // `--color-surface` valant `#1A1D24`, les deux donnent la même couleur.
+    // `--color-surface` valant `#1E1E1E`, les deux donnent la même couleur.
     // Confondre les deux ferait crier à tort sur 4 cartes sur 91.
     for (const { fichier, ligne, brut } of APPELS) {
       const deBase = (brut.match(/className=(?:"([^"]*)"|\{`([^`]*)`\})/) || [])
@@ -385,7 +392,7 @@ describe('LOT 2D — la chaîne de substitution du fond', () => {
   })
 
   it('le fond n\'est pas une des autres surfaces du thème', () => {
-    // `bg-surface-page` (#0B0F19) et `bg-surface-raised` (#242830) sont des
+    // `bg-surface-page` (#121212) et `bg-surface-raised` (#252525) sont des
     // couleurs réelles du thème : les substituer à la carte au lieu de
     // `--color-surface` changerait l'écran sans casser aucune assertion.
     const css = lire('app/globals.css')

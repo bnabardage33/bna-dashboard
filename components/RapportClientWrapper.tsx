@@ -22,7 +22,7 @@ class RapportClientErrorBoundary extends React.Component<{ chantierId: string },
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-xl border border-rose-500/30 bg-[#1A1D24] p-4 text-sm text-rose-400">
+        <div className="rounded-xl border border-rose-500/30 bg-[#1E1E1E] p-4 text-sm text-rose-400">
           ⚠️ Le module des rapports client n&apos;a pas pu se charger.
           <span className="mt-1 block text-xs text-gray-500">{this.state.message}</span>
         </div>

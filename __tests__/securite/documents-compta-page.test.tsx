@@ -145,8 +145,19 @@ async function ongletDocuments(): Promise<void> {
   });
 }
 
+/**
+ * Selection par `aria-label`, et NON par la couleur de fond.
+ *
+ * Le selecteur `button[class*="E30613"]` d'origine couplait ce test a la
+ * teinte du bouton : changer la palette cassait un test qui ne teste rien de
+ * fonctionnel. Le bouton portant deja `aria-label="Supprimer le document"`,
+ * on interroge cet attribut — plus stable, et il dit ce que le test veut
+ * vraiment verifier.
+ */
 function boutonCorbeille(): HTMLButtonElement {
-  const b = conteneur.querySelector<HTMLButtonElement>('button[class*="E30613"]');
+  const b = conteneur.querySelector<HTMLButtonElement>(
+    'button[aria-label="Supprimer le document"]',
+  );
   expect(b).toBeDefined();
   return b!;
 }

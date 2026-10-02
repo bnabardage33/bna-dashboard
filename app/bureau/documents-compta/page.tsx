@@ -336,7 +336,7 @@ export default function DocumentsComptaPage() {
             className={`text-sm whitespace-nowrap transition-all ${
               onglet === 'scanner'
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5"
             }`}
           >
             📷 Scanner
@@ -346,7 +346,7 @@ export default function DocumentsComptaPage() {
             className={`text-sm whitespace-nowrap transition-all ${
               onglet === 'documents'
                 ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5"
+                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5"
             }`}
           >
             📁 Documents ({documents.length})
@@ -546,8 +546,8 @@ export default function DocumentsComptaPage() {
             rend visibles partout. Même JSX, mêmes classes, UNE seule instance :
             ce n'est pas une UI ajoutée. */}
         {error && (
-          <div className="bg-red-900/20 border border-[#E30613] rounded-xl p-3">
-            <p className="text-xs text-[#E30613] font-bold leading-relaxed">{error}</p>
+          <div className="bg-red-900/20 border border-[#E53935] rounded-xl p-3">
+            <p className="text-xs text-[#E53935] font-bold leading-relaxed">{error}</p>
           </div>
         )}
 
@@ -611,7 +611,7 @@ export default function DocumentsComptaPage() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
-                        className="w-8 h-8 shrink-0 bg-[#E30613] rounded-full flex items-center justify-center"
+                        className="w-8 h-8 shrink-0 bg-[#E53935] rounded-full flex items-center justify-center"
                         aria-label="Supprimer le document"
                       >
                         <Trash2 size={14} className="text-white" />

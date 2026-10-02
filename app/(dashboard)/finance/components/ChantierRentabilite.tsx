@@ -33,7 +33,7 @@ export default function ChantierRentabilite() {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-xl border border-white/10 bg-[#1A1D24]/50">
+      <div className="flex h-64 items-center justify-center rounded-xl border border-white/10 bg-[#1E1E1E]/50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent"></div>
       </div>
     );
@@ -62,10 +62,10 @@ export default function ChantierRentabilite() {
         </div>
       )}
 
-      <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 overflow-hidden">
+      <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-300">
-            <thead className="border-b border-white/10 bg-[#1A1D24]/80 text-xs uppercase text-gray-400">
+            <thead className="border-b border-white/10 bg-[#1E1E1E]/80 text-xs uppercase text-gray-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Chantier</th>
                 <th className="px-4 py-3 font-medium text-right">Prix vente</th>
@@ -82,7 +82,7 @@ export default function ChantierRentabilite() {
                 return (
                   <tr
                     key={r.chantier_id}
-                    className={`hover:bg-[#1A1D24]/20 transition-colors ${
+                    className={`hover:bg-[#1E1E1E]/20 transition-colors ${
                       r.alerte_depassement ? "border-l-2 border-l-rose-500" : ""
                     }`}
                   >
@@ -96,7 +96,7 @@ export default function ChantierRentabilite() {
                     <td className="px-4 py-3 text-center">
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-xs font-bold text-gray-400">{r.avancement_reel || 0}%</span>
-                        <div className="w-16 h-1.5 bg-[#1A1D24] rounded-full overflow-hidden">
+                        <div className="w-16 h-1.5 bg-[#1E1E1E] rounded-full overflow-hidden">
                           <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min(r.avancement_reel || 0, 100)}%` }}></div>
                         </div>
                       </div>
@@ -121,7 +121,7 @@ export default function ChantierRentabilite() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex rounded-full bg-[#1A1D24] px-2 py-1 text-2xs font-semibold uppercase text-gray-300">
+                      <span className="inline-flex rounded-full bg-[#1E1E1E] px-2 py-1 text-2xs font-semibold uppercase text-gray-300">
                         {r.statut || "en_cours"}
                       </span>
                     </td>
@@ -130,7 +130,7 @@ export default function ChantierRentabilite() {
                         <button
                           onClick={() => setPrintingBilan(r)}
                           disabled={!!printingBilan}
-                          className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-gray-400 transition-colors disabled:opacity-50"
+                          className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-gray-400 transition-colors disabled:opacity-50"
                           title="Générer le Bilan Analytique"
                         >
                           <BarChart2 className="h-4 w-4" />
@@ -138,7 +138,7 @@ export default function ChantierRentabilite() {
                         <button
                           onClick={() => handleSupprimerChantier(r.chantier_id, r.nom)}
                           disabled={supprimantId === r.chantier_id}
-                          className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-rose-400 transition-colors disabled:opacity-50"
+                          className="flex items-center justify-center rounded p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-rose-400 transition-colors disabled:opacity-50"
                           title="Supprimer le chantier"
                         >
                           <Trash2 className="h-4 w-4" />

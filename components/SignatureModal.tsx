@@ -95,7 +95,7 @@ export default function SignatureModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0F1115] shadow-2xl overflow-hidden">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#121212] shadow-2xl overflow-hidden">
         
         {/* HEADER */}
         <div className="flex items-center justify-between border-b border-white/10 p-4">
@@ -116,7 +116,7 @@ export default function SignatureModal({
           {step === "PHONE" && (
             <div className="space-y-4">
               <div className="flex justify-center mb-2">
-                <div className="bg-[#1A1D24] p-4 rounded-full border border-white/5">
+                <div className="bg-[#1E1E1E] p-4 rounded-full border border-white/5">
                   <Smartphone className="h-8 w-8 text-sky-400" />
                 </div>
               </div>

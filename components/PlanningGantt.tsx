@@ -218,15 +218,20 @@ export default function PlanningGantt({ chantiers, onUpdateDates }: PlanningGant
               }
 
               const nomClient = ch.client_societe || ch.client_nom || "Client Inconnu";
-              let bgColor = "bg-gray-600";
-              let borderColor = "border-gray-500";
+              // Memes couleurs que le badge de statut de la liste des
+              // chantiers (§9). Avant, le planning affichait « en cours » en
+              // ORANGE et « termine » en VERT, alors que la liste affiche
+              // « en cours » en ROUGE sur fond bleu : le meme statut portait
+              // deux couleurs opposees selon la vue.
+              let bgColor = "bg-[#42A5F5]";
+              let borderColor = "border-[#42A5F5]";
 
               if (ch.statut === "en_cours") {
-                bgColor = "bg-orange-600";
-                borderColor = "border-orange-500";
+                bgColor = "bg-[#4CAF50]";
+                borderColor = "border-[#4CAF50]";
               } else if (ch.statut === "termine") {
-                bgColor = "bg-green-600";
-                borderColor = "border-green-500";
+                bgColor = "bg-[#9E9E9E]";
+                borderColor = "border-[#9E9E9E]";
               }
 
               const hasAlert = intemperies[ch.id];

@@ -21,6 +21,6 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | Clé admin (contourne RLS) | Serveur uniquement |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | IA devis (`/api/ia-devis`) | Serveur uniquement |
 | `GROQ_API_KEY` | Transcription/reformulation IA | Serveur uniquement |
-| `VISUALCROSSING_API_KEY` | Météo | Serveur uniquement |
+| `VISUALCROSSING_API_KEY` | Météo (source primaire, configurable uniquement sur Vercel ; en son absence, repli Open-Meteo sans clé) | Serveur uniquement |
 | `FINANCE_PIN` | Verrouillage module Finance | Serveur uniquement |
 | `METEOFRANCE_APPLICATION_ID` | Alertes Météo-France | Serveur uniquement |

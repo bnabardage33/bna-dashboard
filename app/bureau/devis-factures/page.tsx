@@ -813,7 +813,7 @@ function DevisContenu() {
   return (
     <div className="space-y-5">
       {toast && (
-        <div className="fixed top-16 left-1/2 z-[300] max-w-[90vw] -translate-x-1/2 rounded-xl border border-emerald-500/40 bg-[#15181E] px-4 py-3 text-sm font-bold text-emerald-400 shadow-xl shadow-black/40">
+        <div className="fixed top-16 left-1/2 z-[300] max-w-[90vw] -translate-x-1/2 rounded-xl border border-emerald-500/40 bg-[#1E1E1E] px-4 py-3 text-sm font-bold text-emerald-400 shadow-xl shadow-black/40">
           {toast}
         </div>
       )}
@@ -831,11 +831,11 @@ function DevisContenu() {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1A1D24]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des devis…
         </div>
       ) : devis.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1A1D24]/30 p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
           <p className="text-sm font-medium text-gray-400">Aucun devis pour l&apos;instant.</p>
           <button
             onClick={() => setModalOuvert(true)}
@@ -858,7 +858,7 @@ function DevisContenu() {
             return (
               <Surface
                 key={d.id}
-                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1A1D24]"
+                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1E1E1E]"
                 radius="2xl"
               >
                 <div className="space-y-3">
@@ -922,7 +922,7 @@ function DevisContenu() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setApercu(d)}
-                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] flex items-center gap-1"
+                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] flex items-center gap-1"
                     >
                       👁️ Aperçu PDF
                     </button>
@@ -939,7 +939,7 @@ function DevisContenu() {
                     {d.statut !== "accepte" && d.statut !== "signe" && (
                       <button
                         onClick={() => transformerEnChantier(d)}
-                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1A1D24]/40"
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1E1E1E]/40"
                         title="Valider et transformer en chantier"
                       >
                         ⚡ En chantier
@@ -971,7 +971,7 @@ function DevisContenu() {
           <form
             onSubmit={handleGenererFacture}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1A1D24] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5 animate-in fade-in"
+            className="bg-[#1E1E1E] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5 animate-in fade-in"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -1080,7 +1080,7 @@ function DevisContenu() {
             <form
               onSubmit={creerDevis}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#1A1D24] w-full max-w-2xl h-[90dvh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+              className="bg-[#1E1E1E] w-full max-w-2xl h-[90dvh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
             >
             <div className="flex items-center justify-between border-b border-white/10 px-4 min-h-[52px] py-2 sm:min-h-0 sm:py-3.5 shrink-0">
               <h2 className="text-[17px] sm:text-lg font-bold text-white">Nouveau Devis</h2>
@@ -1461,11 +1461,11 @@ function DevisContenu() {
               </div>
             </div>
 
-            <div className="p-2.5 border-t border-white/10 flex flex-row sm:justify-end items-center gap-2 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="p-2.5 border-t border-white/10 flex flex-row sm:justify-end items-center gap-2 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="flex-none min-h-[44px] sm:min-h-0 rounded-xl border border-slate-600 bg-[#1A1D24] px-3 sm:px-4 py-2 text-sm sm:py-2.5 sm:text-xs font-semibold text-gray-300 hover:bg-white/5"
+                className="flex-none min-h-[44px] sm:min-h-0 rounded-xl border border-slate-600 bg-[#1E1E1E] px-3 sm:px-4 py-2 text-sm sm:py-2.5 sm:text-xs font-semibold text-gray-300 hover:bg-white/5"
               >
                 Annuler
               </button>
@@ -1504,7 +1504,7 @@ function DevisContenu() {
 
               <button
                 onClick={() => { setApercu(null); setSignatureData(null); setModeSignature(false); }}
-                className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24]"
+                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
               >
                 Fermer
               </button>
@@ -1547,7 +1547,7 @@ function DevisContenu() {
             />
 
             {modeSignature && (
-              <div className="mt-4 bg-[#1A1D24] border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
+              <div className="mt-4 bg-[#1E1E1E] border border-slate-600 rounded-2xl p-6 space-y-4 print:hidden">
                 <h3 className="text-sm font-bold text-gray-200">✍️ Signature du client</h3>
                 <SignaturePad
                   label="Signature"
@@ -1581,7 +1581,7 @@ function DevisContenu() {
                   </button>
                   <button
                     onClick={() => setModeSignature(false)}
-                    className="rounded-xl border border-slate-600 bg-[#1A1D24] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1A1D24] transition-all"
+                    className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] transition-all"
                   >
                     Annuler
                   </button>

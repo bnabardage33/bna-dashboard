@@ -37,7 +37,7 @@ export default function HistoriquePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Tableau Pointages */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+          <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4">
             <h2 className="text-lg font-bold text-gray-200 mb-4">Derniers Pointages</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-300">
@@ -52,7 +52,7 @@ export default function HistoriquePage() {
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
                   {pointages.map((p) => (
-                    <tr key={p.id} className="hover:bg-[#1A1D24]/20">
+                    <tr key={p.id} className="hover:bg-[#1E1E1E]/20">
                       <td className="px-2 py-2">{new Date(p.date).toLocaleDateString("fr-FR")}</td>
                       <td className="px-2 py-2">{p.profiles?.full_name || "Inconnu"}</td>
                       <td className="px-2 py-2 truncate max-w-[120px]" title={p.chantiers?.nom}>{p.chantiers?.nom}
@@ -94,7 +94,7 @@ export default function HistoriquePage() {
           </div>
 
           {/* Tableau Dépenses */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+          <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4">
             <h2 className="text-lg font-bold text-gray-200 mb-4">Dernières Dépenses</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-300">
@@ -109,7 +109,7 @@ export default function HistoriquePage() {
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
                   {depenses.map((d) => (
-                    <tr key={d.id} className="hover:bg-[#1A1D24]/20">
+                    <tr key={d.id} className="hover:bg-[#1E1E1E]/20">
                       <td className="px-2 py-2">{new Date(d.date).toLocaleDateString("fr-FR")}</td>
                       <td className="px-2 py-2 capitalize">{d.nature.replace("_", " ")}</td>
                       <td className="px-2 py-2 truncate max-w-[120px]" title={d.chantiers?.nom}>{d.chantiers?.nom}</td>
@@ -152,7 +152,7 @@ export default function HistoriquePage() {
           </div>
 
           {/* Tableau Avancements */}
-          <div className="rounded-xl border border-white/10 bg-[#1A1D24]/50 p-4">
+          <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-4">
             <h2 className="text-lg font-bold text-gray-200 mb-4">Dernières Saisies Avancement</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-300">
@@ -166,7 +166,7 @@ export default function HistoriquePage() {
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
                   {avancements.map((a) => (
-                    <tr key={a.id} className="hover:bg-[#1A1D24]/20">
+                    <tr key={a.id} className="hover:bg-[#1E1E1E]/20">
                       <td className="px-2 py-2">{new Date(a.date).toLocaleDateString("fr-FR")}</td>
                       <td className="px-2 py-2 truncate max-w-[120px]" title={a.chantiers?.nom}>{a.chantiers?.nom}</td>
                       <td className="px-2 py-2 text-right font-medium text-gray-400">

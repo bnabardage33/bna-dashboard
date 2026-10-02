@@ -81,7 +81,7 @@ window.location.href = '/'
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-transparent">
-      <form onSubmit={handleLogin} className="w-full max-w-sm bg-[#1A1D24] p-8 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+      <form onSubmit={handleLogin} className="w-full max-w-sm bg-[#1E1E1E] p-8 rounded-2xl shadow-sm border border-slate-100 space-y-4">
         <h1 className="text-xl font-bold text-gray-300">Connexion BNA</h1>
         <input
           type="email" placeholder="Email" value={email}

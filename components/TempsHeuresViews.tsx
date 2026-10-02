@@ -59,23 +59,23 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="chp-surface-m" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Surface (m²)</label>
-          <input id="chp-surface-m" type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <input id="chp-surface-m" type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
         <div>
           <label htmlFor="chp-coupes-ml" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coupes (ml)</label>
-          <input id="chp-coupes-ml" type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <input id="chp-coupes-ml" type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
         <div>
           <label htmlFor="chp-singularites-nb" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Singularités (nb)</label>
-          <input id="chp-singularites-nb" type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <input id="chp-singularites-nb" type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
         <div>
           <label htmlFor="chp-coef-de-perte-de-rendement" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coef. de perte de rendement</label>
-          <input id="chp-coef-de-perte-de-rendement" type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" />
+          <input id="chp-coef-de-perte-de-rendement" type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
       </div>
 
-      <div className="mt-4 p-4 rounded-lg bg-[#0B0F19] border border-white/10 grid grid-cols-2 gap-4">
+      <div className="mt-4 p-4 rounded-lg bg-[#121212] border border-white/10 grid grid-cols-2 gap-4">
         <div>
           <p className="text-xs text-gray-500">Temps Budget (Vente)</p>
           <p className="text-xl font-bold text-emerald-400">{tempsBudget.toFixed(2)} h</p>
@@ -185,7 +185,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
             <select id="chp-ouvrier"
               value={ouvrierId} 
               onChange={(e) => setOuvrierId(e.target.value)} 
-              className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white"
+              className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white"
             >
               <option value="">Collectif (sans ouvrier)</option>
               {ouvriers.map(o => (
@@ -207,7 +207,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
             type="date" 
             value={dateSaisie} 
             onChange={(e) => setDateSaisie(e.target.value)} 
-            className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white" 
+            className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" 
           />
         </div>
 
@@ -218,7 +218,7 @@ export function PointageEquipeView({ chantierId, chantierNom }: { chantierId: st
             placeholder="Ex: 35"
             value={heures || ""} 
             onChange={(e) => setHeures(Number(e.target.value))} 
-            className="w-full rounded-lg border border-white/10 bg-[#0B0F19] px-3 py-2 text-sm text-white text-center text-2xl font-bold" 
+            className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white text-center text-2xl font-bold" 
           />
         </div>
 
@@ -251,7 +251,7 @@ const adjusted = (p.volume_heures_declare || 0) / ((p.coef_meteo || 1.0) || 1.0)
                const icon = METEO_ICONS[p.meteo_relevee || ''] || '➖';
                
                return (
-                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0B0F19]/50 border border-white/10">
+                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[#121212]/50 border border-white/10">
                    <div>
                      <p className="text-sm font-semibold text-white">{p.date_saisie || 'Sans date'}</p>
                      <p className="text-xs text-gray-400">
@@ -351,7 +351,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
       </p>
 
       <div className="space-y-6 mt-4">
-        <div className="p-4 rounded-lg bg-[#0B0F19] border border-white/10">
+        <div className="p-4 rounded-lg bg-[#121212] border border-white/10">
           <div className="flex justify-between items-center mb-2">
             <span className="font-bold text-white">{data.nom} {icones}</span>
             <span className={`font-bold ${estPositif ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -359,7 +359,7 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
             </span>
           </div>
           
-          <div className="h-4 w-full bg-[#1A1D24] rounded-full overflow-hidden flex">
+          <div className="h-4 w-full bg-[#1E1E1E] rounded-full overflow-hidden flex">
             <div 
               className={`h-full ${estPositif ? 'bg-emerald-500' : 'bg-red-500'}`} 
               style={{ width: `${pct}%` }}

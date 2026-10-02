@@ -442,7 +442,7 @@ describe('LOT 2E — FloatingActionButton', () => {
       // gestionnaires diffèrent tous, et aucun ne porte d'aria-label. Les
       // factoriser figerait ce défaut d'accessibilité. Lot à part.
       const cible =
-        'rounded-lg p-1.5 text-gray-400 hover:bg-[#1A1D24] hover:text-white'
+        'rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white'
       let n = 0
       for (const chemin of lireArborescence()) {
         if (!/\.tsx$/.test(chemin)) continue
