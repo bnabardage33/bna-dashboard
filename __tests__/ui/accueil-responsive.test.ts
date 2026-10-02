@@ -169,7 +169,10 @@ describe("Accueil — les grilles sont celles de l'ancien cockpit", () => {
     // La largeur d'une carte est celle de sa colonne, rien d'autre.
     const cartes = [
       ...DASHBOARD.matchAll(/<Link\s+href="\/terrain\/notes"\s+className="([^"]*)"/g),
-      ...DASHBOARD.matchAll(/<Surface as="li" key=\{c\.id\}(?: className="([^"]*)")?>/g),
+      // `key={n.id` : la carte d'alerte est rendue avec `n`, pas `c`. Avec
+      // `c`, cette branche ne matchait AUCUNE occurrence et la garde « aucune
+      // carte a largeur propre » ne verifiait donc pas les alertes.
+      ...DASHBOARD.matchAll(/<Surface as="li" key=\{n\.id\}(?: className="([^"]*)")?>/g),
     ].map((m) => m[1] ?? "");
     expect(cartes.length).toBeGreaterThanOrEqual(2);
     for (const classes of cartes) {
@@ -252,5 +255,68 @@ describe("Accueil — le correctif de rendu ne touche pas au fond", () => {
   it("l'assistance vocale garde son handler et son composant", () => {
     expect(DASHBOARD).toContain("BoutonMicroNote");
     expect(DASHBOARD).toContain("handleTexteReformule");
+  });
+});
+
+/**
+ * Confort interne des cartes de contenu — sections « Dernières Notes » et
+ * « Alertes ».
+ *
+ * Les deux sections alignent titre, texte et date sur une carte. Or `Surface`
+ * ne DEFINIT que l'habillage (bordure + fond + arrondi) : aucun padding. La
+ * carte de note, écrite en classes littérales, en porte un (`p-4`) ; la carte
+ * d'alerte, elle, s'en dispensait — d'où un titre, un message et une date
+ * collés au bord gauche de la carte. Le défaut est visible sur mobile, où la
+ * carte occupe toute la largeur et que le vide se lit d'un coup.
+ *
+ * Le test compare les DEUX padding entre eux plutôt que d'écrire `p-4` en
+ * dur : l'exigence n'est pas « quatre pixels de moins », c'est « le même
+ * confort que les Notes ». Une future retouche des Notes se répercutera donc
+ * ici, au lieu de laisser les deux sections diverger en silence.
+ */
+describe("Accueil — confort interne des cartes Notes et Alertes", () => {
+  /** Les classes de padding d'une carte : `p-*`, `px-*`, `py-*`. */
+  const tokensPadding = (classes: string) =>
+    classes.match(/\b(?:p|px|py)-[0-9.]+/g) ?? [];
+
+  const carteNotes =
+    DASHBOARD.match(/key=\{n\.id\}\s+href="\/terrain\/notes"\s+className="([^"]*)"/);
+  // `className` facultatif : si quelqu'un retire la classe, la carte doit
+  // rester identifiee SANS padding, pour que l'echec soit nucle sur le
+  // padding et non sur la forme du JSX.
+  const carteAlertes =
+    DASHBOARD.match(/<Surface as="li" key=\{n\.id\}(?: className="([^"]*)")?>/);
+
+  it("les deux cartes existent bien dans la source", () => {
+    // Sans ce controle, les assertions suivantes passeraient par absence
+    // d'objet si le JSX changeait de forme.
+    expect(carteNotes, "carte de note introuvable").not.toBeNull();
+    expect(carteAlertes, "carte d'alerte introuvable").not.toBeNull();
+  });
+
+  it("les deux cartes portent le MEME padding", () => {
+    expect(tokensPadding(carteAlertes![1] ?? "")).toEqual(tokensPadding(carteNotes![1]));
+  });
+
+  it("le padding couvre les DEUX axes, pas seulement l'horizontal", () => {
+    // Un `px-4` seul laisserait le titre plaqué en haut de la carte.
+    const padding = tokensPadding(carteAlertes![1] ?? "");
+    expect(padding.length).toBeGreaterThan(0);
+    for (const token of padding) {
+      expect(token, `padding ${token} : ne pose qu'un seul axe`).toMatch(/^p-/);
+    }
+  });
+
+  it("la carte d'alerte ne redéfinit ni fond, ni bordure, ni arrondi", () => {
+    // L'habillage reste celui de `Surface` : la correction porte sur le
+    // padding, pas sur la charte. Un `bg-…`, `border-…` ou `rounded-…`
+    // supplémentaire ici viendrait concurrencer `HABILLAGE`.
+    expect((carteAlertes![1] ?? "").match(/\b(?:bg|border|rounded)-/g) ?? []).toEqual([]);
+  });
+
+  it("la carte d'alerte ne prend toujours pas de largeur propre", () => {
+    // Repris de la garde générale « aucune carte ne porte de largeur propre »,
+    // qui couvre desormais reellement cette carte (cf. regex reparee plus haut).
+    expect(carteAlertes![1] ?? "").not.toMatch(/\bw-full\b|w-\[calc|max-w-/);
   });
 });

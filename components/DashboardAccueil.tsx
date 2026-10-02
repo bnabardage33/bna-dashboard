@@ -393,8 +393,13 @@ export default function DashboardAccueil({
                   </>
                 );
 
+                // `Surface` ne porte que l'habillage (bordure + fond) : AUCUN
+                // padding. Sans `p-4`, le titre, le message et la date sont
+                // colles au bord gauche de la carte, alors que les cartes
+                // « Dernieres Notes » de la section 4 sont en `p-4`. Meme
+                // valeur, donc meme confort visuel sur les deux sections.
                 return (
-                  <Surface as="li" key={n.id}>
+                  <Surface as="li" key={n.id} className="p-4">
                     {n.lien ? (
                       <Link href={n.lien} className="group block">
                         {contenu}
