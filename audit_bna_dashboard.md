@@ -1,650 +1,1015 @@
-# 📋 Audit Complet — BNA Dashboard
-> Rapport mis à jour le 16/09/2026 (Refonte Devis IA, Calepinage, Facturation & Aides MPR) — Toutes les pages, onglets, fonctionnalités et sécurité recensés
+# 📋 Audit — BNA Dashboard
+
+> Fichier de référence unique pour reprendre le projet. Il décrit **l'état réel
+> du dépôt**, vérifié à `ad6404a`. Toute affirmation y est soit vérifiable dans
+> le code, soit explicitement marquée « non vérifié ».
+>
+> Convention : les chemins sont relatifs à la racine du dépôt.
 
 ---
 
-## 🏗️ Architecture Générale
+## 📸 Snapshot
 
-L'application est un **Next.js 16 App Router** connecté à **Supabase** (PostgreSQL + Storage).
-- **UI** : Tailwind CSS (dark mode slate-900 pour le dashboard pro, thème clair blanc `#FFFFFF`/`#111111` pour l'espace client)
-- **IA** :
-  - `openai/gpt-oss-20b` (Groq) — chat client, résumé conversations, sécurité, reformulation, dictée avancement (modèle unique, unification 10/09)
-  - `whisper-large-v3` (Groq) — transcription audio (notes vocales + dictée avancement)
-  - `gemini-3.5-flash-lite` (Vercel `@ai-sdk/google`) — génération devis **et** OCR de tickets/BL (vision)
-- **PDF** : `window.print()` avec composants React masqués (`hidden print:block`)
-- **API Météo** : Météo-France DPVigilance (alertes) + Visual Crossing (détail) + **Open-Meteo** (veille intempéries auto, seuils pluie >10 mm / vent >50 km/h / gel <0 °C)
-- **Crons Vercel** (`vercel.json`) : `/api/rapports-client/auto` (lundi 6h) + `/api/cron/meteo` (chaque jour 6h) — **⚠️ les crons ne tournent pas sur l'offre Hobby (réservés au plan Pro / Vercel)**, déclenchement manuel possible avec `Authorization: Bearer <CRON_SECRET>`
-
----
-
-## 📊 TABLES SUPABASE REQUISES (récapitulatif complet)
-
-| Table | Colonnes principales | Utilisé par |
-|---|---|---|
-| `profiles` | `id, full_name, role` | Pointages, connexion |
-| `entreprise_settings` | `id, raison_sociale, siret, telephone, email, adresse, code_postal, ville, iban, bic, assurance, assurance_nom, assurance_numero_police, assurance_zone_geo, mediateur_nom, mediateur_contact, mentions_legales, logo_url, seuil_ca, taux_cotisations` | Paramètres, tous PDF |
-| `clients` | `id, nom, societe, email, tel, adresse_facturation, code_postal, ville` | Bureau, Terrain |
-| `chantiers` | `id, nom, client_id, adresse_chantier, date_debut, date_fin, statut, materiau_structurel, moyen_acces, zone_vent, checklist, surface_m2, quantite_coupes_ml, singularites_nb, coef_perte_rendement` | Terrain, Finance, Bureau |
-| `equipe` | `id, nom, prenom, role` | Pointages globaux |
-| `catalogue_temps` | `id, nom_tache, temps_unitaire_heure` | Temps Heures, Calepinage |
-| `pointages_globaux` | `id, chantier_id, equipe_id, date_saisie, volume_heures_declare, commentaire, meteo_relevee, coef_meteo` | Temps Heures (Mode Confiance) |
-| `devis` | `id, numero, client_id, chantier_id, objet, adresse_chantier, date_emission, validite_jours, tva_pct, statut, lignes (JSONB), acompte_pct` | Bureau Devis |
-| `factures` | `id, numero, client_id, chantier_id, objet, date_emission, echeance, tva_pct, statut, type_facture, lignes (JSONB)` | Bureau Factures |
-| `fournisseurs` | `id, nom, contact, telephone, email, statut_relation, notes` | Bureau Fournisseurs |
-| `commandes` | `id, fournisseur_id, chantier_id, reference_interne, objet, date_commande, date_livraison_prevue, lignes (JSONB), montant_ht, statut` | Bureau Fournisseurs |
-| `pointages` | `id, user_id, chantier_id, date, heures, type_heure, taux_horaire_charge` | Finance Saisie, Terrain |
-| `depenses_chantier` | `id, chantier_id, fournisseur_id, date, categorie, description, montant_ht, montant_tva, montant_ttc` | Finance Saisie |
-| `avancements_chantier` | `id, chantier_id, date, pourcentage, commentaire, details (JSONB), created_at` | Terrain Avancement Façades, Espace Client |
-| `pv_receptions` | `id, numero, chantier_id, client_id, devis_id, date_reception, statut, type_travaux, adresse_chantier, materiaux_utilises, zones_metres (JSONB), photos (JSONB), reserves (JSONB), observations, notice_entretien (JSONB), signature_client, signataire_client_nom, signature_entreprise, signataire_entreprise_nom, checklist_repli (JSONB)` | Bureau Fin de Chantier |
-| `rapports_intemperies` | `id, numero (RI-AAAA-NNN), chantier_id, cree_le, cree_par (+'auto'), jour_arrete, ampleur_impact, pluie_continue, pluie_cumul, rafales_max, temp_max, motif, vigilance_officielle, a_valider` | Bureau Intempéries + Veille auto |
-| `notes_patron` | `id, titre, contenu, epingle, created_at, updated_at` | Terrain Notes |
-| `fiches_techniques` | `id, titre, categorie, reference, resume, contenu, fichier_url` | Terrain Fiches DTU |
-| `catalogue_ouvrages` | `id, designation, description, famille_label, unite, pu_ht, dimensions_disponibles` | Bureau Devis & Factures |
-| `zones_chantier` | `id, chantier_id, type, nom, largeur, hauteur_mur, hauteur_faite, materiau, ouvertures (JSONB), famille_pose...` | Terrain Métrés |
-| `photos_notes_chantier` | `id, chantier_id, url, legende, created_at` | Terrain Photos & Notes |
-| `parametres_finance` | `id, cle, valeur` | Finance (taux horaire, salaires...) |
-| `tickets_sav` | `id, chantier_id, statut, sous_garantie, type_sinistre, localisation, description, cause_probable, respect_dtu, diagnostic_dtu, materiel_prevu (JSONB), date_intervention, temps_estime, intervenant, moyen_acces, photos (JSONB), signature_technicien (text), signature_client (text)` | Bureau SAV |
-| `documents_compta` | `id, type (bl/ticket), date, note, montant_ht, taux_tva, montant_tva, montant_ttc, url_image, created_at` | Bureau Docs Compta |
-| `notifications` | `id, type, titre, message, destinataire_id, lien, lu, created_at` | Notifications (GET/POST/PATCH) |
-| `rapports_client` | `id, chantier_id, semaine_label, date_debut, date_fin, contenu (JSONB incl. communication.message_patron), statut, envoye_le, created_at` | Rapports Client (auto hebdo + manuel) |
-| `photos_chantier` | `id, chantier_id, url_image, titre, date_ajout` | Photos Chantier (upload/liste/suppression) |
-
-### ✅ Migrations SQL appliquées (`supabase/migrations/`)
-
-- `20260821_create_pv_receptions.sql` — PV de réception
-- `20260821_add_legal_and_insurance_settings.sql` — mentions légales + assurance décennale
-- `20260906_notifications.sql` — table notifications (cloche bureau)
-- `20260907_add_missing_columns.sql` — colonnes manquantes (`avancements_chantier.details/commentaire/created_at`, `tickets_sav.signature_technicien`, …)
-- `20260909_add_module_dimensions.sql` — dimensions modules (zones)
-- `20260910_create_rapports_client.sql` — rapports hebdomadaires client (`statut`, `envoye_le`)
-- `20260910_docs_compta_link_depenses.sql` — lien docs compta → dépenses chantier
-- `20260910_parametres_entreprise.sql` ⚠️ **À APPLIQUER DANS SUPABASE SQL EDITOR** (mission 07, dashboard tréso patron <-> entreprise_settings) — non confirmé par l'utilisateur
-
-> Note : la table `rapports_intemperies` (justificatifs météo, `numero RI-AAAA-NNN`, `cree_par`, `motif`, `jour_arrete`, etc.) existe en base mais sa création n'est pas tracée en fichier de migration ; créée manuellement côté Supabase.
-
----
-
-## 🏠 PAGE D'ACCUEIL (`/terrain/meteo`) — Tableau de Bord Central
-
-> **Redirection automatique** : `/` → `/terrain` → `/terrain/meteo`
-
-- **Widget IA Vocal** : enregistrement audio → transcription Whisper → reformulation (gpt-oss-20b) → `notes_patron`
-- **Widget Météo du Jour** : temp, vent, rafales, alerte colorée (vert/jaune/orange/rouge)
-- **3 Dernières Notes** + lien page complète
-- **Chantiers Actifs & Météo** : liste avec alerte météo calculée en temps réel
-
----
-
-## 🧱 MODULE TERRAIN (`/terrain/*`)
-
-### 1️⃣ Terrain → Chantiers (`/terrain/chantier`)
-
-- Vue Liste + Vue Planning (Gantt 6 mois)
-- Créer / Supprimer un chantier (modale responsive `pb-32 max-h-[80vh]`)
-- Filtres par recherche + Bouton GPS
-
----
-
-### 2️⃣ Terrain → Chantier Détail (`/terrain/chantier/[id]`)
-
-**7 onglets** :
-
-#### Onglet 1 — Général
-- PPSPS Express IA (sécurité — Groq `openai/gpt-oss-20b`)
-- Infos client, adresse, statut, matériau, moyen d'accès, zone de vent
-- Checklist fin de chantier
-
-#### Onglet 2 — Avancement ⭐ NOUVEAU (logique métier "Façadier")
-- **4 accordéons** : Façade Nord / Sud / Est / Ouest
-- **4 cases par façade** : Pose ossature / Pose isolation / Pose bardage / Finitions
-- **Calcul automatique** du % global (16 cases = 100%). Aucune saisie manuelle.
-- Compteur par façade visible dans l'accordéon fermé (ex: "2 / 4")
-- Champ "Observations du jour"
-- Sauvegarde dans `avancements_chantier` (colonne `details` JSONB + `pourcentage` calculé)
-- Persistance : rechargement des cases lors de la prochaine ouverture
-- Enveloppé dans `ErrorBoundary` (affiche message d'erreur propre, ne crash pas la page)
-
-#### Onglet 3 — Temps Heures
-- Gaël Logic : Calepinage / Pointage Mode Confiance / Tableau Rentabilité
-
-#### Onglet 4 — Métrés & Technique
-- Zones, ZoneCard, VisualiseurDebitPlaques, Calepinage SVG, Commander
-
-#### Onglet 5 — Météo & Intempéries
-- Météo temps réel Visual Crossing + Rapports Intempéries
-
-#### Onglet 6 — Photos & Notes
-- Galerie photo (compression auto) + Notes texte
-
-#### Onglet 7 — Documents
-- Synthèse financière + Devis / Factures / BdC / PV liés
-
----
-
-### 3️⃣ Terrain → Notes Patron (`/terrain/notes`)
-- Dictée vocale IA (Whisper → gpt-oss-20b), épingler, éditer, supprimer
-
-### 4️⃣ Terrain → Boîte à Outils (`/terrain/outils`)
-- Hub de navigation vers Météo, Notes, DTU, Intempéries
-
-### 5️⃣ Terrain → Fiches DTU (`/terrain/fiche-technique`)
-- Recherche, filtres catégorie, affichage résumé
-- Créer une fiche (titre, catégorie, référence, contenu, PDF joint)
-- Modale responsive mobile (footer statique)
-
----
-
-## 🏢 MODULE BUREAU (`/bureau/*`)
-
-### 1️⃣ Bureau → Dashboard (`/bureau`)
-- 4 KPIs temps réel + liens rapides
-
-### 2️⃣ Bureau → Clients (`/bureau/clients`)
-- Créer / Supprimer client, Fiche 360°
-- Modale responsive mobile (`pb-32 max-h-[80vh]`)
-
-### 3️⃣ Bureau → Devis (`/bureau/devis-factures`)
-- Créer, changer statut, PDF + signature électronique
-- Génération IA Gemini des lignes (Vercel AI SDK)
-- **Facturation auto à l'acceptation** : quand un devis passe au statut `accepté` ou `signé`, une facture d'acompte (FACT-YYYY-NNN) est générée automatiquement (`pct = acompte_pct ?? 30%`, tva 20%, `statut = en_attente`, échéance +15 jours) ; dédup facturée si déjà existante pour ce devis
-- Devis accepté → Facturation (Globale / Acompte / Situation)
-- Modale responsive mobile
-
-### 4️⃣ Bureau → Factures (`/bureau/factures`)
-- Créer, changer statut, Relance (pénalités LME 40€)
-- Mise en rouge auto si échéance dépassée
-- Filtre et card **"En attente de règlement"** (factures `statut='en_attente'`, issues de la facturation auto ou saisie manuelle)
-- Modale responsive mobile
-
-### 5️⃣ Bureau → Fournisseurs (`/bureau/fournisseurs`)
-- Créer fournisseur, Bons de Commande (PDF + signature double)
-
-### 6️⃣ Bureau → Fin de Chantier / PV Réception (`/bureau/fin-chantier`)
-- PV complet (zones, réserves, checklist, photos, notice entretien)
-- PDF + double signature électronique
-
-### 7️⃣ Bureau → Rapports d'Intempéries (`/bureau/rapports-intemperies`)
-- Génération auto depuis Météo-France + PDF
-- Numérotation `RI-AAAA-NNN`, lignes aussi créées automatiquement par la veille météo (`cree_par='auto'`)
-
-### 8️⃣ Bureau → SAV (`/bureau/sav`) ⭐ MIS À JOUR
-
-**Fiche SAV Détaillée (`/bureau/sav/[id]`)** :
-- Formulaire complet (chantier, statut, garantie, sinistre, diagnostic, matériel...)
-- **Section Photos & Signatures** :
-  - Upload photo Avant / Après
-  - **2 pads de signature distincts** (grid responsive 1→2 colonnes) :
-    - **Visa du Technicien** (obligatoire pour clôturer)
-    - **Signature du Client** (obligatoire pour clôturer)
-  - Clôture bloquée si l'une des 2 signatures manque
-- **Rapport SAV PDF** (responsive mobile) :
-  - Layout fluide `w-full max-w-3xl` (plus de largeurs cm fixes)
-  - Grille `grid-cols-1 sm:grid-cols-2`
-  - Texte adaptatif `text-2xl md:text-4xl break-words`
-  - Visa technicien : affiche la vraie signature capturée
-
-### 9️⃣ Bureau → Catalogue (`/bureau/catalogue`)
-- Créer / Modifier / Supprimer ouvrages. Utilisé dans Devis & Factures.
-
-### 🔟 Bureau → Portails Clients (`/bureau/portails-clients`)
-- Gestion Espaces Clients (code d'accès, URL unique)
-
-### 1️⃣1️⃣ Bureau → Docs Compta (`/bureau/documents-compta`) ⭐ NOUVEAU
-- Scan de Bons de Livraison / Tickets (pour la TVA), sans lien chantier pour l'instant (liste à plat)
-- Sélection photo via appareil photo **ou** galerie/fichiers (pas de `capture` forcé)
-- Saisie type (BL / Ticket), date, montant HT, taux TVA → calcul auto TVA/TTC affiché en direct
-- **OCR auto (IA vision Gemini)** : au choix d'une photo, `/api/ia-ocr-ticket` lit le ticket (montant, TVA, date, fournisseur, catégorie) et **pré-remplit le formulaire** — badge "🤖 Rempli auto par IA" ; matching approximatif fournisseur + bouton "+ Créer « … »" (insert fournisseur client-side)
-- Upload dans le bucket Storage `tickets`, table `documents_compta`
-- Liste des documents enregistrés : clic sur une ligne → ouvre l'image en grand (nouvel onglet), bouton suppression séparé (`stopPropagation`)
-- Route API dédiée `app/api/documents-compta/route.ts` (GET/POST/DELETE) via `supabaseAdmin`, POST acceptant aussi `file_url` (cas upload fait pour de l'IA), même pattern que Photos Chantier
-
-### 1️⃣2️⃣ Bureau → Météo Chantiers (`/bureau/meteo`) ⭐ NOUVEAU
-- Cartes météo par chantier en cours sur J → J+3 (Open-Meteo, géocodage Nominatim + fallback France)
-- Badge rouge "Alerte intempérie aujourd'hui" / vert "Conditions OK"
-- Boutons manuels : **"Vérifier intempéries du jour"** (POST `/api/meteo/intemperies`) et **"Notifier client"** (mailto)
-- Détecte pluie >10 mm, vent >50 km/h, gel <0 °C ; déduplique par jour ; trace `avancements_chantier` (cases inchangées) + crée un justificatif `rapports_intemperies` visible côté client
-
----
-
-## 🌐 ESPACE CLIENT (`/espace-client/[code_acces]`) ⭐ MIS À JOUR
-
-- **Carte Avancement** :
-  - `{avancement}%` issu de `avancements_chantier` (tri `created_at` DESC)
-  - Barre de progression animée
-  - **Frise 3 étapes dynamique** :
-    - `0–15%` → 🔵 Préparation En cours
-    - `16–85%` → ✅ Préparation + 🔵 Pose En cours
-    - `86–100%` → ✅ Préparation + ✅ Pose + 🔵 Finitions En cours
-- **Rapports hebdomadaires** : liste des rapports `statut='envoye'` (cron lundi + envoi manuel) avec photo couverture, delta d'avancement, aperçu imprimable/PDF (`RapportClientPrint`). **Le brouillon ne sort jamais** (double filtre côté API)
-- **Intempéries & justificatifs** ⭐ : section dédiée (badges "Chantier à l'arrêt le … / Reprise prévue dès la fin des intempéries" ou "Intempérie signalée", n° de justificatif, motif Open-Meteo) — envoyables à l'assurance
-- **Mes Documents** : Devis + Factures + Signature électronique
-- **Chatbot IA** (Groq `openai/gpt-oss-20b`) flottant + résumé en arrière-plan
-  - **Prompt sur données réelles** : le système charge l'avancement (%, cases/16), la date de fin, les devis, les factures et les arrêts intempéries des 14 derniers jours ; **plus aucun scénario "plaques HPL" hardcodé** ; règle "ne jamais inventer un retard/livraison" (réponse → le patron rappelle)
-  - **Alerte "client mécontent"** : le résumé injecte aussi une notification bureau (type `client_alert`, cloche) quand le sentiment est négatif
-  - **Mémoire multi-sessions A+B+C** (mission 13) : messages bruts persistés au fil de l'eau (`espace_client_append`) + `resume_global` multi-sessions (consolidation incrémentale bornée en tokens, `decouperParTokens`) + **note patron unique par chantier** (index unique `notes_patron.espace_client_id`) ; verrou advisory anti-consolidations concurrentes ; idempotence `deja_consolide` — voir section Mission 13
-- Photos chantier (galerie bridée aux photos du chantier)
-
----
-
-## 💰 MODULE FINANCE (`/(dashboard)/finance/*`)
-
-### 1️⃣ Finance → Tableau de Bord
-- KPIs, Rentabilité par chantier, Graphique CA, TVA, Trésorerie, URSSAF
-- Rapport PDF mensuel + Export CSV
-
-### 2️⃣ Finance → Saisie Pointage
-- `pointages` table
-
-### 3️⃣ Finance → Saisie Dépense
-- `depenses_chantier` table
-
-> **La Saisie Avancement a été SUPPRIMÉE du module Finance.**
-> L'avancement est désormais géré dans l'onglet "Avancement" de chaque chantier (logique façades).
-
-### 4️⃣ Finance → Historique
-- 30 derniers pointages + dépenses, suppression possible
-
----
-
-## ⚙️ PARAMÈTRES (`/parametres`)
-
-- Raison sociale, SIRET, coordonnées, IBAN/BIC, mentions légales
-- Assurance décennale, Médiateur, Seuil CA, Taux cotisations
-- **Upload Logo** (bucket `photos` Supabase Storage)
-
----
-
-## 🔌 API ROUTES
-
-| Route | Rôle |
+| | |
 |---|---|
-| `/api/meteo` | Météo Visual Crossing (lang=fr) + couvre `/api/meteo/intemperies` (public via startsWith) |
-| `/api/meteo/intemperies` | Veille auto (POST : détecte intempéries, trace `avancements_chantier` + crée justificatifs `rapports_intemperies` `cree_par='auto'` ; GET : lecture des relevés) |
-| `/api/cron/meteo` | Cron quotidien 6h → relance le POST intempéries (public, Hobby n'exécute pas les crons) |
-| `/api/meteo-vigilance` | Alertes DPVigilance |
-| `/api/transcrire-note` | Audio → Texte (Groq Whisper Large v3) |
-| `/api/reformuler-note` | Reformulation IA (Groq `openai/gpt-oss-20b`) |
-| `/api/ia-avancement` | Dictée vocale avancement façades (transcription + déduction des cases cochées) |
-| `/api/ia-devis` | Génération lignes devis (Google Gemini `gemini-3.5-flash-lite` via Vercel AI SDK) |
-| `/api/ia-securite` | Consignes PPSPS (Groq `openai/gpt-oss-20b`) |
-| `/api/ia-ocr-ticket` | OCR tickets/BL (Gemini vision, `generateText` messages image+texte, upload `tickets/ia-ocr/` ou `image_url`) → JSON montant/TVA/date/fournisseur/catégorie |
-| `/api/rapports-intemperies/generer` | Génération rapports (try/catch global → JSON 500) |
-| `/api/chat-client` | Messagerie Espace Client — **prompt contextuel sur données réelles du chantier** (pas de scénario HPL inventé) |
-| `/api/chat-client-summary` | Résumé conversation + **notification `client_alert` côté bureau si sentiment négatif** + note patron |
-| `/api/espace-client/[code_acces]` | Données portail client (avancement réel, devis/factures/rapports `envoye` + **intempéries**) |
-| `/api/espace-client/[code_acces]/signer` | Signature électronique devis/factures (vérification appartenance chantier) |
-| `/api/finance-pin` | Sécurisation module Finance via PIN |
-| `/api/documents-compta` | Scan BL/tickets — upload bucket `tickets` + table `documents_compta` (GET/POST/DELETE), POST accepte `file_url` |
-| `/api/analyze-chantier` | Analyse santé chantier (logique métier BNA, pas d'IA externe) |
-| `/api/scrape` | Scraping produits fournisseurs (Cheerio, extraction prix/dimensions) |
-| `/api/search` | Recherche globale (clients, chantiers, devis, fournisseurs) |
-| `/api/notifications` | Gestion notifications (GET/POST/PATCH) |
-| `/api/photos-chantier` | Upload/Liste/Suppression photos chantier (bucket `chantiers-photos`) |
-| `/api/rapports-client/generer` | Génération manuelle rapport hebdomadaire client |
-| `/api/rapports-client/auto` | Cron hebdo (lundi 6h) — génère les rapports et les marque **`envoye` + `envoye_le`** (envoi auto, plus de brouillons), message patron rédigé automatiquement |
-
----
-
-## 🎨 CHARTE GRAPHIQUE "DARK PREMIUM BNA" ⭐ NOUVEAU
-
-- **Fond d'application** : `bg-[#0B0F19]`
-- **Cartes et Modales** : `bg-[#1A1D24]` avec bordures `border-white/10`
-- **Header Global** : Défile avec la page (position relative, z-index 9999) pour libérer l'espace visuel sur tous les onglets.
-- **Onglets (Tabs) - "Pilule Rouge"** :
-  - **Actif** : `bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md`
-  - **Inactif** : `bg-[#1A1D24]/80 text-gray-400 hover:text-white rounded-full border border-white/5`
-- **Boutons principaux** : `bg-red-600 text-white hover:bg-red-700`
-- *Règle stricte* : Éradication totale du bleu (`sky-500`, `blue-500`) remplacé par le rouge BNA et des gris neutres.
-
----
-
-## 🔐 SÉCURITÉ — Session 27/08 → 31/08/2026
-
-### 1️⃣ Authentification & Middleware
-
-- **Supabase Auth** activée sur le dashboard interne : email/mot de passe, compte admin unique
-- `middleware.ts` (racine) + `lib/supabase/middleware.ts` : bloque l'accès à toutes les routes sauf celles listées dans `PUBLIC_PATHS` :
-  `/login`, `/espace-client`, `/api/espace-client`, `/api/chat-client`, `/api/chat-client-summary`, `/api/meteo` (+ `/api/meteo/intemperies` via `startsWith`), `/api/cron/meteo`, `/api/meteo-vigilance`, `/api/search`, `/api/notifications`, `/api/ia-devis`, `/api/reformuler-note`, `/api/transcrire-note`, `/api/ia-securite`, `/api/ia-avancement`, `/api/ia-ocr-ticket`, `/api/rapports-intemperies/generer`, `/api/rapports-client/auto`, `/api/scrape`, `/api/finance-pin`, `/api/photos-chantier`, `/api/analyze-chantier`, `/api/documents-compta`, `/api/chantiers-fournisseurs`, `/api/dashboard-patron`, `/manifest.json`, `/sw.js`
-- `lib/supabase/client.ts` (navigateur) + `lib/supabase/server.ts` (serveur) via `@supabase/ssr`
-- `lib/supabase.ts` migré de `createClient` (anon basique) vers `createBrowserClient` pour porter la session dans les pages qui font des appels directs Supabase côté navigateur
-- Page `/login` avec gestion d'erreur réseau + auto-connexion si autofill (Bitwarden) remplit email+mot de passe d'un coup
-- Déconnexion manuelle disponible dans le `Drawer` (menu burger en haut à gauche)
-- **⚠️ Piège récurrent identifié** : toute route qui fait un appel serveur-à-serveur interne (`fetch` vers une autre route `/api/...` du même projet) doit être ajoutée à `PUBLIC_PATHS`, sinon le middleware la redirige vers `/login` (HTML au lieu de JSON) faute de cookie de session — déjà rencontré sur `/api/meteo-vigilance`, `manifest.json`, `sw.js`
-
-### 2️⃣ RLS (Row Level Security) Supabase
-
-- RLS verrouillée avec policy unique `acces_authentifie_uniquement` (`auth.uid() IS NOT NULL`) + GRANT `SELECT/INSERT/UPDATE/DELETE` au rôle `authenticated` sur l'ensemble des tables métier (dont `avancements_chantier`, `catalogue_ouvrages`, `chantiers`, `clients`, `commandes`, `depenses_chantier`, `devis`, `entreprise_settings`, `factures`, `frais_interim`, `pointages`, `pointages_globaux`, `rapports_intemperies`, `lignes_commande`, `photos_chantier`, `articles`, `catalogue_temps`, `equipe`, `situations`, `vigilance_captures`, etc.)
-- **GRANT `service_role`** ajouté sur toutes les tables du schema public — trou identifié tardivement (`avancements_chantier` notamment causait un `permission denied` silencieux malgré l'usage de `supabaseAdmin`)
-- **Buckets Storage** : policies de listing public retirées sur `sav_photos`, `tickets`, `photos` (`getPublicUrl()` continue de fonctionner, seul le listing complet du dossier est bloqué)
-- **Suppression en cascade** (`ON DELETE CASCADE`) activée entre `chantiers` et ses 17 tables liées — supprimer un chantier de test nettoie automatiquement tout son historique (⚠️ irréversible, à garder en tête sur un vrai chantier client)
-- Tables orphelines identifiées (non référencées dans le code actuel, sécurisées par précaution mais pas branchées) : `articles`, `catalogue_temps`, `situations`, `vigilance_captures`, bucket `tickets`
-
-### 3️⃣ PIN Module Finance
-
-- Écran de verrouillage `FinancePinGate` devant `app/(dashboard)/finance/*` — code à 6 chiffres vérifié côté serveur (`app/api/finance-pin/route.ts`, variable d'env `FINANCE_PIN`)
-- Persistance via `sessionStorage`, bouton "Verrouiller" manuel (`FinanceLockButton`)
-- **Reverrouillage automatique après 15 min d'inactivité** dans le module Finance
-
-### 4️⃣ Session — Déconnexion automatique globale
-
-- `components/InactivityLogout.tsx` : déconnexion Supabase réelle + retour `/login` après 15 min sans interaction (toucher/clic/scroll/clavier), sur tout le dashboard interne (exclut `/login`, `/espace-client`, `/demo-client`)
-
-### 5️⃣ PWA — Installation mobile
-
-- `public/manifest.json` + `public/sw.js` (service worker minimal, sans cache offline) + `components/RegisterSW.tsx`
-- Icônes `icon-192.png` / `icon-512.png` (tailles exactes requises par Chrome, générées via ImageMagick depuis `logo-bna.png`)
-- App installable depuis Chrome mobile (menu ⋮ → Installer l'application), icône BNA sur l'écran d'accueil, ouverture plein écran
-
-### 🐛 Bugs majeurs corrigés durant cette session
-
-| Bug | Cause | Fix |
-|---|---|---|
-| Chat espace client 502 sur Groq | Guillemets littéraux dans `GROQ_MODEL` (env Vercel) | Retrait des guillemets |
-| Avancement chantier toujours 0% côté espace client | `service_role` sans GRANT sur `avancements_chantier` | GRANT ajouté sur toutes les tables |
-| Frais Agence Intérim invisible côté finance | `hooks/useFinance.ts` ne lit jamais `frais_interim` | Insertion miroir dans `depenses_chantier` |
-| Génération rapport intempéries plantait ("Unexpected token '<'") | Appel interne `/api/meteo-vigilance` bloqué par le middleware | Route ajoutée à `PUBLIC_PATHS` |
-| PWA non installable (fallback "Créer un raccourci") | `manifest.json`/`sw.js` bloqués par le middleware + icônes en 500×500 (pas 192/512 exact) | Routes exemptées + icônes régénérées aux bonnes tailles |
-
----
-
-## 🎨 STANDARD MODALES MOBILES
-
-Template unifié appliqué sur toutes les modales (Nouveau Client, Nouvelle Facture, Nouveau Chantier, Nouvelle Fiche Technique) :
-
-```jsx
-// Overlay — pt-48 et z-[210] pour s'assurer que la modale passe au-dessus du header
-<div className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-  // Conteneur flex colonne - Charte Dark Premium
-  <div className="bg-[#1A1D24] border border-white/10 w-full max-w-2xl max-h-[80vh] flex flex-col rounded-xl shadow-2xl">
-    // Header statique
-    <div className="p-4 border-b border-white/10 shrink-0">...</div>
-    // Formulaire scrollable
-    <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">...</div>
-// Footer statique
-    <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1A1D24] rounded-b-xl z-10">...</div>
-  </div>
-</div>
-```
-
----
-
-## 🤖 FONCTIONNALITÉS IA & OUTILS AVANCÉS — Session 31/08/2026
-
-### 1️⃣ Métré IA (`/terrain/metre-ia`)
-- **Outil de photogrammétrie sur mobile** (HTML5 Canvas)
-- **3 Modes** :
-  - `Étalonnage` : Tracé d'un trait de référence (au doigt/souris) + saisie de la dimension réelle (mètres). Calcule dynamiquement le ratio pixels/mètre.
-  - `Façades` (Addition) : Dessin de polygones libres par tapotements (fermeture auto ou manuelle). Calcule la surface brute selon le théorème de Gauss (Shoelace formula).
-  - `Vides` (Déduction) : Dessin de polygones libres pour déduire les fenêtres/portes.
-- **Résultat temps réel** : Surface Nette à poser calculée instantanément pendant le dessin.
-- Accessibilité : "Accès Rapides" depuis le Bureau + Menu Navigation `SubNav` de la section Terrain.
-
-### 2️⃣ Devis IA Vocal (`/bureau/devis-factures`)
-- **Reconnaissance Vocale (Web Speech API)** intégrée au champ "Générer avec l'IA" dans les Devis.
-- Utilise le micro natif du navigateur (`SpeechRecognition`).
-- **Anticipation de bugs mobile** :
-  - Bouton désactivé pendant l'écoute (évite le double-tap qui déclenche un plantage `aborted` sur Chrome Android).
-  - Gestion claire des erreurs d'autorisation (cadenas URL) via un message explicite `event.error`.
-- Traitement de l'audio transcrit envoyé au backend `/api/ia-devis` (Gemini via Vercel AI SDK) pour créer une ligne de devis structurée.
-
-### 3️⃣ Import Bookmarklet (Passe-muraille Sécurité)
-- Contournement des sécurités Cloudflare / Datadome de fournisseurs (Leroy Merlin, Point.P, Castorama) par un script exécuté côté client.
-- Injection de `?importUrl=...&importTitle=...&importPrice=...` dans `/bureau/catalogue`.
-- Le `useEffect` intercepte ces paramètres, parse le titre pour extraire les dimensions L x l x Ep (calcul en mm) et ouvre le formulaire pré-rempli.
-
----
-
-### Migration & Sécurisation de l'API IA (01 Septembre)
-- **Migration vers Anthropic (Claude 3.5 Sonnet)** : Suite à une forte instabilité de l'API Groq (limites TPM trop basses, décommissionnement imprévisible des modèles), le backend d'intelligence artificielle (`app/api/ia-devis/route.ts`) a été entièrement réécrit pour se connecter à l'API d'Anthropic.
-- **Résolution du Double-Read de Stream** : Correction d'un bug bloquant (`Body has already been read`) qui faisait planter l'API lors de l'interception d'une erreur (le buffer n'est désormais lu qu'une seule fois).
-- **Optimisation du Context Window** : La taille du payload envoyé à l'IA a été drastiquement réduite : les descriptions de produits ne sont plus injectées, et le nombre maximal d'articles de contexte a été plafonné à 15 (sélectionnés par pertinence de mots-clés) pour garantir un chiffrage rapide sans exploser les limites.
-- **Pivot vers Vercel AI SDK & Gemini 1.5 Pro (01 Septembre)** : Remplacement définitif de l'API Anthropic et Groq par le SDK officiel de Vercel (`@ai-sdk/google`) couplé à Gemini 1.5 Pro. La logique de parsing strict (Chain of Thought + Tableau final) et les règles de calcul DTU sont préservées, offrant ainsi une architecture d'entreprise robuste, native à Next.js, et insensible aux changements brusques de modèles des petits providers.
-
-### Unification du modèle IA (10 Septembre)
-- **Remplacement de `groq/compound-mini` par `openai/gpt-oss-20b`** : Les 2 routes utilisaient encore `compound-mini` ( obsolète) ont été migrées vers `openai/gpt-oss-20b` pour unifier tout le dashboard sur un seul modèle LLM.
-  - `app/api/ia-securite/route.ts` : Sécurité chantier (checklist PPSPS)
-  - `app/api/reformuler-note/route.ts` : Reformulation notes vocales
-- **État actuel de la stack IA** :
-  - `openai/gpt-oss-20b` (via Groq) — chat client, résumé conversations, sécurité, reformulation
-  - `whisper-large-v3` (via Groq) — transcription audio (notes vocales)
-  - `gemini-3.5-flash-lite` (via Google `@ai-sdk/google`) — génération de devis
-
-### Synchronisation Dashboard Pro / Portail Client (01 Septembre)
-- **Nettoyage UI Mobile** : Suppression du double "header" noir (`<header>` redondant dans `page.tsx`) et nettoyage des règles CSS forcées qui cassaient la mise en page sous l'enveloppe du Layout principal (`app/layout.tsx`).
-- **Date de fin estimée dynamique** : Correction de la date "15 déc. 2024" qui était écrite en dur. Le code lit désormais `date_fin_estimee` dans la table `chantiers` (via API). S'il n'y a pas de date ou si la date est dépassée, un fallback intelligent (`"Date à redéfinir"`) ou recalculé (`created_at + 2 mois`) s'affiche via `toLocaleDateString`.
-- **Refonte logique d'Avancement (Tâches & Façades)** :
-  - **Unification du calcul** : Le pourcentage global n'est plus une simple donnée copiée (risquant des désynchronisations) mais est désormais calculé dynamiquement *à la volée* côté client (`(Total tâches cochées / Total tâches globales) * 100`) en se basant strictement sur le JSON détaillé de l'avancement.
-  - **API enrichie** : Ajout du champ JSON `details` dans la sélection Supabase de l'API `/api/espace-client/[code_acces]/route.ts`.
-  - **Badges d'avancement dynamiques** : Le portail client affiche maintenant une grille dynamique (`grid-cols-2`) pour les 4 façades, basculant entre "Terminée" (vert), "En cours" (orange) et "À commencer" (gris) en fonction du nombre précis de sous-tâches validées pour chaque façade.
-  - **Correction des Observations** : Résolution du bug qui vidait la zone de texte du commentaire/observation lors de l'enregistrement de l'avancement sur le dashboard pro. Ajout de l'extraction de la colonne `commentaire` depuis la base de données (`fetchAvancement` dans `AvancementFacades.tsx`) afin que la dernière note saisie se recharge correctement au démarrage du composant.
-
-### Nouvelle section Bureau — Docs Compta (02 Septembre)
-- **Objectif** : scanner les Bons de Livraison et tickets de caisse pour faciliter le suivi TVA/comptabilité, sans dépendre d'un lien à un chantier ou une commande précise (liste à plat pour l'instant).
-- **Nouvelle table** `documents_compta` (RLS + GRANT `authenticated`/`service_role`, même politique `acces_authentifie_uniquement` que le reste du dashboard).
-- **Nouvel onglet** dans `BureauNav.tsx` ("Docs Compta", icône `Receipt`), nouvelle page `app/bureau/documents-compta/page.tsx` sur le modèle de Photos Chantier.
-- **Calcul TVA en direct** à la saisie (HT → TVA → TTC affichés instantanément avant l'envoi).
-- **Sélection photo** : retrait de l'attribut `capture="environment"` pour laisser le sélecteur natif proposer Appareil photo **et** Galerie/Fichiers (utile pour les tickets déjà dématérialisés, ex: reçus par email).
-- **Consultation** : clic sur une ligne de la liste ouvre l'image en grand dans un nouvel onglet ; le bouton de suppression utilise `stopPropagation()` pour ne pas déclencher l'ouverture en même temps.
-
----
-
-## 🚀 MISSIONS LOGICIELLES RÉCENTES (08 → 16/09/2026)
-
-> Chaque mission : validée par l'utilisateur, livrée, `npx tsc --noEmit` à 0 erreur, commit + push Git.
-
-| Mission | Commit | Fonctionnalité |
-|---|---|---|
-| 08 — Analyse | `f7da883` | `ANALYSE_PROCHAINES_FONCTIONS.md` : 3 propositions retenues par l'utilisateur (facturation auto, veille météo intempéries, OCR BL/tickets) |
-| 09 — Facturation auto | `a6dfe14` | Devis accepté/signé → facture d'acompte auto (voir Bureau Devis/Factures) |
-| 10 — Veille météo intempéries | `6b5e150` | `/api/meteo/intemperies`, cron `/api/cron/meteo`, page `/bureau/meteo`, nav "Météo Chantiers" |
-| 11 — OCR BL/tickets | `46c9cb7` | `/api/ia-ocr-ticket` (Gemini vision) + pré-remplissage auto dans Docs Compta |
-| 12 — Espace client | `d0e954b` | Rapports hebdo envoyés auto, justificatifs intempéries visibles, **fix chat HPL** (prompt données réelles), alerte "client mécontent" → notifications |
-| 13 — Chat mémoire multi-sessions | `f71cf3f` | Mémoire multi-sessions A+B+C, note unique par chantier, consolidation incrémentale + budget tokens, idempotence, anti-concurrence — détails + validation réelle ci-après |
-| 14 — Scraping Web & Catalogue | `da0a6d4` | Ajout des colonnes `designation_devis`, `code_ral`. Scraper URL web auto-extracteur des DTU, normes, ACERMI et mapping RAL. |
-| 15 — Calepinage (DTU 41.2/45.4) | `47d80bf` | Module de calcul auto des mètres linéaires (chevrons entraxe 60cm max) et équerres (entraxe 1.20m max) avec ancrages. Connecté au moteur IA. |
-| 16 — Fiabilisation Devis IA | `6cd4288` | Option B: Verrouillage strict de l'unité de main-d'œuvre ITE/Bardage en `m²` et injection automatique des textes réglementaires de devis. |
-| 17 — Factures d'Acompte (Loi FR) | `d954588` | Respect strict de la loi anti-fraude à la TVA : numérotation propre, calcul TVA immédiat, déduction automatique en ligne négative (qte: -1) sur la facture de solde. |
-| 18 — Reste à Charge (Aides Anah) | `de869ae` | Intégration du profil MaPrimeRénov' (Bleu, Jaune, Violet, Rose) + forfait CEE. Calcul du reste à charge net plafonné à l'assiette légale des travaux éligibles (150 €/m²). |
-
-### 🚀 Mission 13 — Chat Espace Client : mémoire multi-sessions (11/09/2026)
-
-> **Commit** : `f71cf3f` (feature) + commits attachés `67bd396`, `4c83db1`, `c252d58`.
-> **Migration** : `supabase/migrations/20260912_espace_client_conversations.sql` — **appliquée en production** puis vérifiée en lecture seule (table, colonne `notes_patron.espace_client_id`, fonctions RPC `espace_client_append` / `espace_client_consolider` présentes).
-
-**Design A+B+C (validé)**
-- **A — Niveau 1 (mémoire brute)** : les messages de la session sont persistés au fil de l'eau dans `espace_client_conversations.messages_session` via la RPC `espace_client_append()`.
-- **B — Niveau 2 (condensation)** : à la clôture, le LLM (Groq) condense en `resume_session` (par session, append-only dans `resumes_sessions`) + `resume_global` (mémoire multi-sessions consolidée).
-- **C — Note patron unique** : 1 note « Résumé Espace Web » par chantier (`espace_client_id` = clé de conversation, index unique), fusion de l'historique legacy « Résumé Espace Web », `epingle=true`.
-
-**Points clés de l'implémentation**
-- **Budget tokens** : `SEUIL_TOKENS_SESSION` + `decouperParTokens()` dans `lib/espace-chat-utils.ts` — le LLM ne reçoit jamais l'historique complet, seulement `resume_global` + session courante ; découpage séquentiel si dépassement.
-- **Consolidations concurrentes** : verrou advisory par clé (md5 de la clé) + `espace_client_consolider()` ne vide `messages_session` **que si** la taille n'a pas grandi pendant le calcul → aucun message perdu si un append arrive pendant la génération.
-- **Idempotence** : double clôture d'une même session → `status: deja_consolide` (pas de résumé ni de note en double).
-- **Conversation banale** : bonjour/au revoir court sans question → statut `ras`, pas d'appel LLM, mémoire brute purgée.
-
-**Tests**
-- Unitaires `__tests__/espace-chat-utils.test.ts` : estimation tokens, découpage par budget, état initial.
-- Intégration simulée `__tests__/espace-chat-circuit.test.ts` : circuit complet chat → persistance → clôture → consolidation → note unique, idempotence, RAS, panne Groq, mémoire fusionnée entre sessions.
-- Schéma `__tests__/espace-client-migration.test.ts` : table, index unique, colonne, fonctions RPC.
-
-**Validation réelle (Vercel → Groq + Supabase, 11/09/2026)**
-- ✅ **Échange Groq réel** en production (HTTP 200, modèle de prod).
-- ✅ **Persistance prouvée** : clôture appelée **sans** messages dans le corps de requête → le résumé a été produit depuis `messages_session` en BDD.
-- ✅ **Consolidation + mémoire multi-sessions** : `sessions` 1 → 2, résumé de session 2 = mémoire de la session 1 **fusionnée** (avancement s1 + façade s2).
-- ✅ **Idempotence** : double clôture s1 et s2 → `deja_consolide`.
-- ✅ **Réouverture du même chantier** (même clé, nouvelle session) puis fusion avec la mémoire précédente.
-- ✅ **Nettoyage des données de test effectué et vérifié** : suppression de la conversation et de la note `demo:CLIENT_TEST_E2E_JD`, contrôles SQL Editor à **0 ligne** (résultat collé par l'utilisateur), contre-vérification lecture seule cohérente.
-
-**Ce qui a été validé réellement** : chat réel (Groq prod), persistance BDD, consolidation, mémoire multi-sessions + fusion, idempotence, migration appliquée, nettoyage complet.
-
-**Limites connues (assumé, non automatisable en lecture seule)**
-- La **note patron** n'est pas lisible par la clé anon (RLS patron) → contenu vérifié **visuellement par l'utilisateur** + contenu déterministe (fonction pure `composerNote`).
-- Test réalisé en **mode démo** (clé `demo:*`, sans `chantierId`) — la base prod est encore quasi vide (pre-launch, `chantiers = 0`) ; le circuit via un vrai chantier reste à valider au premier usage réel.
-- **Incohérence latente signalée** : la migration `20260906_notifications.sql` contraint `type IN ('devis','facture','sav','chat','chantier','rapport','general')` alors que la prod contient `commande_retard` et que le résumé envoie `client_alert` → **à arbitrer avant tout `supabase db push`**.
-
-### ⚠️ Points d'attention en cours
-
-- **Crons Vercel** (rapports auto lundi 6h + météo quotidienne) : fonctionnent uniquement sur le **plan Pro** de Vercel. En Hobby, boutons de déclenchement manuel (page Météo, `/api/rapports-client/auto`) avec `Authorization: Bearer <CRON_SECRET>`.
-- **Migration `parametres_entreprise`** : à appliquer dans l'éditeur SQL Supabase (mission 07) — non confirmée.
-- **`lib/supabaseAdmin.ts`** : `NEXT_PUBLIC_SUPABASE_URL` non défini au moment du `next build` (pré-existant) → le build de vérif locale échoue ; on s'appuie sur `npx tsc --noEmit` comme gate. `.env.local` contient bien les clés.
-- **Fallbacks esthétiques du portail client** encore présents (si aucune donnée) : "Villa Arcachon", "33380 Arcachon", `BNA-7429`, badge "★ CLIENT PREMIUM", téléphone WhatsApp `33600000000` — à repasser pour supprimer les valeurs d'exemple.
-
-### Mission 16 : Numérotation Sécurisée des Intempéries (RPC SQL)
-- **Objectif** : Empêcher les doublons de justificatifs météo lors des exécutions simultanées du Cron Vercel.
-- **Réalisation** : Création d'une fonction PostgreSQL PL/pgSQL (`generer_prochain_numero_ri`) utilisant un verrouillage `SHARE ROW EXCLUSIVE MODE`. Suppression de la logique front/API au profit d'un simple appel RPC robuste.
-
-### Mission 17 : Générateur de Bon de Commande Quincaillerie (DTU)
-- **Objectif** : Créer automatiquement un bon de commande de fixations depuis le calepinage.
-- **Réalisation** : Bouton ajouté dans le métré d'un chantier. Calcule les ml de chevrons, le nombre d'équerres et vis via `calculerBesoinsBardage` et pré-remplit le `CommandeModal` avec affectation dynamique des fournisseurs et des prix.
-
-### Mission 18 : Planning de Gantt Interactif (Terrain)
-- **Objectif** : Vue macro des chantiers pour le pilotage.
-- **Réalisation** : Création de `PlanningGantt.tsx`. Vue sur 6 mois avec Drag & Drop tactile (Pointer Events) pour décaler les dates d'un chantier. Indicateurs visuels (Aujourd'hui, couleurs de statuts, bordure rouge + icône d'alerte si arrêt météo actif).
-
-## 🔔 Notifications — modèle collectif O3-B6/N1, et correction d'impact (26/09/2026)
-
-**Migration appliquée le 26/09/2026** : `supabase/migrations/20260926_o3b6_notifications_collectif.sql` (O3-B6/N1) — remplace les 4 policies `notifications_ent_*` par un filtrage `entreprise_id = public.entreprise_courante()` seul. Modèle **collectif par tenant** : ni pont `profiles.user_id`, ni table d'état de lecture par utilisateur, ni nouvelle architecture d'identité.
-
-**Contrôle après application** (lecture seule) : les commentaires `O3-B6/N1` sont bien présents en base sur la table et sur `destinataire_id` (le script a donc tourné jusqu'au bout) ; le RLS est actif — le rôle `anon` sans JWT voit **0 des 3** lignes existantes ; les 3 notifications en base sont **toutes collectives** (`destinataire_id = null`), donc l'élargissement du prédicat n'expose aucune donnée supplémentaire et n'introduit aucune régression.
-
-### ⚠️ Correction d'impact — à lire avant de citer le commit `5249fc9`
-
-Le message de ce commit décrit les notifications `client_alert` comme **« écrites puis invisibles de tous »**. Cette formulation est **trop affirmative**. Trois niveaux doivent être distingués :
-
-1. **Défaut structurel — DÉMONTRÉ.** `notifications.destinataire_id` référence `profiles(id)` ; `profiles.id` est un uuid autonome, sans colonne `user_id`, et le schéma ne contient **aucun pont vers `auth.users`** (les 3 autres colonnes nommées `user_id` pointent toutes vers `profiles`). La clause `destinataire_id = auth.uid()` de l'ancienne policy était donc **structurellement invalide** : aucun code applicatif ne pouvait la rendre vraie. C'est une **preuve**, pas une hypothèse.
-2. **Risque fonctionnel — THÉORIQUE.** *Si* une `client_alert` ciblée avait été produite, l'ancienne policy `using (entreprise_id = entreprise_courante() and (destinataire_id is null or destinataire_id = auth.uid()))` l'aurait rendue invisible à tout lecteur. La migration supprime cette exposition. L'élargissement reste **borné au tenant** : `entreprise_id` et le RLS sont intacts.
-3. **Fait observé — 26/09/2026.** **Aucune ligne `client_alert` n'a jamais été produite en PROD** : comptage exhaustif = 3 lignes au total, de types `general` et `commande_retard` uniquement. Le `CHECK` n'est pas en cause (`20260916_fix_notifications_constraints.sql` autorise bien les 9 types, `client_alert` inclus). Le module a bien tourné — `notes_patron` contient les notes du 07/09 (« C'est bon, tout est bon… ») et du 10/09 — mais `client_alert` n'est produite **que** si le sentiment global est négatif **ou** s'il existe une demande en attente, ce qui n'était le cas ni le 07/09 ni le 10/09. **Aucune perte réelle d'une `client_alert` n'est donc démontrée** : la migration corrige un défaut réel, mais **préventif** — elle n'a pas, à ce jour, rétabli la visibilité d'une notification existante.
-
-### Où la formulation forte subsiste — volontairement
-
-Le commentaire d'en-tête de la migration (l.29-33) et le message du commit `5249fc9` conservent la formulation affirmative. **Ils ne sont pas corrigés ici**, pour deux raisons : le commit est immuable sans *amend* suivi d'un *force-push* (hors méthode retenue), et le fichier de migration est **déjà appliqué en base** — le modifier créerait une divergence entre le dépôt et la PROD. **La présente section fait foi.**
-
-### Autres points O3-B6notifications (26/09/2026)
-
-- **N9 (P1) — l'alerte « Livraison en retard » était morte depuis 4 jours.** Le producteur navigateur insérait sans `entreprise_id` (NOT NULL depuis la migration d'isolation du 22/09) et sans déstructurer `error` : échec `23502` totalement muet. Corrigé via `resoudreContexteEntreprise(null)` (le résolveur **existant**, même source de vérité que `entreprise_courante()`), fail-closed si le claim est absent, déduplication scopée par `.eq("entreprise_id")`, erreurs de lecture et d'insert explicites. Le cast `as TablesInsert<"notifications">` a été supprimé : il masquait l'erreur de compilation, donc `tsc` exige désormais réellement `entreprise_id`.
-- **N2/N3 — `/api/notifications` supprimée** : 0 appelant sur tout l'historique (`git log --all -S`, 5 commits, doc et liste blanche middleware uniquement). Elle avait été **publique 12 jours** avant reverrouillage, toujours sans appelant. Son entrée dans la liste blanche de `middleware.test.ts` est **conservée** : garde-fou anti-remise en liste blanche.
-- **SearchNav — Rules of Hooks.** Le `if (isClientPage) return null;` précédait les deux `useEffect` : le nombre de hooks dépendait de `pathname`. Un retour navigateur depuis `/espace-client` vers `/bureau` faisait lever « Rendered fewer hooks than expected » et cassait la page. Ni ESLint ni aucun test ne le voyait. Garde déplacée dans les effets, `return null` après le dernier hook ; aucun élément visuel modifié.
-- **Impact espace client / chatbot : AUCUN.** `lib/espace-chat-summary.server.ts` intact ; ses écritures passent par `service_role`, donc insensibles au changement de RLS ; `SearchNav` n'est pas rendu sur `/espace-client` (désormais prouvé par test).
-- **Réalisation** : Création de `PlanningGantt.tsx`. Vue sur 6 mois avec Drag & Drop tactile (Pointer Events) pour décaler les dates d'un chantier. Indicateurs visuels (Aujourd'hui, couleurs de statuts, bordure rouge + icône d'alerte si arrêt météo actif).
-
----
-
-## État au 30/09/2026 — Corrections issues de l'audit complet
-
-Cette section ne refait pas l'audit : elle consigne l'état **réel** du dépôt après une passe de corrections portant sur les points **B1, B2, B3, C1, C3, E13, E14**. Elle s'ajoute au contenu fonctionnel ci-dessus, qui décrit l'architecture et les pages et n'a pas été refondu.
-
-### Corrections appliquées
-
-**B1 — RPC `lier_deplacement_devis` durcie.**
-
-*Défaut.* `public.lier_deplacement_devis(p_deplacement_id, p_devis_id, p_entreprise_id)` était `SECURITY DEFINER` **et** paramétrée par le tenant fourni par l'appelant. `CREATE FUNCTION` accorde `EXECUTE` à `PUBLIC` par défaut et PostgREST expose le schéma `public` : un utilisateur authentifié pouvait appeler directement la RPC avec un `p_entreprise_id` appartenant à un autre tenant. Les policies RLS de `frais_deplacement` sont `auth.role() = 'authenticated'` **sans filtre `entreprise_id`** : rien ne bloquait l'appel.
-
-*Correctif.* Décomposition suivant la convention **déjà utilisée par le dépôt** (`generer_prochain_numero_{ri,sav,sit,avenant}`) :
-
-- `lier_deplacement_devis_ctx(p_deplacement_id, p_devis_id, p_entreprise_id)` — implémentation interne, tenant explicite, `EXECUTE` réservé au `service_role` ;
-- `lier_deplacement_devis(p_deplacement_id, p_devis_id)` — wrapper public **sans aucun paramètre tenant**, qui résout `public.entreprise_courante()` (GUC `app.entreprise_id`, sinon claim JWT `app_metadata.entreprise_id`) et **échoue fermé** si le contexte est absent.
-
-**L'ancienne signature à 3 arguments est `DROPée`, et pas seulement `REVOKE`ée** : PostgREST résout par (nom, nombre d'arguments), une surcharge restante demeurerait une surface d'élévation que le moindre `GRANT` futur rouvrirait par accident.
-
-Le **corps métier est inchangé** : les deux verrous `FOR UPDATE`, le contrôle de chantier partagé entre le devis et le déplacement, le recalcul atomique des totaux du devis et la mise à jour du déplacement sont conservés à l'identique.
-
-* Côté application, `app/api/deplacements/[id]/lier/route.ts` appelle désormais la RPC **en 2 arguments**, via le client **porté par la session** (`createClient()`, cookies, clé `anon`) et non via `supabaseAdmin`. C'est indispensable : `entreprise_courante()` lit le claim du JWT de l'appelant, absent du JWT `service_role` ; en `service_role` la RPC tournerait sans contexte et échouerait fermée.
-
-*Vérification.* Un seul appel applicatif à la RPC dans tout le dépôt, en 2 arguments ; `p_entreprise_id` n'est plus transmis à cette RPC nulle part ; `lier_deplacement_devis_ctx` n'est appelée par aucun code.
-
-**B2 — `devis_id` n'est plus modifiable par `PATCH`.**
-
-Le bloc `if (body.devis_id !== undefined)` a été retiré de `app/api/deplacements/[id]/route.ts`. Le corps de mise à jour est désormais une **liste blanche** : `statut` (validé contre `prevu | effectue | annule`) et `updated_at`, typé `Database["public"]["Tables"]["frais_deplacement"]["Update"]`.
-
-Le rattachement à un devis passe **exclusivement** par `POST /api/deplacements/[id]/lier` et la RPC : seule voie qui vérifie que le devis et le déplacement partagent le même chantier, verrouille les deux lignes et recalcule atomiquement les totaux. Accepter `devis_id` par `PATCH` aurait permis de lier un devis d'un **autre chantier** sans mettre à jour le devis.
-
-*Vérification.* Aucun client de l'application n'émet de `PATCH` sur cette route.
-
-**C1 — `search_path` des fonctions `SECURITY DEFINER`.**
-
-*Inventaire préalable* (exigence de ne rien modifier sans vérification) : **26 fonctions `SECURITY DEFINER`** dans `supabase/migrations` — dont **8 portaient déjà** `set search_path = public`, **7 sont superseded** par un `create or replace` ultérieur, et **11 sont vivantes sans `search_path`** : ce sont les seules traitées.
-
-*Méthode.* `alter function … set search_path = public`, et **non** `create or replace`. Retranscrire les 11 corps dans une migration serait une source de dérive silencieuse ; l'`ALTER` est une opération de **catalogue** — il ne lit ni ne réécrit le corps de la fonction, le risque de transcription est nul.
-
-*Contrôle de sûreté, fonction par fonction.* Chaque référence du corps a été classée : **0 alerte**. Dans ces 11 corps, toute référence non qualifiée est soit une fonction ou un type de `pg_catalog` (toujours implicitement en tête du `search_path`), soit un objet de `public` (table ou fonction présente dans `types/supabase.ts`). Aucun appel à une extension hors de `public`, aucune table d'un autre schéma écrite sans qualification, aucun type composite d'un autre schéma. Fixer le `search_path` ne peut donc rien faire échouer.
-
-*Robustesse — sélection par `oid`.* Le traitement est une boucle de catalogue alimentée par `select p.oid, n.nspname from pg_proc p join pg_namespace n on n.oid = p.pronamespace`, filtrée par `nspname = 'public'`, `proname = any (array[…])` et `p.prosecdef` (une fonction `SECURITY INVOKER` n'exécute rien avec des droits-CoPI : le `search_path` n'y est pas un vecteur). L'`ALTER` est construit par `format('alter function %I.%s set search_path = public', r.nspname, r.oid::regprocedure::text)`. **Aucune signature n'est écrite à la main** : ce sont les OID qui sont les cibles, et `regprocedure` restitue la signature exacte, correctement échappée — aucune désynchronisation possible entre la cible testée et la cible modifiée. La boucle couvre **toutes les surcharges** d'un nom, donc aucune ne peut être omise par un oubli dans une liste. Chaque fonction traitée émet un `raise notice` : un no-op devient visible dans la sortie du SQL Editor au lieu d'être silencieux.
-
-*Défaut corrigé dans cette migration.* Une première version comparait `pg_get_function_identity_arguments()` à une liste de signatures littérales. Cette fonction restitue la signature **avec les noms de paramètres** — pour `generer_prochain_numero_ri(p_entreprise_id uuid)` elle renvoie `p_entreprise_id uuid`, et non `uuid`. Une garde comparant l'identité à la chaîne `uuid` n'était donc satisfaite que pour les fonctions **sans** argument, et laissait passer silencieusement les autres : la migration réussissait en n'ayant corrigé qu'une fraction de ses cibles, **sans lever la moindre erreur**, puisque « fonction absente » et « cible non retenue » sont indiscernables dans ce code. La sélection par `oid` supprime le risque.
-
-*L'idempotence.* Portée par le filtre `coalesce(p.proconfig, '{}'::text[]) is distinct from array['search_path=public']` — et non par un test d'existence. Une fonction déjà corrigée est simplement sautée ; une fonction absente n'apparaît pas dans le jeu de résultats et son corps de boucle n'est jamais atteint. **Aucun `ALTER` nu n'est exécuté**, donc le lot ne peut pas échouer sur *function does not exist* sur une base où certaines fonctions n'ont jamais été créées — ce qui importait, plusieurs migrations du dépôt portant la mention « NON EXÉCUTÉ ».
-
-**C3 — typage Supabase de `frais_deplacement` et des RPC.**
-
-Ajout dans `types/supabase.ts` du bloc complet `frais_deplacement` (`Row` / `Insert` / `Update` / `Relationships`), inséré entre `fiches_techniques` et `fournisseurs` (rang 22, ordre alphabétique), ainsi que des `Args` / `Returns` de `lier_deplacement_devis` (2 arguments) et `lier_deplacement_devis_ctx` (3 arguments).
-
-**Nettoyage des `any` — 28 → 0 en production.**
-
-Aucun `any` n'a été remplacé par `unknown`, par `object`, par une interface inventée ou par un cast arbitraire : chaque occurrence a été résolue par le type réel du projet (types Supabase générés, types métier existants).
-
-- `devis.lignes` est un `Json`. Le `as any` de `lib/mainOeuvreAnalytique.ts` a été remplacé par **`mapperLignesPersistees`** (`lib/devisAnalyse.ts`), mappeur **sûr déjà utilisé** par le projet vers `LigneDevis`, sans cast. Effet de bord favorable : il écarte les entrées `null` qui faisaient lever `ligne.catalogue_id` sur `null`.
-- `lib/fournisseursAnalytique.ts` : les 4 paramètres `any[]` deviennent `Tables<"fournisseurs">[]`, `Tables<"commandes">[]`, `Tables<"devis">[]`, `Tables<"catalogue_ouvrages">[]`.
-- `app/(dashboard)/finance/components/RentabiliteMainOeuvreWidget.tsx` : le type d'état annonçait `nom: string` alors que la colonne est `string | null` — c'est ce **mensonge de type** qui imposait le `as any`. L'état est corrigé ; le rendu (`{c.nom}`) affiche `null` comme un nœud vide, **comportement visible inchangé**.
-- `app/api/meteo/intemperies/route.ts` : `(p: any)` → `VigilancePhenomene`, type déjà exporté par `lib/meteoVigilance`.
-- `catch (err: any)` de `components/SignatureModal.tsx`, `hooks/useDeplacements.ts` et `app/api/deplacements/[id]/lier/route.ts` : passés en `unknown` avec un repli explicite. Ces branches étaient **muettes** — sur une valeur qui n'est pas une `Error`, `err.message` vaut `undefined` et l'UI affichait un message vide au lieu du motif réel.
-
-**Les 19 `any` restants sont tous dans `__tests__/`** et sont **conservés** : ils servent de casting sur des `vi.fn()` et des mocks, où ils sont idiomatiques.
-
-**B3 — conventions UI rétablies dans `components/FraisDeplacementTab.tsx`.**
-
-- **5 monetary conversions** vers `fmtEuro` (`lib/financeCalculs`) : `tarifKm`, `montantHt`, `totalHT`, `tarif_km`, `montant_ht`.
-- **2 surfaces littérales** `<div className="bg-[#1A1D24] border border-white/10 rounded-xl …">` converties en `<Surface className="…">`, composant qui émet exactement ces classes.
-
-Aucun élément d'UI n'a été refait. **Effet de bord assumé** : `fmtEuro` produit la virgule décimale française et une **espace insécable U+00A0** avant le `€` — l'affichage passe donc de `12.50 €` à `12,50 €`. C'est le comportement voulu par la charte ; les assertions de `__tests__/FraisDeplacementTab.test.tsx` ont été mises à jour en conséquence (`"30,00\u00A0€"`, `"20,00\u00A0€"`), l'échappement `\u00A0` étant explicite pour qu'une espace ordinaire ne fasse pas passer le test sans rien garantir.
-
-**E14 — code mort supprimé dans `app/bureau/fournisseurs/page.tsx`.**
-
-Suppression de **2 états morts** (`devis`, `catalogue`) **et** de l'import mort associé (`analyserPerformancesFournisseurs`) — 0 usage prouvé sur l'ensemble du dépôt par `grep`. Retirer l'import mort était nécessaire : il aurait laissé un avertissement ESLint et un `any` implicite.
-
-### Migrations créées — NON appliquées
-
-| Fichier | Objet | État |
-|---|---|---|
-| `supabase/migrations/20260929_harden_lier_deplacement_devis.sql` | B1 | **créée, non appliquée** |
-| `supabase/migrations/20260930_c1_search_path_security_definer.sql` | C1 | **créée, non appliquée** |
-
-**Aucune migration n'a été jouée sur aucune base.** Les deux fichiers sont idempotents et rejouables sur n'importe quel état de la base.
-
-- `20260929` : `create or replace` des deux signatures, `revoke`/`grant` explicites, et `drop function if exists` de l'ancienne signature à 3 arguments. Réexécutable sans effet de bord.
-- `20260930` : n'exécute **aucun** `ALTER` direct et ne porte **aucune** garde d'existence. Sa boucle est alimentée par `pg_proc` et filtrée par `coalesce(p.proconfig, '{}'::text[]) is distinct from array['search_path=public']` : une fonction déjà corrigée est sautée, une fonction absente n'apparaît pas dans le jeu de résultats et son corps n'est jamais atteint. Une fonction porteuse d'un `search_path` différent de `public` reste, elle, traitée — c'est le seul cas où le filtre ne l'exclut pas.
-
-> ⚠️ **Ordre de mise en ligne.** Tant que `20260929_harden_lier_deplacement_devis.sql` n'est pas jouée, `/api/deplacements/[id]/lier` appellera une signature à 2 arguments qui n'existe pas encore en base et échouera en `400 HTTP_400_CONTEXTE_ENTREPRISE`. La migration doit être jouée **avant** toute mise en ligne du code correspondant, par intervention humaine au SQL Editor.
-
-### Portes de qualité
+| Branche | `main` |
+| `HEAD` | `ad6404a` — `fix: align alert cards padding with notes` |
+| `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
+| Arbre de travail | propre |
+| Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
+| Routes | **39** pages (`app/**/page.tsx`) · **36** routes API (`app/api/**/route.ts`) |
+| Base | **40** migrations SQL · `types/supabase.ts` (2807 l.) déclare 55 entrées : 42 tables, 1 vue, 12 fonctions |
+
+### Portes de qualité (mesurées à `ad6404a`)
 
 | Porte | Résultat |
 |---|---|
-| `tsc --noEmit` | **0 erreur** |
-| ESLint — production (`app components hooks lib types`) | **0 erreur / 0 `no-explicit-any`** |
-| ESLint — dépôt entier | 0 erreur / **19 warnings**, tous des `no-explicit-any` dans `__tests__/` |
-| `vitest run` | **947 réussis / 1 échec** (948 tests, 62 fichiers) |
+| `npx tsc --noEmit` | **0 erreur** |
+| `npx eslint app components hooks lib types` | **0 erreur, 0 warning** |
+| `npx eslint .` (dépôt entier) | 0 erreur, **26 warning** (tests) |
+| `npx vitest run` | **1121 / 1121** verts, 66 fichiers |
+| `npm run build` | ✓ 51 / 51 pages |
 | `git diff --check` | vide |
 
-**L'unique échec est `__tests__/champs-style-commun.test.ts`** — « aucun autre changement : les 13 champs ne diffèrent que par cette classe ». Il est **préexistant et hors périmètre** : il ne cite que `app/(dashboard)/finance/saisie/depense/page.tsx`, **jamais modifié** par cette passe. Le diff de `RentabiliteMainOeuvreWidget.tsx` qu'il scanne par ailleurs est purement typographique (ajout d'un type de retour, aucun changement de rendu).
+Les 26 warnings du dépôt entier sont des avertissements de tests, aucun en
+production. Le compte `any` d'ESLint en production est **0**.
 
-### Points laissés ouverts
+---
 
-**B4 — schéma réel Supabase non entièrement versionné.** Un `supabase db dump` du schéma réellement en base est nécessaire pour clore l'écart entre migrations et PROD. **Bloqué** : accès à la base indisponible depuis l'environnement d'audit. Aucune conclusion n'est affirmée sur ce point tant qu'il n'est pas vérifié.
+## 🏗️ Architecture
 
-**C4 — validation Zod des routes JSON.** **C5 — timeouts des fetch externes.** **C6 — dépendances ESLint / npm.** Ces trois chantiers sont **volontairement en attente**, hors du périmètre de cette passe.
+### Empilement
 
-**E13 — types `DevisLie` / `FactureLiee` non fusionnés — NON RÉSOLU, par choix.**
-Les deux `DevisLie` (idem `FactureLiee`) qui coexistent dans le dépôt sont des **homonymes de forme différente**, pas des doublons. Les fusionner serait un **changement fonctionnel**, pas un nettoyage : cela imposerait de choisir une forme canonique et de migrer les appelants, sans analyse fonctionnelle préalable. La passe ne l'a donc **pas forcé**.
-Conséquence assumée et à arbitrer : la prop `devisLies` de `FraisDeplacementTab` est typée par un **contrat local minimal** `{ id: string; numero: string }[]` — les seuls champs réellement consommés par la liste de sélection (clé React, valeur d'option, libellé). Ce composant ne dépend ainsi plus d'un type privé d'une autre page.
+- **UI** : Tailwind CSS 4, tokens centralisés dans le bloc `@theme` de
+  `app/globals.css`. Aucun littéral de fond dans les composants : ils passent
+  par `Surface` (`components/ui/Surface.tsx`) ou par les tokens.
+- **Base** : Supabase PostgreSQL + Storage. Accès navigateur via
+  `lib/supabase.ts` (singleton `createBrowserClient` de `@supabase/ssr`, porte la
+  session), serveur via `lib/supabase/server.ts`, et `lib/supabaseAdmin.ts` (clé
+  `service_role` — **contourne le RLS**, cf. Sécurité).
+- **PDF** : `window.print()` avec composants React masqués (`hidden print:block`).
+  Vues d'impression : `BilanChantierPDF`, `RapportMensuelPDF`, `RapportClientPrint`.
+- **IA** :
+  - `openai/gpt-oss-20b` (Groq) — chat client, résumé de conversation, consignes
+    PPSPS, reformulation.
+  - `whisper-large-v3` (Groq) — transcription audio (notes vocales, dictée).
+  - `gemini-3.5-flash-lite` (`@ai-sdk/google`, Vercel AI SDK) — génération de
+    devis **et** OCR vision de tickets/BL.
+  - Stack **unifiée sur un seul modèle LLM** depuis le 10/09 : les fournisseurs
+    précédents (Anthropic, `groq/compound-mini`) ont été abandonnés pour instabilité (TPM,
+    décommissionnement) au profit du SDK Vercel.
+- **Météo** : Météo-France DPVigilance (alertes) · Visual Crossing (détail, clé
+  payante en production) · **Open-Meteo** (repli automatique, sans clé). Veille
+  intempéries : seuils pluie > 10 mm, vent > 50 km/h, gel < 0 °C.
+- **Crons Vercel** (`vercel.json`) : `/api/rapports-client/auto` (`0 6 * * 1`) et
+  `/api/cron/meteo` (`0 6 * * *`).
 
-**Autres dettes techniques non traitées.** L'onglet « 📊 Analyse des Marges » (`tab === "analyse"`) de `app/bureau/fournisseurs/page.tsx` **n'a aucun bloc de rendu** : l'onglet existe dans l'état d'onglet mais affiche un contenu vide. Le contenu manquant reste à concevoir ; ce n'est pas une régression de la passe (E14 a supprimé des états morts, pas l'onglet).
+### Multi-tenant
 
-### État du dépôt au 30/09/2026
+L'isolation par entreprise est la **fondation** du modèle de sécurité, pas une
+surcouche tardive. Elle repose sur :
 
-- `HEAD` : `22b32cc` — **aucun commit créé** par cette passe.
-- `origin/main` : `11e892d` — **aucun push**. La branche locale est 2 commits d'avance (`5fd23fd`, `22b32cc`), situation **antérieure** à cette passe.
-- **Index vide** : aucun fichier n'est staged.
-- Arbre de travail : 17 fichiers applicatifs modifiés + 2 migrations non suivies, **en attente de commit**.
-- **P7-B intact** : aucun fichier P7-B dans le diff.
-- Aucun secret, `.env`, `package.json` ou `package-lock.json` modifié ; aucun fichier supprimé.
+- la table `entreprises` et la table de rattachement `entreprise_membres` ;
+- la fonction `entreprise_courante()`, qui résout le tenant depuis la GUC
+  `app.entreprise_id`, à défaut du claim JWT `app_metadata.entreprise_id` ;
+- le résolveur applicatif `resoudreContexteEntreprise()` côté navigateur, même
+  source de vérité ;
+- des migrations en 5 parties + 2 phases (`20260922`, `20260925`).
 
+Toute requête écrite en `supabaseAdmin` **doit** donc porter son filtre tenant
+explicitement : ce client contourne le RLS. Voir « Points de vigilance » pour
+les 3 routes qui ne le font pas encore.
+
+### Navigation effective
+
+| Route | Rôle |
+|---|---|
+| `/` | Cockpit — rend `components/DashboardAccueil.tsx` (accueil mobile/desktop) |
+| `/terrain/chantier` | Destination de `/terrain` |
+| `/terrain/chantier/[id]` | Fiche chantier, 9 onglets |
+| `/bureau/meteo` | Destination de `/terrain/meteo` |
+| `/chantiers` → `/terrain/chantier` | Redirection legacy |
+| `/boite-a-outils` → `/terrain/outils` | Redirection legacy |
+| `/bureau-etudes` → `/bureau/clients` | Redirection legacy |
+
+Le menu hamburger est un `Drawer` unique (`components/Drawer.tsx`). Ses groupes
+sont un **accordéon** : un groupe se déplie sur place, ce qui évite d'ajouter une
+route par section. L'état d'ouverture distingue trois origines — « ouvert parce
+que l'utilisateur a cliqué », « ouvert parce que c'est la catégorie courante »,
+« mémorisé » — ce qu'un simple `Set<string>` ne pouvait pas représenter.
+
+---
+
+## 🎨 Charte graphique
+
+Palette centralisée dans le bloc `@theme` de `app/globals.css`. C'est la **source
+unique** : les composants consomment les tokens, pas des littéraux.
+
+| Token | Valeur | Rôle |
+|---|---|---|
+| `--color-surface-page` | `#121212` | fond d'application (`<body>`) |
+| `--color-surface` | `#1E1E1E` | cartes, modales, zones vides |
+| `--color-surface-raised` | `#252525` | champs de saisie, en-têtes de tableau |
+| `--color-surface-drawer` | `#1A1A1A` | fond du menu hamburger |
+| `--color-surface-mobile` | `#232323` | carte sur petit écran |
+| `--color-border` / `--color-divider` | `#2E2E2E` / `#3A3A3A` | bordures |
+| `--color-brand` | `#E53935` | action principale, rouge BNA |
+| `--color-brand-dark` / `--color-brand-light` | `#C62828` / `#FF6F60` | survol, variantes |
+| `--color-ink-title` / `--color-ink` | `#F5F5F5` / `#E0E0E0` | titres, texte |
+| `--color-ink-muted` / `--color-ink-disabled` | `#BDBDBD` / `#757575` | texte secondaire |
+| `--foreground` | `#E0E0E0` | couleur de texte globale |
+
+Les échelles `red-*` et `gray-*` sont **redéfinies** dans le même bloc pour
+s'aligner sur ces tokens.
+
+### Le reflet rouge
+
+Le halo rouge du haut de page est porté par le `background-image` du
+`<main id="main-content-wrapper">` de `app/layout.tsx`, avec `bg-top`,
+`bg-no-repeat` et `bg-size-[100%_380px]`. Il est ainsi défini **une seule fois**
+pour toutes les pages. Il ne doit pas être redéfini localement : c'est exactement
+ce qui avait produit deux copies divergentes dans `app/page.tsx`.
+
+> Note Tailwind : le moteur minifie `ellipse at top` en `at top` et
+> `rgba(229,57,53,0.15)` en `#e5393526`. C'est normal, pas une régression.
+
+### Standard des modales
+
+Overlay `fixed inset-0 z-[210] pt-48`, conteneur `w-full max-w-2xl
+max-h-[80vh] flex flex-col rounded-xl`, en-tête et pied statiques, corps
+`overflow-y-auto flex-1`. Le `pt-48` et le `z-[210]` servent à passer au-dessus de
+l'en-tête global.
+
+> **Écart constaté** : 8 fichiers en `pt-48`, 2 en `pt-44`, 11 en `z-[210]`. Le
+> standard n'est pas appliqué uniformément — voir « Points de vigilance ».
+
+### Composant `Surface`
+
+`HABILLAGE = 'border border-white/10 bg-surface'` + `rounded-xl`.
+
+`Surface` ne définit **que l'habillage** : ni padding, ni couleur de texte, ni
+largeur. C'est volontaire : chaque appelant qui a besoin d'un confort
+interne le pose lui-même, et les tests le vérifient section par section
+(voir « Tests de composition »).
+
+---
+
+## 🗺️ Modules
+
+### Accueil (`/`, `components/DashboardAccueil.tsx`)
+
+Cockpit en 5 blocs, dans cet ordre : **Assistant vocal → Chantiers à préparer →
+Météo → Dernières Notes → Alertes**. Grilles : notes `grid-cols-1 md:grid-cols-3`,
+chantiers `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`, météo `grid gap-3
+sm:grid-cols-2`.
+
+Règles de composition verrouillées par les tests : conteneur borné et centré
+(`max-w-7xl`), **aucune largeur propre sur une carte** (une carte prend la
+largeur de sa colonne, rien d'autre) et **aucun centrage artificiel** des rangées
+en `flex flex-wrap justify-center` — ce glissement « remplit » le vide mais sort
+la carte de sa colonne.
+
+**Confort des cartes Notes et Alertes.** Les deux sections alignent titre, texte
+et date sur une carte, donc elles doivent partager le **même** padding. Le test
+`accueil-responsive.test.ts` compare les deux listes de tokens de padding
+(`toEqual`) au lieu d'écrire `p-4` en dur : l'exigence porte sur le confort
+partagé, pas sur une valeur. **Ce couplage est délibéré** — le test doit échouer
+si l'une des deux sections évolue sans l'autre, et il échoue en nommant laquelle.
+Ne pas le découpler sans décision explicite.
+
+La carte d'alerte ne doit ni redéfinir fond, bordure ni arrondi (ils appartiennent
+à `HABILLAGE`), ni prendre de largeur propre.
+
+### Terrain
+
+| Route | Contenu |
+|---|---|
+| `/terrain/chantier` | Liste des chantiers |
+| `/terrain/chantier/[id]` | Fiche, 9 onglets — voir ci-dessous |
+| `/terrain/notes` | Notes chantier |
+| `/terrain/outils` | Boîte à outils |
+| `/terrain/fiche-technique` | Fiches DTU |
+| `/terrain/metre-ia` | Métré IA (photogrammétrie mobile) |
+
+Les 9 onglets de la fiche chantier : Général · Avancement · Rapport Client · Temps
+Heures · Métrés & Technique · Météo & Intempéries · Photos & Notes · Documents ·
+Déplacements.
+
+L'avancement suit une logique **façades** : le pourcentage global est calculé à
+la volée côté client à partir du JSON `details`, jamais recopié d'une colonne, ce
+qui supprime les désynchronisations.
+
+**Métré IA** (`/terrain/metre-ia`) : photogrammétrie sur canvas HTML5, trois modes
+— `Étalonnage` (trait de référence + dimension réelle → ratio px/mètre),
+`Façades` (polygones libres, surface par formule des cordons), `Vides`
+(déduction fenêtres/portes). Surface nette calculée en temps réel pendant le
+dessin.
+
+**Import bookmarklet** : contournement client des protections Cloudflare /
+Datadome des sites fournisseurs. Injecte `?importUrl=…&importTitle=…&
+importPrice=…` dans `/bureau/catalogue`, où un `useEffect` parse le titre pour en
+extraire les dimensions L × l × Ep (en mm) et pré-remplit le formulaire.
+
+### Module Déplacements
+
+Sept fichiers dans `lib/deplacement/` : `adresse.ts`, `calcul.ts`, `geocodage.ts`,
+`itineraire.ts`, `service.ts`, `types.ts`, `validation.ts`.
+
+- **Géocodage** : Nominatim (OpenStreetMap). `extraireCodePostal()` extrait le CP
+  à 5 chiffres **depuis la chaîne d'adresse** pour piéger les communes
+  homonymes — d'où l'inclusion du code postal dans l'adresse composée.
+- **Itinéraire** : OSRM (`router.project-osrm.org`). Réserve connue : écart
+  observé entre la distance OSRM et celle d'un affichage Google Maps.
+- **Adresse de départ** : préremplie depuis `entreprise_settings` (la source
+  unique, également écrite par `/parametres`), composée en
+  `"12 rue X, 33000 Bordeaux"` via la fonction pure `composerAdresseDepart()`.
+  Le champ **reste éditable** (trajet exceptionnel) ; sans adresse enregistrée il
+  reste vide et conserve son placeholder. Une indication discrète
+  « Adresse de départ récupérée depuis vos paramètres » s'affiche sous le champ,
+  **uniquement tant que la valeur est celle qui a été chargée** : c'est une
+  affirmation d'origine, la laisser visible sur une saisie manuelle serait faux.
+- L'adresse d'arrivée est celle du chantier et n'est jamais modifiée. L'adresse
+  de départ n'est **pas** dupliquée dans la base du chantier.
+- La page hôte `app/terrain/chantier/[id]/page.tsx` est `"use client"` : elle lit
+  `entreprise_settings` et transmet la valeur en prop. Lire dans
+  `FraisDeplacementTab` aurait imposé de charger `@/lib/supabase` dans le
+  composant, dont le singleton est construit au chargement du module — ce qui
+  casse les tests existants qui comptent précisément les appels `fetch`.
+
+### Bureau
+
+| Route | Contenu |
+|---|---|
+| `/bureau` | Dashboard Bureau |
+| `/bureau/dashboard-patron` | Vue patron (inclut un bloc « Alertes ») |
+| `/bureau/clients` | Clients |
+| `/bureau/devis-factures` | Devis + facturation automatique d'acompte à l'acceptation |
+| `/bureau/factures` | Factures |
+| `/bureau/fournisseurs` | Fournisseurs, commandes, **calepinage** et bon de commande quincaillerie |
+| `/bureau/catalogue` | Catalogue + RAL + dimensions |
+| `/bureau/sav` | SAV |
+| `/bureau/fin-chantier` | PV de réception |
+| `/bureau/rapports-intemperies` | Rapports d'intempéries |
+| `/bureau/meteo` | Météo chantiers J → J+3, badges, vérification manuelle |
+| `/bureau/documents-compta` | Scan BL/tickets, TVA en direct |
+| `/bureau/photos-chantier` | Photos chantier |
+| `/bureau/portails-clients` | Gestion des portails client |
+
+**Notifications de retard fournisseur.** Le lien de la notification
+« Livraison en retard » ouvre `/bureau/fournisseurs?retard=<id>` : la page
+consomme le paramètre pour présélectionner la commande. Ce chemin est validé par
+test.
+
+**Deep-liens fournisseurs.** `/bureau/fournisseurs` accepte un paramètre d'onglet
+(`fournisseurs`, `commandes`, `analyse`) en plus du paramètre de retard.
+
+**Calepinage (DTU 41.2 / 45.4).** Calcul automatique des mètres linéaires de
+chevrons (entraxe 60 cm max) et d'équerres (entraxe 1,20 m max) avec ancrages,
+connecté au moteur IA. Un bouton du métré pré-remplit le bon de commande
+quincaillerie via `calculerBesoinsBardage`, avec affectation dynamique des
+fournisseurs et des prix.
+
+**Planning Gantt** (`components/PlanningGantt.tsx`, `/terrain/chantier`) : vue
+macro sur 6 mois, glisser-déposer tactile par Pointer Events pour décaler les
+dates, indicateurs aujourd'hui / statuts, bordure rouge et icône d'alerte si
+arrêt météo actif.
+
+**Météo chantiers** (`/bureau/meteo`) : cartes par chantier actif sur J → J+3,
+géocodage Nominatim avec repli France, badge rouge « Alerte intempéries
+aujourd'hui » ou vert « Conditions OK », boutons manuels **« Vérifier
+intempéries du jour »** (`POST /api/meteo/intemperies`) et **« Notifier
+client »** (mailto). La veille déduplique par jour et trace `avancements_chantier`
+sans modifier les cases, puis crée un justificatif `rapports_intemperies` visible
+côté client.
+
+**Docs Compta** (`/bureau/documents-compta`) : liste à plat, sans rattachement
+à un chantier. Table `documents_compta` (RLS + GRANT `authenticated` /
+`service_role`, même politique que le reste du dashboard). TVA calculée en direct
+à la saisie. L'attribut `capture="environment"` a été **retiré** pour laisser le
+sélecteur natif proposer appareil photo *et* galerie. Le clic sur une ligne
+ouvre l'image ; le bouton de suppression utilise `stopPropagation()`.
+
+### Finance (`/(dashboard)/finance/*`)
+
+Écran verrouillé par PIN : tableau de bord (KPIs, rentabilité par chantier, CA,
+TVA, trésorerie, URSSAF, rapport PDF mensuel, export CSV), saisie pointage, saisie
+dépense, saisie frais d'interim, saisie feuille d'heures, historique (30 derniers
+pointages et dépenses, suppressibles).
+
+> **La saisie d'avancement n'existe plus** dans le module Finance : l'avancement
+> est géré dans l'onglet « Avancement » de chaque chantier (logique façades).
+
+### Espace client (`/espace-client/[code_acces]`)
+
+Portail **public par conception** : le client n'a jamais de session, il
+s'authentifie par son code d'accès. Le code est le seul secret ; le client voit
+uniquement **son** chantier.
+
+- **Carte d'avancement** : pourcentage issu de `avancements_chantier` (tri
+  `created_at` DESC), barre animée, frise 3 étapes dynamique — `0–15 %`
+  Préparation · `16–85 %` Préparation + Pose · `86–100 %` Préparation + Pose +
+  Finitions. Badges par façade (Terminée / En cours / À commencer) selon le
+  nombre de sous-tâches validées.
+- **Date de fin estimée** : lue dans `chantiers.date_fin_estimee`, avec repli
+  « Date à redéfinir » si absente ou dépassée, sinon `created_at + 2 mois`.
+- **Rapports hebdomadaires** : uniquement ceux au statut `envoye` (double filtre
+  côté API) — **le brouillon ne sort jamais**. Photo de couverture, delta
+  d'avancement, aperçu imprimable.
+- **Intempéries & justificatifs** : badges « Chantier à l'arrêt le … / Reprise
+  prévue dès la fin des intempéries » ou « Intempérie signalée », n° de
+  justificatif, motif — envoyables à l'assurance.
+- **Mes Documents** : devis, factures, signature électronique.
+- **Chatbot IA** flottant + résumé en arrière-plan, **prompt construit sur les
+  données réelles** du chantier (avancement, cases sur 16, date de fin, devis,
+  factures, arrêts intempéries des 14 derniers jours). Aucun scénario
+  d'exemple n'est hardcodé. Règle explicite : ne jamais inventer un retard ou une
+  livraison.
+- Photos chantier, galerie bridée au chantier courant.
+
+### Paramètres (`/parametres`)
+
+Raison sociale, SIRET, coordonnées, IBAN/BIC, mentions légales, assurance
+décennale, médiateur, seuil de CA, taux de cotisations, **upload du logo**
+(bucket `photos`). Cette page est la **source unique** de l'adresse utilisée pour
+le trajet (cf. Module Déplacements).
+
+---
+
+## 🔌 Routes API
+
+| Route | Rôle |
+|---|---|
+| `/api/meteo` | Visual Crossing (fr) avec repli Open-Meteo |
+| `/api/meteo/intemperies` | Veille auto (POST) et lecture des relevés (GET) |
+| `/api/meteo-vigilance` | Alertes DPVigilance |
+| `/api/cron/meteo` | Cron quotidien → relaance le POST intempéries |
+| `/api/rapports-client/auto` | Cron hebdo (lundi 6h) : génère et marque `envoye` + `envoye_le` |
+| `/api/rapports-client/generer` | Génération manuelle |
+| `/api/rapports-intemperies/generer` | Génération de rapports d'intempéries |
+| `/api/chat-client-summary` | Résumé de conversation + notification `client_alert` + note patron |
+| `/api/espace-client/[code_acces]` | Données du portail client |
+| `/api/espace-client/[code_acces]/chat` | Échange chatbot |
+| `/api/espace-client/[code_acces]/chat-summary` | Résumé côté portail |
+| `/api/espace-client/[code_acces]/signer` | Signature électronique (vérifie l'appartenance du chantier) |
+| `/api/devis` | Liste / création de devis (**filtre tenant**) |
+| `/api/devis/[id]/analyse` | Analyse IA d'un devis |
+| `/api/devis/[id]/send-otp` | Génération d'un OTP de signature |
+| `/api/devis/[id]/verify-otp` | Vérification de l'OTP |
+| `/api/deplacements` | Frais de déplacement |
+| `/api/deplacements/[id]` | Mise à jour d'un frais (liste blanche) |
+| `/api/deplacements/[id]/lier` | Rattachement à un devis via RPC |
+| `/api/deplacements/evaluer` | Évaluation d'un trajet |
+| `/api/analyze-chantier` | Analyse santé chantier (logique métier, pas d'IA) |
+| `/api/transcrire-note` | Audio → texte (Groq Whisper) |
+| `/api/reformuler-note` | Reformulation IA |
+| `/api/ia-avancement` | Dictée vocale de l'avancement |
+| `/api/ia-devis` | Génération de lignes de devis (Gemini) |
+| `/api/ia-securite` | Consignes PPSPS |
+| `/api/ia-ocr-ticket` | OCR vision de tickets/BL |
+| `/api/documents-compta` | Scan BL/tickets (GET/POST/DELETE) |
+| `/api/photos-chantier` | Upload / liste / suppression (bucket `chantiers-photos`) |
+| `/api/chantiers/[id]/metre-complet` | Métré complet d'un chantier |
+| `/api/search` | Recherche globale |
+| `/api/scrape` | Scraping produits fournisseurs (Cheerio) |
+| `/api/finance-pin` | Vérification du PIN Finance |
+| `/api/admin/rattacher-entreprise` | Rattachement d'un profil à une entreprise |
+| `/api/dashboard-patron` | Données de la vue patron |
+| `/api/chantiers-fournisseurs` | Données fournisseurs d'un chantier |
+
+`/api/notifications` et `/api/chat-client` **n'existent plus** (voir
+« Historique des décisions »).
+
+---
+
+## 🗄️ Base de données
+
+### Tables
+
+`types/supabase.ts` déclare 55 entrées : **42 tables**, 1 vue
+(`rapports_intemperies_jours_arretes`) et 12 fonctions. Tables métier
+principales :
+
+`profiles` · `entreprises` · `entreprise_membres` · `entreprise_settings` ·
+`chantiers` · `chantier_zones` · `clients` · `devis` · `lignes_commande` ·
+`factures` · `commandes` · `fournisseurs` · `catalogue_ouvrages` ·
+`catalogue_ouvrages_prix` · `catalogue_temps` · `frais_deplacement` ·
+`frais_interim` · `avancements_chantier` · `pointages` · `pointages_globaux` ·
+`depenses_chantier` · `tickets_sav` · `pv_receptions` · `situations` ·
+`fiches_techniques` · `notes_patron` · `journal_chantier` · `photos` ·
+`photos_chantier` · `documents_compta` · `rapports_client` ·
+`rapports_intemperies` · `notifications` · `parametres_finance` · `parametres_entreprise` ·
+`meteo_log` · `vigilance_captures` · `articles` · `devis_ia` ·
+`devis_ia_historique` · `espace_client_conversations` · `entreprise_membres`.
+
+> Deux noms ont changé par rapport aux anciens audits : `zones_chantier` →
+> `chantier_zones`, `photos_notes_chantier` → `photos`. Le code n'utilise plus
+> les anciens noms (0 occurrence).
+
+### Migrations
+
+**40 fichiers** dans `supabase/migrations/`, du `20260821` au `20261001`.
+Séquencement notable : `20260922_isolation_multi_entreprise_phase1_part1..5`
+(fondation du multi-tenant), `20260925_o3b6_isolation_espace_client_rpc`,
+`20260926_o3b6_notifications_collectif`, `20260929_create_frais_deplacement`,
+`20260930_c1_search_path_security_definer`, `20261001_generer_prochain_numero_devis_factures`.
+
+> **Le dépôt seul ne permet pas de savoir ce qui est appliqué en production.**
+> Il n'existe ni `SUPABASE_ACCESS_TOKEN`, ni `SUPABASE_DB_URL`, ni
+> `supabase/config.toml`, ni journal d'application. Un fichier SQL présent ne
+> prouve pas son exécution, et `types/supabase.ts` ne la prouve pas non plus :
+> un type généré décrit une intention, pas un objet en base.
+>
+> L'état ci-dessous provient donc de **relevés effectués depuis le SQL Editor de
+> Supabase**, en lecture seule. Ce que ces relevés établissent est l'**état
+> observé** — présence des objets, `proconfig`, droits d'exécution. Ils ne
+> constituent pas une preuve du journal d'exécution du fichier SQL : une base peut
+> avoir atteint le même état par un autre chemin. C'est la limite de la méthode,
+> et elle est assumée.
+
+**Effet attendu confirmé en base — vérification SQL en lecture seule :**
+
+- `20260910_parametres_entreprise.sql` — **effet attendu confirmé en base**.
+  Relevé sur `information_schema.tables` : `public.parametres_entreprise` existe
+  réellement. Ce qui est prouvé est la **présence de la structure attendue**, pas
+  le journal d'exécution du fichier.
+- `20260912_espace_client_conversations.sql` — **effet attendu confirmé en base**.
+  Le fichier crée `public.espace_client_conversations`, ajoute la colonne
+  `notes_patron.espace_client_id` et définit les RPC `espace_client_append` /
+  `espace_client_consolider`. Ces trois objets ont été relevés en lecture
+  seule.
+- `20260924_C_o2_situations_numero.sql` — **effet attendu confirmé en base**.
+  Relevé sur `pg_proc` : les **trois** signatures attendues sont présentes, chacune
+  en `search_path = public` — `generer_prochain_numero_sit()`,
+  `generer_prochain_numero_sit(uuid)` et
+  `generer_prochain_numero_sit_ctx(uuid)`.
+
+  Le fichier porte dans son contenu une mention de non-exécution : elle est
+  **infirmée** pour la structure des fonctions, qui est bien en base. Seule la
+  trace d'exécution du script reste inconnue.
+- `20260926_o3b6_notifications_collectif.sql` — **effet attendu confirmé en
+  base**. Commentaires `O3-B6/N1` présents en base sur la table et sur
+  `destinataire_id` ; RLS actif ; le rôle `anon` sans JWT voit 0 des 3 lignes
+  existantes.
+- `20260929_harden_lier_deplacement_devis.sql` — **effet attendu confirmé en
+  base**. Relevé sur `pg_proc`, trois points contrôlés :
+  - `lier_deplacement_devis(p_deplacement_id uuid, p_devis_id uuid)` —
+    `prosecdef = true`, `proconfig = {search_path=public}`,
+    `anon_peut = false`, `auth_peut = true` ;
+  - `lier_deplacement_devis_ctx(… 3 arguments)` — mêmes drapeaux, mais
+    `anon_peut = false` **et** `auth_peut = false` : elle n'est pas atteignable
+    depuis le navigateur ;
+  - **aucune signature à 3 arguments** de `lier_deplacement_devis` : le `drop
+    function` a bien eu lieu, la surface d'élévation est fermée.
+- `20260930_c1_search_path_security_definer.sql` — **effet attendu confirmé en
+  base**. Relevé sur `pg_proc` : plus aucune fonction `SECURITY DEFINER` du
+  schéma `public` n'est dépourvue de `search_path = public`. Le lot est
+  intégralement traité, sans reliquat.
+- `20261001_generer_prochain_numero_devis_factures.sql` — **effet attendu
+  confirmé en base**. Relevé sur `pg_proc` : les **six** fonctions attendues sont
+  présentes, toutes en `prosecdef = true` et `proconfig = {search_path=public}`,
+  en deux familles — `generer_prochain_numero_{dev,fac}` déclinée chacune en
+  `_ctx(uuid)` (helper interne, tenant explicite), enveloppe sans argument, et
+  enveloppe à `p_entreprise_id`.
+
+  Le contrôle décisif porte sur les **droits d'exécution**, pas sur la seule
+  présence :
+
+  | Fonction | `anon` | `authenticated` | `service_role` |
+  |---|---|---|---|
+  | `generer_prochain_numero_dev()` | `false` | `true` | `true` |
+  | `generer_prochain_numero_dev(uuid)` | `false` | `true` | `true` |
+  | `generer_prochain_numero_dev_ctx(uuid)` | `false` | `false` | `false` |
+  | `generer_prochain_numero_fac()` | `false` | `true` | `true` |
+  | `generer_prochain_numero_fac(uuid)` | `false` | `true` | `true` |
+  | `generer_prochain_numero_fac_ctx(uuid)` | `false` | `false` | `false` |
+
+  Les deux `_ctx` sont injoignables par les trois rôles : aucun utilisateur
+  authentifié ne peut numéroter pour une autre entreprise et déduire son volume
+  d'émissions. C'est la propriété que la migration vise, et un simple constat
+  de présence ne l'aurait pas révélée.
+
+**Non vérifié — les 33 autres migrations.**
+
+Aucun relevé n'a été effectué pour elles : l'état en base est **inconnu**, ni
+confirmé ni infirmé. Aucune n'est citée ici comme appliquée, et aucune ne doit
+l'être sans relevé. Le point 14 (*B4 — schéma réel non versionné*) porte sur ce
+reste : un dump du schéma réellement en base est le seul contrôle qui couvre les
+42 tables et la vue d'un coup, alors que les relevés sur `pg_proc` ne portent que
+sur les fonctions et les quelques tables citées.
+
+> ⚠️ **Ordre de mise en ligne — désormais respecté.** `20260929` devait être
+> jouée **avant** toute mise en ligne du code appelant : tant qu'elle ne l'était
+> pas, `/api/deplacements/[id]/lier` appelait une signature à 2 arguments absente
+> et échouait en `400 CONTEXTE_ENTREPRISE`. Elle est désormais confirmée en base,
+> donc la liaison déplacement → devis fonctionne.
+
+`situations`, `rapports_intemperies` et `vigilance_captures` existent en base sans
+migration de création versionnée : **aucun fichier de `supabase/migrations/` ne
+les crée**. Les trois sont typées dans `types/supabase.ts` et utilisées par le
+code ; elles ont été créées manuellement côté Supabase. `supabase/scripts/` ne contient
+qu'un script de diagnostic (`inventaire_sql_diagnostic.sql`), pas une migration.
+
+### Edge Function
+
+`supabase/functions/generer-rapports-intemperies/index.ts` — deux modes :
+`capture` (photographie de la vigilance Météo-France pour chaque chantier actif,
+matin et après-midi) et `generer` (relit les captures, récupère la météo réelle,
+décide si la journée est arrêtée ou soumise à validation). **Le déploiement n'est
+pas vérifiable depuis ce dépôt** (ni `SUPABASE_ACCESS_TOKEN`, ni
+`supabase/config.toml`).
+
+---
+
+## 🔐 Sécurité
+
+### Authentification et middleware
+
+Supabase Auth, email / mot de passe. Le point d'entrée racine est **`proxy.ts`**
+(Next 16 a renommé `middleware.ts` en `proxy.ts`) ; il délègue à
+`lib/supabase/middleware.ts`, qui applique une **liste blanche stricte** :
+
+```ts
+PUBLIC_PATHS    = ['/login']
+PUBLIC_PREFIXES = ['/espace-client', '/api/espace-client']
+```
+
+Trois exceptions, et elles seulement :
+
+1. `/` — page racine (landing) ;
+2. le portail client, public **par conception** (le client s'authentifie par son
+   code d'accès, jamais par une session) ;
+3. un appel portant `Authorization: Bearer <CRON_SECRET>` — Vercel Cron l'envoie
+   automatiquement ; les handlers ré-affirment le secret (défense en profondeur).
+
+S'y ajoute une tolérance explicite : si `getUser()` échoue mais qu'un cookie de
+session `sb-*` est présent, la requête **passe quand même**. Une micro-coupure
+réseau éjectait autrefois l'utilisateur vers `/login` « par moment ». La sécurité
+reste assurée en aval — Server Components via `getUser`, routes API via
+`verifierSession` (401).
+
+> **Il n'y a plus de liste blanche de routes API.** Une ancienne version de cet
+> audit en décrivait une liste d'une vingtaine de routes à alimenter pour chaque
+> appel serveur-à-serveur. Ce mécanisme n'existe plus : les handlers protégés
+> vérifient eux-mêmes la session. Ne pas « réconcilier » ce qui n'existe plus.
+
+`lib/supabase.ts` (navigateur) et `lib/supabase/server.ts` (serveur) passent par
+`@supabase/ssr`. `lib/supabase.ts` expose un singleton navigateur construit au
+chargement du module. Le répertoire `lib/supabase/` ne contient que deux
+fichiers : `middleware.ts` et `server.ts`.
+
+Déconnexion : manuelle via le `Drawer`, et automatique après 15 min
+d'inactivité sur tout le dashboard interne (`components/InactivityLogout.tsx`,
+hors `/login`, `/espace-client`, `/demo-client`).
+
+### RLS
+
+- Policy d'authentification `acces_authentifie_uniquement`
+  (`auth.uid() IS NOT NULL`) — historiquement la seule policy des tables métier,
+  avec GRANT `SELECT/INSERT/UPDATE/DELETE` au rôle `authenticated`. Elle subsiste
+  sur les tables créées après l'isolation multi-tenant.
+- **Isolation par tenant** via `entreprise_courante()` : c'est désormais le modèle
+  dominant : 58 occurrences dans les migrations, sur **35 tables** — 33 dans la
+  boucle de `20260922_..._part2`, plus `profiles` et `catalogue_ouvrages_prix` en
+  policy nominative. C'est cette couche, et
+  non la policy d'authentification, qui porte la sécurité multi-tenant.
+- GRANT `service_role` sur les tables du schéma public — un trou identifié
+  tardivement (`avancements_chantier` provoquait un `permission denied` silencieux
+  malgré l'usage de `supabaseAdmin`).
+- Buckets Storage : policies de listing **retirées** sur `sav_photos`, `tickets`,
+  `photos`. `getPublicUrl()` continue de fonctionner ; seul le parcours complet
+  du dossier est bloqué.
+- `ON DELETE CASCADE` entre `chantiers` et ses tables liées : supprimer un
+  chantier de test nettoie tout son historique. **Irréversible** — à garder en
+  tête sur un vrai chantier client.
+
+### Notifications — modèle collectif
+
+Migration `20260926_o3b6_notifications_collectif.sql` : les policies
+`notifications_ent_*` sont remplacées par le seul filtrage
+`entreprise_id = public.entreprise_courante()`. Modèle **collectif par tenant** —
+ni pont `profiles.user_id`, ni table d'état de lecture par utilisateur, ni
+nouvelle architecture d'identité. Les notifications sont donc collectives : il n'y
+a pas de lecture par utilisateur.
+
+Le raisonnement qui a conduit à cette correction mérite d'être conservé, parce
+qu'il distingue trois niveaux qui se confondent facilement :
+
+1. **Défaut structurel — démontré.** `notifications.destinataire_id` référence
+   `profiles(id)`, dont `id` est un uuid autonome sans colonne `user_id`, et le
+   schéma ne contient **aucun pont vers `auth.users`**. La clause
+   `destinataire_id = auth.uid()` de l'ancienne policy était donc structurellement
+   invalide : aucun code applicatif ne pouvait la rendre vraie.
+2. **Risque fonctionnel — théorique.** *Si* une `client_alert` ciblée avait été
+   produite, l'ancienne policy l'aurait rendue invisible à tout lecteur.
+   L'élargissement reste borné au tenant : `entreprise_id` et le RLS sont intacts.
+3. **Fait observé au 26/09/2026.** Aucune ligne `client_alert` n'avait jamais été
+   produite : 3 lignes au total, de types `general` et `commande_retard`. La
+   correction est donc **préventive** — elle corrige un défaut réel, mais n'a rétabli
+   la visibilité d'aucune notification existante.
+
+Le `CHECK` de type n'est pas en cause : le fichier
+`20260916_fix_notifications_constraints.sql` ajoute une contrainte qui **prévoit**
+les 9 types, `commande_retard` et `client_alert` inclus — ce que le code producteur
+émet effectivement. Ce que le fichier prévoit est vérifiable dans le dépôt ;
+ce que la base applique ne l'est pas (migration non relevée, cf. *Non vérifié*
+ci-dessus), et l'analyse ne conclut rien de ce côté.
+
+L'alerte « Livraison en retard » était **morte depuis 4 jours** : le producteur
+navigateur insérait sans `entreprise_id` (NOT NULL depuis la migration d'isolation
+du 22/09) et sans déstructurer `error` — échec `23502` totalement muet. Corrigé via
+`resoudreContexteEntreprise(null)`, **fail-closed** si le claim est absent,
+déduplication scopée par `.eq("entreprise_id")`, erreurs de lecture et d'insert
+explicites. Le cast `as TablesInsert<"notifications">` a été supprimé : il masquait
+l'erreur de compilation, donc `tsc` exige désormais réellement `entreprise_id`.
+
+### PIN Finance
+
+`FinancePinGate` devant `app/(dashboard)/finance/*`, code à 6 chiffres vérifié
+côté serveur (`app/api/finance-pin/route.ts`, env `FINANCE_PIN`). Persistance en
+`sessionStorage`, bouton « Verrouiller » manuel, reverrouillage automatique après
+15 min d'inactivité.
+
+### Variables d'environnement
+
+`.env.local` est gitignoré. `.env.example` est suivi et ne contient que des
+placeholders.
+
+| Variable | Usage |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | `supabaseAdmin` — **contourne le RLS** |
+| `GROQ_API_KEY` / `GROQ_MODEL` | Groq (chat, résumé, Whisper) |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini (devis, OCR) |
+| `VISUALCROSSING_API_KEY` | Météo détaillée. **Placeholder volontairement présent** : en local, `GET /api/meteo` reçoit un 401 et bascule sur Open-Meteo, donc la météo fonctionne sans compte payant |
+| `METEOFRANCE_APPLICATION_ID` | DPVigilance |
+| `FINANCE_PIN` | Verrou Finance |
+| `CRON_SECRET` | Bearer des crons Vercel |
+| `NOMINATIM_EMAIL` | User-Agent Nominatim — **exigé par la politique d'utilisation** d'OSM. À définir en Vercel aussi, sinon les appels peuvent être bloqués |
+
+> `METEOFRANCE_API_KEY` est référencée dans le code mais **absente de
+> `.env.example`**. À ajouter.
+
+### PWA
+
+`public/manifest.json` + `public/sw.js` (service worker minimal, **sans cache
+offline**) + `components/RegisterSW.tsx`. Icônes `icon-192.png` / `icon-512.png`
+aux tailles exactes exigées par Chrome. App installable, ouverture plein écran.
+
+---
+
+## 🧪 Tests et qualité
+
+**1121 tests, 66 fichiers, 0 échec.** La suite est une partie de la
+maintenance, pas un artefact : plusieurs décisions ci-dessus n'existent que
+parce qu'un test les verrouille.
+
+### Tests de composition
+
+Ces tests lisent les **sources** (helpers `CODE()` / `PAGE()`) plutôt que de
+faire le rendu, ce qui est la convention du dépôt pour les pages qui lisent
+Supabase. `CODE()` supprime les commentaires avant toute assertion, pour qu'un
+test ne vérifie pas sa propre documentation.
+
+Portée : ordre des blocs de l'accueil · grilles d'origine · absence de largeur
+propre sur une carte · absence de centrage artificiel · **confort partagé des
+cartes Notes et Alertes** · proportions de la carte météo · état vide reprenant
+la portée de la grille.
+
+> Un garde-fou de `accueil-responsive.test.ts` était **mort** : sa branche
+> ciblait `key={c.id}` alors que le code rend `key={n.id}`, donc elle ne matchait
+> aucune occurrence et la protection ne vérifiait pas les cartes d'alerte. Elle a
+> été réparée. À l'inverse, si une regex de test ne matche plus rien, c'est un
+> signal : le vérifier avant de conclure que le test passe.
+
+### Tests de sécurité
+
+`__tests__/securite/` couvre le middleware et l'isolation du portail client. Le
+test d'isolation `espace-client-entreprise-tenant` n'inspecte **que**
+`app/api/espace-client/[code_acces]/route.ts` : son périmètre est volontairement
+disjoint, et `.eq("id", 1)` y est **interdit** — le portail est multi-tenant.
+
+### Périmètre de mocking Supabase
+
+`lib/supabase.ts` exporte un singleton construit au chargement du module, sans
+env injecté par Vitest. Supabase-js passe par le `fetch` global, **mocké et
+compté précisément** dans plusieurs tests (`toHaveBeenCalledTimes`). Ajouter une
+lecture Supabase dans un composant testé casse ces assertions. C'est pourquoi la
+lecture de l'adresse de départ se fait dans la page hôte et transite en prop.
+
+### Dette de tests connue
+
+**Aucun test ne couvre l'OTP de signature devis** (`send-otp` / `verify-otp`),
+alors que ces routes présentent les défauts les plus graves décrits ci-dessous.
+
+---
+
+## ⚠️ Problèmes ouverts
+
+### Sécurité
+
+**1. Trois routes `/api/devis/*` ne filtrent pas le tenant.**
+`send-otp`, `verify-otp` et `analyse` appellent bien `verifierSession()`, puis
+lisent et écrivent via `supabaseAdmin` — qui **contourne le RLS** — avec un
+`.eq("id", …)` comme seul filtre. Elles ne contiennent aucune référence à
+`entreprise_id`, `entreprise_courante()` ou `resoudreContexteEntreprise`. Le même
+dossier `app/api/devis/route.ts` en contient 14 : l'incohérence est interne au
+dossier. Conséquence : un utilisateur authentifié d'un tenant peut agir sur un
+devis d'un autre tenant. À corriger avant toute mise en production multi-tenant.
+
+**2. L'OTP de signature n'est jamais envoyé.** `send-otp` journalise le code en
+`console.log` sous le libellé `[SMS MOCK]` : aucun fournisseur SMS n'est appelé.
+La signature électronique par code est donc **non fonctionnelle en production**.
+
+**3. Le verrou anti-bruteforce de l'OTP est en mémoire.** `verify-otp` tient le
+compteur dans une `Map` au niveau du module : il est propre à chaque instance et
+se réinitialise à chaque démarrage à froid. Le commentaire du code l'admet
+lui-même (« le lock définitif (par base de données) reste recommandé »). Même
+remarque pour le cooldown d'une minute de `send-otp`.
+
+### Fonctionnel
+
+**4. Onglet « Analyse des Marges » vide.** Dans
+`app/bureau/fournisseurs/page.tsx`, l'onglet `analyse` existe dans l'état et
+dans la barre d'onglets, mais **n'a aucun bloc de rendu** : le contenu manque à
+concevoir. Ce n'est pas une régression.
+
+**5. Fallbacks d'exemple dans l'espace client.** `app/espace-client/[code_acces]/page.tsx`
+affiche encore « Villa Arcachon », « 33380 Arcachon », `BNA-7429`, le badge
+« ★ CLIENT PREMIUM » et un WhatsApp `33600000000` quand la donnée est absente. À
+remplacer par des valeurs neutres ou des états vides.
+
+**6. Zéro `sky-*` / `blue-*` n'a été atteint.** Une ancienne règle d'audit
+annonçait l'éradication totale du bleu ; le code en conserve plus de 60
+occurrences (`sky-400`, `sky-500`, `sky-600`, `blue-500`…). L'éradication est
+**non faite**. À décider : refaire, ou assumer explicitement ces accents.
+
+**7. Standard des modales non appliqué uniformément.** 8 fichiers en `pt-48`,
+2 en `pt-44`.
+
+**8. Palette du portail client.** `#E30613` y est encore utilisé (17 occurrences)
+alors que le reste de l'application est passé à `--color-brand` (`#E53935`, 48
+occurrences). Divergence assumée à arbitriter.
+
+**9. `#232323` non appliqué.** Le token `--color-surface-mobile` existe mais la
+carte mobile ne l'utilise pas.
+
+**10. Vues d'impression non régénérées.** `BilanChantierPDF` et
+`RapportMensuelPDF` sont passés à `#1E1E1E` ; les PDF restent à produire pour
+constater le rendu.
+
+### Qualité
+
+**11. `zod` n'est pas déclaré.** C4 (validation Zod des routes JSON) n'est pas
+amorcé : `zod@4.4.3` n'est présent que comme dépendance transitive de `ai`,
+`@ai-sdk/google` et `@mistralai/mistralai`, sans import direct. L'ajouter
+explicitement avant de commencer.
+
+**12. C5 — timeouts des `fetch` externes.** Non traités : Nominatim, OSRM,
+Visual Crossing, DPVigilance et Groq sont appelés sans délai maximal.
+
+**13. C6 — dépendances ESLint / npm.** Non traités.
+
+**14. B4 — schéma réel non versionné.** Aucun `supabase db dump` du schéma
+réellement en base. L'écart entre les migrations et la PROD ne peut pas être
+clôturé. **Bloqué** : pas d'accès à la base depuis cet environnement. Aucune
+conclusion n'est affirmée tant que ce n'est pas vérifié.
+
+> L'accès à la base est possible **depuis le SQL Editor de Supabase**, en
+> lecture seule. C'est ainsi qu'ont été confirmées les migrations
+> `20260929` et `20260930`, et c'est le moyen de fermer B4 : un dump du schéma
+> réel reste le seul contrôle qui couvre **toutes** les tables d'un coup, alors
+> que les requêtes sur `pg_proc` ne couvrent que les fonctions.
+
+**15. Décalage de distance sur le trajet.** Écart observé entre la distance OSRM
+(24,94 km) et celle d'un affichage Google Maps (28 km) sur un même trajet.
+
+---
+
+## 🧭 Historique des décisions
+
+Conservé uniquement parce qu'il explique un choix qu'on ne devinerait pas en
+lisant le code.
+
+### `Surface` ne porte pas de padding
+
+Le composant a été extrait pour centraliser l'habillage de carte le plus
+homogène du dépôt (95 éléments, 27 fichiers). `HABILLAGE` ne contient que
+bordure, fond et arrondi — **délibérément aucun padding**, aucun texte, aucune
+largeur. La conséquence est que chaque appelant est responsable de son confort
+interne, et qu'un oubli est possible : c'est exactement ce qui est arrivé aux
+cartes d'alerte de l'accueil. Les tests de composition couvrent désormais ce
+point section par section.
+
+### Le fond est global, le reflet ne l'est pas
+
+Le fond `#121212` est sur le `<body>` depuis toujours. Le **reflet rouge**, lui,
+était local et dupliqué deux fois dans `app/page.tsx`. Il a été porté par le
+`background-image` du `<main id="main-content-wrapper">` du layout racine, ce qui
+le définit une seule fois pour toutes les pages.
+
+### L'adresse de départ se lit dans la page hôte
+
+`app/terrain/chantier/[id]/page.tsx` est un composant client : aucune lecture
+serveur n'y est possible. Lire dans `FraisDeplacementTab` aurait imposé de
+charger `@/lib/supabase` dans le composant et aurait cassé les assertions qui
+comptent les appels `fetch`. La lecture se fait donc dans la page hôte et la
+valeur transite en prop — ce qui préserve aussi l'indépendance du composant.
+
+La synchronisation utilise un `useEffect` avec une garde de saisie : `useState`
+ne lit sa valeur initiale qu'au premier rendu, or la prop arrive
+**asynchronement** — un `useState(adresseDepartDefaut || "")` ne se
+préremplirait jamais.
+
+### L'indication d'origine est conditionnée à la valeur
+
+« Adresse de départ récupérée depuis vos paramètres » ne s'affiche que tant que
+`adresseDepart === adresseDepartDefaut`. C'est une affirmation d'**origine** : la
+laisser affichée sur une saisie manuelle serait factuellement faux, ce qui est
+pire que pas d'indication du tout. L'état est dérivé au rendu — aucun état ni
+minuterie ajouté.
+
+### Le couplage Notes ↔ Alertes est volontaire
+
+Le test compare les deux paddings entre eux plutôt que d'écrire `p-4` en dur.
+L'exigence est que les deux sections conservent **le même confort visuel** ;
+une valeur en dur laisserait les deux dériver en silence. Le couplage est donc
+voulu et le test doit échouer si l'une évolue sans l'autre.
+
+### `SearchNav` — Rules of Hooks
+
+Le `if (isClientPage) return null;` précédait deux `useEffect` : le nombre de
+hooks dépendait de `pathname`. Un retour navigateur depuis `/espace-client` vers
+`/bureau` faisait lever « Rendered fewer hooks than expected ». Ni ESLint ni
+aucun test ne le voyait. La garde a été déplacée dans les effets, `return null`
+après le dernier hook ; aucun élément visuel n'a été modifié.
+
+### Suppression de composants
+
+`BureauNav`, `SubNav` et `PageEnConstruction` ont été retirés : **aucun import
+actif ne subsiste**. Il ne reste que des commentaires documentant le retrait et le
+test qui le vérifie. Ne pas les réintroduire.
+
+### `PUBLIC_PATHS` a été réduit, pas étendu
+
+Le mécanisme de liste blanche de routes API a été **supprimé** au profit d'une
+liste minimale (`/login` + portail client) et d'une exception Bearer pour les
+crons. Chaque route API protégée vérifie sa propre session. Toute recette
+« ajouter ma route à la liste blanche » est périmée.
+
+### `/api/notifications` et `/api/chat-client` supprimés
+
+`/api/notifications` n'avait plus aucun appelant sur tout l'historique
+(`git log --all -S`) et avait été **publique 12 jours** avant reverrouillage,
+sans jamais servir. `/api/chat-client` a été remplacé par
+`/api/espace-client/[code_acces]/chat` et `.../chat-summary`, dans le
+portail. L'entrée de `/api/notifications` reste dans la liste blanche du test
+middleware **délibérément**, comme garde-fou anti-remise en liste blanche.
+
+### RPC `lier_deplacement_devis` durcie
+
+`public.lier_deplacement_devis(p_deplacement_id, p_devis_id, p_entreprise_id)`
+était `SECURITY DEFINER` **et** paramétrée par le tenant fourni par l'appelant.
+`CREATE FUNCTION` accorde `EXECUTE` à `PUBLIC` par défaut et PostgREST expose le
+schéma `public` : un utilisateur authentifié pouvait appeler la RPC directement
+avec un `p_entreprise_id` appartenant à un autre tenant. Les policies RLS de
+`frais_deplacement` sont `auth.role() = 'authenticated'` **sans filtre
+`entreprise_id`** : rien ne bloquait l'appel.
+
+La correction décompose selon la convention **déjà utilisée par le dépôt**
+(`generer_prochain_numero_*`) : une implémentation interne
+`lier_deplacement_devis_ctx` à tenant explicite, `EXECUTE` réservé au
+`service_role`, et un wrapper public **sans aucun paramètre tenant** qui résout
+`entreprise_courante()` et **échoue fermé** si le contexte est absent.
+
+L'ancienne signature à 3 arguments est **`DROP`ée, pas seulement `REVOKE`ée** :
+PostgREST résout par (nom, nombre d'arguments), une surcharge restante demeurerait
+une surface d'élévation que le moindre `GRANT` futur rouvrirait par accident. Le
+corps métier — les deux verrous `FOR UPDATE`, le contrôle de chantier partagé, le
+recalcul atomique des totaux — est **inchangé**.
+
+Côté application, la route appelle la RPC en 2 arguments via le client **porté par
+la session** (`createClient()`, cookies, clé `anon`) et non via `supabaseAdmin` :
+`entreprise_courante()` lit le claim JWT de l'appelant, absent du JWT
+`service_role` — en `service_role` la RPC tournerait sans contexte et échouerait
+fermée.
+
+`devis_id` n'est plus modifiable par `PATCH` : le corps de mise à jour de
+`/api/deplacements/[id]` est une liste blanche (`statut` validé, `updated_at`).
+Le rattachement à un devis passe **exclusivement** par
+`POST /api/deplacements/[id]/lier`, seule voie qui vérifie que le devis et le
+déplacement partagent le même chantier.
+
+### `search_path` des fonctions `SECURITY DEFINER`
+
+Inventaire : 26 fonctions `SECURITY DEFINER` dans les migrations, dont 8 portaient
+déjà `set search_path = public`, 7 sont superseded par un `create or replace`
+ultérieur, et **11 sont vivantes sans `search_path`** — les seules traitées.
+
+La méthode est `alter function … set search_path = public`, **pas**
+`create or replace` : retranscrire un corps serait une source de dérive
+silencieuse, alors que l'`ALTER` est une opération de catalogue qui ne lit ni ne
+réécrit le corps.
+
+Le traitement est une **boucle de catalogue** alimentée par `pg_proc`, filtrée sur
+`prosecdef`, et l'`ALTER` est construit par `format(…, r.oid::regprocedure::text)` :
+**aucune signature n'est écrite à la main** et la boucle couvre toutes les
+surcharges d'un nom.
+
+> Une première version comparait `pg_get_function_identity_arguments()` à des
+> signatures littérales. Cette fonction restituit la signature **avec les noms de
+> paramètres** — pour `generer_prochain_numero_ri(p_entreprise_id uuid)` elle
+> renvoie `p_entreprise_id uuid`, pas `uuid`. La garde n'était donc satisfaite que
+> pour les fonctions **sans** argument, et la migration réussissait en n'ayant
+> corrigé qu'une fraction de ses cibles **sans lever la moindre erreur**. La
+> sélection par `oid` supprime le risque.
+
+L'idempotence est portée par
+`coalesce(p.proconfig, '{}'::text[]) is distinct from array['search_path=public']`
+et non par un test d'existence : **aucun `ALTER` nu** n'est exécuté, donc le lot
+ne peut pas échouer sur *function does not exist*.
+
+### Contrat local dans `FraisDeplacementTab`
+
+Le composant ne dépend pas du type privé `DevisLie` d'une autre page pour deux
+champs. Il déclare un contrat **minimal** `{ id: string; numero: string }[]` :
+l'identifiant (clé React + valeur d'option) et le numéro (libellé) suffisent.
+
+Élargir ce contrat aux « devis du client » serait un piège : la RPC rejette alors
+avec « Le devis et le déplacement n'appartiennent pas au même chantier », ce
+qui est une impasse pour l'utilisateur. **Ne pas élargir.**
+
+### Nettoyage des `any`
+
+Aucun `any` n'a été remplacé par `unknown`, `object` ou un cast arbitraire :
+chaque occurrence a été résolue par le type réel du projet.
+
+- `devis.lignes` est un `Json` : le `as any` de `lib/mainOeuvreAnalytique.ts` a
+  été remplacé par **`mapperLignesPersistees`** (`lib/devisAnalyse.ts`), mappeur
+  sûr déjà utilisé par le projet. Effet de bord favorable : il écarte les entrées
+  `null` qui faisaient lever `ligne.catalogue_id` sur `null`.
+- `lib/fournisseursAnalytique.ts` : les 4 paramètres `any[]` deviennent des types
+  `Tables<…>[]`.
+- `RentabiliteMainOeuvreWidget.tsx` : le type d'état annonçait `nom: string`
+  alors que la colonne est `string | null` — c'est ce **mensonge de type** qui
+  imposait le `as any`. Corrigé ; `{c.nom}` affiche `null` comme nœud vide,
+  comportement visible inchangé.
+- `catch (err: any)` de `SignatureModal.tsx`, `hooks/useDeplacements.ts` et
+  `app/api/deplacements/[id]/lier/route.ts` : passés en `unknown` avec repli
+  explicite. Ces branches étaient **muettes** — sur une valeur qui n'est pas une
+  `Error`, `err.message` vaut `undefined` et l'UI affichait un message vide.
+
+Le compte `any` d'ESLint en production est aujourd'hui **0**. Les occurrences
+restantes sont dans `__tests__/`, où elles servent de cast sur des `vi.fn()` et
+des mocks — elles sont idiomatiques et volontaires.
+
+### Conventions de code
+
+- Un `unknown` ou un `Error` se teste avec `instanceof` avant d'accéder à
+  `.message` ; ne pas réintroduire un accès direct sur une valeur inconnue.
+- Une conversion monétaire passe par `fmtEuro` (`lib/financeCalculs`), qui produit
+  la virgule décimale française et une **espace insécable U+00A0** avant le `€`.
+  Les assertions correspondantes doivent échapper `\u00A0` explicitement, sinon
+  une espace ordinaire ferait passer le test sans rien garantir.
+- Un composant client ne doit pas importer `@/lib/supabase` s'il est testé : lire
+  par une prop depuis la page hôte.
+
+---
+
+## 📌 Notes d'exploitation
+
+### Reprendre le projet
+
+```bash
+npm run dev            # Next 16 — le build tue le serveur de dev, relancer après
+npm run build
+npx tsc --noEmit       # gate fiable
+npx vitest run
+npx eslint .
+```
+
+Si `tsc` remonte des erreurs de syntaxe dans `.next/dev/types/routes.d.ts`, le
+serveur de dev écrit ses types pendant la lecture : arrêter le serveur, puis
+`rm -rf .next/dev`.
+
+### Pièges rencontrés
+
+- `pkill -f "next dev"` s'auto-tuer. Éteindre par PID ; un processus
+  `next-server (v16.3.5)` n'apparaît pas sous le motif `next dev` et peut rester
+  orphelin sur le port 3000.
+- `npm run build` tue le serveur `next dev`.
+- Un test qui lit des sources doit passer ses assertions par `CODE()` (commentaires
+  supprimés), sinon il peut vérifier sa propre documentation.
+- Une regex de test qui ne matche plus rien **passe silencieusement** : c'est un
+  garde-fou mort, pas une protection.
+
+### Règles de travail
+
+- Ne jamais considérer une migration comme appliquée parce que le fichier SQL est
+  dans le dépôt : seul un relevé sur la base l'établit, et il établit l'**état
+  observé**, pas la trace d'exécution. L'accès se fait depuis le SQL Editor
+  Supabase, en lecture seule — c'est ainsi que les 7 migrations listées
+  ci-dessus ont été confirmées.
+- Avant de committer : `git diff` complet, recherche de secrets, absence de
+  fichier parasite ou temporaire, absence de marqueur de conflit.
+- Après une écriture longue, scanner les fichiers modifiés : l'outillage peut
+  injecter des caractères CJK dans les commentaires.
