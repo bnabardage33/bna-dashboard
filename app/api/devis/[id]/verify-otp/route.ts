@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { verifierSession } from "@/lib/auth";
+import { resoudreTenant } from "@/lib/tenant";
+
+// SÉCURITÉ TENANT :
+// - `verifierSession()` ne fournissait aucun tenant : la lecture ne portait que
+//   `.eq("id", id)`. Un utilisateur authentifié pouvait donc signer le devis
+//   d'une AUTRE entreprise s'il en connaissait l'UUID.
+// - `resoudreTenant()` échoue fermé avant toute requête métier.
+// - Les DEUX accès (lecture puis écriture) portent le prédicat `entreprise_id` :
+//   la lecture est le verrou, l'écriture est la défense en profondeur.
+// - Le 404 « Devis introuvable » est le même pour un UUID inexistant : pas
+//   d'oracle d'existence inter-tenant.
 
 // SÉCURITÉ OTP :
 // - La vérification se fait EXCLUSIVEMENT côté serveur : on compare le code
@@ -27,8 +37,9 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifierSession();
-  if (!session.authentifie) return session.reponse;
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
+  const entrepriseId = tenant.entrepriseId;
   try {
     const { code } = await req.json();
     const { id } = await params;
@@ -59,6 +70,7 @@ export async function POST(
       .from("devis")
       .select("otp_code, otp_expires_at, signature_phone")
       .eq("id", id)
+      .eq("entreprise_id", entrepriseId)
       .single();
 
     if (fetchError || !devis) {
@@ -98,7 +110,8 @@ export async function POST(
         otp_code: null,
         otp_expires_at: null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("entreprise_id", entrepriseId);
 
     if (updateError) {
       throw updateError;

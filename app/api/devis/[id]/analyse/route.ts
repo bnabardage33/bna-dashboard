@@ -3,7 +3,7 @@ import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { TablesInsert } from "@/types/supabase";
-import { verifierSession } from "@/lib/auth";
+
 import { calculerDevis } from "@/lib/devisCalcul";
 import { ChantierIntrouvableError, servirPayloadMetreComplet } from "@/lib/servir-metre-complet";
 import { scoreConceptVsItem } from "@/lib/catalogueMatching";
@@ -18,7 +18,21 @@ import {
   type StatutAnalyse,
 } from "@/lib/devisAnalyse";
 import { preparerRemplacement, type AnalysePersistee } from "@/lib/devisHistorique";
+import { resoudreTenant } from "@/lib/tenant";
 import type { Json } from "@/types/supabase";
+
+// SÉCURITÉ TENANT :
+// - `verifierSession()` ne fournissait aucun tenant : les accès `devis` et
+//   `devis_ia` ne portaient que `id` / `devis_id`. Un utilisateur authentifié
+//   pouvait donc lire ET réécrire l'analyse du devis d'une AUTRE entreprise,
+//   et déclencher un appel LLM payant sur ses données.
+// - `resoudreTenant()` échoue fermé avant toute requête métier.
+// - Le verrou principal est la lecture du devis (POST) : à 0 ligne, tout le
+//   reste — catalogue, métré, revendication, LLM, écriture — est inatteignable.
+// - Les accès `devis_ia` portent aussi le prédicat : défense en profondeur, car
+//   ils sont atteints par `devis_ia_id` et non par `devis_id`.
+// - `catalogue_ouvrages` n'est volontairement PAS filtré : cette table n'a pas
+//   de colonne `entreprise_id`, c'est un catalogue partagé.
 
 export const dynamic = "force-dynamic";
 
@@ -98,7 +112,10 @@ function selectionnerContexteCatalogue(
     .slice(0, 30);
 }
 
-async function revendiquerAnalyse(devisId: string): Promise<{
+async function revendiquerAnalyse(
+  devisId: string,
+  entrepriseId: string
+): Promise<{
   ok: boolean;
   id: string;
   ancienne: AnalysePersistee | null;
@@ -110,6 +127,7 @@ async function revendiquerAnalyse(devisId: string): Promise<{
       "id, statut, version, updated_at, analyse_resultats, lignes_proposees, alertes, recommandations, total_estime, marge_estimee, marge_pct",
     )
     .eq("devis_id", devisId)
+    .eq("entreprise_id", entrepriseId)
     .maybeSingle();
 
   const decision = decisionDemarrageAnalyse({
@@ -148,6 +166,7 @@ async function revendiquerAnalyse(devisId: string): Promise<{
     .from("devis_ia")
     .update({ statut: "en_cours", updated_at: new Date().toISOString() })
     .eq("devis_id", devisId)
+    .eq("entreprise_id", entrepriseId)
     .or(`statut.in.(terminee,en_echec),updated_at.lt.${seuilExpiration}`)
     .select("id, version")
     .single();
@@ -174,8 +193,9 @@ async function revendiquerAnalyse(devisId: string): Promise<{
 // ── POST : lancer (ou relancer) une analyse IA d'un devis. ─────────────
 
 export async function POST(req: NextRequest, contexte: { params: Promise<{ id: string }> }) {
-  const session = await verifierSession();
-  if (!session.authentifie) return session.reponse;
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
+  const entrepriseId = tenant.entrepriseId;
   const devisId = await lireParams(contexte);
   if (!devisId) {
     return NextResponse.json({ error: "devis_id manquant." }, { status: 400 });
@@ -185,10 +205,13 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
   }
 
   try {
+    // Verrou principal : à 0 ligne, tout le reste est inatteignable — ni
+    // catalogue, ni métré, ni revendication, ni appel LLM, ni écriture.
     const { data: devis, error: errDevis } = await supabaseAdmin
       .from("devis")
       .select("id, lignes, chantier_id, surface_m2")
       .eq("id", devisId)
+      .eq("entreprise_id", entrepriseId)
       .maybeSingle();
     if (errDevis || !devis) {
       return NextResponse.json({ error: "Devis introuvable." }, { status: 404 });
@@ -211,7 +234,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
     }
 
     // ── Verrou de concurrence (décision pure + revendication atomique). ──
-    const revendication = await revendiquerAnalyse(devisId);
+    const revendication = await revendiquerAnalyse(devisId, entrepriseId);
     if (!revendication.ok) {
       if (revendication.motif === "verrouille") {
         return NextResponse.json(
@@ -358,7 +381,8 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
           version,
           updated_at: new Date().toISOString(),
         })
-        .eq("devis_id", devisId);
+        .eq("devis_id", devisId)
+        .eq("entreprise_id", entrepriseId);
       if (errEcriture) {
         console.error("Erreur écriture devis_ia :", errEcriture.message);
         throw new ErreurAnalyse("Impossible d'enregistrer l'analyse.");
@@ -381,7 +405,8 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
       await supabaseAdmin
         .from("devis_ia")
         .update({ statut: "en_echec", updated_at: new Date().toISOString() })
-        .eq("devis_id", devisId);
+        .eq("devis_id", devisId)
+        .eq("entreprise_id", entrepriseId);
       throw errAnalyse;
     }
   } catch (err) {
@@ -397,8 +422,9 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
 // ── GET : lecture de l'analyse existante (+ historique optionnel). ─────
 
 export async function GET(req: NextRequest, contexte: { params: Promise<{ id: string }> }) {
-  const session = await verifierSession();
-  if (!session.authentifie) return session.reponse;
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
+  const entrepriseId = tenant.entrepriseId;
   const devisId = await lireParams(contexte);
   if (!devisId) {
     return NextResponse.json({ error: "devis_id manquant." }, { status: 400 });
@@ -411,6 +437,7 @@ export async function GET(req: NextRequest, contexte: { params: Promise<{ id: st
         "id, devis_id, analyse_resultats, lignes_proposees, alertes, recommandations, total_estime, marge_estimee, marge_pct, version, statut, created_at, updated_at",
       )
       .eq("devis_id", devisId)
+      .eq("entreprise_id", entrepriseId)
       .maybeSingle();
     if (errAnalyse || !analyse) {
       return NextResponse.json({ error: "Aucune analyse pour ce devis." }, { status: 404 });

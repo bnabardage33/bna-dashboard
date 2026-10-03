@@ -75,7 +75,10 @@ describe("timestamps — updated_at maintenu sur toutes les transitions", () => 
 
 describe("aucun appel LLM avant une revendication réussie", () => {
   it("le LLM (generateText) n'apparaît qu'APRÈS revendiquerAnalyse", () => {
-    const revendication = source.indexOf("const revendication = await revendiquerAnalyse(devisId)");
+    // Ancre sur l'appel, PAS sur la signature : la route passe désormais le
+    // tenant à `revendiquerAnalyse(devisId, entrepriseId)`. L'invariant protégé
+    // est l'ORDRE (revendication avant LLM), pas la liste d'arguments.
+    const revendication = source.indexOf("await revendiquerAnalyse(");
     const llm = source.indexOf("generateText({");
     expect(revendication).not.toBe(-1);
     expect(llm).not.toBe(-1);
