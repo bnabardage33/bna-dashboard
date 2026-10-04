@@ -60,39 +60,55 @@ inv as (
   select count(*) filter (where strpos(f.corps, m.v) > 0) as ok, count(*) as total
   from f cross join m
 ),
-v(pt, ctrl, attendu, obtenu, ok) as (
+v(n, pt, ctrl, attendu, obtenu, ok) as (
   select 17 as n, 'D.1' as pt, 'anon SELECT sur devis_signatures' as ctrl,
-         'true' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'SELECT'),false) = true)) as ok,
+         'true' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'SELECT'),false) = true)) as ok
+union all
   select 18 as n, 'D.1' as pt, 'anon INSERT sur devis_signatures' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'INSERT'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'INSERT'),false) = false)) as ok
+union all
   select 19 as n, 'D.1' as pt, 'anon UPDATE sur devis_signatures' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'UPDATE'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'UPDATE'),false) = false)) as ok
+union all
   select 20 as n, 'D.1' as pt, 'anon DELETE sur devis_signatures' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'DELETE'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_signatures')::oid, 'DELETE'),false) = false)) as ok
+union all
   select 21 as n, 'D.1' as pt, 'authenticated SELECT sur devis_signatures' as ctrl,
-         'true' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'SELECT'),false) = true)) as ok,
+         'true' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'SELECT'),false) = true)) as ok
+union all
   select 22 as n, 'D.1' as pt, 'authenticated INSERT sur devis_signatures' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'INSERT'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'INSERT'),false) = false)) as ok
+union all
   select 23 as n, 'D.1' as pt, 'authenticated UPDATE sur devis_signatures' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'UPDATE'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'UPDATE'),false) = false)) as ok
+union all
   select 24 as n, 'D.1' as pt, 'authenticated DELETE sur devis_signatures' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'DELETE'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_signatures')::oid, 'DELETE'),false) = false)) as ok
+union all
   select 25 as n, 'D.3' as pt, 'service_role SELECT sur devis_signatures' as ctrl,
-         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'SELECT'),false) = true)) as ok,
+         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'SELECT'),false) = true)) as ok
+union all
   select 26 as n, 'D.3' as pt, 'service_role INSERT sur devis_signatures' as ctrl,
-         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'INSERT'),false) = true)) as ok,
+         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'INSERT'),false) = true)) as ok
+union all
   select 27 as n, 'D.3' as pt, 'service_role UPDATE sur devis_signatures' as ctrl,
-         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'UPDATE'),false) = true)) as ok,
+         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'UPDATE'),false) = true)) as ok
+union all
   select 28 as n, 'D.3' as pt, 'service_role DELETE sur devis_signatures' as ctrl,
-         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'DELETE'),false) = true)) as ok,
+         'true' as attendu, cast((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('service_role', to_regclass('public.devis_signatures')::oid, 'DELETE'),false) = true)) as ok
+union all
   select 29 as n, 'D.2' as pt, 'anon SELECT sur devis_otp' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'SELECT'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'SELECT'),false) = false)) as ok
+union all
   select 30 as n, 'D.2' as pt, 'anon INSERT sur devis_otp' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'INSERT'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'INSERT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'INSERT'),false) = false)) as ok
+union all
   select 31 as n, 'D.2' as pt, 'anon UPDATE sur devis_otp' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'UPDATE'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'UPDATE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'UPDATE'),false) = false)) as ok
+union all
   select 32 as n, 'D.2' as pt, 'anon DELETE sur devis_otp' as ctrl,
-         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'DELETE'),false) = false)) as ok,
+         'false' as attendu, cast((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'DELETE')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('anon', to_regclass('public.devis_otp')::oid, 'DELETE'),false) = false)) as ok
+union all
   select 33 as n, 'D.2' as pt, 'authenticated SELECT sur devis_otp' as ctrl,
          'false' as attendu, cast((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_otp')::oid, 'SELECT')::text,'ROLE INCONNU')) as text) as obtenu, ((coalesce(has_table_privilege('authenticated', to_regclass('public.devis_otp')::oid, 'SELECT'),false) = false)) as ok
 )

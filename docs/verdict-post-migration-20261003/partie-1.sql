@@ -60,37 +60,52 @@ inv as (
   select count(*) filter (where strpos(f.corps, m.v) > 0) as ok, count(*) as total
   from f cross join m
 ),
-v(pt, ctrl, attendu, obtenu, ok) as (
+v(n, pt, ctrl, attendu, obtenu, ok) as (
   select 1 as n, 'A.1' as pt, 'table devis_signatures' as ctrl,
-         'presente' as attendu, cast((case when to_regclass('public.devis_signatures') is not null then 'present' else 'ABSENT' end) as text) as obtenu, ((to_regclass('public.devis_signatures') is not null)) as ok,
+         'presente' as attendu, cast((case when to_regclass('public.devis_signatures') is not null then 'present' else 'ABSENT' end) as text) as obtenu, ((to_regclass('public.devis_signatures') is not null)) as ok
+union all
   select 2 as n, 'A.1' as pt, 'table devis_otp' as ctrl,
-         'presente' as attendu, cast((case when to_regclass('public.devis_otp') is not null then 'present' else 'ABSENT' end) as text) as obtenu, ((to_regclass('public.devis_otp') is not null)) as ok,
+         'presente' as attendu, cast((case when to_regclass('public.devis_otp') is not null then 'present' else 'ABSENT' end) as text) as obtenu, ((to_regclass('public.devis_otp') is not null)) as ok
+union all
   select 3 as n, 'A.2' as pt, 'colonnes ajoutees (devis/clients/chantiers)' as ctrl,
-         '7' as attendu, cast((select count(*)::text from information_schema.columns where table_schema='public' and (table_name,column_name) in (('devis','signature_image'),('devis','telephone_source'),('devis','devis_empreinte_sha256'),('clients','tel_normalise'),('clients','tel_verifie'),('chantiers','code_acces_expires_at'),('chantiers','code_acces_utilise_at'))) as text) as obtenu, ((select count(*)=7 from information_schema.columns where table_schema='public' and (table_name,column_name) in (('devis','signature_image'),('devis','telephone_source'),('devis','devis_empreinte_sha256'),('clients','tel_normalise'),('clients','tel_verifie'),('chantiers','code_acces_expires_at'),('chantiers','code_acces_utilise_at')))) as ok,
+         '7' as attendu, cast((select count(*)::text from information_schema.columns where table_schema='public' and (table_name,column_name) in (('devis','signature_image'),('devis','telephone_source'),('devis','devis_empreinte_sha256'),('clients','tel_normalise'),('clients','tel_verifie'),('chantiers','code_acces_expires_at'),('chantiers','code_acces_utilise_at'))) as text) as obtenu, ((select count(*)=7 from information_schema.columns where table_schema='public' and (table_name,column_name) in (('devis','signature_image'),('devis','telephone_source'),('devis','devis_empreinte_sha256'),('clients','tel_normalise'),('clients','tel_verifie'),('chantiers','code_acces_expires_at'),('chantiers','code_acces_utilise_at')))) as ok
+union all
   select 4 as n, 'A.2' as pt, 'colonne devis.signature_image' as ctrl,
-         'presente' as attendu, cast((case when (select count(*)=1 from information_schema.columns where table_schema='public' and table_name='devis' and column_name='signature_image') then 'present' else 'ABSENT' end) as text) as obtenu, ((select count(*)=1 from information_schema.columns where table_schema='public' and table_name='devis' and column_name='signature_image')) as ok,
+         'presente' as attendu, cast((case when (select count(*)=1 from information_schema.columns where table_schema='public' and table_name='devis' and column_name='signature_image') then 'present' else 'ABSENT' end) as text) as obtenu, ((select count(*)=1 from information_schema.columns where table_schema='public' and table_name='devis' and column_name='signature_image')) as ok
+union all
   select 5 as n, 'A.3' as pt, 'colonnes de devis_signatures' as ctrl,
-         '20' as attendu, cast((select count(*)::text from pg_attribute where attrelid=to_regclass('public.devis_signatures') and attnum>0 and not attisdropped) as text) as obtenu, ((select count(*)=20 from pg_attribute where attrelid=to_regclass('public.devis_signatures') and attnum>0 and not attisdropped)) as ok,
+         '20' as attendu, cast((select count(*)::text from pg_attribute where attrelid=to_regclass('public.devis_signatures') and attnum>0 and not attisdropped) as text) as obtenu, ((select count(*)=20 from pg_attribute where attrelid=to_regclass('public.devis_signatures') and attnum>0 and not attisdropped)) as ok
+union all
   select 6 as n, 'A.3' as pt, 'colonnes de devis_otp' as ctrl,
-         '12' as attendu, cast((select count(*)::text from pg_attribute where attrelid=to_regclass('public.devis_otp') and attnum>0 and not attisdropped) as text) as obtenu, ((select count(*)=12 from pg_attribute where attrelid=to_regclass('public.devis_otp') and attnum>0 and not attisdropped)) as ok,
+         '12' as attendu, cast((select count(*)::text from pg_attribute where attrelid=to_regclass('public.devis_otp') and attnum>0 and not attisdropped) as text) as obtenu, ((select count(*)=12 from pg_attribute where attrelid=to_regclass('public.devis_otp') and attnum>0 and not attisdropped)) as ok
+union all
   select 7 as n, 'B.1' as pt, 'devis_statut_check validee' as ctrl,
-         'oui' as attendu, cast((coalesce((select convalidated::text from pg_constraint where conrelid='public.devis'::regclass and conname='devis_statut_check'),'ABSENTE')) as text) as obtenu, ((coalesce((select convalidated from pg_constraint where conrelid='public.devis'::regclass and conname='devis_statut_check'),false))) as ok,
+         'oui' as attendu, cast((coalesce((select convalidated::text from pg_constraint where conrelid='public.devis'::regclass and conname='devis_statut_check'),'ABSENTE')) as text) as obtenu, ((coalesce((select convalidated from pg_constraint where conrelid='public.devis'::regclass and conname='devis_statut_check'),false))) as ok
+union all
   select 8 as n, 'B.2' as pt, 'contraintes CHECK sur devis_signatures' as ctrl,
-         '>=1' as attendu, cast((select count(*)::text from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='c') as text) as obtenu, ((select count(*)>=1 from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='c')) as ok,
+         '>=1' as attendu, cast((select count(*)::text from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='c') as text) as obtenu, ((select count(*)>=1 from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='c')) as ok
+union all
   select 9 as n, 'B.2' as pt, 'contraintes CHECK sur devis_otp' as ctrl,
-         '>=1' as attendu, cast((select count(*)::text from pg_constraint where conrelid=to_regclass('public.devis_otp') and contype='c') as text) as obtenu, ((select count(*)>=1 from pg_constraint where conrelid=to_regclass('public.devis_otp') and contype='c')) as ok,
+         '>=1' as attendu, cast((select count(*)::text from pg_constraint where conrelid=to_regclass('public.devis_otp') and contype='c') as text) as obtenu, ((select count(*)>=1 from pg_constraint where conrelid=to_regclass('public.devis_otp') and contype='c')) as ok
+union all
   select 10 as n, 'B.3' as pt, 'FK devis_signatures -> devis' as ctrl,
-         'presente' as attendu, cast((select count(*)::text from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='f' and confrelid='public.devis'::regclass) as text) as obtenu, ((select count(*)>=1 from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='f' and confrelid='public.devis'::regclass)) as ok,
+         'presente' as attendu, cast((select count(*)::text from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='f' and confrelid='public.devis'::regclass) as text) as obtenu, ((select count(*)>=1 from pg_constraint where conrelid=to_regclass('public.devis_signatures') and contype='f' and confrelid='public.devis'::regclass)) as ok
+union all
   select 11 as n, 'B.3' as pt, 'index devis_otp_devis_recent_idx' as ctrl,
-         'present' as attendu, cast((case when (select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_otp_devis_recent_idx') then 'present' else 'ABSENT' end) as text) as obtenu, ((select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_otp_devis_recent_idx')) as ok,
+         'present' as attendu, cast((case when (select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_otp_devis_recent_idx') then 'present' else 'ABSENT' end) as text) as obtenu, ((select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_otp_devis_recent_idx')) as ok
+union all
   select 12 as n, 'B.3' as pt, 'index devis_signatures_devis_idx' as ctrl,
-         'present' as attendu, cast((case when (select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_signatures_devis_idx') then 'present' else 'ABSENT' end) as text) as obtenu, ((select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_signatures_devis_idx')) as ok,
+         'present' as attendu, cast((case when (select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_signatures_devis_idx') then 'present' else 'ABSENT' end) as text) as obtenu, ((select count(*)=1 from pg_indexes where schemaname='public' and indexname='devis_signatures_devis_idx')) as ok
+union all
   select 13 as n, 'C.1' as pt, 'RLS active sur devis_signatures' as ctrl,
-         'oui' as attendu, cast((coalesce((select relrowsecurity::text from pg_class where oid=to_regclass('public.devis_signatures')),'TABLE ABSENTE')) as text) as obtenu, ((coalesce((select relrowsecurity from pg_class where oid=to_regclass('public.devis_signatures')),false))) as ok,
+         'oui' as attendu, cast((coalesce((select relrowsecurity::text from pg_class where oid=to_regclass('public.devis_signatures')),'TABLE ABSENTE')) as text) as obtenu, ((coalesce((select relrowsecurity from pg_class where oid=to_regclass('public.devis_signatures')),false))) as ok
+union all
   select 14 as n, 'C.2' as pt, 'policies sur devis_signatures' as ctrl,
-         '4' as attendu, cast((select count(*)::text from pg_policies where schemaname='public' and tablename='devis_signatures') as text) as obtenu, ((select count(*)=4 from pg_policies where schemaname='public' and tablename='devis_signatures')) as ok,
+         '4' as attendu, cast((select count(*)::text from pg_policies where schemaname='public' and tablename='devis_signatures') as text) as obtenu, ((select count(*)=4 from pg_policies where schemaname='public' and tablename='devis_signatures')) as ok
+union all
   select 15 as n, 'C.1' as pt, 'RLS active sur devis_otp' as ctrl,
-         'oui' as attendu, cast((coalesce((select relrowsecurity::text from pg_class where oid=to_regclass('public.devis_otp')),'TABLE ABSENTE')) as text) as obtenu, ((coalesce((select relrowsecurity from pg_class where oid=to_regclass('public.devis_otp')),false))) as ok,
+         'oui' as attendu, cast((coalesce((select relrowsecurity::text from pg_class where oid=to_regclass('public.devis_otp')),'TABLE ABSENTE')) as text) as obtenu, ((coalesce((select relrowsecurity from pg_class where oid=to_regclass('public.devis_otp')),false))) as ok
+union all
   select 16 as n, 'C.2' as pt, 'policies sur devis_otp' as ctrl,
          '0' as attendu, cast((select count(*)::text from pg_policies where schemaname='public' and tablename='devis_otp') as text) as obtenu, ((select count(*)=0 from pg_policies where schemaname='public' and tablename='devis_otp')) as ok
 )
