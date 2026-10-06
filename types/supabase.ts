@@ -354,6 +354,8 @@ export type Database = {
           client_id: string | null
           client_nom: string | null
           code_acces: string | null
+          code_acces_expires_at: string | null
+          code_acces_utilise_at: string | null
           coef_perte_rendement: number | null
           contact_chantier: string | null
           created_at: string | null
@@ -383,6 +385,8 @@ export type Database = {
           client_id?: string | null
           client_nom?: string | null
           code_acces?: string | null
+          code_acces_expires_at?: string | null
+          code_acces_utilise_at?: string | null
           coef_perte_rendement?: number | null
           contact_chantier?: string | null
           created_at?: string | null
@@ -412,6 +416,8 @@ export type Database = {
           client_id?: string | null
           client_nom?: string | null
           code_acces?: string | null
+          code_acces_expires_at?: string | null
+          code_acces_utilise_at?: string | null
           coef_perte_rendement?: number | null
           contact_chantier?: string | null
           created_at?: string | null
@@ -464,6 +470,8 @@ export type Database = {
           siret: string | null
           societe: string | null
           tel: string | null
+          tel_normalise: string | null
+          tel_verifie: boolean
           type: string
           ville: string | null
         }
@@ -478,6 +486,8 @@ export type Database = {
           siret?: string | null
           societe?: string | null
           tel?: string | null
+          tel_normalise?: string | null
+          tel_verifie?: boolean
           type?: string
           ville?: string | null
         }
@@ -492,6 +502,8 @@ export type Database = {
           siret?: string | null
           societe?: string | null
           tel?: string | null
+          tel_normalise?: string | null
+          tel_verifie?: boolean
           type?: string
           ville?: string | null
         }
@@ -656,6 +668,7 @@ export type Database = {
           created_at: string | null
           date_emission: string | null
           delai_jours: number | null
+          devis_empreinte_sha256: string | null
           devis_parent_id: string | null
           entreprise_id: string
           id: string
@@ -668,10 +681,12 @@ export type Database = {
           otp_code: string | null
           otp_expires_at: string | null
           signature_date: string | null
+          signature_image: string | null
           signature_ip: string | null
           signature_phone: string | null
           statut: string
           surface_m2: number | null
+          telephone_source: string | null
           total_ht: number
           tva_pct: number
           type_travaux: string | null
@@ -687,6 +702,7 @@ export type Database = {
           created_at?: string | null
           date_emission?: string | null
           delai_jours?: number | null
+          devis_empreinte_sha256?: string | null
           devis_parent_id?: string | null
           entreprise_id: string
           id?: string
@@ -699,10 +715,12 @@ export type Database = {
           otp_code?: string | null
           otp_expires_at?: string | null
           signature_date?: string | null
+          signature_image?: string | null
           signature_ip?: string | null
           signature_phone?: string | null
           statut?: string
           surface_m2?: number | null
+          telephone_source?: string | null
           total_ht?: number
           tva_pct?: number
           type_travaux?: string | null
@@ -718,6 +736,7 @@ export type Database = {
           created_at?: string | null
           date_emission?: string | null
           delai_jours?: number | null
+          devis_empreinte_sha256?: string | null
           devis_parent_id?: string | null
           entreprise_id?: string
           id?: string
@@ -730,10 +749,12 @@ export type Database = {
           otp_code?: string | null
           otp_expires_at?: string | null
           signature_date?: string | null
+          signature_image?: string | null
           signature_ip?: string | null
           signature_phone?: string | null
           statut?: string
           surface_m2?: number | null
+          telephone_source?: string | null
           total_ht?: number
           tva_pct?: number
           type_travaux?: string | null
@@ -874,6 +895,168 @@ export type Database = {
             columns: ["entreprise_id"]
             isOneToOne: false
             referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devis_otp: {
+        Row: {
+          code_hmac: string
+          consumed_at: string | null
+          created_at: string
+          devis_id: string
+          entreprise_id: string
+          expires_at: string
+          id: string
+          ip: string | null
+          tentatives: number
+          verrouille_jusqua: string | null
+        }
+        Insert: {
+          code_hmac: string
+          consumed_at?: string | null
+          created_at?: string
+          devis_id: string
+          entreprise_id: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          tentatives?: number
+          verrouille_jusqua?: string | null
+        }
+        Update: {
+          code_hmac?: string
+          consumed_at?: string | null
+          created_at?: string
+          devis_id?: string
+          entreprise_id?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          tentatives?: number
+          verrouille_jusqua?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_otp_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_otp_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devis_signatures: {
+        Row: {
+          chantier_id: string | null
+          client_id: string | null
+          consentement_ip: boolean
+          created_at: string
+          devis_empreinte_sha256: string
+          devis_id: string
+          devis_version_json: Json
+          entreprise_id: string
+          id: string
+          mention_bon_pour_accord: boolean
+          mention_bon_pour_accord_texte: string | null
+          methode: string
+          otp_id: string | null
+          signataire_nom: string
+          signature_image: string
+          signe_par: string
+          signed_at: string
+          signed_ip: string | null
+          telephone_source: string | null
+          telephone_verifie: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          chantier_id?: string | null
+          client_id?: string | null
+          consentement_ip?: boolean
+          created_at?: string
+          devis_empreinte_sha256: string
+          devis_id: string
+          devis_version_json: Json
+          entreprise_id: string
+          id?: string
+          mention_bon_pour_accord?: boolean
+          mention_bon_pour_accord_texte?: string | null
+          methode?: string
+          otp_id?: string | null
+          signataire_nom: string
+          signature_image: string
+          signe_par?: string
+          signed_at?: string
+          signed_ip?: string | null
+          telephone_source?: string | null
+          telephone_verifie?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          chantier_id?: string | null
+          client_id?: string | null
+          consentement_ip?: boolean
+          created_at?: string
+          devis_empreinte_sha256?: string
+          devis_id?: string
+          devis_version_json?: Json
+          entreprise_id?: string
+          id?: string
+          mention_bon_pour_accord?: boolean
+          mention_bon_pour_accord_texte?: string | null
+          methode?: string
+          otp_id?: string | null
+          signataire_nom?: string
+          signature_image?: string
+          signe_par?: string
+          signed_at?: string
+          signed_ip?: string | null
+          telephone_source?: string | null
+          telephone_verifie?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_signatures_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_signatures_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_signatures_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_signatures_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_signatures_otp_id_fkey"
+            columns: ["otp_id"]
+            isOneToOne: false
+            referencedRelation: "devis_otp"
             referencedColumns: ["id"]
           },
         ]
@@ -1308,6 +1491,56 @@ export type Database = {
         }
         Relationships: []
       }
+      fournisseurs: {
+        Row: {
+          conditions_paiement: string | null
+          contact: string | null
+          created_at: string | null
+          email: string | null
+          entreprise_id: string
+          id: string
+          nom: string
+          notes: string | null
+          specialite: string | null
+          statut_relation: string
+          telephone: string | null
+        }
+        Insert: {
+          conditions_paiement?: string | null
+          contact?: string | null
+          created_at?: string | null
+          email?: string | null
+          entreprise_id: string
+          id?: string
+          nom: string
+          notes?: string | null
+          specialite?: string | null
+          statut_relation?: string
+          telephone?: string | null
+        }
+        Update: {
+          conditions_paiement?: string | null
+          contact?: string | null
+          created_at?: string | null
+          email?: string | null
+          entreprise_id?: string
+          id?: string
+          nom?: string
+          notes?: string | null
+          specialite?: string | null
+          statut_relation?: string
+          telephone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseurs_entreprise_fk"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       frais_deplacement: {
         Row: {
           adresse_arrivee: string | null
@@ -1389,56 +1622,6 @@ export type Database = {
           },
           {
             foreignKeyName: "frais_deplacement_entreprise_id_fkey"
-            columns: ["entreprise_id"]
-            isOneToOne: false
-            referencedRelation: "entreprises"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fournisseurs: {
-        Row: {
-          conditions_paiement: string | null
-          contact: string | null
-          created_at: string | null
-          email: string | null
-          entreprise_id: string
-          id: string
-          nom: string
-          notes: string | null
-          specialite: string | null
-          statut_relation: string
-          telephone: string | null
-        }
-        Insert: {
-          conditions_paiement?: string | null
-          contact?: string | null
-          created_at?: string | null
-          email?: string | null
-          entreprise_id: string
-          id?: string
-          nom: string
-          notes?: string | null
-          specialite?: string | null
-          statut_relation?: string
-          telephone?: string | null
-        }
-        Update: {
-          conditions_paiement?: string | null
-          contact?: string | null
-          created_at?: string | null
-          email?: string | null
-          entreprise_id?: string
-          id?: string
-          nom?: string
-          notes?: string | null
-          specialite?: string | null
-          statut_relation?: string
-          telephone?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fournisseurs_entreprise_fk"
             columns: ["entreprise_id"]
             isOneToOne: false
             referencedRelation: "entreprises"
@@ -2672,6 +2855,19 @@ export type Database = {
       set_entreprise_courante: {
         Args: { p_entreprise_id: string }
         Returns: undefined
+      }
+      signature_devis_valider_otp: {
+        Args: {
+          p_code_acces: string
+          p_code_hmac_attendu: string
+          p_devis_id: string
+          p_ip: string | null
+          p_mention_acord: boolean
+          p_otp_id: string | null
+          p_signature_image: string
+          p_user_agent: string | null
+        }
+        Returns: Json
       }
     }
     Enums: {

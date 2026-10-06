@@ -17,8 +17,8 @@
 | `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
 | Arbre de travail | propre |
 | Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
-| Routes | **39** pages (`app/**/page.tsx`) · **36** routes API (`app/api/**/route.ts`) |
-| Base | **40** migrations SQL · `types/supabase.ts` (2807 l.) déclare 55 entrées : 42 tables, 1 vue, 12 fonctions |
+| Routes | **39** pages (`app/**/page.tsx`) · **35** routes API (`app/api/**/route.ts`) |
+| Base | **41** migrations SQL · `types/supabase.ts` (3003 l.) déclare 58 entrées : 44 tables, 1 vue, 13 fonctions |
 
 ### Portes de qualité (mesurées à `ad6404a`)
 
@@ -350,11 +350,13 @@ le trajet (cf. Module Déplacements).
 | `/api/espace-client/[code_acces]` | Données du portail client |
 | `/api/espace-client/[code_acces]/chat` | Échange chatbot |
 | `/api/espace-client/[code_acces]/chat-summary` | Résumé côté portail |
-| `/api/espace-client/[code_acces]/signer` | Signature électronique (vérifie l'appartenance du chantier) |
+| `/api/espace-client/[code_acces]/send-otp` | OTP SMS du portail : clé **HMAC**, cooldown **persistant** (`devis_otp`) |
+| `/api/espace-client/[code_acces]/verify-otp` | Consommation de l'OTP **+ preuve `devis_signatures`** en une seule RPC, contrôle d'encre serveur |
+| ~~`/api/espace-client/[code_acces]/signer`~~ | **RETIRÉE** — signature sans OTP ni preuve |
 | `/api/devis` | Liste / création de devis (**filtre tenant**) |
 | `/api/devis/[id]/analyse` | Analyse IA d'un devis |
-| `/api/devis/[id]/send-otp` | Génération d'un OTP de signature |
-| `/api/devis/[id]/verify-otp` | Vérification de l'OTP |
+| ~~`/api/devis/[id]/send-otp`~~ | **RETIRÉE** — OTP en clair, téléphone fourni par le corps |
+| ~~`/api/devis/[id]/verify-otp`~~ | **RETIRÉE** — anti-bruteforce en mémoire, aucune trace |
 | `/api/deplacements` | Frais de déplacement |
 | `/api/deplacements/[id]` | Mise à jour d'un frais (liste blanche) |
 | `/api/deplacements/[id]/lier` | Rattachement à un devis via RPC |
@@ -378,6 +380,13 @@ le trajet (cf. Module Déplacements).
 
 `/api/notifications` et `/api/chat-client` **n'existent plus** (voir
 « Historique des décisions »).
+
+Le tableau ci-dessus énumère les **35** routes actives. Les trois lignes barrées
+(`~~…~~` + **RETIRÉE**) documentent des routes supprimées et ne comptent pas. Le
+compteur de la ligne 20 et cette liste sont **vérifiés par
+`__tests__/system/audit-snapshot-routes.test.ts`**, qui les compare à
+l'arborescence réelle : toute divergence — route absente du document, route
+documentée mais inexistante, compteur faux — fait échouer la suite.
 
 ---
 
@@ -407,7 +416,7 @@ principales :
 
 ### Migrations
 
-**40 fichiers** dans `supabase/migrations/`, du `20260821` au `20261001`.
+**41 fichiers** dans `supabase/migrations/`, du `20260821` au `20261003`.
 Séquencement notable : `20260922_isolation_multi_entreprise_phase1_part1..5`
 (fondation du multi-tenant), `20260925_o3b6_isolation_espace_client_rpc`,
 `20260926_o3b6_notifications_collectif`, `20260929_create_frais_deplacement`,
@@ -487,6 +496,23 @@ Séquencement notable : `20260922_isolation_multi_entreprise_phase1_part1..5`
   authentifié ne peut numéroter pour une autre entreprise et déduire son volume
   d'émissions. C'est la propriété que la migration vise, et un simple constat
   de présence ne l'aurait pas révélée.
+- `20261003_devis_signature_provenance.sql` — **effet attendu confirmé en base**,
+  verdict **58/58** contrôles SQL en lecture seule, dont **30/30** sur le
+  périmètre E (OTP/signature). Chiffres relevés : `devis_signatures` = **21
+  colonnes**, `devis_otp` = **10 colonnes** ; FK au nommage `{table}_{colonne}_fkey`
+  (ex. `devis_signatures_otp_id_fkey`, `ON DELETE RESTRICT`) ; RPC
+  `signature_devis_valider_otp` `security definer`,
+  `set search_path = public, extensions`, retour `jsonb`, **8 arguments** ;
+  colonnes ajoutées présentes (`devis.signature_image`,
+  `devis.telephone_source`, `devis.devis_empreinte_sha256`,
+  `chantiers.code_acces_expires_at`, `chantiers.code_acces_utilise_at`,
+  `clients.tel_normalise`, `clients.tel_verifie`, toutes nullables).
+
+  `types/supabase.ts` a été **régénéré** depuis cette base (44 tables + 1 vue +
+  13 fonctions, 3003 l.), ce qui ajoute `devis_otp`, `devis_signatures` et la
+  RPC `signature_devis_valider_otp` aux types ; les directives `@ts-expect-error`
+  devenues inutiles ont été retirées (routes send-otp/verify-otp, page
+  devis-factures).
 
 **Non vérifié — les 33 autres migrations.**
 
@@ -494,7 +520,7 @@ Aucun relevé n'a été effectué pour elles : l'état en base est **inconnu**, 
 confirmé ni infirmé. Aucune n'est citée ici comme appliquée, et aucune ne doit
 l'être sans relevé. Le point 14 (*B4 — schéma réel non versionné*) porte sur ce
 reste : un dump du schéma réellement en base est le seul contrôle qui couvre les
-42 tables et la vue d'un coup, alors que les relevés sur `pg_proc` ne portent que
+44 tables et la vue d'un coup, alors que les relevés sur `pg_proc` ne portent que
 sur les fonctions et les quelques tables citées.
 
 > ⚠️ **Ordre de mise en ligne — désormais respecté.** `20260929` devait être
@@ -864,6 +890,62 @@ sans jamais servir. `/api/chat-client` a été remplacé par
 `/api/espace-client/[code_acces]/chat` et `.../chat-summary`, dans le
 portail. L'entrée de `/api/notifications` reste dans la liste blanche du test
 middleware **délibérément**, comme garde-fou anti-remise en liste blanche.
+
+### Les trois routes OTP legacy supprimées
+
+`/api/espace-client/[code_acces]/signer`, `/api/devis/[id]/send-otp` et
+`/api/devis/[id]/verify-otp` ont été **supprimées**, pas désactivées. Le
+déclencheur n'est pas un nettoyage : c'est que la cartographie des appelants
+(`app/`, `components/`, `lib/`, scripts, configuration) n'a trouvé **aucun
+appelant** — ni page, ni composant, ni construction d'URL dynamique. Le parcours
+réel passe par `components/SignatureModal.tsx` →
+`/api/espace-client/[code_acces]/send-otp` puis `/verify-otp`.
+
+Les trois ensemble formaient un **second canal de signature, sans aucune des
+garanties du nouveau** :
+
+| Route | Défaut structurel |
+|---|---|
+| `…/signer` | **Publique** (`/api/espace-client` est un préfixe public). Ni OTP, ni image, ni empreinte, ni `signatureId`. Passait `devis.statut` à `signe` en laissant `devis_signatures` vide — donc un devis « signé » supprimable, alors qu'une preuve rend la suppression impossible (`ON DELETE RESTRICT`). |
+| `/api/devis/[id]/send-otp` | `phone` lu dans le **corps** de la requête : le numéro qui reçoit l'avertissement était choisi par l'appelant. OTP stocké **en clair** dans `devis.otp_code`, et **journalisé en clair**, sans garde d'environnement. Cooldown en mémoire, perdu au redémarrage. |
+| `/api/devis/[id]/verify-otp` | Comparaison de l'OTP **en clair**. Anti-bruteforce dans un `Map` **en mémoire** : perdu au redémarrage, inefficace en serverless multi-instances. Aucune trace conservée. |
+
+Elles vivaient sous `/api/devis`, donc **derrière session** — ce qui les rendait
+non exploitables anonymement, mais laissait un artisan authentifié du tenant A
+marquer « signé » un devis du tenant A sans laisser de preuve, et sans passer par
+l'OTP. C'était suffisant pour un utilisateur authentifié, insuffisant pour un audit.
+
+Remplacement, et où vit désormais chaque garantie :
+
+| Garantie | Testée dans |
+|---|---|
+| Cloisonnement par `code_acces` → chantier → devis | `espace-client-signature.test.ts` §B |
+| Clé HMAC de l'OTP, jamais l'OTP en clair | `otp-contrats-officiels.test.ts` |
+| Anti-bruteforce **persistant** (`tentatives`, `verrouille_jusqua`) | `espace-client-signature.test.ts` §D |
+| Preuve, empreinte, `signatureId`, non-rejouabilité | `espace-client-signature.test.ts` §H, `signature-parcours-client.test.tsx` §A |
+| Absence **physique** des trois fichiers | `devis-id-tenant.test.ts` §B, `otp-fuite-journaux.test.ts` B4 |
+
+Aucun test n'a été supprimé. Les dix-sept tests de `devis-id-tenant.test.ts` qui
+portaient sur les routes OTP avaient déjà été **portés** dans
+`espace-client-signature.test.ts` (§A1…§I9, balises `[PORTE …]`) ; la seconde
+réduction de ce fichier a simplement réduit `F`/`G` aux deux entrées restantes et
+ajouté §B. Le garde `resoudreTenant()` en échec fermé reste testé — il ne
+s'applique plus aux routes de signature, qui n'exigent pas de session mais un
+`code_acces` (vérifié par `devis-id-tenant.test.ts` G3).
+
+✅ **La migration `20261003_devis_signature_provenance.sql` est appliquée.**
+Le verdict de conformité porte **58/58** contrôles SQL en lecture seule, dont
+**30/30** sur le périmètre E (OTP/signature) : `devis_signatures` (21 colonnes),
+`devis_otp` (10 colonnes) et la RPC `signature_devis_valider_otp` (8 arguments,
+`security definer`, `search_path = public, extensions`, retour `jsonb`) sont en
+base, ainsi que les colonnes `devis.signature_image`, `devis.telephone_source`,
+`devis.devis_empreinte_sha256`, `chantiers.code_acces_*`, `clients.tel_*` (voir
+la rubrique « Migrations »). Les objets décrits dans cette section existent donc
+réellement en base. Le compteur de routes API a été corrigé en conséquence
+(36 → **35**, ligne 20), et les deux routes `send-otp` / `verify-otp` ont été
+ajoutées au tableau « Routes API » ci-dessus ;
+`__tests__/system/audit-snapshot-routes.test.ts` empêche désormais le snapshot de
+diverger de nouveau de l'arbre réel.
 
 ### RPC `lier_deplacement_devis` durcie
 

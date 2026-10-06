@@ -1,11 +1,65 @@
 // @vitest-environment node
 //
-// Isolation tenant de `app/api/devis/[id]/*` : send-otp, verify-otp, analyse.
+// Isolation tenant de `app/api/devis/[id]/*` : **analyse seulement**.
 //
-// Les VRAIES routes sont exécutées (POST send-otp, POST verify-otp, POST + GET
-// analyse). Seuls sont stubés : le client Supabase SSR (session),
-// `supabaseAdmin` (service_role) et le fournisseur LLM. Aucun réseau, aucun DML,
-// aucun secret.
+// ─────────────────────────────────────────────────────────────────────────────
+// CE FICHIER A ETE REDUIT DEUX FOIS — AUCUN TEST N'A ETE SUPPRIME
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// PREMIERE REDUCTION — le flux de signature a change de FORME.
+// Les routes OTP ont ete deplacees sous `app/api/espace-client/[code_acces]/`
+// puis reecrites autour d'une transaction PostgreSQL unique. Ce qu'elles
+// affirmaient n'y est plus observable, et un test qui continuerait a l'affirmer
+// passerait au vert sur une architecture qui n'existe plus.
+//
+// Les DIX-SEPT tests concernes ont donc ete PORTES, identite d'origine conservee, et
+// non reecrits — sauf I2 et I7, dont l'objet meme a disparu (voir ci-dessous).
+// Ils vivent dans `espace-client-signature.test.ts` :
+//
+//     A1  A2  B1  B2  B3  B4  C1  C2  C3  H1  H2  H3  I1  I2  I5  I7  I9
+//
+// Le detail de chaque port est dans les balises `[PORTE ...]` du fichier
+// d'arrivee.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// SECONDE REDUCTION — les deux routes OTP ont ete SUPPRIMEES
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// La cartographie d'appelants a etabli qu'elles n'avaient plus AUCUN appelant :
+// ni page, ni composant, ni fetch dynamique, ni script. Elles sont donc retirees.
+// Ce qui change n'est pas une intention de test mais sa REALITE : ce fichier ne
+// peut plus les invoquer, et sa section B verifie desormais qu'elles sont
+// PHYSIQUEMENT ABSENTES — garantie plus forte que tout test d'isolation, puisque
+// le code non importe ne peut pas s'executer.
+//
+// Il ne faut pas confondre deux choses qui se ressemblent :
+//
+//   * `F`/`G` ont.change de PORTEE : `resoudreTenant()` en echec ferme est
+//     toujours teste, mais sur les DEUX entrees restantes. C'etait deja le cas
+//     pour `analyse` seul ; la question posee par F1-F3 — « un claim absent ou
+//     mal forme donne-t-il 403 sans toucher la base ? » — n'a pas change.
+//
+//   * `G1` perd sa moitie OTP. Le refus 401 sans session NE S'APPLIQUE PLUS aux
+//     routes de signature, et c'etait deja vrai avant la suppression : elles
+//     vivaient sous `/api/espace-client`, donc hors du chemin session, et leur
+//     garde est `code_acces` -> chantier -> devis. Ce garde est teste ailleurs, a
+//     sa vraie place : `espace-client-signature.test.ts` section B. Rien n'est
+//     perdu ; la garantie est simplement exercee la ou elle existe.
+//
+// LE CAS PARTICULIER DE I2 ET I7
+// -----------------------------
+// Ces deux tests affirmaient que `verify-otp` cloisonnait par `entreprise_id`.
+// Ce cloisonnement etait un `.eq()` TypeScript, donc analysable. Il n'existe
+// plus : il est desormais dans le CORPS SQL de la RPC. Un I2 d'origine recopie
+// tel quel chercherait un `.eq("entreprise_id", ...)` dans une route qui n'en a
+// plus, trouverait le motif dans un COMMENTAIRE, et passerait au vert sur une RPC
+// entierement non cloisonnee. C'est l'auto-verification rigoureuse, inversee.
+// I2 et I7 ont donc ete reecrits sur le SQL REEL, et I18 refute des mutants SQL.
+//
+
+// Les VRAIES routes sont exécutées (GET analyse, POST analyse). Seuls sont stubés :
+// le client Supabase SSR (session), `supabaseAdmin` (service_role) et le
+// fournisseur LLM. Aucun réseau, aucun DML, aucun secret.
 //
 // Fidélité du stub, condition de validité de ces tests :
 //   * `.eq()` est un prédicat RÉELLEMENT appliqué aux lignes. C'est ce qui rend
@@ -13,10 +67,9 @@
 //     ligne de l'autre tenant, et le test le voit.
 //   * `.update()` / `.insert()` n'exposent des données que si `.select()` a été
 //     appelé, comme PostgREST. Une route ne peut donc pas « compter » les lignes
-//     touchées sans `.select()` — le test B l'exige pour `send-otp`.
-//   * Chaque handler est rechargé à chaque test (`vi.resetModules()`) car
-//     `send-otp` (cooldown 60 s) et `verify-otp` (anti-bruteforce) ont un état
-//     module-level qui fuiterait d'un test à l'autre.
+//     touchées sans `.select()`.
+//   * Chaque handler est rechargé à chaque test (`vi.resetModules()`) car la
+//     route analyse a un état module-level qui fuiterait d'un test à l'autre.
 //   * `.or(...)` est journalisé mais NON appliqué : c'est la condition de
 //     concurrence de `revendiquerAnalyse`, et son respect est déjà couvert par
 //     `__tests__/ia/devis-ia-route.test.ts`. Le stub ne prétend pas le simuler.
@@ -26,9 +79,35 @@
 //     aurait posée (celle du devis parent).
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
+import { sansCommentaires } from "./_lecture-source";
+
+/**
+ * Tout le code applicatif susceptible d'appeler une route : `app/`, `components/`
+ * et `lib/`. Les tests sont exclus — ils DOIVENT nommer les routes legacy pour
+ * vérifier leur absence, et les inclure les ferait se signaler eux-mêmes.
+ */
+const CORPUS: string[] = [
+  ...sous("app"),
+  ...sous("components"),
+  ...sous("lib"),
+];
+
+function sous(dossier: string): string[] {
+  const sortie: string[] = [];
+  const racine = join(process.cwd(), dossier);
+  const parcours = (d: string) => {
+    for (const entree of readdirSync(d, { withFileTypes: true })) {
+      const chemin = join(d, entree.name);
+      if (entree.isDirectory()) parcours(chemin);
+      else if (/\.(ts|tsx)$/.test(entree.name)) sortie.push(chemin);
+    }
+  };
+  parcours(racine);
+  return sortie;
+}
 
 const BNA = "11111111-1111-4111-8111-111111111111";
 const TEST = "22222222-2222-4222-8222-222222222222";
@@ -304,13 +383,10 @@ function base(segment: string, id: string): string {
   return `http://localhost/api/devis/${id}/${segment}`;
 }
 
-function postJson(segment: string, id: string, body: unknown): Request {
-  return new Request(base(segment, id), {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.9" },
-    body: JSON.stringify(body),
-  });
-}
+// `postJson` a ete retire avec les deux routes OTP : il ne servait qu'a leur
+// fabriquer un corps de requete (`{ phone }` puis `{ code }`). Le conserver
+// aurait laisse dans le fichier un constructeur d'URL vers `/api/devis/{id}/*`
+// sans aucun usage — un rappel permanent d'une API qui n'existe plus.
 
 function nextGet(segment: string, id: string, query = ""): NextRequest {
   return new NextRequest(`${base(segment, id)}${query}`, {
@@ -325,11 +401,16 @@ function nextPost(segment: string, id: string): NextRequest {
   });
 }
 
-/** Charge les 3 handlers à l'état frais (mémoire module-level réinitialisée). */
+/**
+ * Charge le handler à l'état frais (mémoire module-level réinitialisée).
+ *
+ * Un SEUL handler : les deux routes OTP ont été supprimées (voir l'en-tête et la
+ * section B). Les garder ici ferait échouer l'import à la collecte, ce qui est un
+ * garde-fou utile — mais un message d'erreur d'import n'explique PAS la décision,
+ * alors que la section B, elle, la documente et la vérifie.
+ */
 async function handlers() {
   return {
-    sendOtp: await import("@/app/api/devis/[id]/send-otp/route"),
-    verifyOtp: await import("@/app/api/devis/[id]/verify-otp/route"),
     analyse: await import("@/app/api/devis/[id]/analyse/route"),
   };
 }
@@ -344,8 +425,8 @@ const REPONSE_LLM = JSON.stringify({
 let silencieux: Array<{ mockRestore: () => void }> = [];
 
 beforeAll(() => {
-  // `send-otp` journalise l'OTP et `analyse` marque chaque appel LLM : sans
-  // silence, la sortie du test est illisible.
+  // `analyse` marque chaque appel LLM : sans silence, la sortie du test est
+  // illisible.
   silencieux = (["log", "info", "warn", "error"] as const).map((niveau) =>
     vi.spyOn(console, niveau).mockImplementation(() => {})
   );
@@ -375,44 +456,6 @@ beforeEach(() => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe("A) predicats tenant reellement appliques", () => {
-  it("A1 - send-otp : l'ecriture devis porte id ET entreprise_id", async () => {
-    sessioner(TEST);
-    const { sendOtp } = await handlers();
-    const res = await sendOtp.POST(
-      postJson("send-otp", DEVIS_TEST, { phone: "0655555555" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(200);
-    const maj = ops("devis", "mise_a_jour");
-    expect(maj).toHaveLength(1);
-    expect(maj[0].filtres).toEqual([
-      ["id", DEVIS_TEST],
-      ["entreprise_id", TEST],
-    ]);
-  });
-
-  it("A2 - verify-otp : la LECTURE et l'ECRITURE portent toutes deux entreprise_id", async () => {
-    sessioner(TEST);
-    const { verifyOtp } = await handlers();
-    const res = await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "424242" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(200);
-    expect(ops("devis", "lecture")[0].filtres).toEqual([
-      ["id", DEVIS_TEST],
-      ["entreprise_id", TEST],
-    ]);
-    const maj = ops("devis", "mise_a_jour");
-    expect(maj).toHaveLength(1);
-    expect(maj[0].filtres).toEqual([
-      ["id", DEVIS_TEST],
-      ["entreprise_id", TEST],
-    ]);
-  });
-
   it("A3 - analyse POST : lecture devis ET operations devis_ia portent entreprise_id", async () => {
     sessioner(TEST);
     const { analyse } = await handlers();
@@ -460,119 +503,96 @@ describe("A) predicats tenant reellement appliques", () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// B) send-otp cross-tenant
+// B) LES ROUTES OTP LEGACY SONT PHYSIQUEMENT ABSENTES
 // ───────────────────────────────────────────────────────────────────────────
+//
+// C'est ici que vivent les guarantees que B1 et C1 affirmaient.
+//
+// L'ancienne intention etait : « si un utilisateur authentifié du tenant A
+// appelle `POST /api/devis/[id]/send-otp` avec l'UUID d'un devis du tenant B, la
+// reponse est un 404 et le tenant B n'est pas ecrit. » Elle est satisfaite, mais
+// plus STRICTEMENT : le fichier n'existe plus, donc la route n'est pas enregistree
+// par le routeur, donc le code ne peut pas s'executer. Un test d'isolation
+// verifie une propriete d'un programme ; celui-ci verifie une propriete du
+// systeme de fichiers, qui est plus forte.
+//
+// Il faut mesurer ce que cela change. Ces deux routes n'etaient PAS inoffensives :
+//   * `send-otp` prenait `phone` dans le CORPS de la requete, donc le numero
+//     d'avertissement etait choisi par l'appelant ;
+//   * `verify-otp` comparait le code en clair et ne laissait AUCUNE trace : il
+//     passait `devis.statut` a 'signe' sans ecrire dans `devis_signatures` ;
+//   * son anti-bruteforce etait un `Map` en memoire, perdu au redemarrage et
+//     inutile en serverless multi-instances.
+// Elles vivaient sous `/api/devis`, donc derriere session — mais `signer`, elle,
+// etait PUBLIQUE (`/api/espace-client` est un prefixe public) et ne demandait ni
+// OTP ni image. C'est ce que ces routes etaient : un second canal de signature,
+// sans aucune des garanties du nouveau.
+//
+// La cartographie ne trouva aucun appelant. Aucune page, aucun composant, aucune
+// construction d'URL dynamique, aucun script, aucune configuration. Le parcours
+// reel passe par `SignatureModal` -> `/api/espace-client/[code_acces]/send-otp`
+// puis `/verify-otp`, et `espace-client-signature.test.ts` section B verifie
+// l'isolation de CE chemin-la — par code d'acces, sa ou elle existe reellement.
+//
 
-describe("B) send-otp - devis d'un autre tenant", () => {
-  it("B1 - retourne 404", async () => {
-    sessioner(BNA);
-    const { sendOtp } = await handlers();
-    const res = await sendOtp.POST(
-      postJson("send-otp", DEVIS_TEST, { phone: "0655555555" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(404);
+describe("B) les deux routes OTP legacy sont retirees", () => {
+  it("B1 le FICHIER de la route send-otp n'existe plus", () => {
+    // Dans l'App Router, le routeur est construit a partir de l'ARBORESCENCE.
+    // Un fichier absent ne produit pas de route : il n'y a pas de handler qui
+    // repondrait 404, il n'y a rien du tout. C'est ce qui rend cette garantie
+    // superieure a un 404 - un 404 prouve qu'une branche existe et se contente
+    // de refuser ; l'absence prouve qu'il n'y a pas de branche.
+    expect(existsSync(join(process.cwd(), "app/api/devis/[id]/send-otp/route.ts"))).toBe(false);
   });
 
-  it("B2 - l'ecriture EMISE est scoping : aucune ligne d'un autre tenant", async () => {
-    // Correction d'un defaut de ce test : une route dont le SEUL acces est un
-    // UPDATE ne peut PAS ne pas emettre de requete — c'est cette requete qui
-    // prouve l'appartenance. Ce qui doit etre vrai, c'est qu'elle porte le
-    // predicat et qu'elle ne touche donc aucune ligne. La zero-mutation reelle
-    // est prouvee en B3.
-    sessioner(BNA);
-    const { sendOtp } = await handlers();
-    await sendOtp.POST(
-      postJson("send-otp", DEVIS_TEST, { phone: "0655555555" }),
-      contexte(DEVIS_TEST)
-    );
-
-    const maj = ops("devis", "mise_a_jour");
-    expect(maj).toHaveLength(1);
-    expect(maj[0].filtres).toEqual([
-      ["id", DEVIS_TEST],
-      ["entreprise_id", BNA],
-    ]);
+  it("B2 le FICHIER de la route verify-otp n'existe plus", () => {
+    expect(existsSync(join(process.cwd(), "app/api/devis/[id]/verify-otp/route.ts"))).toBe(false);
   });
 
-  it("B3 - la ligne du devis tiers SURVIT INTACTE (signature_phone, OTP, statut)", async () => {
-    sessioner(BNA);
-    const avant = { ...ligne(DEVIS_TEST) };
-    const { sendOtp } = await handlers();
-    await sendOtp.POST(
-      postJson("send-otp", DEVIS_TEST, { phone: "0699999999" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(ligne(DEVIS_TEST)).toEqual(avant);
-    expect(ligne(DEVIS_TEST).signature_phone).toBe("0600000000");
-    expect(ligne(DEVIS_TEST).otp_code).toBe("424242");
-    expect(ligne(DEVIS_TEST).statut).toBe("envoye");
+  it("B3 le repertoire send-otp a entierement disparu, pas seulement son handler", () => {
+    // Un `route.ts` supprime mais laisse un dossier vide, un `README`, ou un
+    // `handler.ts` non enregistre : rien ne le prouverait, et l'apparition d'une
+    // route a cote, un jour, serait accueillie comme une continuité. On verifie
+    // l'absence du REPERTOIRE, qui est l unite que le routeur observe.
+    expect(existsSync(join(process.cwd(), "app/api/devis/[id]/send-otp"))).toBe(false);
+    expect(existsSync(join(process.cwd(), "app/api/devis/[id]/verify-otp"))).toBe(false);
   });
 
-  it("B4 - la reponse ne laisse fuir ni l'OTP ni le numero ecrit", async () => {
-    sessioner(BNA);
-    const { sendOtp } = await handlers();
-    const res = await sendOtp.POST(
-      postJson("send-otp", DEVIS_TEST, { phone: "0699999999" }),
-      contexte(DEVIS_TEST)
-    );
-    const corps = (await res.json()) as Record<string, unknown>;
-
-    expect(corps.success).toBeUndefined();
-    expect(JSON.stringify(corps)).not.toContain("424242");
-    expect(JSON.stringify(corps)).not.toContain("0699999999");
-  });
-});
-
-// ───────────────────────────────────────────────────────────────────────────
-// C) verify-otp cross-tenant
-// ───────────────────────────────────────────────────────────────────────────
-
-describe("C) verify-otp - devis d'un autre tenant", () => {
-  it("C1 - retourne 404 meme avec le BON code du devis tiers", async () => {
-    sessioner(BNA);
-    const { verifyOtp } = await handlers();
-    const res = await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "424242" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(404);
+  it("B4 `analyse` a SURVECU : la suppression n'a pas emporté la route voisine", () => {
+    // Le test inverse d'une suppression trop large. Une erreur de manipulation
+    // courante est de retirer le parent au lieu des enfants : le repository
+    // passerait tous les tests de cette section en celebrant une disparition
+    // generale. On exige que la route voisine, elle, soit toujours la.
+    expect(existsSync(join(process.cwd(), "app/api/devis/[id]/analyse/route.ts"))).toBe(true);
   });
 
-  it("C2 - AUCUNE ecriture : le devis tiers n'est PAS signe", async () => {
-    sessioner(BNA);
-    const { verifyOtp } = await handlers();
-    await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "424242" }),
-      contexte(DEVIS_TEST)
-    );
+  it("B5 AUTO-VERIFICATION : B1-B3 detectent le retour des routes legacy", () => {
+    // Un invariant d'absence qui ne peut pas echouer ne prouve rien : le voici
+    // replique sur un etat de fichiers ou les routes sont presentes.
+    const routesLegacy = [
+      "app/api/devis/[id]/send-otp/route.ts",
+      "app/api/devis/[id]/verify-otp/route.ts",
+    ];
+    const invariant = (present: string[]) => present.length === 0;
 
-    expect(ops("devis", "mise_a_jour")).toHaveLength(0);
-    expect(ligne(DEVIS_TEST).statut).toBe("envoye");
-    expect(ligne(DEVIS_TEST).signature_date).toBeNull();
-    // le code n'est pas consomme : rien n'a ete touche
-    expect(ligne(DEVIS_TEST).otp_code).toBe("424242");
+    expect(invariant(routesLegacy), "l'invariant voit les routes presentes").toBe(false);
+    expect(invariant([]), "l'invariant rejette un etat propre").toBe(true);
   });
 
-  it("C3 - AUCUNE oracle d'existence : 'autre tenant' et 'UUID inexistant' sont INDISCERNABLES", async () => {
-    sessioner(BNA);
-    const { verifyOtp } = await handlers();
-
-    const tiers = await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "424242" }),
-      contexte(DEVIS_TEST)
-    );
-    const inconnu = await verifyOtp.POST(
-      postJson("verify-otp", INCONNU, { code: "424242" }),
-      contexte(INCONNU)
-    );
-
-    expect(tiers.status).toBe(404);
-    expect(inconnu.status).toBe(404);
-    expect(await tiers.json()).toEqual(await inconnu.json());
+  it("B6 aucun fichier du dépôt ne référence encore ces routes hors commentaire", () => {
+    // Garde de non-retour par le calcul : si quelqu'un reintroduit un appel, un
+    // `await import(...)` cassera ce fichier — mais un appel par CONSTRUCTION
+    // DYNAMIQUE (`fetch(\`/api/devis/${id}/verify-otp\`)`) ne casserait rien du
+    // tout. Ce test voit les deux formes.
+    const dynamique = /["'`]?\/api\/devis\/\$\{[^}]+\}\/(?:send|verify)-otp/;
+    for (const fichiers of CORPUS) {
+      const lu = sansCommentaires(readFileSync(fichiers, "utf8"), { jsx: true });
+      expect(dynamique.test(lu), `appel dynamique vers une route legacy dans ${fichiers}`).toBe(false);
+      expect(
+        /await import\(["']@\/app\/api\/devis\/\[id\]\/(?:send|verify)-otp/.test(lu),
+        `import de handler legacy dans ${fichiers}`
+      ).toBe(false);
+    }
   });
 });
 
@@ -665,44 +685,39 @@ describe("E) analyse POST - devis d'un autre tenant", () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// F) Contexte entreprise absent ou invalide - fail-closed sur les 3 routes
+// F) Contexte entreprise absent ou invalide - fail-closed sur les 2 entrees
 // ───────────────────────────────────────────────────────────────────────────
 
-/** Appelle les 4 points d'entree (send-otp, verify-otp, GET analyse, POST analyse). */
-async function quatreAppels(): Promise<Response[]> {
-  const { sendOtp, verifyOtp, analyse } = await handlers();
+/** Appelle les 2 points d'entree restants (GET analyse, POST analyse). */
+async function deuxAppels(): Promise<Response[]> {
+  const { analyse } = await handlers();
   return [
-    await sendOtp.POST(postJson("send-otp", DEVIS_TEST, { phone: "0655555555" }), contexte(DEVIS_TEST)),
-    await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "424242" }),
-      contexte(DEVIS_TEST)
-    ),
     await analyse.GET(nextGet("analyse", DEVIS_TEST), contexte(DEVIS_TEST)),
     await analyse.POST(nextPost("analyse", DEVIS_TEST), contexte(DEVIS_TEST)),
   ];
 }
 
-const NOMS_APPELS = ["send-otp", "verify-otp", "analyse GET", "analyse POST"];
+const NOMS_APPELS = ["analyse GET", "analyse POST"];
 
 describe("F) contexte entreprise absent ou mal forme", () => {
-  it("F1 - claim ABSENT : 403 sur les 4 entrees, ZERO requete metier", async () => {
+  it("F1 - claim ABSENT : 403 sur les 2 entrees, ZERO requete metier", async () => {
     sessioner(undefined);
-    const codes = await quatreAppels();
+    const codes = await deuxAppels();
 
-    expect(codes.map((r) => r.status)).toEqual([403, 403, 403, 403]);
+    expect(codes.map((r) => r.status)).toEqual([403, 403]);
     expect(etat.fromCalls).toHaveLength(0);
     expect(etat.operations).toHaveLength(0);
     expect(spies.genererTexte).not.toHaveBeenCalled();
   });
 
-  it("F2 - claim MAL FORME : 403 sur les 4 entrees, ZERO requete metier", async () => {
+  it("F2 - claim MAL FORME : 403 sur les 2 entrees, ZERO requete metier", async () => {
     for (const claim of ["pas-un-uuid", "", "   ", 42, null, { nested: true }]) {
       etat = creerEtat();
       spies.from.mockClear();
       sessioner(claim);
-      const codes = await quatreAppels();
+      const codes = await deuxAppels();
 
-      expect(codes.map((r) => r.status)).toEqual([403, 403, 403, 403]);
+      expect(codes.map((r) => r.status)).toEqual([403, 403]);
       expect(etat.fromCalls).toHaveLength(0);
       expect(etat.operations).toHaveLength(0);
     }
@@ -710,7 +725,7 @@ describe("F) contexte entreprise absent ou mal forme", () => {
 
   it("F3 - le message d'echec ne divulgue ni le tenant attendu ni l'identifiant", async () => {
     sessioner(undefined);
-    const codes = await quatreAppels();
+    const codes = await deuxAppels();
 
     for (const res of codes) {
       const corps = (await res.json()) as Record<string, unknown>;
@@ -720,10 +735,10 @@ describe("F) contexte entreprise absent ou mal forme", () => {
     }
   });
 
-  it("F4 - le nom des 4 entrees est couvert (garde anti-oubli)", () => {
-    // Un `quatreAppels` qui oublierait une route ferait passer F1-F3 a vide.
-    expect(NOMS_APPELS).toHaveLength(4);
-    expect(new Set(NOMS_APPELS).size).toBe(4);
+  it("F4 - le nom des 2 entrees est couvert (garde anti-oubli)", () => {
+    // Un `deuxAppels` qui oublierait une route ferait passer F1-F3 a vide.
+    expect(NOMS_APPELS).toHaveLength(2);
+    expect(new Set(NOMS_APPELS).size).toBe(2);
   });
 });
 
@@ -732,11 +747,22 @@ describe("F) contexte entreprise absent ou mal forme", () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe("G) absence de session", () => {
-  it("G1 - 401 sur les 4 entrees, ZERO requete metier", async () => {
-    sessioner(BNA, false);
-    const codes = await quatreAppels();
+  // La portée de G est ici plus étroite qu'elle ne l'etait, et c'est un fait
+  // qu'il faut dire plutot que laisser deduire. Les deux entrees OTP etaient
+  // derriere session parce qu'elles vivaient sous `/api/devis`. Elles vivaient
+  // aussi sous cette prefixe-ci — donc un utilisateur sans session n'en aurait
+  // rien obtenu NON PLUS, mais par une tout autre voie : `/api/espace-client` est
+  // un prefixe PUBLIC, et la garde des routes de signature est `code_acces`
+  // (et non une session). Ce garde est verifie a sa vraie place, dans
+  // `espace-client-signature.test.ts` section B.
+  // Tester ici un « il faut une session » pour une route qui n'en demande pas
+  // aurait produit un test qui documents un mecanisme absent.
 
-    expect(codes.map((r) => r.status)).toEqual([401, 401, 401, 401]);
+  it("G1 - 401 sur les 2 entrees, ZERO requete metier", async () => {
+    sessioner(BNA, false);
+    const codes = await deuxAppels();
+
+    expect(codes.map((r) => r.status)).toEqual([401, 401]);
     expect(etat.fromCalls).toHaveLength(0);
     expect(etat.operations).toHaveLength(0);
     expect(spies.genererTexte).not.toHaveBeenCalled();
@@ -744,13 +770,31 @@ describe("G) absence de session", () => {
 
   it("G2 - aucun secret ni contenu metier dans la reponse 401", async () => {
     sessioner(BNA, false);
-    const codes = await quatreAppels();
+    const codes = await deuxAppels();
 
     for (const res of codes) {
       const texte = JSON.stringify(await res.json());
       expect(texte).not.toContain("424242");
       expect(texte).not.toContain("Analyse initiale du tenant TEST");
     }
+  });
+
+  it("G3 - le garde des routes de signature n'est PAS la session : c'est le code d'acces", () => {
+    // Le contrepied de G1, et il merite d'etre teste parce qu'il dit ce que
+    // G1 ne dit plus. Une lecture erronee de ce fichier croirait que toute route
+    // `/api/...` exige une session ; c'est faux, et `/api/espace-client` est
+    // expressement public. La consequence operationnelle est importante : on ne
+    // peut pas juger la securite du portail client en comptant les 401.
+    const middleware = readFileSync(join(process.cwd(), "lib/supabase/middleware.ts"), "utf8");
+    // Les guillemets ne font rien a l'intention : on tolere les deux formes
+    // plutot que d'ecrire un motif qui casse au premier prettier -s.
+    expect(middleware).toMatch(/PUBLIC_PREFIXES\s*=\s*\[[^\]]*['"]\/api\/espace-client['"]/);
+    // Et le portail resout son tenant par le chantier, pas par un JWT.
+    const garde = readFileSync(
+      join(process.cwd(), "app/api/espace-client/[code_acces]/_garde-signature.ts"),
+      "utf8"
+    );
+    expect(garde).toMatch(/code_acces/);
   });
 });
 
@@ -759,46 +803,6 @@ describe("G) absence de session", () => {
 // ───────────────────────────────────────────────────────────────────────────
 
 describe("H) non-regression du nominal (tenant TEST)", () => {
-  it("H1 - send-otp signe le devis de SON tenant : OTP ecrit, 200", async () => {
-    sessioner(TEST);
-    const { sendOtp } = await handlers();
-    const res = await sendOtp.POST(
-      postJson("send-otp", DEVIS_TEST, { phone: "0655555555" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(200);
-    expect(ligne(DEVIS_TEST).signature_phone).toBe("0655555555");
-    expect(ligne(DEVIS_TEST).otp_code).toMatch(/^\d{6}$/);
-    expect(ligne(DEVIS_TEST).otp_expires_at).not.toBeNull();
-  });
-
-  it("H2 - verify-otp avec le BON code signe : statut signe, code detruit", async () => {
-    sessioner(TEST);
-    const { verifyOtp } = await handlers();
-    const res = await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "424242" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(200);
-    expect(ligne(DEVIS_TEST).statut).toBe("signe");
-    expect(ligne(DEVIS_TEST).otp_code).toBeNull();
-    expect(ligne(DEVIS_TEST).signature_date).not.toBeNull();
-  });
-
-  it("H3 - verify-otp avec un MAUVAIS code echoue toujours (non-regression du nominal)", async () => {
-    sessioner(TEST);
-    const { verifyOtp } = await handlers();
-    const res = await verifyOtp.POST(
-      postJson("verify-otp", DEVIS_TEST, { code: "999999" }),
-      contexte(DEVIS_TEST)
-    );
-
-    expect(res.status).toBe(400);
-    expect(ligne(DEVIS_TEST).statut).toBe("envoye");
-  });
-
   it("H4 - analyse GET rend l'analyse de SON tenant (avec historique)", async () => {
     sessioner(TEST);
     const { analyse } = await handlers();
@@ -884,9 +888,11 @@ describe("H) non-regression du nominal (tenant TEST)", () => {
 // qui laisserait le comportement nominal intact.
 // ───────────────────────────────────────────────────────────────────────────
 
+// SEULEMENT la route qui n'a pas change de forme. Les deux routes OTP ont ete
+// deplacees sous `app/api/espace-client/[code_acces]/` puis ecrites autour d'une
+// RPC : ce qu'elles affirmaient ne peut plus etre observe ici, et un test qui le
+// ferait encore passerait au vert sur une architecture qui n'existe plus.
 const CHEMINS = {
-  sendOtp: join(process.cwd(), "app/api/devis/[id]/send-otp/route.ts"),
-  verifyOtp: join(process.cwd(), "app/api/devis/[id]/verify-otp/route.ts"),
   analyse: join(process.cwd(), "app/api/devis/[id]/analyse/route.ts"),
 } as const;
 
@@ -896,29 +902,12 @@ const SOURCES = Object.fromEntries(
   (Object.keys(CHEMINS) as NomRoute[]).map((nom) => [nom, readFileSync(CHEMINS[nom], "utf8")])
 ) as Record<NomRoute, string>;
 
-/** Retire `//` et `/* ... *\/` : un nom cite en commentaire n'est pas un usage. */
-function sansCommentaires(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-}
-
 const CODE: Record<NomRoute, string> = {
-  sendOtp: sansCommentaires(SOURCES.sendOtp),
-  verifyOtp: sansCommentaires(SOURCES.verifyOtp),
   analyse: sansCommentaires(SOURCES.analyse),
 };
 
 const PREDICAT_TENANT = /\.eq\(\s*["']entreprise_id["']\s*,/;
-const PREDICAT_TENANT_G = /\.eq\(\s*["']entreprise_id["']\s*,/g;
 const UTILISE_VERIFIER_SESSION = /\bverifierSession\b/;
-
-/** Retire le predicat tenant de la VRAIE source (une ligne entiere). */
-function retirerPredicat(src: string): string {
-  return src.replace(/[ \t]*\.eq\(\s*["']entreprise_id["']\s*,[^\n]*\n/g, "\n");
-}
-
-function compterPredicats(src: string): number {
-  return (src.match(PREDICAT_TENANT_G) ?? []).length;
-}
 
 /** Bloc de source delimite par deux marqueurs. */
 function bloc(source: string, debut: string, fin: string): string {
@@ -929,16 +918,6 @@ function bloc(source: string, debut: string, fin: string): string {
 }
 
 describe("I) garde structurel auto-verifie", () => {
-  it("I1 - chaque route porte au moins un .eq('entreprise_id', ...)", () => {
-    for (const nom of Object.keys(CHEMINS) as NomRoute[]) {
-      expect(compterPredicats(CODE[nom]), nom).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it("I2 - verify-otp en porte au moins DEUX (lecture ET ecriture)", () => {
-    expect(compterPredicats(CODE.verifyOtp)).toBeGreaterThanOrEqual(2);
-  });
-
   it("I3 - `verifierSession` n'est PLUS utilise : elle ne fournit aucun tenant", () => {
     // Le nom est cite dans les commentaires de ces routes : c'est le CODE,
     // commentaires retires, qui doit être exempt. Sans ce filtre, I3 echouerait
@@ -956,13 +935,6 @@ describe("I) garde structurel auto-verifie", () => {
     }
   });
 
-  it("I5 - send-otp expose les lignes touchees (.select) : c'est son SEUL acces", () => {
-    // send-otp n'a aucune lecture prealable : sans `.select()`, PostgREST ne
-    // renvoie rien et la route ne peut pas constater 0 ligne => elle repondrait
-    // 200 sur un devis qui n'existe pas ou appartient a un autre tenant.
-    expect(CODE.sendOtp).toMatch(/\.select\(\s*["'][^"']+["']\s*\)/);
-  });
-
   it("I6 - le catalogue partage n'est PAS filtre : la table n'a pas entreprise_id", () => {
     // Garde de non-regression fonctionnelle : filtrer `catalogue_ouvrages`
     // casserait l'analyse (colonne inexistante) ET le partage du catalogue BNA.
@@ -975,39 +947,22 @@ describe("I) garde structurel auto-verifie", () => {
     expect(chargeur).not.toMatch(PREDICAT_TENANT);
   });
 
-  it("I7 - AUTO-VERIFICATION : I1 et I2 detectent une copie reellement non scopee", () => {
-    for (const nom of Object.keys(CHEMINS) as NomRoute[]) {
-      const sans = retirerPredicat(CODE[nom]);
-      // 1) le retrait a bien change quelque chose…
-      expect(sans, nom).not.toBe(CODE[nom]);
-      // 2) …et le detecteur le voit (sinon I1-I2 passeraient a vide).
-      expect(compterPredicats(sans), nom).toBe(0);
-      expect(sans, nom).not.toMatch(PREDICAT_TENANT);
-    }
-  });
-
   it("I8 - AUTO-VERIFICATION : I3 detecte sa contre-exemple", () => {
     // L'ancre est d'abord verifiee : sinon un `replace()` caduc deviendrait un
     // no-op silencieux et ce test passerait a vide.
     const ancre = 'import { resoudreTenant } from "@/lib/tenant";';
-    expect(SOURCES.sendOtp).toContain(ancre);
+    expect(SOURCES.analyse).toContain(ancre);
 
     const avecVerifier = sansCommentaires(
-      SOURCES.sendOtp.replace(
+      SOURCES.analyse.replace(
         ancre,
         `${ancre}\nimport { verifierSession } from "@/lib/auth";\nvoid verifierSession;`
       )
     );
     // 1) l'injection a bien eu lieu…
-    expect(avecVerifier).not.toBe(CODE.sendOtp);
+    expect(avecVerifier).not.toBe(CODE.analyse);
     // 2) …et le detecteur la signale.
     expect(avecVerifier).toMatch(UTILISE_VERIFIER_SESSION);
-  });
-
-  it("I9 - AUTO-VERIFICATION : I5 detecte la disparition du .select", () => {
-    const sansSelect = CODE.sendOtp.replace(/\.select\(\s*["'][^"']+["']\s*\)/g, "");
-    expect(sansSelect).not.toBe(CODE.sendOtp);
-    expect(sansSelect).not.toMatch(/\.select\(\s*["'][^"']+["']\s*\)/);
   });
 
   it("I10 - AUTO-VERIFICATION : I6 detecte un catalogue filtre", () => {

@@ -9,6 +9,17 @@ export type ChantierCodeAcces = {
    * donc l'entreprise en découle. Jamais fournie par le client.
    */
   entrepriseId: string;
+  /**
+   * Client du chantier, résolu côté serveur (signature par OTP, phase 3).
+   *
+   * `null` si le chantier n'est rattaché à aucun client. C'est un cas
+   * REEL : les devis peuvent être créés sans client. Les appelants doivent donc
+   * traiter `null` comme un refus, jamais comme une valeur à comparer.
+   *
+   * Ajout additif : les appelants existants (chat, chat-summary) n'utilisent pas
+   * ce champ et n'en sont pas affectés.
+   */
+  clientId: string | null;
 };
 
 const UUID_RE =
@@ -25,7 +36,7 @@ function estUuid(value: string): boolean {
 export async function resoudreChantierParCodeAcces(codeAcces: string): Promise<ChantierCodeAcces | null> {
   const { data } = await supabaseAdmin
     .from('chantiers')
-    .select('id, client_nom, entreprise_id, clients(nom)')
+    .select('id, client_nom, client_id, entreprise_id, clients(nom)')
     .eq('code_acces', codeAcces)
     .maybeSingle();
 
@@ -33,6 +44,7 @@ export async function resoudreChantierParCodeAcces(codeAcces: string): Promise<C
   const ligne = data as {
     id?: unknown;
     client_nom?: unknown;
+    client_id?: unknown;
     entreprise_id?: unknown;
     clients?: { nom?: unknown } | null;
   };
@@ -48,5 +60,14 @@ export async function resoudreChantierParCodeAcces(codeAcces: string): Promise<C
   const entrepriseId = typeof ligne.entreprise_id === 'string' ? ligne.entreprise_id.trim() : '';
   if (!estUuid(entrepriseId)) return null;
 
-  return { id: String(ligne.id), clientName: clientNom, entrepriseId };
+  // `clientId` suit la MÊME règle fail-closed que `entrepriseId` : un
+  // `client_id` qui n'est pas un UUID n'est pas un client exploitable, on
+  // renvoie `null` plutôt que de laisser un appelant le transmettre à une
+  // requête base. Ici ce n'est PAS un refus de code d'accès : le code reste
+  // valide pour le chat, et l'appelant décide. D'où l'absence de garde
+  // bloquante sur ce champ, contrairement à l'entreprise.
+  const clientBrut = typeof ligne.client_id === 'string' ? ligne.client_id.trim() : '';
+  const clientId = estUuid(clientBrut) ? clientBrut : null;
+
+  return { id: String(ligne.id), clientName: clientNom, entrepriseId, clientId };
 }

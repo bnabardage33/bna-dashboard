@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useEffect, use } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, use } from "react";
 import {
   FileText, CheckCircle2, MessageSquare, Clock, Download,
   AlertCircle, Camera, HardHat, Send, X, Check, Bell, User, Wrench, Clipboard,
-  Printer, CloudRain
+  Printer, CloudRain, PenLine
 } from "lucide-react";
 import Image from "next/image";
 import DocumentPDF, { type Entreprise, type Client, type DocumentData } from "@/components/DocumentPDF";
 import RapportClientPrint from "@/components/rapports/RapportClientPrint";
-import SignatureModal from "@/components/SignatureModal";
+import SignatureModal, { type PreuveSignature } from "@/components/SignatureModal";
 import {
   analyserSnapshot,
   preparerEtImprimer,
@@ -169,9 +169,39 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         setIsPageLoading(false);
       }
     };
-    
+
     if (codeAcces) {
       fetchRealData();
+    }
+  }, [codeAcces]);
+
+  /**
+   * Rechargement des documents après une signature réussie.
+   *
+   * DELIBEREMENT distinct de `fetchRealData` : celle-ci remet l'état de session
+   * du chat à zéro (`nouvelleSession()`, message d'accueil), ce qui effacerait
+   * la conversation du client au moment précis où il vient d'obtenir ce qu'il
+   * demandait. Ici on ne recharge que les documents, pour que le devis passe
+   * visuellement en « Validé et signé ».
+   *
+   * C'est une QUESTION D'AFFICHAGE, pas de sécurité. Le statut fait foi en base,
+   * et la RPC le refuse une seconde fois si on rappelait le parcours : un
+   * rechargement manquant ne fait pas réapparaître le bouton, il fait seulement
+   * rester un devis signé sur un affichage périmé. Aucun état de signature
+   * n'est déduit de cette réponse.
+   */
+  const rechargerDocuments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/espace-client/${codeAcces}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        devis?: DevisRow[];
+        factures?: FactureRow[];
+      };
+      if (data.devis) setDevisData(data.devis);
+      if (data.factures) setFacturesData(data.factures);
+    } catch {
+      console.error("Failed to reload documents after signature");
     }
   }, [codeAcces]);
 
@@ -271,103 +301,58 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const displayAddress = chantierData?.adresse_chantier || "12 Rue des Lilas, Lyon";
 
   const [isDevisOpen, setIsDevisOpen] = useState(false);
-  const [signatureData, setSignatureData] = useState<string | null>(null);
-  const [isSigned, setIsSigned] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  /**
+   * Preuve affichée au client après sa signature.
+   *
+   * Elle est conservée localement parce que le tableau `devis` ne porte pas de
+   * trace de signature : une ligne yochrome de « signé », sans date ni
+   * identifiant, alors que l'OTC a précisément pour objet de rendre la preuve
+   * consultable. Le rechargement des documents recharge le STATUT ; cette piece
+   * recharge l'IDENTITE de la preuve.
+   */
+  const [preuveRecue, setPreuveRecue] = useState<PreuveSignature | null>(null);
 
-  const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, rect: DOMRect) => {
-    const touch = (e as React.TouchEvent<HTMLCanvasElement>).touches?.[0];
-    const clientX = touch ? touch.clientX : (e as React.MouseEvent<HTMLCanvasElement>).clientX;
-    const clientY = touch ? touch.clientY : (e as React.MouseEvent<HTMLCanvasElement>).clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+  /**
+   * Ouvrir le parcours de signature d'un devis.
+   *
+   * Elle ne fait QUE selectionner le devis et ouvrir la modale. Aucun appel
+   * reseau ici : la demande de code, la saisie, le trace et la validation sont
+   * tous dans `SignatureModal`, qui parle directement aux routes. Une page qui
+   * emettrait elle-meme le code ne pourrait pas le faire correctement -- elle
+   * n'a pas le devis dans le bon contexte, et surtout elle ouvrirait une
+   * fenetre supplementaire pendant laquelle la modale pourrait etre fermee.
+   */
+  const ouvrirSignature = (devisId: string, numero: string) => {
+    setSigningDevis({ id: devisId, numero });
   };
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const { x, y } = getCanvasCoords(e, rect);
-    
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    setIsDrawing(true);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const { x, y } = getCanvasCoords(e, rect);
-    
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      setSignatureData(canvas.toDataURL());
+  /**
+   * Le document ouvert porte-t-il deja une signature valide ?
+   *
+   * LA REPONSE EST RELUE DANS LES DONNEES FRAICHES, pas dans `activeDoc`.
+   * `activeDoc` est une COPIE figee au moment du clic : s'appuyer dessus
+   * afficherait « en attente de signature » meme apres une signature reussie, et
+   * surtout laisserait croire qu'un deuxieme parcours est possible alors que la
+   * RPC le refuse.
+   *
+   * `preuveRecue` ne participate PAS a ce calcul, et c'est volontaire : une
+   * reponse de succes affichee mais un statut non encore recharge ne doit pas
+   * faire affirmatif ce que la base dit encore. Le rechargement est une question
+   * d'affichage ; le statut fait foi.
+   */
+  const statutDuDoc = useMemo(() => {
+    if (!activeDoc) return null;
+    if (activeDoc.kind === 'facture') {
+      return facturesData.find((f) => f.id === activeDoc.id)?.statut ?? null;
     }
-  };
-  
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      ctx?.clearRect(0, 0, canvas.width, canvas.height);
-      setSignatureData(null);
-    }
-  };
+    return devisData.find((d) => d.id === activeDoc.id)?.statut ?? null;
+  }, [activeDoc, devisData, facturesData]);
 
-  const submitSignature = async () => {
-    if (!signatureData) return;
-
-    // Seuls les devis sont signables par le portail client. Une facture ne
-    // peut pas être signée ni passée au statut "payee" depuis cette interface.
-    if (activeDoc && activeDoc.kind === 'devis') {
-      try {
-        const res = await fetch(`/api/espace-client/${codeAcces}/signer`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ docId: activeDoc.id, docKind: activeDoc.kind }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          console.error("Erreur signature", data.error || res.status);
-          return;
-        }
-      } catch {
-        console.error("Erreur signature");
-        return;
-      }
-    }
-    
-    setIsSigned(true);
-    setTimeout(() => {
-      setIsDevisOpen(false);
-    }, 2000);
-  };
-
-  const docEstSigne = isSigned || (activeDoc
+  const docEstSigne = activeDoc
     ? activeDoc.kind === 'facture'
-      ? activeDoc.statut === 'payee'
-      : activeDoc.statut === 'signe' || activeDoc.statut === 'accepte'
-    : false);
+      ? statutDuDoc === 'payee'
+      : statutDuDoc === 'signe' || statutDuDoc === 'accepte'
+    : false;
 
   const calculateEstimatedEndDate = () => {
     let endDateStr = chantierData?.date_fin_estimee;
@@ -550,7 +535,10 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             ) : (
               <>
                 {devisData.map((devis) => {
-                  const estSigne = isSigned || devis.statut === 'signe' || devis.statut === 'accepte';
+                  // Le statut vient de la liste, jamais d'un etat local : c'est
+                  // la seule source qui reflete ce que la base a reellement
+                  // enregistre.
+                  const estSigne = devis.statut === 'signe' || devis.statut === 'accepte';
                   const totalHT = (devis.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                   const totalTTC = totalHT * (1 + (devis.tva_pct || 20) / 100);
                   return (
@@ -576,7 +564,22 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                       {estSigne ? (
                         <button className="text-[#111111] text-xs font-bold px-3 py-1.5 transition">Consulter</button>
                       ) : (
-                        <button onClick={() => setSigningDevis({ id: devis.id, numero: devis.numero })} className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition hover:bg-red-700">✍️ Signer par SMS</button>
+                        // `stopPropagation` est INDISPENSABLE : ce bouton est
+                        // dans la div qui ouvre l'aperçu du devis. Sans lui, un
+                        // clic ouvre l'aperçu ET le parcours de signature, et
+                        // l'ecran d apercu (`z-9999`) passe par-dessus la modale
+                        // de signature (`z-10002`) sans qu'on voie ce qui se
+                        // passe.
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            ouvrirSignature(devis.id, devis.numero);
+                          }}
+                          className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition hover:bg-red-700"
+                        >
+                          ✍️ Signer par SMS
+                        </button>
                       )}
                     </div>
 
@@ -618,7 +621,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                 })}
                 
                 {facturesData.map((facture) => {
-                  const estPayee = isSigned || facture.statut === 'payee';
+                  const estPayee = facture.statut === 'payee';
                   const totalHT = (facture.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                   const totalTTC = totalHT * (1 + (facture.tva_pct || 20) / 100);
                   return (
@@ -882,12 +885,45 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                 </div>
               )}
 
-              {docEstSigne && !isSigned && (
+              {docEstSigne && (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start gap-3 bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-200">
                     <CheckCircle2 size={22} className="text-emerald-500 mt-0.5 shrink-0" />
                     <p className="text-sm font-medium">Ce document a été validé. L'équipe BNA s'occupe de la suite !</p>
                   </div>
+                  {preuveRecue && (
+                    <dl className="rounded-xl border border-emerald-200 bg-white p-3 text-[11px] text-slate-600">
+                      {preuveRecue.signedAt && (
+                        <div className="flex justify-between gap-2 py-0.5">
+                          <dt>Signé le</dt>
+                          <dd className="font-mono">
+                            {new Date(preuveRecue.signedAt).toLocaleString('fr-FR')}
+                          </dd>
+                        </div>
+                      )}
+                      {preuveRecue.signatureId && (
+                        <div className="py-0.5">
+                          <dt className="mb-0.5">Référence de la signature</dt>
+                          <dd className="break-all font-mono text-[10px] text-slate-400">
+                            {preuveRecue.signatureId}
+                          </dd>
+                          <dd className="mt-0.5 text-[10px] text-slate-400">
+                            Identifiant de la preuve dans le registre BNA, à
+                            conserver : il désigne cette signature précise en cas de
+                            litige.
+                          </dd>
+                        </div>
+                      )}
+                      {preuveRecue.devisEmpreinteSha256 && (
+                        <div className="py-0.5">
+                          <dt className="mb-0.5">Empreinte du document</dt>
+                          <dd className="break-all font-mono text-[10px] text-slate-400">
+                            {preuveRecue.devisEmpreinteSha256}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
                   <button className="flex items-center justify-center gap-2 w-full py-3 bg-[#111111] text-white rounded-xl font-bold hover:bg-slate-800 transition">
                     <Download size={18} />
                     Télécharger le document signé (PDF)
@@ -904,57 +940,62 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               )}
             </div>
 
-            {/* Écran de succès juste après signature */}
-            {isSigned && (
-              <div className="flex flex-col items-center justify-center p-10 text-center">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-4">
-                  <Check size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-1">Document signé !</h3>
-                <p className="text-slate-500 text-sm">Merci, l'équipe BNA a bien reçu votre accord.</p>
-              </div>
-            )}
+            {/* Le parcours de signature ne vit plus ici.
+                Le canvas, la saisie du code et la validation sont dans
+                `SignatureModal`. Ce bloc ne fait plus qu'OUVRIR ce parcours.
 
-            {/* Zone de signature — uniquement pour un devis non encore signé.
-                Les factures ne sont jamais signables depuis ce portail. */}
-            {!docEstSigne && !isSigned && activeDoc?.kind === 'devis' && (
-              <div className="p-6 flex flex-col">
-                <div className="flex justify-between items-center mb-3">
-                  <label className="text-sm font-bold text-slate-800">Votre signature ci-dessous :</label>
-                  <button onClick={clearSignature} className="text-xs text-slate-400 hover:text-slate-600 underline">Effacer</button>
-                </div>
-                <div className="w-full h-44 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 overflow-hidden relative touch-none">
-                  <canvas
-                    ref={canvasRef}
-                    width={400}
-                    height={176}
-                    className="w-full h-full cursor-crosshair touch-none absolute inset-0"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
-                  />
-                  {!isDrawing && !signatureData && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="text-slate-300 font-medium text-lg">Signez avec le doigt</span>
-                    </div>
-                  )}
-                </div>
+                Pourquoi le canvas a quitté cette page : il envoyait l'image
+                vers `/signer`, une route qui passait le devis a « signé » sans
+                OTP ni preuve — et qui a depuis été SUPPRIMÉE. La laisser ici
+                aurait gardé deux surfaces de signature sur le même écran, dont
+                une contournait la vérification. La surface unique est la règle :
+                quand il n'y a qu'un chemin, on ne peut pas emprunter le mauvais.
+            */}
+            {!docEstSigne && activeDoc?.kind === 'devis' && (
+              <div className="p-6 flex flex-col gap-3">
+                <p className="text-sm text-slate-600">
+                  Pour signer ce devis, vous allez recevoir un code par SMS sur le
+                  numéro vérifié de ce chantier, puis y apposer votre signature.
+                </p>
                 <button
-                  onClick={submitSignature}
-                  disabled={!signatureData}
-                  className={`mt-4 w-full py-4 rounded-xl font-bold text-white transition-all text-lg ${signatureData ? 'bg-amber-500 hover:bg-amber-400 shadow-xl shadow-amber-500/20' : 'bg-slate-300 cursor-not-allowed'}`}
+                  type="button"
+                  onClick={() => ouvrirSignature(activeDoc.id, activeDoc.numero)}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-[#E30613] text-white font-bold text-lg hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
                 >
-                  Valider ma signature
+                  <PenLine size={18} />
+                  Recevoir le code et signer
                 </button>
+                <p className="text-[11px] text-slate-400 text-center">
+                  La signature est enregistrée avec la date, l'heure et une
+                  empreinte du document. Elle ne peut pas être refaite.
+                </p>
               </div>
             )}
 
           </div>
         </div>
+      )}
+
+    {/* Parcours de signature — demande OTP, saisie, canvas, preuve.
+          Monte au-dessus de l'apercu (z-10002 contre z-9999) parce qu'il doit
+          pouvoir s'ouvrir depuis l'apercu du devis, sans le fermer d'abord.
+
+          Le `key` force le remontage a chaque ouverture : sans lui, changer de
+          devis sans fermer la modale laisserait l'etape, le code et surtout le
+          canvas precedents dans le composant, et le client signerait le devis
+          A avec la signature du devis B. */}
+      {signingDevis && (
+        <SignatureModal
+          key={signingDevis.id}
+          codeAcces={codeAcces}
+          devisId={signingDevis.id}
+          numero={signingDevis.numero}
+          onClose={() => setSigningDevis(null)}
+          onSuccess={(preuve) => {
+            setPreuveRecue(preuve);
+            void rechargerDocuments();
+          }}
+        />
       )}
 
     {/* Overlay : rapport hebdomadaire (rendu clair, imprimable) */}

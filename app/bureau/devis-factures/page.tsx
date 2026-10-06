@@ -798,12 +798,35 @@ function DevisContenu() {
       alert(`Impossible de supprimer le devis ${d.numero} : ${facturesLiees.length} facture(s) liée(s) existent (${nums}). Supprimez-les d'abord dans l'onglet Factures.`);
       return;
     }
+    // Un devis signé est une PREUVE : `devis_signatures.devis_id` est en
+    // ON DELETE RESTRICT (migration 20261003_devis_signature_provenance.sql,
+    // §2). Sans ce contrôle préalable, la suppression échouerait sur une clé
+    // étrangère et l'utilisateur recevrait un message technique illisible au
+    // lieu d'une explication. La vérification est faite ici, avant le DELETE.
+    const s = await signatureBloquante(d.id);
+    if (s) {
+      const quand = s.signed_at ? new Date(s.signed_at).toLocaleString("fr-FR") : "date inconnue";
+      alert(
+        `Impossible de supprimer le devis ${d.numero} : il porte une preuve de signature.` +
+          `\nSignataire : ${s.signataire_nom || "non renseigné"} — ${quand}.` +
+          `\nUn devis signé est un document contractuel : il ne peut pas être effacé.`
+      );
+      return;
+    }
     const { error } = await supabase.from("devis").delete().eq("id", d.id);
     if (error) {
       alert("Erreur lors de la suppression : " + error.message);
       return;
     }
     fetchTout();
+  }
+
+  // Dette résorbée : `devis_signatures` est créée par la migration 20261003 et
+  // présente dans types/supabase.ts (régénéré depuis la base validée 58/58).
+  async function signatureBloquante(devisId: string) {
+    const { data } = await supabase.from("devis_signatures").select("id, signed_at, signataire_nom").eq("devis_id", devisId).limit(1);
+    const lignes = data ?? [];
+    return lignes[0] ?? null;
   }
 
   function imprimer() {
