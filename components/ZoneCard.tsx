@@ -2,6 +2,7 @@
 
 import type { Materiau } from "@/lib/meteoAlerte";
 
+import Link from "next/link";
 import { useState, useEffect, useRef, useMemo, useId } from "react";
 import {
   calculerPose,
@@ -1445,6 +1446,17 @@ export default function ZoneCard({
         />
       )}
 
+      {zone.famille_pose ===
+        "hpl" &&
+        zone.id && (
+          <Link
+            href={`/dashboard/calepinage/${zone.id}`}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-950/40 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-900/50 transition-colors"
+          >
+            📐 Voir le calepinage détaillé (2D / 3D / Bordereau) →
+          </Link>
+        )}
+
       {/* ====================================================== */}
       {/* MESSAGE PARAMÈTRES MANQUANTS */}
       {/* ====================================================== */}
@@ -1465,6 +1477,15 @@ export default function ZoneCard({
       {/* ====================================================== */}
 
       <div className="flex flex-col sm:flex-row gap-2 pt-1">
+        {zone.id && (
+          <Link
+            href={`/dashboard/calepinage/${zone.id}`}
+            className="flex-1 rounded-lg border border-sky-500/40 bg-sky-500/10 py-2 text-sm font-medium text-sky-300 hover:bg-sky-500/20 transition-colors text-center flex items-center justify-center gap-1.5"
+          >
+            <span>📐</span> Calepinage 2D/3D
+          </Link>
+        )}
+
         {(calc.surfaceNette > 0 || pose) && (
           <button
             type="button"

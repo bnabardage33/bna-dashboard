@@ -347,6 +347,241 @@ export type Database = {
           },
         ]
       }
+      chantier_zones_module_groups: {
+        Row: {
+          count: number
+          entreprise_id: string
+          group_number: string
+          height_mm: number
+          id: string
+          is_flipped: boolean
+          is_rotated: boolean
+          material: string
+          treatment: "none" | "bird-beak" | "miter" | "bevel"
+          width_mm: number
+          zone_id: string
+        }
+        Insert: {
+          count: number
+          entreprise_id?: string
+          group_number: string
+          height_mm: number
+          id?: string
+          is_flipped?: boolean
+          is_rotated?: boolean
+          material?: string
+          treatment?: "none" | "bird-beak" | "miter" | "bevel"
+          width_mm: number
+          zone_id: string
+        }
+        Update: {
+          count?: number
+          entreprise_id?: string
+          group_number?: string
+          height_mm?: number
+          id?: string
+          is_flipped?: boolean
+          is_rotated?: boolean
+          material?: string
+          treatment?: "none" | "bird-beak" | "miter" | "bevel"
+          width_mm?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_zones_module_groups_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_zones_module_groups_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chantier_zones_modules: {
+        Row: {
+          created_at: string
+          entreprise_id: string
+          group_number: string
+          height_mm: number
+          id: string
+          is_cut: boolean
+          is_flipped: boolean
+          is_rotated: boolean
+          material: string
+          treatment: "none" | "bird-beak" | "miter" | "bevel"
+          width_mm: number
+          x_mm: number
+          y_mm: number
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id?: string
+          group_number: string
+          height_mm: number
+          id?: string
+          is_cut?: boolean
+          is_flipped?: boolean
+          is_rotated?: boolean
+          material?: string
+          treatment?: "none" | "bird-beak" | "miter" | "bevel"
+          width_mm: number
+          x_mm: number
+          y_mm: number
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string
+          group_number?: string
+          height_mm?: number
+          id?: string
+          is_cut?: boolean
+          is_flipped?: boolean
+          is_rotated?: boolean
+          material?: string
+          treatment?: "none" | "bird-beak" | "miter" | "bevel"
+          width_mm?: number
+          x_mm?: number
+          y_mm?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_zones_modules_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_zones_modules_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chantier_zones_ouvertures: {
+        Row: {
+          created_at: string
+          entreprise_id: string
+          height_mm: number
+          id: string
+          type: "fenetre" | "porte" | "vide"
+          width_mm: number
+          x_mm: number
+          y_mm: number
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          entreprise_id?: string
+          height_mm: number
+          id?: string
+          type: "fenetre" | "porte" | "vide"
+          width_mm: number
+          x_mm: number
+          y_mm: number
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          entreprise_id?: string
+          height_mm?: number
+          id?: string
+          type?: "fenetre" | "porte" | "vide"
+          width_mm?: number
+          x_mm?: number
+          y_mm?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_zones_ouvertures_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_zones_ouvertures_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chantier_zones_percages: {
+        Row: {
+          created_at: string
+          depth_mm: number | null
+          diameter_mm: number
+          entreprise_id: string
+          id: string
+          module_id: string
+          type: "fixe" | "coulissante" | "invisible"
+          x_mm: number
+          y_mm: number
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          depth_mm?: number | null
+          diameter_mm?: number
+          entreprise_id?: string
+          id?: string
+          module_id: string
+          type?: "fixe" | "coulissante" | "invisible"
+          x_mm: number
+          y_mm: number
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          depth_mm?: number | null
+          diameter_mm?: number
+          entreprise_id?: string
+          id?: string
+          module_id?: string
+          type?: "fixe" | "coulissante" | "invisible"
+          x_mm?: number
+          y_mm?: number
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_zones_percages_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_zones_percages_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_zones_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_zones_percages_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chantiers: {
         Row: {
           adresse_chantier: string | null
@@ -2868,6 +3103,16 @@ export type Database = {
           p_user_agent: string | null
         }
         Returns: Json
+      }
+      upsert_calepinage_zone: {
+        Args: {
+          p_entreprise_id: string
+          p_groups: Json
+          p_modules: Json
+          p_percages?: Json
+          p_zone_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

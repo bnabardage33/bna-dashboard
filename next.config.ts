@@ -67,6 +67,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/dashboard/calepinage",
+        destination: "/calepinage",
+      },
+      {
+        source: "/dashboard/calepinage/:path*",
+        destination: "/calepinage/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
