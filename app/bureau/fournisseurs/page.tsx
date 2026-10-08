@@ -287,9 +287,10 @@ export default function FournisseursPage() {
 
   // Récupère une éventuelle commande pré-remplie transmise depuis un métré (Chantier → Zone)
   useEffect(() => {
-    const raw = localStorage.getItem(CLE_PREFILL_COMMANDE);
-    if (!raw) return;
+    if (typeof window === "undefined" || !window.localStorage) return;
     try {
+      const raw = window.localStorage.getItem(CLE_PREFILL_COMMANDE);
+      if (!raw) return;
       const payload = JSON.parse(raw) as {
         chantierId: string;
         chantierNom: string;
@@ -301,10 +302,10 @@ export default function FournisseursPage() {
       setPrefillInfo({ chantierNom: payload.chantierNom, zoneNom: payload.zoneNom });
       setTab("commandes");
       setModalCommande(true);
+      window.localStorage.removeItem(CLE_PREFILL_COMMANDE);
     } catch {
-      // payload invalide, on ignore
+      // payload invalide ou localStorage inaccessible, on ignore
     }
-    localStorage.removeItem(CLE_PREFILL_COMMANDE);
   }, []);
 
   const kpis = useMemo(() => {

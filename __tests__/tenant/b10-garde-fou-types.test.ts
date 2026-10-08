@@ -102,9 +102,9 @@ beforeAll(() => {
     let sortie = "";
     try {
       sortie = execFileSync(
-        "npx",
+        process.execPath,
         [
-          "tsc",
+          join(RACINE, "node_modules/typescript/bin/tsc"),
           "--noEmit",
           "--strict",
           "--skipLibCheck",

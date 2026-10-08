@@ -297,21 +297,13 @@ describe('LOT 2D — inventaire de la conversion', () => {
     expect(VUES_IMPRESSION).toHaveLength(8)
   })
 
-  it('96 cartes ont été converties', () => {
-    // 91 cartes à la fin du LOT 2D, + 2 dans components/FraisDeplacementTab.tsx
-    // = 93 appels sur 28 fichiers (le fichier rejoignait la liste des 27).
-    //
-    // PHASE 2 : + 4 sur components/DashboardAccueil.tsx (deux états vides, et
-    // deux cartes en `Surface as="li"` pour « Chantiers à préparer » et
-    // « Alertes »), − 1 sur app/terrain/meteo/page.tsx, devenue une
-    // redirection. Bilan : 93 + 4 − 1 = 96 appels, et 27 fichiers — le
-    // périmètre perd un fichier, pas un habitat.
-    //
-    // Comme pour fmtEuro, c'est un décompte de lot : le contrat de fond est
-    // « il ne reste AUCUNE carte en littéral dans le périmètre », vérifié juste
-    // après, et c'est lui qui était rouge avant cette conversion.
-    expect(APPELS).toHaveLength(96)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(27)
+  it('101 cartes ont été converties', () => {
+    // 96 à la fin de la Phase 2.
+    // + 3 sur components/RetenueGarantieChantier.tsx (module Retenue de Garantie)
+    // + 2 sur app/bureau/fin-chantier/page.tsx (onglet et modale retenue)
+    // Bilan : 96 + 3 + 2 = 101 appels, sur 28 fichiers.
+    expect(APPELS).toHaveLength(101)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(28)
   })
 
   it('il ne reste AUCUNE carte en littéral dans le périmètre', () => {

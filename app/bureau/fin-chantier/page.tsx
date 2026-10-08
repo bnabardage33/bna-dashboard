@@ -653,7 +653,7 @@ export default function FinChantierPage() {
 
       {vueOnglet === "retenues" ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#1E1E1E] p-4 rounded-2xl border border-white/10">
+          <Surface radius="2xl" className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
               <p className="text-xs font-bold text-white">Chantier concerné :</p>
               <p className="text-2xs text-gray-400">Consulter le compte séquestre de retenue de garantie et les réserves</p>
@@ -669,7 +669,7 @@ export default function FinChantierPage() {
                 </option>
               ))}
             </select>
-          </div>
+          </Surface>
 
           {(chantierRetenueId || chantiers[0]?.id) && (
             <RetenueGarantieChantier
@@ -939,8 +939,9 @@ export default function FinChantierPage() {
           className="fixed inset-0 z-[215] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalRetenueChantier(null)}
         >
-          <div
-            className="bg-[#1E1E1E] w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 shadow-2xl p-6 space-y-4 animate-in fade-in"
+          <Surface
+            radius="2xl"
+            className="w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl p-6 space-y-4 animate-in fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -960,7 +961,7 @@ export default function FinChantierPage() {
               chantierNom={modalRetenueChantier.nom}
               onUpdate={() => chargerDonnees()}
             />
-          </div>
+          </Surface>
         </div>
       )}
 

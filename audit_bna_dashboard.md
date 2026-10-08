@@ -17,7 +17,7 @@
 | `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
 | Arbre de travail | propre |
 | Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
-| Routes | **39** pages (`app/**/page.tsx`) · **38** routes API (`app/api/**/route.ts`) |
+| Routes | **39** pages (`app/**/page.tsx`) · **43** routes API (`app/api/**/route.ts`) |
 | Base | **41** migrations SQL · `types/supabase.ts` (3003 l.) déclare 58 entrées : 44 tables, 1 vue, 13 fonctions |
 
 ### Portes de qualité (mesurées à `ad6404a`)
@@ -371,6 +371,11 @@ le trajet (cf. Module Déplacements).
 | `/api/documents-compta` | Scan BL/tickets (GET/POST/DELETE) |
 | `/api/photos-chantier` | Upload / liste / suppression (bucket `chantiers-photos`) |
 | `/api/chantiers/[id]/metre-complet` | Métré complet d'un chantier |
+| `/api/chantiers/[id]/retenue-garantie` | Consultation de la retenue de garantie et des réserves (Loi n° 71-584) |
+| `/api/chantiers/[id]/retenue-garantie/liberer` | Libération totale ou partielle de la retenue via RPC sécurisée |
+| `/api/factures` | Liste et création sécurisée de factures (situations, acomptes, solde) |
+| `/api/factures/[id]` | Détail, mise à jour et suppression d'une facture |
+| `/api/factures/calculer` | Calcul financier d'une facture (lignes, TVA, acomptes déduits, retenue) |
 | `/api/search` | Recherche globale |
 | `/api/scrape` | Scraping produits fournisseurs (Cheerio) |
 | `/api/finance-pin` | Vérification du PIN Finance |
@@ -384,7 +389,7 @@ le trajet (cf. Module Déplacements).
 `/api/notifications` et `/api/chat-client` **n'existent plus** (voir
 « Historique des décisions »).
 
-Le tableau ci-dessus énumère les **38** routes actives. Les trois lignes barrées
+Le tableau ci-dessus énumère les **43** routes actives. Les trois lignes barrées
 (`~~…~~` + **RETIRÉE**) documentent des routes supprimées et ne comptent pas. Le
 compteur de la ligne 20 et cette liste sont **vérifiés par
 `__tests__/system/audit-snapshot-routes.test.ts`**, qui les compare à

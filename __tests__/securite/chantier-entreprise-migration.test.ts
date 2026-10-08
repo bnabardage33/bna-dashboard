@@ -61,16 +61,20 @@ describe("O3-B8 — invariants de compilation (le cast ne doit plus exister)", (
     expect(sansCommentaires).not.toMatch(/as TablesInsert<"chantiers">/);
   });
 
-  it("les 4 autres occurrences du même idiome sont INTACTES (hors périmètre B8)", () => {
-    // Garde-fou anti-débordement : B8 ne doit toucher que `chantiers`.
+  it("les factures ne sont plus insérées côté client mais déléguées à POST /api/factures", () => {
+    // Dans l'architecture actuelle (Retenue de Garantie V2.1 + Phase 4),
+    // la création de facture n'effectue plus d'insertion directe côté client :
+    // elle délègue à l'API sécurisée POST /api/factures avec contrôle de tenant.
     const s = source(DEVIS_FACTURES);
-    // `devis` / `pv_receptions` restent castés ailleurs ; on vérifie ici que
-    // les inserts non-chantiers du même fichier n'ont pas été "corrigés".
-    const insertsFactures = s.match(/\.from\("factures"\)\.insert\([^;]*?\);/g) || [];
-    expect(insertsFactures.length).toBeGreaterThan(0);
-    for (const i of insertsFactures) {
-      expect(i).toMatch(/as TablesInsert<"factures">/);
-    }
+    const insertsFacturesClient = s.match(/\.from\("factures"\)\.insert/g) || [];
+    expect(insertsFacturesClient).toHaveLength(0);
+    expect(s).toMatch(/fetch\(\s*["']\/api\/factures["']/);
+
+    // Invariant serveur : l'insertion dans la route API est typée TablesInsert<"factures">
+    // et assigne obligatoirement entreprise_id du tenant
+    const routeFactures = source("app/api/factures/route.ts");
+    expect(routeFactures).toMatch(/TablesInsert<"factures">/);
+    expect(routeFactures).toMatch(/entreprise_id:\s*tenant\.entrepriseId/);
   });
 });
 

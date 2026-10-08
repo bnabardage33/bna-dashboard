@@ -319,13 +319,13 @@ describe("audit — snapshot des routes API", () => {
     expect(documentes).toEqual(ARBRE);
   });
 
-  it("S3 le compteur du snapshot vaut bien 38", () => {
+  it("S3 le compteur du snapshot vaut bien 43", () => {
     // Valeur FIGÉE, alors que S1 ne la figerait pas. Raison : ajouter une route
     // légitime fait passer S1 au vert dès que le document est mis à jour — ce qui
     // est le comportement voulu. Cette assertion, elle, oblige à toucher aussi
     // le test : le compteur documenté devient une décision, pas une conséquence.
-    expect(compteurAnnonce(audit())).toBe(38);
-    expect(ARBRE.length).toBe(38);
+    expect(compteurAnnonce(audit())).toBe(43);
+    expect(ARBRE.length).toBe(43);
   });
 
   it("S4 les trois routes retirées sont documentées comme telles, et absentes du disque", () => {
@@ -350,8 +350,8 @@ describe("audit — snapshot des routes API", () => {
     const reference = audit();
     const situations: Array<{ nom: string; mutant: string; codeAttendu: string }> = [
       {
-        nom: "compteur remis à 39",
-        mutant: reference.replace("**38** routes API", "**39** routes API"),
+        nom: "compteur remis à 44",
+        mutant: reference.replace("**43** routes API", "**44** routes API"),
         codeAttendu: "compteur-faux",
       },
       {
