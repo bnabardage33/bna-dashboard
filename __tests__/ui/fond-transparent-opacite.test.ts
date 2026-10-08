@@ -78,7 +78,7 @@ const cssGlobal = lire('app/globals.css')
  */
 const opacite = (base: string, n: number | string) => `${base}/${n}`
 
-/** Les 12 fichiers où le lot a substitué la famille opaque par `bg-transparent`. */
+/** Les 11 fichiers où le lot a substitué la famille opaque par `bg-transparent`. */
 const SITES_CORRIGES = [
   'app/(dashboard)/finance/components/TresorerieWidget.tsx',
   'app/(dashboard)/finance/saisie/feuille-heures/page.tsx',
@@ -88,7 +88,6 @@ const SITES_CORRIGES = [
   'app/bureau/fin-chantier/page.tsx',
   'app/bureau/meteo/page.tsx',
   'app/bureau/sav/[id]/page.tsx',
-  'app/demo-client/page.tsx',
   'app/parametres/page.tsx',
   'app/terrain/chantier/[id]/page.tsx',
   'app/terrain/notes/page.tsx',
@@ -245,7 +244,7 @@ describe('2G-P2 · plus aucune classe de fond transparent à opacité', () => {
     ).toEqual([])
   })
 
-  it('les 12 fichiers corrigés portent bien bg-transparent', () => {
+  it('les 11 fichiers corrigés portent bien bg-transparent', () => {
     for (const f of SITES_CORRIGES) {
       expect(
         lire(f),

@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 const DUREE_INACTIVITE_MS = 15 * 60 * 1000; // 15 minutes
 
-const CHEMINS_EXCLUS = ["/login", "/espace-client", "/demo-client"];
+const CHEMINS_EXCLUS = ["/login", "/espace-client"];
 
 export default function InactivityLogout() {
   const pathname = usePathname();

@@ -297,13 +297,11 @@ describe('LOT 2D — inventaire de la conversion', () => {
     expect(VUES_IMPRESSION).toHaveLength(8)
   })
 
-  it('101 cartes ont été converties', () => {
-    // 96 à la fin de la Phase 2.
-    // + 3 sur components/RetenueGarantieChantier.tsx (module Retenue de Garantie)
-    // + 2 sur app/bureau/fin-chantier/page.tsx (onglet et modale retenue)
-    // Bilan : 96 + 3 + 2 = 101 appels, sur 28 fichiers.
-    expect(APPELS).toHaveLength(101)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(28)
+  it('98 cartes ont été converties', () => {
+    // 101 avant la suppression du prototype /demo-client (− 3 appels, − 1 fichier).
+    // Bilan : 98 appels sur 27 fichiers.
+    expect(APPELS).toHaveLength(98)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(27)
   })
 
   it('il ne reste AUCUNE carte en littéral dans le périmètre', () => {

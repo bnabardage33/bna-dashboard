@@ -145,7 +145,7 @@ describe("O3-B6 / SearchNav — Rules of Hooks", () => {
     await expect(allerVers("/bureau/fournisseurs")).resolves.toBeUndefined();
     await expect(allerVers("/espace-client/CODE-ACCES")).resolves.toBeUndefined();
     await expect(allerVers("/bureau/clients")).resolves.toBeUndefined();
-    await expect(allerVers("/demo-client")).resolves.toBeUndefined();
+    await expect(allerVers("/espace-client/AUTRE-CODE")).resolves.toBeUndefined();
     await expect(allerVers("/terrain")).resolves.toBeUndefined();
   });
 
@@ -166,7 +166,7 @@ describe("O3-B6 / SearchNav — Rules of Hooks", () => {
     expect(badge()).toBeNull();
     expect(conteneur.innerHTML).toBe("");
 
-    await allerVers("/demo-client");
+    await allerVers("/espace-client/AUTRE-CODE");
     expect(cloche()).toBeNull();
     expect(conteneur.innerHTML).toBe("");
   });

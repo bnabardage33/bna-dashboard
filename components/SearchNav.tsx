@@ -36,7 +36,7 @@ export default function SearchNav() {
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const isClientPage = pathname?.startsWith("/espace-client") || pathname?.startsWith("/demo-client");
+  const isClientPage = pathname?.startsWith("/espace-client");
 
   // O3-B6 — RULES OF HOOKS (correction).
   //
@@ -54,7 +54,7 @@ export default function SearchNav() {
   // Correction : le garde est appliqué à l'INTÉRIEUR des effets (pas de rendu,
   // pas de polling, pas d'écouteur sur les pages client) et le `return null` est
   // descendu APRÈS le dernier hook. Le comportement est strictement inchangé :
-  // SearchNav reste absent de `/espace-client` et de `/demo-client`.
+  // SearchNav reste absent de `/espace-client`.
   useEffect(() => {
     if (isClientPage) return;
     chargerNotifications();

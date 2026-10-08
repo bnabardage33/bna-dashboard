@@ -193,7 +193,7 @@ export default function Drawer() {
   };
 
   // Masquer le drawer sur l'espace client
-  if (pathname?.startsWith("/espace-client") || pathname?.startsWith("/demo-client")) {
+  if (pathname?.startsWith("/espace-client")) {
     return null;
   }
 
