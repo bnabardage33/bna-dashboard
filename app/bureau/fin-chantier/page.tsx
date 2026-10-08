@@ -21,6 +21,7 @@ import PVReceptionPDF, {
 import Image from "next/image";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import RetenueGarantieChantier from "@/components/RetenueGarantieChantier";
 
 type PVRow = {
   id: string;
@@ -141,6 +142,9 @@ export default function FinChantierPage() {
   const [modalPdfOuvert, setModalPdfOuvert] = useState(false);
   const [modalReservesOuvert, setModalReservesOuvert] = useState(false);
   const [pvSelectionne, setPvSelectionne] = useState<PVRow | null>(null);
+  const [vueOnglet, setVueOnglet] = useState<"pvs" | "retenues">("pvs");
+  const [chantierRetenueId, setChantierRetenueId] = useState<string>("");
+  const [modalRetenueChantier, setModalRetenueChantier] = useState<{ id: string; nom: string } | null>(null);
 
   // Formulaire d'édition / création
   const [formId, setFormId] = useState<string | null>(null);
@@ -618,7 +622,66 @@ export default function FinChantierPage() {
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {/* Sélecteur de vue : PVs vs Retenues de garantie */}
+      <div className="flex border-b border-white/10 gap-6 text-xs font-bold">
+        <button
+          onClick={() => setVueOnglet("pvs")}
+          className={`pb-3 transition-colors border-b-2 ${
+            vueOnglet === "pvs"
+              ? "border-red-600 text-white"
+              : "border-transparent text-gray-400 hover:text-gray-200"
+          }`}
+        >
+          📋 Procès-Verbaux de Réception ({totalPV})
+        </button>
+        <button
+          onClick={() => setVueOnglet("retenues")}
+          className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
+            vueOnglet === "retenues"
+              ? "border-red-600 text-white"
+              : "border-transparent text-gray-400 hover:text-gray-200"
+          }`}
+        >
+          <span>💰 Retenues de Garantie 5 % &amp; Réserves</span>
+          {nbReservesLevees > 0 && (
+            <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-3xs px-2 py-0.5 border border-emerald-500/30">
+              Déblocable
+            </span>
+          )}
+        </button>
+      </div>
+
+      {vueOnglet === "retenues" ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#1E1E1E] p-4 rounded-2xl border border-white/10">
+            <div>
+              <p className="text-xs font-bold text-white">Chantier concerné :</p>
+              <p className="text-2xs text-gray-400">Consulter le compte séquestre de retenue de garantie et les réserves</p>
+            </div>
+            <select
+              value={chantierRetenueId || chantiers[0]?.id || ""}
+              onChange={(e) => setChantierRetenueId(e.target.value)}
+              className="rounded-xl border border-white/10 bg-[#1E1E1E]/80 px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none min-w-[240px]"
+            >
+              {chantiers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom || "Chantier sans nom"}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(chantierRetenueId || chantiers[0]?.id) && (
+            <RetenueGarantieChantier
+              chantierId={chantierRetenueId || chantiers[0]?.id || ""}
+              chantierNom={chantiers.find((c) => c.id === (chantierRetenueId || chantiers[0]?.id))?.nom || undefined}
+              onUpdate={() => chargerDonnees()}
+            />
+          )}
+        </div>
+      ) : (
+        <>
+          {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Surface className="p-4 shadow-sm" radius="2xl">
           <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Total PV Émis</p>
@@ -817,6 +880,21 @@ export default function FinChantierPage() {
                         🔧 Réserves
                       </button>
                     )}
+
+                    {pv.chantier_id && (
+                      <button
+                        onClick={() =>
+                          setModalRetenueChantier({
+                            id: pv.chantier_id as string,
+                            nom: pv.chantiers?.nom || "Chantier",
+                          })
+                        }
+                        className="rounded-xl border border-red-600/30 bg-red-600/10 px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-600/20 flex items-center gap-1"
+                        title="Consulter et libérer la retenue de garantie 5 %"
+                      >
+                        💰 Retenue 5%
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -844,6 +922,8 @@ export default function FinChantierPage() {
           })}
         </div>
       )}
+        </>
+      )}
 
       {/* FAB (+) */}
       <FloatingActionButton
@@ -852,6 +932,37 @@ export default function FinChantierPage() {
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </FloatingActionButton>
+
+      {/* Modal Dédié Retenue de Garantie pour un chantier */}
+      {modalRetenueChantier && (
+        <div
+          className="fixed inset-0 z-[215] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setModalRetenueChantier(null)}
+        >
+          <div
+            className="bg-[#1E1E1E] w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 shadow-2xl p-6 space-y-4 animate-in fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-sm font-bold text-white">
+                Compte Retenue de Garantie &amp; Réserves — {modalRetenueChantier.nom}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setModalRetenueChantier(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <RetenueGarantieChantier
+              chantierId={modalRetenueChantier.id}
+              chantierNom={modalRetenueChantier.nom}
+              onUpdate={() => chargerDonnees()}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ============================================================ */}
       {/* MODAL : CRÉATION & ÉDITION D'UN PV DE RÉCEPTION ENRICHI */}

@@ -315,12 +315,15 @@ describe('LOT 2C — plus aucun formatage monétaire artisanal', () => {
     // « Chiffres clés » de l'accueil n'affiche que des compteurs, jamais des
     // montants — donc aucun formatage monétaire n'a été perdu en route.
     //
+    // PHASE 5 : + 1 importateur (`components/RetenueGarantieChantier.tsx`) = 27,
+    // et + 19 appels réels (17 dans RetenueGarantieChantier, 2 dans factures) = 154.
+    //
     // Ces deux nombres sont un DÉCOMPTE DE LOT, pas un contrat : toute conversion
     // correcte ultérieure les déplace mécaniquement. Le contrat de fond est
     // « ne subsistent que les exceptions documentées », vérifié plus bas — c'est
     // lui qui a Tickets, et lui qui était rouge avant cette conversion.
-    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(135)
-    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(26)
+    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(154)
+    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(27)
   })
 
   it('la référence définit fmtEuro() une seule fois, et l’exporte', () => {

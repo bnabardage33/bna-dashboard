@@ -39,6 +39,10 @@ export type DocumentData = {
   surface_m2?: number | null;
   signature_client?: string | null;
   signataire_client_nom?: string | null;
+  retenue_garantie_pct?: number | null;
+  montant_retenue_ht?: number | null;
+  montant_retenue_ttc?: number | null;
+  net_a_payer_ttc?: number | null;
 };
 
 // LOT 2C — la fonction `euros()` locale est supprimee au profit de fmtEuro().
@@ -226,10 +230,30 @@ export default function DocumentPDF({
               <span>TVA ({doc.tva_pct} %)</span>
               <span className="font-semibold">{fmtEuro(tva)}</span>
             </div>
-            <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
-              <span className="text-slate-100">TOTAL TTC</span>
-              <span className="text-amber-400 font-mono font-black text-base">{fmtEuro(totalTTC)}</span>
-            </div>
+            {/* Affichage différencié selon présence de Retenue de Garantie */}
+            {doc.kind === "facture" && (doc.montant_retenue_ttc ?? 0) > 0 ? (
+              <>
+                <div className="flex justify-between rounded-lg bg-slate-100 px-2.5 py-1.5 text-slate-700 font-medium text-[11px]">
+                  <span>TOTAL TTC</span>
+                  <span className="font-mono font-bold">{fmtEuro(totalTTC)}</span>
+                </div>
+                <div className="flex justify-between text-amber-700 font-semibold px-2.5 text-[11px]">
+                  <span>Retenue de garantie ({doc.retenue_garantie_pct ?? 5} %)</span>
+                  <span className="font-mono">-{fmtEuro(doc.montant_retenue_ttc ?? 0)}</span>
+                </div>
+                <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
+                  <span className="text-slate-100">NET À PAYER TTC</span>
+                  <span className="text-amber-400 font-mono font-black text-base">
+                    {fmtEuro(doc.net_a_payer_ttc ?? (totalTTC - (doc.montant_retenue_ttc ?? 0)))}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
+                <span className="text-slate-100">TOTAL TTC</span>
+                <span className="text-amber-400 font-mono font-black text-base">{fmtEuro(totalTTC)}</span>
+              </div>
+            )}
             {acompte !== null && (
               <div className="flex justify-between text-slate-600 text-[11px] pt-1">
                 <span>Acompte à la commande ({doc.acompte_pct} %)</span>

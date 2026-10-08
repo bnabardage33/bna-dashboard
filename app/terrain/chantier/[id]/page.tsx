@@ -26,6 +26,7 @@ import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteVi
 import { Surface } from '@/components/ui/Surface';
 import FraisDeplacementTab from "@/components/FraisDeplacementTab";
 import { composerAdresseDepart } from "@/lib/deplacement/adresse";
+import RetenueGarantieChantier from "@/components/RetenueGarantieChantier";
 
 type Chantier = {
   id: string;
@@ -1515,6 +1516,14 @@ function ChantierDetailContent() {
                     </table>
                   </Surface>
                 )}
+              </div>
+
+              {/* Retenue de Garantie (5 %) & Réserves */}
+              <div className="space-y-3 pt-3 border-t border-white/10">
+                <RetenueGarantieChantier
+                  chantierId={id}
+                  chantierNom={chantier?.nom || "Chantier"}
+                />
               </div>
 
               {/* Rapports Intempéries */}

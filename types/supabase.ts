@@ -582,6 +582,91 @@ export type Database = {
           },
         ]
       }
+      chantier_retenues_garantie: {
+        Row: {
+          caution_date_acte: string | null
+          caution_organisme: string | null
+          caution_reference: string | null
+          chantier_id: string
+          created_at: string
+          date_derniere_liberation: string | null
+          devis_id: string | null
+          entreprise_id: string
+          id: string
+          montant_libere_cumule_ttc: number
+          montant_restant_a_liberer_ttc: number
+          montant_retenu_cumule_ht: number
+          montant_retenu_cumule_ttc: number
+          observations: string | null
+          statut: string
+          taux_applicable_pct: number
+          type_garantie: string
+          updated_at: string
+        }
+        Insert: {
+          caution_date_acte?: string | null
+          caution_organisme?: string | null
+          caution_reference?: string | null
+          chantier_id: string
+          created_at?: string
+          date_derniere_liberation?: string | null
+          devis_id?: string | null
+          entreprise_id: string
+          id?: string
+          montant_libere_cumule_ttc?: number
+          montant_restant_a_liberer_ttc?: number
+          montant_retenu_cumule_ht?: number
+          montant_retenu_cumule_ttc?: number
+          observations?: string | null
+          statut?: string
+          taux_applicable_pct?: number
+          type_garantie?: string
+          updated_at?: string
+        }
+        Update: {
+          caution_date_acte?: string | null
+          caution_organisme?: string | null
+          caution_reference?: string | null
+          chantier_id?: string
+          created_at?: string
+          date_derniere_liberation?: string | null
+          devis_id?: string | null
+          entreprise_id?: string
+          id?: string
+          montant_libere_cumule_ttc?: number
+          montant_restant_a_liberer_ttc?: number
+          montant_retenu_cumule_ht?: number
+          montant_retenu_cumule_ttc?: number
+          observations?: string | null
+          statut?: string
+          taux_applicable_pct?: number
+          type_garantie?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_retenues_garantie_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: true
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_retenues_garantie_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_retenues_garantie_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chantiers: {
         Row: {
           adresse_chantier: string | null
@@ -1619,8 +1704,12 @@ export type Database = {
           entreprise_id: string
           id: string
           lignes: Json
+          montant_retenue_ht: number
+          montant_retenue_ttc: number
+          net_a_payer_ttc: number
           numero: string
           objet: string | null
+          retenue_garantie_pct: number
           statut: string
           tva_pct: number
           type_facture: string
@@ -1637,8 +1726,12 @@ export type Database = {
           entreprise_id: string
           id?: string
           lignes?: Json
+          montant_retenue_ht?: number
+          montant_retenue_ttc?: number
+          net_a_payer_ttc?: number
           numero: string
           objet?: string | null
+          retenue_garantie_pct?: number
           statut?: string
           tva_pct?: number
           type_facture?: string
@@ -1655,8 +1748,12 @@ export type Database = {
           entreprise_id?: string
           id?: string
           lignes?: Json
+          montant_retenue_ht?: number
+          montant_retenue_ttc?: number
+          net_a_payer_ttc?: number
           numero?: string
           objet?: string | null
+          retenue_garantie_pct?: number
           statut?: string
           tva_pct?: number
           type_facture?: string
@@ -2735,6 +2832,83 @@ export type Database = {
           },
         ]
       }
+      retenues_liberations: {
+        Row: {
+          chantier_id: string
+          created_at: string
+          date_liberation: string
+          document_ref: string | null
+          entreprise_id: string
+          id: string
+          montant_libere_ht: number
+          montant_libere_ttc: number
+          motif: string
+          observations: string | null
+          pv_reception_id: string | null
+          retenue_id: string
+          utilisateur_id: string | null
+        }
+        Insert: {
+          chantier_id: string
+          created_at?: string
+          date_liberation?: string
+          document_ref?: string | null
+          entreprise_id: string
+          id?: string
+          montant_libere_ht: number
+          montant_libere_ttc: number
+          motif?: string
+          observations?: string | null
+          pv_reception_id?: string | null
+          retenue_id: string
+          utilisateur_id?: string | null
+        }
+        Update: {
+          chantier_id?: string
+          created_at?: string
+          date_liberation?: string
+          document_ref?: string | null
+          entreprise_id?: string
+          id?: string
+          montant_libere_ht?: number
+          montant_libere_ttc?: number
+          motif?: string
+          observations?: string | null
+          pv_reception_id?: string | null
+          retenue_id?: string
+          utilisateur_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retenues_liberations_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retenues_liberations_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retenues_liberations_pv_reception_id_fkey"
+            columns: ["pv_reception_id"]
+            isOneToOne: false
+            referencedRelation: "pv_receptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retenues_liberations_retenue_id_fkey"
+            columns: ["retenue_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_retenues_garantie"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       situations: {
         Row: {
           chantier_id: string | null
@@ -3080,6 +3254,17 @@ export type Database = {
           p_deplacement_id: string
           p_devis_id: string
           p_entreprise_id: string
+        }
+        Returns: Json
+      }
+      liberer_retenue_garantie_rpc: {
+        Args: {
+          p_chantier_id: string
+          p_document_ref?: string | null
+          p_montant_ttc: number
+          p_motif: string
+          p_observations?: string | null
+          p_pv_reception_id?: string | null
         }
         Returns: Json
       }

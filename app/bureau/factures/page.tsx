@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import type { TablesInsert } from "@/types/supabase";
@@ -13,6 +13,7 @@ import { prochainNumeroFacture } from "@/lib/documents";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { calculerRetenueFacture } from "@/lib/retenueCalculs";
 
 type CatalogueOuvrage = {
   id: string;
@@ -55,6 +56,7 @@ type Facture = {
   id: string;
   numero: string;
   client_id: string;
+  chantier_id?: string | null;
   devis_id: string | null;
   objet: string | null;
   adresse_chantier: string | null;
@@ -65,6 +67,10 @@ type Facture = {
   type_facture: "acompte" | "situation" | "solde" | "totale";
   lignes: Ligne[];
   tva_pct: number;
+  retenue_garantie_pct?: number | null;
+  montant_retenue_ht?: number | null;
+  montant_retenue_ttc?: number | null;
+  net_a_payer_ttc?: number | null;
   clients: Client | null;
 };
 
@@ -109,6 +115,17 @@ export default function FacturesPage() {
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
   const [totalDevisHT, setTotalDevisHT] = useState<number | null>(null);
   const [dejaFactureHT, setDejaFactureHT] = useState<number | null>(null);
+  const [appliquerRetenue, setAppliquerRetenue] = useState(false);
+  const [tauxRetenue, setTauxRetenue] = useState(5.0);
+  const [chantierIdManuel, setChantierIdManuel] = useState<string | null>(null);
+
+  const calculFacture = useMemo(() => {
+    return calculerRetenueFacture({
+      lignes,
+      retenue_garantie_pct: appliquerRetenue ? tauxRetenue : 0,
+      tva_defaut_pct: tva,
+    });
+  }, [lignes, appliquerRetenue, tauxRetenue, tva]);
 
   async function fetchTout() {
     setLoading(true);
@@ -272,32 +289,34 @@ export default function FacturesPage() {
     const devisChoisi = depuisDevis
       ? devisAcceptes.find((d) => d.id === depuisDevis)
       : null;
-    const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(
-      devisChoisi?.chantier_id
+    const { chantier_id } = await resoudreContexteEntreprise(
+      devisChoisi?.chantier_id || chantierIdManuel
     );
 
-    // `entreprise_id` omis quand `chantier_id` est présent : rempli par le
-    // trigger `tg_auto_entreprise` (règle produit, cf. lib/contexteEntreprise.ts) ;
-    // les types régénérés le marquent "requis" → assertion typée ciblée.
-    const payload = {
-      numero,
-      devis_id: depuisDevis || null,
-      client_id: clientId,
-      chantier_id,
-      ...(entreprise_id ? { entreprise_id } : {}),
-      objet: objet || null,
-      adresse_chantier: adresseChantier || null,
-      type_travaux: typeTravaux || null,
-      echeance: echeance || null,
-      tva_pct: tva,
-      type_facture: typeFacture,
-      statut: "brouillon",
-      lignes,
-    };
-    const { error } = await supabase.from("factures").insert(payload as TablesInsert<"factures">);
+    // Émission sécurisée via l'API Phase 4 POST /api/factures avec calcul serveur
+    const res = await fetch("/api/factures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numero,
+        devis_id: depuisDevis || null,
+        client_id: clientId,
+        chantier_id: chantier_id || null,
+        objet: objet || null,
+        adresse_chantier: adresseChantier || null,
+        type_travaux: typeTravaux || null,
+        type_facture: typeFacture,
+        statut: "brouillon",
+        echeance: echeance || null,
+        tva_defaut_pct: tva,
+        retenue_garantie_pct: appliquerRetenue ? tauxRetenue : 0,
+        lignes,
+      }),
+    });
 
-    if (error) {
-      alert("Erreur : " + error.message);
+    const json = await res.json();
+    if (!res.ok || !json.ok) {
+      alert("Erreur lors de la création de la facture : " + (json.error || "Erreur serveur"));
       return;
     }
 
@@ -309,19 +328,36 @@ export default function FacturesPage() {
     setTypeTravaux("");
     setEcheance("");
     setTypeFacture("totale");
+    setAppliquerRetenue(false);
+    setTauxRetenue(5.0);
+    setChantierIdManuel(null);
     setLignes([{ ...LIGNE_VIDE }]);
     fetchTout();
   }
 
   async function changerStatut(f: Facture, statut: string) {
-    const { error } = await supabase.from("factures").update({ statut }).eq("id", f.id);
-    if (!error) fetchTout();
+    const res = await fetch(`/api/factures/${f.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ statut }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert("Erreur lors du changement de statut : " + (json.error || "Erreur serveur"));
+      return;
+    }
+    fetchTout();
   }
 
   async function supprimerFacture(f: Facture) {
     if (!confirm(`Supprimer la facture ${f.numero} ?`)) return;
-    const { error } = await supabase.from("factures").delete().eq("id", f.id);
-    if (!error) fetchTout();
+    const res = await fetch(`/api/factures/${f.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      alert("Erreur lors de la suppression : " + (json.error || "Seule une facture au statut brouillon peut être supprimée"));
+      return;
+    }
+    fetchTout();
   }
 
   function imprimer() {
@@ -380,6 +416,8 @@ export default function FacturesPage() {
           {factures.map((f) => {
             const ht = f.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
             const ttc = ht * (1 + f.tva_pct / 100);
+            const aRetenue = (f.montant_retenue_ttc ?? 0) > 0;
+            const netAPayer = f.net_a_payer_ttc ?? (aRetenue ? ttc - (f.montant_retenue_ttc ?? 0) : ttc);
             const nomClient = f.clients?.societe || f.clients?.nom || "Client direct";
 
             return (
@@ -395,6 +433,11 @@ export default function FacturesPage() {
                         {f.type_facture !== "totale" && (
                           <span className="rounded-full bg-red-600/15 border border-red-600/40 px-2 py-0.5 text-2xs font-bold uppercase text-gray-400">
                             {f.type_facture}
+                          </span>
+                        )}
+                        {aRetenue && (
+                          <span className="rounded-full bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-2xs font-bold text-amber-300">
+                            Retenue {f.retenue_garantie_pct ?? 5} %
                           </span>
                         )}
                         <span className="text-xs text-gray-500">· {new Date(f.date_emission).toLocaleDateString("fr-FR")}</span>
@@ -427,9 +470,21 @@ export default function FacturesPage() {
                       <p className="text-2xs uppercase tracking-wide text-gray-500">Montant HT</p>
                       <p className="text-xs font-semibold text-gray-300">{fmtEuro(ht)}</p>
                     </div>
+                    {aRetenue && (
+                      <div className="text-center">
+                        <p className="text-2xs uppercase tracking-wide text-amber-500">Retenue 5% TTC</p>
+                        <p className="text-xs font-semibold text-amber-400 font-mono">
+                          -{fmtEuro(f.montant_retenue_ttc ?? 0)}
+                        </p>
+                      </div>
+                    )}
                     <div className="text-right">
-                      <p className="text-2xs uppercase tracking-wide text-gray-500">Total TTC ({f.tva_pct}%)</p>
-                      <p className="text-sm font-bold text-gray-300 font-mono">{fmtEuro(ttc)}</p>
+                      <p className="text-2xs uppercase tracking-wide text-gray-500">
+                        {aRetenue ? "Net à Payer TTC" : `Total TTC (${f.tva_pct}%)`}
+                      </p>
+                      <p className="text-sm font-bold text-gray-100 font-mono">
+                        {fmtEuro(netAPayer)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -674,9 +729,64 @@ export default function FacturesPage() {
                 </div>
               </div>
 
-              <p className="text-right text-sm font-bold text-white pt-2">
-                Total HT : <span className="font-mono text-gray-400">{fmtEuro(totalHT)}</span>
-              </p>
+              {/* Option Retenue de Garantie (Loi n° 71-584) */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3.5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-white">
+                    <input
+                      type="checkbox"
+                      checked={appliquerRetenue}
+                      onChange={(e) => setAppliquerRetenue(e.target.checked)}
+                      className="rounded border-slate-600 text-red-600 focus:ring-red-600"
+                    />
+                    <span>Appliquer la retenue de garantie légale (5 % BTP — Loi 1971)</span>
+                  </label>
+                  {appliquerRetenue && (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <label className="text-2xs text-gray-400">Taux :</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        value={tauxRetenue}
+                        onChange={(e) => setTauxRetenue(Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        className="w-16 rounded-lg border border-slate-600 bg-transparent px-2 py-1 text-xs text-white text-right font-mono"
+                      />
+                      <span className="text-gray-300 font-bold">%</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Synthèse financière calculée par le moteur officiel */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-white/5 text-2xs">
+                  <div>
+                    <span className="text-gray-500 block">Total HT :</span>
+                    <span className="font-mono font-bold text-gray-300">{fmtEuro(calculFacture.total_ht)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Total TVA :</span>
+                    <span className="font-mono font-bold text-gray-300">{fmtEuro(calculFacture.total_tva)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Total TTC :</span>
+                    <span className="font-mono font-bold text-gray-300">{fmtEuro(calculFacture.total_ttc)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-gray-400 block font-semibold">
+                      {appliquerRetenue ? "Net à Payer TTC :" : "Total Net :"}
+                    </span>
+                    <span className="font-mono font-black text-xs text-amber-400">
+                      {fmtEuro(calculFacture.net_a_payer_ttc)}
+                    </span>
+                    {appliquerRetenue && calculFacture.montant_retenue_ttc > 0 && (
+                      <span className="block text-3xs text-amber-500/80">
+                        (Retenue 5% : -{fmtEuro(calculFacture.montant_retenue_ttc)})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl z-10">
@@ -737,6 +847,10 @@ export default function FacturesPage() {
                 lignes: apercu.lignes,
                 tva_pct: apercu.tva_pct,
                 type_facture: apercu.type_facture,
+                retenue_garantie_pct: apercu.retenue_garantie_pct,
+                montant_retenue_ht: apercu.montant_retenue_ht,
+                montant_retenue_ttc: apercu.montant_retenue_ttc,
+                net_a_payer_ttc: apercu.net_a_payer_ttc,
               }}
               entreprise={entreprise}
               client={

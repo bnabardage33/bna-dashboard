@@ -79,6 +79,10 @@ export interface FactureFinance {
   montant_tva?: number;
   montant_ttc?: number;
   taux_tva?: number;
+  montant_retenue_ht?: number;
+  montant_retenue_ttc?: number;
+  net_a_payer_ttc?: number;
+  retenue_garantie_pct?: number;
   clients?: { nom: string };
   fournisseurs?: { nom: string };
 }
@@ -286,4 +290,70 @@ export interface PVRow {
   photos?: unknown[];
   reserves: unknown[];
   observations: string | null;
+}
+
+// --- Types métier pour la Retenue de Garantie (Loi n° 71-584) & Réserves ---
+
+export type StatutRetenueGarantie =
+  | 'en_constitution'
+  | 'bloquee_avec_reserves'
+  | 'liberable'
+  | 'liberee_partiellement'
+  | 'liberee_totalement';
+
+export type TypeGarantieBTP =
+  | 'retenue_financiere'
+  | 'caution_bancaire'
+  | 'garantie_premiere_demande';
+
+export type MotifLiberationRetenue =
+  | 'levee_reserves'
+  | 'echeance_1_an_gpa'
+  | 'accord_amiable'
+  | 'substitution_caution';
+
+export interface ChantierRetenueGarantie {
+  id: string;
+  entreprise_id: string;
+  chantier_id: string;
+  devis_id?: string | null;
+  taux_applicable_pct: number;
+  type_garantie: TypeGarantieBTP;
+  caution_organisme?: string | null;
+  caution_reference?: string | null;
+  caution_date_acte?: string | null;
+  montant_retenu_cumule_ht: number;
+  montant_retenu_cumule_ttc: number;
+  montant_libere_cumule_ttc: number;
+  montant_restant_a_liberer_ttc: number;
+  statut: StatutRetenueGarantie;
+  date_derniere_liberation?: string | null;
+  observations?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RetenueLiberation {
+  id: string;
+  entreprise_id: string;
+  retenue_id: string;
+  chantier_id: string;
+  pv_reception_id?: string | null;
+  montant_libere_ht: number;
+  montant_libere_ttc: number;
+  date_liberation: string;
+  motif: MotifLiberationRetenue;
+  utilisateur_id?: string | null;
+  document_ref?: string | null;
+  observations?: string | null;
+  created_at?: string;
+}
+
+export interface LibererRetenueResult {
+  success: boolean;
+  liberation_id: string;
+  montant_libere_ttc: number;
+  montant_libere_ht: number;
+  nouveau_restant_ttc: number;
+  statut: StatutRetenueGarantie;
 }
