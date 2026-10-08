@@ -21,6 +21,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Smartphone, CheckCircle, Loader2, ShieldCheck, PenLine, RefreshCw } from "lucide-react";
+import { ARTICLES_CGV_CONTRAT } from "@/lib/cgvContrat";
 
 // `catch (err: any)` laissait passer une branche d'erreur muette : sur une valeur
 // qui n'est pas une Error, `err.message` vaut undefined et l'UI affichait un
@@ -95,12 +96,14 @@ export default function SignatureModal({
   codeAcces,
   devisId,
   numero,
+  retenueGarantiePct,
   onClose,
   onSuccess,
 }: {
   codeAcces: string;
   devisId: string;
   numero: string;
+  retenueGarantiePct?: number | null;
   onClose: () => void;
   onSuccess: (preuve: PreuveSignature) => void;
 }) {
@@ -126,6 +129,7 @@ export default function SignatureModal({
    * du client. La case est une déclaration de sa part, transmise telle quelle.
    */
   const [mention, setMention] = useState(true);
+  const [showCGV, setShowCGV] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dessineRef = useRef(false);
@@ -446,10 +450,25 @@ export default function SignatureModal({
                   className="mt-0.5"
                 />
                 <span className="text-[11px] text-gray-300">
-                  Je soussigné(e), donne mon bon pour accord au devis {numero} et à
-                  ses conditions.
+                  {(retenueGarantiePct ?? 0) > 0 ? (
+                    <>
+                      Je soussigné(e), donne mon bon pour accord au devis {numero}, déclare accepter les Conditions Générales de Vente et confirme l&apos;application d&apos;une retenue de garantie contractuelle de <strong>{retenueGarantiePct} %</strong> (Loi n° 71-584).
+                    </>
+                  ) : (
+                    <>
+                      Je soussigné(e), donne mon bon pour accord au devis {numero} et déclare accepter ses Conditions Générales de Vente sans retenue de garantie.
+                    </>
+                  )}
                 </span>
               </label>
+
+              <button
+                type="button"
+                onClick={() => setShowCGV(true)}
+                className="text-2xs text-sky-400 hover:text-sky-300 underline block text-center w-full"
+              >
+                Consulter les Conditions Générales de Vente (CGV BTP — 9 articles)
+              </button>
 
               <button
                 onClick={() => void validerSignature()}
@@ -510,6 +529,50 @@ export default function SignatureModal({
           )}
         </div>
       </div>
+
+      {showCGV && (
+        <div className="fixed inset-0 z-[10003] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#1A1A1A] p-5 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h4 className="text-sm font-bold text-white">Conditions Générales de Vente (CGV BTP)</h4>
+                <p className="text-[10px] text-gray-400">Texte intégral des 9 articles contractuels applicables aux travaux</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCGV(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-white/10 hover:text-white"
+                aria-label="Fermer les CGV"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto space-y-3 py-3 text-xs text-gray-300 leading-relaxed pr-1">
+              {ARTICLES_CGV_CONTRAT.map((art) => (
+                <div key={art.numero}>
+                  <h5 className="font-semibold text-white text-xs mb-1">{art.titre}</h5>
+                  {art.numero === 7 ? (
+                    <p className="text-[11px] text-gray-200 bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-lg leading-relaxed">
+                      {art.contenu}
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 leading-relaxed">{art.contenu}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-white/10 pt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCGV(false)}
+                className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white hover:bg-white/20"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

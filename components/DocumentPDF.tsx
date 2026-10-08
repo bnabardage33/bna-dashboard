@@ -291,6 +291,21 @@ export default function DocumentPDF({
           <p className="text-[10px] text-slate-400 italic pt-1">{entreprise.mentions_legales}</p>
         )}
 
+        {/* Mention contractuelle Devis (CGV & Retenue de garantie Loi n° 71-584) */}
+        {doc.kind === "devis" && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2 text-[10px] text-slate-700 leading-tight">
+            {(doc.retenue_garantie_pct ?? 0) > 0 ? (
+              <p>
+                <strong>Conditions contractuelles &amp; Retenue de garantie :</strong> Les travaux sont soumis aux Conditions Générales de Vente ci-jointes. Conformément aux dispositions de la loi n° 71-584 du 16 juillet 1971 et selon accord exprès entre les parties, une retenue de garantie de <strong>{doc.retenue_garantie_pct} %</strong> sera appliquée sur les acomptes et situations pour garantir la levée des réserves éventuelles.
+              </p>
+            ) : (
+              <p>
+                <strong>Conditions contractuelles :</strong> Les travaux sont soumis aux Conditions Générales de Vente ci-jointes. Aucune retenue de garantie contractuelle n&apos;est convenue au titre du présent devis.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Zone de signature */}
         <div className="grid grid-cols-2 gap-6 border-t border-slate-300 pt-3 text-xs avoid-break">
           <div>
@@ -377,14 +392,21 @@ export default function DocumentPDF({
             </div>
 
             <div className="space-y-1">
-              <p className="font-bold text-slate-900 text-[11px]">Article 7 — Assurances &amp; Garantie Décennale</p>
+              <p className="font-bold text-slate-900 text-[11px]">Article 7 — Retenue de garantie légale &amp; Consignation (Loi n° 71-584)</p>
+              <p>
+                Conformément aux dispositions de la loi n° 71-584 du 16 juillet 1971, une retenue de garantie égale au plus à 5 % du montant des travaux peut être appliquée sur les situations et acomptes, sous réserve d&apos;avoir été expressément convenue entre les parties dans le devis accepté. Cette retenue a pour objet exclusif de garantir contractuellement la bonne exécution des travaux et de répondre, le cas échéant, aux réserves formulées lors de la réception contradictoire des ouvrages. En application de l&apos;article 2 de ladite loi, les sommes retenues doivent être impérativement consignées entre les mains d&apos;un tiers consignataire accepté des deux parties ou désigné judiciairement. L&apos;entreprise conserve la faculté légale de substituer à cette retenue une caution personnelle et solidaire équivalente. La retenue (ou caution) est libérée dès la levée formelle des réserves constatée contradictoirement. À défaut de mainlevée amiable, elle est libérée de plein droit à l&apos;expiration d&apos;un délai d&apos;un an à compter de la date de réception des travaux, sauf opposition motivée notifiée par LRAR pour inexécution contractuelle.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Article 8 — Assurances &amp; Garantie Décennale</p>
               <p>
                 L&apos;entreprise est couverte par une assurance Responsabilité Civile Professionnelle et <strong>Garantie Décennale obligatoire</strong> (Art. 1792 du Code Civil) souscrite auprès de la compagnie <strong>{nomAssurance}</strong>, sous le contrat N° <strong>{policeAssurance}</strong>, valable pour les travaux exécutés en <strong>{zoneAssurance}</strong>.
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="font-bold text-slate-900 text-[11px]">Article 8 — Médiation de la consommation &amp; Litiges</p>
+              <p className="font-bold text-slate-900 text-[11px]">Article 9 — Médiation de la consommation &amp; Litiges</p>
               <p>
                 Conformément aux articles L.616-1 et R.616-1 du Code de la consommation, le Client consommateur a le droit de recourir gratuitement au médiateur de la consommation compétent pour le règlement amiable de tout litige : <strong>{nomMediateur}</strong>, joignable via <strong>{contactMediateur}</strong>. À défaut d&apos;accord amiable, les tribunaux compétents seront ceux du siège social de l&apos;entreprise.
               </p>

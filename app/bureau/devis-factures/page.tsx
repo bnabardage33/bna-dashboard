@@ -92,6 +92,7 @@ type Devis = {
   tva_pct: number;
   delai_jours: number | null;
   acompte_pct: number | null;
+  retenue_garantie_pct?: number | null;
   chantier_id: string | null;
   surface_m2?: number | null;
   total_ht?: number | null;
@@ -175,6 +176,7 @@ function DevisContenu() {
   const [validite, setValidite] = useState(90);
   const [delai, setDelai] = useState(15);
   const [acompte, setAcompte] = useState(30);
+  const [retenueGarantie, setRetenueGarantie] = useState(0);
   const [tva, setTva] = useState(10);
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
   const [profilRevenu, setProfilRevenu] = useState<ProfilRevenu>("aucun");
@@ -362,8 +364,9 @@ function DevisContenu() {
         validite_jours: validite,
         delai_jours: delai,
         acompte_pct: acompte,
+        retenue_garantie_pct: retenueGarantie,
         tva_pct: tva,
-      profil_revenu: profilRevenu,
+        profil_revenu: profilRevenu,
         surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : null,
         lignes: lignesNettoyees,
       }),
@@ -515,6 +518,7 @@ function DevisContenu() {
         validite_jours: validite,
         delai_jours: delai,
         acompte_pct: acompte,
+        retenue_garantie_pct: retenueGarantie,
         tva_pct: tva,
         surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : null,
         lignes: lignesNettoyees,
@@ -536,6 +540,7 @@ function DevisContenu() {
     setTypeTravaux("");
     setLignes([{ ...LIGNE_VIDE }]);
     setSurfacePonctuelle("");
+    setRetenueGarantie(0);
     fetchTout();
   }
 
@@ -634,34 +639,30 @@ function DevisContenu() {
         }));
     }
 
-    const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(d.chantier_id);
+    // Appel de la route officielle POST /api/factures (Phase 4 + Moteur V2.1)
+    // avec transmission contractuelle du taux de retenue du devis
+    const res = await fetch("/api/factures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numero,
+        devis_id: d.id,
+        client_id: d.client_id,
+        chantier_id: d.chantier_id || null,
+        objet: `${billType === "totale" ? "Facture" : billType === "acompte" ? "Acompte" : "Situation d'avancement"} — ${d.objet ?? d.numero}`,
+        adresse_chantier: d.adresse_chantier,
+        type_travaux: d.type_travaux,
+        type_facture: billType === "totale" ? "solde" : billType,
+        statut: "brouillon",
+        tva_defaut_pct: d.tva_pct,
+        retenue_garantie_pct: d.retenue_garantie_pct ?? 0,
+        lignes: lignesFacture,
+      }),
+    });
+    const resData = await res.json().catch(() => null);
 
-    // `entreprise_id` omis quand `chantier_id` est présent : rempli par le
-    // trigger `tg_auto_entreprise` (règle produit, cf. lib/contexteEntreprise.ts) ;
-    // les types régénérés le marquent "requis" → assertion typée ci-dessous.
-    const payload = {
-      numero,
-      devis_id: d.id,
-      client_id: d.client_id,
-      chantier_id,
-      ...(entreprise_id ? { entreprise_id } : {}),
-      objet: `${billType === "totale" ? "Facture" : billType === "acompte" ? "Acompte" : "Situation d'avancement"} — ${d.objet ?? d.numero}`,
-      adresse_chantier: d.adresse_chantier,
-      type_travaux: d.type_travaux,
-      tva_pct: d.tva_pct,
-      type_facture: billType === "totale" ? "solde" : billType,
-      statut: "brouillon",
-      lignes: lignesFacture,
-    };
-    // `entreprise_id` est omis quand `chantier_id` est présent : le trigger
-    // `tg_auto_entreprise` le dérive du chantier (règle produit conservée,
-    // cf. lib/contexteEntreprise.ts). Le type Insert le marque "requis"
-    // (NOT NULL sans défaut côté PostgREST) → assertion typée ciblée
-    // (jamais as any / as never / as unknown).
-    const { error } = await supabase.from("factures").insert(payload as TablesInsert<"factures">);
-
-    if (error) {
-      alert("Erreur lors de la génération de la facture : " + error.message);
+    if (!res.ok || resData?.error) {
+      alert("Erreur lors de la génération de la facture : " + (resData?.error || "Erreur serveur."));
     } else {
       alert(`Facture ${numero} générée dans l'onglet Factures.`);
     }
@@ -699,38 +700,39 @@ function DevisContenu() {
     const echeance = new Date();
     echeance.setDate(echeance.getDate() + 15);
 
-    const { chantier_id, entreprise_id } = await resoudreContexteEntreprise(d.chantier_id);
+    // Appel de la route officielle POST /api/factures (Phase 4 + Moteur V2.1)
+    // avec transmission contractuelle du taux de retenue du devis
+    const res = await fetch("/api/factures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numero,
+        devis_id: d.id,
+        client_id: d.client_id,
+        chantier_id: d.chantier_id || null,
+        objet: `Acompte ${pct}% devis ${d.numero}`,
+        adresse_chantier: d.adresse_chantier,
+        type_travaux: d.type_travaux,
+        type_facture: "acompte",
+        statut: "en_attente",
+        echeance: echeance.toISOString().slice(0, 10),
+        tva_defaut_pct: d.tva_pct,
+        retenue_garantie_pct: d.retenue_garantie_pct ?? 0,
+        lignes: [
+          {
+            designation: `Facture d'acompte (${pct}%) sur le devis n°${d.numero}`,
+            description: d.objet ?? undefined,
+            qte: 1,
+            unite: "forfait",
+            pu_ht: montantHT,
+          },
+        ],
+      }),
+    });
+    const resData = await res.json().catch(() => null);
 
-    // `entreprise_id` omis si chantier présent : rempli par le trigger
-    // `tg_auto_entreprise` (règle produit, cf. lib/contexteEntreprise.ts) →
-    // assertion typée ciblée (jamais as any / as never / as unknown).
-    const payload = {
-      numero,
-      devis_id: d.id,
-      client_id: d.client_id,
-      chantier_id,
-      ...(entreprise_id ? { entreprise_id } : {}),
-      objet: `Acompte ${pct}% devis ${d.numero}`,
-      adresse_chantier: d.adresse_chantier,
-      type_travaux: d.type_travaux,
-      tva_pct: d.tva_pct,   // Fix #1 : reprend le taux TVA du devis (ex. 10% rénovation)
-      type_facture: "acompte",
-      statut: "en_attente",
-      echeance: echeance.toISOString().slice(0, 10),
-      lignes: [
-        {
-          designation: `Facture d'acompte (${pct}%) sur le devis n°${d.numero}`,
-          description: d.objet ?? undefined,
-          qte: 1,
-          unite: "forfait",
-          pu_ht: montantHT,
-        },
-      ],
-    };
-    const { error } = await supabase.from("factures").insert(payload as TablesInsert<"factures">);
-
-    if (error) {
-      afficherToast(`⚠️ Erreur génération acompte : ${error.message}`);
+    if (!res.ok || resData?.error) {
+      afficherToast(`⚠️ Erreur génération acompte : ${resData?.error || "Erreur serveur"}`);
       return;
     }
 
@@ -890,6 +892,11 @@ function DevisContenu() {
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-gray-300">{d.numero}</span>
                         <span className="text-xs text-gray-500">· {new Date(d.date_emission).toLocaleDateString("fr-FR")}</span>
+                        {Number(d.retenue_garantie_pct ?? 0) > 0 && (
+                          <span className="rounded-md bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-3xs font-semibold text-amber-300">
+                            RG {Number(d.retenue_garantie_pct)}%
+                          </span>
+                        )}
                       </div>
                       <h2 className="text-base font-bold text-white mt-0.5">{nomClient}</h2>
                       {d.objet && <p className="text-xs text-gray-400 line-clamp-1">{d.objet}</p>}
@@ -1220,7 +1227,7 @@ function DevisContenu() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
                 <div>
                   <label htmlFor="chp-validite-j" className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">Validité (j)</label>
                   <input id="chp-validite-j"
@@ -1247,6 +1254,17 @@ function DevisContenu() {
                     onChange={(e) => setAcompte(parseInt(e.target.value) || 0)}
                     className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   />
+                </div>
+                <div>
+                  <label htmlFor="chp-retenue" className="text-3xs font-semibold uppercase text-amber-400 sm:text-xs">Retenue (Loi 1971)</label>
+                  <select id="chp-retenue"
+                    value={retenueGarantie}
+                    onChange={(e) => setRetenueGarantie(parseFloat(e.target.value) || 0)}
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-amber-600/50 bg-amber-900/10 px-3 py-2 text-sm text-amber-100 focus:border-amber-400 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                  >
+                    <option value="0" className="text-gray-900">0% (Aucune)</option>
+                    <option value="5" className="text-gray-900">5% (Loi 71-584)</option>
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="chp-tva" className="text-3xs font-semibold uppercase text-gray-400 sm:text-xs">TVA (%)</label>

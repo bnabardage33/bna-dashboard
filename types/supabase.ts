@@ -1000,6 +1000,7 @@ export type Database = {
           objet: string | null
           otp_code: string | null
           otp_expires_at: string | null
+          retenue_garantie_pct: number
           signature_date: string | null
           signature_image: string | null
           signature_ip: string | null
@@ -1034,6 +1035,7 @@ export type Database = {
           objet?: string | null
           otp_code?: string | null
           otp_expires_at?: string | null
+          retenue_garantie_pct?: number
           signature_date?: string | null
           signature_image?: string | null
           signature_ip?: string | null
@@ -1068,6 +1070,7 @@ export type Database = {
           objet?: string | null
           otp_code?: string | null
           otp_expires_at?: string | null
+          retenue_garantie_pct?: number
           signature_date?: string | null
           signature_image?: string | null
           signature_ip?: string | null

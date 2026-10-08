@@ -56,6 +56,7 @@ interface SimulationAides {
 
 interface DevisRow extends DocumentData {
   id: string;
+  retenue_garantie_pct?: number | null;
   simulation_aides?: SimulationAides | null;
 }
 
@@ -109,7 +110,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
   const [activeDoc, setActiveDoc] = useState<ActiveDoc | null>(null);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [signingDevis, setSigningDevis] = useState<{id: string, numero: string} | null>(null);
+  const [signingDevis, setSigningDevis] = useState<{ id: string; numero: string; retenueGarantiePct?: number | null } | null>(null);
 
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoData | null>(null);
@@ -322,8 +323,8 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
    * n'a pas le devis dans le bon contexte, et surtout elle ouvrirait une
    * fenetre supplementaire pendant laquelle la modale pourrait etre fermee.
    */
-  const ouvrirSignature = (devisId: string, numero: string) => {
-    setSigningDevis({ id: devisId, numero });
+  const ouvrirSignature = (devisId: string, numero: string, retenueGarantiePct?: number | null) => {
+    setSigningDevis({ id: devisId, numero, retenueGarantiePct });
   };
 
   /**
@@ -574,7 +575,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            ouvrirSignature(devis.id, devis.numero);
+                            ouvrirSignature(devis.id, devis.numero, devis.retenue_garantie_pct);
                           }}
                           className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition hover:bg-red-700"
                         >
@@ -953,13 +954,22 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
             */}
             {!docEstSigne && activeDoc?.kind === 'devis' && (
               <div className="p-6 flex flex-col gap-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <FileText size={14} className="text-[#E30613]" />
+                    <span>Conditions Générales de Vente (CGV)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Les travaux sont régis par les CGV annexées (Page 2 ci-dessus), incluant l&apos;Article 7 relatif à la retenue de garantie (Loi n° 71-584).
+                  </p>
+                </div>
                 <p className="text-sm text-slate-600">
                   Pour signer ce devis, vous allez recevoir un code par SMS sur le
                   numéro vérifié de ce chantier, puis y apposer votre signature.
                 </p>
                 <button
                   type="button"
-                  onClick={() => ouvrirSignature(activeDoc.id, activeDoc.numero)}
+                  onClick={() => ouvrirSignature(activeDoc.id, activeDoc.numero, activeDoc.retenue_garantie_pct)}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-[#E30613] text-white font-bold text-lg hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
                 >
                   <PenLine size={18} />
@@ -990,6 +1000,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           codeAcces={codeAcces}
           devisId={signingDevis.id}
           numero={signingDevis.numero}
+          retenueGarantiePct={signingDevis.retenueGarantiePct}
           onClose={() => setSigningDevis(null)}
           onSuccess={(preuve) => {
             setPreuveRecue(preuve);

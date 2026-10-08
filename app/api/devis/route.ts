@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { verifierSession } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { resoudreTenant } from "@/lib/tenant";
 import {
   calculerDevis,
   creerLigneAChiffrer,
@@ -9,6 +8,7 @@ import {
   type CoutType,
   type LigneDevis,
 } from "@/lib/devisCalcul";
+import { validerTauxRetenue } from "@/lib/retenueCalculs";
 
 // Route protégée : NON listée dans PUBLIC_PATHS (lib/supabase/middleware.ts) →
 // le middleware redirige les accès anonymes vers /login. Les données métier
@@ -136,8 +136,8 @@ type CatalogueRow = {
 };
 
 export async function POST(req: NextRequest) {
-  const session = await verifierSession();
-  if (!session.authentifie) return session.reponse;
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
   try {
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
@@ -169,42 +169,36 @@ export async function POST(req: NextRequest) {
     // Surface factuelle : CHANTIER PRIME (source de vérité terrain), sinon métré
     // ponctuel fourni au devis. Jamais devinée.
     let surface_m2: number | null = null;
-    // Contexte multi-entreprise (isolée depuis la Phase 1) : entreprise_id est
-    // NOT NULL sans default sur devis. Résolu depuis le chantier (service_role
-    // lit sans RLS), sinon depuis le claim app_metadata.entreprise_id de la session.
-    let entreprise_id: string | null = null;
+    const entreprise_id = tenant.entrepriseId;
     const chantierId = texte(body.chantier_id);
     if (chantierId) {
       const { data: chantier } = await supabaseAdmin
         .from("chantiers")
-        .select("*")
+        .select("id, surface_m2, entreprise_id")
         .eq("id", chantierId)
+        .eq("entreprise_id", tenant.entrepriseId)
         .maybeSingle();
+
+      if (!chantier) {
+        return NextResponse.json(
+          { error: "Chantier introuvable ou non rattaché à votre entreprise." },
+          { status: 404 }
+        );
+      }
       if (chantier?.surface_m2 && chantier.surface_m2 > 0) {
         surface_m2 = chantier.surface_m2;
       }
-      const entrepriseChantier = (
-        chantier as unknown as { entreprise_id?: string | null } | null
-      )?.entreprise_id;
-      if (entrepriseChantier) entreprise_id = entrepriseChantier;
     }
     if (surface_m2 === null && estNombrePositif(body.surface_m2)) {
       surface_m2 = body.surface_m2;
     }
-    if (!entreprise_id) {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      entreprise_id =
-        (user?.app_metadata as { entreprise_id?: string } | null | undefined)
-          ?.entreprise_id ?? null;
-    }
-    if (!entreprise_id) {
-      return NextResponse.json(
-        { error: "Contexte entreprise introuvable." },
-        { status: 400 }
-      );
+
+    let tauxRetenue = 0;
+    try {
+      tauxRetenue = validerTauxRetenue(body.retenue_garantie_pct ?? 0);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Taux de retenue invalide.";
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
 
     const calculs = calculerDevis(lignes);
@@ -241,6 +235,7 @@ export async function POST(req: NextRequest) {
       marge_ht: calculs.marge_ht,
       marge_pct: calculs.marge_pct,
       surface_m2,
+      retenue_garantie_pct: tauxRetenue,
     };
 
     // `entreprise_id` est TOUJOURS renseigné ici (vérifié non-null plus haut) :

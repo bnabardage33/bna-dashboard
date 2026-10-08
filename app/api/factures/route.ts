@@ -147,12 +147,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Contrôle d'appartenance du devis au tenant (si fourni)
+    let tauxRetenue = body.retenue_garantie_pct;
+    if (devisId) {
+      const { data: devis } = await supabaseAdmin
+        .from("devis")
+        .select("id, entreprise_id, retenue_garantie_pct")
+        .eq("id", devisId)
+        .eq("entreprise_id", tenant.entrepriseId)
+        .maybeSingle();
+
+      if (!devis) {
+        return NextResponse.json(
+          { ok: false, error: "Devis introuvable ou non rattaché à votre entreprise." },
+          { status: 404 }
+        );
+      }
+      if (typeof devis.retenue_garantie_pct === "number") {
+        tauxRetenue = devis.retenue_garantie_pct;
+      }
+    }
+
     // 1) Calcul officiel côté serveur via `lib/retenueCalculs.ts`
     let calcul;
     try {
       calcul = calculerRetenueFacture({
         lignes: lignesBrutes as LigneFacturation[],
-        retenue_garantie_pct: body.retenue_garantie_pct,
+        retenue_garantie_pct: tauxRetenue,
         tva_defaut_pct: body.tva_defaut_pct,
       });
     } catch (err) {

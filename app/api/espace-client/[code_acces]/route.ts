@@ -64,7 +64,7 @@ const SELECT_CHANTIER = `id, nom, adresse_chantier, statut, surface_m2, created_
 
 // Devis : ne sort que la désignation, les quantités, les prix de vente
 // unitaires (lignes) + en-tête du document et son taux de TVA.
-const SELECT_DEVIS = `id, numero, statut, created_at, date_emission, validite_jours, objet, adresse_chantier, type_travaux, lignes, tva_pct, acompte_pct, delai_jours, surface_m2` as const;
+const SELECT_DEVIS = `id, numero, statut, created_at, date_emission, validite_jours, objet, adresse_chantier, type_travaux, lignes, tva_pct, acompte_pct, delai_jours, surface_m2, retenue_garantie_pct` as const;
 
 // Factures : même principe, + échéance et type de facture.
 const SELECT_FACTURES = `id, numero, statut, date_emission, echeance, objet, adresse_chantier, type_travaux, lignes, tva_pct, type_facture` as const;
