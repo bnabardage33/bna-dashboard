@@ -17,7 +17,7 @@
 | `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
 | Arbre de travail | propre |
 | Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
-| Routes | **38** pages (`app/**/page.tsx`) · **43** routes API (`app/api/**/route.ts`) |
+| Routes | **38** pages (`app/**/page.tsx`) · **42** routes API (`app/api/**/route.ts`) |
 | Base | **41** migrations SQL · `types/supabase.ts` (3003 l.) déclare 58 entrées : 44 tables, 1 vue, 13 fonctions |
 
 ### Portes de qualité (mesurées à `ad6404a`)
@@ -361,7 +361,6 @@ le trajet (cf. Module Déplacements).
 | `/api/deplacements/[id]` | Mise à jour d'un frais (liste blanche) |
 | `/api/deplacements/[id]/lier` | Rattachement à un devis via RPC |
 | `/api/deplacements/evaluer` | Évaluation d'un trajet |
-| `/api/analyze-chantier` | Analyse santé chantier (logique métier, pas d'IA) |
 | `/api/transcrire-note` | Audio → texte (Groq Whisper) |
 | `/api/reformuler-note` | Reformulation IA |
 | `/api/ia-avancement` | Dictée vocale de l'avancement |

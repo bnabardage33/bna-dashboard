@@ -297,11 +297,11 @@ describe('LOT 2D — inventaire de la conversion', () => {
     expect(VUES_IMPRESSION).toHaveLength(8)
   })
 
-  it('98 cartes ont été converties', () => {
-    // 101 avant la suppression du prototype /demo-client (− 3 appels, − 1 fichier).
-    // Bilan : 98 appels sur 27 fichiers.
-    expect(APPELS).toHaveLength(98)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(27)
+  it('96 cartes ont été converties', () => {
+    // 98 avant la suppression de ChantierHealthCard (− 2 appels, − 1 fichier).
+    // Bilan : 96 appels sur 26 fichiers.
+    expect(APPELS).toHaveLength(96)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(26)
   })
 
   it('il ne reste AUCUNE carte en littéral dans le périmètre', () => {

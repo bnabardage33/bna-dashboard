@@ -32,7 +32,6 @@ describe('Middleware — bouclier PUBLIC_PATHS', () => {
       '/api/scrape',
       '/api/finance-pin',
       '/api/photos-chantier',
-      '/api/analyze-chantier',
       '/api/documents-compta',
       '/api/chantiers-fournisseurs',
       '/api/dashboard-patron',
