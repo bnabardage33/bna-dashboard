@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import type { ChantierTerrasseConfig, ResultatCalculTerrasse } from "@/lib/terrasse/types";
+import type {
+  ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
+  ResultatCalculTerrasse,
+  TypeReservationTerrasse,
+} from "@/lib/terrasse/types";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
 import TerrasseConfigForm from "./TerrasseConfigForm";
 import TerrasseConformiteDTU from "./TerrasseConformiteDTU";
@@ -18,6 +23,9 @@ import {
   Check,
   Loader2,
   AlertCircle,
+  Plus,
+  Trash2,
+  Box,
 } from "lucide-react";
 
 interface ChantierTerrasseTabProps {
@@ -26,7 +34,7 @@ interface ChantierTerrasseTabProps {
   clientNom?: string;
 }
 
-type SousOngletTerrasse = "config" | "plan2d" | "vue3d" | "quantitatif";
+type SousOngletTerrasse = "config" | "plan2d" | "vue3d" | "reservations" | "quantitatif";
 
 export default function ChantierTerrasseTab({
   chantierId,
@@ -82,10 +90,12 @@ export default function ChantierTerrasseTab({
     coef_perte_lambourdes: 1.08,
   });
 
-  // Calcul instantané en mémoire dès que la configuration change
+  const [reservations, setReservations] = useState<ChantierTerrasseReservation[]>([]);
+
+  // Calcul instantané en mémoire dès que la configuration ou les réservations changent
   const resultat = useMemo<ResultatCalculTerrasse>(() => {
-    return calculerTerrasse(config);
-  }, [config]);
+    return calculerTerrasse(config, reservations);
+  }, [config, reservations]);
 
   // Chargement initial depuis l'API
   const fetchTerrasse = useCallback(async () => {
@@ -99,6 +109,9 @@ export default function ChantierTerrasseTab({
       const data = await res.json();
       if (data.terrasse) {
         setConfig((prev) => ({ ...prev, ...data.terrasse }));
+      }
+      if (data.reservations) {
+        setReservations(data.reservations);
       }
     } catch (err: unknown) {
       console.error(err);
@@ -117,6 +130,42 @@ export default function ChantierTerrasseTab({
     setSavedSuccess(false);
   };
 
+  const handleAddReservation = (type: TypeReservationTerrasse) => {
+    const nouvelle: ChantierTerrasseReservation = {
+      terrasse_id: config.id || "",
+      type_reservation: type,
+      nom:
+        type === "piscine"
+          ? "Piscine"
+          : type === "skimmer"
+          ? "Skimmer"
+          : type === "arbre"
+          ? "Arbre"
+          : type === "poteau"
+          ? "Poteau"
+          : "Trappe technique",
+      x: 1.0,
+      y: 1.0,
+      largeur: type === "piscine" ? 4.0 : type === "arbre" || type === "poteau" ? undefined : 0.6,
+      longueur: type === "piscine" ? 2.5 : type === "arbre" || type === "poteau" ? undefined : 0.6,
+      diametre: type === "arbre" ? 0.8 : type === "poteau" ? 0.3 : undefined,
+    };
+    setReservations((prev) => [...prev, nouvelle]);
+    setSavedSuccess(false);
+  };
+
+  const handleRemoveReservation = (index: number) => {
+    setReservations((prev) => prev.filter((_, i) => i !== index));
+    setSavedSuccess(false);
+  };
+
+  const handleUpdateReservation = (index: number, updated: Partial<ChantierTerrasseReservation>) => {
+    setReservations((prev) =>
+      prev.map((r, i) => (i === index ? { ...r, ...updated } : r))
+    );
+    setSavedSuccess(false);
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -124,7 +173,7 @@ export default function ChantierTerrasseTab({
       const res = await fetch(`/api/chantiers/${encodeURIComponent(chantierId)}/terrasse`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({ ...config, reservations }),
       });
 
       if (!res.ok) {
@@ -317,6 +366,18 @@ export default function ChantierTerrasseTab({
         </button>
 
         <button
+          onClick={() => setSousOnglet("reservations")}
+          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            sousOnglet === "reservations"
+              ? "bg-amber-600 text-white shadow-md"
+              : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+          }`}
+        >
+          <Box size={14} />
+          Réservations & Découpes ({reservations.length})
+        </button>
+
+        <button
           onClick={() => setSousOnglet("quantitatif")}
           className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "quantitatif"
@@ -339,13 +400,174 @@ export default function ChantierTerrasseTab({
 
       {sousOnglet === "plan2d" && (
         <div className="space-y-4">
-          <TerrassePlanCanvas2D config={config} resultat={resultat} />
+          <TerrassePlanCanvas2D config={config} resultat={resultat} reservations={reservations} />
         </div>
       )}
 
       {sousOnglet === "vue3d" && (
         <div className="space-y-4">
           <TerrasseVue3D config={config} resultat={resultat} />
+        </div>
+      )}
+
+      {sousOnglet === "reservations" && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                  🕳️ Réservations & Trémies dans le platelage
+                </h3>
+                <p className="mt-1 text-3xs text-gray-400">
+                  Découpes intégrées (piscines, trappes de visite, skimmers, arbres, poteaux) avec renforts de lambourdes automatiques.
+                </p>
+              </div>
+
+              {/* Boutons d'ajout rapide */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleAddReservation("piscine")}
+                  className="flex items-center gap-1 rounded-xl bg-sky-600/30 border border-sky-500/40 px-3 py-1.5 text-3xs font-bold text-sky-200 hover:bg-sky-600/50 transition"
+                >
+                  <Plus size={12} /> + Piscine
+                </button>
+                <button
+                  onClick={() => handleAddReservation("trappe")}
+                  className="flex items-center gap-1 rounded-xl bg-amber-600/30 border border-amber-500/40 px-3 py-1.5 text-3xs font-bold text-amber-200 hover:bg-amber-600/50 transition"
+                >
+                  <Plus size={12} /> + Trappe / Regard
+                </button>
+                <button
+                  onClick={() => handleAddReservation("skimmer")}
+                  className="flex items-center gap-1 rounded-xl bg-cyan-600/30 border border-cyan-500/40 px-3 py-1.5 text-3xs font-bold text-cyan-200 hover:bg-cyan-600/50 transition"
+                >
+                  <Plus size={12} /> + Skimmer
+                </button>
+                <button
+                  onClick={() => handleAddReservation("arbre")}
+                  className="flex items-center gap-1 rounded-xl bg-emerald-600/30 border border-emerald-500/40 px-3 py-1.5 text-3xs font-bold text-emerald-200 hover:bg-emerald-600/50 transition"
+                >
+                  <Plus size={12} /> + Arbre
+                </button>
+                <button
+                  onClick={() => handleAddReservation("poteau")}
+                  className="flex items-center gap-1 rounded-xl bg-gray-600/30 border border-gray-500/40 px-3 py-1.5 text-3xs font-bold text-gray-200 hover:bg-gray-600/50 transition"
+                >
+                  <Plus size={12} /> + Poteau
+                </button>
+              </div>
+            </div>
+
+            {reservations.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-xs text-gray-500">
+                Aucune réservation configurée. Cliquez sur les boutons ci-dessus pour intégrer une piscine, une trappe ou un obstacle.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-3xs font-semibold uppercase text-gray-400">
+                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3">Nom</th>
+                      <th className="py-2.5 px-3">Pos X (m)</th>
+                      <th className="py-2.5 px-3">Pos Y (m)</th>
+                      <th className="py-2.5 px-3">Largeur (m)</th>
+                      <th className="py-2.5 px-3">Longueur (m)</th>
+                      <th className="py-2.5 px-3">Diamètre (m)</th>
+                      <th className="py-2.5 px-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {reservations.map((res, idx) => (
+                      <tr key={idx} className="hover:bg-white/5 transition">
+                        <td className="py-2.5 px-3 font-semibold text-white capitalize">
+                          {res.type_reservation === "piscine" && "🏊 Piscine"}
+                          {res.type_reservation === "trappe" && "🚪 Trappe"}
+                          {res.type_reservation === "skimmer" && "💧 Skimmer"}
+                          {res.type_reservation === "arbre" && "🌳 Arbre"}
+                          {res.type_reservation === "poteau" && "🏛️ Poteau"}
+                          {res.type_reservation === "autre" && "📦 Autre"}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <input
+                            type="text"
+                            value={res.nom}
+                            onChange={(e) => handleUpdateReservation(idx, { nom: e.target.value })}
+                            className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={res.x}
+                            onChange={(e) => handleUpdateReservation(idx, { x: parseFloat(e.target.value) || 0 })}
+                            className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={res.y}
+                            onChange={(e) => handleUpdateReservation(idx, { y: parseFloat(e.target.value) || 0 })}
+                            className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {res.diametre === undefined && (
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0.1"
+                              value={res.largeur ?? 0.6}
+                              onChange={(e) => handleUpdateReservation(idx, { largeur: parseFloat(e.target.value) || 0.6 })}
+                              className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                            />
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {res.diametre === undefined && (
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0.1"
+                              value={res.longueur ?? 0.6}
+                              onChange={(e) => handleUpdateReservation(idx, { longueur: parseFloat(e.target.value) || 0.6 })}
+                              className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                            />
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {res.diametre !== undefined && (
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0.1"
+                              value={res.diametre ?? 0.8}
+                              onChange={(e) => handleUpdateReservation(idx, { diametre: parseFloat(e.target.value) || 0.8 })}
+                              className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                            />
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <button
+                            onClick={() => handleRemoveReservation(idx)}
+                            className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition"
+                            title="Supprimer la réservation"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

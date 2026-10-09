@@ -1,17 +1,23 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import type { ChantierTerrasseConfig, ResultatCalculTerrasse } from "@/lib/terrasse/types";
+import type {
+  ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
+  ResultatCalculTerrasse,
+} from "@/lib/terrasse/types";
 import { ZoomIn, ZoomOut, RotateCcw, Layers, Eye, EyeOff } from "lucide-react";
 
 interface TerrassePlanCanvas2DProps {
   config: ChantierTerrasseConfig;
   resultat: ResultatCalculTerrasse;
+  reservations?: ChantierTerrasseReservation[];
 }
 
 export default function TerrassePlanCanvas2D({
   config,
   resultat,
+  reservations = [],
 }: TerrassePlanCanvas2DProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -190,6 +196,53 @@ export default function TerrassePlanCanvas2D({
       ctx.lineTo(startX + deckW, startY + deckH);
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+
+    // 6.bis RÉSERVATIONS & DÉCOUPES (Piscines, trappes, arbres, regards)
+    if (reservations.length > 0) {
+      for (const res of reservations) {
+        const rx = startX + (res.x || 0) * scale;
+        const ry = startY + (res.y || 0) * scale;
+
+        if (res.type_reservation === "piscine") {
+          const rw = (res.largeur || 3) * scale;
+          const rh = (res.longueur || 2) * scale;
+          ctx.fillStyle = "rgba(14, 165, 233, 0.85)";
+          ctx.fillRect(rx, ry, rw, rh);
+          ctx.strokeStyle = "#0284c7";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(rx, ry, rw, rh);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(`🏊 ${res.nom}`, rx + rw / 2, ry + rh / 2);
+        } else if (res.diametre) {
+          const rRadius = (res.diametre / 2) * scale;
+          ctx.beginPath();
+          ctx.arc(rx, ry, rRadius, 0, Math.PI * 2);
+          ctx.fillStyle = res.type_reservation === "arbre" ? "#15803d" : "#334155";
+          ctx.fill();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(res.nom, rx, ry + 3);
+        } else {
+          const rw = (res.largeur || 0.6) * scale;
+          const rh = (res.longueur || 0.6) * scale;
+          ctx.fillStyle = "#334155";
+          ctx.fillRect(rx, ry, rw, rh);
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(rx, ry, rw, rh);
+          ctx.fillStyle = "#fef08a";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(res.nom, rx + rw / 2, ry + rh / 2 + 3);
+        }
+      }
     }
 
     // 7. COTES ET MESURES

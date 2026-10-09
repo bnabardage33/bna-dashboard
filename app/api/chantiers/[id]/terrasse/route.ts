@@ -5,7 +5,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreTenant } from "@/lib/tenant";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
-import type { ChantierTerrasseConfig } from "@/lib/terrasse/types";
+import type {
+  ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
+} from "@/lib/terrasse/types";
 import type { Database, Json } from "@/types/supabase";
 
 export const dynamic = "force-dynamic";
@@ -102,11 +105,20 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
   }
 
   const typedTerrasse = terrasse as unknown as ChantierTerrasseConfig;
-  const resultat = calculerTerrasse(typedTerrasse);
+
+  const { data: reservations } = await supabase
+    .from("chantier_terrasse_reservations")
+    .select("*")
+    .eq("terrasse_id", terrasse.id)
+    .order("created_at", { ascending: true });
+
+  const typedReservations = (reservations || []) as unknown as ChantierTerrasseReservation[];
+  const resultat = calculerTerrasse(typedTerrasse, typedReservations);
 
   return NextResponse.json({
     existe: true,
     terrasse: typedTerrasse,
+    reservations: typedReservations,
     resultat,
     chantierNom: chantier.nom,
     clientNom: (chantier.clients as unknown as { nom: string })?.nom,
@@ -121,7 +133,7 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
   const { id: chantierId } = await params;
   const supabase = await createClient();
 
-  let body: Partial<ChantierTerrasseConfig>;
+  let body: Partial<ChantierTerrasseConfig> & { reservations?: ChantierTerrasseReservation[] };
   try {
     body = await request.json();
   } catch {
@@ -229,6 +241,30 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
       return NextResponse.json({ error: errInsert?.message || "Erreur insertion" }, { status: 500 });
     }
     idEnregistre = ins.id;
+  }
+
+  // Persistance des réservations (table dédiée chantier_terrasse_reservations)
+  if (Array.isArray(body.reservations) && idEnregistre) {
+    await supabase
+      .from("chantier_terrasse_reservations")
+      .delete()
+      .eq("terrasse_id", idEnregistre);
+
+    if (body.reservations.length > 0) {
+      const toInsert = body.reservations.map((r) => ({
+        terrasse_id: idEnregistre!,
+        entreprise_id: entrepriseId,
+        type_reservation: r.type_reservation || "trappe",
+        nom: r.nom || "Réservation",
+        x: Number(r.x) || 0,
+        y: Number(r.y) || 0,
+        largeur: r.largeur ? Number(r.largeur) : null,
+        longueur: r.longueur ? Number(r.longueur) : null,
+        diametre: r.diametre ? Number(r.diametre) : null,
+        metadata: (r.metadata as Json) || null,
+      }));
+      await supabase.from("chantier_terrasse_reservations").insert(toInsert);
+    }
   }
 
   return NextResponse.json({
