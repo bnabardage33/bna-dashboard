@@ -263,6 +263,141 @@ export type Database = {
         }
         Relationships: []
       }
+      chantier_terrasses: {
+        Row: {
+          id: string
+          chantier_id: string
+          entreprise_id: string
+          nom: string
+          longueur_m: number
+          largeur_m: number
+          hauteur_sol_cm: number
+          type_sol: string
+          pente_pct: number
+          essence_bois: string
+          type_pose: string
+          largeur_lame_mm: number
+          epaisseur_lame_mm: number
+          longueur_lame_m: number
+          espacement_lames_mm: number
+          type_fixation: string
+          type_lambourde: string
+          section_largeur_mm: number
+          section_hauteur_mm: number
+          longueur_lambourde_m: number
+          entraxe_lambourdes_cm: number
+          double_lambourdage_aboutage: boolean
+          bande_etancheite_epdm: boolean
+          cales_isolation: boolean
+          type_plots: string
+          entraxe_plots_cm: number
+          hauteur_reglage_plots: string
+          geotextile: boolean
+          presence_escalier: boolean
+          escalier_nb_marches: number
+          escalier_largeur_m: number
+          escalier_giron_cm: number
+          escalier_hauteur_marche_cm: number
+          presence_garde_corps: boolean
+          garde_corps_longueur_ml: number
+          garde_corps_type: string
+          garde_corps_hauteur_cm: number
+          coef_perte_lames: number
+          coef_perte_lambourdes: number
+          resultats_techniques: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          chantier_id: string
+          entreprise_id: string
+          nom?: string
+          longueur_m?: number
+          largeur_m?: number
+          hauteur_sol_cm?: number
+          type_sol?: string
+          pente_pct?: number
+          essence_bois?: string
+          type_pose?: string
+          largeur_lame_mm?: number
+          epaisseur_lame_mm?: number
+          longueur_lame_m?: number
+          espacement_lames_mm?: number
+          type_fixation?: string
+          type_lambourde?: string
+          section_largeur_mm?: number
+          section_hauteur_mm?: number
+          longueur_lambourde_m?: number
+          entraxe_lambourdes_cm?: number
+          double_lambourdage_aboutage?: boolean
+          bande_etancheite_epdm?: boolean
+          cales_isolation?: boolean
+          type_plots?: string
+          entraxe_plots_cm?: number
+          hauteur_reglage_plots?: string
+          geotextile?: boolean
+          presence_escalier?: boolean
+          escalier_nb_marches?: number
+          escalier_largeur_m?: number
+          escalier_giron_cm?: number
+          escalier_hauteur_marche_cm?: number
+          presence_garde_corps?: boolean
+          garde_corps_longueur_ml?: number
+          garde_corps_type?: string
+          garde_corps_hauteur_cm?: number
+          coef_perte_lames?: number
+          coef_perte_lambourdes?: number
+          resultats_techniques?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          chantier_id?: string
+          entreprise_id?: string
+          nom?: string
+          longueur_m?: number
+          largeur_m?: number
+          hauteur_sol_cm?: number
+          type_sol?: string
+          pente_pct?: number
+          essence_bois?: string
+          type_pose?: string
+          largeur_lame_mm?: number
+          epaisseur_lame_mm?: number
+          longueur_lame_m?: number
+          espacement_lames_mm?: number
+          type_fixation?: string
+          type_lambourde?: string
+          section_largeur_mm?: number
+          section_hauteur_mm?: number
+          longueur_lambourde_m?: number
+          entraxe_lambourdes_cm?: number
+          double_lambourdage_aboutage?: boolean
+          bande_etancheite_epdm?: boolean
+          cales_isolation?: boolean
+          type_plots?: string
+          entraxe_plots_cm?: number
+          hauteur_reglage_plots?: string
+          geotextile?: boolean
+          presence_escalier?: boolean
+          escalier_nb_marches?: number
+          escalier_largeur_m?: number
+          escalier_giron_cm?: number
+          escalier_hauteur_marche_cm?: number
+          presence_garde_corps?: boolean
+          garde_corps_longueur_ml?: number
+          garde_corps_type?: string
+          garde_corps_hauteur_cm?: number
+          coef_perte_lames?: number
+          coef_perte_lambourdes?: number
+          resultats_techniques?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chantier_zones: {
         Row: {
           angle: boolean

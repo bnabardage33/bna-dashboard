@@ -27,6 +27,7 @@ import { Surface } from '@/components/ui/Surface';
 import FraisDeplacementTab from "@/components/FraisDeplacementTab";
 import { composerAdresseDepart } from "@/lib/deplacement/adresse";
 import RetenueGarantieChantier from "@/components/RetenueGarantieChantier";
+import ChantierTerrasseTab from "@/components/terrasse/ChantierTerrasseTab";
 
 type Chantier = {
   id: string;
@@ -96,7 +97,7 @@ type CommandeLiee = {
   fournisseurs: { nom: string } | null;
 };
 
-const TABS = ["Général", "Avancement", "Rapport Client", "Temps Heures", "Métrés & Technique", "Météo & Intempéries", "Photos & Notes", "Documents", "Déplacements"] as const;
+const TABS = ["Général", "Avancement", "Rapport Client", "Temps Heures", "Métrés & Technique", "Terrasse", "Météo & Intempéries", "Photos & Notes", "Documents", "Déplacements"] as const;
 
 // Clé localStorage utilisée pour transmettre une commande pré-remplie
 // depuis un métré vers le formulaire "Nouvelle commande" de la page Fournisseurs.
@@ -1135,6 +1136,14 @@ function ChantierDetailContent() {
 
           </div>
         </div>
+      )}
+
+      {tab === "Terrasse" && (
+        <ChantierTerrasseTab
+          chantierId={chantier.id}
+          chantierNom={chantier.nom || chantier.clients?.nom || "Chantier"}
+          clientNom={chantier.clients?.nom}
+        />
       )}
 
       {tab === "Météo & Intempéries" && (
