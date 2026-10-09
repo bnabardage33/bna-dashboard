@@ -3,10 +3,13 @@
 
 import type {
   ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
   ControleDTU51_4,
   RapportConformiteDTU,
   StatutControle,
 } from "./types";
+import { auditComposite } from "./composite/audit";
+import { auditBois } from "./bois/audit";
 
 /**
  * Calcule l'entraxe maximal admissible des lambourdes selon l'épaisseur de la lame
@@ -57,8 +60,63 @@ export function calculerPorteeMaxLambourde(
  * Exécute l'audit complet de conformité DTU 51.4 sur la terrasse configurée.
  */
 export function verifierConformiteDTU51_4(
-  config: ChantierTerrasseConfig
+  config: ChantierTerrasseConfig,
+  reservations: ChantierTerrasseReservation[] = []
 ): RapportConformiteDTU {
+  if (config.systeme_terrasse === "composite_clip") {
+    const audit = auditComposite(config, reservations);
+    // Contrôles de sécurité universels (Garde-corps et escalier)
+    if (config.hauteur_sol_cm > 100 && !config.presence_garde_corps) {
+      audit.controles.push({
+        id: "norme-garde-corps-obligatoire",
+        titre: "Garde-corps antichute (NF P01-012)",
+        regleDtu: "Norme NF P01-012 : Garde-corps obligatoire si hauteur de chute > 1.00 m",
+        valeurConstatee: `Hauteur de ${config.hauteur_sol_cm} cm sans garde-corps`,
+        statut: "non_conforme",
+        recommandation: "Ajouter impérativement un garde-corps d'au moins 1.00 m sur les côtés ouverts.",
+        sourceNormative: "NF P01-012",
+      });
+      audit.nbNonConformes += 1;
+      audit.statutGlobal = "non_conforme";
+    }
+    if (config.presence_escalier) {
+      const blondel = 2 * config.escalier_hauteur_marche_cm + config.escalier_giron_cm;
+      const blondelOk = blondel >= 60 && blondel <= 64;
+      audit.controles.push({
+        id: "norme-escalier-blondel",
+        titre: "Confort escalier (Loi de Blondel)",
+        regleDtu: "Règle de l'art : 2H + G doit être compris entre 60 cm et 64 cm",
+        valeurConstatee: `2×${config.escalier_hauteur_marche_cm} + ${config.escalier_giron_cm} = ${blondel.toFixed(1)} cm`,
+        statut: blondelOk ? "conforme" : "avertissement",
+        recommandation: blondelOk
+          ? "Escalier ergonomique et confortable."
+          : `Ajuster la marche ou le giron (actuellement ${blondel.toFixed(1)} cm) pour cibler ~62 cm.`,
+        sourceNormative: "Règles de l'art",
+      });
+      if (blondelOk) audit.nbConformes += 1;
+      else audit.nbAvertissements += 1;
+    }
+    return audit;
+  }
+
+  if (config.systeme_terrasse === "bois_clip") {
+    const audit = auditBois(config, reservations);
+    if (config.hauteur_sol_cm > 100 && !config.presence_garde_corps) {
+      audit.controles.push({
+        id: "norme-garde-corps-obligatoire",
+        titre: "Garde-corps antichute (NF P01-012)",
+        regleDtu: "Norme NF P01-012 : Garde-corps obligatoire si hauteur de chute > 1.00 m",
+        valeurConstatee: `Hauteur de ${config.hauteur_sol_cm} cm sans garde-corps`,
+        statut: "non_conforme",
+        recommandation: "Ajouter impérativement un garde-corps d'au moins 1.00 m sur les côtés ouverts.",
+        sourceNormative: "NF P01-012",
+      });
+      audit.nbNonConformes += 1;
+      audit.statutGlobal = "non_conforme";
+    }
+    return audit;
+  }
+
   const controles: ControleDTU51_4[] = [];
 
   // 1. Entraxe lambourdes vs épaisseur lame

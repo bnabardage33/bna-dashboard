@@ -269,6 +269,10 @@ export type Database = {
           chantier_id: string
           entreprise_id: string
           nom: string
+          systeme_terrasse: string
+          zone_environnement: string
+          fabricant_composite: string | null
+          gamme_composite: string | null
           longueur_m: number
           largeur_m: number
           hauteur_sol_cm: number
@@ -313,6 +317,10 @@ export type Database = {
           chantier_id: string
           entreprise_id: string
           nom?: string
+          systeme_terrasse?: string
+          zone_environnement?: string
+          fabricant_composite?: string | null
+          gamme_composite?: string | null
           longueur_m?: number
           largeur_m?: number
           hauteur_sol_cm?: number
@@ -357,6 +365,10 @@ export type Database = {
           chantier_id?: string
           entreprise_id?: string
           nom?: string
+          systeme_terrasse?: string
+          zone_environnement?: string
+          fabricant_composite?: string | null
+          gamme_composite?: string | null
           longueur_m?: number
           largeur_m?: number
           hauteur_sol_cm?: number
@@ -397,6 +409,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      chantier_terrasse_reservations: {
+        Row: {
+          id: string
+          terrasse_id: string
+          entreprise_id: string
+          type_reservation: string
+          nom: string
+          x: number
+          y: number
+          largeur: number | null
+          longueur: number | null
+          diametre: number | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          terrasse_id: string
+          entreprise_id: string
+          type_reservation?: string
+          nom?: string
+          x?: number
+          y?: number
+          largeur?: number | null
+          longueur?: number | null
+          diametre?: number | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          terrasse_id?: string
+          entreprise_id?: string
+          type_reservation?: string
+          nom?: string
+          x?: number
+          y?: number
+          largeur?: number | null
+          longueur?: number | null
+          diametre?: number | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_terrasse_reservations_terrasse_id_fkey"
+            columns: ["terrasse_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_terrasses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chantier_zones: {
         Row: {

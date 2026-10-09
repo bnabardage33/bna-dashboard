@@ -1,6 +1,7 @@
 // Moteur de calcul quantitatif et dimensionnement du platelage TERRASSE (DTU 51.4)
 import type {
   ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
   LigneChiffrageTerrasse,
   ResultatCalculTerrasse,
 } from "./types";
@@ -9,6 +10,7 @@ import {
   calculerPorteeMaxLambourde,
   verifierConformiteDTU51_4,
 } from "./dtu51_4";
+import { calculComposite } from "./composite/calculs";
 
 /** Prix unitaires moyens HT de référence (fournitures pro) pour le chiffrage indicatif */
 const TARIFS_INDICATIFS: Record<string, number> = {
@@ -47,7 +49,14 @@ const TARIFS_INDICATIFS: Record<string, number> = {
   garde_corps_ml: 125.0,
 };
 
-export function calculerTerrasse(config: ChantierTerrasseConfig): ResultatCalculTerrasse {
+export function calculerTerrasse(
+  config: ChantierTerrasseConfig,
+  reservations: ChantierTerrasseReservation[] = []
+): ResultatCalculTerrasse {
+  if (config.systeme_terrasse === "composite_clip" || config.essence_bois === "composite") {
+    return calculComposite(config, reservations);
+  }
+
   const surfaceBruteM2 = Number((config.longueur_m * config.largeur_m).toFixed(2));
   const perimetreM = Number((2 * (config.longueur_m + config.largeur_m)).toFixed(2));
 

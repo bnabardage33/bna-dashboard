@@ -127,9 +127,16 @@ export default function TerrasseConformiteDTU({ conformite }: TerrasseConformite
               </span>
             </div>
 
-            <p className="mt-2 text-3xs font-medium text-gray-400">
-              {c.regleDtu}
-            </p>
+            <div className="flex items-center justify-between gap-2 mt-2">
+              <p className="text-3xs font-medium text-gray-400">
+                {c.regleDtu}
+              </p>
+              {c.sourceNormative && (
+                <span className="shrink-0 rounded bg-sky-950/40 px-1.5 py-0.5 text-3xs font-mono text-sky-400 border border-sky-800/40">
+                  {c.sourceNormative}
+                </span>
+              )}
+            </div>
 
             <div className="mt-2.5 rounded-xl bg-black/30 p-2.5 border border-white/5">
               <p className="text-3xs text-gray-300">

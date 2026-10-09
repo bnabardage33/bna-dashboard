@@ -5,13 +5,20 @@ import type {
   ChantierTerrasseConfig,
   EssenceBois,
   HauteurReglagePlots,
+  SystemeTerrasse,
   TypeFixation,
   TypeGardeCorps,
   TypeLambourde,
   TypePlots,
   TypePose,
   TypeSol,
+  ZoneEnvironnement,
 } from "@/lib/terrasse/types";
+import {
+  FABRICANTS_COMPOSITE,
+  estDTAExpire,
+  getFabricantComposite,
+} from "@/lib/terrasse/composite/fabricants";
 
 interface TerrasseConfigFormProps {
   config: ChantierTerrasseConfig;
@@ -22,8 +29,131 @@ export default function TerrasseConfigForm({
   config,
   onChange,
 }: TerrasseConfigFormProps) {
+  const systemeActuel: SystemeTerrasse =
+    config.systeme_terrasse ||
+    (config.essence_bois === "composite"
+      ? "composite_clip"
+      : config.type_fixation === "clips_invisibles"
+      ? "bois_clip"
+      : "bois_vis");
+
+  const zoneActuelle: ZoneEnvironnement = config.zone_environnement || "normal";
+  const fabricantComposite = getFabricantComposite(config.fabricant_composite);
+  const dtaExpire = estDTAExpire(fabricantComposite.dta);
+
   return (
     <div className="space-y-6">
+      {/* 0. SYSTÈME MÉTIER & ENVIRONNEMENT */}
+      <div className="rounded-2xl border border-sky-500/30 bg-[#12161f] p-5 shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
+            ⚙️ Système Constructif & Environnement
+          </h3>
+          {(zoneActuelle === "piscine" || zoneActuelle === "littoral") && (
+            <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-3xs font-medium text-emerald-300 border border-emerald-500/30">
+              ⚓ Inox A4 Marine (AISI 316) obligatoire
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Sélection du système constructif */}
+          <div>
+            <label className="text-3xs font-medium text-gray-300">Système de terrasse</label>
+            <select
+              value={systemeActuel}
+              onChange={(e) => {
+                const val = e.target.value as SystemeTerrasse;
+                if (val === "composite_clip") {
+                  onChange({
+                    systeme_terrasse: val,
+                    essence_bois: "composite",
+                    type_fixation: "clips_invisibles",
+                    fabricant_composite: config.fabricant_composite || "silvadec",
+                  });
+                } else if (val === "bois_clip") {
+                  onChange({
+                    systeme_terrasse: val,
+                    essence_bois: config.essence_bois === "composite" ? "ipe" : config.essence_bois,
+                    type_fixation: "clips_invisibles",
+                  });
+                } else {
+                  onChange({
+                    systeme_terrasse: val,
+                    essence_bois: config.essence_bois === "composite" ? "pin_cl4" : config.essence_bois,
+                    type_fixation: "vis_inox",
+                  });
+                }
+              }}
+              className="mt-1 w-full rounded-xl border border-sky-500/40 bg-sky-950/20 px-3 py-2 text-xs font-semibold text-white focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+            >
+              <option value="bois_vis">🪵 Bois Naturel — Vissage Apparent (DTU 51.4)</option>
+              <option value="bois_clip">🪚 Bois Naturel — Clips Invisibles (Avis Techniques)</option>
+              <option value="composite_clip">🧱 Terrasse Composite — Clips Invisibles (DTA GS 2.1)</option>
+            </select>
+          </div>
+
+          {/* Sélection de la zone environnementale */}
+          <div>
+            <label className="text-3xs font-medium text-gray-300">Zone Environnementale</label>
+            <select
+              value={zoneActuelle}
+              onChange={(e) => onChange({ zone_environnement: e.target.value as ZoneEnvironnement })}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+            >
+              <option value="normal">Normal / Standard (Inox A2)</option>
+              <option value="piscine">🏊 Plage de Piscine (Chlore / Sel → Inox A4)</option>
+              <option value="littoral">🌊 Zone Littorale & Marine (Embruns → Inox A4)</option>
+              <option value="montagne">🏔️ Montagne (Amplitude thermique & Gel)</option>
+            </select>
+          </div>
+
+          {/* Si composite : Fabricant ciblé & DTA */}
+          {systemeActuel === "composite_clip" && (
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-3xs font-medium text-gray-300">Fabricant Composite</label>
+                <span
+                  className={`text-3xs font-bold px-1.5 py-0.5 rounded ${
+                    dtaExpire
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  }`}
+                >
+                  {dtaExpire ? "⚠️ DTA expiré" : "✅ DTA CSTB actif"}
+                </span>
+              </div>
+              <select
+                value={config.fabricant_composite || "silvadec"}
+                onChange={(e) => {
+                  const fabId = e.target.value;
+                  const fab = getFabricantComposite(fabId);
+                  const defGamme = fab.gammes[0];
+                  onChange({
+                    fabricant_composite: fabId,
+                    gamme_composite: defGamme.gamme,
+                    largeur_lame_mm: defGamme.largeurMm,
+                    epaisseur_lame_mm: defGamme.epaisseurMm,
+                    entraxe_lambourdes_cm: defGamme.entraxeMaxCm,
+                    pente_pct: defGamme.penteMinimalePct,
+                  });
+                }}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              >
+                {Object.values(FABRICANTS_COMPOSITE).map((fab) => (
+                  <option key={fab.id} value={fab.id}>
+                    {fab.nom} ({fab.dta.numero})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-3xs text-gray-400">
+                DTA {fabricantComposite.dta.numero} • Expiration {fabricantComposite.dta.expirationDTA}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 1. GÉOMÉTRIE & SOL */}
       <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
         <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2 mb-4">

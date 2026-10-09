@@ -1,6 +1,10 @@
 // Types du domaine Métier TERRASSE — DTU 51.4
 // Indépendant du domaine Bardage (chantier_zones)
 
+export type ZoneEnvironnement = "normal" | "piscine" | "littoral" | "montagne";
+
+export type SystemeTerrasse = "bois_vis" | "bois_clip" | "composite_clip";
+
 export type EssenceBois =
   | "pin_cl4"
   | "douglas"
@@ -19,6 +23,8 @@ export type TypeSol =
 export type TypePose = "parallele" | "perpendiculaire" | "diagonale";
 
 export type TypeFixation = "vis_inox" | "clips_invisibles";
+
+export type GradeInox = "A2" | "A4";
 
 export type TypeLambourde = "bois_cl4" | "bois_exotique" | "alu_structure";
 
@@ -42,11 +48,41 @@ export type TypeGardeCorps =
   | "tout_bois"
   | "metal_barreaudage";
 
+export type TypeReservationTerrasse =
+  | "piscine"
+  | "skimmer"
+  | "regard"
+  | "trappe"
+  | "arbre"
+  | "poteau"
+  | "local_technique"
+  | "autre";
+
+export interface ChantierTerrasseReservation {
+  id?: string;
+  terrasse_id: string;
+  entreprise_id?: string;
+  type_reservation: TypeReservationTerrasse;
+  nom: string;
+  x: number;
+  y: number;
+  largeur?: number;
+  longueur?: number;
+  diametre?: number;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ChantierTerrasseConfig {
   id?: string;
   chantier_id: string;
   entreprise_id?: string;
   nom: string;
+  systeme_terrasse?: SystemeTerrasse;
+  zone_environnement?: ZoneEnvironnement;
+  fabricant_composite?: string | null;
+  gamme_composite?: string | null;
 
   // Géométrie
   longueur_m: number;
@@ -111,6 +147,7 @@ export interface ControleDTU51_4 {
   valeurConstatee: string;
   statut: StatutControle;
   recommandation: string;
+  sourceNormative?: string;
 }
 
 export interface RapportConformiteDTU {
@@ -156,6 +193,7 @@ export interface ResultatCalculTerrasse {
     nbPlotsTotal: number;
     densiteParM2: number;
     geotextileM2: number;
+    hauteurReglage?: string;
   };
 
   lames: {
@@ -167,6 +205,8 @@ export interface ResultatCalculTerrasse {
     lineaireMl: number;
     surfaceACommanderM2: number;
     nbLamesStandard: number;
+    espacementRecommandeMm?: number;
+    jeuAboutageMm?: number;
   };
 
   fixations: {
@@ -174,6 +214,10 @@ export interface ResultatCalculTerrasse {
     nbVisOuClipsTotal: number;
     nbBoites: number;
     clipsDepartFinNb: number;
+    conditionnementBoite?: number;
+    longueurVisMm?: number;
+    diametreVisMm?: number;
+    inoxGrade?: string;
   };
 
   escalier: {
@@ -201,6 +245,7 @@ export interface ResultatCalculTerrasse {
   chiffrage: {
     lignes: LigneChiffrageTerrasse[];
     totalHt: number;
+    prixM2Ht?: number;
   };
   calculeA: string;
 }
