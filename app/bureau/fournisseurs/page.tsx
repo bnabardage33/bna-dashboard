@@ -11,6 +11,7 @@ import { PenTool, AlertTriangle } from "lucide-react";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import EnvoyerCommandeModal from "@/components/email/EnvoyerCommandeModal";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 
@@ -124,6 +125,7 @@ export default function FournisseursPage() {
   const [cDateLivraison, setCDateLivraison] = useState("");
 
   const [apercuCommande, setApercuCommande] = useState<Commande | null>(null);
+  const [commandePourEmail, setCommandePourEmail] = useState<Commande | null>(null);
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
 
   // Mode "plusieurs lignes" — utilisé quand la commande arrive pré-remplie depuis un métré
@@ -765,6 +767,14 @@ export default function FournisseursPage() {
                       >
                         📄 Bon de commande
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setCommandePourEmail(c)}
+                        className="rounded-lg border border-red-500/40 bg-red-950/20 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-900/40 hover:border-red-500/60 transition-colors flex items-center gap-1"
+                        title="Envoyer le bon de commande par email au fournisseur"
+                      >
+                        <span>📧</span> Envoyer
+                      </button>
                       <select
                         value={c.statut}
                         onChange={(e) => changerStatutCommande(c, e.target.value)}
@@ -1071,6 +1081,13 @@ export default function FournisseursPage() {
             <div className="mb-3 flex justify-end gap-2 print:hidden">
               <button
                 type="button"
+                onClick={() => setCommandePourEmail(apercuCommande)}
+                className="flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-2 text-xs font-bold text-red-300 hover:bg-red-900/50 transition-all"
+              >
+                <span>📧</span> Envoyer par email
+              </button>
+              <button
+                type="button"
                 onClick={() => window.print()}
                 className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
               >
@@ -1125,6 +1142,18 @@ export default function FournisseursPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* MODAL ENVOI BON DE COMMANDE PAR EMAIL */}
+      {commandePourEmail && (
+        <EnvoyerCommandeModal
+          commande={commandePourEmail}
+          isOpen={Boolean(commandePourEmail)}
+          onClose={() => setCommandePourEmail(null)}
+          onSuccess={() => {
+            fetchTout();
+          }}
+        />
       )}
 
       {/* FAB (+) */}

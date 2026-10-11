@@ -17,7 +17,7 @@
 | `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
 | Arbre de travail | propre |
 | Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
-| Routes | **38** pages (`app/**/page.tsx`) · **42** routes API (`app/api/**/route.ts`) |
+| Routes | **38** pages (`app/**/page.tsx`) · **46** routes API (`app/api/**/route.ts`) |
 | Base | **41** migrations SQL · `types/supabase.ts` (3003 l.) déclare 58 entrées : 44 tables, 1 vue, 13 fonctions |
 
 ### Portes de qualité (mesurées à `ad6404a`)
@@ -384,11 +384,15 @@ le trajet (cf. Module Déplacements).
 | `/api/calepinage/calculer` | Calcul complet du calepinage 2D/pro, perçages et persistance atomique |
 | `/api/calepinage/export/excel` | Export Excel du bordereau de débit et de la liste des modules |
 | `/api/calepinage/export/pdf` | Export PDF A4 avec plan vectoriel et schémas de perçage cotés |
+| `/api/chantiers/[id]/terrasse` | Configuration terrasse DTU 51.4 et persistance (GET/POST) |
+| `/api/chantiers/[id]/terrasse/export/excel` | Export Excel du calepinage terrasse |
+| `/api/chantiers/[id]/terrasse/export/pdf` | Export PDF de conformité terrasse DTU 51.4 |
+| `/api/commandes/[id]/email` | Envoi officiel bon de commande PDF par email et historisation multi-tenant |
 
 `/api/notifications` et `/api/chat-client` **n'existent plus** (voir
 « Historique des décisions »).
 
-Le tableau ci-dessus énumère les **43** routes actives. Les trois lignes barrées
+Le tableau ci-dessus énumère les **46** routes actives. Les trois lignes barrées
 (`~~…~~` + **RETIRÉE**) documentent des routes supprimées et ne comptent pas. Le
 compteur de la ligne 20 et cette liste sont **vérifiés par
 `__tests__/system/audit-snapshot-routes.test.ts`**, qui les compare à

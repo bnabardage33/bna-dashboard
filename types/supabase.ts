@@ -1779,6 +1779,116 @@ export type Database = {
           },
         ]
       }
+      emails_envoyes: {
+        Row: {
+          id: string
+          entreprise_id: string
+          type_document: string
+          document_id: string | null
+          document_reference: string | null
+          destinataire_email: string
+          destinataire_nom: string | null
+          copies_cc: string[] | null
+          expediteur_email: string
+          expediteur_nom: string
+          objet: string
+          corps_resume: string | null
+          has_attachment: boolean
+          nom_piece_jointe: string | null
+          taille_piece_jointe_octets: number | null
+          provider: string
+          message_id_externe: string | null
+          statut: string
+          erreur_detail: string | null
+          envoye_le: string
+          delivre_le: string | null
+          ouvert_le: string | null
+          nb_ouvertures: number
+          clique_le: string | null
+          nb_clics: number
+          dernier_evenement: string | null
+          dernier_evenement_le: string | null
+          metadata_evenements: Json | null
+          envoye_par_user_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          entreprise_id: string
+          type_document: string
+          document_id?: string | null
+          document_reference?: string | null
+          destinataire_email: string
+          destinataire_nom?: string | null
+          copies_cc?: string[] | null
+          expediteur_email: string
+          expediteur_nom: string
+          objet: string
+          corps_resume?: string | null
+          has_attachment?: boolean
+          nom_piece_jointe?: string | null
+          taille_piece_jointe_octets?: number | null
+          provider: string
+          message_id_externe?: string | null
+          statut?: string
+          erreur_detail?: string | null
+          envoye_le?: string
+          delivre_le?: string | null
+          ouvert_le?: string | null
+          nb_ouvertures?: number
+          clique_le?: string | null
+          nb_clics?: number
+          dernier_evenement?: string | null
+          dernier_evenement_le?: string | null
+          metadata_evenements?: Json | null
+          envoye_par_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          entreprise_id?: string
+          type_document?: string
+          document_id?: string | null
+          document_reference?: string | null
+          destinataire_email?: string
+          destinataire_nom?: string | null
+          copies_cc?: string[] | null
+          expediteur_email?: string
+          expediteur_nom?: string
+          objet?: string
+          corps_resume?: string | null
+          has_attachment?: boolean
+          nom_piece_jointe?: string | null
+          taille_piece_jointe_octets?: number | null
+          provider?: string
+          message_id_externe?: string | null
+          statut?: string
+          erreur_detail?: string | null
+          envoye_le?: string
+          delivre_le?: string | null
+          ouvert_le?: string | null
+          nb_ouvertures?: number
+          clique_le?: string | null
+          nb_clics?: number
+          dernier_evenement?: string | null
+          dernier_evenement_le?: string | null
+          metadata_evenements?: Json | null
+          envoye_par_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emails_envoyes_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entreprises: {
         Row: {
           actif: boolean
