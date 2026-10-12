@@ -1,6 +1,7 @@
 // Export PDF pour la fiche technique & conformité DTU 51.4 Terrasse
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf-lib";
 import type { ChantierTerrasseConfig, ResultatCalculTerrasse } from "./types";
+import { fmtEuro } from "@/lib/financeCalculs";
 
 export interface DonneesExportTerrasse {
   terrasse: ChantierTerrasseConfig;
@@ -288,7 +289,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
       font: fontRegular,
       color: grayColor,
     });
-    page.drawText(`${ligne.totalHt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €`, {
+    page.drawText(fmtEuro(ligne.totalHt), {
       x: 485,
       y: y - 6,
       size: 7,
@@ -326,7 +327,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: primaryColor,
   });
 
-  page.drawText(`${resultat.chiffrage.totalHt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € HT`, {
+  page.drawText(`${fmtEuro(resultat.chiffrage.totalHt)} HT`, {
     x: 475,
     y: y - 11,
     size: 9,

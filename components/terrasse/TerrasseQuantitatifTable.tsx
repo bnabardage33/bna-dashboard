@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import type { ResultatCalculTerrasse } from "@/lib/terrasse/types";
+import { fmtEuro } from "@/lib/financeCalculs";
 import { ShoppingCart, PackageCheck, Layers, Ruler } from "lucide-react";
 
 interface TerrasseQuantitatifTableProps {
@@ -82,7 +83,7 @@ export default function TerrasseQuantitatifTable({
         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-3 text-center shadow-md">
           <p className="text-3xs font-semibold uppercase tracking-wider text-emerald-400">Total Fournitures HT</p>
           <p className="mt-1 text-lg font-bold text-emerald-400">
-            {resultat.chiffrage.totalHt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
+            {fmtEuro(resultat.chiffrage.totalHt)}
           </p>
           <p className="text-3xs text-emerald-500/70">Indicatif marché pro</p>
         </div>
@@ -138,10 +139,10 @@ export default function TerrasseQuantitatifTable({
                   </td>
                   <td className="px-4 py-3 text-center text-gray-400">{l.unite}</td>
                   <td className="px-4 py-3 text-right text-gray-400">
-                    {l.prixUnitaireHt.toFixed(2)} €
+                    {fmtEuro(l.prixUnitaireHt)}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-emerald-400">
-                    {l.totalHt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €
+                    {fmtEuro(l.totalHt)}
                   </td>
                 </tr>
               ))}
@@ -152,7 +153,7 @@ export default function TerrasseQuantitatifTable({
                   TOTAL ESTIMATIF FOURNITURES :
                 </td>
                 <td className="px-4 py-3.5 text-right text-emerald-400 text-sm">
-                  {resultat.chiffrage.totalHt.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € HT
+                  {fmtEuro(resultat.chiffrage.totalHt)} HT
                 </td>
               </tr>
             </tfoot>

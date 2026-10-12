@@ -152,7 +152,7 @@ describe("O3-B10 — la page chantier et la liste des chantiers", () => {
     );
     // L'ordre impose est preserve, et les trois cites sont presents.
     expect(onglets.slice(0, 3)).toEqual(["Général", "Avancement", "Rapport Client"]);
-    expect(onglets.length).toBe(9);
+    expect(onglets.length).toBe(10);
     // Le rendu des onglets est toujours en place.
     expect(source).toContain("TABS.map");
   });

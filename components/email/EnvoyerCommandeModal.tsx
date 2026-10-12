@@ -153,7 +153,7 @@ export default function EnvoyerCommandeModal({
       onClick={onClose}
     >
       <div
-        className="bg-[#1E1E1E] w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl text-white overflow-hidden animate-in fade-in"
+        className="bg-surface w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 shadow-2xl text-white overflow-hidden animate-in fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

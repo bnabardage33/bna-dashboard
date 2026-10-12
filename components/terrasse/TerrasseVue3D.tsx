@@ -157,7 +157,7 @@ export default function TerrasseVue3D({ config, resultat }: TerrasseVue3DProps) 
                   : "linear-gradient(135deg, #272118 0%, #15110a 100%)",
             }}
           >
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#94a3b8_1px,transparent_1px),linear-gradient(to_bottom,#94a3b8_1px,transparent_1px)] bg-[size:20px_20px]"></div>
           </div>
 
           {/* Plots réglables sous la structure (Z = -15px) */}
