@@ -3,6 +3,32 @@ import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont } from "pdf
 import type { ChantierTerrasseConfig, ResultatCalculTerrasse } from "./types";
 import { fmtEuro } from "@/lib/financeCalculs";
 
+/**
+ * pdf-lib + polices standard (Helvetica) encodent en WinAnsi : tout caractère
+ * hors de cet encodage fait LEVER `drawText`
+ * (ex. « ≤ » → « WinAnsi cannot encode "≤" (0x2264) »).
+ * Remplace les symboles DTU/typographiques par un équivalent encodable, sans
+ * toucher à la logique métier. WinAnsi ⊇ Latin-1 + CP1252 : « € » et « œ » sont
+ * donc PRÉSERVÉS (notamment le « € » produit par fmtEuro).
+ */
+const CARACTERES_WINANSI_EXTRA =
+  "\u20AC\u201A\u0192\u201E\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u017D\u2022\u2122\u0161\u203A\u0153\u017E\u0178";
+const RE_NON_WINANSI = new RegExp(`[^\\x00-\\xFF${CARACTERES_WINANSI_EXTRA}]`, "g");
+
+export function sanitizeForPdf(texte: string): string {
+  return texte
+    .replace(/≤/g, "<=")
+    .replace(/≥/g, ">=")
+    .replace(/[×✕]/g, "x")
+    .replace(/→/g, "->")
+    .replace(/[’‘`]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[—–]/g, "-")
+    .replace(/…/g, "...")
+    .replace(RE_NON_WINANSI, " "); // espaces fines insécables fr-FR, etc.
+}
+
+
 export interface DonneesExportTerrasse {
   terrasse: ChantierTerrasseConfig;
   resultat: ResultatCalculTerrasse;
@@ -19,6 +45,12 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
 
   const page = doc.addPage([595.28, 841.89]); // A4 portrait
   const { width, height } = page.getSize();
+
+  // Toute écriture de texte passe par `ecrire` : le contenu est assaini pour
+  // l'encodage WinAnsi, titres comme cellules de tableau.
+  const ecrire = (texte: string, options: Parameters<PDFPage["drawText"]>[1]): void => {
+    page.drawText(sanitizeForPdf(texte), options);
+  };
 
   const primaryColor = rgb(0.1, 0.45, 0.85); // Bleu pro
   const darkColor = rgb(0.12, 0.14, 0.18);
@@ -39,7 +71,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: primaryColor,
   });
 
-  page.drawText("FICHE TECHNIQUE & CONFORMITÉ DTU 51.4", {
+  ecrire("FICHE TECHNIQUE & CONFORMITÉ DTU 51.4", {
     x: 55,
     y: y - 20,
     size: 15,
@@ -47,7 +79,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: rgb(1, 1, 1),
   });
 
-  page.drawText(`Chantier : ${chantierNom} ${clientNom ? `| Client : ${clientNom}` : ""}`, {
+  ecrire(`Chantier : ${chantierNom} ${clientNom ? `| Client : ${clientNom}` : ""}`, {
     x: 55,
     y: y - 38,
     size: 10,
@@ -55,7 +87,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: rgb(0.9, 0.95, 1),
   });
 
-  page.drawText(`Édité le ${new Date().toLocaleDateString("fr-FR")} — Ouvrage : ${terrasse.nom}`, {
+  ecrire(`Édité le ${new Date().toLocaleDateString("fr-FR")} — Ouvrage : ${terrasse.nom}`, {
     x: 55,
     y: y - 50,
     size: 8,
@@ -66,7 +98,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
   y -= 75;
 
   // --- GÉOMÉTRIE & MATÉRIAUX ---
-  page.drawText("1. CARACTÉRISTIQUES DE L'OUVRAGE", {
+  ecrire("1. CARACTÉRISTIQUES DE L'OUVRAGE", {
     x: 40,
     y,
     size: 11,
@@ -89,21 +121,21 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
   const col2X = 220;
   const col3X = 390;
 
-  page.drawText(`Surface brute : ${resultat.surfaceBruteM2} m² (${terrasse.longueur_m}m × ${terrasse.largeur_m}m)`, {
+  ecrire(`Surface brute : ${resultat.surfaceBruteM2} m² (${terrasse.longueur_m}m × ${terrasse.largeur_m}m)`, {
     x: col1X,
     y: y - 18,
     size: 9,
     font: fontBold,
     color: darkColor,
   });
-  page.drawText(`Hauteur sol fini : ${terrasse.hauteur_sol_cm} cm | Pente : ${terrasse.pente_pct} %`, {
+  ecrire(`Hauteur sol fini : ${terrasse.hauteur_sol_cm} cm | Pente : ${terrasse.pente_pct} %`, {
     x: col1X,
     y: y - 32,
     size: 8,
     font: fontRegular,
     color: grayColor,
   });
-  page.drawText(`Type de sol : ${terrasse.type_sol.replace("_", " ")}`, {
+  ecrire(`Type de sol : ${terrasse.type_sol.replace("_", " ")}`, {
     x: col1X,
     y: y - 46,
     size: 8,
@@ -111,21 +143,21 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: grayColor,
   });
 
-  page.drawText(`Lames : ${terrasse.essence_bois.toUpperCase()} ${terrasse.largeur_lame_mm}×${terrasse.epaisseur_lame_mm}mm`, {
+  ecrire(`Lames : ${terrasse.essence_bois.toUpperCase()} ${terrasse.largeur_lame_mm}×${terrasse.epaisseur_lame_mm}mm`, {
     x: col2X,
     y: y - 18,
     size: 9,
     font: fontBold,
     color: darkColor,
   });
-  page.drawText(`Jeu entre lames : ${terrasse.espacement_lames_mm} mm | Fixation : ${terrasse.type_fixation === "vis_inox" ? "Vis inox" : "Clips"}`, {
+  ecrire(`Jeu entre lames : ${terrasse.espacement_lames_mm} mm | Fixation : ${terrasse.type_fixation === "vis_inox" ? "Vis inox" : "Clips"}`, {
     x: col2X,
     y: y - 32,
     size: 8,
     font: fontRegular,
     color: grayColor,
   });
-  page.drawText(`Pose : ${terrasse.type_pose} | Lame std : ${terrasse.longueur_lame_m}m`, {
+  ecrire(`Pose : ${terrasse.type_pose} | Lame std : ${terrasse.longueur_lame_m}m`, {
     x: col2X,
     y: y - 46,
     size: 8,
@@ -133,21 +165,21 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: grayColor,
   });
 
-  page.drawText(`Lambourdes : ${resultat.lambourdes.sectionMm} (${terrasse.type_lambourde})`, {
+  ecrire(`Lambourdes : ${resultat.lambourdes.sectionMm} (${terrasse.type_lambourde})`, {
     x: col3X,
     y: y - 18,
     size: 9,
     font: fontBold,
     color: darkColor,
   });
-  page.drawText(`Entraxe lambourdes : ${terrasse.entraxe_lambourdes_cm} cm`, {
+  ecrire(`Entraxe lambourdes : ${terrasse.entraxe_lambourdes_cm} cm`, {
     x: col3X,
     y: y - 32,
     size: 8,
     font: fontRegular,
     color: grayColor,
   });
-  page.drawText(`Plots : ${terrasse.type_plots} (entraxe ${terrasse.entraxe_plots_cm}cm)`, {
+  ecrire(`Plots : ${terrasse.type_plots} (entraxe ${terrasse.entraxe_plots_cm}cm)`, {
     x: col3X,
     y: y - 46,
     size: 8,
@@ -166,7 +198,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
       ? warningColor
       : dangerColor;
 
-  page.drawText("2. AUDIT DE CONFORMITÉ DTU 51.4", {
+  ecrire("2. AUDIT DE CONFORMITÉ DTU 51.4", {
     x: 40,
     y,
     size: 11,
@@ -189,7 +221,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     height: 18,
     color: dtuColor,
   });
-  page.drawText(labelBadge, {
+  ecrire(labelBadge, {
     x: width - 170,
     y: y + 1,
     size: 8,
@@ -210,7 +242,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
         : dangerColor;
     const itemSymbol = c.statut === "conforme" ? "[OK]" : c.statut === "avertissement" ? "[ATTN]" : "[NON]";
 
-    page.drawText(`${itemSymbol} ${c.titre} : ${c.valeurConstatee}`, {
+    ecrire(`${itemSymbol} ${c.titre} : ${c.valeurConstatee}`, {
       x: 50,
       y,
       size: 8,
@@ -219,7 +251,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     });
     y -= 11;
 
-    page.drawText(`${c.regleDtu} — ${c.recommandation}`, {
+    ecrire(`${c.regleDtu} — ${c.recommandation}`, {
       x: 60,
       y,
       size: 7,
@@ -232,7 +264,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
   y -= 10;
 
   // --- NOMENCLATURE DES APPROVISIONNEMENTS ---
-  page.drawText("3. NOMENCLATURE & QUANTITATIF APPROVISIONNEMENTS", {
+  ecrire("3. NOMENCLATURE & QUANTITATIF APPROVISIONNEMENTS", {
     x: 40,
     y,
     size: 11,
@@ -250,46 +282,46 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: rgb(0.9, 0.92, 0.95),
   });
 
-  page.drawText("DÉSIGNATION", { x: 50, y: y - 10, size: 7, font: fontBold, color: darkColor });
-  page.drawText("CATÉGORIE", { x: 300, y: y - 10, size: 7, font: fontBold, color: darkColor });
-  page.drawText("QTÉ", { x: 390, y: y - 10, size: 7, font: fontBold, color: darkColor });
-  page.drawText("UNITÉ", { x: 440, y: y - 10, size: 7, font: fontBold, color: darkColor });
-  page.drawText("TOTAL HT (IND.)", { x: 485, y: y - 10, size: 7, font: fontBold, color: darkColor });
+  ecrire("DÉSIGNATION", { x: 50, y: y - 10, size: 7, font: fontBold, color: darkColor });
+  ecrire("CATÉGORIE", { x: 300, y: y - 10, size: 7, font: fontBold, color: darkColor });
+  ecrire("QTÉ", { x: 390, y: y - 10, size: 7, font: fontBold, color: darkColor });
+  ecrire("UNITÉ", { x: 440, y: y - 10, size: 7, font: fontBold, color: darkColor });
+  ecrire("TOTAL HT (IND.)", { x: 485, y: y - 10, size: 7, font: fontBold, color: darkColor });
 
   y -= 18;
 
   for (const ligne of resultat.chiffrage.lignes) {
     if (y < 60) break;
 
-    page.drawText(ligne.designation.substring(0, 48), {
+    ecrire(ligne.designation.substring(0, 48), {
       x: 50,
       y: y - 6,
       size: 7,
       font: fontRegular,
       color: darkColor,
     });
-    page.drawText(ligne.categorie, {
+    ecrire(ligne.categorie, {
       x: 300,
       y: y - 6,
       size: 7,
       font: fontRegular,
       color: grayColor,
     });
-    page.drawText(ligne.quantite.toLocaleString("fr-FR"), {
+    ecrire(ligne.quantite.toLocaleString("fr-FR"), {
       x: 390,
       y: y - 6,
       size: 7,
       font: fontBold,
       color: darkColor,
     });
-    page.drawText(ligne.unite, {
+    ecrire(ligne.unite, {
       x: 440,
       y: y - 6,
       size: 7,
       font: fontRegular,
       color: grayColor,
     });
-    page.drawText(fmtEuro(ligne.totalHt), {
+    ecrire(fmtEuro(ligne.totalHt), {
       x: 485,
       y: y - 6,
       size: 7,
@@ -319,7 +351,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     borderWidth: 0.5,
   });
 
-  page.drawText("TOTAL ESTIMATIF FOURNITURES HT :", {
+  ecrire("TOTAL ESTIMATIF FOURNITURES HT :", {
     x: 280,
     y: y - 11,
     size: 8,
@@ -327,7 +359,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: primaryColor,
   });
 
-  page.drawText(`${fmtEuro(resultat.chiffrage.totalHt)} HT`, {
+  ecrire(`${fmtEuro(resultat.chiffrage.totalHt)} HT`, {
     x: 475,
     y: y - 11,
     size: 9,
@@ -336,7 +368,7 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
   });
 
   // Footer
-  page.drawText(
+  ecrire(
     "Document édité par BNA Dashboard — Moteur de calcul conforme DTU 51.4 (Platelages extérieurs bois).",
     {
       x: 40,
