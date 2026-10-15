@@ -1,10 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 export type CatalogueTerrasseLame = {
   id: string
   entreprise_id: string
+  designation: string | null
+  description: string | null
+  fournisseur: string | null
   reference_fournisseur: string | null
   essence: string | null
   type_material: string | null
@@ -22,6 +25,9 @@ export type CatalogueTerrasseLame = {
 export type CatalogueTerrasseAccessoire = {
   id: string
   entreprise_id: string
+  designation: string | null
+  description: string | null
+  fournisseur: string | null
   categorie: string | null
   materiel_compatibles: unknown
   conditionnement: string | null
@@ -40,12 +46,18 @@ export type CatalogueTerrasseAccessoire = {
  * la résolution du tenant) est faite côté serveur par la route.
  *
  * @param type restreint la réponse à `lames` ou `accessoires` ; omis ⇒ les deux.
+ * @returns `refetch` force un rechargement (utilisé après une écriture CRUD).
  */
 export function useCatalogueTerrasse(type?: "lames" | "accessoires") {
   const [lames, setLames] = useState<CatalogueTerrasseLame[]>([])
   const [accessoires, setAccessoires] = useState<CatalogueTerrasseAccessoire[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  // Force une nouvelle exécution de l'effet de chargement (utilisé après une
+  // écriture CRUD pour rafraîchir la liste sans remonter le composant).
+  const refetch = useCallback(() => setReloadKey((k) => k + 1), [])
 
   useEffect(() => {
     let mounted = true
@@ -86,7 +98,7 @@ export function useCatalogueTerrasse(type?: "lames" | "accessoires") {
     return () => {
       mounted = false
     }
-  }, [type])
+  }, [type, reloadKey])
 
-  return { lames, accessoires, loading, error }
+  return { lames, accessoires, loading, error, refetch }
 }

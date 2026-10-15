@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, X } from "lucide-react";
+import { fmtEuro } from "@/lib/financeCalculs";
 import {
   ENUMS_CAT_ACCESSOIRE,
   ENUMS_TYPE_MATERIAL,
@@ -18,6 +19,7 @@ import {
   type CatalogueType,
   type CatAccessoireTerrasse,
   type DimensionItem,
+  type NatureCout,
   type ProductDraft,
   type ProductDraftPatch,
   type TypeMaterialTerrasse,
@@ -28,6 +30,8 @@ export interface ProductFormModalProps {
   open: boolean;
   type: CatalogueType;
   initial?: ProductDraft | null;
+  /** Bardage uniquement : type de coût pré-sélectionné à la création. */
+  typeCoutDefaut?: NatureCout;
   onClose: () => void;
   onSave: (values: ProductDraft) => void | Promise<void>;
 }
@@ -80,23 +84,40 @@ function appliquerPatch(prev: ProductDraft, patch: ProductDraftPatch): ProductDr
   return suivant;
 }
 
+/** État de départ : édition fournie, sinon brouillon vide (Bardage : `typeCoutDefaut`). */
+function valeurInitiale(
+  type: CatalogueType,
+  initial: ProductDraft | null,
+  typeCoutDefaut?: NatureCout
+): ProductDraft {
+  if (initial) return initial;
+  const vide = emptyForType(type);
+  if (vide.kind === "BARDAGE" && typeCoutDefaut) {
+    return { ...vide, type_cout: typeCoutDefaut };
+  }
+  return vide;
+}
+
 export default function ProductFormModal({
   open,
   type,
   initial = null,
+  typeCoutDefaut,
   onClose,
   onSave,
 }: ProductFormModalProps) {
-  const [values, setValues] = useState<ProductDraft>(() => initial ?? emptyForType(type));
+  const [values, setValues] = useState<ProductDraft>(() =>
+    valeurInitiale(type, initial, typeCoutDefaut)
+  );
   const [activeTab, setActiveTab] = useState<Onglet>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setValues(initial ?? emptyForType(type));
+      setValues(valeurInitiale(type, initial, typeCoutDefaut));
       setActiveTab("general");
     }
-  }, [open, initial, type]);
+  }, [open, initial, type, typeCoutDefaut]);
 
   const { importUrl, setImportUrl, isScraping, scrape } = useScraping(type, (patch) => {
     setValues((prev) => appliquerPatch(prev, patch));
@@ -107,21 +128,31 @@ export default function ProductFormModal({
   const patch = (p: Record<string, unknown>) =>
     setValues((prev) => ({ ...prev, ...p } as ProductDraft));
 
-  const afficheDimensions =
-    values.kind !== "TERRASSE_ACCESSOIRE" &&
-    !(values.kind === "BARDAGE" && values.type_cout === "main_oeuvre");
+  // Synchronisation HT ↔ TTC (Bardage) : identique au modal historique.
+  const modifierPuHt = (valeur: string) => {
+    const n = parseFloat(valeur.replace(",", ".")) || 0;
+    patch({
+      pu_ht: valeur,
+      prix_ttc: valeur.trim() === "" ? "" : (n * 1.2).toFixed(2).replace(".", ","),
+    });
+  };
+  const modifierPrixTtc = (valeur: string) => {
+    const n = parseFloat(valeur.replace(",", ".")) || 0;
+    patch({
+      prix_ttc: valeur,
+      pu_ht: valeur.trim() === "" ? "" : (n / 1.2).toFixed(2).replace(".", ","),
+    });
+  };
 
-  const titre = initial
-    ? {
-        BARDAGE: "Modifier le matériau",
-        TERRASSE_LAME: "Modifier la lame",
-        TERRASSE_ACCESSOIRE: "Modifier l'accessoire",
-      }[values.kind]
-    : {
-        BARDAGE: "Nouveau matériau",
-        TERRASSE_LAME: "Nouvelle lame",
-        TERRASSE_ACCESSOIRE: "Nouvel accessoire",
-      }[values.kind];
+  const estMainOeuvre = values.kind === "BARDAGE" && values.type_cout === "main_oeuvre";
+  const afficheDimensions = values.kind !== "TERRASSE_ACCESSOIRE" && !estMainOeuvre;
+
+  const titre = (() => {
+    if (values.kind === "TERRASSE_LAME") return initial ? "Modifier la lame" : "Nouvelle lame";
+    if (values.kind === "TERRASSE_ACCESSOIRE") return initial ? "Modifier l'accessoire" : "Nouvel accessoire";
+    if (estMainOeuvre) return initial ? "Modifier la main-d'œuvre" : "Nouvelle Main-d'œuvre";
+    return initial ? "Modifier le matériau" : "Nouveau matériau";
+  })();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +204,7 @@ export default function ProductFormModal({
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
           <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-3">
             {/* ── Bloc Auto-remplir (tous types) ───────────────────────── */}
-            {activeTab === "general" && (
+            {activeTab === "general" && !estMainOeuvre && (
               <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
                 <label htmlFor="chp-auto-url" className="block text-xs font-semibold text-cyan-400 mb-2">
                   ⚡ Auto-remplir via une adresse Web (Optionnel)
@@ -434,8 +465,19 @@ export default function ProductFormModal({
                     </div>
                     <div>
                       <label htmlFor="chp-gamme" className={labelCls}>Gamme / Sous-Famille</label>
-                      <input id="chp-gamme" type="text" value={values.gamme}
-                        onChange={(e) => patch({ gamme: e.target.value })} className={inputCls} />
+                      {values.famille_label === "Parements & Bardages" ? (
+                        <select id="chp-gamme" value={values.gamme}
+                          onChange={(e) => patch({ gamme: e.target.value })} className={inputCls}>
+                          <option value="">Sélectionner...</option>
+                          <option value="Bois Massif">Bois Massif</option>
+                          <option value="Lame Composite">Lame Composite</option>
+                          <option value="HPL (Trespa/Polyrey)">HPL (Trespa/Polyrey)</option>
+                          <option value="Fibrociment">Fibrociment</option>
+                        </select>
+                      ) : (
+                        <input id="chp-gamme" type="text" value={values.gamme}
+                          onChange={(e) => patch({ gamme: e.target.value })} className={inputCls} />
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -577,7 +619,7 @@ export default function ProductFormModal({
                   <div>
                     <label htmlFor="chp-pu-ht" className={labelCls}>Prix Unitaire HT (€)</label>
                     <input id="chp-pu-ht" type="text" inputMode="decimal" value={values.pu_ht}
-                      onChange={(e) => patch({ pu_ht: e.target.value })} className={inputCls} />
+                      onChange={(e) => modifierPuHt(e.target.value)} className={inputCls} />
                   </div>
                   <div>
                     <label htmlFor="chp-pu-revient" className={labelCls}>Coût de revient HT (€)</label>
@@ -590,8 +632,25 @@ export default function ProductFormModal({
                     Prix TTC (€) <span className="text-gray-500">(TVA 20%)</span>
                   </label>
                   <input id="chp-prix-ttc" type="text" inputMode="decimal" value={values.prix_ttc}
-                    onChange={(e) => patch({ prix_ttc: e.target.value })} className={inputCls} />
+                    onChange={(e) => modifierPrixTtc(e.target.value)} className={inputCls} />
                 </div>
+                {estMainOeuvre && (() => {
+                  const vente = parseFloat(values.pu_ht.replace(",", ".")) || 0;
+                  const revient = parseFloat(values.pu_revient.replace(",", ".")) || 0;
+                  if (vente > 0 && revient > 0) {
+                    const marge = vente - revient;
+                    const margePct = (marge / vente) * 100;
+                    return (
+                      <div className="mt-3 flex items-center justify-between rounded bg-violet-900/30 px-3 py-2 border border-violet-500/20">
+                        <span className="text-xs font-medium text-violet-300">Marge brute estimée</span>
+                        <span className={`text-sm font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          {fmtEuro(marge)} <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             )}
 

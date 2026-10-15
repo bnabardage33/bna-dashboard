@@ -75,6 +75,22 @@ function parserMaterielCompatibles(json: Json | null): string[] {
   return json.filter((x): x is string => typeof x === "string");
 }
 
+/** Bardage : lit `dimensions_disponibles`, avec migration à la volée des
+ *  colonnes legacy top-level (`longueur_mm`/`largeur_mm`/`epaisseur_mm`),
+ *  comme le faisait historiquement `handleOpenModal`. */
+function parserDimensionsBardage(row: RowBardage): DimensionItem[] {
+  const dims = parserDimensions(row.dimensions_disponibles);
+  if (dims.length > 0) return dims;
+  if (row.longueur_mm != null || row.largeur_mm != null || row.epaisseur_mm != null) {
+    return [{
+      longueur_mm: row.longueur_mm,
+      largeur_mm: row.largeur_mm,
+      epaisseur_mm: row.epaisseur_mm,
+    }];
+  }
+  return [];
+}
+
 function parserSpecifications(json: Json | null): Record<string, unknown> | null {
   if (json && typeof json === "object" && !Array.isArray(json)) {
     return json as Record<string, unknown>;
@@ -178,7 +194,7 @@ export function fromBardageRow(row: RowBardage): BardageValues {
     couleur: row.couleur ?? "",
     code_ral: row.code_ral ?? "",
     finition: row.finition ?? "",
-    dimensions_disponibles: parserDimensions(row.dimensions_disponibles),
+    dimensions_disponibles: parserDimensionsBardage(row),
     fournisseur: row.fournisseur ?? "",
     unite: row.unite ?? "m²",
     pu_ht: nombreVersTexte(row.pu_ht),

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
+import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import type {
   ChantierTerrasseConfig,
   EssenceBois,
@@ -294,9 +296,19 @@ export default function TerrasseConfigForm({
 
       {/* 2. LAMES DE PLATELAGE */}
       <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2 mb-4">
-          🌲 2. Lames de platelage (DTU 51.4)
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+            🌲 2. Lames de platelage (DTU 51.4)
+          </h3>
+          <Link
+            href="/bureau/catalogue-terrasse"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-3xs font-medium text-gray-400 transition-colors hover:border-sky-500/40 hover:text-sky-300"
+            title="Ouvrir le catalogue Terrasse (lames & accessoires)"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            Gérer mes lames
+          </Link>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="text-3xs font-medium text-gray-400">Essence de bois</label>
