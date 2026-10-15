@@ -51,6 +51,7 @@
 // immediate et bruyante. `OTP_HMAC_SECRET` n'est de toute facon pas expose au
 // navigateur (pas de prefixe NEXT_PUBLIC_).
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { fetchWithTimeout, ErreurTimeout } from "@/lib/fetchWithTimeout";
 
 // =============================================================================
 // 1) SECRET DE HACHAGE
@@ -255,14 +256,21 @@ interface CibleHttp {
   hote: string;
 }
 
+// C5 : borne dure des appels SMS externes.
+const TIMEOUT_SMS_MS = 8_000;
+
 async function postSms(cible: CibleHttp, corps: URLSearchParams, nom: string) {
   try {
-    const reponse = await fetch(cible.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: corps.toString(),
-      cache: "no-store",
-    });
+    const reponse = await fetchWithTimeout(
+      cible.url,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: corps.toString(),
+        cache: "no-store",
+      },
+      TIMEOUT_SMS_MS,
+    );
     if (!reponse.ok) {
       // On journalise le STATUT et le nom de l'hote, jamais le corps : celui-ci
       // contient le code en clair.
@@ -270,7 +278,11 @@ async function postSms(cible: CibleHttp, corps: URLSearchParams, nom: string) {
       return { ok: false as const, raison: `SMS ${nom} : envoi refuse (HTTP ${reponse.status}).` };
     }
     return { ok: true as const };
-  } catch {
+  } catch (e) {
+    if (e instanceof ErreurTimeout) {
+      console.error(`SMS ${nom} : delai depasse vers ${cible.hote} (${TIMEOUT_SMS_MS}ms).`);
+      return { ok: false as const, raison: `SMS ${nom} : delai depasse.` };
+    }
     console.error(`SMS ${nom} : erreur reseau vers ${cible.hote}.`);
     return { ok: false as const, raison: `SMS ${nom} : erreur reseau.` };
   }
@@ -288,20 +300,33 @@ export function fournisseurTwilio(env: NodeJS.ProcessEnv): FournisseurSms {
     nom: "twilio",
     async envoyer(destinataire, message) {
       const base = Buffer.from(`${sid}:${token}`).toString("base64");
-      const reponse = await fetch(`${hote}/Messages.json`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${base}`,
-        },
-        body: new URLSearchParams({ To: destinataire, From: from, Body: message }).toString(),
-        cache: "no-store",
-      });
-      if (!reponse.ok) {
-        console.error(`SMS twilio : envoi refuse par ${hote} (HTTP ${reponse.status}).`);
-        return { ok: false, raison: `SMS : envoi refuse (HTTP ${reponse.status}).` };
+      try {
+        const reponse = await fetchWithTimeout(
+          `${hote}/Messages.json`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              Authorization: `Basic ${base}`,
+            },
+            body: new URLSearchParams({ To: destinataire, From: from, Body: message }).toString(),
+            cache: "no-store",
+          },
+          TIMEOUT_SMS_MS,
+        );
+        if (!reponse.ok) {
+          console.error(`SMS twilio : envoi refuse par ${hote} (HTTP ${reponse.status}).`);
+          return { ok: false, raison: `SMS : envoi refuse (HTTP ${reponse.status}).` };
+        }
+        return { ok: true };
+      } catch (e) {
+        if (e instanceof ErreurTimeout) {
+          console.error(`SMS twilio : delai depasse vers ${hote} (${TIMEOUT_SMS_MS}ms).`);
+          return { ok: false, raison: "SMS : delai depasse." };
+        }
+        console.error(`SMS twilio : erreur reseau vers ${hote}.`);
+        return { ok: false, raison: "SMS : erreur reseau." };
       }
-      return { ok: true };
     },
   };
 }

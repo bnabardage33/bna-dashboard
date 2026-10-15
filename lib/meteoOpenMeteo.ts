@@ -79,6 +79,10 @@
 // deplacement — y compris son comportement fail-closed sur le code postal.
 
 import { geocoderAdresse } from "@/lib/deplacement/geocodage";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+
+// C5 : borne dure de l'appel Open-Meteo.
+const TIMEOUT_METEO_MS = 8_000;
 
 // ─── Structure commune aux deux sources ──────────────────────────────────────
 //
@@ -335,9 +339,11 @@ export async function fetchDonneesOpenMeteo(
 
   let data: ReponseOpenMeteo;
   try {
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
-      next: { revalidate: 1800 },
-    });
+    const res = await fetchWithTimeout(
+      `https://api.open-meteo.com/v1/forecast?${params}`,
+      { next: { revalidate: 1800 } },
+      TIMEOUT_METEO_MS,
+    );
     if (!res.ok) {
       console.error("meteoOpenMeteo : Open-Meteo a répondu %s", res.status);
       return null;

@@ -10,9 +10,13 @@ import {
   estimerTokensMessages,
   resumeVide,
 } from '@/lib/espace-chat-utils';
+import { fetchWithTimeout, ErreurTimeout } from '@/lib/fetchWithTimeout';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+
+// C5 : borne dure des appels LLM (réponses potentiellement longues).
+const TIMEOUT_LLM_MS = 20_000;
 
 // ---- Isolation multi-entreprise (O3-B5) ----------------------------------
 // Convention alignée sur `lib/anonymizeText.ts` (O3-B4). Le tenant est un
@@ -148,22 +152,26 @@ function analyserCondensation(raffle: string): ReponseCondensation {
 }
 
 async function condenser(resumeGlobal: ResumeGlobal, messages: MessageChat[]): Promise<ReponseCondensation> {
-  const response = await fetch(GROQ_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: "Bearer " + process.env.GROQ_API_KEY,
+  const response = await fetchWithTimeout(
+    GROQ_URL,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: "Bearer " + process.env.GROQ_API_KEY,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: INSTRUCTIONS_CONDENSATION },
+          { role: 'user', content: JSON.stringify({ resume_global: resumeGlobal, messages }) },
+        ],
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+      }),
     },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: INSTRUCTIONS_CONDENSATION },
-        { role: 'user', content: JSON.stringify({ resume_global: resumeGlobal, messages }) },
-      ],
-      temperature: 0.1,
-      response_format: { type: 'json_object' },
-    }),
-  });
+    TIMEOUT_LLM_MS,
+  );
 
   if (!response.ok) {
     throw new Error(`Groq condensation ${response.status}`);
@@ -354,7 +362,18 @@ export async function traiterConsolidation(
 
   const condenses: ReponseCondensation[] = [];
   for (const bloc of blocs) {
-    const resultat = await condenser(dernierResume, bloc);
+    let resultat: ReponseCondensation;
+    try {
+      resultat = await condenser(dernierResume, bloc);
+    } catch (err) {
+      if (err instanceof ErreurTimeout) {
+        return NextResponse.json(
+          { error: 'Service de consolidation indisponible (timeout).' },
+          { status: 504 },
+        );
+      }
+      throw err;
+    }
     condenses.push(resultat);
     dernierResume = {
       texte: resultat.resume_global.texte,

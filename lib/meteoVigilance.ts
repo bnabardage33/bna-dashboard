@@ -19,6 +19,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
+import { fetchWithTimeout, ErreurTimeout } from "@/lib/fetchWithTimeout";
 
 // ---------------------------------------------------------------------------
 // Configuration Météo-France
@@ -26,6 +27,9 @@ import { adresseVersDepartement } from "@/lib/meteoDepartements";
 
 const URL_VIGILANCE =
   "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
+
+// C5 : borne dure de l'appel Météo-France.
+const TIMEOUT_METEO_MS = 8_000;
 
 // Météo-France :
 // 1 = vert
@@ -144,7 +148,7 @@ export async function GET(
   // -------------------------------------------------------------------------
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       URL_VIGILANCE,
       {
         method: "GET",
@@ -157,7 +161,8 @@ export async function GET(
         next: {
           revalidate: 600,
         },
-      }
+      },
+      TIMEOUT_METEO_MS,
     );
 
     if (!response.ok) {
@@ -209,6 +214,12 @@ export async function GET(
       resultat
     );
   } catch (error) {
+    if (error instanceof ErreurTimeout) {
+      return NextResponse.json(
+        { error: "Le service Vigilance Météo-France n'a pas répondu à temps." },
+        { status: 504 }
+      );
+    }
     console.error(
       "Erreur route meteo-vigilance:",
       error

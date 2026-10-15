@@ -19,6 +19,7 @@ import {
 } from "@/lib/devisAnalyse";
 import { preparerRemplacement, type AnalysePersistee } from "@/lib/devisHistorique";
 import { resoudreTenant } from "@/lib/tenant";
+import { estDelaiDepasse } from "@/lib/fetchWithTimeout";
 import type { Json } from "@/types/supabase";
 
 // SÉCURITÉ TENANT :
@@ -41,6 +42,9 @@ const googleProvider = createGoogleGenerativeAI({
 });
 
 const PROMPT_MAX_CHARS = 6000;
+
+// C5 : borne dure de l'appel LLM Gemini.
+const TIMEOUT_LLM_MS = 20_000;
 
 function texte(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -339,6 +343,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
         system: systemAnalyse,
         prompt,
         temperature: 0.2,
+        abortSignal: AbortSignal.timeout(TIMEOUT_LLM_MS),
       });
       // Marqueur d'observabilité : UNE analyse = UN appel LLM (vérifiable au test de concurrence).
       console.info(`[devis_ia] analyse LLM lancée devis_id=${devisId}`);
@@ -417,10 +422,19 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("Erreur Analyse IA Devis:", message);
+    const delaiDepasse = estDelaiDepasse(err);
+    if (delaiDepasse) {
+      console.error(`[TIMEOUT] Analyse IA devis : Gemini a dépassé ${TIMEOUT_LLM_MS}ms`);
+    } else {
+      console.error("Erreur Analyse IA Devis:", message);
+    }
     return NextResponse.json(
-      { error: "L'analyse a échoué: " + message },
-      { status: err instanceof ErreurAnalyse ? 422 : 500 },
+      {
+        error: delaiDepasse
+          ? "L'analyse a expiré : le service IA n'a pas répondu à temps."
+          : "L'analyse a échoué: " + message,
+      },
+      { status: delaiDepasse ? 504 : err instanceof ErreurAnalyse ? 422 : 500 },
     );
   }
 }

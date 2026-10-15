@@ -28,12 +28,16 @@ import {
   construireLignesAChiffrerManquantes,
   cheminMetreDisponible,
 } from "@/lib/iaDevisMetre";
+import { estDelaiDepasse } from "@/lib/fetchWithTimeout";
 
 const googleProvider = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 const PROMPT_MAX_CHARS = 6000;
+
+// C5 : borne dure des appels LLM Gemini.
+const TIMEOUT_LLM_MS = 20_000;
 
 // ── CHEMIN LEGACY (sans chantier_id) ───────────────────────────────────
 // Quantités OSSATURE (DTU 41.2) — uniquement quand aucun payload metre-complet
@@ -143,6 +147,7 @@ async function cheminLegacy(
     system: systemPas1,
     prompt,
     temperature: 0.2,
+    abortSignal: AbortSignal.timeout(TIMEOUT_LLM_MS),
   });
 
   let jsonStringPas1 = textePas1.trim();
@@ -238,6 +243,7 @@ async function cheminLegacy(
         system: systemPas2,
         prompt: intentionsNonResolues.map((s) => s.concept.prestation).join("\n"),
         temperature: 0.1,
+        abortSignal: AbortSignal.timeout(TIMEOUT_LLM_MS),
       });
 
       let jsonStringPas2 = textePas2.trim();
@@ -441,7 +447,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("Erreur IA Devis:", message);
-    return NextResponse.json({ error: "L'IA a échoué: " + message }, { status: 500 });
+    const delaiDepasse = estDelaiDepasse(err);
+    if (delaiDepasse) {
+      console.error(`[TIMEOUT] IA Devis : Gemini a dépassé ${TIMEOUT_LLM_MS}ms`);
+    } else {
+      console.error("Erreur IA Devis:", message);
+    }
+    return NextResponse.json(
+      { error: delaiDepasse ? "Le service IA n'a pas répondu à temps." : "L'IA a échoué: " + message },
+      { status: delaiDepasse ? 504 : 500 },
+    );
   }
 }
