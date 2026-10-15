@@ -322,8 +322,10 @@ describe('LOT 2C — plus aucun formatage monétaire artisanal', () => {
     // correcte ultérieure les déplace mécaniquement. Le contrat de fond est
     // « ne subsistent que les exceptions documentées », vérifié plus bas — c'est
     // lui qui a Tickets, et lui qui était rouge avant cette conversion.
-    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(162)
-    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(30)
+    // +5 appels ajoutés via catalogue_terrasse (lames/accessoires/prix estimé)
+    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(167)
+    // +1 importateur via catalogue_terrasse (TerrasseConfigForm.tsx)
+    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(31)
   })
 
   it('la référence définit fmtEuro() une seule fois, et l’exporte', () => {

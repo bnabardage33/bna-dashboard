@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import type {
   ChantierTerrasseConfig,
   EssenceBois,
@@ -19,6 +19,21 @@ import {
   estDTAExpire,
   getFabricantComposite,
 } from "@/lib/terrasse/composite/fabricants";
+import { useCatalogueTerrasse } from "@/hooks/useCatalogueTerrasse";
+import { fmtEuro } from "@/lib/financeCalculs";
+
+const formatLame = (l: {
+  essence: string | null
+  longueur_mm: number | null
+  largeur_utile_mm: number | null
+  epaisseur_mm: number | null
+}) => {
+  const essence = l.essence || "?"
+  const lon = l.longueur_mm ?? "?"
+  const lar = l.largeur_utile_mm ?? "?"
+  const ep = l.epaisseur_mm ?? "?"
+  return `${essence} | ${lon}mm x ${lar}mm x ${ep}mm`
+}
 
 interface TerrasseConfigFormProps {
   config: ChantierTerrasseConfig;
@@ -40,6 +55,79 @@ export default function TerrasseConfigForm({
   const zoneActuelle: ZoneEnvironnement = config.zone_environnement || "normal";
   const fabricantComposite = getFabricantComposite(config.fabricant_composite);
   const dtaExpire = estDTAExpire(fabricantComposite.dta);
+  const { lames, accessoires, loading } = useCatalogueTerrasse();
+
+  const lamesTriees = useMemo(() => {
+    return [...lames].sort((a, b) => {
+      const ea = (a.essence || "").localeCompare(b.essence || "");
+      if (ea !== 0) return ea;
+      const la = (a.longueur_mm || 0) - (b.longueur_mm || 0);
+      if (la !== 0) return la;
+      const lb = (a.largeur_utile_mm || 0) - (b.largeur_utile_mm || 0);
+      if (lb !== 0) return lb;
+      return (a.epaisseur_mm || 0) - (b.epaisseur_mm || 0);
+    });
+  }, [lames]);
+
+  const lameSelectionnee = useMemo(
+    () => lamesTriees.find((l) => l.id === ((config as any)?.lame_id ?? "") as string),
+    [lamesTriees, config]
+  );
+
+  const surfaceTotale = useMemo(() => (config.longueur_m || 0) * (config.largeur_m || 0), [config]);
+
+  const accessoiresCompatibles = useMemo(() => {
+    if (!lameSelectionnee) return [];
+    const typeMat = lameSelectionnee.type_material?.toLowerCase() || "";
+    const lameId = lameSelectionnee.id;
+    return accessoires.filter((acc) => {
+      const compat = acc.materiel_compatibles as any;
+      if (!compat || !Array.isArray(compat)) return false;
+      return compat.some((c: any) => {
+        if (typeof c === "string") {
+          const cl = c.toLowerCase();
+          if (cl === lameId) return true;
+          if (typeMat && cl === typeMat) return true;
+          if (cl === "bois_naturel" && (typeMat === "bois_naturel" || typeMat === "bois" || typeMat === "exotique")) return true;
+          if (cl === "composite" && typeMat === "composite") return true;
+          if (cl === "pvc" && typeMat === "pvc") return true;
+          return false;
+        }
+        if (c && typeof c === "object") {
+          if (c.lame_id === lameId || c.id === lameId) return true;
+          const t = String(c.type_material || c.type || "").toLowerCase();
+          if (typeMat && t === typeMat) return true;
+        }
+        return false;
+      });
+    });
+  }, [accessoires, lameSelectionnee]);
+
+  const clips = accessoiresCompatibles.filter((a) => (a.categorie || "").toLowerCase() === "clip");
+  const lambourdes = accessoiresCompatibles.filter((a) => (a.categorie || "").toLowerCase() === "lambourde");
+  const plots = accessoiresCompatibles.filter((a) => (a.categorie || "").toLowerCase() === "plot");
+
+  const nbLames = useMemo(() => {
+    const largeurUtile = lameSelectionnee?.largeur_utile_mm || config.largeur_lame_mm || 0;
+    if (!surfaceTotale || !largeurUtile) return 0;
+    const esp = (config.espacement_lames_mm || 0) / 1000;
+    const effective = (largeurUtile / 1000) + esp;
+    const ratio = surfaceTotale / (config.longueur_m * effective);
+    const base = (config.longueur_m * config.largeur_m) / ((largeurUtile / 1000) * (config.longueur_lame_m || 1));
+    const nb = Math.ceil(base * (config.coef_perte_lames || 1.1));
+    return nb > 0 ? nb : Math.ceil(ratio * (config.coef_perte_lames || 1.1) || 0);
+  }, [lameSelectionnee, config, surfaceTotale]);
+
+  const prixEstimeHT = useMemo(() => {
+    const prixLame = lameSelectionnee?.prix_unitaire_lame || 0;
+    const nb = nbLames || 0;
+    const clipsPrix = clips.reduce((s, a) => s + (a.prix_conditionnement || 0), 0);
+    const lambPrix = lambourdes.reduce((s, a) => s + (a.prix_conditionnement || 0), 0);
+    const plotsPrix = plots.reduce((s, a) => s + (a.prix_conditionnement || 0), 0);
+    const qtyAcc = ((config as any)?.quantite_accessoires ?? {}) || {};
+    const accTotal = (clipsPrix + lambPrix + plotsPrix) * (Object.keys(qtyAcc).length ? 1 : 0);
+    return prixLame * nb + accTotal;
+  }, [lameSelectionnee, nbLames, clips, lambourdes, plots, config]);
 
   return (
     <div className="space-y-6">
@@ -244,38 +332,75 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Largeur de lame (mm)</label>
-            <input
-              type="number"
-              min="70"
-              max="200"
-              value={config.largeur_lame_mm}
-              onChange={(e) => onChange({ largeur_lame_mm: parseInt(e.target.value, 10) || 145 })}
+            <label className="text-3xs font-medium text-gray-400">Lame sélectionnée (catalogue Terrasse)</label>
+            <select
+              value={((config as any)?.lame_id ?? "") as string || ""}
+              onChange={(e) => {
+                const lid = e.target.value;
+                const l = lamesTriees.find((x) => x.id === lid);
+                onChange({
+                  ...(lid ? { lame_id: lid } : {}),
+                  ...(l ? { largeur_lame_mm: l.largeur_utile_mm || config.largeur_lame_mm, epaisseur_lame_mm: l.epaisseur_mm || config.epaisseur_lame_mm, longueur_lame_m: (l.longueur_mm || 0) / 1000 || config.longueur_lame_m, essence_bois: (l.essence || config.essence_bois) as any } : {}),
+                } as any);
+              }}
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-            />
+            >
+              <option value="">-- Choisir une lame --</option>
+              {lamesTriees.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {formatLame(l)}{l.prix_unitaire_lame != null ? ` — ${fmtEuro(Number(l.prix_unitaire_lame))} HT/u` : ""}
+                </option>
+              ))}
+            </select>
+            {loading && <p className="mt-1 text-3xs text-gray-500">Chargement du catalogue Terrasse...</p>}
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Épaisseur de lame (mm)</label>
-            <input
-              type="number"
-              min="19"
-              max="35"
-              value={config.epaisseur_lame_mm}
-              onChange={(e) => onChange({ epaisseur_lame_mm: parseInt(e.target.value, 10) || 21 })}
+            <label className="text-3xs font-medium text-gray-400">Clips compatibles</label>
+            <select
+              value={((config as any)?.clip_id) || ""}
+              onChange={(e) => onChange({ clip_id: e.target.value || undefined } as Partial<ChantierTerrasseConfig> & Record<string, unknown>)}
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-            />
+              disabled={!lameSelectionnee || clips.length === 0}
+            >
+              <option value="">{!lameSelectionnee ? "Sélectionner une lame d'abord" : clips.length ? "-- Choisir un clip --" : "Aucun clip compatible"}</option>
+              {clips.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.conditionnement || a.id}{a.prix_conditionnement != null ? ` — ${fmtEuro(Number(a.prix_conditionnement))}` : ""}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Longueur lame std (m)</label>
-            <input
-              type="number"
-              step="0.1"
-              min="2.0"
-              max="6.0"
-              value={config.longueur_lame_m}
-              onChange={(e) => onChange({ longueur_lame_m: parseFloat(e.target.value) || 4.0 })}
+            <label className="text-3xs font-medium text-gray-400">Lambourdes compatibles</label>
+            <select
+              value={((config as any)?.lambourde_id) || ""}
+              onChange={(e) => onChange({ lambourde_id: e.target.value || undefined } as Partial<ChantierTerrasseConfig> & Record<string, unknown>)}
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-            />
+              disabled={!lameSelectionnee || lambourdes.length === 0}
+            >
+              <option value="">{!lameSelectionnee ? "Sélectionner une lame d'abord" : lambourdes.length ? "-- Choisir une lambourde --" : "Aucune lambourde compatible"}</option>
+              {lambourdes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.conditionnement || a.id}{a.prix_conditionnement != null ? ` — ${fmtEuro(Number(a.prix_conditionnement))}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-3xs font-medium text-gray-400">Plots compatibles</label>
+            <select
+              value={((config as any)?.plot_id) || ""}
+              onChange={(e) => onChange({ plot_id: e.target.value || undefined } as Partial<ChantierTerrasseConfig> & Record<string, unknown>)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              disabled={!lameSelectionnee || plots.length === 0}
+            >
+              <option value="">{!lameSelectionnee ? "Sélectionner une lame d'abord" : plots.length ? "-- Choisir un plot --" : "Aucun plot compatible"}</option>
+              {plots.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.conditionnement || a.id}{a.prix_conditionnement != null ? ` — ${fmtEuro(Number(a.prix_conditionnement))}` : ""}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="text-3xs font-medium text-gray-400">Espacement / jeu entre lames (mm)</label>
@@ -324,6 +449,13 @@ export default function TerrasseConfigForm({
               className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
             />
             <p className="mt-1 text-3xs text-gray-500">1.10 = +10% de commande</p>
+          </div>
+        </div>
+        <div className="mt-3 rounded-xl border border-white/5 bg-black/20 p-3 text-2xs text-gray-300">
+          <div className="flex flex-wrap items-center gap-4">
+            <div>Surface : <span className="text-sky-300 font-semibold">{surfaceTotale.toFixed(2)} m²</span></div>
+            <div>Nb lames calculé : <span className="text-amber-300 font-semibold">{nbLames}</span></div>
+            <div>Prix estimé HT : <span className="text-emerald-300 font-semibold">{fmtEuro(prixEstimeHT)}</span></div>
           </div>
         </div>
       </div>
