@@ -144,7 +144,12 @@ async function revendiquerAnalyse(
     // Un seul POST concurrent peut créer la ligne ; les autres échouent (23505).
     const { data: cree, error: errInsert } = await supabaseAdmin
       .from("devis_ia")
-      .insert({ devis_id: devisId, statut: "en_cours", version: 1 } as TablesInsert<"devis_ia">)
+      .insert({
+        devis_id: devisId,
+        entreprise_id: entrepriseId,
+        statut: "en_cours",
+        version: 1,
+      } as TablesInsert<"devis_ia">)
       .select("id")
       .single();
     if (errInsert || !cree) {
@@ -358,6 +363,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
           .from("devis_ia_historique")
           .insert({
             devis_ia_id: devisIaId,
+            entreprise_id: entrepriseId,
             version: snapshot.version,
             snapshot: snapshot.contenu as unknown as Json,
           } as TablesInsert<"devis_ia_historique">);
