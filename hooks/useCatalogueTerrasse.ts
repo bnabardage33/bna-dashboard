@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/server"
-import { resoudreTenant } from "@/lib/tenant"
 
 export type CatalogueTerrasseLame = {
   id: string
@@ -34,7 +32,16 @@ export type CatalogueTerrasseAccessoire = {
   updated_at: string
 }
 
-export function useCatalogueTerrasse() {
+/**
+ * Charge le catalogue Terrasse via la route serveur `/api/catalogue-terrasse`.
+ *
+ * Ce hook NE DOIT JAMAIS importer `lib/supabase/server.ts` : ce module dépend de
+ * `next/headers`, interdit dans un Client Component. Toute la récupération (et
+ * la résolution du tenant) est faite côté serveur par la route.
+ *
+ * @param type restreint la réponse à `lames` ou `accessoires` ; omis ⇒ les deux.
+ */
+export function useCatalogueTerrasse(type?: "lames" | "accessoires") {
   const [lames, setLames] = useState<CatalogueTerrasseLame[]>([])
   const [accessoires, setAccessoires] = useState<CatalogueTerrasseAccessoire[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,28 +52,28 @@ export function useCatalogueTerrasse() {
     async function load() {
       try {
         setLoading(true)
-        const ctx = await resoudreTenant()
-        if (!ctx.ok) throw new Error("Entreprise introuvable")
-        const entrepriseId = ctx.entrepriseId
-        const supabase = await createClient()
-        const [lamesRes, accRes] = await Promise.all([
-          supabase
-            .from("catalogue_terrasse_lames")
-            .select("*")
-            .eq("entreprise_id", entrepriseId)
-            .order("essence", { ascending: true })
-            .order("longueur_mm", { ascending: true })
-            .order("largeur_utile_mm", { ascending: true }),
-          supabase
-            .from("catalogue_terrasse_accessoires")
-            .select("*")
-            .eq("entreprise_id", entrepriseId),
-        ])
-        if (lamesRes.error) throw lamesRes.error
-        if (accRes.error) throw accRes.error
+        // `credentials` par défaut (`same-origin`) envoie les cookies de session.
+        const suffixe = type ? `?type=${type}` : ""
+        const res = await fetch(`/api/catalogue-terrasse${suffixe}`, {
+          cache: "no-store",
+        })
+        if (!res.ok) {
+          let message = `Erreur ${res.status}`
+          try {
+            const corps = (await res.json()) as { error?: string }
+            if (corps?.error) message = corps.error
+          } catch {
+            /* corps non JSON : on garde le message générique */
+          }
+          throw new Error(message)
+        }
+        const corps = (await res.json()) as {
+          lames?: CatalogueTerrasseLame[]
+          accessoires?: CatalogueTerrasseAccessoire[]
+        }
         if (!mounted) return
-        setLames((lamesRes.data as any) || [])
-        setAccessoires((accRes.data as any) || [])
+        setLames(corps.lames ?? [])
+        setAccessoires(corps.accessoires ?? [])
         setError(null)
       } catch (e) {
         if (!mounted) return
@@ -79,7 +86,7 @@ export function useCatalogueTerrasse() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [type])
 
   return { lames, accessoires, loading, error }
 }

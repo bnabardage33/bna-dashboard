@@ -21,6 +21,7 @@ import {
 } from "@/lib/terrasse/composite/fabricants";
 import { useCatalogueTerrasse } from "@/hooks/useCatalogueTerrasse";
 import { fmtEuro } from "@/lib/financeCalculs";
+import { filtrerAccessoiresCompatibles } from "@/lib/terrasse/compatAccessoires";
 
 const formatLame = (l: {
   essence: string | null
@@ -78,29 +79,11 @@ export default function TerrasseConfigForm({
 
   const accessoiresCompatibles = useMemo(() => {
     if (!lameSelectionnee) return [];
-    const typeMat = lameSelectionnee.type_material?.toLowerCase() || "";
-    const lameId = lameSelectionnee.id;
-    return accessoires.filter((acc) => {
-      const compat = acc.materiel_compatibles as any;
-      if (!compat || !Array.isArray(compat)) return false;
-      return compat.some((c: any) => {
-        if (typeof c === "string") {
-          const cl = c.toLowerCase();
-          if (cl === lameId) return true;
-          if (typeMat && cl === typeMat) return true;
-          if (cl === "bois_naturel" && (typeMat === "bois_naturel" || typeMat === "bois" || typeMat === "exotique")) return true;
-          if (cl === "composite" && typeMat === "composite") return true;
-          if (cl === "pvc" && typeMat === "pvc") return true;
-          return false;
-        }
-        if (c && typeof c === "object") {
-          if (c.lame_id === lameId || c.id === lameId) return true;
-          const t = String(c.type_material || c.type || "").toLowerCase();
-          if (typeMat && t === typeMat) return true;
-        }
-        return false;
-      });
-    });
+    return filtrerAccessoiresCompatibles(
+      accessoires,
+      lameSelectionnee.id,
+      lameSelectionnee.type_material
+    );
   }, [accessoires, lameSelectionnee]);
 
   const clips = accessoiresCompatibles.filter((a) => (a.categorie || "").toLowerCase() === "clip");
