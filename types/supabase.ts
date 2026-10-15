@@ -268,7 +268,10 @@ export type Database = {
           categorie: string | null
           conditionnement: string | null
           created_at: string
+          description: string | null
+          designation: string | null
           entreprise_id: string
+          fournisseur: string | null
           id: string
           materiel_compatibles: Json | null
           prix_conditionnement: number | null
@@ -280,7 +283,10 @@ export type Database = {
           categorie?: string | null
           conditionnement?: string | null
           created_at?: string
+          description?: string | null
+          designation?: string | null
           entreprise_id: string
+          fournisseur?: string | null
           id?: string
           materiel_compatibles?: Json | null
           prix_conditionnement?: number | null
@@ -292,7 +298,10 @@ export type Database = {
           categorie?: string | null
           conditionnement?: string | null
           created_at?: string
+          description?: string | null
+          designation?: string | null
           entreprise_id?: string
+          fournisseur?: string | null
           id?: string
           materiel_compatibles?: Json | null
           prix_conditionnement?: number | null
@@ -313,10 +322,13 @@ export type Database = {
       catalogue_terrasse_lames: {
         Row: {
           created_at: string
+          description: string | null
+          designation: string | null
           entreprise_id: string
           epaisseur_mm: number | null
           essence: string | null
           fiche_technique_pdf: string | null
+          fournisseur: string | null
           id: string
           image_url: string | null
           largeur_utile_mm: number | null
@@ -329,10 +341,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string | null
+          designation?: string | null
           entreprise_id: string
           epaisseur_mm?: number | null
           essence?: string | null
           fiche_technique_pdf?: string | null
+          fournisseur?: string | null
           id?: string
           image_url?: string | null
           largeur_utile_mm?: number | null
@@ -345,10 +360,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string | null
+          designation?: string | null
           entreprise_id?: string
           epaisseur_mm?: number | null
           essence?: string | null
           fiche_technique_pdf?: string | null
+          fournisseur?: string | null
           id?: string
           image_url?: string | null
           largeur_utile_mm?: number | null

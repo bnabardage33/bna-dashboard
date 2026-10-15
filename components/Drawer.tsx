@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown } from "lucide-react";
+import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown, BookOpen } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { LucideIcon } from "lucide-react";
 
@@ -42,7 +42,14 @@ const NAV_ITEMS: EntreeNav[] = [
       { href: "/bureau/clients", label: "Clients" },
       { href: "/bureau/devis-factures", label: "Devis" },
       { href: "/bureau/factures", label: "Factures" },
-      { href: "/bureau/catalogue", label: "Catalogue d'ouvrages" },
+    ],
+  },
+  {
+    label: "Catalogues",
+    icon: BookOpen,
+    children: [
+      { href: "/bureau/catalogue", label: "Catalogue Bardage" },
+      { href: "/bureau/catalogue-terrasse", label: "Catalogue Terrasse" },
     ],
   },
   {
@@ -164,7 +171,15 @@ export default function Drawer() {
    */
   const estActif = (href: string) => {
     const cible = cheminDe(href);
-    if (!(cible === "/" ? pathname === "/" : pathname?.startsWith(cible))) return false;
+    // Comparaison bornée au séparateur : `/bureau/catalogue-terrasse` ne doit
+    // PAS allumer `/bureau/catalogue`. Les pages détail restent couvertes
+    // (`/bureau/clients/123` commence bien par `/bureau/clients/`).
+    if (
+      !(cible === "/"
+        ? pathname === "/"
+        : pathname === cible || pathname?.startsWith(`${cible}/`))
+    )
+      return false;
 
     const requeteHref = href.includes("?") ? href.slice(href.indexOf("?")) : "";
     if (!requeteHref) return ongletUrl === null;
