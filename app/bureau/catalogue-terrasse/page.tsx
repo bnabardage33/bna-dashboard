@@ -54,12 +54,13 @@ const LIBELLES_GROUPES: Record<GroupeAccessoire, string> = {
 
 /**
  * Catégorie pré-remplie à la création depuis un onglet métier — valeurs de
- * l'ENUM DB existant uniquement (cf. `CatAccessoireTerrasse`). `null` ⇒ aucun
- * préremplissage (l'utilisateur choisit dans le select).
+ * l'ENUM DB existant uniquement (cf. `CatAccessoireTerrasse`). Chaque groupe
+ * métier a désormais un défaut, pour un préremplissage cohérent d'un onglet
+ * à l'autre.
  */
-const CATEGORIE_DEFAUT_GROUPE: Record<GroupeAccessoire, CatAccessoireTerrasse | null> = {
+const CATEGORIE_DEFAUT_GROUPE: Record<GroupeAccessoire, CatAccessoireTerrasse> = {
   structure: "LAMBOURDE",
-  preparation: null, // Aucune valeur de l'ENUM actuel ne correspond à « préparation »
+  preparation: "GEOTEXTILE",
   fixations: "CLIP",
 };
 
