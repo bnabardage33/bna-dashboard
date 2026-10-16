@@ -90,6 +90,12 @@ export interface TerrasseAccessoireValues {
   unite_mesure: string;
   /** JSONB libre. */
   specifications_dt: Record<string, unknown> | null;
+  /** Nature de la ligne — alignement Bardage : accès matériel ou prestation main-d'œuvre. */
+  type_cout: NatureCout;
+  /** Prix de vente HT — valeur textuelle du champ, convertie en nombre par le mapper. */
+  pu_ht: string;
+  /** Coût de revient HT — idem. */
+  pu_revient: string;
 }
 
 export type ProductDraft = BardageValues | TerrasseLameValues | TerrasseAccessoireValues;
@@ -170,6 +176,7 @@ export function emptyTerrasseAccessoire(): TerrasseAccessoireValues {
     designation: "", description: "", fournisseur: "",
     categorie: "", materiel_compatibles: [], conditionnement: "",
     prix_conditionnement: "", unite_mesure: "", specifications_dt: null,
+    type_cout: "matiere", pu_ht: "", pu_revient: "",
   };
 }
 

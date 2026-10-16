@@ -275,7 +275,10 @@ export type Database = {
           id: string
           materiel_compatibles: Json | null
           prix_conditionnement: number | null
+          pu_ht: number | null
+          pu_revient: number | null
           specifications_dt: Json | null
+          type_cout: string
           unite_mesure: string | null
           updated_at: string
         }
@@ -290,7 +293,10 @@ export type Database = {
           id?: string
           materiel_compatibles?: Json | null
           prix_conditionnement?: number | null
+          pu_ht?: number | null
+          pu_revient?: number | null
           specifications_dt?: Json | null
+          type_cout?: string
           unite_mesure?: string | null
           updated_at?: string
         }
@@ -305,7 +311,10 @@ export type Database = {
           id?: string
           materiel_compatibles?: Json | null
           prix_conditionnement?: number | null
+          pu_ht?: number | null
+          pu_revient?: number | null
           specifications_dt?: Json | null
+          type_cout?: string
           unite_mesure?: string | null
           updated_at?: string
         }
