@@ -30,6 +30,8 @@ export interface ProductFormModalProps {
   open: boolean;
   type: CatalogueType;
   initial?: ProductDraft | null;
+  /** Terrasse accessoire uniquement : catégorie pré-sélectionnée à la création. */
+  initialCategorie?: CatAccessoireTerrasse | null;
   /** Bardage uniquement : type de coût pré-sélectionné à la création. */
   typeCoutDefaut?: NatureCout;
   onClose: () => void;
@@ -88,12 +90,18 @@ function appliquerPatch(prev: ProductDraft, patch: ProductDraftPatch): ProductDr
 function valeurInitiale(
   type: CatalogueType,
   initial: ProductDraft | null,
-  typeCoutDefaut?: NatureCout
+  typeCoutDefaut?: NatureCout,
+  initialCategorie?: CatAccessoireTerrasse | null
 ): ProductDraft {
   if (initial) return initial;
   const vide = emptyForType(type);
   if (vide.kind === "BARDAGE" && typeCoutDefaut) {
     return { ...vide, type_cout: typeCoutDefaut };
+  }
+  // Création d'un accessoire : on injecte la catégorie pré-sélectionnée
+  // (onglet métier actif côté catalogue Terrasse), sans casser l'union.
+  if (vide.kind === "TERRASSE_ACCESSOIRE" && initialCategorie) {
+    return { ...vide, categorie: initialCategorie };
   }
   return vide;
 }
@@ -102,22 +110,23 @@ export default function ProductFormModal({
   open,
   type,
   initial = null,
+  initialCategorie,
   typeCoutDefaut,
   onClose,
   onSave,
 }: ProductFormModalProps) {
   const [values, setValues] = useState<ProductDraft>(() =>
-    valeurInitiale(type, initial, typeCoutDefaut)
+    valeurInitiale(type, initial, typeCoutDefaut, initialCategorie)
   );
   const [activeTab, setActiveTab] = useState<Onglet>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setValues(valeurInitiale(type, initial, typeCoutDefaut));
+      setValues(valeurInitiale(type, initial, typeCoutDefaut, initialCategorie));
       setActiveTab("general");
     }
-  }, [open, initial, type, typeCoutDefaut]);
+  }, [open, initial, type, typeCoutDefaut, initialCategorie]);
 
   const { importUrl, setImportUrl, isScraping, scrape } = useScraping(type, (patch) => {
     setValues((prev) => appliquerPatch(prev, patch));

@@ -8,6 +8,7 @@ import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
 import {
   useCatalogueTerrasse,
+  type CatalogueTerrasseAccessoire,
   type CatalogueTerrasseLame,
 } from "@/hooks/useCatalogueTerrasse";
 import ProductFormModal from "@/components/catalogue/ProductFormModal";
@@ -27,7 +28,61 @@ import {
 
 /** Types Terrasse gérés par cette page (sous-ensemble de `CatalogueType`). */
 type TypeTerrasse = "TERRASSE_LAME" | "TERRASSE_ACCESSOIRE";
-type FiltreOnglet = "tout" | "lames" | "accessoires";
+
+/**
+ * Onglets = « flux de travail chantier » : la lame d'abord, puis les
+ * accessoires regroupés par fonction métier (structure, préparation, fixations).
+ */
+type FiltreOnglet = "tout" | "lames" | "structure" | "preparation" | "fixations";
+
+/** Groupe métier d'un accessoire (sous-ensemble des onglets, hors `tout`/`lames`). */
+type GroupeAccessoire = Exclude<FiltreOnglet, "tout" | "lames">;
+
+const ONGLETS: { id: FiltreOnglet; libelle: string }[] = [
+  { id: "tout", libelle: "Tout" },
+  { id: "lames", libelle: "Lames" },
+  { id: "structure", libelle: "Structure" },
+  { id: "preparation", libelle: "Préparation" },
+  { id: "fixations", libelle: "Fixations" },
+];
+
+const LIBELLES_GROUPES: Record<GroupeAccessoire, string> = {
+  structure: "Structure",
+  preparation: "Préparation",
+  fixations: "Fixations",
+};
+
+/**
+ * Catégorie pré-remplie à la création depuis un onglet métier — valeurs de
+ * l'ENUM DB existant uniquement (cf. `CatAccessoireTerrasse`). `null` ⇒ aucun
+ * préremplissage (l'utilisateur choisit dans le select).
+ */
+const CATEGORIE_DEFAUT_GROUPE: Record<GroupeAccessoire, CatAccessoireTerrasse | null> = {
+  structure: "LAMBOURDE",
+  preparation: null, // Aucune valeur de l'ENUM actuel ne correspond à « préparation »
+  fixations: "CLIP",
+};
+
+const GROUPE_PAR_DEFAUT: GroupeAccessoire = "fixations";
+
+/**
+ * Mappe une catégorie accessoire (enum DB ou texte libre) vers le groupe
+ * métier du flux chantier. Tout ce qui n'est pas reconnu (dont `BANDEROLE`
+ * et les valeurs vides) atterrit dans « fixations ».
+ */
+function getGroupeMetier(categorie: string | null): GroupeAccessoire {
+  if (!categorie) return GROUPE_PAR_DEFAUT; // Défaut sûr
+  const c = categorie.toUpperCase();
+
+  // Structure porteuse
+  if (["LAMBOURDE", "SOLIVE", "PLOT"].includes(c)) return "structure";
+
+  // Préparation du sol
+  if (["GEOTEXTILE", "GRAVIER", "CONCASSE", "DALLE_BETON"].includes(c)) return "preparation";
+
+  // Fixations & divers (repli)
+  return "fixations";
+}
 
 const etiquetteLame = (l: CatalogueTerrasseLame): string =>
   l.designation || l.essence || "Lame sans désignation";
@@ -59,6 +114,7 @@ export default function CatalogueTerrassePage() {
   const [modalOuvert, setModalOuvert] = useState(false);
   const [modalType, setModalType] = useState<TypeTerrasse>("TERRASSE_LAME");
   const [draftInitial, setDraftInitial] = useState<ProductDraft | null>(null);
+  const [categorieInitiale, setCategorieInitiale] = useState<CatAccessoireTerrasse | null>(null);
   const [idEnEdition, setIdEnEdition] = useState<string | null>(null);
 
   const rechercheBasse = recherche.trim().toLowerCase();
@@ -98,9 +154,25 @@ export default function CatalogueTerrassePage() {
     });
   }, [accessoires, rechercheBasse]);
 
-  const ouvrirCreation = (type: TypeTerrasse) => {
+  /** Accessoires répartis par groupe métier (ordre du flux chantier). */
+  const accessoiresGroupes = useMemo(() => {
+    const groupes: Record<GroupeAccessoire, CatalogueTerrasseAccessoire[]> = {
+      structure: [],
+      preparation: [],
+      fixations: [],
+    };
+    for (const a of accessoiresFiltres) {
+      groupes[getGroupeMetier(a.categorie)].push(a);
+    }
+    return groupes;
+  }, [accessoiresFiltres]);
+
+  const ouvrirCreation = (type: TypeTerrasse, categorie?: CatAccessoireTerrasse | null) => {
     setModalType(type);
     setDraftInitial(null);
+    // Préremplissage intelligent : un accessoire créé depuis un onglet métier
+    // part avec la catégorie représentative de ce groupe.
+    setCategorieInitiale(type === "TERRASSE_ACCESSOIRE" ? categorie ?? null : null);
     setIdEnEdition(null);
     setModalOuvert(true);
   };
@@ -108,6 +180,7 @@ export default function CatalogueTerrassePage() {
   const ouvrirEdition = (type: TypeTerrasse, ligne: unknown) => {
     setModalType(type);
     setDraftInitial(fromRow(type, ligne));
+    setCategorieInitiale(null); // L'édition lit la ligne : pas de préremplissage
     setIdEnEdition((ligne as { id: string }).id);
     setModalOuvert(true);
   };
@@ -115,6 +188,7 @@ export default function CatalogueTerrassePage() {
   const fermerModal = () => {
     setModalOuvert(false);
     setDraftInitial(null);
+    setCategorieInitiale(null);
     setIdEnEdition(null);
   };
 
@@ -208,7 +282,70 @@ export default function CatalogueTerrassePage() {
   };
 
   const afficherLames = filtre === "tout" || filtre === "lames";
-  const afficherAccessoires = filtre === "tout" || filtre === "accessoires";
+  const groupesVisibles: GroupeAccessoire[] =
+    filtre === "tout"
+      ? ["structure", "preparation", "fixations"]
+      : filtre === "lames"
+        ? []
+        : [filtre];
+
+  /** Catégorie présélectionnée à la création selon l'onglet métier actif. */
+  const categorieOngletActif =
+    filtre !== "tout" && filtre !== "lames" ? CATEGORIE_DEFAUT_GROUPE[filtre] : null;
+
+  /** Carte d'un accessoire, utilisée dans chaque section de groupe. */
+  const carteAccessoire = (a: CatalogueTerrasseAccessoire) => {
+    const etiquette = a.designation || libelleCategorieAccessoire(a.categorie);
+    return (
+      <div
+        key={a.id}
+        className="flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-5 transition-colors hover:border-white/10"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <span className="inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit bg-amber-600/20 text-amber-300">
+            {libelleCategorieAccessoire(a.categorie)}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => ouvrirEdition("TERRASSE_ACCESSOIRE", a)}
+              className="text-gray-500 hover:text-gray-400"
+              aria-label={`Modifier ${etiquette}`}
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => supprimer("TERRASSE_ACCESSOIRE", a.id, etiquette)}
+              className="text-gray-500 hover:text-rose-400"
+              aria-label={`Supprimer ${etiquette}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
+          {etiquette}
+        </h3>
+        {a.conditionnement && (
+          <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">
+            {a.conditionnement}
+          </p>
+        )}
+        <p className="text-xs text-gray-500 line-clamp-3 mb-4 flex-grow">
+          {a.description}
+        </p>
+        <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
+          <span className="text-xs font-medium text-gray-500">
+            {a.fournisseur || "Fournisseur non défini"}
+          </span>
+          {a.prix_conditionnement != null && (
+            <span className="text-lg font-black text-gray-200">
+              {fmtEuro(Number(a.prix_conditionnement))}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
@@ -224,12 +361,13 @@ export default function CatalogueTerrassePage() {
             </Link>
             <h1 className="text-3xl font-bold text-white">Catalogue Terrasse</h1>
             <p className="text-sm text-gray-400 mt-1">
-              Gérez vos lames et accessoires de terrasse pour le module Chantier.
+              Gérez vos lames et accessoires de terrasse, organisés par groupe
+              métier selon le flux de chantier.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE")}
+              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", categorieOngletActif)}
               className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
             >
               <Plus className="h-4 w-4" />
@@ -248,17 +386,17 @@ export default function CatalogueTerrassePage() {
         {/* Filtres */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1E1E1E]/50 p-4 rounded-xl border border-white/10">
           <div className="flex flex-wrap gap-2">
-            {(["tout", "lames", "accessoires"] as const).map((t) => (
+            {ONGLETS.map((o) => (
               <button
-                key={t}
-                onClick={() => setFiltre(t)}
+                key={o.id}
+                onClick={() => setFiltre(o.id)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border ${
-                  filtre === t
+                  filtre === o.id
                     ? "bg-red-600/20 text-gray-300 border-white/10"
                     : "bg-[#1E1E1E] text-gray-400 border-white/10 hover:border-slate-500"
                 }`}
               >
-                {t === "tout" ? "Tout" : t === "lames" ? "Lames" : "Accessoires"}
+                {o.libelle}
               </button>
             ))}
           </div>
@@ -413,77 +551,32 @@ export default function CatalogueTerrassePage() {
               </section>
             )}
 
-            {/* ── Section Accessoires ───────────────────────────────── */}
-            {afficherAccessoires && (
-              <section className="space-y-3">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  Accessoires
-                  <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-2xs font-semibold text-gray-400 border border-white/10">
-                    {accessoiresFiltres.length}
-                  </span>
-                </h2>
-                {accessoiresFiltres.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
-                    Aucun accessoire trouvé pour cette recherche.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {accessoiresFiltres.map((a) => {
-                      const etiquette = a.designation || libelleCategorieAccessoire(a.categorie);
-                      return (
-                        <div
-                          key={a.id}
-                          className="flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-5 transition-colors hover:border-white/10"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit bg-amber-600/20 text-amber-300">
-                              {libelleCategorieAccessoire(a.categorie)}
-                            </span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => ouvrirEdition("TERRASSE_ACCESSOIRE", a)}
-                                className="text-gray-500 hover:text-gray-400"
-                                aria-label={`Modifier ${etiquette}`}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => supprimer("TERRASSE_ACCESSOIRE", a.id, etiquette)}
-                                className="text-gray-500 hover:text-rose-400"
-                                aria-label={`Supprimer ${etiquette}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                          <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
-                            {etiquette}
-                          </h3>
-                          {a.conditionnement && (
-                            <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">
-                              {a.conditionnement}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-500 line-clamp-3 mb-4 flex-grow">
-                            {a.description}
-                          </p>
-                          <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
-                            <span className="text-xs font-medium text-gray-500">
-                              {a.fournisseur || "Fournisseur non défini"}
-                            </span>
-                            {a.prix_conditionnement != null && (
-                              <span className="text-lg font-black text-gray-200">
-                                {fmtEuro(Number(a.prix_conditionnement))}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            )}
+            {/* ── Sections Accessoires par groupe métier ─────────────── */}
+            {groupesVisibles.map((groupe) => {
+              const items = accessoiresGroupes[groupe];
+              // En vue « Tout », on ignore silencieusement les groupes vides ;
+              // un onglet dédié affiche toujours son état vide explicite.
+              if (filtre === "tout" && items.length === 0) return null;
+              return (
+                <section key={groupe} className="space-y-3">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    {LIBELLES_GROUPES[groupe]}
+                    <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-2xs font-semibold text-gray-400 border border-white/10">
+                      {items.length}
+                    </span>
+                  </h2>
+                  {items.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
+                      Aucun accessoire dans « {LIBELLES_GROUPES[groupe]} » pour cette recherche.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {items.map(carteAccessoire)}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </>
         )}
 
@@ -491,6 +584,7 @@ export default function CatalogueTerrassePage() {
           open={modalOuvert}
           type={modalType}
           initial={draftInitial}
+          initialCategorie={categorieInitiale}
           onClose={fermerModal}
           onSave={enregistrer}
         />
