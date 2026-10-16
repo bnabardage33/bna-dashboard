@@ -15,6 +15,7 @@ import type {
   TerrasseLameValues,
   TypeMaterialTerrasse,
 } from "./types";
+import { ENUMS_CAT_ACCESSOIRE } from "./types";
 
 type RowBardage = Database["public"]["Tables"]["catalogue_ouvrages"]["Row"];
 type RowLame = Database["public"]["Tables"]["catalogue_terrasse_lames"]["Row"];
@@ -101,8 +102,11 @@ function parserSpecifications(json: Json | null): Record<string, unknown> | null
 function versTypeMaterial(v: string | null): TypeMaterialTerrasse | "" {
   return v === "BOIS_NATUREL" || v === "COMPOSITE" || v === "PVC" ? v : "";
 }
+/** Valide une catégorie via `ENUMS_CAT_ACCESSOIRE` (source de vérité unique). */
 function versCatAccessoire(v: string | null): CatAccessoireTerrasse | "" {
-  return v === "CLIP" || v === "LAMBOURDE" || v === "PLOT" || v === "VIS" || v === "BANDEROLE" ? v : "";
+  return v !== null && (ENUMS_CAT_ACCESSOIRE as readonly string[]).includes(v)
+    ? (v as CatAccessoireTerrasse)
+    : "";
 }
 
 // --- Draft -> INSERT -------------------------------------------------------

@@ -19,7 +19,19 @@ export interface DimensionItem {
 export type TypeMaterialTerrasse = "BOIS_NATUREL" | "COMPOSITE" | "PVC";
 
 /** ENUM Postgres `cat_accessoire_terrasse`. */
-export type CatAccessoireTerrasse = "CLIP" | "LAMBOURDE" | "PLOT" | "VIS" | "BANDEROLE";
+export type CatAccessoireTerrasse =
+  | "CLIP"
+  | "LAMBOURDE"
+  | "PLOT"
+  | "VIS"
+  | "BANDEROLE"
+  | "SOLIVE"
+  | "GEOTEXTILE"
+  | "GRAVIER"
+  | "CONCASSE"
+  | "DALLE_BETON"
+  | "CACHE"
+  | "PROFILE_PVC";
 
 export type NatureCout = "matiere" | "main_oeuvre";
 
@@ -93,7 +105,20 @@ export type ProductDraftPatch =
   | ({ kind: "TERRASSE_ACCESSOIRE" } & Partial<Omit<TerrasseAccessoireValues, "kind">>);
 
 export const ENUMS_TYPE_MATERIAL: TypeMaterialTerrasse[] = ["BOIS_NATUREL", "COMPOSITE", "PVC"];
-export const ENUMS_CAT_ACCESSOIRE: CatAccessoireTerrasse[] = ["CLIP", "LAMBOURDE", "PLOT", "VIS", "BANDEROLE"];
+export const ENUMS_CAT_ACCESSOIRE: CatAccessoireTerrasse[] = [
+  "CLIP",
+  "LAMBOURDE",
+  "PLOT",
+  "VIS",
+  "BANDEROLE",
+  "SOLIVE",
+  "GEOTEXTILE",
+  "GRAVIER",
+  "CONCASSE",
+  "DALLE_BETON",
+  "CACHE",
+  "PROFILE_PVC",
+];
 export const UNITES_VENTE = ["m²", "ml", "unité", "U", "heure", "forfait"] as const;
 
 export const LIBELLES_TYPE_MATERIAL: Record<TypeMaterialTerrasse, string> = {
@@ -108,6 +133,13 @@ export const LIBELLES_ACCESSOIRE: Record<CatAccessoireTerrasse, string> = {
   PLOT: "Plot",
   VIS: "Vis",
   BANDEROLE: "Banderole",
+  SOLIVE: "Solive",
+  GEOTEXTILE: "Géotextile",
+  GRAVIER: "Gravier",
+  CONCASSE: "Concassé",
+  DALLE_BETON: "Dalle béton",
+  CACHE: "Cache",
+  PROFILE_PVC: "Profilé PVC",
 };
 
 /** Fabriques d'état vide, indexées par type. */
