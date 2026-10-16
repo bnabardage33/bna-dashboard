@@ -58,7 +58,10 @@ export async function GET(request: NextRequest) {
       .order("longueur_mm", { ascending: true })
       .order("largeur_utile_mm", { ascending: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("[catalogue-terrasse] SELECT lames:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     reponse.lames = data ?? [];
   }
 
@@ -68,7 +71,10 @@ export async function GET(request: NextRequest) {
       .select("*")
       .eq("entreprise_id", entrepriseId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("[catalogue-terrasse] SELECT accessoires:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     let accessoires = data ?? [];
 
@@ -84,7 +90,10 @@ export async function GET(request: NextRequest) {
         .eq("entreprise_id", entrepriseId)
         .maybeSingle();
 
-      if (errLame) return NextResponse.json({ error: errLame.message }, { status: 500 });
+      if (errLame) {
+        console.error("[catalogue-terrasse] SELECT lame pour compatibleWith:", errLame.message);
+        return NextResponse.json({ error: errLame.message }, { status: 500 });
+      }
       accessoires = lame
         ? filtrerAccessoiresCompatibles(accessoires, lame.id, lame.type_material)
         : [];
