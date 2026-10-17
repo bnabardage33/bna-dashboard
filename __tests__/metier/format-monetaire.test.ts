@@ -323,9 +323,20 @@ describe('LOT 2C — plus aucun formatage monétaire artisanal', () => {
     // « ne subsistent que les exceptions documentées », vérifié plus bas — c'est
     // lui qui a Tickets, et lui qui était rouge avant cette conversion.
     // +5 appels ajoutés via catalogue_terrasse (lames/accessoires/prix estimé)
-    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(167)
-    // +1 importateur via catalogue_terrasse (TerrasseConfigForm.tsx)
-    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(31)
+    //
+    // DÉRIVE PRÉEXISTANTE (constatée à HEAD, indépendante de la PHASE 3) :
+    // le commit e96deb7 « unify product management with generic modal and add
+    // terrace catalog page » a ajouté 4 appels `fmtEuro(` et retiré 1 (net +3),
+    // plus 2 importateurs, SANS mettre à jour ce décompte. Le test était donc
+    // déjà rouge sur HEAD (170 mesurés contre 167 attendus, 33 importateurs
+    // contre 31) avant toute modification de la PHASE 3.
+    //
+    // PHASE 3 (main-d'œuvre du catalogue Terrasse) : + 3 appels réels — 2 dans
+    // la carte prestation (`pu_revient`, `pu_ht`) et 1 dans le bloc « Marge
+    // brute estimée » du modal. Aucun nouvel importateur : la page catalogue
+    // Terrasse et le modal générique importaient déjà fmtEuro.
+    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(173)
+    expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(33)
   })
 
   it('la référence définit fmtEuro() une seule fois, et l’exporte', () => {

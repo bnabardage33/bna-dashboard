@@ -34,6 +34,10 @@ export type CatalogueTerrasseAccessoire = {
   prix_conditionnement: number | null
   unite_mesure: string | null
   specifications_dt: unknown
+  /** `'matiere' | 'main_oeuvre'` — nullable en base (DEFAULT 'matiere'). */
+  type_cout: string | null
+  pu_ht: number | null
+  pu_revient: number | null
   created_at: string
   updated_at: string
 }

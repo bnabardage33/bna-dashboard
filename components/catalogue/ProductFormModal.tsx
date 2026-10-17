@@ -34,6 +34,8 @@ export interface ProductFormModalProps {
   initialCategorie?: CatAccessoireTerrasse | null;
   /** Bardage uniquement : type de coût pré-sélectionné à la création. */
   typeCoutDefaut?: NatureCout;
+  /** Terrasse accessoire uniquement : type de coût pré-sélectionné à la création. */
+  initialTypeCout?: NatureCout;
   onClose: () => void;
   onSave: (values: ProductDraft) => void | Promise<void>;
 }
@@ -91,17 +93,23 @@ function valeurInitiale(
   type: CatalogueType,
   initial: ProductDraft | null,
   typeCoutDefaut?: NatureCout,
-  initialCategorie?: CatAccessoireTerrasse | null
+  initialCategorie?: CatAccessoireTerrasse | null,
+  initialTypeCout?: NatureCout
 ): ProductDraft {
   if (initial) return initial;
   const vide = emptyForType(type);
   if (vide.kind === "BARDAGE" && typeCoutDefaut) {
     return { ...vide, type_cout: typeCoutDefaut };
   }
-  // Création d'un accessoire : on injecte la catégorie pré-sélectionnée
-  // (onglet métier actif côté catalogue Terrasse), sans casser l'union.
-  if (vide.kind === "TERRASSE_ACCESSOIRE" && initialCategorie) {
-    return { ...vide, categorie: initialCategorie };
+  // Création d'un accessoire : on injecte la catégorie et le type de coût
+  // pré-sélectionnés (onglet métier actif côté catalogue Terrasse), sans
+  // casser l'union. Onglet « Prestations » ⇒ `type_cout: "main_oeuvre"`.
+  if (vide.kind === "TERRASSE_ACCESSOIRE") {
+    return {
+      ...vide,
+      ...(initialCategorie ? { categorie: initialCategorie } : {}),
+      ...(initialTypeCout ? { type_cout: initialTypeCout } : {}),
+    };
   }
   return vide;
 }
@@ -112,21 +120,22 @@ export default function ProductFormModal({
   initial = null,
   initialCategorie,
   typeCoutDefaut,
+  initialTypeCout,
   onClose,
   onSave,
 }: ProductFormModalProps) {
   const [values, setValues] = useState<ProductDraft>(() =>
-    valeurInitiale(type, initial, typeCoutDefaut, initialCategorie)
+    valeurInitiale(type, initial, typeCoutDefaut, initialCategorie, initialTypeCout)
   );
   const [activeTab, setActiveTab] = useState<Onglet>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setValues(valeurInitiale(type, initial, typeCoutDefaut, initialCategorie));
+      setValues(valeurInitiale(type, initial, typeCoutDefaut, initialCategorie, initialTypeCout));
       setActiveTab("general");
     }
-  }, [open, initial, type, typeCoutDefaut, initialCategorie]);
+  }, [open, initial, type, typeCoutDefaut, initialCategorie, initialTypeCout]);
 
   const { importUrl, setImportUrl, isScraping, scrape } = useScraping(type, (patch) => {
     setValues((prev) => appliquerPatch(prev, patch));
@@ -153,12 +162,21 @@ export default function ProductFormModal({
     });
   };
 
-  const estMainOeuvre = values.kind === "BARDAGE" && values.type_cout === "main_oeuvre";
+  // Prestation = main-d'œuvre, quel que soit le catalogue ; côté Terrasse elle
+  // reste stockée dans la table accessoires, distinguée par `type_cout`.
+  const estMainOeuvre =
+    (values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE") &&
+    values.type_cout === "main_oeuvre";
+  const estPrestationAccessoire =
+    values.kind === "TERRASSE_ACCESSOIRE" && values.type_cout === "main_oeuvre";
   const afficheDimensions = values.kind !== "TERRASSE_ACCESSOIRE" && !estMainOeuvre;
 
   const titre = (() => {
     if (values.kind === "TERRASSE_LAME") return initial ? "Modifier la lame" : "Nouvelle lame";
-    if (values.kind === "TERRASSE_ACCESSOIRE") return initial ? "Modifier l'accessoire" : "Nouvel accessoire";
+    if (values.kind === "TERRASSE_ACCESSOIRE") {
+      if (estPrestationAccessoire) return initial ? "Modifier la prestation" : "Nouvelle prestation";
+      return initial ? "Modifier l'accessoire" : "Nouvel accessoire";
+    }
     if (estMainOeuvre) return initial ? "Modifier la main-d'œuvre" : "Nouvelle Main-d'œuvre";
     return initial ? "Modifier le matériau" : "Nouveau matériau";
   })();
@@ -379,6 +397,20 @@ export default function ProductFormModal({
             {activeTab === "general" && values.kind === "TERRASSE_ACCESSOIRE" && (
               <>
                 <div>
+                  <label htmlFor="chp-type-presta-acc" className={labelCls}>Type de prestation</label>
+                  <select
+                    id="chp-type-presta-acc"
+                    value={values.type_cout}
+                    onChange={(e) =>
+                      patch({ type_cout: e.target.value === "main_oeuvre" ? "main_oeuvre" : "matiere" })
+                    }
+                    className={inputCls}
+                  >
+                    <option value="matiere">Matériau (fourniture)</option>
+                    <option value="main_oeuvre">Main-d&apos;œuvre (prestation)</option>
+                  </select>
+                </div>
+                <div>
                   <label htmlFor="chp-designation-acc" className={labelCls}>Désignation</label>
                   <input
                     id="chp-designation-acc"
@@ -399,63 +431,70 @@ export default function ProductFormModal({
                     className={inputCls}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="chp-categorie-acc" className={labelCls}>Catégorie</label>
-                    <select
-                      id="chp-categorie-acc"
-                      value={values.categorie}
-                      onChange={(e) => patch({ categorie: e.target.value as CatAccessoireTerrasse | "" })}
-                      className={inputCls}
-                    >
-                      <option value="">Sélectionner...</option>
-                      {ENUMS_CAT_ACCESSOIRE.map((c) => (
-                        <option key={c} value={c}>{LIBELLES_ACCESSOIRE[c]}</option>
-                      ))}
-                    </select>
+                {/* Champs propres à un accessoire PHYSIQUE : masqués pour une
+                    prestation. Aucune donnée n'est effacée — les valeurs
+                    éventuelles restent dans le brouillon et sont réécrites. */}
+                {!estPrestationAccessoire && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="chp-categorie-acc" className={labelCls}>Catégorie</label>
+                      <select
+                        id="chp-categorie-acc"
+                        value={values.categorie}
+                        onChange={(e) => patch({ categorie: e.target.value as CatAccessoireTerrasse | "" })}
+                        className={inputCls}
+                      >
+                        <option value="">Sélectionner...</option>
+                        {ENUMS_CAT_ACCESSOIRE.map((c) => (
+                          <option key={c} value={c}>{LIBELLES_ACCESSOIRE[c]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="chp-conditionnement" className={labelCls}>Conditionnement</label>
+                      <input
+                        id="chp-conditionnement"
+                        type="text"
+                        value={values.conditionnement}
+                        onChange={(e) => patch({ conditionnement: e.target.value })}
+                        className={inputCls}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="chp-conditionnement" className={labelCls}>Conditionnement</label>
-                    <input
-                      id="chp-conditionnement"
-                      type="text"
-                      value={values.conditionnement}
-                      onChange={(e) => patch({ conditionnement: e.target.value })}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
+                )}
                 <div>
                   <label htmlFor="chp-unite-mesure" className={labelCls}>Unité de mesure</label>
                   <input
                     id="chp-unite-mesure"
                     type="text"
-                    placeholder="ex : boîte de 100"
+                    placeholder={estPrestationAccessoire ? "ex : heure, m² posé" : "ex : boîte de 100"}
                     value={values.unite_mesure}
                     onChange={(e) => patch({ unite_mesure: e.target.value })}
                     className={inputCls}
                   />
                 </div>
-                <div>
-                  <label htmlFor="chp-materiel-compatibles" className={labelCls}>
-                    Matériaux compatibles (types, séparés par des virgules)
-                  </label>
-                  <input
-                    id="chp-materiel-compatibles"
-                    type="text"
-                    placeholder="ex : BOIS_NATUREL, COMPOSITE"
-                    value={values.materiel_compatibles.join(", ")}
-                    onChange={(e) =>
-                      patch({
-                        materiel_compatibles: e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    className={inputCls}
-                  />
-                </div>
+                {!estPrestationAccessoire && (
+                  <div>
+                    <label htmlFor="chp-materiel-compatibles" className={labelCls}>
+                      Matériaux compatibles (types, séparés par des virgules)
+                    </label>
+                    <input
+                      id="chp-materiel-compatibles"
+                      type="text"
+                      placeholder="ex : BOIS_NATUREL, COMPOSITE"
+                      value={values.materiel_compatibles.join(", ")}
+                      onChange={(e) =>
+                        patch({
+                          materiel_compatibles: e.target.value
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      className={inputCls}
+                    />
+                  </div>
+                )}
               </>
             )}
 
@@ -693,17 +732,19 @@ export default function ProductFormModal({
                 <div className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
                   Fournisseur &amp; Tarifs
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={`grid gap-3 ${estPrestationAccessoire ? "grid-cols-1" : "grid-cols-2"}`}>
                   <div>
                     <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
                     <input id="chp-fournisseur" type="text" value={values.fournisseur}
                       onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
                   </div>
-                  <div>
-                    <label htmlFor="chp-conditionnement-tarif" className={labelCls}>Conditionnement</label>
-                    <input id="chp-conditionnement-tarif" type="text" value={values.conditionnement}
-                      onChange={(e) => patch({ conditionnement: e.target.value })} className={inputCls} />
-                  </div>
+                  {!estPrestationAccessoire && (
+                    <div>
+                      <label htmlFor="chp-conditionnement-tarif" className={labelCls}>Conditionnement</label>
+                      <input id="chp-conditionnement-tarif" type="text" value={values.conditionnement}
+                        onChange={(e) => patch({ conditionnement: e.target.value })} className={inputCls} />
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -711,12 +752,46 @@ export default function ProductFormModal({
                     <input id="chp-unite-mesure-tarif" type="text" value={values.unite_mesure}
                       onChange={(e) => patch({ unite_mesure: e.target.value })} className={inputCls} />
                   </div>
-                  <div>
-                    <label htmlFor="chp-prix-conditionnement" className={labelCls}>Prix conditionnement HT (€)</label>
-                    <input id="chp-prix-conditionnement" type="text" inputMode="decimal" value={values.prix_conditionnement}
-                      onChange={(e) => patch({ prix_conditionnement: e.target.value })} className={inputCls} />
-                  </div>
+                  {estPrestationAccessoire ? (
+                    <div>
+                      <label htmlFor="chp-pu-ht-acc" className={labelCls}>Prix unitaire HT (€)</label>
+                      <input id="chp-pu-ht-acc" type="text" inputMode="decimal" value={values.pu_ht}
+                        onChange={(e) => patch({ pu_ht: e.target.value })} className={inputCls} />
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor="chp-prix-conditionnement" className={labelCls}>Prix conditionnement HT (€)</label>
+                      <input id="chp-prix-conditionnement" type="text" inputMode="decimal" value={values.prix_conditionnement}
+                        onChange={(e) => patch({ prix_conditionnement: e.target.value })} className={inputCls} />
+                    </div>
+                  )}
                 </div>
+                {estPrestationAccessoire && (
+                  <>
+                    <div>
+                      <label htmlFor="chp-pu-revient-acc" className={labelCls}>Coût de revient HT (€)</label>
+                      <input id="chp-pu-revient-acc" type="text" inputMode="decimal" value={values.pu_revient}
+                        onChange={(e) => patch({ pu_revient: e.target.value })} className={inputCls} />
+                    </div>
+                    {(() => {
+                      const vente = parseFloat(values.pu_ht.replace(",", ".")) || 0;
+                      const revient = parseFloat(values.pu_revient.replace(",", ".")) || 0;
+                      if (vente > 0 && revient > 0) {
+                        const marge = vente - revient;
+                        const margePct = (marge / vente) * 100;
+                        return (
+                          <div className="mt-3 flex items-center justify-between rounded bg-violet-900/30 px-3 py-2 border border-violet-500/20">
+                            <span className="text-xs font-medium text-violet-300">Marge brute estimée</span>
+                            <span className={`text-sm font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              {fmtEuro(marge)} <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </>
+                )}
               </div>
             )}
           </div>

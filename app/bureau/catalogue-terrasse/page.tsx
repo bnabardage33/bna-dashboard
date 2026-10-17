@@ -22,6 +22,7 @@ import {
   LIBELLES_ACCESSOIRE,
   LIBELLES_TYPE_MATERIAL,
   type CatAccessoireTerrasse,
+  type NatureCout,
   type ProductDraft,
   type TypeMaterialTerrasse,
 } from "@/components/catalogue/types";
@@ -31,12 +32,22 @@ type TypeTerrasse = "TERRASSE_LAME" | "TERRASSE_ACCESSOIRE";
 
 /**
  * Onglets = « flux de travail chantier » : la lame d'abord, puis les
- * accessoires regroupés par fonction métier (structure, préparation, fixations).
+ * accessoires regroupés par fonction métier (structure, préparation, fixations),
+ * et enfin les prestations de main-d'œuvre (`type_cout === "main_oeuvre"`).
  */
-type FiltreOnglet = "tout" | "lames" | "structure" | "preparation" | "fixations";
+type FiltreOnglet =
+  | "tout"
+  | "lames"
+  | "structure"
+  | "preparation"
+  | "fixations"
+  | "prestations";
 
-/** Groupe métier d'un accessoire (sous-ensemble des onglets, hors `tout`/`lames`). */
-type GroupeAccessoire = Exclude<FiltreOnglet, "tout" | "lames">;
+/**
+ * Groupe métier d'un accessoire MATÉRIEL. Les prestations sont exclues : elles
+ * ne sont pas réparties par groupe mais affichées dans leur propre onglet.
+ */
+type GroupeAccessoire = Exclude<FiltreOnglet, "tout" | "lames" | "prestations">;
 
 const ONGLETS: { id: FiltreOnglet; libelle: string }[] = [
   { id: "tout", libelle: "Tout" },
@@ -44,6 +55,7 @@ const ONGLETS: { id: FiltreOnglet; libelle: string }[] = [
   { id: "structure", libelle: "Structure" },
   { id: "preparation", libelle: "Préparation" },
   { id: "fixations", libelle: "Fixations" },
+  { id: "prestations", libelle: "Prestations" },
 ];
 
 const LIBELLES_GROUPES: Record<GroupeAccessoire, string> = {
@@ -85,6 +97,14 @@ function getGroupeMetier(categorie: string | null): GroupeAccessoire {
   return "fixations";
 }
 
+/**
+ * Une ligne est une prestation de main-d'œuvre si `type_cout` vaut
+ * « main_oeuvre ». Toute autre valeur — dont `null` (base pré-migration) et
+ * `undefined` — est traitée comme un accessoire matériel.
+ */
+const estPrestation = (a: CatalogueTerrasseAccessoire): boolean =>
+  a.type_cout === "main_oeuvre";
+
 const etiquetteLame = (l: CatalogueTerrasseLame): string =>
   l.designation || l.essence || "Lame sans désignation";
 
@@ -116,6 +136,7 @@ export default function CatalogueTerrassePage() {
   const [modalType, setModalType] = useState<TypeTerrasse>("TERRASSE_LAME");
   const [draftInitial, setDraftInitial] = useState<ProductDraft | null>(null);
   const [categorieInitiale, setCategorieInitiale] = useState<CatAccessoireTerrasse | null>(null);
+  const [typeCoutInitial, setTypeCoutInitial] = useState<NatureCout | undefined>(undefined);
   const [idEnEdition, setIdEnEdition] = useState<string | null>(null);
 
   const rechercheBasse = recherche.trim().toLowerCase();
@@ -155,7 +176,7 @@ export default function CatalogueTerrassePage() {
     });
   }, [accessoires, rechercheBasse]);
 
-  /** Accessoires répartis par groupe métier (ordre du flux chantier). */
+  /** Accessoires matériels (hors prestations), répartis par groupe métier. */
   const accessoiresGroupes = useMemo(() => {
     const groupes: Record<GroupeAccessoire, CatalogueTerrasseAccessoire[]> = {
       structure: [],
@@ -163,17 +184,32 @@ export default function CatalogueTerrassePage() {
       fixations: [],
     };
     for (const a of accessoiresFiltres) {
+      // Les prestations ne sont pas réparties par groupe : elles ont leur
+      // propre onglet (et une section dédiée en vue « Tout »).
+      if (estPrestation(a)) continue;
       groupes[getGroupeMetier(a.categorie)].push(a);
     }
     return groupes;
   }, [accessoiresFiltres]);
 
-  const ouvrirCreation = (type: TypeTerrasse, categorie?: CatAccessoireTerrasse | null) => {
+  /** Prestations de main-d'œuvre (`type_cout === "main_oeuvre"`). */
+  const accessoiresPrestations = useMemo(
+    () => accessoiresFiltres.filter(estPrestation),
+    [accessoiresFiltres]
+  );
+
+  const ouvrirCreation = (
+    type: TypeTerrasse,
+    categorie?: CatAccessoireTerrasse | null,
+    typeCout?: NatureCout
+  ) => {
     setModalType(type);
     setDraftInitial(null);
     // Préremplissage intelligent : un accessoire créé depuis un onglet métier
-    // part avec la catégorie représentative de ce groupe.
+    // part avec la catégorie représentative de ce groupe — et depuis l'onglet
+    // « Prestations », avec `type_cout: "main_oeuvre"`.
     setCategorieInitiale(type === "TERRASSE_ACCESSOIRE" ? categorie ?? null : null);
+    setTypeCoutInitial(type === "TERRASSE_ACCESSOIRE" ? typeCout : undefined);
     setIdEnEdition(null);
     setModalOuvert(true);
   };
@@ -182,6 +218,7 @@ export default function CatalogueTerrassePage() {
     setModalType(type);
     setDraftInitial(fromRow(type, ligne));
     setCategorieInitiale(null); // L'édition lit la ligne : pas de préremplissage
+    setTypeCoutInitial(undefined); // `type_cout` vient lui aussi de la ligne éditée
     setIdEnEdition((ligne as { id: string }).id);
     setModalOuvert(true);
   };
@@ -190,6 +227,7 @@ export default function CatalogueTerrassePage() {
     setModalOuvert(false);
     setDraftInitial(null);
     setCategorieInitiale(null);
+    setTypeCoutInitial(undefined);
     setIdEnEdition(null);
   };
 
@@ -283,28 +321,50 @@ export default function CatalogueTerrassePage() {
   };
 
   const afficherLames = filtre === "tout" || filtre === "lames";
+  const afficherPrestations = filtre === "tout" || filtre === "prestations";
   const groupesVisibles: GroupeAccessoire[] =
     filtre === "tout"
       ? ["structure", "preparation", "fixations"]
-      : filtre === "lames"
+      : filtre === "lames" || filtre === "prestations"
         ? []
         : [filtre];
 
-  /** Catégorie présélectionnée à la création selon l'onglet métier actif. */
-  const categorieOngletActif =
-    filtre !== "tout" && filtre !== "lames" ? CATEGORIE_DEFAUT_GROUPE[filtre] : null;
+  /** Onglet « groupe métier » actif (structure/préparation/fixations), sinon null. */
+  const groupeOngletActif: GroupeAccessoire | null =
+    filtre === "structure" || filtre === "preparation" || filtre === "fixations"
+      ? filtre
+      : null;
 
-  /** Carte d'un accessoire, utilisée dans chaque section de groupe. */
+  /** Catégorie présélectionnée à la création selon l'onglet métier actif. */
+  const categorieOngletActif = groupeOngletActif
+    ? CATEGORIE_DEFAUT_GROUPE[groupeOngletActif]
+    : null;
+
+  /**
+   * Carte d'un accessoire — matériel (badge catégorie, prix conditionnement) ou
+   * prestation de main-d'œuvre (badge et liseré violets, coût de revient + prix).
+   */
   const carteAccessoire = (a: CatalogueTerrasseAccessoire) => {
-    const etiquette = a.designation || libelleCategorieAccessoire(a.categorie);
+    const prestation = estPrestation(a);
+    const etiquette =
+      a.designation ||
+      (prestation ? "Prestation sans désignation" : libelleCategorieAccessoire(a.categorie));
     return (
       <div
         key={a.id}
-        className="flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-5 transition-colors hover:border-white/10"
+        className={`flex flex-col rounded-xl border p-5 transition-colors ${
+          prestation
+            ? "border-violet-500/40 bg-violet-500/[0.06] hover:border-violet-500/60"
+            : "border-white/10 bg-[#1E1E1E]/50 hover:border-white/10"
+        }`}
       >
         <div className="flex justify-between items-start mb-2">
-          <span className="inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit bg-amber-600/20 text-amber-300">
-            {libelleCategorieAccessoire(a.categorie)}
+          <span
+            className={`inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit ${
+              prestation ? "bg-violet-600/30 text-violet-300" : "bg-amber-600/20 text-amber-300"
+            }`}
+          >
+            {prestation ? "Main-d'œuvre" : libelleCategorieAccessoire(a.categorie)}
           </span>
           <div className="flex gap-2">
             <button
@@ -338,10 +398,21 @@ export default function CatalogueTerrassePage() {
           <span className="text-xs font-medium text-gray-500">
             {a.fournisseur || "Fournisseur non défini"}
           </span>
-          {a.prix_conditionnement != null && (
-            <span className="text-lg font-black text-gray-200">
-              {fmtEuro(Number(a.prix_conditionnement))}
-            </span>
+          {prestation ? (
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-xs font-medium text-violet-300/80">
+                Revient : {fmtEuro(a.pu_revient ?? 0)} HT
+              </span>
+              <span className="text-lg font-black text-gray-200">
+                {fmtEuro(a.pu_ht ?? 0)} HT
+              </span>
+            </div>
+          ) : (
+            a.prix_conditionnement != null && (
+              <span className="text-lg font-black text-gray-200">
+                {fmtEuro(Number(a.prix_conditionnement))}
+              </span>
+            )
           )}
         </div>
       </div>
@@ -368,8 +439,16 @@ export default function CatalogueTerrassePage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", categorieOngletActif)}
+              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", null, "main_oeuvre")}
               className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+              title="Créer une prestation de main-d'œuvre (pose, préparation, finition…)"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvelle Prestation
+            </button>
+            <button
+              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", categorieOngletActif)}
+              className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-500 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Nouvel Accessoire
@@ -578,6 +657,28 @@ export default function CatalogueTerrassePage() {
                 </section>
               );
             })}
+
+            {/* ── Section Prestations de main-d'œuvre ──────────────────── */}
+            {afficherPrestations &&
+              (filtre !== "tout" || accessoiresPrestations.length > 0) && (
+                <section className="space-y-3">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    Prestations
+                    <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-2xs font-semibold text-gray-400 border border-white/10">
+                      {accessoiresPrestations.length}
+                    </span>
+                  </h2>
+                  {accessoiresPrestations.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
+                      Aucune prestation pour cette recherche.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {accessoiresPrestations.map(carteAccessoire)}
+                    </div>
+                  )}
+                </section>
+              )}
           </>
         )}
 
@@ -586,6 +687,7 @@ export default function CatalogueTerrassePage() {
           type={modalType}
           initial={draftInitial}
           initialCategorie={categorieInitiale}
+          initialTypeCout={typeCoutInitial}
           onClose={fermerModal}
           onSave={enregistrer}
         />
