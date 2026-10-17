@@ -10,10 +10,25 @@
 // (identifiant de lame OU `type_material`) ou tableau d'objets
 // (`{ lame_id | id, type_material | type }`). La règle reproduit EXACTEMENT le
 // filtrage qui vivait auparavant dans le composant.
+//
+// Depuis la migration 20261020, la table porte aussi `type_cout`
+// (`'matiere' | 'main_oeuvre'`). Une prestation de main-d'œuvre N'EST PAS un
+// accessoire matériel : elle est exclue des sélections/calculs de
+// compatibilité (cf. `filtrerAccessoiresCompatibles`). Les lignes antérieures
+// (ou `null`) sont traitées comme matérielles — dégradation sûre.
 
 export interface AccessoireCompatibilite {
   id: string;
   materiel_compatibles: unknown;
+  /** `'matiere'` | `'main_oeuvre'` (nullable : lignes pré-migration 20261020). */
+  type_cout?: string | null;
+}
+
+/** Une ligne est-elle une prestation de main-d'œuvre (`type_cout`) ? */
+export function estPrestationMainOeuvre(
+  accessoire: Pick<AccessoireCompatibilite, "type_cout">
+): boolean {
+  return accessoire.type_cout === "main_oeuvre";
 }
 
 /** Une entrée de `materiel_compatibles` désigne-t-elle cette lame ? */
@@ -62,17 +77,20 @@ export function accessoireCompatibleAvecLame(
   );
 }
 
-/** Sous-ensemble des accessoires compatibles avec la lame sélectionnée. */
+/** Sous-ensemble des accessoires MATÉRIELS compatibles avec la lame sélectionnée. */
 export function filtrerAccessoiresCompatibles<T extends AccessoireCompatibilite>(
   accessoires: T[],
   lameId: string,
   typeMaterial?: string | null
 ): T[] {
-  return accessoires.filter((accessoire) =>
-    accessoireCompatibleAvecLame(
-      accessoire.materiel_compatibles,
-      lameId,
-      typeMaterial
-    )
+  return accessoires.filter(
+    (accessoire) =>
+      // Une prestation de main-d'œuvre n'est jamais un accessoire matériel.
+      !estPrestationMainOeuvre(accessoire) &&
+      accessoireCompatibleAvecLame(
+        accessoire.materiel_compatibles,
+        lameId,
+        typeMaterial
+      )
   );
 }

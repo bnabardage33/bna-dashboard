@@ -23,7 +23,7 @@ import {
 } from "@/lib/terrasse/composite/fabricants";
 import { useCatalogueTerrasse } from "@/hooks/useCatalogueTerrasse";
 import { fmtEuro } from "@/lib/financeCalculs";
-import { filtrerAccessoiresCompatibles } from "@/lib/terrasse/compatAccessoires";
+import { estPrestationMainOeuvre, filtrerAccessoiresCompatibles } from "@/lib/terrasse/compatAccessoires";
 
 const formatLame = (l: {
   essence: string | null
@@ -79,14 +79,23 @@ export default function TerrasseConfigForm({
 
   const surfaceTotale = useMemo(() => (config.longueur_m || 0) * (config.largeur_m || 0), [config]);
 
+  // Les prestations de main-d'œuvre (`type_cout === "main_oeuvre"`) ne sont pas
+  // des accessoires matériels : elles sont écartées AVANT toute sélection et
+  // tout calcul de prix (cf. audit « Prestations / Main-d'œuvre »). Les lignes
+  // antérieures sans `type_cout` restent traitées comme matérielles.
+  const accessoiresMateriels = useMemo(
+    () => accessoires.filter((a) => !estPrestationMainOeuvre(a)),
+    [accessoires]
+  );
+
   const accessoiresCompatibles = useMemo(() => {
     if (!lameSelectionnee) return [];
     return filtrerAccessoiresCompatibles(
-      accessoires,
+      accessoiresMateriels,
       lameSelectionnee.id,
       lameSelectionnee.type_material
     );
-  }, [accessoires, lameSelectionnee]);
+  }, [accessoiresMateriels, lameSelectionnee]);
 
   const clips = accessoiresCompatibles.filter((a) => (a.categorie || "").toLowerCase() === "clip");
   const lambourdes = accessoiresCompatibles.filter((a) => (a.categorie || "").toLowerCase() === "lambourde");

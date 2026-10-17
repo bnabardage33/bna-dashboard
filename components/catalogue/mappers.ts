@@ -159,6 +159,14 @@ function terrasseLameVersInsert(v: TerrasseLameValues): TerrasseLameInsertPayloa
   };
 }
 
+// NOTE (audit Prestations / Main-d'œuvre) : le payload est écrit tel quel pour
+// `type_cout`, `pu_ht`, `pu_revient` ET les champs matériels (categorie,
+// conditionnement, materiel_compatibles, prix_conditionnement). Stratégie
+// retenue = FILTRAGE SEUL (non destructif) : on ne purge PAS les champs
+// matériels d'une prestation, on exclut les lignes `type_cout === "main_oeuvre"`
+// au moment des sélections/calculs (cf. `lib/terrasse/compatAccessoires.ts` et
+// `components/terrasse/TerrasseConfigForm.tsx`). Un retour `matiere` restitue
+// donc l'intégralité des données.
 function terrasseAccessoireVersInsert(v: TerrasseAccessoireValues): TerrasseAccessoireInsertPayload {
   return {
     designation: texteOuNull(v.designation),
