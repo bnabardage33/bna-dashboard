@@ -395,9 +395,14 @@ export default function CatalogueTerrassePage() {
           {a.description}
         </p>
         <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
-          <span className="text-xs font-medium text-gray-500">
-            {a.fournisseur || "Fournisseur non défini"}
-          </span>
+          {/* Une prestation de main-d'œuvre n'a pas de fournisseur : on masque
+              la mention, tandis que matières et accessoires gardent l'affichage
+              actuel (valeur saisie ou « Fournisseur non défini »). */}
+          {!prestation && (
+            <span className="text-xs font-medium text-gray-500">
+              {a.fournisseur || "Fournisseur non défini"}
+            </span>
+          )}
           {prestation ? (
             <div className="flex flex-col items-end gap-0.5">
               <span className="text-xs font-medium text-violet-300/80">
