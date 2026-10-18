@@ -647,14 +647,20 @@ export default function ProductFormModal({
             {activeTab === "tarifs" && values.kind === "BARDAGE" && (
               <div role="group" aria-labelledby="grp-3-fournisseur-tarifs" className={blocCls}>
                 <div id="grp-3-fournisseur-tarifs" className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                  3 · Fournisseur &amp; Tarifs
+                  {estMainOeuvre ? "Tarifs de la prestation" : "3 · Fournisseur & Tarifs"}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
-                    <input id="chp-fournisseur" type="text" value={values.fournisseur}
-                      onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
-                  </div>
+                {/* Prestation (main-d'œuvre) : pas de fournisseur (achat de
+                    fournitures). Unité de vente et prix restent — ce sont des
+                    champs de tarification (heure, forfait…). Aucune donnée
+                    n'est effacée : le brouillon garde `fournisseur`. */}
+                <div className={`grid gap-3 ${estMainOeuvre ? "grid-cols-1" : "grid-cols-2"}`}>
+                  {!estMainOeuvre && (
+                    <div>
+                      <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
+                      <input id="chp-fournisseur" type="text" value={values.fournisseur}
+                        onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="chp-unite" className={labelCls}>Unité de vente</label>
                     <select id="chp-unite" value={values.unite}
@@ -730,22 +736,26 @@ export default function ProductFormModal({
             {activeTab === "tarifs" && values.kind === "TERRASSE_ACCESSOIRE" && (
               <div className={blocCls}>
                 <div className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Fournisseur &amp; Tarifs
+                  {estPrestationAccessoire ? "Tarifs de la prestation" : "Fournisseur & Tarifs"}
                 </div>
-                <div className={`grid gap-3 ${estPrestationAccessoire ? "grid-cols-1" : "grid-cols-2"}`}>
-                  <div>
-                    <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
-                    <input id="chp-fournisseur" type="text" value={values.fournisseur}
-                      onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
-                  </div>
-                  {!estPrestationAccessoire && (
+                {/* Prestation (main-d'œuvre) : ni fournisseur, ni achat de
+                    fournitures / conditionnement. Aucune donnée n'est effacée —
+                    les valeurs restent dans le brouillon et réapparaissent si
+                    l'on repasse en « matiere ». */}
+                {!estPrestationAccessoire && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
+                      <input id="chp-fournisseur" type="text" value={values.fournisseur}
+                        onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
+                    </div>
                     <div>
                       <label htmlFor="chp-conditionnement-tarif" className={labelCls}>Conditionnement</label>
                       <input id="chp-conditionnement-tarif" type="text" value={values.conditionnement}
                         onChange={(e) => patch({ conditionnement: e.target.value })} className={inputCls} />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="chp-unite-mesure-tarif" className={labelCls}>Unité de mesure</label>
