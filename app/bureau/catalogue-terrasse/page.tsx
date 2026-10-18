@@ -386,7 +386,10 @@ export default function CatalogueTerrassePage() {
         <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
           {etiquette}
         </h3>
-        {a.conditionnement && (
+        {/* Une prestation n'a pas de conditionnement matériel : on masque la
+            mention même si des valeurs historiques subsistent dans la ligne
+            (vestiges d'une ligne basculée de "matiere" en "main_oeuvre"). */}
+        {!prestation && a.conditionnement && (
           <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">
             {a.conditionnement}
           </p>
