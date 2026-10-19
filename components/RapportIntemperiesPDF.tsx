@@ -114,35 +114,38 @@ export default function RapportIntemperiesPDF({
   const ventMoyen = calculerVentMoyen(rapport);
 
   return (
-    <div id="document-pdf-content" className="mx-auto max-w-3xl bg-white p-6 text-slate-900 shadow-xl text-sm leading-relaxed">
-      <div className="mb-2 h-1.5 w-full rounded-full bg-red-700" />
+    // La classe `rapport-intemperies` sert de crochet à la page CSS nommée
+    // `@page rapport-intemperies` (format A4 strict) déclarée dans globals.css :
+    // elle n'affecte QUE ce document imprimé.
+    <div id="document-pdf-content" className="rapport-intemperies mx-auto max-w-3xl bg-white p-6 text-slate-900 shadow-xl text-[13px] leading-snug">
+      <div className="mb-1 h-1 w-full rounded-full bg-red-700" />
 
       {/* En-tête */}
-      <div className="flex items-start justify-between pt-3">
-        <div className="flex items-center gap-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
           <Image
             src={entreprise.logo_url || "/logo-bna.png"}
             alt="Logo"
-            className="h-20 sm:h-24 max-h-24 w-auto object-contain"
+            className="h-14 max-h-14 w-auto object-contain"
            width={100} height={100} />
           <div>
-            <p className="text-lg font-extrabold text-slate-900">{entreprise.raison_sociale}</p>
-            <p className="font-medium text-slate-500 text-xs">Spécialiste Bardage Rapporté · Isolation ITE</p>
+            <p className="text-base font-extrabold leading-tight text-slate-900">{entreprise.raison_sociale}</p>
+            <p className="font-medium text-slate-500 text-[10px]">Spécialiste Bardage Rapporté · Isolation ITE</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xl font-black uppercase tracking-tight text-slate-900 leading-tight">
+          <p className="text-base font-black uppercase tracking-tight text-slate-900 leading-tight">
             Rapport d&apos;arrêt de chantier
             <br />
             pour intempéries
           </p>
-          <p className="font-mono text-sm font-bold text-red-700 mt-1">N° {rapport.numero}</p>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 font-mono text-xs font-bold text-red-700">N° {rapport.numero}</p>
+          <p className="text-[10px] text-slate-500">
             Rédigé le {new Date(rapport.cree_le).toLocaleDateString("fr-FR")}
           </p>
-          <div className="mt-1">
+          <div className="mt-0.5">
             <span
-              className={`inline-block rounded-full px-3 py-0.5 text-xs font-semibold uppercase text-white ${BADGE_VIGILANCE[rapport.vigilance_officielle]}`}
+              className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase text-white ${BADGE_VIGILANCE[rapport.vigilance_officielle]}`}
             >
               {LABELS_VIGILANCE[rapport.vigilance_officielle]}
             </span>
@@ -154,10 +157,10 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 1. Identification du chantier */}
-      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-0.5">
         1. Identification du chantier
       </p>
-      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
+      <div className="mt-1 grid grid-cols-2 gap-x-6 gap-y-0.5 text-[12px]">
         <p><span className="text-slate-400">Entreprise de pose :</span> {entreprise.raison_sociale}</p>
         <p><span className="text-slate-400">Maître d&apos;ouvrage / Client :</span> ______________________</p>
         <p><span className="text-slate-400">Lieu des travaux :</span> {chantier.adresse || chantier.nom} {chantier.code_postal} {chantier.ville}</p>
@@ -171,20 +174,20 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 2. Données météorologiques de contrôle */}
-      <div className="mt-3 rounded-lg border-2 border-sky-200 bg-sky-50/50 p-4">
-        <p className="text-xs font-extrabold uppercase tracking-wide text-sky-800">
+      <div className="mt-1.5 rounded-lg border-2 border-sky-200 bg-sky-50/50 px-2.5 py-2">
+        <p className="text-[11px] font-extrabold uppercase tracking-wide text-sky-800">
           🚩 Données météorologiques de contrôle (générées via API)
         </p>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-0.5 text-[10px] text-slate-500">
           Horodatage de l&apos;extraction : {new Date(rapport.cree_le).toLocaleString("fr-FR")}
           {rapport.departement && ` · Département ${rapport.departement}`}
         </p>
 
-        <div className="mt-3">
-          <p className="text-xs font-bold uppercase text-orange-700">
+        <div className="mt-1.5">
+          <p className="text-[11px] font-bold uppercase text-orange-700">
             {EMOJI_VIGILANCE[rapport.vigilance_officielle]} Vigilance officielle (Météo-France)
           </p>
-          <p className="text-sm mt-0.5">
+          <p className="text-[12px]">
             Niveau d&apos;alerte : <strong>{LABELS_VIGILANCE[rapport.vigilance_officielle]}</strong>
             {rapport.vigilance_phenomene && <> — Phénomène : <strong>{rapport.vigilance_phenomene}</strong></>}
           </p>
@@ -192,33 +195,33 @@ export default function RapportIntemperiesPDF({
 
         {/* RISQUE TECHNIQUE — niveau DISTINCT de la vigilance officielle
             ci-dessus. Les deux ne sont jamais fusionnés. */}
-        <div className="mt-2">
-          <p className="text-xs font-bold uppercase text-slate-700">
+        <div className="mt-1">
+          <p className="text-[11px] font-bold uppercase text-slate-700">
             🔧 Risque technique chantier (matériau / accès)
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="text-[11px] text-slate-600">
             {LABELS_RISQUE_TECHNIQUE[rapport.risque_technique_niveau ?? ""] ?? "Non évalué"}
           </p>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+        <div className="mt-1.5 grid grid-cols-2 gap-x-6 gap-y-0.5 text-[12px]">
           <p>💨 Vent maximum (rafales) : <strong>{rapport.rafales_max ?? "—"} km/h</strong></p>
           <p>💨 Vent moyen : <strong>{ventMoyen ?? "—"} km/h</strong></p>
           <p>🌧️ Précipitations cumulées : <strong>{rapport.pluie_cumul !== null ? Math.round(rapport.pluie_cumul * 10) / 10 : "—"} mm</strong></p>
           <p>🌡️ Température min / max : <strong>{tempMin ?? "—"}°C / {rapport.temp_max ?? "—"}°C</strong></p>
         </div>
 
-        <p className="mt-3 text-xs text-sky-800">
+        <p className="mt-1.5 text-[11px] text-sky-800">
           Statut réglementaire : ces relevés confirment {rapport.jour_arrete ? "un dépassement" : "une approche"} des
           seuils de tolérance des DTU de la série 41 / 31 et du Code du travail.
         </p>
       </div>
 
       {/* 3. Description de l'impact */}
-      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-0.5">
         2. Description de l&apos;impact sur les travaux
       </p>
-      <div className="mt-2 space-y-1.5">
+      <div className="mt-1 space-y-1 text-[12px]">
         <p><span className="text-slate-400">Phase de travaux impactée :</span> ______________________</p>
         <p><span className="text-slate-400">Risques identifiés :</span> {rapport.motif}</p>
         {rapport.risque_technique_motif && (
@@ -235,46 +238,46 @@ export default function RapportIntemperiesPDF({
       </div>
 
       {/* 4. Mesures conservatoires */}
-      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-0.5">
         3. Mesures conservatoires prises immédiatement
       </p>
-      <div className="mt-2 min-h-[50px] rounded-lg border border-dashed border-slate-300 p-3 text-sm">
+      <div className="mt-1 min-h-[32px] rounded-lg border border-dashed border-slate-300 p-2 text-[12px]">
         {rapport.mesures_prises || "☐ ______________________________________________"}
       </div>
 
       {/* 5. Conséquences planning */}
-      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-0.5">
         4. Conséquences sur le planning
       </p>
-      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1">
+      <div className="mt-1 grid grid-cols-2 gap-x-6 gap-y-0.5 text-[12px]">
         <p><span className="text-slate-400">Heures perdues :</span> ______ h pour ______ poseur(s)</p>
         <p><span className="text-slate-400">Report de livraison estimé :</span> ______ jour(s)</p>
       </div>
 
       {/* Relevé horaire (annexe technique) */}
       {rapport.heures && rapport.heures.length > 0 && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-xs font-bold uppercase tracking-wide text-slate-500">
+        <details className="mt-2">
+          <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wide text-slate-500">
             Annexe — Relevé horaire complet (pièce jointe)
           </summary>
-          <table className="mt-2 w-full text-xs">
+          <table className="mt-1.5 w-full text-[11px]">
             <thead>
               <tr className="border-b-2 border-slate-900 text-left uppercase text-slate-400">
-                <th className="py-1">Heure</th>
-                <th className="py-1 text-right">Temp.</th>
-                <th className="py-1 text-right">Vent</th>
-                <th className="py-1 text-right">Rafales</th>
-                <th className="py-1 text-right">Pluie</th>
+                <th className="py-0.5">Heure</th>
+                <th className="py-0.5 text-right">Temp.</th>
+                <th className="py-0.5 text-right">Vent</th>
+                <th className="py-0.5 text-right">Rafales</th>
+                <th className="py-0.5 text-right">Pluie</th>
               </tr>
             </thead>
             <tbody>
               {rapport.heures.map((h, i) => (
                 <tr key={i} className="border-b border-slate-100">
-                  <td className="py-1">{h.heure}</td>
-                  <td className="py-1 text-right">{h.temp}°C</td>
-                  <td className="py-1 text-right">{h.vent} km/h</td>
-                  <td className="py-1 text-right">{h.rafales} km/h</td>
-                  <td className="py-1 text-right">{h.pluie} mm</td>
+                  <td className="py-0.5">{h.heure}</td>
+                  <td className="py-0.5 text-right">{h.temp}°C</td>
+                  <td className="py-0.5 text-right">{h.vent} km/h</td>
+                  <td className="py-0.5 text-right">{h.rafales} km/h</td>
+                  <td className="py-0.5 text-right">{h.pluie} mm</td>
                 </tr>
               ))}
             </tbody>
@@ -283,27 +286,27 @@ export default function RapportIntemperiesPDF({
       )}
 
       {/* 6. Pièces jointes */}
-      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-1">
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-0.5">
         5. Pièces jointes
       </p>
-      <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
+      <ul className="mt-1 list-disc pl-5 text-[12px] text-slate-700">
         <li>Relevé météo officiel (voir encadré ci-dessus)</li>
         <li>Photos datées de l&apos;état du chantier au moment de l&apos;arrêt (à joindre au dossier)</li>
       </ul>
 
       {/* Signatures */}
-      <div className="mt-4 grid grid-cols-2 gap-6 border-t border-slate-200 pt-3 text-xs">
+      <div className="avoid-break mt-2 grid grid-cols-2 gap-6 border-t border-slate-200 pt-2 text-[11px]">
         <div>
           <p className="font-semibold">L&apos;entreprise</p>
-          <div className="mt-4 h-10 rounded-lg border border-dashed border-slate-300" />
+          <div className="mt-2 h-9 rounded-lg border border-dashed border-slate-300" />
         </div>
         <div>
           <p className="font-semibold">Chef de chantier</p>
-          <div className="mt-4 h-10 rounded-lg border border-dashed border-slate-300" />
+          <div className="mt-2 h-9 rounded-lg border border-dashed border-slate-300" />
         </div>
       </div>
 
-      <p className="mt-3 text-[9.5px] leading-relaxed text-slate-400">
+      <p className="mt-2 text-[9.5px] leading-snug text-slate-400">
         Rapport généré {rapport.cree_par === "auto" ? "automatiquement" : "manuellement"} à partir de la vigilance
         officielle Météo-France et des données météo locales du chantier. Document à conserver au dossier chantier
         en cas de sinistre ou de litige lié aux conditions météorologiques et aux dispositions des DTU 41.2 / 31.2.
