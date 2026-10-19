@@ -209,13 +209,17 @@ describe("Accueil — hierarchie visuelle et comportement mobile", () => {
     expect(DASHBOARD).toMatch(/<header>/);
   });
 
-  it("les quatre en-tetes de section gardent l'alignement d'origine", () => {
-    // `justify-between` : le libelle a gauche, le lien a droite, tous deux sur
-    // la meme ligne et le meme axe que les sections voisines.
+  it("les cinq en-têtes de section gardent l'alignement d'origine", () => {
+    // `justify-between` : le libellé à gauche, le lien à droite, tous deux sur
+    // la même ligne et le même axe que les sections voisines.
+    //
+    // Cinq : chantiers à préparer, météo générale, impact météo sur les
+    // chantiers, dernières notes, alertes. L'assistance vocale ouvre la page
+    // avec son propre en-tête, hors de ce motif.
     const enTetes = [...DASHBOARD.matchAll(/className="(mb-4[^"]*)"/g)].map(
       (m) => m[1],
     );
-    expect(enTetes).toHaveLength(4);
+    expect(enTetes).toHaveLength(5);
     for (const classes of enTetes) {
       expect(classes).toMatch(/justify-between/);
     }

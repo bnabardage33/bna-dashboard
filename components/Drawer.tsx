@@ -57,6 +57,10 @@ const NAV_ITEMS: EntreeNav[] = [
     icon: HardHat,
     children: [
       { href: "/terrain/chantier", label: "Liste des chantiers" },
+      // Deux entrées météo distinctes, sans redirection croisée :
+      //   - « Météo générale » = prévisions (ville, jour, heure par heure) ;
+      //   - « Météo & intempéries » = veille officielle + rapports.
+      { href: "/terrain/meteo", label: "Météo générale" },
       { href: "/bureau/meteo", label: "Météo & intempéries" },
       { href: "/bureau/rapports-intemperies", label: "Rapports intempéries" },
       { href: "/bureau/fin-chantier", label: "Fin de chantier / PV" },

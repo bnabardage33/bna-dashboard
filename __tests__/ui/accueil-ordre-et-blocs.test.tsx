@@ -5,7 +5,8 @@
 // dans un test de rendu isolé :
 //
 //   1. L'ordre des blocs de l'accueil est
-//        Assistant vocal -> Chantiers à préparer -> Météo -> Notes -> Alertes.
+//        Assistant vocal -> Chantiers à préparer -> Météo générale ->
+//        Impact météo sur les chantiers -> Notes -> Alertes.
 //      Un test qui vérifie l'ordre est plus robuste qu'un test qui vérifie des
 //      numéros de section : l'ordre est l'intention, pas une implémentation.
 //
@@ -62,8 +63,11 @@ function blocs(source: string): Array<{ numero: string; titre: string; corps: st
 const BLOCS = blocs(DASHBOARD);
 
 describe("Accueil — l'ordre des blocs est celui validé", () => {
-  it("cinq blocs, numérotés 1 à 5, sans trou ni doublon", () => {
-    expect(BLOCS.map((b) => b.numero)).toEqual(["1", "2", "3", "4", "5"]);
+  it("six blocs, numérotés 1 à 6, sans trou ni doublon", () => {
+    // Le bloc 3 « Météo générale » a été restauré (recherche de ville,
+    // matin/après-midi, heure par heure, J+1 à J+4) sans supprimer le bloc 4
+    // « Impact météo sur les chantiers » : ce sont deux fonctions distinctes.
+    expect(BLOCS.map((b) => b.numero)).toEqual(["1", "2", "3", "4", "5", "6"]);
   });
 
   it("1. Assistance vocale (IA)", () => {
@@ -80,21 +84,31 @@ describe("Accueil — l'ordre des blocs est celui validé", () => {
     expect(BLOCS[1].corps).toContain("chantiersAPreparer");
   });
 
-  it("3. Météo & impact météo sur les chantiers", () => {
-    expect(BLOCS[2].titre).toMatch(/[Mm]étéo/i);
+  it("3. Météo générale (restaurée)", () => {
+    expect(BLOCS[2].titre).toMatch(/Météo générale/i);
+    // Le composant restauré est monté ici, et son lien « Prévisions
+    // complètes » mène à la page historique /terrain/meteo.
+    expect(BLOCS[2].corps).toContain("MeteoGeneraleAccueil");
+    expect(BLOCS[2].corps).toContain('"/terrain/meteo"');
+  });
+
+  it("4. Impact météo sur les chantiers", () => {
+    expect(BLOCS[3].titre).toMatch(/Impact météo/i);
     // Le bloc est un nœud rendu par `app/page.tsx` : c'est ce qui sort la
-    // logique météo du périmètre de ce composant.
-    expect(BLOCS[2].corps).toContain("blocMeteo");
+    // logique météo des chantiers du périmètre de ce composant.
+    expect(BLOCS[3].corps).toContain("blocMeteo");
+    // La veille des intempéries reste sur /bureau/meteo.
+    expect(BLOCS[3].corps).toContain('"/bureau/meteo"');
   });
 
-  it("4. Dernières Notes", () => {
-    expect(BLOCS[3].titre).toMatch(/Dernières Notes/i);
-    expect(BLOCS[3].corps).toContain("dernieresNotes");
+  it("5. Dernières Notes", () => {
+    expect(BLOCS[4].titre).toMatch(/Dernières Notes/i);
+    expect(BLOCS[4].corps).toContain("dernieresNotes");
   });
 
-  it("5. Alertes", () => {
-    expect(BLOCS[4].titre).toMatch(/Alertes/i);
-    expect(BLOCS[4].corps).toContain("notifications");
+  it("6. Alertes", () => {
+    expect(BLOCS[5].titre).toMatch(/Alertes/i);
+    expect(BLOCS[5].corps).toContain("notifications");
   });
 });
 

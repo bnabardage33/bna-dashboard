@@ -16,9 +16,16 @@
 // réellement utiles sont remontés ici. L'ordre des blocs est celui validé :
 //   1. Assistance vocale / IA
 //   2. Chantiers à préparer
-//   3. Météo & impact météo sur les chantiers
-//   4. Dernières Notes
-//   5. Alertes
+//   3. Météo générale (recherche de ville, jour, matin/après-midi, heure par
+//      heure, prévisions J+1 à J+4 — restauration de l'expérience historique
+//      de `/terrain/meteo`, désormais aussi accessible en page complète)
+//   4. Impact météo sur les chantiers (ChantiersMeteoCards, inchangé)
+//   5. Dernières Notes
+//   6. Alertes
+//
+// La séparation 3/4 est volontaire : le bloc 3 est la météo GÉNÉRALE du
+// territoire (ville recherchée), le bloc 4 est l'impact OPÉRATIONNEL sur les
+// chantiers suivis. La veille des intempéries reste sur `/bureau/meteo`.
 //
 // Le bloc « Chiffres clés » (chantiers actifs, devis, factures en retard,
 // fournisseurs, notes patron) a été SUPPRIMÉ de l'accueil : il ne servait à
@@ -82,6 +89,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import BoutonMicroNote from '@/components/BoutonMicroNote';
+import MeteoGeneraleAccueil from '@/components/MeteoGeneraleAccueil';
 import { supabase } from '@/lib/supabase';
 import { resoudreContexteEntreprise } from '@/lib/contexteEntreprise';
 import { Surface } from '@/components/ui/Surface';
@@ -204,12 +212,13 @@ export default function DashboardAccueil({
     <div className="space-y-8">
       {/* En-tête de page : `h1` + sous-titre, sur le modèle du cockpit Bureau
           d'origine. Donne au regard une porte d'entrée et une échelle, et rend
-          les cinq blocs lisibles comme des sections de même niveau. */}
+          les six blocs lisibles comme des sections de même niveau. */}
       <header>
         <h1 className="text-2xl font-bold text-white sm:text-3xl">Accueil</h1>
         <p className="mt-1 text-sm text-gray-400">
           L&apos;essentiel en un écran : votre assistant, les chantiers à
-          préparer, l&apos;impact de la météo, vos dernières notes et les alertes.
+          préparer, la météo générale, l&apos;impact de la météo sur les
+          chantiers, vos dernières notes et les alertes.
         </p>
       </header>
 
@@ -284,7 +293,24 @@ export default function DashboardAccueil({
         </section>
       )}
 
-      {/* ── 3. Météo + impact météo sur les chantiers ─────────────────── */}
+      {/* ── 3. Météo générale ───────────────────────────────────────── */}
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <CloudSun className="h-5 w-5 shrink-0 text-[#E53935]" />
+            Météo générale
+          </h2>
+          <Link
+            href="/terrain/meteo"
+            className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#E53935] transition-colors hover:text-red-400"
+          >
+            Prévisions complètes <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <MeteoGeneraleAccueil />
+      </section>
+
+      {/* ── 4. Impact météo sur les chantiers ───────────────────────── */}
       {blocMeteo && (
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -303,7 +329,7 @@ export default function DashboardAccueil({
         </section>
       )}
 
-      {/* ── 4. Dernières notes ─────────────────────────────────────────── */}
+      {/* ── 5. Dernières notes ─────────────────────────────────────────── */}
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -348,7 +374,7 @@ export default function DashboardAccueil({
         </div>
       </section>
 
-      {/* ── 5. Notifications / alertes ─────────────────────────────────── */}
+      {/* ── 6. Notifications / alertes ─────────────────────────────────── */}
       {notifications && (
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

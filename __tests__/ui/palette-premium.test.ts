@@ -57,7 +57,7 @@ function code(fichier: string): string {
   // Le glob `/finance/**` porte un `/*`. Retirer les blocs AVANT les lignes
   // fait ouvrir un commentaire à cet endroit, qui avale alors tout le reste du
   // fichier jusqu'au prochain `*/` : NAV_ITEMS et les groupes disparaissent, et
-  // 10 `href` sont comptés au lieu de 27. Le contrôle « 27 routes, 6 groupes »
+  // 10 `href` sont comptés au lieu de 29. Le contrôle « 29 routes, 7 groupes »
   // échouerait, mais surtout les contrôles de migration de palette scalleraient
   // du code qu'ils sont censés inspecter.
   const sansLignes = s.replace(/^\s*\/\/.*$/gm, '')
@@ -74,8 +74,10 @@ function code(fichier: string): string {
 it('le retrait des commentaires ne perd pas de code (ordre // puis /* */)', () => {
   const brut = readFileSync('components/Drawer.tsx', 'utf8')
   const nu = code('components/Drawer.tsx')
-  expect(nu.match(/href: "/g)?.length).toBe(27)
-  expect(nu.match(/children: \[/g)?.length).toBe(6)
+  // 29 routes depuis que « Météo générale » (/terrain/meteo) a rejoint
+  // « Météo & intempéries » (/bureau/meteo) : deux fonctions distinctes.
+  expect(nu.match(/href: "/g)?.length).toBe(29)
+  expect(nu.match(/children: \[/g)?.length).toBe(7)
   // Et le commentaire piége est bien celui qu'on croit.
   expect(brut).toMatch(/\/\/.*\/finance\/\*\*/)
 })
@@ -348,9 +350,14 @@ describe('charte graphique — le tiroir de navigation (§6)', () => {
     expect(D).not.toMatch(/border-red-\d{3}\b/)
   })
 
-  it('la structure est intacte : 27 routes et 6 groupes', () => {
-    expect(D.match(/href: "/g)?.length).toBe(27)
-    expect(D.match(/children: \[/g)?.length).toBe(6)
+  it('la structure est intacte : 29 routes et 7 groupes', () => {
+    // Le groupe « Catalogues » (06b6dff) puis l'entrée « Météo générale »
+    // (restauration de la météo) ont fait évoluer la structure. Ce test
+    // verrouille le compte pour détecter une route perdue par accident —
+    // il doit donc suivre les ajouts délibérés, pas rester figé sur un état
+    // antérieur.
+    expect(D.match(/href: "/g)?.length).toBe(29)
+    expect(D.match(/children: \[/g)?.length).toBe(7)
   })
 
   it('le comportement d\'accordeon est intact', () => {
