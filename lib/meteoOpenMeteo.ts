@@ -292,23 +292,33 @@ function jourDe(iso: string): string {
  */
 export async function fetchDonneesOpenMeteo(
   adresse: string,
+  coordonnees?: { lat: number; lon: number },
 ): Promise<DonneesMeteo | null> {
   const q = adresse.trim();
-  if (!q) return null;
+  if (!q && !coordonnees) return null;
 
-  // Même géocodeur que les frais de déplacement : fail-closed sur le code
-  // postal, et surtout un SEUL appelant Nominatim pour toute l'application.
-  const geocode = await geocoderAdresse(q);
-  if (!geocode.ok) {
-    console.error(
-      "meteoOpenMeteo : géocodage impossible pour « %s » — %s",
-      q,
-      geocode.erreur,
-    );
-    return null;
+  let lat: number;
+  let lon: number;
+
+  if (coordonnees) {
+    // Coordonnées déjà validées (code postal) par l'appelant : on les
+    // réutilise telles quelles. C'est ce qui garantit que Visual Crossing et
+    // Open-Meteo travaillent sur le même point.
+    ({ lat, lon } = coordonnees);
+  } else {
+    // Même géocodeur que les frais de déplacement : fail-closed sur le code
+    // postal, et surtout un SEUL appelant Nominatim pour toute l'application.
+    const geocode = await geocoderAdresse(q);
+    if (!geocode.ok) {
+      console.error(
+        "meteoOpenMeteo : géocodage impossible pour « %s » — %s",
+        q,
+        geocode.erreur,
+      );
+      return null;
+    }
+    ({ lat, lon } = geocode.data);
   }
-
-  const { lat, lon } = geocode.data;
 
   const params = new URLSearchParams({
     latitude: String(lat),

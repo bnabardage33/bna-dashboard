@@ -8,6 +8,7 @@ type RapportListe = {
   id: string;
   numero: string;
   vigilance_officielle: string;
+  risque_technique_niveau: string | null;
   jour_arrete: boolean;
   a_valider: boolean;
   ampleur_impact: "complete" | "partielle" | null;
@@ -22,6 +23,7 @@ type RapportIntemperieRow = {
   numero: string | null;
   chantier_id: string | null;
   vigilance_officielle: string | null;
+  risque_technique_niveau: string | null;
   jour_arrete: boolean | null;
   a_valider: boolean | null;
   ampleur_impact: "complete" | "partielle" | null;
@@ -35,6 +37,7 @@ const EMOJI_VIGILANCE: Record<string, string> = {
   jaune: "🟡",
   orange: "🟠",
   rouge: "🔴",
+  indisponible: "⚪",
 };
 
 const COULEUR_BORDURE: Record<string, string> = {
@@ -42,6 +45,15 @@ const COULEUR_BORDURE: Record<string, string> = {
   jaune: "border-white/10",
   orange: "border-white/10",
   rouge: "border-red-500/40",
+  indisponible: "border-white/10",
+};
+
+// Libellés du RISQUE TECHNIQUE (distinct de la vigilance officielle).
+const LABEL_RISQUE_TECHNIQUE: Record<string, string> = {
+  vert: "aucun dépassement mesuré",
+  jaune: "dépassement modéré mesuré",
+  orange: "dépassement important mesuré",
+  rouge: "dépassement critique mesuré",
 };
 
 function labelStatut(r: RapportListe) {
@@ -65,7 +77,7 @@ export default function BureauRapportsIntemperiesPage() {
       supabase
         .from("rapports_intemperies")
         .select(
-          "id, numero, chantier_id, vigilance_officielle, jour_arrete, a_valider, ampleur_impact, motif, cree_le, cree_par"
+          "id, numero, chantier_id, vigilance_officielle, risque_technique_niveau, jour_arrete, a_valider, ampleur_impact, motif, cree_le, cree_par"
         )
         .order("cree_le", { ascending: false }),
       supabase
@@ -90,7 +102,8 @@ export default function BureauRapportsIntemperiesPage() {
       ((rapportsRes.data as RapportIntemperieRow[] | null) ?? []).map((r) => ({
       id: r.id,
       numero: r.numero ?? "",
-      vigilance_officielle: r.vigilance_officielle ?? "vert",
+      vigilance_officielle: r.vigilance_officielle ?? "indisponible",
+      risque_technique_niveau: r.risque_technique_niveau ?? null,
       jour_arrete: r.jour_arrete ?? false,
       a_valider: r.a_valider ?? false,
       ampleur_impact: r.ampleur_impact,
@@ -233,6 +246,18 @@ export default function BureauRapportsIntemperiesPage() {
                 </div>
               </div>
               <p className="mt-1 text-xs text-gray-400">{labelStatut(r)}</p>
+              <p className="mt-1 text-xs text-gray-400">
+                Vigilance officielle :{" "}
+                {r.vigilance_officielle === "indisponible"
+                  ? "indisponible"
+                  : r.vigilance_officielle}
+                {r.risque_technique_niveau
+                  ? ` · Risque technique : ${
+                      LABEL_RISQUE_TECHNIQUE[r.risque_technique_niveau] ??
+                      r.risque_technique_niveau
+                    }`
+                  : ""}
+              </p>
               <p className="mt-1 line-clamp-2 text-xs text-gray-500">{r.motif}</p>
             </Link>
           ))}

@@ -2,6 +2,12 @@
 
 export type NiveauVigilance = "vert" | "jaune" | "orange" | "rouge";
 
+// La vigilance OFFICIELLE peut être indisponible (API Météo-France en panne,
+// clé absente…). « indisponible » est un ÉTAT, pas une couleur : il ne doit
+// jamais être confondu avec « vert ». Le risque TECHNIQUE du chantier est, lui,
+// toujours porté séparément par `risque_technique_niveau`.
+export type StatutVigilanceOfficielle = NiveauVigilance | "indisponible";
+
 import { Entreprise } from "@/types/entreprise";
 import Image from "next/image";
 
@@ -16,7 +22,7 @@ export type RapportIntemperiesData = {
   numero: string;
   cree_le: string;
   cree_par: "auto" | "manuel";
-  vigilance_officielle: NiveauVigilance;
+  vigilance_officielle: StatutVigilanceOfficielle;
   vigilance_phenomene?: string | null; // ex: "orages", "vent", "pluie-inondation"
   jour_arrete: boolean;
   a_valider: boolean;
@@ -34,25 +40,37 @@ export type RapportIntemperiesData = {
   heures?: { heure: string; temp: number; vent: number; rafales: number; pluie: number }[];
 };
 
-const LABELS_VIGILANCE: Record<NiveauVigilance, string> = {
+const LABELS_VIGILANCE: Record<StatutVigilanceOfficielle, string> = {
   vert: "Pas de vigilance",
   jaune: "Vigilance jaune",
   orange: "Vigilance orange",
   rouge: "Vigilance rouge",
+  indisponible: "Vigilance officielle indisponible",
 };
 
-const EMOJI_VIGILANCE: Record<NiveauVigilance, string> = {
+const EMOJI_VIGILANCE: Record<StatutVigilanceOfficielle, string> = {
   vert: "🟢",
   jaune: "🟡",
   orange: "🟠",
   rouge: "🔴",
+  indisponible: "⚪",
 };
 
-const BADGE_VIGILANCE: Record<NiveauVigilance, string> = {
+const BADGE_VIGILANCE: Record<StatutVigilanceOfficielle, string> = {
   vert: "bg-emerald-600",
   jaune: "bg-amber-500",
   orange: "bg-orange-600",
   rouge: "bg-red-600",
+  indisponible: "bg-slate-500",
+};
+
+// Niveaux du RISQUE TECHNIQUE (seuils matériau/accès), distincts de la
+// vigilance officielle ci-dessus.
+const LABELS_RISQUE_TECHNIQUE: Record<string, string> = {
+  vert: "Aucun dépassement mesuré",
+  jaune: "Dépassement modéré mesuré",
+  orange: "Dépassement important mesuré",
+  rouge: "Dépassement critique mesuré",
 };
 
 const LABELS_MATERIAU: Record<string, string> = {
@@ -169,6 +187,17 @@ export default function RapportIntemperiesPDF({
           <p className="text-sm mt-0.5">
             Niveau d&apos;alerte : <strong>{LABELS_VIGILANCE[rapport.vigilance_officielle]}</strong>
             {rapport.vigilance_phenomene && <> — Phénomène : <strong>{rapport.vigilance_phenomene}</strong></>}
+          </p>
+        </div>
+
+        {/* RISQUE TECHNIQUE — niveau DISTINCT de la vigilance officielle
+            ci-dessus. Les deux ne sont jamais fusionnés. */}
+        <div className="mt-2">
+          <p className="text-xs font-bold uppercase text-slate-700">
+            🔧 Risque technique chantier (matériau / accès)
+          </p>
+          <p className="text-xs text-slate-600">
+            {LABELS_RISQUE_TECHNIQUE[rapport.risque_technique_niveau ?? ""] ?? "Non évalué"}
           </p>
         </div>
 

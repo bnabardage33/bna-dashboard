@@ -117,7 +117,9 @@ describe("Composant FraisDeplacementTab (LOT 5 - React 19 test)", () => {
     // mauvaise commune, qui produirait un chiffrage sans aucun autre signal.
     expect(conteneur.textContent).toContain("33920 Générac");
     expect(conteneur.textContent).toContain("33920 Saint-Savin");
-    expect(conteneur.textContent).not.toContain("Branne");
+    // Aucun lieu d'un AUTRE code postal ne doit s'afficher : le serveur n'a
+    // retenu que les deux ci-dessus.
+    expect(conteneur.textContent).not.toContain("44100");
   });
 
   it("déclenche POST /evaluer uniquement au clic et affiche le résultat retourné", async () => {

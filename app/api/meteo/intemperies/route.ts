@@ -5,9 +5,10 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
-import type { VigilancePhenomene } from "@/lib/meteoVigilance";
+import type { VigilancePhenomene } from "@/lib/vigilanceMeteoFrance";
 import { verifierSession } from "@/lib/auth";
-import { extraireCodePostal, userAgentNominatim } from "@/lib/deplacement/geocodage";
+import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
+import { dateParis, dateParisDans } from "@/lib/dateParis";
 
 // ─── Seuils communs ───────────────────────────────────────────────────────────
 const SEUIL_PLUIE_MM = 5;
@@ -96,7 +97,9 @@ async function resoudreContexteMeteo(
   };
 }
 
-const FALLBACK_GEOLOC = { lat: 46.6, lng: 2.4 };
+// Note : il n'y a volontairement PAS de FALLBACK_GEOLOC ici. Un chantier dont
+// l'adresse n'a pas pu être validée n'a pas de météo attribuée : on le signale
+// (`erreurLocalisation`) au lieu de lui attribuer la météo d'un point arbitraire.
 const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES = ["ossature", "isolation", "bardage", "finitions"] as const;
 
@@ -134,25 +137,32 @@ type ChantierMeteo = {
   lat: number;
   lng: number;
   geocoded: boolean;
+  /**
+   * Message expliquant pourquoi la commune n'a pas pu être validée par le code
+   * postal. `null` quand la localisation est validée. L'interface s'en sert
+   * pour signaler une localisation à corriger au lieu d'afficher une météo
+   * venue d'ailleurs.
+   */
+  erreurLocalisation: string | null;
+  /** Lieu réellement utilisé (commune issue du code postal), pour audit. */
+  localisationValidee: {
+    lat: number;
+    lon: number;
+    libelle: string;
+    codePostal: string | null;
+  } | null;
   jours: JourIntemperie[];
   intemperieAujourdhui: boolean;
   intemperiesProchainesJours: boolean;
   emailClient: string | null;
   departement: string | null;
-  vigilanceOfficielle: string | null;
+  vigilanceOfficielle: string;
   moyenAcces: Acces;
   materiau: Materiau;
 };
 
-// ─── Date France ──────────────────────────────────────────────────────────────
-function dateParis(): string {
-  return new Intl.DateTimeFormat("fr-CA", {
-    timeZone: "Europe/Paris",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
+// La date « française » vit dans `lib/dateParis.ts` : la même règle sert ici,
+// à `/api/meteo` et au Générateur de rapports. Ne pas la réimplémenter.
 
 function normalize(v: string | null | undefined): string {
   return (v ?? "").trim();
@@ -165,65 +175,10 @@ function seuilVentCritique(materiau: Materiau, acces: Acces): number {
   return Math.min(sm.vent_critique, sa.vent_critique);
 }
 
-// Point n°1 : géocodage depuis l'adresse du chantier (cache 6h)
-//
-// La version précédente faisait `limit=1` sans vérifier le code postal, ce qui
-// exposait la meteo au meme defaut que les frais de deplacement : Nominatim
-// classe par importance, et deux homonymes peuvent etre separes de moins de
-// 3e-7 d'ecart. Mesure sur « 8 lotissement Bellevue, 33920 » :
-//
-//   Branne      cp 33420  importance 0,0533973472   <-- arrivait en tete
-//   Saint-Savin cp 33920  importance 0,0533971092
-//
-// soit 40 km d'ecart, et le premier arrivant en tete etait le mauvais : la
-// meteo affichee etait celle de Branne, pour un chantier a Saint-Savin.
-//
-// Contrairement aux frais de deplacement, on ne refuse pas ici : l'echec ne
-// coute pas d'argent mais une prevision meteo absente ou approximative. On
-// prefere donc le candidat dont le code postal correspond a la saisie, et a
-// defaut le plus important — l'exactitude reste amelioree sans risque de
-// laisser un chantier sans meteo.
-async function geocoderAdresse(adresse: string): Promise<{ lat: number; lng: number } | null> {
-  const q = normalize(adresse);
-  if (!q) return null;
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&countrycodes=fr&q=${encodeURIComponent(q + ", France")}`,
-      {
-        headers: { "User-Agent": userAgentNominatim(), Accept: "application/json" },
-        next: { revalidate: 21600 },
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return null;
-
-    // Le code postal est extrait de l'adresse SAISIE, pas de la requete
-    // enrichie « , France » : sinon la commune ajoutee fausserait le
-    // rapprochement.
-    const codePostal = extraireCodePostal(q);
-    const eligibles = data.filter(
-      (c: { lat?: string; lon?: string }) => c.lat && c.lon
-    );
-    // Nominatim renvoie ses resultats tries par importance decroissante : le
-    // premier candidat valide est donc le plus pertinent, et le premier
-    // candidat compatible avec le code postal bat cette importance.
-    const candidat = codePostal
-      ? eligibles.find(
-          (c: { address?: { postcode?: string } }) => c.address?.postcode === codePostal
-        )
-      : undefined;
-    const retenu = candidat ?? eligibles[0];
-    if (!retenu) return null;
-
-    const lat = parseFloat(retenu.lat);
-    const lng = parseFloat(retenu.lon);
-    if (isNaN(lat) || isNaN(lng)) return null;
-    return { lat, lng };
-  } catch {
-    return null;
-  }
-}
+// Le géocodage est centralisé dans `lib/meteoLocalisation.ts` : code postal
+// exact, refus de l'ambiguïté, et coordonnées partagées avec VisualCrossing.
+// On ne reprend PAS ici de repli « premier résultat » ni de point par défaut
+// (voir `FALLBACK_GEOLOC`, supprimé) : un chantier mal localisé doit le dire.
 
 // Open-Meteo avec seuil vent dynamique
 async function fetchOpenMeteo(lat: number, lng: number, ventCritique: number): Promise<JourIntemperie[]> {
@@ -250,24 +205,30 @@ async function fetchOpenMeteo(lat: number, lng: number, ventCritique: number): P
 const PHENOMENES_CRITIQUES = ["vent", "pluie-inondation", "grand-froid", "orages"];
 
 async function fetchVigilanceDepartement(departement: string): Promise<{ niveau: string; phenomenes: string[] } | null> {
-  const applicationId = process.env.METEOFRANCE_APPLICATION_ID;
-  if (!applicationId || !departement) return null;
+  // Pas de `departement` : rien à interroger, on le dit par `null`.
+  if (!departement) return null;
   try {
     const { obtenirTokenMeteoFrance } = await import("@/lib/meteoFranceToken");
+    // `obtenirTokenMeteoFrance` lit elle-même METEOFRANCE_APPLICATION_ID. Si la
+    // clé manque, elle lève : le catch ci-dessous renvoie `null` (indisponible).
     const token = await obtenirTokenMeteoFrance();
     if (!token) return null;
 
+    // Endpoint officiel DPVigilance v1. L'ancien chemin « vigimeteo » n'existe
+    // pas dans ce produit : il renvoyait une erreur, donc TOUTE vigilance était
+    // perdue. L'authentification est le token OAuth2 en `Authorization: Bearer`
+    // (documenté pour DPVigilance v1) — PAS le header `apikey`.
     const res = await fetch(
-      "https://public-api.meteofrance.fr/public/DPVigilance/v1/vigimeteo?domain=metropolitaine",
+      "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours",
       {
-        headers: { Authorization: `Bearer ${token}`, apikey: applicationId },
+        headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 3600 },
       }
     );
     if (!res.ok) return null;
     const json = await res.json();
 
-    const { extraireDepartement } = await import("@/lib/meteoVigilance");
+    const { extraireDepartement } = await import("@/lib/vigilanceMeteoFrance");
     const resultat = extraireDepartement(json, departement);
     if (!resultat) return null;
 
@@ -368,31 +329,51 @@ async function analyserChantiers(
     const moyenAcces: Acces = (ch.moyen_acces as Acces) ?? "echafaudage";
     const ventCritique = seuilVentCritique(materiau, moyenAcces);
 
-    // Point n°1 : adresse du CHANTIER
+    // Point n°1 : adresse du CHANTIER.
+    // Coordonnées validées une seule fois, utilisées ensuite telles quelles.
+    // Aucun point de repli : sans lieu validé, on le signale au lieu d'afficher
+    // une météo inventée.
     const adresseChantier = normalize(ch.adresse_chantier);
-    let geoloc = adresseChantier ? await geocoderAdresse(adresseChantier) : null;
-    const geocoded = geoloc !== null;
-    if (!geoloc) geoloc = { ...FALLBACK_GEOLOC };
+    const localisation = await resoudreLocalisationMeteo(adresseChantier);
+    const geocoded = localisation.ok;
+    const erreurLocalisation = localisation.ok ? null : localisation.erreur;
+    const coordonnees = localisation.ok
+      ? { lat: localisation.data.lat, lng: localisation.data.lon }
+      : null;
 
     const departement = adresseVersDepartement(adresseChantier);
 
     let jours: JourIntemperie[] = [];
     let erreur = false;
-    try {
-      jours = await fetchOpenMeteo(geoloc.lat, geoloc.lng, ventCritique);
-    } catch {
-      erreur = true;
+    if (coordonnees) {
+      try {
+        jours = await fetchOpenMeteo(coordonnees.lat, coordonnees.lng, ventCritique);
+      } catch {
+        erreur = true;
+      }
     }
 
     if (jours.length === 0) {
+      // Sans coordonnées validées, ce n'est PAS une intempérie : on le signale
+      // sans le transformer en alerte. Sinon une adresse mal localisée ferait
+      // apparaître un « chantier impraticable » inventé.
+      const message = coordonnees
+        ? (erreur ? "Données météo indisponibles" : "")
+        : (erreurLocalisation ?? "Localisation non validée");
       jours = [0, 1, 2, 3].map((i) => {
-        const date = new Date(Date.now() + i * 86400000).toISOString().slice(0, 10);
-        return { date, pluie: 0, vent: 0, tempMin: 0, intemperie: erreur, raisons: erreur ? ["Données météo indisponibles"] : [] };
+        // `dateParisDans` : date FRANÇAISE, jamais la date UTC (voir lib/dateParis.ts).
+        const date = dateParisDans(i);
+        return { date, pluie: 0, vent: 0, tempMin: 0, intemperie: coordonnees ? erreur : false, raisons: message ? [message] : [] };
       });
     }
 
-    // Point n°3 : vigilance Météo-France
-    let vigilanceOfficielle: string | null = null;
+    // Point n°3 : vigilance officielle Météo-France.
+    //
+    // « indisponible » est un ÉTAT, pas une couleur : la vigilance officielle
+    // peut être absente (clé/API en panne, département inconnu). On ne la
+    // remplace jamais par un « vert » inventé — sinon un rapport pourrait
+    // afficher « pas de vigilance » alors qu'on n'en sait rien.
+    let vigilanceOfficielle = "indisponible";
     if (departement) {
       const vigil = await fetchVigilanceDepartement(departement);
       if (vigil) {
@@ -409,7 +390,9 @@ async function analyserChantiers(
     resultats.push({
       id: ch.id, nom,
       location: adresseChantier || nomClient || "France",
-      lat: geoloc.lat, lng: geoloc.lng, geocoded,
+      lat: coordonnees?.lat ?? 0, lng: coordonnees?.lng ?? 0, geocoded,
+      localisationValidee: localisation.ok ? localisation.data : null,
+      erreurLocalisation,
       jours,
       intemperieAujourdhui: jours[0]?.intemperie ?? false,
       intemperiesProchainesJours: jours.slice(1).some((j) => j.intemperie),
@@ -533,7 +516,7 @@ export async function POST(request: NextRequest) {
             rafales_max: jour.vent > 0 ? jour.vent : null,
             temp_max: null,
             motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,
-            vigilance_officielle: ch.vigilanceOfficielle ?? "vert",
+            vigilance_officielle: ch.vigilanceOfficielle,
           } as TablesInsert<"rapports_intemperies">);
       }
     }

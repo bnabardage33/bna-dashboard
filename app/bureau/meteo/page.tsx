@@ -18,6 +18,7 @@ type ChantierMeteo = {
   nom: string;
   location: string;
   geocoded: boolean;
+  erreurLocalisation?: string | null;
   jours: JourIntemperie[];
   intemperieAujourdhui: boolean;
   intemperiesProchainesJours: boolean;
@@ -167,6 +168,12 @@ export default function BureauMeteoPage() {
                     {ch.intemperieAujourdhui ? "⛔ Intempérie" : "✅ Travail possible"}
                   </span>
                 </div>
+
+                {ch.erreurLocalisation && (
+                  <div className="rounded-xl border border-amber-500/40 bg-amber-950/20 px-3 py-2 text-2xs font-semibold text-amber-300">
+                    📍 {ch.erreurLocalisation}
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   {ch.jours.slice(0, 4).map((j) => (

@@ -52,7 +52,13 @@ function RapportDetailContent() {
         numero: dataRapport.numero,
         cree_le: dataRapport.cree_le,
         cree_par: (dataRapport.cree_par as "auto" | "manuel") || "manuel",
-        vigilance_officielle: (dataRapport.vigilance_officielle as import("@/components/RapportIntemperiesPDF").NiveauVigilance) || "jaune",
+        // La colonne est NOT NULL en base, mais on ne remplace jamais une valeur
+        // absente par une couleur « jaune » inventée : l'état par défaut est
+        // « indisponible ».
+        vigilance_officielle:
+          (dataRapport.vigilance_officielle as
+            | import("@/components/RapportIntemperiesPDF").StatutVigilanceOfficielle
+            | null) || "indisponible",
         jour_arrete: dataRapport.jour_arrete ?? false,
         a_valider: dataRapport.a_valider ?? false,
         pluie_continue: dataRapport.pluie_continue ?? false,

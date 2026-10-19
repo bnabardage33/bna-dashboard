@@ -38,6 +38,10 @@ import {
 } from "lucide-react";
 import { Surface } from '@/components/ui/Surface';
 
+// Niveaux officiels Météo-France (couleurs). Toute autre valeur de
+// `vigilance_max` — dont la sentinelle « indisponible » — n'est PAS un vert.
+const NIVEAUX_VIGILANCE = new Set(["vert", "jaune", "orange", "rouge"]);
+
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
@@ -606,11 +610,16 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
             <Surface className="p-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs uppercase tracking-wide text-gray-400">Intempéries</p>
-                {snapshotSelectionne.intemperies.vigilance_max && (
-                  <span className="text-sm">
-                    {EMOJI_VIGILANCE[snapshotSelectionne.intemperies.vigilance_max] ?? ""}
-                  </span>
-                )}
+                {snapshotSelectionne.intemperies.vigilance_max &&
+                  (NIVEAUX_VIGILANCE.has(snapshotSelectionne.intemperies.vigilance_max) ? (
+                    <span className="text-sm">
+                      {EMOJI_VIGILANCE[snapshotSelectionne.intemperies.vigilance_max]}
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-white/10 bg-[#1E1E1E] px-2 py-0.5 text-3xs uppercase tracking-wide text-gray-400">
+                      Vigilance officielle indisponible
+                    </span>
+                  ))}
               </div>
 
               {snapshotSelectionne.intemperies.jours_arret_total === 0 ? (

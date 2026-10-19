@@ -215,15 +215,21 @@ export default function ChantiersMeteoCards() {
           }
 
           let meteo: JourMeteo | null = null;
+          // Motif affiché si la prévision n'arrive pas : par défaut l'état
+          // vide, mais si la route explique une localisation non validée, on
+          // préfère SON message — c'est ce qui permet de corriger l'adresse au
+          // lieu de croire à une panne.
+          let motifMeteo = "Météo indisponible pour cette adresse.";
           try {
             meteo = await fetchMeteo(adresse);
-          } catch {
+          } catch (e) {
+            if (e instanceof Error && e.message) motifMeteo = e.message;
             // Trace explicite : ce chemin est la cause historique du
             // « Météo indisponible » généralisé, il ne doit plus être muet.
             console.error(
-              "ChantiersMeteoCards : prévision impossible pour le chantier %s (%s)",
-              ch.nom ?? ch.id,
+              "ChantiersMeteoCards : prévision impossible pour « %s » — %s",
               adresse,
+              e instanceof Error ? e.message : e,
             );
           }
 
@@ -236,7 +242,7 @@ export default function ChantiersMeteoCards() {
               acces,
               zoneVent,
               niveau: "inconnu" as const,
-              motif: "Météo indisponible pour cette adresse.",
+              motif: motifMeteo,
               meteo: null,
               impact: null,
             };

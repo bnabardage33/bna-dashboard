@@ -9,6 +9,7 @@ type RapportResume = {
   id: string;
   numero: string;
   vigilance_officielle: string;
+  risque_technique_niveau: string | null;
   jour_arrete: boolean;
   a_valider: boolean;
   ampleur_impact: "complete" | "partielle" | null;
@@ -22,6 +23,7 @@ const EMOJI_VIGILANCE: Record<string, string> = {
   jaune: "🟡",
   orange: "🟠",
   rouge: "🔴",
+  indisponible: "⚪",
 };
 
 const COULEUR_BORDURE: Record<string, string> = {
@@ -29,6 +31,7 @@ const COULEUR_BORDURE: Record<string, string> = {
   jaune: "border-amber-500/40",
   orange: "border-orange-500/40",
   rouge: "border-red-500/40",
+  indisponible: "border-slate-600/50",
 };
 
 const LABEL_VIGILANCE: Record<string, string> = {
@@ -36,6 +39,16 @@ const LABEL_VIGILANCE: Record<string, string> = {
   jaune: "Vigilance jaune",
   orange: "Vigilance orange",
   rouge: "Vigilance rouge",
+  indisponible: "Vigilance officielle indisponible",
+};
+
+// Libellés du RISQUE TECHNIQUE (seuils matériau/accès), distincts de la
+// vigilance officielle. Les deux niveaux ne sont jamais fusionnés à l'affichage.
+const LABEL_RISQUE_TECHNIQUE: Record<string, string> = {
+  vert: "Aucun dépassement mesuré",
+  jaune: "Dépassement modéré mesuré",
+  orange: "Dépassement important mesuré",
+  rouge: "Dépassement critique mesuré",
 };
 
 function labelStatut(r: RapportResume) {
@@ -50,6 +63,12 @@ function labelStatut(r: RapportResume) {
 
 function labelVigilance(niveau: string) {
   return LABEL_VIGILANCE[niveau] ?? "Vigilance inconnue";
+}
+
+// Niveau du risque technique, affiché SÉPARÉMENT de la vigilance officielle.
+function labelRisqueTechnique(niveau: string | null) {
+  if (!niveau) return null;
+  return LABEL_RISQUE_TECHNIQUE[niveau] ?? `Risque technique ${niveau}`;
 }
 
 export default function RapportsIntemperiesListe({
@@ -68,7 +87,7 @@ export default function RapportsIntemperiesListe({
     const { data, error } = await supabase
       .from("rapports_intemperies")
       .select(
-        "id, numero, vigilance_officielle, jour_arrete, a_valider, ampleur_impact, motif, cree_le, cree_par"
+        "id, numero, vigilance_officielle, risque_technique_niveau, jour_arrete, a_valider, ampleur_impact, motif, cree_le, cree_par"
       )
       .eq("chantier_id", chantierId)
       .order("cree_le", { ascending: false });
@@ -229,6 +248,15 @@ export default function RapportsIntemperiesListe({
                 <p className="text-xs text-slate-500">
                   {labelVigilance(r.vigilance_officielle)}
                 </p>
+
+                {labelRisqueTechnique(r.risque_technique_niveau) && (
+                  <>
+                    <span className="text-slate-700">·</span>
+                    <p className="text-xs text-slate-500">
+                      {labelRisqueTechnique(r.risque_technique_niveau)}
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Motif */}

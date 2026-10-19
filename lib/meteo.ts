@@ -32,7 +32,17 @@ export type JourMeteo = {
 export async function fetchMeteo(location: string): Promise<JourMeteo> {
   const res = await fetch(`/api/meteo?location=${encodeURIComponent(location)}`);
   if (!res.ok) {
-    throw new Error("Erreur météo");
+    // La route porte une explication utile — notamment « localisation non
+    // validée » avec le code postal attendu. On la propage au lieu de la
+    // remplacer par un message générique qui masquerait la cause.
+    let message = "Erreur météo";
+    try {
+      const corps = (await res.json()) as { error?: string };
+      if (corps?.error) message = corps.error;
+    } catch {
+      // Corps non JSON : on garde le message générique.
+    }
+    throw new Error(message);
   }
   return res.json();
 }

@@ -6,6 +6,8 @@ import {
   type RawHeure,
   type RawJour,
 } from "@/lib/meteoOpenMeteo";
+import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
+import { dateParis, dateParisDans } from "@/lib/dateParis";
 
 // Les interfaces `RawHeure`, `RawJour` et `DonneesMeteo` sont désormais importées
 // depuis `lib/meteoOpenMeteo.ts`, où elles vivent depuis que la route accepte
@@ -78,7 +80,7 @@ const toJours = (raw: RawJour[]): Jour[] =>
  * répond et ce chemin n'est pas emprunté. Voir `lib/meteoOpenMeteo.ts`.
  */
 async function essayerVisualCrossing(
-  location: string,
+  coordonnees: { lat: number; lon: number },
   key: string | undefined,
 ): Promise<DonneesMeteo | null> {
   if (!key) {
@@ -89,15 +91,17 @@ async function essayerVisualCrossing(
     return null;
   }
 
-  const aujourdHui = new Date();
-  const dans4Jours = new Date();
-  dans4Jours.setDate(aujourdHui.getDate() + 4);
+  // Fenêtre demandée en dates FRANÇAISES, jamais en UTC : voir lib/dateParis.ts.
+  // Avec `toISOString().slice(0, 10)`, à 00 h 30 heure de Paris (UTC+1) la date
+  // UTC est encore la VEILLE : la fenêtre commençait la veille et la journée du
+  // jour n'était pas demandée du tout entre minuit et 1 h.
+  const aujourdHui = dateParis();
+  const dans4Jours = dateParisDans(4);
 
-  const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
-
-  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(
-    location
-  )}/${fmtDate(aujourdHui)}/${fmtDate(dans4Jours)}?unitGroup=metric&key=${key}&contentType=json&include=days,hours,current&elements=datetime,tempmax,tempmin,temp,windspeed,windgust,precip,icon,conditions&lang=fr`;
+  // VisualCrossing reçoit des COORDONNÉES validées, plus jamais l'adresse : il
+  // ne peut donc pas choisir une autre commune que celle validée ici. Format
+  // `lat,lon` documenté par l'API pour le segment `location`.
+  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${coordonnees.lat},${coordonnees.lon}/${aujourdHui}/${dans4Jours}?unitGroup=metric&key=${key}&contentType=json&include=days,hours,current&elements=datetime,tempmax,tempmin,temp,windspeed,windgust,precip,icon,conditions&lang=fr`;
 
   try {
     const res = await fetch(url, { next: { revalidate: 1800 } });
@@ -127,26 +131,34 @@ export async function GET(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   const { searchParams } = new URL(req.url);
-  const location = searchParams.get("location") || "Bordeaux,FR";
+  const location = (searchParams.get("location") ?? "").trim() || "Bordeaux, FR";
 
-  // DEUX SOURCES, UN SEUL CALCUL.
+  // DEUX SOURCES, UN SEUL POINT GÉOGRAPHIQUE.
   //
-  // VisualCrossing en PREMIER : c'est la source du projet, celle qui répond en
-  // production. Ce n'est pas un abandon — elle n'est simplement pas disponible
-  // hors Vercel, sa clé n'étant pas versionnée.
+  // On résout l'adresse AVANT d'appeler qui que ce soit : le code postal prime,
+  // et les coordonnées validées servent aux deux fournisseurs. VisualCrossing ne
+  // reçoit donc plus l'adresse en texte (il la géocodait lui-même et pouvait
+  // retenir une commune incompatible) : il reçoit `lat,lon`, comme Open-Meteo.
   //
-  // Open-Meteo ensuite : gratuite, sans clé, et DÉJÀ utilisée par
-  // `/api/meteo/intemperies` et par l'Edge Function. Elle couvre le local (où
-  // la clé payante est absente) et absorbe une indisponibilité de
-  // VisualCrossing en production.
-  //
-  // Lequel que ce soit qui réponde, les lignes ci-dessous produisent une réponse
-  // identique : aucun seuil, aucun calcul d'alerte n'est dupliqué.
+  // VisualCrossing reste la source PRIORITAIRE de la production ; Open-Meteo est
+  // le repli gratuit quand la clé payante n'est pas disponible (en local) ou
+  // quand le service ne répond pas. Les deux partagent la même localisation.
+  const localisation = await resoudreLocalisationMeteo(location);
+  if (!localisation.ok) {
+    // Pas de commune validée ⇒ pas de météo. On refuse plutôt que d'afficher la
+    // météo d'un lieu choisi par défaut.
+    return NextResponse.json(
+      { error: localisation.erreur, localisation: false },
+      { status: 422 },
+    );
+  }
+  const { lat, lon } = localisation.data;
+
   const vc = await essayerVisualCrossing(
-    location,
+    { lat, lon },
     process.env.VISUALCROSSING_API_KEY,
   );
-  const data = vc ?? (await fetchDonneesOpenMeteo(location));
+  const data = vc ?? (await fetchDonneesOpenMeteo(location, { lat, lon }));
   // `icon` n'a pas le même sens selon la source : un NOM d'icône chez
   // VisualCrossing, un CODE WMO chez Open-Meteo. On le dit explicitement pour
   // que l'affichage puisse choisir son pictogramme au lieu de deviner.
@@ -219,6 +231,14 @@ export async function GET(req: NextRequest) {
     : Math.round(today.tempmax);
 
   return NextResponse.json({
+    // Le point réellement utilisé par les deux fournisseurs : rend vérifiable
+    // « quelle commune a produit cette prévision » sans relire les logs.
+    localisation: {
+      lat,
+      lon,
+      libelle: localisation.data.libelle,
+      codePostal: localisation.data.codePostal,
+    },
     matin,
     apresMidi,
     heures,

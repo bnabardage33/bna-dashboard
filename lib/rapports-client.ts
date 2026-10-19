@@ -79,6 +79,9 @@ export const EMOJI_VIGILANCE: Record<string, string> = {
   jaune: "🟡",
   orange: "🟠",
   rouge: "🔴",
+  // La vigilance officielle peut être indisponible (API Météo-France muette) :
+  // un rond neutre, jamais un vert implicite.
+  indisponible: "⚪",
 };
 
 export function objet(valeur: unknown): Record<string, unknown> | null {
