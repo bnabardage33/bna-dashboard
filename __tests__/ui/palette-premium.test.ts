@@ -482,16 +482,29 @@ function baliseMainLayout(): string {
   return m[0]
 }
 
+/** La balise ouvrante `<body>` du layout racine — elle porte le reflet. */
+function baliseBodyLayout(): string {
+  const m = code('app/layout.tsx').match(/<body\b[\s\S]*?>/)
+  if (!m) throw new Error('`<body>` introuvable dans app/layout.tsx')
+  return m[0]
+}
+
 describe('charte graphique — le fond global et son reflet rouge', () => {
   const LAYOUT = code('app/layout.tsx')
   const MAIN = baliseMainLayout()
+  const BODY = baliseBodyLayout()
 
-  it('le reflet rouge est porte par le <main> du layout partage', () => {
+  it('le reflet rouge est porte par le <body> du layout partage', () => {
     // C'est LE controle demande : l'effet visuel est defini au niveau du layout
     // commun, et non dans une page. Tant qu'il reste ici, toute page du
     // dashboard en herite ; tant qu'il reste dans `app/page.tsx`, il n'existe
     // que sur `/`.
-    expect(MAIN).toMatch(/bg-\[radial-gradient\(ellipse_at_top,rgba\(229,57,53,0\.15\),transparent_60%\)\]/)
+    //
+    // Il est desormais sur le `<body>` et plus sur le `<main>` : le `<body>` est
+    // le seul conteneur qui englobe AUSSI le header. Sur le `<main>`, le reflet
+    // commencait sous le header et laissait une bande noire `#121212` autour du
+    // logo.
+    expect(BODY).toMatch(/bg-\[radial-gradient\(ellipse_at_top,rgba\(229,57,53,0\.15\),transparent_60%\)\]/)
   })
 
   it('le fond est pose sur un conteneur present sur toutes les pages', () => {
@@ -539,17 +552,17 @@ describe('charte graphique — le fond global et son reflet rouge', () => {
     // rouge monterait jusqu'en bas. Ces trois utilitaires la bornent a 380 px,
     // en haut, une seule fois — exactement la geometrie de l'ancien
     // `div` en `absolute top-0 inset-x-0 h-[380px]`.
-    expect(MAIN).toContain('ellipse_at_top')
-    expect(MAIN).toContain('bg-size-[100%_380px]')
-    expect(MAIN).toContain('bg-no-repeat')
-    expect(MAIN).toContain('bg-top')
+    expect(BODY).toContain('ellipse_at_top')
+    expect(BODY).toContain('bg-size-[100%_380px]')
+    expect(BODY).toContain('bg-no-repeat')
+    expect(BODY).toContain('bg-top')
   })
 
   it('l\'opacite du reflet reste discrete', () => {
     // 0.15 : le reflet est une atmosphere, pas un aplat. Une opacite plus
     // forte contaminerait les cartes en `#1E1E1E` situees dessous.
-    expect(MAIN).toMatch(/rgba\(229,57,53,0\.15\)/)
-    expect(MAIN).not.toMatch(/rgba\(229,57,53,(?:0\.[2-9]|1)\)/)
+    expect(BODY).toMatch(/rgba\(229,57,53,0\.15\)/)
+    expect(BODY).not.toMatch(/rgba\(229,57,53,(?:0\.[2-9]|1)\)/)
   })
 
   it('le fond est une couche de fond, pas un div superpose', () => {
@@ -562,9 +575,12 @@ describe('charte graphique — le fond global et son reflet rouge', () => {
   })
 
   it('le <main> partage conserve ses classes d\'origine, dans l\'ordre', () => {
-    // Preuve que la correction est strictement un ajout de fond : ni structure,
-    // ni espacement, ni grille, ni z-index du conteneur n'ont bougé.
-    expect(MAIN).toContain('className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12 ')
+    // Preuve que la correction n'a touche QUE le porteur du reflet : ni
+    // structure, ni espacement, ni grille, ni z-index du `<main>` n'ont bougé.
+    // Toutes ses classes d'origine sont encore la, dans le meme ordre — le
+    // reflet a simplement monte du `<main>` vers le `<body>`.
+    expect(MAIN).toContain('className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12"')
+    expect(MAIN).not.toMatch(/radial-gradient/)
   })
 
   it('le fond de page #121212 reste porte par le <body>', () => {

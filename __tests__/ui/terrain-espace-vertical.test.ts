@@ -15,9 +15,10 @@
 //
 // LA CAUSE
 //
-// Le header BNA de `app/layout.tsx` est `position: relative`, en flux normal,
-// de hauteur fixe `h-[120px]`. Il ne RECOUVRE donc jamais le contenu : rien ne
-// demande de pousser le contenu vers le bas. Le `pt-44` a ete introduit en
+// Le header BNA de `app/layout.tsx` est `position: relative`, en flux normal :
+// une top bar fine (menu + cloche) puis le conteneur du logo. Il ne RECOUVRE
+// donc jamais le contenu, quelle que soit sa hauteur : rien ne demande de
+// pousser le contenu vers le bas. Le `pt-44` a ete introduit en
 // `5a32e26` (« refonte Dark Premium du module Chantiers ») comme reflexe de
 // style — et meme a cette date, le header etait deja `relative` (verifie sur
 // `git show 5a32e26:app/layout.tsx`). Il n'a jamais existe sur aucune autre
@@ -175,6 +176,10 @@ describe("O3-B10 — l'espacement qui reste vient bien du layout", () => {
     expect(header, "header introuvable dans app/layout.tsx").not.toBeNull();
     expect(header![1]).toMatch(/\brelative\b/);
     expect(header![1]).not.toMatch(/\bfixed\b/);
-    expect(header![1]).toMatch(/h-\[120px\]/);
+    // Le header est un FLEXBOX sur une seule ligne (menu · logo · cloche).
+    // Sa hauteur est naturelle (plus de `h-[120px]`), ce qui ne change rien a
+    // l'invariant : en flux normal, il ne recouvre pas le contenu.
+    expect(header![1]).toMatch(/\bflex\b/);
+    expect(header![1]).toMatch(/\bitems-center\b/);
   });
 });

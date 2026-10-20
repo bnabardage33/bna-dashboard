@@ -7,6 +7,13 @@ export type JourPrevu = {
   tempMin: number;
   icon: string;
   conditions: string;
+  /**
+   * Cumul de précipitations de la journée, en mm, tel que fourni par la source
+   * (`precipitation_sum` chez Open-Meteo, `precip` journalier chez
+   * VisualCrossing). C'est déjà un cumul : il ne doit jamais être additionné.
+   * Absent si la source ne le fournit pas.
+   */
+  cumulPluie?: number;
 };
 // Origine de la prévision. `icon` n'a pas le même sens selon la source : un
 // NOM d'icône chez VisualCrossing, un CODE WMO chez Open-Meteo. Voir

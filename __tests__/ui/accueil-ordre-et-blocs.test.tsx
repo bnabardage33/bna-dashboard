@@ -5,10 +5,19 @@
 // dans un test de rendu isolé :
 //
 //   1. L'ordre des blocs de l'accueil est
-//        Assistant vocal -> Chantiers à préparer -> Météo générale ->
-//        Impact météo sur les chantiers -> Notes -> Alertes.
+//        En-tête compact (marque, titre, dictée vocale, accès rapides) ->
+//        Météo générale -> Impact météo sur les chantiers ->
+//        Chantiers à préparer -> Dernières notes et alertes.
 //      Un test qui vérifie l'ordre est plus robuste qu'un test qui vérifie des
 //      numéros de section : l'ordre est l'intention, pas une implémentation.
+//      La météo est la PREMIÈRE grande section informative, juste après
+//      l'en-tête : on lit l'essentiel sans défiler un grand bloc vocal.
+//
+//      Le grand conteneur « Assistant vocal (IA) » et ses trois raccourcis
+//      redondants ont été SUPPRIMÉS ; la fonction vocale reste, portée par le
+//      bouton « Dicter une note » de l'en-tête (même composant, même handler).
+//      Les deux anciennes sections « Dernières Notes » et « Alertes » restent
+//      FUSIONNÉES en une seule (deux sous-listes).
 //
 //   2. Le bloc « Chiffres clés » (chantiers actifs, devis, factures en retard,
 //      fournisseurs, notes patron) a été SUPPRIMÉ. Il ne doit plus apparaître,
@@ -63,52 +72,60 @@ function blocs(source: string): Array<{ numero: string; titre: string; corps: st
 const BLOCS = blocs(DASHBOARD);
 
 describe("Accueil — l'ordre des blocs est celui validé", () => {
-  it("six blocs, numérotés 1 à 6, sans trou ni doublon", () => {
-    // Le bloc 3 « Météo générale » a été restauré (recherche de ville,
-    // matin/après-midi, heure par heure, J+1 à J+4) sans supprimer le bloc 4
-    // « Impact météo sur les chantiers » : ce sont deux fonctions distinctes.
-    expect(BLOCS.map((b) => b.numero)).toEqual(["1", "2", "3", "4", "5", "6"]);
+  it("cinq blocs, numérotés 1 à 5, sans trou ni doublon", () => {
+    // Le bloc 1 est l'en-tête compact (dictée vocale + accès rapides). La météo
+    // générale a été remontée en bloc 2, l'impact météo en bloc 3, les
+    // chantiers en bloc 4, et le bloc 5 réunit les notes et les alertes.
+    expect(BLOCS.map((b) => b.numero)).toEqual(["1", "2", "3", "4", "5"]);
   });
 
-  it("1. Assistance vocale (IA)", () => {
-    // Le fonctionnement de l'IA ne doit pas être touché : on vérifie que le
-    // handler et le composant de micro sont toujours câblés, pas leur
-    // implémentation interne.
-    expect(BLOCS[0].titre).toMatch(/Assistance vocale/i);
+  it("1. En-tête compact : dictée vocale et accès rapides", () => {
+    // Le fonctionnement de l'IA n'est pas touché : on vérifie que le handler et
+    // le composant de micro sont toujours câblés, pas leur implémentation.
+    expect(BLOCS[0].titre).toMatch(/En-tête compact/i);
     expect(BLOCS[0].corps).toContain("BoutonMicroNote");
     expect(BLOCS[0].corps).toContain("handleTexteReformule");
+    // Les TROIS accès rapides, et eux seuls : tous mènent à un écran existant.
+    expect(BLOCS[0].corps).toContain("/bureau/meteo");
+    expect(BLOCS[0].corps).toContain("/boite-a-outils");
+    expect(BLOCS[0].corps).toContain("/terrain/notes");
+    // Les anciens raccourcis redondants (Chantiers, Météo) ont disparu de
+    // l'en-tête. Ils ne réapparaissent pas non plus sous forme de tuiles.
+    expect(BLOCS[0].corps).not.toContain("/terrain/chantier");
+    expect(BLOCS[0].corps).not.toContain("/terrain/meteo");
+    // Et la grande carte « Assistant vocal (IA) » n'existe plus dans le code.
+    expect(DASHBOARD_CODE).not.toContain("Assistant vocal");
   });
 
-  it("2. Chantiers à préparer", () => {
-    expect(BLOCS[1].titre).toMatch(/Chantiers à préparer/i);
-    expect(BLOCS[1].corps).toContain("chantiersAPreparer");
-  });
-
-  it("3. Météo générale (restaurée)", () => {
-    expect(BLOCS[2].titre).toMatch(/Météo générale/i);
+  it("2. Météo générale (première section informative)", () => {
+    expect(BLOCS[1].titre).toMatch(/Météo générale/i);
     // Le composant restauré est monté ici, et son lien « Prévisions
     // complètes » mène à la page historique /terrain/meteo.
-    expect(BLOCS[2].corps).toContain("MeteoGeneraleAccueil");
-    expect(BLOCS[2].corps).toContain('"/terrain/meteo"');
+    expect(BLOCS[1].corps).toContain("MeteoGeneraleAccueil");
+    expect(BLOCS[1].corps).toContain('"/terrain/meteo"');
   });
 
-  it("4. Impact météo sur les chantiers", () => {
-    expect(BLOCS[3].titre).toMatch(/Impact météo/i);
+  it("3. Impact météo sur les chantiers", () => {
+    expect(BLOCS[2].titre).toMatch(/Impact météo/i);
     // Le bloc est un nœud rendu par `app/page.tsx` : c'est ce qui sort la
     // logique météo des chantiers du périmètre de ce composant.
-    expect(BLOCS[3].corps).toContain("blocMeteo");
+    expect(BLOCS[2].corps).toContain("blocMeteo");
     // La veille des intempéries reste sur /bureau/meteo.
-    expect(BLOCS[3].corps).toContain('"/bureau/meteo"');
+    expect(BLOCS[2].corps).toContain('"/bureau/meteo"');
   });
 
-  it("5. Dernières Notes", () => {
-    expect(BLOCS[4].titre).toMatch(/Dernières Notes/i);
+  it("4. Chantiers à préparer", () => {
+    expect(BLOCS[3].titre).toMatch(/Chantiers à préparer/i);
+    expect(BLOCS[3].corps).toContain("chantiersAPreparer");
+    expect(BLOCS[3].corps).toContain('"/terrain/chantier"');
+  });
+
+  it("5. Dernières notes et alertes", () => {
+    expect(BLOCS[4].titre).toMatch(/notes et alertes/i);
+    // Les deux listes vivent dans la même section : ni l'une ni l'autre n'a
+    // été supprimée par la fusion.
     expect(BLOCS[4].corps).toContain("dernieresNotes");
-  });
-
-  it("6. Alertes", () => {
-    expect(BLOCS[5].titre).toMatch(/Alertes/i);
-    expect(BLOCS[5].corps).toContain("notifications");
+    expect(BLOCS[4].corps).toContain("notifications");
   });
 });
 

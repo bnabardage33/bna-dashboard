@@ -298,10 +298,11 @@ describe('LOT 2D — inventaire de la conversion', () => {
   })
 
   it('98 cartes ont été converties', () => {
-    // 96 après la suppression de ChantierHealthCard (− 2 appels, − 1 fichier).
-    // + 2 avec la météo générale restaurée : la page `/terrain/meteo` retrouve
-    // sa carte et le bloc d'accueil `MeteoGeneraleAccueil` en ajoute une.
-    // Bilan : 98 appels sur 28 fichiers.
+    // 97 avec la refonte finale de l'accueil (la grande carte « Assistant
+    // vocal (IA) » avait été supprimée). Puis +1 avec la recherche mobile :
+    // le volet déroulant de `SearchNav` est une `Surface` de plus, à côté du
+    // panneau desktop et du panneau de notifications. Bilan : 98 appels sur
+    // 28 fichiers.
     expect(APPELS).toHaveLength(98)
     expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(28)
   })

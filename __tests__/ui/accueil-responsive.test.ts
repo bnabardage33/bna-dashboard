@@ -1,31 +1,31 @@
-// Accueil : composition et responsive —.calque de l'ancien cockpit
+// Accueil : composition et responsive (refonte mobile d'abord)
 // ============================================================================
 //
 // Ces tests verrouillent le RENDU de l'accueil. Ils ne touchent ni l'ordre des
 // blocs (accueil-ordre-et-blocs.test.tsx), ni la source meteo, ni les seuils.
 //
-// LA REGLE : la composition n'est pas réinventée, elle est RECOPIEE depuis la
-// version déployée, mesurée à HEAD. Concrètement :
+// LA REGLE : la composition est mobile d'abord et n'invente aucune donnee.
+// Concretement :
 //
-//   1. CONTENEUR BORNÉ ET CENTRÉ. `app/page.tsx` ne portait aucun plafond, et
-//      c'était le seul écran de l'application dans ce cas. Reprise de
-//      `mx-auto max-w-7xl`, celle du cockpit Bureau d'origine.
+//   1. CONTENEUR BORNE ET CENTRE. `app/page.tsx` reprend `mx-auto max-w-7xl`
+//      et `px-4`, comme les autres ecrans de l'application.
 //
-//   2. GRILLES D'ORIGINE. Chaque bloc reprend la grille EXACTE d'un écran
-//      déployé :
-//        - notes     -> `grid grid-cols-1 md:grid-cols-3 gap-4`   (accueil HEAD)
-//        - meteo     -> `grid gap-3 sm:grid-cols-2`               (/terrain/meteo HEAD)
-//        - chantiers -> `grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3`
-//                                                               (cockpit Bureau HEAD)
+//   2. GRILLES. Une seule colonne sur mobile, deux a partir de `md`, et une
+//      grille de 12 colonnes a partir de `xl` :
+//        - notes     -> `grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3`
+//        - meteo     -> `grid gap-3 sm:grid-cols-2`               (/terrain/meteo)
+//        - chantiers -> `grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3`
 //
 //   3. AUCUN CENTRAGE ARTIFICIEL. Une carte seule reste dans la colonne de la
-//      grille, à gauche, avec la largeur de cette colonne. Une tentative avait
-//      été faite de passer les rangees en `flex flex-wrap justify-center` pour
-//      « remplir » l'espace : c'est un changement de comportement, pas une mise
-//      en page — la carte quittait sa colonne pour aller au centre de l'écran.
-//      Ces tests interdisent explicitement ce glissement, parce qu'il est
-//      tentant : il « corrige » vraiment le vide a droite, mais il produit
-//      exactement l'ecart visuel que la reprise de reference exclut.
+//      grille, a gauche. Une rangee de cartes en `flex flex-wrap justify-center`
+//      ferait sortir la carte de sa colonne : on l'interdit explicitement.
+//      Depuis la refonte finale, le SEUL endroit qui centre est la rangee des
+//      trois acces rapides de l'en-tete (des liens de navigation, pas des
+//      cartes) ; aucune rangee de cartes n'est centree.
+//
+//   4. ZONES TACTILES. Les acces rapides portent `min-h-10` (40 px) et le
+//      bouton vocal `min-h-11` (44 px) : utilisables au doigt sur chantier, sans
+//      dependre du survol.
 //
 // Comme les autres tests de composition du depot, ils lisent les SOURCES :
 // ces proprietes sont des classes CSS, et aucune assertion de rendu ne les
@@ -101,13 +101,13 @@ describe("Accueil — le contenu est borne et centre", () => {
   });
 });
 
-describe("Accueil — les grilles sont celles de l'ancien cockpit", () => {
+describe("Accueil — les grilles sont celles de la refonte", () => {
   /** Les trois rangees de cartes, avec la grille de reference de chacune. */
   const RANGEES = [
     {
       nom: "dernieres notes",
       source: DASHBOARD,
-      grille: 'className="grid grid-cols-1 md:grid-cols-3 gap-4"',
+      grille: 'className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"',
     },
     {
       nom: "cartes meteo",
@@ -117,7 +117,7 @@ describe("Accueil — les grilles sont celles de l'ancien cockpit", () => {
     {
       nom: "chantiers a preparer",
       source: DASHBOARD,
-      grille: '<ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">',
+      grille: '<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">',
     },
   ];
 
@@ -151,17 +151,18 @@ describe("Accueil — les grilles sont celles de l'ancien cockpit", () => {
     }
   });
 
-  it("le seul `justify-center` de l'accueil est celui de la boite vocal", () => {
-    // Pour que l'interdiction ci-dessus ne devienne pas une interdiction
-    // generale laterale : on nomme l'exception legitime, mesuree a HEAD.
+  it("aucune rangee de cartes n'est centree, seul l'en-tete a le droit de l'etre", () => {
+    // La grande boite d'enregistrement vocal et les trois tuiles de raccourcis
+    // qui portaient `justify-center` ont ete supprimees. Il ne reste qu'UN
+    // centrage : la rangee des trois acces rapides de l'en-tete, qui sont des
+    // liens de navigation alignes a l'axe de leur colonne — jamais des cartes.
     const centres = [...DASHBOARD.matchAll(/className="([^"]*justify-center[^"]*)"/g)].map(
       (m) => m[1],
     );
-    expect(centres).toHaveLength(1);
-    // La classe exacte de la boite d'enregistrement, telle qu'a HEAD.
-    expect(centres[0]).toBe(
-      "flex flex-col items-center justify-center p-6 bg-black/20 rounded-xl border border-white/5 relative z-10",
-    );
+    expect(centres.length).toBeGreaterThan(0);
+    for (const classes of centres) {
+      expect(classes, `centrage hors acces rapides : "${classes}"`).toMatch(/\bmin-h-10\b/);
+    }
   });
 
   it("aucune carte ne porte de largeur propre", () => {
@@ -186,43 +187,65 @@ describe("Accueil — les grilles sont celles de l'ancien cockpit", () => {
     expect(carteMeteo![1]).not.toMatch(/\bw-full\b|w-\[calc|max-w-/);
   });
 
-  it("l'etat vide des notes reprend la portee de la grille d'origine", () => {
-    // `col-span-3` est la grille d'origine. Hors grille, il n'aurait aucun
-    // sens — et c'est sa presence qui prouve que la grille est bien revenue.
-    expect(DASHBOARD).toContain('className="col-span-3 border-dashed');
+  it("l'etat vide des notes reprend la portee de la grille", () => {
+    // La portee de l'etat vide suit la grille : 2 colonnes a `sm`, 3 a `xl`.
+    expect(DASHBOARD).toContain('sm:col-span-2 xl:col-span-3');
   });
 
-  it("la carte meteo garde ses proportions d'origine", () => {
-    // Le correctif porte sur le conteneur, pas sur la carte : contenu, releves
-    // et impact chantier ne bougent pas.
-    expect(METEO).toMatch(/className=\{`rounded-xl border p-4/);
+  it("la carte meteo garde son habillage et son impact chantier", () => {
+    // Le correctif porte sur la presentation, pas sur le calcul d'impact.
+    expect(METEO).toMatch(/className=\{`rounded-xl border p-3/);
     expect(METEO).toContain("evaluerAlerteChantier");
     expect(METEO).toContain("COULEURS[ch.niveau]");
   });
 });
 
 describe("Accueil — hierarchie visuelle et comportement mobile", () => {
-  it("la page s'ouvre sur un `h1` et un sous-titre", () => {
-    // Point de repere manquant : sans lui, l'oeil entrait directement dans une
-    // carte de pleine largeur et n'avait aucune echelle de comparaison.
+  it("la page s'ouvre sur un en-tete compact avec `h1` et sous-titre", () => {
+    // En-tete compact : titre et sous-titre d'une ligne. La marque « BNA
+    // Bardage » n'est plus répétée ici : elle est portée par le logo du layout
+    // global (`app/layout.tsx`), le sur-titre rouge faisait doublon.
     expect(DASHBOARD).toMatch(/<h1[^>]*>[^<]+<\/h1>/);
-    expect(DASHBOARD).toMatch(/<header>/);
+    expect(DASHBOARD).toMatch(/<header className="[^"]*"/);
+    expect(DASHBOARD).not.toContain("BNA Bardage");
   });
 
-  it("les cinq en-têtes de section gardent l'alignement d'origine", () => {
-    // `justify-between` : le libellé à gauche, le lien à droite, tous deux sur
-    // la même ligne et le même axe que les sections voisines.
-    //
-    // Cinq : chantiers à préparer, météo générale, impact météo sur les
-    // chantiers, dernières notes, alertes. L'assistance vocale ouvre la page
-    // avec son propre en-tête, hors de ce motif.
-    const enTetes = [...DASHBOARD.matchAll(/className="(mb-4[^"]*)"/g)].map(
-      (m) => m[1],
-    );
-    expect(enTetes).toHaveLength(5);
+  it("les quatre en-tetes de section gardent l'alignement d'origine", () => {
+    // `justify-between` : le libelle a gauche, le lien a droite, sur le meme
+    // axe. Quatre sections porteuses d'un lien : meteo, impact, chantiers,
+    // notes & alertes. L'en-tete compact ouvre la page avec son propre motif,
+    // hors de ce compte.
+    const enTetes = [
+      ...DASHBOARD.matchAll(/className="(mb-3 flex flex-wrap items-center justify-between[^"]*)"/g),
+    ].map((m) => m[1]);
+    expect(enTetes).toHaveLength(4);
     for (const classes of enTetes) {
-      expect(classes).toMatch(/justify-between/);
+      expect(classes).toMatch(/gap-x-3/);
     }
+  });
+
+  it("les trois acces rapides de l'en-tete tiennent sur une seule rangee", () => {
+    // Trois acces, pas un de plus : Intempéries, Boite a outils, Notes.
+    // Tous pointent vers un ecran qui existe (aucune fonction promise en vain).
+    const acces = DASHBOARD.slice(
+      DASHBOARD.indexOf('aria-label="Accès rapides"'),
+      DASHBOARD.indexOf("</nav>", DASHBOARD.indexOf('aria-label="Accès rapides"')),
+    );
+    expect((acces.match(/<Link/g) ?? []).length).toBe(3);
+    for (const route of ["/bureau/meteo", "/boite-a-outils", "/terrain/notes"]) {
+      expect(acces, `acces manquant : ${route}`).toContain(route);
+    }
+    // Sur UNE seule rangee des le mobile : grille a trois colonnes egales,
+    // aucun `flex-wrap` (qui aurait rejete un acces sur une seconde ligne).
+    expect(acces).toContain("grid grid-cols-3");
+    expect(acces).not.toContain("flex-wrap");
+    // Le libelle « Veille » (trop long pour trois colonnes) a ete retire :
+    // l'acces garde sa destination et son pictogramme.
+    expect(acces).toContain("Intempéries");
+    expect(acces).not.toContain("Veille intempéries");
+    // Les anciens raccourcis redondants de la carte vocale ont disparu.
+    expect(acces).not.toContain("/terrain/chantier");
+    expect(acces).not.toContain("/terrain/meteo");
   });
 
   it("les liens et pictogrammes d'en-tete ne se font pas ecraser", () => {
@@ -240,6 +263,69 @@ describe("Accueil — hierarchie visuelle et comportement mobile", () => {
     ]) {
       expect(source, `${nom} : largeur fixe en px`).not.toMatch(/\bw-\[\d+px\]/);
     }
+  });
+
+  it("la grille principale couvre mobile, tablette et desktop", () => {
+    // 1 colonne sur mobile, 2 a partir de `md` (768 px), 12 colonnes a partir
+    // de `xl` (1280 px) : la page se raccourcit au lieu de s'allonger.
+    expect(DASHBOARD).toContain(
+      'grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-12',
+    );
+    // Meteo 5/12 + impact 7/12 a partir de `xl` ; chantiers et notes en pleine
+    // largeur (leurs cartes internes passent a trois colonnes).
+    expect(DASHBOARD).toContain('className="xl:col-span-5"');
+    expect(DASHBOARD).toContain('className="xl:col-span-7"');
+    expect(DASHBOARD).toContain('className="md:col-span-2 xl:col-span-12"');
+    // La meteo est le PREMIER bloc du DOM : on lit l'essentiel avant tout.
+    expect(DASHBOARD.indexOf("Météo générale")).toBeLessThan(
+      DASHBOARD.indexOf("Impact météo sur les chantiers"),
+    );
+    expect(DASHBOARD.indexOf("Impact météo sur les chantiers")).toBeLessThan(
+      DASHBOARD.indexOf("Chantiers à préparer"),
+    );
+  });
+
+  it("la dictee vocale reste dans l'en-tete, avec sa bulle dans le flux", () => {
+    // Le bouton vit dans l'en-tete (a droite du titre), pas dans un grand bloc.
+    const entete = DASHBOARD.slice(
+      DASHBOARD.indexOf("<header"),
+      DASHBOARD.indexOf("</header>"),
+    );
+    expect(entete).toContain("BoutonMicroNote");
+    expect(entete).toContain("handleTexteReformule");
+    // La bulle est un `role="status"` : region annoncee, dans le flux.
+    expect(entete).toContain('role="status"');
+    // Elle ne doit ni recouvrir la meteo (positionnement absolu/fixe) ni
+    // dependre du survol.
+    const bulle = DASHBOARD.slice(
+      DASHBOARD.indexOf('role="status"'),
+      DASHBOARD.indexOf("</div>", DASHBOARD.indexOf('role="status"')),
+    );
+    expect(bulle).not.toMatch(/\b(?:absolute|fixed|sticky)\b/);
+  });
+
+  it("les acces et le bouton vocal offrent une cible tactile suffisante", () => {
+    // `min-h-10` = 2.5rem = 40 px pour les acces rapides : legerement plus bas
+    // que les 44 px historiques, mais toujours largement au-dessus du minimum
+    // utilisable au doigt sur chantier.
+    // On verifie les trois acces rapides de l'en-tete…
+    const acces = DASHBOARD.slice(
+      DASHBOARD.indexOf('aria-label="Accès rapides"'),
+      DASHBOARD.indexOf("</nav>", DASHBOARD.indexOf('aria-label="Accès rapides"')),
+    );
+    expect((acces.match(/min-h-10/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    // Aucun acces ne retombe sous ce seuil : tout `min-h-*` de la rangee vaut 10.
+    const hauteurs = acces.match(/min-h-[0-9.]+/g) ?? [];
+    expect(hauteurs.length).toBeGreaterThanOrEqual(3);
+    for (const hauteur of hauteurs) {
+      expect(hauteur).toBe("min-h-10");
+    }
+
+    // …et le bouton « Dicter une note », dont la cible de 44 px reste definie
+    // dans le composant vocal lui-meme.
+    const bouton = lire("components/BoutonMicroNote.tsx");
+    expect(bouton).toContain("min-h-11");
+    expect(bouton).toContain("Dicter une note");
   });
 });
 

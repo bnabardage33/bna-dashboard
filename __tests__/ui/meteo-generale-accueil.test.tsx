@@ -47,9 +47,13 @@ const METEO_VALIDE: JourMeteo = {
   matin: { temp: 12, vent: 10, rafales: 18 },
   apresMidi: { temp: 18, vent: 14, rafales: 26 },
   heures: [
+    // Hors plage de travail : ne doit PAS être affiché (06 h → 18 h).
+    { heure: "05:00", temp: 9, vent: 8, rafales: 12, pluie: 0 },
     { heure: "08:00", temp: 11, vent: 9, rafales: 15, pluie: 0 },
     { heure: "12:00", temp: 16, vent: 12, rafales: 20, pluie: 0.2 },
     { heure: "18:00", temp: 17, vent: 13, rafales: 22, pluie: 0 },
+    { heure: "19:00", temp: 16, vent: 14, rafales: 24, pluie: 0 },
+    { heure: "22:00", temp: 13, vent: 11, rafales: 18, pluie: 0 },
   ],
   alerte: { niveau: "vert", motif: "Aucune vigilance particulière" },
   icon: "partly-cloudy-day",
@@ -60,9 +64,9 @@ const METEO_VALIDE: JourMeteo = {
   tempMinJour: 9,
   cumulPluie: 0.2,
   prochainsJours: [
-    { date: "2026-10-20", tempMax: 17, tempMin: 8, icon: "rain", conditions: "Pluie" },
-    { date: "2026-10-21", tempMax: 14, tempMin: 7, icon: "cloudy", conditions: "Nuageux" },
-    { date: "2026-10-22", tempMax: 16, tempMin: 6, icon: "clear-day", conditions: "Ensoleillé" },
+    { date: "2026-10-20", tempMax: 17, tempMin: 8, icon: "rain", conditions: "Pluie", cumulPluie: 3.4 },
+    { date: "2026-10-21", tempMax: 14, tempMin: 7, icon: "cloudy", conditions: "Nuageux", cumulPluie: 0 },
+    { date: "2026-10-22", tempMax: 16, tempMin: 6, icon: "clear-day", conditions: "Ensoleillé", cumulPluie: 12.6 },
   ],
 };
 
@@ -173,6 +177,45 @@ describe("Météo générale (accueil) — recherche de ville", () => {
     await chercherVille("   ");
     expect(mockFetch.mock.calls.length).toBe(nbAppels);
   });
+
+  it("la recherche est déclenchée par une loupe blanche sur fond rouge BNA", async () => {
+    await rendre();
+    const loupe = conteneur.querySelector(
+      'button[aria-label="Rechercher la ville"]',
+    ) as HTMLButtonElement | null;
+    expect(loupe, "bouton loupe introuvable").toBeTruthy();
+    // Même comportement : c'est le bouton de soumission du formulaire, donc la
+    // touche Entrée et le toucher empruntent le même `onSubmit`.
+    expect(loupe!.getAttribute("type")).toBe("submit");
+    // Pictogramme (loupe) au lieu du libellé « OK ».
+    expect(loupe!.querySelector("svg")).toBeTruthy();
+    expect(loupe!.textContent?.trim()).toBe("");
+    // Habillage : loupe blanche sur fond rouge BNA, cible tactile de 44 px.
+    expect(loupe!.className).toContain("bg-[#E53935]");
+    expect(loupe!.className).toContain("text-white");
+    expect(loupe!.className).toContain("h-11");
+    expect(loupe!.className).toContain("w-11");
+  });
+
+  it("toucher la loupe relance exactement la recherche de la ville", async () => {
+    await rendre();
+    const input = conteneur.querySelector(
+      'input[placeholder*="Rechercher une ville"]',
+    ) as HTMLInputElement;
+    const proto = Object.getPrototypeOf(input);
+    Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(input, "Arcachon");
+    await act(async () => {
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await sleep(0);
+    });
+    const loupe = conteneur.querySelector(
+      'button[aria-label="Rechercher la ville"]',
+    ) as HTMLButtonElement;
+    await cliquer(loupe);
+    expect(derniereUrlRequisee()).toContain(
+      `/api/meteo?location=${encodeURIComponent("Arcachon")}`,
+    );
+  });
 });
 
 // ── 2. Rendu des prévisions ─────────────────────────────────────────────────
@@ -207,6 +250,30 @@ describe("Météo générale (accueil) — prévisions affichées", () => {
     expect(bouton("Masquer le détail heure par heure")).toBeTruthy();
     await cliquer(bouton("Masquer le détail heure par heure")!);
     expect(conteneur.textContent).not.toContain("08:00");
+  });
+
+  it("ne montre que les heures de 06 h à 18 h incluses", async () => {
+    // La grille est limitée aux heures de travail : les relevés nocturnes
+    // servent au calcul mais n'encombrent pas la carte.
+    await rendre();
+    await cliquer(bouton("Afficher le détail heure par heure")!);
+    for (const heure of ["08:00", "12:00", "18:00"]) {
+      expect(conteneur.textContent, `heure manquante : ${heure}`).toContain(heure);
+    }
+    for (const heure of ["05:00", "19:00", "22:00"]) {
+      expect(conteneur.textContent, `heure nocturne affichée : ${heure}`).not.toContain(heure);
+    }
+  });
+
+  it("affiche les cumuls de pluie prévus (aujourd'hui, demain, après-demain)", async () => {
+    await rendre();
+    expect(conteneur.textContent).toContain("Aujourd'hui");
+    expect(conteneur.textContent).toContain("Demain");
+    expect(conteneur.textContent).toContain("Après-demain");
+    // Valeurs JOURNALIÈRES telles que fournies : jamais additionnées.
+    expect(conteneur.textContent).toContain("0.2 mm");
+    expect(conteneur.textContent).toContain("3.4 mm");
+    expect(conteneur.textContent).toContain("0 mm");
   });
 
   it("affiche les prévisions des jours suivants (fenêtre J+1 à J+4)", async () => {
@@ -346,5 +413,22 @@ describe("Météo générale — invariants de structure", () => {
 
   it("la page /terrain/meteo n'est plus une redirection", () => {
     expect(PAGE).not.toContain("redirect(");
+  });
+
+  it("la grille horaire est bornée à 06 h–18 h dans le code du bloc", () => {
+    // L'invariant doit tenir même si le rendu change : les bornes sont
+    // nommées et le filtre inclut les deux extrêmes.
+    expect(BLOC).toContain("HEURE_DEBUT = 6");
+    expect(BLOC).toContain("HEURE_FIN = 18");
+    expect(BLOC).toMatch(/hh >= HEURE_DEBUT && hh <= HEURE_FIN/);
+  });
+
+  it("les cumuls de pluie journaliers viennent de la donnée, jamais d'une somme locale", () => {
+    // `cumulPluie` (aujourd'hui) et `prochainsJours[].cumulPluie` (J+1, J+2)
+    // sont affichés tels quels : aucune addition de valeurs déjà cumulées.
+    expect(BLOC).toContain("meteo.cumulPluie");
+    expect(BLOC).toContain("prochainsJours[0]?.cumulPluie");
+    expect(BLOC).toContain("prochainsJours[1]?.cumulPluie");
+    expect(BLOC).not.toMatch(/reduce\(\s*\([^)]*\)\s*=>[^)]*pluie/);
   });
 });

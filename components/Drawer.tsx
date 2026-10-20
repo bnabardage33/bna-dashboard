@@ -218,15 +218,20 @@ export default function Drawer() {
 
   return (
     <>
-      {/* HAMBURGER BUTTON */}
+      {/* HAMBURGER BUTTON
+
+          Carré visuel discret (`w-10 h-10` = 40 px) posé dans une zone
+          tactile de 44 px (`min-h-11 min-w-11`) : le doigt vise 44 px, l'œil
+          voit 40 px. L'icône passe de 20 à 17 px et le fond de `bg-white/15`
+          à `bg-white/10` pour un remplissage plus léger. */}
       <button
         onClick={() => setOpen(true)}
-        className="relative z-[200] w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 border border-white/15 hover:bg-white/25 transition-all"
+        className="relative z-[200] min-h-11 min-w-11 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all"
         aria-label="Ouvrir le menu"
         aria-expanded={open}
         aria-controls="bna-drawer"
       >
-        <Menu size={20} className="text-white" />
+        <Menu size={17} className="text-white" />
       </button>
 
       {/* OVERLAY */}

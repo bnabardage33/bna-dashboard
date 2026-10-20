@@ -177,13 +177,14 @@ export default function ChantiersPage() {
   });
 
   // Plus de `pt-44` ici (retiré le 02/10). Le header BNA est en flux normal —
-  // `position: relative` dans `app/layout.tsx`, hauteur fixe `h-[120px]` — il
-  // ne recouvre donc jamais le contenu, et rien ne demande de pousser le
-  // contenu vers le bas. Ce `pt-44` (176 px) a été introduit en `5a32e26`
-  // comme réflexe de style, alors que le header était déjà `relative`, et
-  // n'a jamais existé sur les autres pages du groupe terrain. Résultat : une
-  // bande morte de 176 px sous le header. Le seul espacement restant est
-  // celui du layout : `mt-4` (main) + `py-6` (`app/terrain/layout.tsx`).
+  // `position: relative` dans `app/layout.tsx` (top bar fine + logo flottant,
+  // hauteur naturelle) — il ne recouvre donc jamais le contenu, et rien ne
+  // demande de pousser le contenu vers le bas. Ce `pt-44` (176 px) a été
+  // introduit en `5a32e26` comme réflexe de style, alors que le header était
+  // déjà `relative`, et n'a jamais existé sur les autres pages du groupe
+  // terrain. Résultat : une bande morte de 176 px sous le header. Le seul
+  // espacement restant est celui du layout : `mt-4` (main) + `py-6`
+  // (`app/terrain/layout.tsx`).
   return (
     <div className="space-y-5">
       {/* En-tête principal */}

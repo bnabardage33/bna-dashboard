@@ -53,7 +53,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CloudRain, Droplets, Thermometer, Wind } from "lucide-react";
+import { CloudRain, Droplets, Gauge, MapPin, Thermometer, Wind } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fetchMeteo, type JourMeteo } from "@/lib/meteo";
 import { emojiWmo } from "@/lib/meteoOpenMeteo";
@@ -113,6 +113,32 @@ const LIBELLES_NIVEAU: Record<Niveau, string> = {
 };
 
 /**
+ * Habillage de la pastille d'état. Même code couleur que la carte, mais avec
+ * un texte contrasté : l'état de pose doit rester lisible sans dépendre de la
+ * seule couleur de fond.
+ */
+const PASTILLES_NIVEAU: Record<Niveau, string> = {
+  vert: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+  jaune: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  orange: "border-orange-500/40 bg-orange-500/10 text-orange-300",
+  rouge: "border-red-500/40 bg-red-500/10 text-red-300",
+  inconnu: "border-white/15 bg-white/[0.04] text-gray-400",
+};
+
+/**
+ * Ordre d'AFFICHAGE : les risques critiques d'abord. C'est une présentation,
+ * pas une règle métier — les niveaux eux-mêmes viennent tous de
+ * `evaluerAlerteChantier`, qui n'est pas modifié.
+ */
+const ORDRE_NIVEAU: Record<Niveau, number> = {
+  rouge: 0,
+  orange: 1,
+  jaune: 2,
+  vert: 3,
+  inconnu: 4,
+};
+
+/**
  * L'alerte GÉNÉRALE de la journée (rafales / pluie / chaleur sur le site), dont
  * le calcul est fait par la route `/api/meteo` — distincte de l'impact CHANTIER
  * (matériau × accès), qui reste l'information déterminante.
@@ -139,24 +165,32 @@ function pictogramme(meteo: JourMeteo): string {
   return "⛅";
 }
 
-/** Un relevé chiffré. `valeur === null` → tiret, jamais un 0 inventé. */
-function Releve({
+/**
+ * Une mesure chiffrée avec son libellé VISIBLE.
+ *
+ * Le libellé n'est pas seulement dans un `title` : sur téléphone, il n'y a pas
+ * de survol. « Vent » et « Rafales » restent donc distincts à l'écran.
+ * `valeur === null` → tiret, jamais un 0 inventé.
+ */
+function Mesure({
   icone,
+  label,
   valeur,
-  unite,
+  titre,
 }: {
   icone: React.ReactNode;
+  label: string;
   valeur: string | null;
-  unite: string;
+  titre?: string;
 }) {
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-lg bg-[#1E1E1E] px-1.5 py-0.5 text-2xs font-semibold text-gray-300"
-      title={unite}
-    >
-      <span aria-hidden>{icone}</span>
-      {valeur ?? "—"}
-    </span>
+    <div className="rounded-lg bg-[#1E1E1E] px-2 py-1.5" title={titre}>
+      <p className="flex items-center gap-1 text-4xs font-bold uppercase tracking-wider text-gray-500">
+        <span aria-hidden className="shrink-0">{icone}</span>
+        <span className="truncate">{label}</span>
+      </p>
+      <p className="mt-0.5 truncate text-xs font-semibold text-gray-200">{valeur ?? "—"}</p>
+    </div>
   );
 }
 
@@ -303,78 +337,100 @@ export default function ChantiersMeteoCards() {
     );
   }
 
+  const chantiersTries = [...chantiers].sort(
+    (a, b) => ORDRE_NIVEAU[a.niveau] - ORDRE_NIVEAU[b.niveau],
+  );
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {chantiers.map((ch) => {
+      {chantiersTries.map((ch) => {
         const m = ch.meteo;
+        const ventMoyen = m ? Math.max(m.matin.vent, m.apresMidi.vent) : null;
+        const rafales = m ? Math.max(m.matin.rafales, m.apresMidi.rafales) : null;
 
         return (
           <Link
             key={ch.id}
             href={`/terrain/chantier/${ch.id}`}
-            className={`rounded-xl border p-4 transition-colors hover:border-white/25 ${COULEURS[ch.niveau]}`}
+            className={`rounded-xl border p-3 transition-colors hover:border-white/25 sm:p-4 ${COULEURS[ch.niveau]}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="truncate font-medium text-white">{ch.nom || "Chantier"}</p>
-                {ch.adresse && <p className="truncate text-xs text-gray-400">{ch.adresse}</p>}
+                <p className="line-clamp-2 font-semibold leading-snug text-white">
+                  {ch.nom || "Chantier"}
+                </p>
+                {ch.adresse && (
+                  <p className="mt-0.5 flex items-center gap-1 text-2xs text-gray-400">
+                    <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                    <span className="truncate">{ch.adresse}</span>
+                  </p>
+                )}
               </div>
-              <span className="shrink-0" title={LIBELLES_NIVEAU[ch.niveau]} aria-hidden>
+              <span className="shrink-0 text-xl" title={LIBELLES_NIVEAU[ch.niveau]} aria-hidden>
                 {m ? pictogramme(m) : EMOJIS[ch.niveau]}
               </span>
             </div>
 
-            {/* ── Situation du chantier ─────────────────────────────────── */}
-            <p className="mt-2 text-sm font-semibold text-gray-200">
-              {LIBELLES_NIVEAU[ch.niveau]}
-            </p>
-            <p className="text-xs text-gray-400">{ch.impact ?? ch.motif}</p>
-
-            {/* ── La météo, quand elle existe ──────────────────────────── */}
-            {m ? (
-              <div className="mt-3 space-y-2 border-t border-white/10 pt-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl" aria-hidden>
-                    {pictogramme(m)}
-                  </span>
-                  <span className="text-2xl font-black text-white">{m.tempActuelle}°C</span>
-                  <span className="truncate text-xs text-gray-300">{m.conditions}</span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Releve
-                    icone={<Thermometer className="h-3 w-3" />}
-                    valeur={`${m.tempMinJour}° / ${m.tempMaxJour}°`}
-                    unite="Minimum / maximum du jour"
-                  />
-                  <Releve
-                    icone={<Droplets className="h-3 w-3" />}
-                    valeur={m.cumulPluie !== undefined ? `${m.cumulPluie} mm` : null}
-                    unite="Cumul de précipitations du jour"
-                  />
-                  <Releve
-                    icone={<Wind className="h-3 w-3" />}
-                    valeur={`${Math.max(m.matin.rafales, m.apresMidi.rafales)} km/h`}
-                    unite="Rafales max (matin / après-midi)"
-                  />
-                  <Releve
-                    icone={<CloudRain className="h-3 w-3" />}
-                    valeur={LIBELLES_ALERTE_JOUR[m.alerte.niveau] ?? null}
-                    unite={`Alerte météo générale — ${m.alerte.motif}`}
-                  />
-                </div>
-              </div>
-            ) : (
-              <p className="mt-3 rounded-lg border border-dashed border-white/10 px-2 py-1.5 text-2xs text-gray-500">
-                Aucune donnée météo disponible — conditions et impact non déterminés.
-              </p>
-            )}
-
-            <div className="mt-2 flex items-center justify-end">
-              <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 font-semibold text-gray-400">
+            {/* ── État de pose + zone ──────────────────────────────────── */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className={`rounded-full border px-2 py-0.5 text-2xs font-bold ${PASTILLES_NIVEAU[ch.niveau]}`}>
+                {EMOJIS[ch.niveau]} {LIBELLES_NIVEAU[ch.niveau]}
+              </span>
+              <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 text-4xs font-semibold text-gray-400">
                 Zone {ch.zoneVent}
               </span>
             </div>
+            <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-gray-400">
+              {ch.impact ?? ch.motif}
+            </p>
+
+            {/* ── La météo, quand elle existe ──────────────────────────── */}
+            {m ? (
+              <div className="mt-2.5 border-t border-white/10 pt-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl" aria-hidden>
+                    {pictogramme(m)}
+                  </span>
+                  <span className="text-xl font-black text-white">{m.tempActuelle}°C</span>
+                  <span className="truncate text-2xs text-gray-300">{m.conditions}</span>
+                </div>
+
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <Mesure
+                    icone={<Thermometer className="h-3 w-3" />}
+                    label="Min / max"
+                    valeur={`${m.tempMinJour}° / ${m.tempMaxJour}°`}
+                  />
+                  <Mesure
+                    icone={<Droplets className="h-3 w-3" />}
+                    label="Pluie du jour"
+                    valeur={m.cumulPluie !== undefined ? `${m.cumulPluie} mm` : null}
+                  />
+                  <Mesure
+                    icone={<Wind className="h-3 w-3" />}
+                    label="Vent moyen"
+                    valeur={ventMoyen !== null ? `${ventMoyen} km/h` : null}
+                  />
+                  <Mesure
+                    icone={<Gauge className="h-3 w-3" />}
+                    label="Rafales"
+                    valeur={rafales !== null ? `${rafales} km/h` : null}
+                  />
+                  <div className="col-span-2">
+                    <Mesure
+                      icone={<CloudRain className="h-3 w-3" />}
+                      label="Alerte jour"
+                      valeur={LIBELLES_ALERTE_JOUR[m.alerte.niveau] ?? null}
+                      titre={`Alerte météo générale — ${m.alerte.motif}`}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2.5 rounded-lg border border-dashed border-white/10 px-2 py-1.5 text-2xs text-gray-500">
+                Aucune donnée météo disponible — conditions et impact non déterminés.
+              </p>
+            )}
           </Link>
         );
       })}

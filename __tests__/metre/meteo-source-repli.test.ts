@@ -329,6 +329,19 @@ describe("lib/meteoOpenMeteo — traduction fidèle, aucun chiffre fabriqué", (
     expect(json.cumulPluie).toBe(0.7);
   });
 
+  it("J+1 à J+3 portent leur cumul JOURNALIER de pluie, jamais une re-somme", async () => {
+    const { json } = await getAvecRepli();
+    const jours = json.prochainsJours as Array<Record<string, number>>;
+    // `precipitation_sum` est DÉJÀ un cumul de journée : [0.7, 0, 0.78, 0.1]
+    // pour J, J+1, J+2, J+3. On recopie donc 0, 0.8 (0.78 arrondi à 0,1 mm,
+    // comme le reste de la route) et 0.1 — et surtout PAS 0.7 (aujourd'hui) ni
+    // une somme des relevés horaires.
+    expect(jours[0].cumulPluie).toBe(0);
+    expect(jours[1].cumulPluie).toBe(0.8);
+    expect(jours[2].cumulPluie).toBe(0.1);
+    expect(jours.map((j) => j.cumulPluie)).not.toContain(0.7);
+  });
+
   it("matin et après-midi sont découpés sur les heures du jour", async () => {
     const { json } = await getAvecRepli();
     const matin = json.matin as Record<string, number>;

@@ -29,6 +29,13 @@ interface Jour {
   tempMin: number;
   icon: string;
   conditions: string;
+  /**
+   * Cumul journalier de précipitations fourni par la source. Les deux sources
+   * l'exposent déjà sous forme de TOTAL de journée (`precip` /
+   * `precipitation_sum`) : on le recopie tel quel, sans re-sommer les relevés
+   * horaires — ce serait compter deux fois la même pluie.
+   */
+  cumulPluie?: number;
 }
 
 interface MatinApresMidi {
@@ -60,6 +67,13 @@ const toJours = (raw: RawJour[]): Jour[] =>
     tempMin: Math.round(j.tempmin),
     icon: j.icon,
     conditions: j.conditions,
+    // `j.precip` est DÉJÀ le cumul de la journée chez les deux fournisseurs.
+    // On ne somme donc pas `j.hours` ici : le cumul du jour courant, lui, est
+    // calculé plus bas à partir des relevés horaires (une seule fois).
+    cumulPluie:
+      typeof j.precip === "number" && Number.isFinite(j.precip)
+        ? Math.round(j.precip * 10) / 10
+        : undefined,
   }));
 
 /**
