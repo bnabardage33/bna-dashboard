@@ -62,12 +62,16 @@ describe("lireColorId — lire la couleur quelle que soit la forme", () => {
     expect(lireColorId(null)).toBeNull();
   });
 
-  it("couleurDepuisId : id 1..4, repli vert sur l'illisible", () => {
+  it("couleurDepuisId : id 1..4, null sur toute donnée illisible ou invalide (jamais de faux vert)", () => {
     expect(couleurDepuisId(1)).toBe("vert");
+    expect(couleurDepuisId("1")).toBe("vert");
     expect(couleurDepuisId("3")).toBe("orange");
     expect(couleurDepuisId(4)).toBe("rouge");
-    expect(couleurDepuisId(99)).toBe("vert");
-    expect(couleurDepuisId(undefined)).toBe("vert");
+    expect(couleurDepuisId(99)).toBeNull();
+    expect(couleurDepuisId("abc")).toBeNull();
+    expect(couleurDepuisId(undefined)).toBeNull();
+    expect(couleurDepuisId(null)).toBeNull();
+    expect(couleurDepuisId("")).toBeNull();
   });
 });
 
@@ -151,6 +155,101 @@ describe("extraireDepartement — couleur du département", () => {
     };
     expect(extraireDepartement(corse, "2a", false, MAINTENANT)?.couleurMax).toBe("rouge");
     expect(extraireDepartement(corse, "2B", false, MAINTENANT)?.couleurMax).toBe("vert");
+  });
+
+  it("renvoie null si max_color_id est invalide ('abc', 99, undefined) — jamais de faux vert", () => {
+    const reponseAbc = {
+      product: { periods: [{ ...BORNES_J, timelaps: { domain_ids: [domaine("33", "abc")] } }] },
+    };
+    expect(extraireDepartement(reponseAbc, "33", false, MAINTENANT)).toBeNull();
+
+    const reponse99 = {
+      product: { periods: [{ ...BORNES_J, timelaps: { domain_ids: [domaine("33", 99)] } }] },
+    };
+    expect(extraireDepartement(reponse99, "33", false, MAINTENANT)).toBeNull();
+
+    const reponseUndefined = {
+      product: { periods: [{ ...BORNES_J, timelaps: { domain_ids: [domaine("33", undefined)] } }] },
+    };
+    expect(extraireDepartement(reponseUndefined, "33", false, MAINTENANT)).toBeNull();
+  });
+
+  it("ignore un phénomène à la couleur invalide et renvoie null si aucune autre donnée n'est exploitable", () => {
+    const reponsePhenomeneInvalide = {
+      product: {
+        periods: [
+          {
+            ...BORNES_J,
+            timelaps: {
+              domain_ids: [
+                domaine("33", undefined, [
+                  { phenomenon_id: 1, phenomenon_max_color_id: { color_id: "inconnu" } },
+                  { phenomenon_id: 2, phenomenon_max_color_id: { color_id: 99 } },
+                ]),
+              ],
+            },
+          },
+        ],
+      },
+    };
+    expect(extraireDepartement(reponsePhenomeneInvalide, "33", false, MAINTENANT)).toBeNull();
+  });
+
+  it("distingue clairement un vert officiel (max_color_id: 1) d'une donnée invalide/indisponible", () => {
+    const vertOfficiel = {
+      product: { periods: [{ ...BORNES_J, timelaps: { domain_ids: [domaine("33", 1)] } }] },
+    };
+    const res = extraireDepartement(vertOfficiel, "33", false, MAINTENANT);
+    expect(res).not.toBeNull();
+    expect(res?.couleurMax).toBe("vert");
+  });
+
+  it("déduit le niveau maximal réel des phénomènes lorsque max_color_id est invalide ('abc', 99)", () => {
+    // Cas 1 : max_color_id vaut "abc", mais vent est orange (3) et pluie est jaune (2)
+    const reponseAbc = {
+      product: {
+        periods: [
+          {
+            ...BORNES_J,
+            timelaps: {
+              domain_ids: [
+                domaine("33", "abc", [
+                  { phenomenon_id: 1, phenomenon_max_color_id: { color_id: 3 } },
+                  { phenomenon_id: 2, phenomenon_max_color_id: { color_id: 2 } },
+                ]),
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const resAbc = extraireDepartement(reponseAbc, "33", false, MAINTENANT);
+    expect(resAbc).not.toBeNull();
+    expect(resAbc?.couleurMax).toBe("orange");
+    expect(resAbc?.phenomenes).toHaveLength(2);
+
+    // Cas 2 : max_color_id vaut 99, mais orages est rouge (4) et vent est vert (1)
+    const reponse99 = {
+      product: {
+        periods: [
+          {
+            ...BORNES_J,
+            timelaps: {
+              domain_ids: [
+                domaine("33", 99, [
+                  { phenomenon_id: 1, phenomenon_max_color_id: { color_id: 1 } },
+                  { phenomenon_id: 3, phenomenon_max_color_id: { color_id: 4 } },
+                ]),
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const res99 = extraireDepartement(reponse99, "33", false, MAINTENANT);
+    expect(res99).not.toBeNull();
+    expect(res99?.couleurMax).toBe("rouge");
+    expect(res99?.couleurMax).not.toBe("vert");
   });
 });
 

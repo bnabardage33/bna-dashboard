@@ -98,10 +98,23 @@ function chaine(v: unknown): string | null {
   return null;
 }
 
-/** Couleur Météo-France d'un id 1..4. Un id illisible vaut « vert ». */
-export function couleurDepuisId(valeur: unknown): CouleurVigilance {
-  const id = Number(valeur);
-  return COULEUR_PAR_ID[id] ?? "vert";
+/**
+ * Couleur Météo-France d'un id 1..4.
+ *
+ * Renvoie `null` pour tout id illisible ou hors 1..4 (« abc », 99, `""`,
+ * `undefined`, booléen, tableau…). DÉCISION MÉTIER : une valeur invalide est
+ * « indisponible », JAMAIS « vert ». Seul l'id 1 donne un vert officiel.
+ */
+export function couleurDepuisId(valeur: unknown): CouleurVigilance | null {
+  let id: number;
+  if (typeof valeur === "number") {
+    id = valeur;
+  } else if (typeof valeur === "string" && valeur.trim() !== "") {
+    id = Number(valeur.trim());
+  } else {
+    return null;
+  }
+  return Number.isInteger(id) ? (COULEUR_PAR_ID[id] ?? null) : null;
 }
 
 /**
@@ -125,6 +138,9 @@ export function lireColorId(phenomene: unknown): number | null {
 
   for (const candidat of candidats) {
     if (candidat === undefined || candidat === null || candidat === "") continue;
+    // Seuls un nombre ou une chaîne sont lisibles : `Number(true)` ou
+    // `Number([1])` donneraient 1 (donc « vert ») à partir d'une donnée invalide.
+    if (typeof candidat !== "number" && typeof candidat !== "string") continue;
     const n = Number(candidat);
     if (Number.isFinite(n)) return n;
   }
@@ -238,10 +254,14 @@ function phenomenesDe(
   for (const brut of liste) {
     const id = lireIdPhenomene(estObjet(brut) ? brut : {});
     if (id === null || !PHENOMENE_PAR_ID[id]) continue;
+    const couleur = couleurDepuisId(lireColorId(brut));
+    // DÉCISION MÉTIER : une couleur de phénomène invalide/illisible ne doit
+    // JAMAIS être comptabilisée comme un faux vert.
+    if (!couleur) continue;
     phenomenes.push({
       id,
       nom: PHENOMENE_PAR_ID[id],
-      couleur: couleurDepuisId(lireColorId(brut)),
+      couleur,
     });
   }
   return phenomenes;
@@ -250,14 +270,19 @@ function phenomenesDe(
 function couleurMaxDeDomaine(
   domaine: Record<string, unknown>,
   phenomenes: VigilancePhenomene[]
-): CouleurVigilance {
+): CouleurVigilance | null {
   const brut = domaine.max_color_id;
   if (brut !== undefined && brut !== null && brut !== "") {
-    return couleurDepuisId(brut);
+    const c = couleurDepuisId(brut);
+    if (c !== null) return c;
   }
-  // Pas de `max_color_id` exploitable : on prend la plus forte couleur
-  // réellement listée, jamais une couleur inventée.
-  return couleurLaPlusForte(...phenomenes.map((p) => p.couleur));
+  // Pas de `max_color_id` valide : si des phénomènes existent avec des
+  // couleurs reconnues, on prend la plus forte d'entre eux.
+  if (phenomenes.length > 0) {
+    return couleurLaPlusForte(...phenomenes.map((p) => p.couleur));
+  }
+  // Aucune couleur valide disponible : la vigilance est inexploitable (null).
+  return null;
 }
 
 function miseAJourDe(data: unknown): string | null {
@@ -304,10 +329,20 @@ export function extraireDepartement(
   }
 
   const phenomenes = phenomenesDe(domaine);
+  const couleurMax = couleurMaxDeDomaine(domaine, phenomenes);
+
+  // DÉCISION MÉTIER : une vigilance dont la couleur est invalide ou absente
+  // est considérée comme « indisponible » (null), jamais comme « vert ».
+  if (!couleurMax) {
+    console.warn(
+      `Vigilance inexploitable ou invalide pour le département ${departementNormalise}`
+    );
+    return null;
+  }
 
   return {
     departement: departementNormalise,
-    couleurMax: couleurMaxDeDomaine(domaine, phenomenes),
+    couleurMax,
     phenomenes,
     misAJourLe: miseAJourDe(data),
   };
