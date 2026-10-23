@@ -7,7 +7,16 @@ import {
   type RawJour,
 } from "@/lib/meteoOpenMeteo";
 import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
-import { dateParis, dateParisDans } from "@/lib/dateParis";
+import { dateParis, dateParisDans, heureParis, heureParisEnMinutes } from "@/lib/dateParis";
+import {
+  heureDe,
+  natureHeure,
+  statutHeure,
+  type NatureHeure,
+  type StatutHeure,
+} from "@/lib/meteoHoraire";
+import { evaluerPoseChantier, type Acces, type Materiau } from "@/lib/meteoAlerte";
+import { maxConnu } from "@/lib/meteo";
 
 // Les interfaces `RawHeure`, `RawJour` et `DonneesMeteo` sont désormais importées
 // depuis `lib/meteoOpenMeteo.ts`, où elles vivent depuis que la route accepte
@@ -15,12 +24,22 @@ import { dateParis, dateParisDans } from "@/lib/dateParis";
 // matin/après-midi et l'alerte ci-dessous n'ont pas bougé d'un iota : c'est la
 // structure d'entrée qui s'est élargie, pas la règle de décision.
 
+/**
+ * Une heure de la série.
+ *
+ * Une grandeur `null` = la source n'a rien renvoyé pour cette heure. Elle
+ * n'est jamais convertie en 0 : l'écran affiche un tiret, et aucun cumul ne
+ * l'additionne. `statut` / `nature` décrivent l'heure (écoulée / à venir,
+ * observée / prévue).
+ */
 interface Heure {
   heure: string;
-  temp: number;
-  vent: number;
-  rafales: number;
-  pluie: number;
+  temp: number | null;
+  vent: number | null;
+  rafales: number | null;
+  pluie: number | null;
+  statut: StatutHeure;
+  nature: NatureHeure;
 }
 
 interface Jour {
@@ -38,10 +57,16 @@ interface Jour {
   cumulPluie?: number;
 }
 
+/**
+ * Agrégat d'une période.
+ *
+ * `null` = aucune heure CONNUE dans la période. On affiche un tiret plutôt que
+ * « 0 km/h », qui se lirait comme un calme garanti.
+ */
 interface MatinApresMidi {
-  temp: number;
-  vent: number;
-  rafales: number;
+  temp: number | null;
+  vent: number | null;
+  rafales: number | null;
 }
 
 /**
@@ -51,14 +76,29 @@ interface MatinApresMidi {
  */
 export type SourceMeteo = "visualcrossing" | "open-meteo";
 
-const toHeures = (raw: RawHeure[]): Heure[] =>
-  raw.map((h) => ({
-    heure: h.datetime.slice(0, 5),
-    temp: Math.round(h.temp),
-    vent: Math.round(h.windspeed),
-    rafales: Math.round(h.windgust ?? h.windspeed),
-    pluie: h.precip ?? 0,
-  }));
+const arrondi = (v: number | null): number | null =>
+  typeof v === "number" && Number.isFinite(v) ? Math.round(v * 10) / 10 : null;
+
+const toHeures = (
+  raw: RawHeure[],
+  referenceSource: string | undefined,
+  heureCouranteMinutes: number,
+): Heure[] =>
+  raw.map((h) => {
+    const heure = heureDe(h.datetime);
+    // Rafale absente → repli sur le vent MOYEN de la même heure, qui reste une
+    // donnée réelle de cette heure. Rafale ET vent absents → `null`, jamais 0.
+    const rafales = h.windgust ?? h.windspeed;
+    return {
+      heure,
+      temp: arrondi(h.temp),
+      vent: arrondi(h.windspeed),
+      rafales: arrondi(rafales),
+      pluie: arrondi(h.precip),
+      statut: statutHeure(heure, heureCouranteMinutes),
+      nature: natureHeure(heure, referenceSource),
+    };
+  });
 
 const toJours = (raw: RawJour[]): Jour[] =>
   raw.slice(1, 5).map((j) => ({
@@ -191,7 +231,17 @@ export async function GET(req: NextRequest) {
 
   const jours = data.days;
 
-  const heures: Heure[] = toHeures(today.hours || []);
+  // Référence temporelle : quand la source l'indique (`current.time`), elle
+  // autorise à qualifier chaque heure d'observée ou de prévue ; sinon la
+  // nature de toutes les heures reste `inconnue`.
+  const referenceSource =
+    data.referenceSource ?? data.currentConditions?.time ?? undefined;
+
+  const heures: Heure[] = toHeures(
+    today.hours || [],
+    referenceSource,
+    heureParisEnMinutes(),
+  );
 
   const matinHeures = heures.filter((h) => {
     const hh = parseInt(h.heure);
@@ -202,41 +252,102 @@ export async function GET(req: NextRequest) {
     return hh >= 13 && hh < 19;
   });
 
-  const avg = (arr: Heure[], k: "temp" | "vent" | "rafales" | "pluie") =>
-    arr.length ? Math.round(arr.reduce((s, h) => s + h[k], 0) / arr.length) : 0;
-  const max = (arr: Heure[], k: "temp" | "vent" | "rafales" | "pluie") =>
-    arr.length ? Math.max(...arr.map((h) => h[k])) : 0;
+  // Agrégats NULL-SÛRS : une période sans aucune heure connue produit `null`
+  // (affiché en tiret), jamais 0, qui se lirait « 0 km/h » ou « 0 °C ».
+  const moyenne = (arr: Heure[], k: "temp" | "vent"): number | null => {
+    const connues = arr
+      .map((h) => h[k])
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    // Arrondi ENTIER, comme avant la refonte : c'est la valeur affichée
+    // (« Matin 19°C »), et le test de fidélité de la source la verrouille.
+    return connues.length
+      ? Math.round(connues.reduce((s, v) => s + v, 0) / connues.length)
+      : null;
+  };
+  const maxi = (arr: Heure[], k: "rafales"): number | null => {
+    const connues = arr
+      .map((h) => h[k])
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    return connues.length ? Math.round(Math.max(...connues)) : null;
+  };
 
-  const matin: MatinApresMidi = { temp: avg(matinHeures, "temp"), vent: avg(matinHeures, "vent"), rafales: max(matinHeures, "rafales") };
-  const apresMidi: MatinApresMidi = { temp: avg(apremHeures, "temp"), vent: avg(apremHeures, "vent"), rafales: max(apremHeures, "rafales") };
+  const matin: MatinApresMidi = {
+    temp: moyenne(matinHeures, "temp"),
+    vent: moyenne(matinHeures, "vent"),
+    rafales: maxi(matinHeures, "rafales"),
+  };
+  const apresMidi: MatinApresMidi = {
+    temp: moyenne(apremHeures, "temp"),
+    vent: moyenne(apremHeures, "vent"),
+    rafales: maxi(apremHeures, "rafales"),
+  };
 
-  const rafalesMax = Math.max(matin.rafales, apresMidi.rafales);
+  const rafalesMax = maxConnu(matin.rafales, apresMidi.rafales);
   const tempMax = Math.round(today.tempmax);
-  const heuresPluie = heures.filter((h) => h.pluie > 0.2).length;
-  const cumulPluie = heures.reduce((s, h) => s + h.pluie, 0);
+  const heuresPluie = heures.filter(
+    (h) => typeof h.pluie === "number" && h.pluie > 0.2,
+  ).length;
+  const valeursPluie = heures
+    .map((h) => h.pluie)
+    .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  const cumulPluie = valeursPluie.length
+    ? Math.round(valeursPluie.reduce((s, v) => s + v, 0) * 10) / 10
+    : null;
 
+  // ─── ALERTE GÉNÉRALE DE LA JOURNÉE ────────────────────────────────────────
+  //
+  // Cette alerte décrit les CONDITIONS GÉNÉRALES de la journée sur le lieu du
+  // chantier. Ce n'est PAS la décision de pose : celle-ci est portée par
+  // `pose`, évaluée sur les horaires du chantier (voir plus bas).
+  //
+  // CORRECTION D'AUDIT : le cumul JOURNALIER de pluie ne déclenche plus le
+  // rouge « pose interdite ». Une nuit de pluie qui se termine à 6 h n'interdit
+  // rien à une équipe posant de 7 h à 17 h. Le même cumul (≥ 8 mm en ≥ 4 h
+  // pluvieuses) est désormais évalué dans `evaluerPoseChantier`, sur les seules
+  // heures de pose. Ici il devient un AVERTISSEMENT orange, consultable, avec
+  // le rappel que la décision se prend sur les horaires de pose.
+  //
+  // Le seuil de VENT (≥ 70 km/h) reste rouge à l'échelle de la journée : c'est
+  // un seuil existant validé, et aucun seuil n'est abaissé par cette refonte.
   let niveau: "vert" | "jaune" | "orange" | "rouge" = "vert";
   let motif = "Conditions normales de pose";
 
-  if (rafalesMax > 70) {
+  if (typeof rafalesMax === "number" && rafalesMax > 70) {
     niveau = "rouge";
     motif = `Rafales critiques (${rafalesMax} km/h) — pose interdite`;
-  } else if (cumulPluie >= 8 && heuresPluie >= 4) {
-    niveau = "rouge";
-    motif = `Pluie continue (${cumulPluie.toFixed(1)} mm sur ${heuresPluie}h) — pose interdite`;
-  } else if (rafalesMax > 50) {
+  } else if (cumulPluie !== null && cumulPluie >= 8 && heuresPluie >= 4) {
+    niveau = "orange";
+    motif =
+      `Pluie abondante sur la journée (${cumulPluie.toFixed(1)} mm en ${heuresPluie} h) ` +
+      `— protection des matériaux à vérifier. La décision de pose dépend des horaires du chantier.`;
+  } else if (typeof rafalesMax === "number" && rafalesMax > 50) {
     niveau = "orange";
     motif = `Rafales fortes (${rafalesMax} km/h) — conditions difficiles`;
   } else if (tempMax > 35) {
     niveau = "orange";
     motif = `Chaleur importante (${tempMax}°C) — conditions difficiles`;
-  } else if (rafalesMax > 30) {
+  } else if (typeof rafalesMax === "number" && rafalesMax > 30) {
     niveau = "jaune";
     motif = `Rafales modérées (${rafalesMax} km/h) — vigilance renforcée`;
   } else if (tempMax > 30) {
     niveau = "jaune";
     motif = `Chaleur (${tempMax}°C) — vigilance renforcée`;
+  } else if (cumulPluie !== null && cumulPluie > 0) {
+    // Le cumul reste AFFICHÉ, même minime : c'est une information demandée,
+    // pas un silence.
+    motif = `Conditions normales de pose — cumul journalier ${cumulPluie.toFixed(1)} mm`;
   }
+
+  // ─── DÉCISION DE POSE, SUR LES HORAIRES DU CHANTIER ──────────────────────
+  //
+  // Elle n'existe QUE si le chantier a communiqué ses horaires : le paramètre
+  // `horaires` porte `chantiers.horaires`. Sans lui, `pose.statut` vaut
+  // `non_determine` — l'écran affiche un état explicite au lieu d'un vert
+  // silencieux. Voir `lib/meteoAlerte.ts#evaluerPoseChantier`.
+  const horaires = searchParams.get("horaires");
+  const materiau = (searchParams.get("materiau") ?? "bois") as Materiau;
+  const acces = (searchParams.get("acces") ?? "echafaudage") as Acces;
+  const resultatPose = evaluerPoseChantier(materiau, acces, horaires, heures);
 
   const prochainsJours = toJours(jours);
 
@@ -257,6 +368,17 @@ export async function GET(req: NextRequest) {
     apresMidi,
     heures,
     alerte: { niveau, motif },
+    // Décision de pose sur les horaires du chantier. Distincte de `alerte`,
+    // qui décrit la journée et ne connaît aucun horaire.
+    pose: {
+      statut: resultatPose.statut,
+      niveau: resultatPose.niveau,
+      motif: resultatPose.motif,
+      fenetre: resultatPose.fenetre,
+      horairesStatut: resultatPose.horairesStatut,
+      avertissements: resultatPose.avertissements,
+      synthese: resultatPose.synthese,
+    },
     icon: data.currentConditions?.icon || today.icon,
     conditions: today.conditions,
     source,
@@ -266,7 +388,13 @@ export async function GET(req: NextRequest) {
     // Cumul de pluie de la journée, en mm. Ajouté pour que la carte puisse
     // afficher la precipitation SANS recalculer un cumul dans le navigateur —
     // et sans inventer de chiffre quand la donnée est absente.
-    cumulPluie: Math.round(cumulPluie * 10) / 10,
+    // `null` = la source n'a rien renvoyé : à afficher en tiret.
+    cumulPluie,
+    // Heure LOCALE de génération de cette réponse. La réponse est cachée
+    // 30 minutes : c'est cette référence qui justifie le `statut` des heures,
+    // et un affichage doit reclasser avec sa propre heure courante.
+    genereLe: heureParis(),
+    ...(referenceSource ? { referenceSource } : {}),
     prochainsJours,
   });
 }

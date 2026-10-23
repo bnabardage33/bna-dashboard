@@ -1,6 +1,8 @@
 "use server";
 
 import { createServerClient } from "@supabase/ssr";
+import { resoudreTenant } from "@/lib/tenant";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 
 async function getSupabase() {
   const { cookies } = await import("next/headers");
@@ -22,12 +24,17 @@ async function getSupabase() {
 }
 
 export async function validerPointageAvecMeteo(chantierId: string, userId: string, heures: number, dateSaisie: string, commentaire: string = "") {
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) {
+    return { success: false, error: "Contexte entreprise ou session invalide." };
+  }
   const supabase = await getSupabase();
   try {
     const { data: chantier, error: chantierErr } = await supabase
       .from('chantiers')
       .select('adresse_chantier')
       .eq('id', chantierId)
+      .eq('entreprise_id', tenant.entrepriseId)
       .single();
 
     if (chantierErr) throw chantierErr;
@@ -40,7 +47,7 @@ export async function validerPointageAvecMeteo(chantierId: string, userId: strin
     if (apiKey) {
       try {
         const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/${dateSaisie}?unitGroup=metric&key=${apiKey}&contentType=json`;
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url, {}, 10_000);
         if (res.ok) {
           const meteoData = await res.json();
           precip = meteoData?.days?.[0]?.precip || 0;
@@ -71,6 +78,7 @@ export async function validerPointageAvecMeteo(chantierId: string, userId: strin
 
     const payload: Record<string, unknown> = {
       chantier_id: chantierId,
+      entreprise_id: tenant.entrepriseId,
       volume_heures_declare: heures,
       date_saisie: dateSaisie,
       meteo_relevee: meteo_relevee,
@@ -94,9 +102,17 @@ export async function validerPointageAvecMeteo(chantierId: string, userId: strin
 }
 
 export async function supprimerPointageGlob(id: string) {
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) {
+    return { success: false, error: "Contexte entreprise ou session invalide." };
+  }
   const supabase = await getSupabase();
   try {
-    const { error } = await supabase.from('pointages_globaux').delete().eq('id', id);
+    const { error } = await supabase
+      .from('pointages_globaux')
+      .delete()
+      .eq('id', id)
+      .eq('entreprise_id', tenant.entrepriseId);
     if (error) throw error;
     return { success: true };
   } catch (error) {
@@ -106,9 +122,17 @@ export async function supprimerPointageGlob(id: string) {
 }
 
 export async function reinitialiserPointagesChantier(chantierId: string) {
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) {
+    return { success: false, error: "Contexte entreprise ou session invalide." };
+  }
   const supabase = await getSupabase();
   try {
-    const { error } = await supabase.from('pointages_globaux').delete().eq('chantier_id', chantierId);
+    const { error } = await supabase
+      .from('pointages_globaux')
+      .delete()
+      .eq('chantier_id', chantierId)
+      .eq('entreprise_id', tenant.entrepriseId);
     if (error) throw error;
     return { success: true };
   } catch (error) {

@@ -57,7 +57,9 @@ import { CloudRain, Droplets, Gauge, MapPin, Thermometer, Wind } from "lucide-re
 import { supabase } from "@/lib/supabase";
 import { fetchMeteo, type JourMeteo } from "@/lib/meteo";
 import { emojiWmo } from "@/lib/meteoOpenMeteo";
-import { evaluerAlerteChantier, type Materiau, type Acces } from "@/lib/meteoAlerte";
+import { evaluerPoseChantier, type Materiau, type Acces } from "@/lib/meteoAlerte";
+import { maxConnu } from "@/lib/meteo";
+import TableauPrecipitations from "@/components/TableauPrecipitations";
 
 // NB : la génération des rapports intempéries ne se fait plus ici.
 // Elle tourne côté serveur, une fois par jour en fin de journée, via
@@ -65,7 +67,7 @@ import { evaluerAlerteChantier, type Materiau, type Acces } from "@/lib/meteoAle
 // (planifiée par cron_rapports_intemperies.sql). Ce composant se contente
 // d'afficher le risque technique en temps réel quand quelqu'un ouvre l'appli.
 
-type Niveau = "vert" | "jaune" | "orange" | "rouge" | "inconnu";
+type Niveau = "vert" | "jaune" | "orange" | "rouge" | "indeterminate" | "inconnu";
 
 /** Une carte = un chantier + sa prévision, ou un chantier sans prévision. */
 type ChantierMeteo = {
@@ -86,6 +88,10 @@ type ChantierMeteo = {
   meteo: JourMeteo | null;
   /** Métier : ce que la météo implique pour la pose, matériau × accès. */
   impact: string | null;
+  /** Horaires de pose saisis, pour que le dépliant horaire soit contextualisé. */
+  horaires: string | null;
+  /** Avertissements matériaux, distincts du niveau de pose. */
+  avertissements: string[];
 };
 
 const COULEURS: Record<Niveau, string> = {
@@ -93,6 +99,10 @@ const COULEURS: Record<Niveau, string> = {
   jaune: "border-amber-500/40 bg-amber-500/10",
   orange: "border-orange-500/40 bg-orange-500/10",
   rouge: "border-red-500/40 bg-red-500/10",
+  // « Non déterminé » n'est PAS une couleur de risque : c'est un état de
+  // connaissance. Il est volontairement neutre, pour ne pas se lire comme un
+  // vert (« tout va bien ») ni comme un rouge (« pose interdite »).
+  indeterminate: "border-white/15 bg-white/[0.04]",
   inconnu: "border-white/10 bg-[#1E1E1E]",
 };
 
@@ -101,6 +111,7 @@ const EMOJIS: Record<Niveau, string> = {
   jaune: "🟡",
   orange: "🟠",
   rouge: "🔴",
+  indeterminate: "❔",
   inconnu: "⚪",
 };
 
@@ -109,6 +120,7 @@ const LIBELLES_NIVEAU: Record<Niveau, string> = {
   jaune: "Vigilance",
   orange: "Conditions difficiles",
   rouge: "Pose interdite",
+  indeterminate: "Impact non déterminé",
   inconnu: "Météo indisponible",
 };
 
@@ -122,20 +134,22 @@ const PASTILLES_NIVEAU: Record<Niveau, string> = {
   jaune: "border-amber-500/40 bg-amber-500/10 text-amber-300",
   orange: "border-orange-500/40 bg-orange-500/10 text-orange-300",
   rouge: "border-red-500/40 bg-red-500/10 text-red-300",
+  indeterminate: "border-white/15 bg-white/[0.04] text-gray-300",
   inconnu: "border-white/15 bg-white/[0.04] text-gray-400",
 };
 
 /**
  * Ordre d'AFFICHAGE : les risques critiques d'abord. C'est une présentation,
  * pas une règle métier — les niveaux eux-mêmes viennent tous de
- * `evaluerAlerteChantier`, qui n'est pas modifié.
+ * `evaluerPoseChantier`, qui applique les seuils matériau × accès existants.
  */
 const ORDRE_NIVEAU: Record<Niveau, number> = {
   rouge: 0,
   orange: 1,
   jaune: 2,
   vert: 3,
-  inconnu: 4,
+  indeterminate: 4,
+  inconnu: 5,
 };
 
 /**
@@ -203,9 +217,13 @@ export default function ChantiersMeteoCards() {
       setLoading(true);
 
       // FIX BDD : Ajout de 'zone_vent' dans le select
+      // `horaires` transporte les horaires de pose saisis par l'équipe : c'est
+      // eux qui permettent de décider d'une POSE, et non d'une simple journée.
       const { data, error } = await supabase
         .from("chantiers")
-        .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut, zone_vent")
+        .select(
+          "id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut, zone_vent, horaires",
+        )
         .neq("statut", "termine");
 
       if (error || !data) {
@@ -222,6 +240,7 @@ export default function ChantiersMeteoCards() {
         moyen_acces: string | null;
         statut: string;
         zone_vent: string | null;
+        horaires: string | null;
       };
 
       const resultats = await Promise.all(
@@ -230,6 +249,7 @@ export default function ChantiersMeteoCards() {
           const zoneVent = ch.zone_vent ? Number(ch.zone_vent) : 1; // Sécurité fallback zone 1
           const materiau = (ch.materiau_structurel ?? "bois") as Materiau;
           const acces = (ch.moyen_acces ?? "echafaudage") as Acces;
+          const horaires = ch.horaires ?? null;
 
           // Sans adresse, aucune prévision n'est demandée : ce n'est pas un
           // échec technique, c'est une fiche chantier incomplète.
@@ -245,6 +265,8 @@ export default function ChantiersMeteoCards() {
               motif: "Pas d'adresse renseignée pour ce client.",
               meteo: null,
               impact: null,
+              horaires,
+              avertissements: [],
             };
           }
 
@@ -255,7 +277,10 @@ export default function ChantiersMeteoCards() {
           // lieu de croire à une panne.
           let motifMeteo = "Météo indisponible pour cette adresse.";
           try {
-            meteo = await fetchMeteo(adresse);
+            // Les horaires de pose du chantier voyagent avec la demande : la
+            // route renvoie alors une DÉCISION DE POSE (`meteo.pose`) évaluée
+            // sur ces heures, et non sur la journée entière.
+            meteo = await fetchMeteo(adresse, { horaires, materiau, acces });
           } catch (e) {
             if (e instanceof Error && e.message) motifMeteo = e.message;
             // Trace explicite : ce chemin est la cause historique du
@@ -279,22 +304,30 @@ export default function ChantiersMeteoCards() {
               motif: motifMeteo,
               meteo: null,
               impact: null,
+              horaires,
+              avertissements: [],
             };
           }
 
-          // Impact CHANTIER : seuils matériau × accès, appliqués aux mesures
-          // réellement reçues. C'est la logique métier existante, inchangée.
-          const rafalesMax = Math.max(meteo.matin.rafales, meteo.apresMidi.rafales);
-          const tempMax = Math.max(meteo.matin.temp, meteo.apresMidi.temp);
-          const pluieCumul = meteo.cumulPluie ?? meteo.heures.reduce((s, h) => s + h.pluie, 0);
+          // ── DÉCISION DE POSE ────────────────────────────────────────────
+          //
+          // Elle est calculée SUR LES HORAIRES DE POSE du chantier : c'est la
+          // correction d'audit. Avant, le cumul JOURNALIER de pluie (≥ 8 mm en
+          // ≥ 4 h) déclenchait « Pose interdite » — une nuit de pluie
+          // interdisait donc la pose du lendemain. Ce n'est plus le cas : les
+          // mêmes seuils s'appliquent aux seules heures de pose.
+          //
+          // La fonction est pure et identique à celle utilisée par la route et
+          // par la fiche chantier : un seul chemin de décision, donc aucun
+          // risque d'afficher deux verdicts différents pour le même chantier.
+          const decision =
+            meteo.pose ??
+            evaluerPoseChantier(materiau, acces, horaires, meteo.heures);
 
-          // Note : l'angle d'exposition est géré dynamiquement par zone de
-          // façade dans `chantier_zones`, pas dans la table racine `chantiers`.
-          const alerte = evaluerAlerteChantier(materiau, acces, {
-            rafalesMax,
-            tempMax,
-            pluieCumul,
-          });
+          const niveauCarte: Niveau =
+            decision.statut === "non_determine"
+              ? "indeterminate"
+              : (decision.niveau as Niveau);
 
           return {
             id: ch.id,
@@ -303,13 +336,17 @@ export default function ChantiersMeteoCards() {
             materiau,
             acces,
             zoneVent,
-            // Le niveau affiché est celui de l'alerte CHANTIER (matériau ×
-            // accès), pas celui de l'alerte générale de la journée : c'est le
-            // second qui décide si l'équipe peut poser.
-            niveau: alerte.niveau as Niveau,
-            motif: alerte.motif,
+            // Le niveau affiché est celui de la POSE (matériau × accès, sur les
+            // horaires du chantier). L'alerte générale de la journée reste
+            // affichée à part : elle décrit le site, pas la pose.
+            niveau: niveauCarte,
+            // Le motif de pose explique le périmètre utilisé ; le motif
+            // d'impact historique est conservé pour l'affichage « impact ».
+            motif: decision.motif,
             meteo,
-            impact: alerte.motif,
+            impact: decision.statut === "evaluee" ? decision.motif : null,
+            horaires,
+            avertissements: decision.avertissements,
           };
         })
       );
@@ -345,8 +382,8 @@ export default function ChantiersMeteoCards() {
     <div className="grid gap-3 sm:grid-cols-2">
       {chantiersTries.map((ch) => {
         const m = ch.meteo;
-        const ventMoyen = m ? Math.max(m.matin.vent, m.apresMidi.vent) : null;
-        const rafales = m ? Math.max(m.matin.rafales, m.apresMidi.rafales) : null;
+        const ventMoyen = m ? maxConnu(m.matin.vent, m.apresMidi.vent) : null;
+        const rafales = m ? maxConnu(m.matin.rafales, m.apresMidi.rafales) : null;
 
         return (
           <Link
@@ -383,6 +420,20 @@ export default function ChantiersMeteoCards() {
             <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-gray-400">
               {ch.impact ?? ch.motif}
             </p>
+
+            {/* ── Avertissements matériaux ──────────────────────────────
+                DISTINCTS du niveau de pose : ils ne le modifient jamais. Ils
+                sont donc affichés à part, en liste, et formulés comme des
+                vérifications à faire sur le terrain. */}
+            {ch.avertissements.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5">
+                {ch.avertissements.map((a) => (
+                  <li key={a} className="text-2xs leading-snug text-amber-300/80">
+                    ⚠️ {a}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* ── La météo, quand elle existe ──────────────────────────── */}
             {m ? (
@@ -424,6 +475,19 @@ export default function ChantiersMeteoCards() {
                       titre={`Alerte météo générale — ${m.alerte.motif}`}
                     />
                   </div>
+                </div>
+
+                {/* ── Tableau horaire dépliant ─────────────────────────────
+                    « Voir les précipitations » ouvre le détail heure par
+                    heure (pluie + rafales). Le bouton neutralise la
+                    navigation de la carte : sans cela, le clic ouvrirait le
+                    chantier au lieu de déplier le tableau. */}
+                <div className="mt-2">
+                  <TableauPrecipitations
+                    heures={m.heures}
+                    libelleFerme="▼ Voir les précipitations"
+                    libelleOuvert="▲ Masquer les précipitations"
+                  />
                 </div>
               </div>
             ) : (

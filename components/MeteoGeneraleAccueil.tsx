@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchMeteo, JourMeteo } from "@/lib/meteo";
+import { fetchMeteo, JourMeteo, maxConnu } from "@/lib/meteo";
+import { texteDegre, texteKmh, texteMm } from "@/components/TableauPrecipitations";
 import {
   Search,
   Sun,
@@ -193,13 +194,13 @@ export default function MeteoGeneraleAccueil() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5">
                   <p className="text-2xs font-bold uppercase tracking-wider text-gray-500">Matin</p>
-                  <p className="text-lg font-black text-white">{meteo.matin.temp}°C</p>
-                  <p className="text-2xs text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
+                  <p className="text-lg font-black text-white">{texteDegre(meteo.matin.temp)}</p>
+                  <p className="text-2xs text-gray-400">Rafales {texteKmh(meteo.matin.rafales)}</p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5">
                   <p className="text-2xs font-bold uppercase tracking-wider text-gray-500">Après-midi</p>
-                  <p className="text-lg font-black text-white">{meteo.apresMidi.temp}°C</p>
-                  <p className="text-2xs text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                  <p className="text-lg font-black text-white">{texteDegre(meteo.apresMidi.temp)}</p>
+                  <p className="text-2xs text-gray-400">Rafales {texteKmh(meteo.apresMidi.rafales)}</p>
                 </div>
               </div>
 
@@ -237,13 +238,16 @@ export default function MeteoGeneraleAccueil() {
                 {heuresJour.map((h) => (
                   <div key={h.heure} className="rounded-lg border border-white/10 bg-white/[0.03] px-1 py-1.5 text-center">
                     <p className="text-4xs text-gray-500">{h.heure}</p>
-                    <p className="text-sm font-bold text-white">{h.temp}°</p>
+                    <p className="text-sm font-bold text-white">{texteDegre(h.temp)}</p>
                     <p
                       className="text-4xs leading-tight text-gray-400"
-                      title={`Vent moyen ${h.vent} km/h, rafales ${h.rafales} km/h`}
+                      title={`Vent moyen ${texteKmh(h.vent)}, rafales ${texteKmh(h.rafales)}`}
                     >
-                      V{h.vent} · R{h.rafales}
+                      {texteKmh(h.vent)} · {texteKmh(h.rafales)}
                     </p>
+                    {/* Une heure sans relevé affiche un tiret : « 0 mm » se
+                        lirait comme une garantie de temps sec. */}
+                    <p className="text-4xs leading-tight text-gray-500">{texteMm(h.pluie)}</p>
                   </div>
                 ))}
               </div>

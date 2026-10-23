@@ -48,12 +48,12 @@ const METEO_VALIDE: JourMeteo = {
   apresMidi: { temp: 18, vent: 14, rafales: 26 },
   heures: [
     // Hors plage de travail : ne doit PAS être affiché (06 h → 18 h).
-    { heure: "05:00", temp: 9, vent: 8, rafales: 12, pluie: 0 },
-    { heure: "08:00", temp: 11, vent: 9, rafales: 15, pluie: 0 },
-    { heure: "12:00", temp: 16, vent: 12, rafales: 20, pluie: 0.2 },
-    { heure: "18:00", temp: 17, vent: 13, rafales: 22, pluie: 0 },
-    { heure: "19:00", temp: 16, vent: 14, rafales: 24, pluie: 0 },
-    { heure: "22:00", temp: 13, vent: 11, rafales: 18, pluie: 0 },
+    { heure: "05:00", temp: 9, vent: 8, rafales: 12, pluie: 0, statut: "avenir", nature: "prevision" },
+    { heure: "08:00", temp: 11, vent: 9, rafales: 15, pluie: 0, statut: "avenir", nature: "prevision" },
+    { heure: "12:00", temp: 16, vent: 12, rafales: 20, pluie: 0.2, statut: "avenir", nature: "prevision" },
+    { heure: "18:00", temp: 17, vent: 13, rafales: 22, pluie: 0, statut: "avenir", nature: "prevision" },
+    { heure: "19:00", temp: 16, vent: 14, rafales: 24, pluie: 0, statut: "avenir", nature: "prevision" },
+    { heure: "22:00", temp: 13, vent: 11, rafales: 18, pluie: 0, statut: "avenir", nature: "prevision" },
   ],
   alerte: { niveau: "vert", motif: "Aucune vigilance particulière" },
   icon: "partly-cloudy-day",
@@ -63,6 +63,8 @@ const METEO_VALIDE: JourMeteo = {
   tempMaxJour: 19,
   tempMinJour: 9,
   cumulPluie: 0.2,
+  // Heure locale de génération de la réponse (voir `JourMeteo.genereLe`).
+  genereLe: "12:00",
   prochainsJours: [
     { date: "2026-10-20", tempMax: 17, tempMin: 8, icon: "rain", conditions: "Pluie", cumulPluie: 3.4 },
     { date: "2026-10-21", tempMax: 14, tempMin: 7, icon: "cloudy", conditions: "Nuageux", cumulPluie: 0 },

@@ -195,7 +195,11 @@ describe("Accueil — les grilles sont celles de la refonte", () => {
   it("la carte meteo garde son habillage et son impact chantier", () => {
     // Le correctif porte sur la presentation, pas sur le calcul d'impact.
     expect(METEO).toMatch(/className=\{`rounded-xl border p-3/);
-    expect(METEO).toContain("evaluerAlerteChantier");
+    // Depuis la refonte, la carte n'applique plus l'alerte sur la JOURNEE
+    // entiere : elle applique `evaluerPoseChantier`, qui restreint les mêmes
+    // seuils aux HORAIRES DE POSE du chantier (le cumul journalier de pluie ne
+    // déclenche plus « pose interdite » à lui seul). Voir lib/meteoAlerte.ts.
+    expect(METEO).toContain("evaluerPoseChantier");
     expect(METEO).toContain("COULEURS[ch.niveau]");
   });
 });

@@ -24,8 +24,8 @@ import type { HeureMeteo } from "@/lib/meteo";
 const METEO_CHAUDE = { rafalesMax: 20, pluieCumul: 0, tempMax: 36 };
 
 const HEURES_SECHES: HeureMeteo[] = [
-  { heure: "12:00", temp: 36, vent: 10, rafales: 20, pluie: 0 },
-  { heure: "13:00", temp: 34, vent: 8, rafales: 15, pluie: 0 },
+  { heure: "12:00", temp: 36, vent: 10, rafales: 20, pluie: 0, statut: "ecoulee", nature: "observee" },
+  { heure: "13:00", temp: 34, vent: 8, rafales: 15, pluie: 0, statut: "avenir", nature: "prevision" },
 ];
 
 /** Motif produit par l'évaluateur quand la vigilance officielle vaut « vert ». */

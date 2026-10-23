@@ -27,6 +27,8 @@ import {
   NiveauAlerte,
 } from "@/lib/meteoAlerte";
 import type { HeureMeteo } from "@/lib/meteo";
+import { heureParisEnMinutes } from "@/lib/dateParis";
+import { statutHeure } from "@/lib/meteoHoraire";
 import {
   prefixerMotifVigilance,
   type VigilanceDepartement,
@@ -573,12 +575,18 @@ export async function POST(request: NextRequest) {
           );
           const vigilance = await fetchVigilanceInterne(request, departement);
 
+          const referenceMinutes = heureParisEnMinutes();
           const heuresMeteo: HeureMeteo[] = meteo.heures.map((h) => ({
             heure: h.heure,
             temp: h.temp,
             vent: h.vent,
             rafales: h.rafales,
             pluie: h.pluie,
+            // Ce fetcher VisualCrossing n'expose pas l'horodatage de son
+            // relevé courant : la nature des heures reste donc `inconnue`.
+            // On n'affirme pas « observé » sans marque de fiabilité.
+            statut: statutHeure(h.heure, referenceMinutes),
+            nature: "inconnue",
           }));
 
           const decision = evaluerJourChantier(

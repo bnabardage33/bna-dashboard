@@ -19,7 +19,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchMeteo, JourMeteo } from "@/lib/meteo";
+import { fetchMeteo, JourMeteo, maxConnu, sommeConnue } from "@/lib/meteo";
+import TableauPrecipitations, { texteDegre, texteKmh } from "@/components/TableauPrecipitations";
 import {
   Search,
   Sun,
@@ -194,38 +195,21 @@ export default function MeteoPage() {
             <div className="px-4 pt-3 grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                 <p className="text-2xs uppercase tracking-wider text-gray-500 font-bold">Matin</p>
-                <p className="text-lg font-black text-white">{meteo.matin.temp}°C</p>
-                <p className="text-2xs text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
+                <p className="text-lg font-black text-white">{texteDegre(meteo.matin.temp)}</p>
+                <p className="text-2xs text-gray-400">Rafales {texteKmh(meteo.matin.rafales)}</p>
               </div>
               <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                 <p className="text-2xs uppercase tracking-wider text-gray-500 font-bold">Après-midi</p>
-                <p className="text-lg font-black text-white">{meteo.apresMidi.temp}°C</p>
-                <p className="text-2xs text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                <p className="text-lg font-black text-white">{texteDegre(meteo.apresMidi.temp)}</p>
+                <p className="text-2xs text-gray-400">Rafales {texteKmh(meteo.apresMidi.rafales)}</p>
               </div>
             </div>
 
             {/* DÉTAIL HEURE PAR HEURE */}
-            <div className="px-4 pt-4">
-              <button
-                type="button"
-                onClick={() => setDetailOuvert((v) => !v)}
-                className="text-xs font-medium text-gray-400 hover:text-gray-200"
-              >
-                {detailOuvert ? "▲ Masquer le détail heure par heure" : "▼ Afficher le détail heure par heure"}
-              </button>
+            {/* DÉTAIL HORAIRE : pluie + rafales, une donnée absente en tiret. */}
+            <div className="px-4 pt-4 pb-3">
+              <TableauPrecipitations heures={meteo.heures} />
             </div>
-
-            {detailOuvert && (
-              <div className="px-4 pt-3 pb-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
-                {meteo.heures.map((h) => (
-                  <div key={h.heure} className="rounded-lg border border-white/10 bg-white/[0.03] p-2 text-center">
-                    <p className="text-2xs text-gray-500">{h.heure}</p>
-                    <p className="text-sm font-bold text-white">{h.temp}°</p>
-                    <p className="text-2xs text-gray-400">{h.vent}·{h.rafales} km/h</p>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* PRÉVISIONS J+1 À J+4 */}
             <div className="mt-4 px-2 pb-4 grid grid-cols-4 gap-1">

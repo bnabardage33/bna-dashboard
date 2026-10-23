@@ -5,14 +5,17 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
+import {
+  libelleFenetre,
+  lireHorairesPose,
+  synthetiserPose,
+  type HeureHoraires,
+} from "@/lib/meteoHoraire";
 import type { VigilancePhenomene } from "@/lib/vigilanceMeteoFrance";
 import { verifierSession } from "@/lib/auth";
 import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
 import { dateParis, dateParisDans } from "@/lib/dateParis";
-
-// ─── Seuils communs ───────────────────────────────────────────────────────────
-const SEUIL_PLUIE_MM = 5;
-const SEUIL_GEL_C = 0;
+import { SEUIL_GEL_C, SEUIL_PLUIE_MM } from "@/lib/intemperiesSeuils";
 
 type ClientMeteo = SupabaseClient<Database>;
 
@@ -123,11 +126,26 @@ async function prochainNumeroIntemperie(entrepriseId: string): Promise<string> {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type JourIntemperie = {
   date: string;
-  pluie: number;
+  /**
+   * Cumul journalier de précipitations, en mm.
+   *
+   * P5 : `null` vaut « inconnu / indisponible » — une valeur absente de
+   * `precipitation_sum` n'est JAMAIS convertie en 0 (0 mm se lirait comme une
+   * garantie de temps sec). L'interface l'affiche « — ».
+   */
+  pluie: number | null;
   vent: number;
   tempMin: number;
   intemperie: boolean;
   raisons: string[];
+  /**
+   * Cumul de pluie pendant les HORAIRES DE POSE, quand ils sont connus.
+   * `null` : horaires non configurés (on retombe alors sur le cumul journalier,
+   * en le disant explicitement dans les raisons).
+   */
+  pluiePose: number | null;
+  /** État de la lecture des horaires, pour que l'appelant puisse l'afficher. */
+  horairesStatut: "configuree" | "non_configuree" | "illisible";
 };
 
 type ChantierMeteo = {
@@ -180,24 +198,114 @@ function seuilVentCritique(materiau: Materiau, acces: Acces): number {
 // On ne reprend PAS ici de repli « premier résultat » ni de point par défaut
 // (voir `FALLBACK_GEOLOC`, supprimé) : un chantier mal localisé doit le dire.
 
-// Open-Meteo avec seuil vent dynamique
-async function fetchOpenMeteo(lat: number, lng: number, ventCritique: number): Promise<JourIntemperie[]> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,wind_speed_10m_max,temperature_2m_min&timezone=Europe/Paris&forecast_days=4`;
+// Open-Meteo avec seuil vent dynamique.
+//
+// Depuis la refonte, la requête demande AUSSI `hourly=precipitation` : sans les
+// heures, on ne peut pas distinguer une pluie qui tombe PENDANT la pose d'une
+// pluie nocturne qui n'empêche rien. C'est la même requête, élargie — pas un
+// second appel réseau.
+//
+// `horaires` est le texte libre du chantier. Quand il est lisible, seule la
+// pluie tombée PENDANT la fenêtre de pose compte comme intempérie de pluie ;
+// quand il ne l'est pas, on retombe sur le cumul journalier, et la raison
+// affichée le DIT explicitement — jamais une conclusion silencieuse.
+async function fetchOpenMeteo(
+  lat: number,
+  lng: number,
+  ventCritique: number,
+  horaires: string | null
+): Promise<JourIntemperie[]> {
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+    `&daily=precipitation_sum,wind_speed_10m_max,temperature_2m_min` +
+    `&hourly=precipitation&timezone=Europe/Paris&forecast_days=4`;
   const res = await fetch(url, { next: { revalidate: 1800 } });
   if (!res.ok) throw new Error("Erreur Open-Meteo");
   const data = await res.json();
   const d = data.daily;
   if (!d || !Array.isArray(d.time)) throw new Error("Données Open-Meteo invalides");
 
+  const lecture = lireHorairesPose(horaires);
+
+  // Index des heures par date locale : `hourly.time` est déjà en Europe/Paris
+  // (paramètre `timezone`), donc `slice(0, 10)` est la date locale — pas UTC.
+  const heuresParDate = new Map<string, HeureHoraires[]>();
+  const hourly = data.hourly;
+  if (hourly && Array.isArray(hourly.time)) {
+    for (let i = 0; i < hourly.time.length; i++) {
+      const t = hourly.time[i] as string;
+      if (typeof t !== "string" || t.length < 13) continue;
+      const date = t.slice(0, 10);
+      const heure = t.slice(11, 16);
+      const brut = hourly.precipitation?.[i];
+      // `valeurOuNull` : une précipitation absente reste `null`, elle ne
+      // devient JAMAIS 0 (0 mm se lirait comme une garantie de temps sec).
+      const pluie =
+        typeof brut === "number" && Number.isFinite(brut) ? Math.round(brut * 10) / 10 : null;
+      const liste = heuresParDate.get(date) ?? [];
+      liste.push({ heure, pluie, vent: null, rafales: null, temp: null });
+      heuresParDate.set(date, liste);
+    }
+  }
+
   return d.time.map((date: string, i: number): JourIntemperie => {
-    const pluie = Math.round((d.precipitation_sum?.[i] ?? 0) * 10) / 10;
+    // P5 : une précipitation journalière absente reste `null` — jamais 0.
+    const brutPluie = d.precipitation_sum?.[i];
+    const pluie =
+      typeof brutPluie === "number" && Number.isFinite(brutPluie)
+        ? Math.round(brutPluie * 10) / 10
+        : null;
     const vent = Math.round(d.wind_speed_10m_max?.[i] ?? 0);
     const tempMin = Math.round(d.temperature_2m_min?.[i] ?? 0);
     const raisons: string[] = [];
-    if (pluie > SEUIL_PLUIE_MM) raisons.push(`Pluie ${pluie}mm`);
+
+    // Pluie : on privilégie la fenêtre de POSE quand les horaires sont lisibles.
+    const synthese = synthetiserPose(heuresParDate.get(date) ?? [], lecture);
+    const pluiePose = synthese.pluiePendantPose;
+    const horairesStatut = lecture.statut;
+
+    if (lecture.statut === "configuree" && typeof pluiePose === "number") {
+      if (pluiePose > SEUIL_PLUIE_MM) {
+        raisons.push(
+          `Pluie ${pluiePose}mm pendant les horaires de pose (${libelleFenetre(lecture.fenetre)})`,
+        );
+      } else if (typeof pluie === "number" && pluie > SEUIL_PLUIE_MM) {
+        // Une pluie journalière forte MAIS hors pose n'est PAS une intempérie de
+        // pose : elle est signalée comme information, sans déclencher le jour.
+        raisons.push(
+          `Pluie ${pluie}mm sur la journée, hors horaires de pose (${libelleFenetre(lecture.fenetre)})`,
+        );
+      }
+    } else if (typeof pluie === "number" && pluie > SEUIL_PLUIE_MM) {
+      // Horaires non lisibles : on ne peut pas dater la pluie. On retombe sur le
+      // cumul journalier, en le disant, plutôt que de conclure en silence.
+      const precision =
+        lecture.statut === "non_configuree"
+          ? "horaires de pose non configurés"
+          : lecture.statut === "illisible"
+            ? "horaires de pose illisibles"
+            : "données horaires indisponibles";
+      raisons.push(`Pluie ${pluie}mm (journée, ${precision})`);
+    }
+
     if (vent > ventCritique) raisons.push(`Vent ${vent}km/h (seuil ${ventCritique}km/h)`);
     if (tempMin < SEUIL_GEL_C) raisons.push(`Gel ${tempMin}°C`);
-    return { date, pluie, vent, tempMin, intemperie: raisons.length > 0, raisons };
+
+    // Une raison purement INFORMATIONNELLE (« pluie hors pose ») ne déclenche
+    // pas d'intempérie : c'est la correction d'audit. Une pluie qui tombe quand
+    // personne ne pose ne bloque pas la pose.
+    const raisonsBloquantes = raisons.filter((r) => !r.includes("hors horaires de pose"));
+
+    return {
+      date,
+      pluie,
+      vent,
+      tempMin,
+      intemperie: raisonsBloquantes.length > 0,
+      raisons,
+      pluiePose,
+      horairesStatut,
+    };
   });
 }
 
@@ -253,7 +361,7 @@ async function chargerChantiers(supabase: ClientMeteo, entrepriseId: string) {
   const { data: chantiers, error } = await supabase
     .from("chantiers")
     .select(
-      "id, client_id, entreprise_id, nom, adresse_chantier, client_nom, moyen_acces, materiau_structurel"
+      "id, client_id, entreprise_id, nom, adresse_chantier, client_nom, moyen_acces, materiau_structurel, horaires"
     )
     .eq("entreprise_id", entrepriseId)
     .eq("statut", "en_cours");
@@ -345,9 +453,10 @@ async function analyserChantiers(
 
     let jours: JourIntemperie[] = [];
     let erreur = false;
+    const horaires = (ch as { horaires?: string | null }).horaires ?? null;
     if (coordonnees) {
       try {
-        jours = await fetchOpenMeteo(coordonnees.lat, coordonnees.lng, ventCritique);
+        jours = await fetchOpenMeteo(coordonnees.lat, coordonnees.lng, ventCritique, horaires);
       } catch {
         erreur = true;
       }
@@ -360,10 +469,25 @@ async function analyserChantiers(
       const message = coordonnees
         ? (erreur ? "Données météo indisponibles" : "")
         : (erreurLocalisation ?? "Localisation non validée");
+      const lectureHoraires = lireHorairesPose(horaires);
       jours = [0, 1, 2, 3].map((i) => {
         // `dateParisDans` : date FRANÇAISE, jamais la date UTC (voir lib/dateParis.ts).
         const date = dateParisDans(i);
-        return { date, pluie: 0, vent: 0, tempMin: 0, intemperie: coordonnees ? erreur : false, raisons: message ? [message] : [] };
+        return {
+          date,
+          // P5 : sans données, la pluie est INCONNUE — pas 0. L'interface
+          // affiche « — » plutôt qu'un faux « 0 mm » qui se lirait comme un
+          // temps sec garanti. (La raison de vigilance signale le cas ci-dessous.)
+          pluie: null,
+          vent: 0,
+          tempMin: 0,
+          // Un jour sans données n'est PAS un jour sans intempérie : on le
+          // signale (`erreur`) au lieu de conclure, comme avant.
+          intemperie: coordonnees ? erreur : false,
+          raisons: message ? [message] : [],
+          pluiePose: null,
+          horairesStatut: lectureHoraires.statut,
+        };
       });
     }
 
@@ -500,6 +624,17 @@ export async function POST(request: NextRequest) {
         if (error) console.error("Erreur insert avancement:", error.message);
         else rapportes.push(ch.nom);
 
+        // `pluie_cumul` porte la pluie PENDANT les horaires de pose quand elle
+        // est connue : c'est elle qui a motivé le rapport. On retombe sur le
+        // cumul journalier uniquement quand les horaires ne sont pas lisibles, et
+        // `pluie_continue` reflète alors honnêtement le périmètre utilisé. P5 :
+        // une pluie inconnue (`null`) n'est JAMAIS retenue comme cumul 0.
+        const pluieRetenue = jour.pluiePose ?? jour.pluie;
+        const pluieContinue =
+          jour.horairesStatut === "configuree"
+            ? (jour.pluiePose ?? 0) > 0
+            : typeof jour.pluie === "number" && jour.pluie > 0;
+
         await resultatContexte.contexte.client
           .from("rapports_intemperies")
           .insert({
@@ -510,9 +645,12 @@ export async function POST(request: NextRequest) {
             ampleur_impact: ch.vigilanceOfficielle === "rouge" ? "totale" : "partielle",
             cree_par: "auto",
             departement: ch.departement,
+            // `jour_arrete` reste `true` : ce champ est une PROPOSITION soumise à
+            // validation humaine (`a_valider`), pas une qualification automatique.
+            // La refonte n'a pas changé cette règle métier.
             jour_arrete: true,
-            pluie_continue: jour.pluie > 0,
-            pluie_cumul: jour.pluie > 0 ? jour.pluie : null,
+            pluie_continue: pluieContinue,
+            pluie_cumul: typeof pluieRetenue === "number" && pluieRetenue > 0 ? pluieRetenue : null,
             rafales_max: jour.vent > 0 ? jour.vent : null,
             temp_max: null,
             motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,

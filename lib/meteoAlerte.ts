@@ -22,6 +22,13 @@
 
 import { HeureMeteo } from "./meteo";
 import {
+  LectureHoraires,
+  SynthesePose,
+  evaluerAvisMateriaux,
+  lireHorairesPose,
+  synthetiserPose,
+} from "./meteoHoraire";
+import {
   VigilanceDepartement,
   couleurPourPhenomene,
   couleurLaPlusForte,
@@ -52,15 +59,31 @@ export type AmpleurImpact =
   | "partielle"
   | null;
 
+/**
+ * Mesures de la journée.
+ *
+ * `null` = grandeur NON CONNUE (aucune heure de la série ne l'a fournie). La
+ * règle d'or : un `null` n'est jamais converti en 0, et une grandeur manquante
+ * ne produit jamais un seuil franchi — elle produit un état « incomplet » que
+ * l'écran doit afficher.
+ */
 export interface MeteoJour {
-  rafalesMax: number;
-  pluieCumul: number;
-  tempMax: number;
+  rafalesMax: number | null;
+  pluieCumul: number | null;
+  tempMax: number | null;
 }
 
 export interface RisqueTechnique {
   niveau: NiveauAlerte;
   motif: string;
+  /**
+   * `true` quand au moins une grandeur manquait : le niveau affiché est alors
+   * un PLANCHER (ce qui est certain), pas une conclusion (ce qui ne l'est
+   * pas). Un vert « incomplet » doit être affiché comme tel.
+   */
+  incomplet?: boolean;
+  /** Grandeurs manquantes, pour l'affichage. */
+  manquantes?: string[];
 }
 
 export interface DecisionJourChantier {
@@ -177,11 +200,27 @@ export function evaluerAlerteChantier(
     sa.vent_vigilance
   );
 
-  // 1. Vent critique
-  if (meteo.rafalesMax >= ventCritique) {
+  // Une grandeur manquante ne franchit AUCUN seuil, mais elle est TRACÉE :
+  // le résultat est marqué `incomplet` pour que l'écran affiche « non déterminé »
+  // plutôt qu'un vert silencieux.
+  const connu = (v: number | null): v is number =>
+    typeof v === "number" && Number.isFinite(v);
+
+  const manquantes: string[] = [];
+  if (!connu(meteo.rafalesMax)) manquantes.push("rafales");
+  if (!connu(meteo.pluieCumul)) manquantes.push("pluie");
+  if (!connu(meteo.tempMax)) manquantes.push("température");
+
+  const incomplet = manquantes.length > 0;
+  const suffixe = incomplet
+    ? ` (donnée manquante : ${manquantes.join(", ")})`
+    : "";
+
+  // 1. Vent critique — PRIORITÉ CONSERVÉE avant la pluie, comme aujourd'hui.
+  if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventCritique) {
     return {
       niveau: "rouge",
-      motif: `Vent critique (${meteo.rafalesMax} km/h ≥ seuil ${ventCritique} km/h)`,
+      motif: `Vent critique (${meteo.rafalesMax} km/h ≥ seuil ${ventCritique} km/h)${suffixe}`,
     };
   }
 
@@ -191,37 +230,209 @@ export function evaluerAlerteChantier(
   // le cumul doit atteindre à la fois le seuil du matériau
   // et 8 mm sur la journée.
   if (
+    connu(meteo.pluieCumul) &&
     meteo.pluieCumul >= sm.pluie_critique &&
     meteo.pluieCumul >= 8
   ) {
     return {
       niveau: "rouge",
-      motif: `Pluie critique (${meteo.pluieCumul.toFixed(1)} mm)`,
+      motif: `Pluie critique (${meteo.pluieCumul.toFixed(1)} mm)${suffixe}`,
     };
   }
 
   // 3. Température limite
   if (
-    meteo.tempMax <= sm.temp_mini ||
-    meteo.tempMax >= sm.temp_maxi
+    connu(meteo.tempMax) &&
+    (meteo.tempMax <= sm.temp_mini ||
+    meteo.tempMax >= sm.temp_maxi)
   ) {
     return {
       niveau: "orange",
-      motif: `Température limite (${meteo.tempMax}°C) pour ${materiau}`,
+      motif: `Température limite (${meteo.tempMax}°C) pour ${materiau}${suffixe}`,
     };
   }
 
   // 4. Vent de vigilance
-  if (meteo.rafalesMax >= ventVigilance) {
+  if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventVigilance) {
     return {
       niveau: "jaune",
-      motif: `Vent de vigilance (${meteo.rafalesMax} km/h)`,
+      motif: `Vent de vigilance (${meteo.rafalesMax} km/h)${suffixe}`,
     };
   }
 
   return {
     niveau: "vert",
-    motif: "Conditions optimales de pose",
+    motif: incomplet
+      ? `Conditions non déterminées${suffixe}`
+      : "Conditions optimales de pose",
+    incomplet,
+    ...(incomplet ? { manquantes } : {}),
+  };
+}
+
+// -----------------------------------------------------------------------------
+// 1-bis. DÉCISION DE POSE SUR LES HORAIRES DU CHANTIER
+// -----------------------------------------------------------------------------
+//
+// C'est la fonction qui remplace, pour les DÉCISIONS DE POSE affichées aux
+// équipes, l'évaluation sur la journée entière.
+//
+// Règle corrigée : le cumul JOURNALIER de pluie ne déclenche plus « Pose
+// interdite ». Les mêmes seuils s'appliquent MAINTENANT sur les heures
+// pendant lesquelles l'équipe pose réellement. Un chantier de 7 h à 17 h
+// n'interdit donc plus la pose parce qu'il a plu toute la nuit.
+//
+// Ce qui ne change PAS :
+//   - aucun seuil n'est redéfini : `SEUILS_MATERIAUX` et `SEUILS_ACCES`
+//     servent tels quels ;
+//   - la priorité « vent critique avant pluie critique » est conservée ;
+//   - le cumul journalier reste calculé et affiché, en information.
+//
+// Ce qui change :
+//   - le périmètre du calcul (fenêtre de pose, et non 24 h) ;
+//   - une donnée manquante produit « non déterminé », et non un vert.
+// -----------------------------------------------------------------------------
+
+export interface ResultatPose {
+  statut: "evaluee" | "non_determine";
+  /** Niveau de pose, présent seulement si `statut === "evaluee"`. */
+  niveau: NiveauAlerte | null;
+  motif: string;
+  /** Découpage pose / hors pose, communiqué tel quel à l'affichage. */
+  synthese: SynthesePose;
+  /** Avertissements matériaux, distincts du niveau de pose. */
+  avertissements: string[];
+  /** État de la lecture des horaires saisis. */
+  horairesStatut: LectureHoraires["statut"];
+  /** Fenêtre utilisée, en `HH:MM`, ou `null`. */
+  fenetre: { debut: string; fin: string } | null;
+}
+
+/** Formate une minute depuis minuit en `HH:MM`. */
+function versHeureTexte(minutes: number): string {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+/**
+ * Évalue la pose d'UN chantier sur SES horaires.
+ *
+ * @param horaires Texte libre `chantiers.horaires`. `null` / vide →
+ *   `non_configuree` : aucun défaut n'est appliqué.
+ * @param heures   Série horaire de la journée, avec `null` pour les grandeurs
+ *   non renvoyées par la source.
+ */
+export function evaluerPoseChantier(
+  materiau: Materiau,
+  acces: Acces,
+  horaires: string | null | undefined,
+  heures: HeureMeteo[]
+): ResultatPose {
+  const lecture: LectureHoraires = lireHorairesPose(horaires);
+  const synthese = synthetiserPose(heures ?? [], lecture);
+
+  const fenetre =
+    lecture.statut === "configuree"
+      ? {
+          debut: versHeureTexte(lecture.fenetre.debutMinutes),
+          fin: versHeureTexte(lecture.fenetre.finMinutes),
+        }
+      : null;
+
+  const avertissements = evaluerAvisMateriaux({
+    heures: heures ?? [],
+    synthese,
+    seuilRafaleChantier: Math.min(
+      (SEUILS_MATERIAUX[materiau] ?? SEUILS_MATERIAUX.bois).vent_critique,
+      (SEUILS_ACCES[acces] ?? SEUILS_ACCES.echafaudage).vent_critique
+    ),
+  });
+
+  // ── Horaires absents : PAS de décision, et surtout PAS de vert ────────────
+  if (lecture.statut === "non_configuree") {
+    return {
+      statut: "non_determine",
+      niveau: null,
+      motif:
+        "Horaires de pose non configurés sur ce chantier — impact de pose non déterminé. " +
+        "Le cumul journalier (" +
+        (synthese.pluieJour === null ? "pluie inconnue" : `${synthese.pluieJour} mm`) +
+        ") reste consultable sans décider de la pose.",
+      synthese,
+      avertissements,
+      horairesStatut: lecture.statut,
+      fenetre: null,
+    };
+  }
+
+  // ── Horaires illisibles : on dit QUOI, pour pouvoir corriger ──────────────
+  if (lecture.statut === "illisible") {
+    return {
+      statut: "non_determine",
+      niveau: null,
+      motif:
+        `Horaires de pose illisibles (« ${lecture.brut} ») — impact de pose non déterminé. ` +
+        "Corriger la saisie des horaires pour obtenir une décision.",
+      synthese,
+      avertissements,
+      horairesStatut: lecture.statut,
+      fenetre: null,
+    };
+  }
+
+  // ── Fenêtre lue mais vide de données : jamais une conclusion verte ────────
+  //
+  // Garde explicite (plutôt que `fenetreEvaluable`) pour que TypeScript
+  // sache, à partir d'ici, que `synthese.fenetre` est bien renseignée.
+  if (
+    synthese.fenetre === null ||
+    synthese.heuresPoseConnues === 0 ||
+    synthese.heuresPoseAvecPluie === 0
+  ) {
+    return {
+      statut: "non_determine",
+      niveau: null,
+      motif:
+        `Aucune donnée horaire disponible pendant les horaires de pose ` +
+        `(${synthese.heuresPoseConnues} heure(s) reçue(s) sur ${synthese.heuresPoseAttendues}) ` +
+        `— impact de pose non déterminé. Une donnée manquante n'est jamais un temps sec.`,
+      synthese,
+      avertissements,
+      horairesStatut: lecture.statut,
+      fenetre,
+    };
+  }
+
+  // ── Décision : mêmes seuils, périmètre pose ───────────────────────────────
+  const risque = evaluerAlerteChantier(materiau, acces, {
+    rafalesMax: synthese.rafalesPendantPose,
+    pluieCumul: synthese.pluiePendantPose,
+    tempMax: synthese.tempPendantPose,
+  });
+
+  if (risque.incomplet) {
+    return {
+      statut: "non_determine",
+      niveau: null,
+      motif:
+        `Données incomplètes pendant les horaires de pose (${risque.motif}) ` +
+        `— impact de pose non déterminé.`,
+      synthese,
+      avertissements,
+      horairesStatut: lecture.statut,
+      fenetre,
+    };
+  }
+
+  return {
+    statut: "evaluee",
+    niveau: risque.niveau,
+    motif:
+      `${risque.motif}, sur les horaires de pose ` +
+      `${versHeureTexte(synthese.fenetre.debutMinutes)}–${versHeureTexte(synthese.fenetre.finMinutes)}`,
+    synthese,
+    avertissements,
+    horairesStatut: lecture.statut,
+    fenetre,
   };
 }
 
@@ -235,6 +446,10 @@ const FRACTION_MINI_HEURES_PLUIE = 0.75;
 /**
  * Considère la journée comme pluvieuse de façon continue lorsque
  * au moins 75 % des relevés horaires atteignent 0,2 mm ou plus.
+ *
+ * Une heure SANS donnée (`pluie: null`) n'est jamais comptée pluvieuse : c'est
+ * le comportement antérieur (la valeur manquante était alors `0`), conservé à
+ * l'identique pour ne pas modifier la qualification des rapports d'intempéries.
  */
 export function pleutTouteLaJournee(
   heures: HeureMeteo[]
@@ -244,7 +459,7 @@ export function pleutTouteLaJournee(
   }
 
   const heuresPluvieuses = heures.filter(
-    (h) => h.pluie >= SEUIL_PLUIE_HORAIRE_MM
+    (h) => (h.pluie ?? -1) >= SEUIL_PLUIE_HORAIRE_MM
   ).length;
 
   return (
