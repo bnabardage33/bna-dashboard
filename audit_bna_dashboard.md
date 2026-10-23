@@ -12,12 +12,12 @@
 
 | | |
 |---|---|
-| Branche | `main` |
-| `HEAD` | `ad6404a` — `fix: align alert cards padding with notes` |
+| Branche | `agent-workflow` |
+| `HEAD` | `71d2f88` — (Post-correction sécurité RLS + Robustesse) |
 | `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
 | Arbre de travail | propre |
 | Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
-| Routes | **38** pages (`app/**/page.tsx`) · **46** routes API (`app/api/**/route.ts`) |
+| Routes | **38** pages (`app/**/page.tsx`) · **47** routes API (`app/api/**/route.ts`) |
 | Base | **41** migrations SQL · `types/supabase.ts` (3003 l.) déclare 58 entrées : 44 tables, 1 vue, 13 fonctions |
 
 ### Portes de qualité (mesurées à `ad6404a`)
@@ -86,7 +86,7 @@ les 3 routes qui ne le font pas encore.
 |---|---|
 | `/` | Cockpit — rend `components/DashboardAccueil.tsx` (accueil mobile/desktop) |
 | `/terrain/chantier` | Destination de `/terrain` |
-| `/terrain/chantier/[id]` | Fiche chantier, 9 onglets |
+| `/terrain/chantier/[id]` | Fiche chantier, 10 onglets |
 | `/bureau/meteo` | Destination de `/terrain/meteo` |
 | `/chantiers` → `/terrain/chantier` | Redirection legacy |
 | `/boite-a-outils` → `/terrain/outils` | Redirection legacy |
@@ -185,14 +185,14 @@ La carte d'alerte ne doit ni redéfinir fond, bordure ni arrondi (ils appartienn
 | Route | Contenu |
 |---|---|
 | `/terrain/chantier` | Liste des chantiers |
-| `/terrain/chantier/[id]` | Fiche, 9 onglets — voir ci-dessous |
+| `/terrain/chantier/[id]` | Fiche, 10 onglets — voir ci-dessous |
 | `/terrain/notes` | Notes chantier |
 | `/terrain/outils` | Boîte à outils |
 | `/terrain/fiche-technique` | Fiches DTU |
 | `/terrain/metre-ia` | Métré IA (photogrammétrie mobile) |
 
-Les 9 onglets de la fiche chantier : Général · Avancement · Rapport Client · Temps
-Heures · Métrés & Technique · Météo & Intempéries · Photos & Notes · Documents ·
+Les 10 onglets de la fiche chantier : Général · Avancement · Rapport Client · Temps
+Heures · Métrés & Technique · Terrasse · Météo & Intempéries · Photos & Notes · Documents ·
 Déplacements.
 
 L'avancement suit une logique **façades** : le pourcentage global est calculé à
@@ -384,6 +384,7 @@ le trajet (cf. Module Déplacements).
 | `/api/calepinage/calculer` | Calcul complet du calepinage 2D/pro, perçages et persistance atomique |
 | `/api/calepinage/export/excel` | Export Excel du bordereau de débit et de la liste des modules |
 | `/api/calepinage/export/pdf` | Export PDF A4 avec plan vectoriel et schémas de perçage cotés |
+| `/api/catalogue-terrasse` | Lecture du catalogue Terrasse (lames et accessoires compatibles par tenant) |
 | `/api/chantiers/[id]/terrasse` | Configuration terrasse DTU 51.4 et persistance (GET/POST) |
 | `/api/chantiers/[id]/terrasse/export/excel` | Export Excel du calepinage terrasse |
 | `/api/chantiers/[id]/terrasse/export/pdf` | Export PDF de conformité terrasse DTU 51.4 |
@@ -392,7 +393,7 @@ le trajet (cf. Module Déplacements).
 `/api/notifications` et `/api/chat-client` **n'existent plus** (voir
 « Historique des décisions »).
 
-Le tableau ci-dessus énumère les **46** routes actives. Les trois lignes barrées
+Le tableau ci-dessus énumère les **47** routes actives. Les trois lignes barrées
 (`~~…~~` + **RETIRÉE**) documentent des routes supprimées et ne comptent pas. Le
 compteur de la ligne 20 et cette liste sont **vérifiés par
 `__tests__/system/audit-snapshot-routes.test.ts`**, qui les compare à
@@ -744,14 +745,7 @@ alors que ces routes présentent les défauts les plus graves décrits ci-dessou
 
 ### Sécurité
 
-**1. Trois routes `/api/devis/*` ne filtrent pas le tenant.**
-`send-otp`, `verify-otp` et `analyse` appellent bien `verifierSession()`, puis
-lisent et écrivent via `supabaseAdmin` — qui **contourne le RLS** — avec un
-`.eq("id", …)` comme seul filtre. Elles ne contiennent aucune référence à
-`entreprise_id`, `entreprise_courante()` ou `resoudreContexteEntreprise`. Le même
-dossier `app/api/devis/route.ts` en contient 14 : l'incohérence est interne au
-dossier. Conséquence : un utilisateur authentifié d'un tenant peut agir sur un
-devis d'un autre tenant. À corriger avant toute mise en production multi-tenant.
+**[RESOLU] Routes OTP legacy supprimées. Parcours signé unique via espace-client.**
 
 **2. L'OTP de signature n'est jamais envoyé.** `send-otp` journalise le code en
 `console.log` sous le libellé `[SMS MOCK]` : aucun fournisseur SMS n'est appelé.
@@ -801,8 +795,7 @@ amorcé : `zod@4.4.3` n'est présent que comme dépendance transitive de `ai`,
 `@ai-sdk/google` et `@mistralai/mistralai`, sans import direct. L'ajouter
 explicitement avant de commencer.
 
-**12. C5 — timeouts des `fetch` externes.** Non traités : Nominatim, OSRM,
-Visual Crossing, DPVigilance et Groq sont appelés sans délai maximal.
+**[RÉSOLU] C5 — timeouts des `fetch` externes.** Ajout de `lib/fetchWithTimeout.ts` (wrapper partagé : `AbortController` manuel, journalisation `[TIMEOUT]`, `ErreurTimeout`, `estDelaiDepasse`). Bornés : Groq (`lib/espace-chat-summary.server.ts`), Gemini (`app/api/devis/[id]/analyse/route.ts`, `app/api/ia-devis/route.ts`), Météo-France (Vigilance + token OAuth), Open-Meteo, OTP SMS (postSms + Twilio) — 20 s (LLM), 8 s (météo/SMS).
 
 **13. C6 — dépendances ESLint / npm.** Non traités.
 

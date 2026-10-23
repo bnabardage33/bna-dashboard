@@ -250,12 +250,17 @@ describe("O3-B9 — DashboardAccueil : l'erreur PostgREST n'est plus silencieuse
     const mod = await import("@/lib/supabase");
     const from = mod.supabase.from as unknown as (t: string) => Record<string, unknown>;
     const vrai = from.bind(mod.supabase);
-    (mod.supabase as unknown as { from: unknown }).from = (t: string) => {
+    // `vi.spyOn` (et non une affectation directe) : le patch est ainsi défait
+    // par `vi.restoreAllMocks()` de l'`afterEach`, sans quoi l'insertion
+    // continuerait de lever pour TOUS les tests suivants et les rendrait
+    // dépendants de l'ordre d'exécution.
+    const spy = vi.spyOn(mod.supabase, "from").mockImplementation(((t: string) => {
       if (t === "notes_patron") throw new Error("exception réseau");
       return vrai(t);
-    };
+    }) as never);
     await reformuler();
     expect(conteneur.textContent).toMatch(/exception réseau/);
+    spy.mockRestore();
   });
 });
 
@@ -264,23 +269,26 @@ describe("O3-B9 — DashboardAccueil : l'erreur PostgREST n'est plus silencieuse
 // ════════════════════════════════════════════════════════════════════════════
 
 describe("O3-B9 — DashboardAccueil : le fonctionnement de l'IA est intact", () => {
-  it("le libellé d'attente revient dans son état initial après échec", async () => {
+  it("l'état transitoire d'enregistrement disparaît après échec", async () => {
     erreurPostgREST = { message: "boom" };
     await reformuler();
     // `isSavingNote` doit repasser à `false` : le `finally` court malgré le
     // `return` du garde fail-closed / du `if (err)`.
-    expect(conteneur.textContent).toMatch(/Appuyez pour parler/);
     expect(conteneur.textContent).not.toMatch(/Enregistrement de la note/);
+    // Et l'erreur reste visible pour l'utilisateur.
+    expect(conteneur.textContent).toMatch(/Erreur lors de la sauvegarde/);
   });
 
-  it("le libellé d'attente revient dans son état initial après refus de contexte", async () => {
+  it("l'état transitoire disparaît aussi après refus de contexte", async () => {
     session = { user: { app_metadata: {} } };
     await reformuler();
-    expect(conteneur.textContent).toMatch(/Appuyez pour parler/);
+    expect(conteneur.textContent).not.toMatch(/Enregistrement de la note/);
+    expect(conteneur.textContent).toMatch(/entreprise/i);
   });
 
-  it("succès : le libellé d'attente revient aussi", async () => {
+  it("succès : l'état transitoire disparaît aussi", async () => {
     await reformuler();
-    expect(conteneur.textContent).toMatch(/Appuyez pour parler/);
+    expect(conteneur.textContent).not.toMatch(/Enregistrement de la note/);
+    expect(conteneur.textContent).toMatch(/Notes & alertes/);
   });
 });

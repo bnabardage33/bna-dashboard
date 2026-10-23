@@ -35,17 +35,13 @@ const nextConfig: NextConfig = {
         destination: "/terrain/outils",
         permanent: true,
       },
-      // ── Météo : fusion vers /bureau/meteo (PHASE 2) ────────────────────
+      // ── Météo : deux entrées distinctes (restauration) ──────────────────
       //
-      // Le bloc impact météo est remonté sur l'Accueil. L'entrée unique
-      // « Météo & intempéries » du Drawer pointe sur `/bureau/meteo`. On
-      // redirige donc l'ancienne route `/terrain/meteo` vers sa nouvelle
-      // destination, pour préserver les favoris et liens éventuels.
-      {
-        source: "/terrain/meteo",
-        destination: "/bureau/meteo",
-        permanent: true,
-      },
+      // `/terrain/meteo` a été restaurée en page complète (météo générale :
+      // recherche de ville, matin/après-midi, heure par heure, J+1 à J+4).
+      // Aucune redirection ne doit la re-diriger vers `/bureau/meteo`, qui
+      // porte la veille des intempéries : ce sont deux fonctions
+      // complémentaires, chacune avec son entrée dans le Drawer.
       // L'index `/terrain` ouvrait l'ancien cockpit météo ; il redirige
       // désormais vers la liste des chantiers (logique et cohérente avec
       // le nouveau Drawer).

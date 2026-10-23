@@ -10,9 +10,9 @@
 
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin";
 import type { Json } from "@/types/supabase";
+import { agregerIntemperiesSemaine } from "@/lib/intemperiesSemaine";
 import type {
   FacadeCompteur,
-  JourIntemperie,
   PhotoRapport,
   SnapshotContenu,
 } from "@/lib/rapports-client";
@@ -21,13 +21,6 @@ const FUSE_HORAIRE = "Europe/Paris";
 
 const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES = ["ossature", "isolation", "bardage", "finitions"] as const;
-
-const ORDRE_VIGILANCE: Record<string, number> = {
-  vert: 0,
-  jaune: 1,
-  orange: 2,
-  rouge: 3,
-};
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -260,56 +253,10 @@ function compterFacades(details: Json | null): {
 
 // -----------------------------------------------------------------------------
 // Aggrégation — intempéries (une entrée par jour, la plus récente)
+//
+// L'agrégation vit dans `lib/intemperiesSemaine.ts` : PURE, testable sans
+// Supabase, et sans couleur inventée (« indisponible » n'est pas « vert »).
 // -----------------------------------------------------------------------------
-
-function agregerIntemperies(
-  lignes: RapportIntemperieRow[],
-  lundiISO: string,
-  dimancheISO: string
-): {
-  joursArretTotal: number;
-  details: JourIntemperie[];
-  vigilanceMax: string;
-} {
-  const parJour = new Map<string, RapportIntemperieRow>();
-
-  for (const ligne of lignes) {
-    const jour = dateParis(ligne.cree_le);
-
-    // Sûreté : on ne garde que la période visée, puis la ligne la plus récente.
-    if (jour < lundiISO || jour > dimancheISO) continue;
-
-    const existant = parJour.get(jour);
-    if (!existant || ligne.cree_le > existant.cree_le) {
-      parJour.set(jour, ligne);
-    }
-  }
-
-  const joursTries = [...parJour.keys()].sort();
-
-  let joursArretTotal = 0;
-  let vigilanceMax = "vert";
-
-  const details: JourIntemperie[] = joursTries.map((jour) => {
-    const ligne = parJour.get(jour);
-
-    if (ligne?.jour_arrete) joursArretTotal += 1;
-
-    const niveau = ligne?.vigilance_officielle ?? "vert";
-    if ((ORDRE_VIGILANCE[niveau] ?? 0) > (ORDRE_VIGILANCE[vigilanceMax] ?? 0)) {
-      vigilanceMax = niveau;
-    }
-
-    return {
-      date: jour,
-      motif: ligne?.motif ?? "Aucun rapport intempéries enregistré.",
-      jour_arrete: ligne?.jour_arrete ?? false,
-      vigilance: niveau,
-    };
-  });
-
-  return { joursArretTotal, details, vigilanceMax };
-}
 
 // -----------------------------------------------------------------------------
 // Construction du snapshot complet pour un chantier
@@ -518,7 +465,7 @@ export async function construireSnapshot(
     throw new Error(`Erreur chargement des rapports intempéries : ${erreurIntemperies.message}`);
   }
 
-  const intemperies = agregerIntemperies(
+  const intemperies = agregerIntemperiesSemaine(
     exigerEntreprise(
       (intemperiesBruts ?? []) as RapportIntemperieRow[],
       entrepriseId,

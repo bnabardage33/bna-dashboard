@@ -297,11 +297,14 @@ describe('LOT 2D — inventaire de la conversion', () => {
     expect(VUES_IMPRESSION).toHaveLength(8)
   })
 
-  it('96 cartes ont été converties', () => {
-    // 98 avant la suppression de ChantierHealthCard (− 2 appels, − 1 fichier).
-    // Bilan : 96 appels sur 26 fichiers.
-    expect(APPELS).toHaveLength(96)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(26)
+  it('98 cartes ont été converties', () => {
+    // 97 avec la refonte finale de l'accueil (la grande carte « Assistant
+    // vocal (IA) » avait été supprimée). Puis +1 avec la recherche mobile :
+    // le volet déroulant de `SearchNav` est une `Surface` de plus, à côté du
+    // panneau desktop et du panneau de notifications. Bilan : 98 appels sur
+    // 28 fichiers.
+    expect(APPELS).toHaveLength(98)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(28)
   })
 
   it('il ne reste AUCUNE carte en littéral dans le périmètre', () => {

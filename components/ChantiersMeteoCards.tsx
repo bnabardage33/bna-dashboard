@@ -53,11 +53,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CloudRain, Droplets, Thermometer, Wind } from "lucide-react";
+import { CloudRain, Droplets, Gauge, MapPin, Thermometer, Wind } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fetchMeteo, type JourMeteo } from "@/lib/meteo";
 import { emojiWmo } from "@/lib/meteoOpenMeteo";
-import { evaluerAlerteChantier, type Materiau, type Acces } from "@/lib/meteoAlerte";
+import { evaluerPoseChantier, type Materiau, type Acces } from "@/lib/meteoAlerte";
+import { maxConnu } from "@/lib/meteo";
+import TableauPrecipitations from "@/components/TableauPrecipitations";
 
 // NB : la génération des rapports intempéries ne se fait plus ici.
 // Elle tourne côté serveur, une fois par jour en fin de journée, via
@@ -65,7 +67,7 @@ import { evaluerAlerteChantier, type Materiau, type Acces } from "@/lib/meteoAle
 // (planifiée par cron_rapports_intemperies.sql). Ce composant se contente
 // d'afficher le risque technique en temps réel quand quelqu'un ouvre l'appli.
 
-type Niveau = "vert" | "jaune" | "orange" | "rouge" | "inconnu";
+type Niveau = "vert" | "jaune" | "orange" | "rouge" | "indeterminate" | "inconnu";
 
 /** Une carte = un chantier + sa prévision, ou un chantier sans prévision. */
 type ChantierMeteo = {
@@ -86,6 +88,10 @@ type ChantierMeteo = {
   meteo: JourMeteo | null;
   /** Métier : ce que la météo implique pour la pose, matériau × accès. */
   impact: string | null;
+  /** Horaires de pose saisis, pour que le dépliant horaire soit contextualisé. */
+  horaires: string | null;
+  /** Avertissements matériaux, distincts du niveau de pose. */
+  avertissements: string[];
 };
 
 const COULEURS: Record<Niveau, string> = {
@@ -93,6 +99,10 @@ const COULEURS: Record<Niveau, string> = {
   jaune: "border-amber-500/40 bg-amber-500/10",
   orange: "border-orange-500/40 bg-orange-500/10",
   rouge: "border-red-500/40 bg-red-500/10",
+  // « Non déterminé » n'est PAS une couleur de risque : c'est un état de
+  // connaissance. Il est volontairement neutre, pour ne pas se lire comme un
+  // vert (« tout va bien ») ni comme un rouge (« pose interdite »).
+  indeterminate: "border-white/15 bg-white/[0.04]",
   inconnu: "border-white/10 bg-[#1E1E1E]",
 };
 
@@ -101,6 +111,7 @@ const EMOJIS: Record<Niveau, string> = {
   jaune: "🟡",
   orange: "🟠",
   rouge: "🔴",
+  indeterminate: "❔",
   inconnu: "⚪",
 };
 
@@ -109,7 +120,36 @@ const LIBELLES_NIVEAU: Record<Niveau, string> = {
   jaune: "Vigilance",
   orange: "Conditions difficiles",
   rouge: "Pose interdite",
+  indeterminate: "Impact non déterminé",
   inconnu: "Météo indisponible",
+};
+
+/**
+ * Habillage de la pastille d'état. Même code couleur que la carte, mais avec
+ * un texte contrasté : l'état de pose doit rester lisible sans dépendre de la
+ * seule couleur de fond.
+ */
+const PASTILLES_NIVEAU: Record<Niveau, string> = {
+  vert: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+  jaune: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  orange: "border-orange-500/40 bg-orange-500/10 text-orange-300",
+  rouge: "border-red-500/40 bg-red-500/10 text-red-300",
+  indeterminate: "border-white/15 bg-white/[0.04] text-gray-300",
+  inconnu: "border-white/15 bg-white/[0.04] text-gray-400",
+};
+
+/**
+ * Ordre d'AFFICHAGE : les risques critiques d'abord. C'est une présentation,
+ * pas une règle métier — les niveaux eux-mêmes viennent tous de
+ * `evaluerPoseChantier`, qui applique les seuils matériau × accès existants.
+ */
+const ORDRE_NIVEAU: Record<Niveau, number> = {
+  rouge: 0,
+  orange: 1,
+  jaune: 2,
+  vert: 3,
+  indeterminate: 4,
+  inconnu: 5,
 };
 
 /**
@@ -139,24 +179,32 @@ function pictogramme(meteo: JourMeteo): string {
   return "⛅";
 }
 
-/** Un relevé chiffré. `valeur === null` → tiret, jamais un 0 inventé. */
-function Releve({
+/**
+ * Une mesure chiffrée avec son libellé VISIBLE.
+ *
+ * Le libellé n'est pas seulement dans un `title` : sur téléphone, il n'y a pas
+ * de survol. « Vent » et « Rafales » restent donc distincts à l'écran.
+ * `valeur === null` → tiret, jamais un 0 inventé.
+ */
+function Mesure({
   icone,
+  label,
   valeur,
-  unite,
+  titre,
 }: {
   icone: React.ReactNode;
+  label: string;
   valeur: string | null;
-  unite: string;
+  titre?: string;
 }) {
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-lg bg-[#1E1E1E] px-1.5 py-0.5 text-2xs font-semibold text-gray-300"
-      title={unite}
-    >
-      <span aria-hidden>{icone}</span>
-      {valeur ?? "—"}
-    </span>
+    <div className="rounded-lg bg-[#1E1E1E] px-2 py-1.5" title={titre}>
+      <p className="flex items-center gap-1 text-4xs font-bold uppercase tracking-wider text-gray-500">
+        <span aria-hidden className="shrink-0">{icone}</span>
+        <span className="truncate">{label}</span>
+      </p>
+      <p className="mt-0.5 truncate text-xs font-semibold text-gray-200">{valeur ?? "—"}</p>
+    </div>
   );
 }
 
@@ -169,9 +217,13 @@ export default function ChantiersMeteoCards() {
       setLoading(true);
 
       // FIX BDD : Ajout de 'zone_vent' dans le select
+      // `horaires` transporte les horaires de pose saisis par l'équipe : c'est
+      // eux qui permettent de décider d'une POSE, et non d'une simple journée.
       const { data, error } = await supabase
         .from("chantiers")
-        .select("id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut, zone_vent")
+        .select(
+          "id, nom, adresse_chantier, materiau_structurel, moyen_acces, statut, zone_vent, horaires",
+        )
         .neq("statut", "termine");
 
       if (error || !data) {
@@ -188,6 +240,7 @@ export default function ChantiersMeteoCards() {
         moyen_acces: string | null;
         statut: string;
         zone_vent: string | null;
+        horaires: string | null;
       };
 
       const resultats = await Promise.all(
@@ -196,6 +249,7 @@ export default function ChantiersMeteoCards() {
           const zoneVent = ch.zone_vent ? Number(ch.zone_vent) : 1; // Sécurité fallback zone 1
           const materiau = (ch.materiau_structurel ?? "bois") as Materiau;
           const acces = (ch.moyen_acces ?? "echafaudage") as Acces;
+          const horaires = ch.horaires ?? null;
 
           // Sans adresse, aucune prévision n'est demandée : ce n'est pas un
           // échec technique, c'est une fiche chantier incomplète.
@@ -211,19 +265,30 @@ export default function ChantiersMeteoCards() {
               motif: "Pas d'adresse renseignée pour ce client.",
               meteo: null,
               impact: null,
+              horaires,
+              avertissements: [],
             };
           }
 
           let meteo: JourMeteo | null = null;
+          // Motif affiché si la prévision n'arrive pas : par défaut l'état
+          // vide, mais si la route explique une localisation non validée, on
+          // préfère SON message — c'est ce qui permet de corriger l'adresse au
+          // lieu de croire à une panne.
+          let motifMeteo = "Météo indisponible pour cette adresse.";
           try {
-            meteo = await fetchMeteo(adresse);
-          } catch {
+            // Les horaires de pose du chantier voyagent avec la demande : la
+            // route renvoie alors une DÉCISION DE POSE (`meteo.pose`) évaluée
+            // sur ces heures, et non sur la journée entière.
+            meteo = await fetchMeteo(adresse, { horaires, materiau, acces });
+          } catch (e) {
+            if (e instanceof Error && e.message) motifMeteo = e.message;
             // Trace explicite : ce chemin est la cause historique du
             // « Météo indisponible » généralisé, il ne doit plus être muet.
             console.error(
-              "ChantiersMeteoCards : prévision impossible pour le chantier %s (%s)",
-              ch.nom ?? ch.id,
+              "ChantiersMeteoCards : prévision impossible pour « %s » — %s",
               adresse,
+              e instanceof Error ? e.message : e,
             );
           }
 
@@ -236,25 +301,33 @@ export default function ChantiersMeteoCards() {
               acces,
               zoneVent,
               niveau: "inconnu" as const,
-              motif: "Météo indisponible pour cette adresse.",
+              motif: motifMeteo,
               meteo: null,
               impact: null,
+              horaires,
+              avertissements: [],
             };
           }
 
-          // Impact CHANTIER : seuils matériau × accès, appliqués aux mesures
-          // réellement reçues. C'est la logique métier existante, inchangée.
-          const rafalesMax = Math.max(meteo.matin.rafales, meteo.apresMidi.rafales);
-          const tempMax = Math.max(meteo.matin.temp, meteo.apresMidi.temp);
-          const pluieCumul = meteo.cumulPluie ?? meteo.heures.reduce((s, h) => s + h.pluie, 0);
+          // ── DÉCISION DE POSE ────────────────────────────────────────────
+          //
+          // Elle est calculée SUR LES HORAIRES DE POSE du chantier : c'est la
+          // correction d'audit. Avant, le cumul JOURNALIER de pluie (≥ 8 mm en
+          // ≥ 4 h) déclenchait « Pose interdite » — une nuit de pluie
+          // interdisait donc la pose du lendemain. Ce n'est plus le cas : les
+          // mêmes seuils s'appliquent aux seules heures de pose.
+          //
+          // La fonction est pure et identique à celle utilisée par la route et
+          // par la fiche chantier : un seul chemin de décision, donc aucun
+          // risque d'afficher deux verdicts différents pour le même chantier.
+          const decision =
+            meteo.pose ??
+            evaluerPoseChantier(materiau, acces, horaires, meteo.heures);
 
-          // Note : l'angle d'exposition est géré dynamiquement par zone de
-          // façade dans `chantier_zones`, pas dans la table racine `chantiers`.
-          const alerte = evaluerAlerteChantier(materiau, acces, {
-            rafalesMax,
-            tempMax,
-            pluieCumul,
-          });
+          const niveauCarte: Niveau =
+            decision.statut === "non_determine"
+              ? "indeterminate"
+              : (decision.niveau as Niveau);
 
           return {
             id: ch.id,
@@ -263,13 +336,17 @@ export default function ChantiersMeteoCards() {
             materiau,
             acces,
             zoneVent,
-            // Le niveau affiché est celui de l'alerte CHANTIER (matériau ×
-            // accès), pas celui de l'alerte générale de la journée : c'est le
-            // second qui décide si l'équipe peut poser.
-            niveau: alerte.niveau as Niveau,
-            motif: alerte.motif,
+            // Le niveau affiché est celui de la POSE (matériau × accès, sur les
+            // horaires du chantier). L'alerte générale de la journée reste
+            // affichée à part : elle décrit le site, pas la pose.
+            niveau: niveauCarte,
+            // Le motif de pose explique le périmètre utilisé ; le motif
+            // d'impact historique est conservé pour l'affichage « impact ».
+            motif: decision.motif,
             meteo,
-            impact: alerte.motif,
+            impact: decision.statut === "evaluee" ? decision.motif : null,
+            horaires,
+            avertissements: decision.avertissements,
           };
         })
       );
@@ -297,78 +374,127 @@ export default function ChantiersMeteoCards() {
     );
   }
 
+  const chantiersTries = [...chantiers].sort(
+    (a, b) => ORDRE_NIVEAU[a.niveau] - ORDRE_NIVEAU[b.niveau],
+  );
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {chantiers.map((ch) => {
+      {chantiersTries.map((ch) => {
         const m = ch.meteo;
+        const ventMoyen = m ? maxConnu(m.matin.vent, m.apresMidi.vent) : null;
+        const rafales = m ? maxConnu(m.matin.rafales, m.apresMidi.rafales) : null;
 
         return (
           <Link
             key={ch.id}
             href={`/terrain/chantier/${ch.id}`}
-            className={`rounded-xl border p-4 transition-colors hover:border-white/25 ${COULEURS[ch.niveau]}`}
+            className={`rounded-xl border p-3 transition-colors hover:border-white/25 sm:p-4 ${COULEURS[ch.niveau]}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="truncate font-medium text-white">{ch.nom || "Chantier"}</p>
-                {ch.adresse && <p className="truncate text-xs text-gray-400">{ch.adresse}</p>}
+                <p className="line-clamp-2 font-semibold leading-snug text-white">
+                  {ch.nom || "Chantier"}
+                </p>
+                {ch.adresse && (
+                  <p className="mt-0.5 flex items-center gap-1 text-2xs text-gray-400">
+                    <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                    <span className="truncate">{ch.adresse}</span>
+                  </p>
+                )}
               </div>
-              <span className="shrink-0" title={LIBELLES_NIVEAU[ch.niveau]} aria-hidden>
+              <span className="shrink-0 text-xl" title={LIBELLES_NIVEAU[ch.niveau]} aria-hidden>
                 {m ? pictogramme(m) : EMOJIS[ch.niveau]}
               </span>
             </div>
 
-            {/* ── Situation du chantier ─────────────────────────────────── */}
-            <p className="mt-2 text-sm font-semibold text-gray-200">
-              {LIBELLES_NIVEAU[ch.niveau]}
+            {/* ── État de pose + zone ──────────────────────────────────── */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className={`rounded-full border px-2 py-0.5 text-2xs font-bold ${PASTILLES_NIVEAU[ch.niveau]}`}>
+                {EMOJIS[ch.niveau]} {LIBELLES_NIVEAU[ch.niveau]}
+              </span>
+              <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 text-4xs font-semibold text-gray-400">
+                Zone {ch.zoneVent}
+              </span>
+            </div>
+            <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-gray-400">
+              {ch.impact ?? ch.motif}
             </p>
-            <p className="text-xs text-gray-400">{ch.impact ?? ch.motif}</p>
+
+            {/* ── Avertissements matériaux ──────────────────────────────
+                DISTINCTS du niveau de pose : ils ne le modifient jamais. Ils
+                sont donc affichés à part, en liste, et formulés comme des
+                vérifications à faire sur le terrain. */}
+            {ch.avertissements.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5">
+                {ch.avertissements.map((a) => (
+                  <li key={a} className="text-2xs leading-snug text-amber-300/80">
+                    ⚠️ {a}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* ── La météo, quand elle existe ──────────────────────────── */}
             {m ? (
-              <div className="mt-3 space-y-2 border-t border-white/10 pt-2.5">
+              <div className="mt-2.5 border-t border-white/10 pt-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl" aria-hidden>
+                  <span className="text-xl" aria-hidden>
                     {pictogramme(m)}
                   </span>
-                  <span className="text-2xl font-black text-white">{m.tempActuelle}°C</span>
-                  <span className="truncate text-xs text-gray-300">{m.conditions}</span>
+                  <span className="text-xl font-black text-white">{m.tempActuelle}°C</span>
+                  <span className="truncate text-2xs text-gray-300">{m.conditions}</span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Releve
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <Mesure
                     icone={<Thermometer className="h-3 w-3" />}
+                    label="Min / max"
                     valeur={`${m.tempMinJour}° / ${m.tempMaxJour}°`}
-                    unite="Minimum / maximum du jour"
                   />
-                  <Releve
+                  <Mesure
                     icone={<Droplets className="h-3 w-3" />}
+                    label="Pluie du jour"
                     valeur={m.cumulPluie !== undefined ? `${m.cumulPluie} mm` : null}
-                    unite="Cumul de précipitations du jour"
                   />
-                  <Releve
+                  <Mesure
                     icone={<Wind className="h-3 w-3" />}
-                    valeur={`${Math.max(m.matin.rafales, m.apresMidi.rafales)} km/h`}
-                    unite="Rafales max (matin / après-midi)"
+                    label="Vent moyen"
+                    valeur={ventMoyen !== null ? `${ventMoyen} km/h` : null}
                   />
-                  <Releve
-                    icone={<CloudRain className="h-3 w-3" />}
-                    valeur={LIBELLES_ALERTE_JOUR[m.alerte.niveau] ?? null}
-                    unite={`Alerte météo générale — ${m.alerte.motif}`}
+                  <Mesure
+                    icone={<Gauge className="h-3 w-3" />}
+                    label="Rafales"
+                    valeur={rafales !== null ? `${rafales} km/h` : null}
+                  />
+                  <div className="col-span-2">
+                    <Mesure
+                      icone={<CloudRain className="h-3 w-3" />}
+                      label="Alerte jour"
+                      valeur={LIBELLES_ALERTE_JOUR[m.alerte.niveau] ?? null}
+                      titre={`Alerte météo générale — ${m.alerte.motif}`}
+                    />
+                  </div>
+                </div>
+
+                {/* ── Tableau horaire dépliant ─────────────────────────────
+                    « Voir les précipitations » ouvre le détail heure par
+                    heure (pluie + rafales). Le bouton neutralise la
+                    navigation de la carte : sans cela, le clic ouvrirait le
+                    chantier au lieu de déplier le tableau. */}
+                <div className="mt-2">
+                  <TableauPrecipitations
+                    heures={m.heures}
+                    libelleFerme="▼ Voir les précipitations"
+                    libelleOuvert="▲ Masquer les précipitations"
                   />
                 </div>
               </div>
             ) : (
-              <p className="mt-3 rounded-lg border border-dashed border-white/10 px-2 py-1.5 text-2xs text-gray-500">
+              <p className="mt-2.5 rounded-lg border border-dashed border-white/10 px-2 py-1.5 text-2xs text-gray-500">
                 Aucune donnée météo disponible — conditions et impact non déterminés.
               </p>
             )}
-
-            <div className="mt-2 flex items-center justify-end">
-              <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 font-semibold text-gray-400">
-                Zone {ch.zoneVent}
-              </span>
-            </div>
           </Link>
         );
       })}

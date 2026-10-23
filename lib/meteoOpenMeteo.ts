@@ -79,6 +79,10 @@
 // deplacement — y compris son comportement fail-closed sur le code postal.
 
 import { geocoderAdresse } from "@/lib/deplacement/geocodage";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+
+// C5 : borne dure de l'appel Open-Meteo.
+const TIMEOUT_METEO_MS = 8_000;
 
 // ─── Structure commune aux deux sources ──────────────────────────────────────
 //
@@ -89,10 +93,16 @@ import { geocoderAdresse } from "@/lib/deplacement/geocodage";
 
 export interface RawHeure {
   datetime: string;
-  temp: number;
-  windspeed: number;
-  windgust: number;
-  precip: number;
+  /**
+   * Chaque grandeur est `null` quand la source n'a rien renvoyé pour cette
+   * heure. Règle d'or de la refonte : une valeur absente n'est JAMAIS convertie
+   * en 0, qui se lirait « 0 mm · 0 km/h » et serait interprété en aval comme
+   * une garantie de temps sec.
+   */
+  temp: number | null;
+  windspeed: number | null;
+  windgust: number | null;
+  precip: number | null;
 }
 
 export interface RawJour {
@@ -110,7 +120,23 @@ export interface RawJour {
 
 export interface DonneesMeteo {
   days: RawJour[];
-  currentConditions?: { temp: number; icon: string };
+  currentConditions?: {
+    temp: number;
+    icon: string;
+    /**
+     * Horodatage local du relevé courant, quand la source le fournit.
+     *
+     * C'est la SEULE marque de fiabilité disponible pour distinguer une heure
+     * observée d'une heure prévue. Absente → la nature de toutes les heures
+     * reste `inconnue`, ce qui est préférable à une affirmation hasardeuse.
+     */
+    time?: string;
+  };
+  /**
+   * Variante portée par le FETCHER Open-Meteo (`current.time`), reprise par la
+   * route comme `referenceSource` de la réponse.
+   */
+  referenceSource?: string;
 }
 
 // ─── Table WMO → français ────────────────────────────────────────────────────
@@ -209,6 +235,8 @@ type ReponseHoraire = {
 type ReponseCourante = {
   temperature_2m?: unknown;
   weather_code?: unknown;
+  /** Horodatage local du relevé courant (ex. `2026-10-20T13:30`). */
+  time?: unknown;
 };
 
 /**
@@ -246,6 +274,20 @@ function valeur(a: unknown, i: number): number {
 }
 
 /**
+ * Variante `null`-sûre de `valeur()`, pour les GRANDEURS HORAIRES.
+ *
+ * La différence est le cœur du correctif : `valeur()` renvoie 0 quand la
+ * source n'a rien envoyé, ce qui se lit ensuite « 0 mm » sur l'écran. Pour
+ * une grandeur horaire, l'absence doit rester une absence (`null`), que
+ * l'aval affiche en tiret et n'additionne jamais.
+ */
+function valeurOuNull(a: unknown, i: number): number | null {
+  if (!Array.isArray(a)) return null;
+  const v = a[i];
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/**
  * Lit un champ SCALAIRE (`current.temperature_2m`, `current.weather_code`).
  *
  * Distinct de `valeur()` : ces champs ne sont PAS des tableaux, et le sont
@@ -260,6 +302,11 @@ function nombre(v: unknown): number {
 function texte(a: unknown, i: number): string {
   if (!Array.isArray(a)) return "";
   const v = a[i];
+  return typeof v === "string" ? v : "";
+}
+
+/** Lit un champ TEXTUEL scalaire (`current.time`), sans jamais lever. */
+function texteScalaire(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
@@ -288,23 +335,33 @@ function jourDe(iso: string): string {
  */
 export async function fetchDonneesOpenMeteo(
   adresse: string,
+  coordonnees?: { lat: number; lon: number },
 ): Promise<DonneesMeteo | null> {
   const q = adresse.trim();
-  if (!q) return null;
+  if (!q && !coordonnees) return null;
 
-  // Même géocodeur que les frais de déplacement : fail-closed sur le code
-  // postal, et surtout un SEUL appelant Nominatim pour toute l'application.
-  const geocode = await geocoderAdresse(q);
-  if (!geocode.ok) {
-    console.error(
-      "meteoOpenMeteo : géocodage impossible pour « %s » — %s",
-      q,
-      geocode.erreur,
-    );
-    return null;
+  let lat: number;
+  let lon: number;
+
+  if (coordonnees) {
+    // Coordonnées déjà validées (code postal) par l'appelant : on les
+    // réutilise telles quelles. C'est ce qui garantit que Visual Crossing et
+    // Open-Meteo travaillent sur le même point.
+    ({ lat, lon } = coordonnees);
+  } else {
+    // Même géocodeur que les frais de déplacement : fail-closed sur le code
+    // postal, et surtout un SEUL appelant Nominatim pour toute l'application.
+    const geocode = await geocoderAdresse(q);
+    if (!geocode.ok) {
+      console.error(
+        "meteoOpenMeteo : géocodage impossible pour « %s » — %s",
+        q,
+        geocode.erreur,
+      );
+      return null;
+    }
+    ({ lat, lon } = geocode.data);
   }
-
-  const { lat, lon } = geocode.data;
 
   const params = new URLSearchParams({
     latitude: String(lat),
@@ -335,9 +392,11 @@ export async function fetchDonneesOpenMeteo(
 
   let data: ReponseOpenMeteo;
   try {
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
-      next: { revalidate: 1800 },
-    });
+    const res = await fetchWithTimeout(
+      `https://api.open-meteo.com/v1/forecast?${params}`,
+      { next: { revalidate: 1800 } },
+      TIMEOUT_METEO_MS,
+    );
     if (!res.ok) {
       console.error("meteoOpenMeteo : Open-Meteo a répondu %s", res.status);
       return null;
@@ -369,17 +428,18 @@ export async function fetchDonneesOpenMeteo(
     if (jourDe(iso) !== aujourdhui) continue;
     const heure = heureDuJour(iso);
     if (!heure) continue;
-    // `wind_gusts_10m` est la rafale ; à défaut, la vitesse moyenne est le
-    // majorant disponible. Jamais `NaN` : `valeur()` renvoie 0, et une rafale à
-    // 0 se lit « 0 km/h », pas « undefined ».
-    const vent = valeur(hourly?.wind_speed_10m, i);
-    const rafales = valeur(hourly?.wind_gusts_10m, i) || vent;
+    // `wind_gusts_10m` est la rafale ; quand elle manque, la vitesse moyenne de
+    // la même heure est le majorant DISPONIBLE (et non une valeur inventée :
+    // c'est une mesure réelle de cette heure-là). Quand les deux manquent, les
+    // deux champs restent `null` — jamais 0, qui se lirait « 0 km/h ».
+    const vent = valeurOuNull(hourly?.wind_speed_10m, i);
+    const rafales = valeurOuNull(hourly?.wind_gusts_10m, i) ?? vent;
     heures.push({
       datetime: heure,
-      temp: valeur(hourly?.temperature_2m, i),
+      temp: valeurOuNull(hourly?.temperature_2m, i),
       windspeed: vent,
       windgust: rafales,
-      precip: valeur(hourly?.precipitation, i),
+      precip: valeurOuNull(hourly?.precipitation, i),
     });
   }
 
@@ -391,12 +451,24 @@ export async function fetchDonneesOpenMeteo(
     Array.isArray(tempsJournaliers) ? tempsJournaliers.indexOf(jourIso) : -1;
 
   // Les 24 relevés du jour sont la base : la route découpe cette journée en
-  // matin / après-midi, et une fenêtre vide y donnerait 0 °C.
-  const ventMoyen = heures.reduce((s, h) => s + h.windspeed, 0) / heures.length;
-  const rafalesMax = Math.max(...heures.map((h) => h.windgust));
-  const precipCumul = heures.reduce((s, h) => s + h.precip, 0);
-  const tempMaxHoraire = Math.max(...heures.map((h) => h.temp));
-  const tempMinHoraire = Math.min(...heures.map((h) => h.temp));
+  // matin / après-midi. Ces agrégats de repli ne sont calculés qu'à partir des
+  // heures CONNUES : une heure sans donnée ne participe pas au calcul, et une
+  // période entièrement vide produit `null` plutôt qu'un 0 trompeur.
+  const connus = <T extends number>(lire: (h: RawHeure) => T | null): T[] =>
+    heures.map(lire).filter((v): v is T => typeof v === "number" && Number.isFinite(v));
+
+  const ventsConnus = connus((h) => h.windspeed);
+  const rafalesConnues = connus((h) => h.windgust);
+  const precipConnus = connus((h) => h.precip);
+  const tempsConnus = connus((h) => h.temp);
+
+  const ventMoyen = ventsConnus.length
+    ? ventsConnus.reduce((s, v) => s + v, 0) / ventsConnus.length
+    : 0;
+  const rafalesMax = rafalesConnues.length ? Math.max(...rafalesConnues) : 0;
+  const precipCumul = precipConnus.reduce((s, v) => s + v, 0);
+  const tempMaxHoraire = tempsConnus.length ? Math.max(...tempsConnus) : 0;
+  const tempMinHoraire = tempsConnus.length ? Math.min(...tempsConnus) : 0;
 
   // Min et max du jour : l'agrégat `daily` fait foi quand il est présent, car
   // il couvre toute la journée y compris les heures déjà écoulées que
@@ -460,11 +532,18 @@ export async function fetchDonneesOpenMeteo(
     });
   }
 
+  // Référence temporelle de la source : `current.time` est l'horodatage local du
+  // relevé courant. C'est elle qui autorise, en aval, à qualifier une heure
+  // d'« observée » ou de « prévue ». Absente → la nature restera `inconnue`.
+  const referenceSource = texteScalaire(data.current?.time);
+
   return {
     days: [jour, ...joursSuivants],
     currentConditions: {
       temp: nombre(data.current?.temperature_2m) || tempMax,
       icon: String(nombre(data.current?.weather_code)),
+      ...(referenceSource ? { time: referenceSource } : {}),
     },
+    ...(referenceSource ? { referenceSource } : {}),
   };
 }

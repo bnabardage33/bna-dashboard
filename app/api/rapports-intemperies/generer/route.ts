@@ -19,6 +19,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { verifierSession } from "@/lib/auth";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
+import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
 import {
   evaluerJourChantier,
   Materiau,
@@ -26,6 +27,18 @@ import {
   NiveauAlerte,
 } from "@/lib/meteoAlerte";
 import type { HeureMeteo } from "@/lib/meteo";
+import { heureParisEnMinutes } from "@/lib/dateParis";
+import { statutHeure } from "@/lib/meteoHoraire";
+import {
+  prefixerMotifVigilance,
+  type VigilanceDepartement,
+} from "@/lib/vigilanceMeteoFrance";
+
+// La vigilance officielle est SOIT une couleur Météo-France, SOIT l'état
+// explicite « indisponible ». Elle n'est jamais remplacée par un « vert » de
+// complaisance : une vigilance qu'on n'a pas pu lire n'est pas une vigilance
+// verte.
+export type StatutVigilance = NiveauAlerte | "indisponible";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -50,7 +63,7 @@ type ResultatGeneration = {
   chantierId: string;
   nom: string | null;
   numero?: string;
-  vigilance?: NiveauAlerte;
+  vigilance?: StatutVigilance;
   rapportId?: string;
   statut: string;
   erreur?: string;
@@ -89,13 +102,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 
 const VISUAL_CROSSING_URL =
   "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
-
-const ORDRE_VIGILANCE: Record<NiveauAlerte, number> = {
-  vert: 0,
-  jaune: 1,
-  orange: 2,
-  rouge: 3,
-};
 
 function estUuid(value: string) {
   return UUID_RE.test(value);
@@ -200,13 +206,6 @@ async function resoudreContexteGeneration(
 // Utilitaires
 // -----------------------------------------------------------------------------
 
-function plusForte(
-  a: NiveauAlerte,
-  b: NiveauAlerte
-): NiveauAlerte {
-  return ORDRE_VIGILANCE[a] >= ORDRE_VIGILANCE[b] ? a : b;
-}
-
 function normaliserMateriau(value: unknown): Materiau {
   const valeur = String(value ?? "").toLowerCase().trim();
 
@@ -257,11 +256,14 @@ function normaliserZoneVent(value: unknown): number {
 // -----------------------------------------------------------------------------
 
 async function fetchMeteoVisualCrossing(
-  adresse: string,
+  coordonnees: { lat: number; lon: number },
   apiKey: string
 ): Promise<MeteoJour> {
+  // Visual Crossing reçoit `lat,lon` : ce sont les coordonnées validées par le
+  // code postal, les mêmes que celles d'Open-Meteo ailleurs. Il ne géocode donc
+  // plus l'adresse lui-même et ne peut pas retenir une autre commune.
   const url =
-    `${VISUAL_CROSSING_URL}/${encodeURIComponent(adresse)}/today` +
+    `${VISUAL_CROSSING_URL}/${coordonnees.lat},${coordonnees.lon}/today` +
     `?unitGroup=metric` +
     `&key=${encodeURIComponent(apiKey)}` +
     `&contentType=json` +
@@ -340,27 +342,36 @@ async function fetchMeteoVisualCrossing(
 async function fetchVigilanceInterne(
   request: NextRequest,
   departement: string
-) {
+): Promise<VigilanceDepartement | null> {
   const origin = new URL(request.url).origin;
 
   const url =
     `${origin}/api/meteo-vigilance?departement=` +
     encodeURIComponent(departement);
 
-  const response = await fetch(url, {
-    cache: "no-store",
-  });
+  try {
+    const response = await fetch(url, {
+      cache: "no-store",
+    });
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      // La vigilance officielle est INDISPONIBLE (clé/API en panne, département
+      // inconnu…). On ne l'invente pas : on retourne `null`, l'appelant écrira
+      // l'état explicite « indisponible » et poursuivra la génération.
+      console.warn(
+        `Vigilance Météo-France indisponible pour le département ${departement} (${response.status})`
+      );
+      return null;
+    }
 
-    throw new Error(
-      data?.error ||
-        `Impossible de récupérer la vigilance Météo-France (${response.status})`
+    return (await response.json()) as VigilanceDepartement;
+  } catch (erreur) {
+    console.warn(
+      `Vigilance Météo-France injoignable pour le département ${departement}`,
+      erreur
     );
+    return null;
   }
-
-  return response.json();
 }
 
 // -----------------------------------------------------------------------------
@@ -544,23 +555,38 @@ export async function POST(request: NextRequest) {
             chantier.adresse_chantier?.trim() ||
             chantier.nom?.trim() ||
             "Bordeaux, France";
+
+          // Code postal d'abord : si le lieu ne peut pas être validé (code
+          // postal incompatible, ambiguïté), on refuse ce chantier au lieu de
+          // produire un rapport sur une commune choisie au hasard.
+          const localisation = await resoudreLocalisationMeteo(adresse);
+          if (!localisation.ok) {
+            throw new Error(`Localisation non validée : ${localisation.erreur}`);
+          }
+
           const departement = adresseVersDepartement(adresse) || "33";
           const materiau = normaliserMateriau(chantier.materiau_structurel);
           const acces = normaliserAcces(chantier.moyen_acces);
           const zoneVent = normaliserZoneVent(chantier.zone_vent);
 
           const meteo = await fetchMeteoVisualCrossing(
-            adresse,
+            { lat: localisation.data.lat, lon: localisation.data.lon },
             visualCrossingKey
           );
           const vigilance = await fetchVigilanceInterne(request, departement);
 
+          const referenceMinutes = heureParisEnMinutes();
           const heuresMeteo: HeureMeteo[] = meteo.heures.map((h) => ({
             heure: h.heure,
             temp: h.temp,
             vent: h.vent,
             rafales: h.rafales,
             pluie: h.pluie,
+            // Ce fetcher VisualCrossing n'expose pas l'horodatage de son
+            // relevé courant : la nature des heures reste donc `inconnue`.
+            // On n'affirme pas « observé » sans marque de fiabilité.
+            statut: statutHeure(h.heure, referenceMinutes),
+            nature: "inconnue",
           }));
 
           const decision = evaluerJourChantier(
@@ -572,16 +598,30 @@ export async function POST(request: NextRequest) {
               tempMax: meteo.tempMax,
             },
             heuresMeteo,
-            vigilance?.couleurMax ?? "vert",
-            vigilance?.couleurMax ?? "vert"
+            // Couleur officielle SEULE, ou `null` si elle est indisponible. Le
+            // risque technique du chantier n'entre PAS ici : il est calculé
+            // séparément par `evaluerJourChantier`.
+            vigilance?.couleurMax ?? null,
+            vigilance?.couleurMax ?? null
           );
 
-          const niveauRapport = plusForte(
-            decision.vigilanceOfficielle,
-            decision.risqueTechnique.niveau
-          );
+          // La vigilance OFFICIELLE enregistrée est la couleur Météo-France, et
+          // rien d'autre. Plus de fusion avec le risque technique : une
+          // vigilance verte accompagnée d'un dépassement mesuré sur le chantier
+          // ne doit PAS devenir « vigilance orange ». Si la vigilance n'a pas pu
+          // être lue, on écrit l'état explicite « indisponible » — jamais une
+          // couleur inventée.
+          const vigilanceOfficielle: StatutVigilance =
+            vigilance?.couleurMax ?? "indisponible";
 
-          let motif = decision.motif;
+          // Préfixe d'indisponibilité PARTAGÉ avec l'Edge Function
+          // (`lib/vigilanceMeteoFrance.ts`) : le motif ne doit jamais laisser
+          // croire à une vigilance verte confirmée quand la donnée manque.
+          let motif = prefixerMotifVigilance(
+            decision.motif,
+            vigilance?.couleurMax ?? null,
+            vigilance?.couleurMax ?? null
+          );
           if (
             decision.risqueTechnique.niveau !== "vert" &&
             decision.risqueTechnique.motif
@@ -590,7 +630,7 @@ export async function POST(request: NextRequest) {
           }
 
           const donneesRapport = {
-            vigilance_officielle: niveauRapport,
+            vigilance_officielle: vigilanceOfficielle,
             jour_arrete: decision.jourArrete,
             a_valider: decision.aValider,
             ampleur_impact: decision.jourArrete
@@ -668,7 +708,7 @@ export async function POST(request: NextRequest) {
             chantierId: chantier.id,
             nom: chantier.nom,
             numero,
-            vigilance: niveauRapport,
+            vigilance: vigilanceOfficielle,
             rapportId: rapportId ?? undefined,
             statut:
               existant && force

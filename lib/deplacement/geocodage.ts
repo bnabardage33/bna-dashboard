@@ -68,16 +68,10 @@ type NominatimCandidat = {
  *
  * Pourquoi `limit=1` était un défaut : Nominatim classe ses résultats par
  * *importance*, pas par pertinence d'adresse, et deux homonymes peuvent avoir
- * une importance presque identique. Cas réel mesuré sur
- * « 8 lotissement Bellevue, 33920 » :
- *
- *   Lotissement Bellevue              Branne      cp 33420  importance 0,0533973472
- *   Lotissement les Portes de Bellevue Saint-Savin cp 33920  importance 0,0533971092
- *
- * L'écart d'importance est de 2,4e-7. `limit=1` renvoie donc l'un ou l'autre
- * selon l'état de l'index, sans aucun signal. Depuis le même point de départ,
- * OSRM donne 12,47 km vers Saint-Savin et 55,22 km vers Branne — soit
- * 24,94 km ou 110,43 km aller-retour pour un chiffrage censé être identique.
+ * une importance presque identique. Deux lieux-dits homonymes dans deux
+ * communes de codes postaux différents affichaient alors des scores à 2,4e-7
+ * l'un de l'autre : `limit=1` renvoyait l'un ou l'autre selon l'état de
+ * l'index, sans aucun signal, pour deux points distants de dizaines de km.
  *
  * La stratégie est donc fail-closed :
  *   - code postal dans la saisie  -> on exige une correspondance EXACTE, sinon
@@ -85,8 +79,15 @@ type NominatimCandidat = {
  *   - pas de code postal          -> on refuse si les candidats s'étalent sur
  *     plusieurs communes, car choisir au hasard peut facturer 4,4 fois le
  *     montant réel.
+ *
+ * `exigerCommuneUnique` resserre encore : même avec un code postal exact, un
+ * même code peut désigner plusieurs communes. La météo l'active pour n'accepter
+ * qu'un point sans ambiguïté ; les frais de déplacement gardent le défaut.
  */
-export async function geocoderAdresse(adresse: string): Promise<ResultatService<Coordonnees>> {
+export async function geocoderAdresse(
+  adresse: string,
+  options?: { exigerCommuneUnique?: boolean }
+): Promise<ResultatService<Coordonnees>> {
   if (!adresse.trim()) return { ok: false, erreur: "Adresse vide." };
 
   const controller = new AbortController();
@@ -153,6 +154,21 @@ export async function geocoderAdresse(adresse: string): Promise<ResultatService<
           erreur:
             `Adresse ambiguë : « ${adresse.trim()} » correspond à plusieurs communes ` +
             `(${communes.join(", ")}). Ajoutez le code postal pour choisir la bonne.`
+        };
+      }
+    }
+
+    // Un même code postal peut couvrir plusieurs communes (ou un lotissement
+    // homonyme). Quand l'appelant exige une commune unique, on refuse de
+    // « choisir le premier » : ce serait exactement le défaut qu'on corrige.
+    if (options?.exigerCommuneUnique) {
+      const communes = [...new Set(retenus.map((c) => nomLisible(c)))];
+      if (communes.length > 1) {
+        return {
+          ok: false,
+          erreur:
+            `Adresse ambiguë : « ${adresse.trim()} » correspond à plusieurs lieux ` +
+            `(${communes.join(", ")}). Ajoutez la commune pour lever l'ambiguïté.`
         };
       }
     }

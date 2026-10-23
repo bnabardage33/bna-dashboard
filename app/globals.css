@@ -194,6 +194,25 @@ body {
 }
 
 @media print {
+  /* Format d'impression A4 portrait. Filet de sécurité appliqué à TOUS les
+   * documents imprimables (ils sont tous conçus pour A4) : garantit le format
+   * même si le navigateur est réglé sur « Letter ». Seule la TAILLE est forcée
+   * ici ; les marges par défaut du navigateur sont conservées pour les autres
+   * documents. */
+  @page {
+    size: A4 portrait;
+  }
+
+  /* Rapport d'arrêt de chantier pour intempéries : A4 strict + marges
+   * réduites, via une PAGE CSS NOMMÉE. Le nommage limite la portée à ce seul
+   * document sans toucher aux marges des autres impressions. */
+  @page rapport-intemperies {
+    size: A4 portrait;
+    margin: 7mm 8mm;
+  }
+  #document-pdf-content.rapport-intemperies {
+    page: rapport-intemperies;
+  }
   body * {
     visibility: hidden;
   }

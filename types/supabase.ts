@@ -263,6 +263,139 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogue_terrasse_accessoires: {
+        Row: {
+          categorie: string | null
+          conditionnement: string | null
+          created_at: string
+          description: string | null
+          designation: string | null
+          entreprise_id: string
+          fournisseur: string | null
+          id: string
+          materiel_compatibles: Json | null
+          prix_conditionnement: number | null
+          pu_ht: number | null
+          pu_revient: number | null
+          specifications_dt: Json | null
+          type_cout: string
+          unite_mesure: string | null
+          updated_at: string
+        }
+        Insert: {
+          categorie?: string | null
+          conditionnement?: string | null
+          created_at?: string
+          description?: string | null
+          designation?: string | null
+          entreprise_id: string
+          fournisseur?: string | null
+          id?: string
+          materiel_compatibles?: Json | null
+          prix_conditionnement?: number | null
+          pu_ht?: number | null
+          pu_revient?: number | null
+          specifications_dt?: Json | null
+          type_cout?: string
+          unite_mesure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string | null
+          conditionnement?: string | null
+          created_at?: string
+          description?: string | null
+          designation?: string | null
+          entreprise_id?: string
+          fournisseur?: string | null
+          id?: string
+          materiel_compatibles?: Json | null
+          prix_conditionnement?: number | null
+          pu_ht?: number | null
+          pu_revient?: number | null
+          specifications_dt?: Json | null
+          type_cout?: string
+          unite_mesure?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_terrasse_accessoires_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogue_terrasse_lames: {
+        Row: {
+          created_at: string
+          description: string | null
+          designation: string | null
+          entreprise_id: string
+          epaisseur_mm: number | null
+          essence: string | null
+          fiche_technique_pdf: string | null
+          fournisseur: string | null
+          id: string
+          image_url: string | null
+          largeur_utile_mm: number | null
+          longueur_mm: number | null
+          prix_m2_ht: number | null
+          prix_unitaire_lame: number | null
+          reference_fournisseur: string | null
+          type_material: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          designation?: string | null
+          entreprise_id: string
+          epaisseur_mm?: number | null
+          essence?: string | null
+          fiche_technique_pdf?: string | null
+          fournisseur?: string | null
+          id?: string
+          image_url?: string | null
+          largeur_utile_mm?: number | null
+          longueur_mm?: number | null
+          prix_m2_ht?: number | null
+          prix_unitaire_lame?: number | null
+          reference_fournisseur?: string | null
+          type_material?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          designation?: string | null
+          entreprise_id?: string
+          epaisseur_mm?: number | null
+          essence?: string | null
+          fiche_technique_pdf?: string | null
+          fournisseur?: string | null
+          id?: string
+          image_url?: string | null
+          largeur_utile_mm?: number | null
+          longueur_mm?: number | null
+          prix_m2_ht?: number | null
+          prix_unitaire_lame?: number | null
+          reference_fournisseur?: string | null
+          type_material?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_terrasse_lames_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chantier_terrasses: {
         Row: {
           id: string
@@ -3617,7 +3750,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      cat_accessoire_terrasse: "CLIP" | "LAMBOURDE" | "PLOT" | "VIS" | "BANDEROLE" | "SOLIVE" | "GEOTEXTILE" | "GRAVIER" | "CONCASSE" | "DALLE_BETON" | "CACHE" | "PROFILE_PVC"
+      type_material_terrasse: "BOIS_NATUREL" | "COMPOSITE" | "PVC"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3744,6 +3878,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      cat_accessoire_terrasse: ["CLIP", "LAMBOURDE", "PLOT", "VIS", "BANDEROLE", "SOLIVE", "GEOTEXTILE", "GRAVIER", "CONCASSE", "DALLE_BETON", "CACHE", "PROFILE_PVC"],
+      type_material_terrasse: ["BOIS_NATUREL", "COMPOSITE", "PVC"],
+    },
   },
 } as const

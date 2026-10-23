@@ -5,13 +5,17 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { SEUILS_ACCES, SEUILS_MATERIAUX, Acces, Materiau } from "@/lib/meteoAlerte";
-import type { VigilancePhenomene } from "@/lib/meteoVigilance";
+import {
+  libelleFenetre,
+  lireHorairesPose,
+  synthetiserPose,
+  type HeureHoraires,
+} from "@/lib/meteoHoraire";
+import type { VigilancePhenomene } from "@/lib/vigilanceMeteoFrance";
 import { verifierSession } from "@/lib/auth";
-import { extraireCodePostal, userAgentNominatim } from "@/lib/deplacement/geocodage";
-
-// ─── Seuils communs ───────────────────────────────────────────────────────────
-const SEUIL_PLUIE_MM = 5;
-const SEUIL_GEL_C = 0;
+import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
+import { dateParis, dateParisDans } from "@/lib/dateParis";
+import { SEUIL_GEL_C, SEUIL_PLUIE_MM } from "@/lib/intemperiesSeuils";
 
 type ClientMeteo = SupabaseClient<Database>;
 
@@ -96,7 +100,9 @@ async function resoudreContexteMeteo(
   };
 }
 
-const FALLBACK_GEOLOC = { lat: 46.6, lng: 2.4 };
+// Note : il n'y a volontairement PAS de FALLBACK_GEOLOC ici. Un chantier dont
+// l'adresse n'a pas pu être validée n'a pas de météo attribuée : on le signale
+// (`erreurLocalisation`) au lieu de lui attribuer la météo d'un point arbitraire.
 const FACADES = ["nord", "sud", "est", "ouest"] as const;
 const ETAPES = ["ossature", "isolation", "bardage", "finitions"] as const;
 
@@ -120,11 +126,26 @@ async function prochainNumeroIntemperie(entrepriseId: string): Promise<string> {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type JourIntemperie = {
   date: string;
-  pluie: number;
+  /**
+   * Cumul journalier de précipitations, en mm.
+   *
+   * P5 : `null` vaut « inconnu / indisponible » — une valeur absente de
+   * `precipitation_sum` n'est JAMAIS convertie en 0 (0 mm se lirait comme une
+   * garantie de temps sec). L'interface l'affiche « — ».
+   */
+  pluie: number | null;
   vent: number;
   tempMin: number;
   intemperie: boolean;
   raisons: string[];
+  /**
+   * Cumul de pluie pendant les HORAIRES DE POSE, quand ils sont connus.
+   * `null` : horaires non configurés (on retombe alors sur le cumul journalier,
+   * en le disant explicitement dans les raisons).
+   */
+  pluiePose: number | null;
+  /** État de la lecture des horaires, pour que l'appelant puisse l'afficher. */
+  horairesStatut: "configuree" | "non_configuree" | "illisible";
 };
 
 type ChantierMeteo = {
@@ -134,25 +155,32 @@ type ChantierMeteo = {
   lat: number;
   lng: number;
   geocoded: boolean;
+  /**
+   * Message expliquant pourquoi la commune n'a pas pu être validée par le code
+   * postal. `null` quand la localisation est validée. L'interface s'en sert
+   * pour signaler une localisation à corriger au lieu d'afficher une météo
+   * venue d'ailleurs.
+   */
+  erreurLocalisation: string | null;
+  /** Lieu réellement utilisé (commune issue du code postal), pour audit. */
+  localisationValidee: {
+    lat: number;
+    lon: number;
+    libelle: string;
+    codePostal: string | null;
+  } | null;
   jours: JourIntemperie[];
   intemperieAujourdhui: boolean;
   intemperiesProchainesJours: boolean;
   emailClient: string | null;
   departement: string | null;
-  vigilanceOfficielle: string | null;
+  vigilanceOfficielle: string;
   moyenAcces: Acces;
   materiau: Materiau;
 };
 
-// ─── Date France ──────────────────────────────────────────────────────────────
-function dateParis(): string {
-  return new Intl.DateTimeFormat("fr-CA", {
-    timeZone: "Europe/Paris",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
+// La date « française » vit dans `lib/dateParis.ts` : la même règle sert ici,
+// à `/api/meteo` et au Générateur de rapports. Ne pas la réimplémenter.
 
 function normalize(v: string | null | undefined): string {
   return (v ?? "").trim();
@@ -165,84 +193,119 @@ function seuilVentCritique(materiau: Materiau, acces: Acces): number {
   return Math.min(sm.vent_critique, sa.vent_critique);
 }
 
-// Point n°1 : géocodage depuis l'adresse du chantier (cache 6h)
-//
-// La version précédente faisait `limit=1` sans vérifier le code postal, ce qui
-// exposait la meteo au meme defaut que les frais de deplacement : Nominatim
-// classe par importance, et deux homonymes peuvent etre separes de moins de
-// 3e-7 d'ecart. Mesure sur « 8 lotissement Bellevue, 33920 » :
-//
-//   Branne      cp 33420  importance 0,0533973472   <-- arrivait en tete
-//   Saint-Savin cp 33920  importance 0,0533971092
-//
-// soit 40 km d'ecart, et le premier arrivant en tete etait le mauvais : la
-// meteo affichee etait celle de Branne, pour un chantier a Saint-Savin.
-//
-// Contrairement aux frais de deplacement, on ne refuse pas ici : l'echec ne
-// coute pas d'argent mais une prevision meteo absente ou approximative. On
-// prefere donc le candidat dont le code postal correspond a la saisie, et a
-// defaut le plus important — l'exactitude reste amelioree sans risque de
-// laisser un chantier sans meteo.
-async function geocoderAdresse(adresse: string): Promise<{ lat: number; lng: number } | null> {
-  const q = normalize(adresse);
-  if (!q) return null;
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&countrycodes=fr&q=${encodeURIComponent(q + ", France")}`,
-      {
-        headers: { "User-Agent": userAgentNominatim(), Accept: "application/json" },
-        next: { revalidate: 21600 },
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return null;
+// Le géocodage est centralisé dans `lib/meteoLocalisation.ts` : code postal
+// exact, refus de l'ambiguïté, et coordonnées partagées avec VisualCrossing.
+// On ne reprend PAS ici de repli « premier résultat » ni de point par défaut
+// (voir `FALLBACK_GEOLOC`, supprimé) : un chantier mal localisé doit le dire.
 
-    // Le code postal est extrait de l'adresse SAISIE, pas de la requete
-    // enrichie « , France » : sinon la commune ajoutee fausserait le
-    // rapprochement.
-    const codePostal = extraireCodePostal(q);
-    const eligibles = data.filter(
-      (c: { lat?: string; lon?: string }) => c.lat && c.lon
-    );
-    // Nominatim renvoie ses resultats tries par importance decroissante : le
-    // premier candidat valide est donc le plus pertinent, et le premier
-    // candidat compatible avec le code postal bat cette importance.
-    const candidat = codePostal
-      ? eligibles.find(
-          (c: { address?: { postcode?: string } }) => c.address?.postcode === codePostal
-        )
-      : undefined;
-    const retenu = candidat ?? eligibles[0];
-    if (!retenu) return null;
-
-    const lat = parseFloat(retenu.lat);
-    const lng = parseFloat(retenu.lon);
-    if (isNaN(lat) || isNaN(lng)) return null;
-    return { lat, lng };
-  } catch {
-    return null;
-  }
-}
-
-// Open-Meteo avec seuil vent dynamique
-async function fetchOpenMeteo(lat: number, lng: number, ventCritique: number): Promise<JourIntemperie[]> {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,wind_speed_10m_max,temperature_2m_min&timezone=Europe/Paris&forecast_days=4`;
+// Open-Meteo avec seuil vent dynamique.
+//
+// Depuis la refonte, la requête demande AUSSI `hourly=precipitation` : sans les
+// heures, on ne peut pas distinguer une pluie qui tombe PENDANT la pose d'une
+// pluie nocturne qui n'empêche rien. C'est la même requête, élargie — pas un
+// second appel réseau.
+//
+// `horaires` est le texte libre du chantier. Quand il est lisible, seule la
+// pluie tombée PENDANT la fenêtre de pose compte comme intempérie de pluie ;
+// quand il ne l'est pas, on retombe sur le cumul journalier, et la raison
+// affichée le DIT explicitement — jamais une conclusion silencieuse.
+async function fetchOpenMeteo(
+  lat: number,
+  lng: number,
+  ventCritique: number,
+  horaires: string | null
+): Promise<JourIntemperie[]> {
+  const url =
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+    `&daily=precipitation_sum,wind_speed_10m_max,temperature_2m_min` +
+    `&hourly=precipitation&timezone=Europe/Paris&forecast_days=4`;
   const res = await fetch(url, { next: { revalidate: 1800 } });
   if (!res.ok) throw new Error("Erreur Open-Meteo");
   const data = await res.json();
   const d = data.daily;
   if (!d || !Array.isArray(d.time)) throw new Error("Données Open-Meteo invalides");
 
+  const lecture = lireHorairesPose(horaires);
+
+  // Index des heures par date locale : `hourly.time` est déjà en Europe/Paris
+  // (paramètre `timezone`), donc `slice(0, 10)` est la date locale — pas UTC.
+  const heuresParDate = new Map<string, HeureHoraires[]>();
+  const hourly = data.hourly;
+  if (hourly && Array.isArray(hourly.time)) {
+    for (let i = 0; i < hourly.time.length; i++) {
+      const t = hourly.time[i] as string;
+      if (typeof t !== "string" || t.length < 13) continue;
+      const date = t.slice(0, 10);
+      const heure = t.slice(11, 16);
+      const brut = hourly.precipitation?.[i];
+      // `valeurOuNull` : une précipitation absente reste `null`, elle ne
+      // devient JAMAIS 0 (0 mm se lirait comme une garantie de temps sec).
+      const pluie =
+        typeof brut === "number" && Number.isFinite(brut) ? Math.round(brut * 10) / 10 : null;
+      const liste = heuresParDate.get(date) ?? [];
+      liste.push({ heure, pluie, vent: null, rafales: null, temp: null });
+      heuresParDate.set(date, liste);
+    }
+  }
+
   return d.time.map((date: string, i: number): JourIntemperie => {
-    const pluie = Math.round((d.precipitation_sum?.[i] ?? 0) * 10) / 10;
+    // P5 : une précipitation journalière absente reste `null` — jamais 0.
+    const brutPluie = d.precipitation_sum?.[i];
+    const pluie =
+      typeof brutPluie === "number" && Number.isFinite(brutPluie)
+        ? Math.round(brutPluie * 10) / 10
+        : null;
     const vent = Math.round(d.wind_speed_10m_max?.[i] ?? 0);
     const tempMin = Math.round(d.temperature_2m_min?.[i] ?? 0);
     const raisons: string[] = [];
-    if (pluie > SEUIL_PLUIE_MM) raisons.push(`Pluie ${pluie}mm`);
+
+    // Pluie : on privilégie la fenêtre de POSE quand les horaires sont lisibles.
+    const synthese = synthetiserPose(heuresParDate.get(date) ?? [], lecture);
+    const pluiePose = synthese.pluiePendantPose;
+    const horairesStatut = lecture.statut;
+
+    if (lecture.statut === "configuree" && typeof pluiePose === "number") {
+      if (pluiePose > SEUIL_PLUIE_MM) {
+        raisons.push(
+          `Pluie ${pluiePose}mm pendant les horaires de pose (${libelleFenetre(lecture.fenetre)})`,
+        );
+      } else if (typeof pluie === "number" && pluie > SEUIL_PLUIE_MM) {
+        // Une pluie journalière forte MAIS hors pose n'est PAS une intempérie de
+        // pose : elle est signalée comme information, sans déclencher le jour.
+        raisons.push(
+          `Pluie ${pluie}mm sur la journée, hors horaires de pose (${libelleFenetre(lecture.fenetre)})`,
+        );
+      }
+    } else if (typeof pluie === "number" && pluie > SEUIL_PLUIE_MM) {
+      // Horaires non lisibles : on ne peut pas dater la pluie. On retombe sur le
+      // cumul journalier, en le disant, plutôt que de conclure en silence.
+      const precision =
+        lecture.statut === "non_configuree"
+          ? "horaires de pose non configurés"
+          : lecture.statut === "illisible"
+            ? "horaires de pose illisibles"
+            : "données horaires indisponibles";
+      raisons.push(`Pluie ${pluie}mm (journée, ${precision})`);
+    }
+
     if (vent > ventCritique) raisons.push(`Vent ${vent}km/h (seuil ${ventCritique}km/h)`);
     if (tempMin < SEUIL_GEL_C) raisons.push(`Gel ${tempMin}°C`);
-    return { date, pluie, vent, tempMin, intemperie: raisons.length > 0, raisons };
+
+    // Une raison purement INFORMATIONNELLE (« pluie hors pose ») ne déclenche
+    // pas d'intempérie : c'est la correction d'audit. Une pluie qui tombe quand
+    // personne ne pose ne bloque pas la pose.
+    const raisonsBloquantes = raisons.filter((r) => !r.includes("hors horaires de pose"));
+
+    return {
+      date,
+      pluie,
+      vent,
+      tempMin,
+      intemperie: raisonsBloquantes.length > 0,
+      raisons,
+      pluiePose,
+      horairesStatut,
+    };
   });
 }
 
@@ -250,24 +313,30 @@ async function fetchOpenMeteo(lat: number, lng: number, ventCritique: number): P
 const PHENOMENES_CRITIQUES = ["vent", "pluie-inondation", "grand-froid", "orages"];
 
 async function fetchVigilanceDepartement(departement: string): Promise<{ niveau: string; phenomenes: string[] } | null> {
-  const applicationId = process.env.METEOFRANCE_APPLICATION_ID;
-  if (!applicationId || !departement) return null;
+  // Pas de `departement` : rien à interroger, on le dit par `null`.
+  if (!departement) return null;
   try {
     const { obtenirTokenMeteoFrance } = await import("@/lib/meteoFranceToken");
+    // `obtenirTokenMeteoFrance` lit elle-même METEOFRANCE_APPLICATION_ID. Si la
+    // clé manque, elle lève : le catch ci-dessous renvoie `null` (indisponible).
     const token = await obtenirTokenMeteoFrance();
     if (!token) return null;
 
+    // Endpoint officiel DPVigilance v1. L'ancien chemin « vigimeteo » n'existe
+    // pas dans ce produit : il renvoyait une erreur, donc TOUTE vigilance était
+    // perdue. L'authentification est le token OAuth2 en `Authorization: Bearer`
+    // (documenté pour DPVigilance v1) — PAS le header `apikey`.
     const res = await fetch(
-      "https://public-api.meteofrance.fr/public/DPVigilance/v1/vigimeteo?domain=metropolitaine",
+      "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours",
       {
-        headers: { Authorization: `Bearer ${token}`, apikey: applicationId },
+        headers: { Authorization: `Bearer ${token}` },
         next: { revalidate: 3600 },
       }
     );
     if (!res.ok) return null;
     const json = await res.json();
 
-    const { extraireDepartement } = await import("@/lib/meteoVigilance");
+    const { extraireDepartement } = await import("@/lib/vigilanceMeteoFrance");
     const resultat = extraireDepartement(json, departement);
     if (!resultat) return null;
 
@@ -292,7 +361,7 @@ async function chargerChantiers(supabase: ClientMeteo, entrepriseId: string) {
   const { data: chantiers, error } = await supabase
     .from("chantiers")
     .select(
-      "id, client_id, entreprise_id, nom, adresse_chantier, client_nom, moyen_acces, materiau_structurel"
+      "id, client_id, entreprise_id, nom, adresse_chantier, client_nom, moyen_acces, materiau_structurel, horaires"
     )
     .eq("entreprise_id", entrepriseId)
     .eq("statut", "en_cours");
@@ -368,31 +437,67 @@ async function analyserChantiers(
     const moyenAcces: Acces = (ch.moyen_acces as Acces) ?? "echafaudage";
     const ventCritique = seuilVentCritique(materiau, moyenAcces);
 
-    // Point n°1 : adresse du CHANTIER
+    // Point n°1 : adresse du CHANTIER.
+    // Coordonnées validées une seule fois, utilisées ensuite telles quelles.
+    // Aucun point de repli : sans lieu validé, on le signale au lieu d'afficher
+    // une météo inventée.
     const adresseChantier = normalize(ch.adresse_chantier);
-    let geoloc = adresseChantier ? await geocoderAdresse(adresseChantier) : null;
-    const geocoded = geoloc !== null;
-    if (!geoloc) geoloc = { ...FALLBACK_GEOLOC };
+    const localisation = await resoudreLocalisationMeteo(adresseChantier);
+    const geocoded = localisation.ok;
+    const erreurLocalisation = localisation.ok ? null : localisation.erreur;
+    const coordonnees = localisation.ok
+      ? { lat: localisation.data.lat, lng: localisation.data.lon }
+      : null;
 
     const departement = adresseVersDepartement(adresseChantier);
 
     let jours: JourIntemperie[] = [];
     let erreur = false;
-    try {
-      jours = await fetchOpenMeteo(geoloc.lat, geoloc.lng, ventCritique);
-    } catch {
-      erreur = true;
+    const horaires = (ch as { horaires?: string | null }).horaires ?? null;
+    if (coordonnees) {
+      try {
+        jours = await fetchOpenMeteo(coordonnees.lat, coordonnees.lng, ventCritique, horaires);
+      } catch {
+        erreur = true;
+      }
     }
 
     if (jours.length === 0) {
+      // Sans coordonnées validées, ce n'est PAS une intempérie : on le signale
+      // sans le transformer en alerte. Sinon une adresse mal localisée ferait
+      // apparaître un « chantier impraticable » inventé.
+      const message = coordonnees
+        ? (erreur ? "Données météo indisponibles" : "")
+        : (erreurLocalisation ?? "Localisation non validée");
+      const lectureHoraires = lireHorairesPose(horaires);
       jours = [0, 1, 2, 3].map((i) => {
-        const date = new Date(Date.now() + i * 86400000).toISOString().slice(0, 10);
-        return { date, pluie: 0, vent: 0, tempMin: 0, intemperie: erreur, raisons: erreur ? ["Données météo indisponibles"] : [] };
+        // `dateParisDans` : date FRANÇAISE, jamais la date UTC (voir lib/dateParis.ts).
+        const date = dateParisDans(i);
+        return {
+          date,
+          // P5 : sans données, la pluie est INCONNUE — pas 0. L'interface
+          // affiche « — » plutôt qu'un faux « 0 mm » qui se lirait comme un
+          // temps sec garanti. (La raison de vigilance signale le cas ci-dessous.)
+          pluie: null,
+          vent: 0,
+          tempMin: 0,
+          // Un jour sans données n'est PAS un jour sans intempérie : on le
+          // signale (`erreur`) au lieu de conclure, comme avant.
+          intemperie: coordonnees ? erreur : false,
+          raisons: message ? [message] : [],
+          pluiePose: null,
+          horairesStatut: lectureHoraires.statut,
+        };
       });
     }
 
-    // Point n°3 : vigilance Météo-France
-    let vigilanceOfficielle: string | null = null;
+    // Point n°3 : vigilance officielle Météo-France.
+    //
+    // « indisponible » est un ÉTAT, pas une couleur : la vigilance officielle
+    // peut être absente (clé/API en panne, département inconnu). On ne la
+    // remplace jamais par un « vert » inventé — sinon un rapport pourrait
+    // afficher « pas de vigilance » alors qu'on n'en sait rien.
+    let vigilanceOfficielle = "indisponible";
     if (departement) {
       const vigil = await fetchVigilanceDepartement(departement);
       if (vigil) {
@@ -409,7 +514,9 @@ async function analyserChantiers(
     resultats.push({
       id: ch.id, nom,
       location: adresseChantier || nomClient || "France",
-      lat: geoloc.lat, lng: geoloc.lng, geocoded,
+      lat: coordonnees?.lat ?? 0, lng: coordonnees?.lng ?? 0, geocoded,
+      localisationValidee: localisation.ok ? localisation.data : null,
+      erreurLocalisation,
       jours,
       intemperieAujourdhui: jours[0]?.intemperie ?? false,
       intemperiesProchainesJours: jours.slice(1).some((j) => j.intemperie),
@@ -517,6 +624,17 @@ export async function POST(request: NextRequest) {
         if (error) console.error("Erreur insert avancement:", error.message);
         else rapportes.push(ch.nom);
 
+        // `pluie_cumul` porte la pluie PENDANT les horaires de pose quand elle
+        // est connue : c'est elle qui a motivé le rapport. On retombe sur le
+        // cumul journalier uniquement quand les horaires ne sont pas lisibles, et
+        // `pluie_continue` reflète alors honnêtement le périmètre utilisé. P5 :
+        // une pluie inconnue (`null`) n'est JAMAIS retenue comme cumul 0.
+        const pluieRetenue = jour.pluiePose ?? jour.pluie;
+        const pluieContinue =
+          jour.horairesStatut === "configuree"
+            ? (jour.pluiePose ?? 0) > 0
+            : typeof jour.pluie === "number" && jour.pluie > 0;
+
         await resultatContexte.contexte.client
           .from("rapports_intemperies")
           .insert({
@@ -527,13 +645,16 @@ export async function POST(request: NextRequest) {
             ampleur_impact: ch.vigilanceOfficielle === "rouge" ? "totale" : "partielle",
             cree_par: "auto",
             departement: ch.departement,
+            // `jour_arrete` reste `true` : ce champ est une PROPOSITION soumise à
+            // validation humaine (`a_valider`), pas une qualification automatique.
+            // La refonte n'a pas changé cette règle métier.
             jour_arrete: true,
-            pluie_continue: jour.pluie > 0,
-            pluie_cumul: jour.pluie > 0 ? jour.pluie : null,
+            pluie_continue: pluieContinue,
+            pluie_cumul: typeof pluieRetenue === "number" && pluieRetenue > 0 ? pluieRetenue : null,
             rafales_max: jour.vent > 0 ? jour.vent : null,
             temp_max: null,
             motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,
-            vigilance_officielle: ch.vigilanceOfficielle ?? "vert",
+            vigilance_officielle: ch.vigilanceOfficielle,
           } as TablesInsert<"rapports_intemperies">);
       }
     }

@@ -18,9 +18,16 @@ import AvancementFacades from "@/components/AvancementFacadesWrapper";
 import RapportClientWrapper from "@/components/RapportClientWrapper";
 import { Scissors } from "lucide-react";
 import PhotosNotes from "@/components/PhotosNotes";
-import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES, evaluerAlerteChantier } from "@/lib/meteoAlerte";
+import { Materiau, Acces, LABELS_MATERIAU, LABELS_ACCES } from "@/lib/meteoAlerte";
+import { dateParis } from "@/lib/dateParis";
+import OssaturePosee from "@/components/OssaturePosee";
 import { calculerBesoinsBardage } from "@/lib/poseCalcul";
-import { fetchMeteo, JourMeteo } from "@/lib/meteo";
+import { fetchMeteo, JourMeteo, maxConnu, sommeConnue } from "@/lib/meteo";
+import TableauPrecipitations, {
+  texteDegre,
+  texteKmh,
+  texteMm,
+} from "@/components/TableauPrecipitations";
 import RapportsIntemperiesListe from "@/components/RapportsIntemperiesListe";
 import { ChantiersCalepinageView, PointageEquipeView, TableauDeBordRentabiliteView } from "@/components/TempsHeuresViews";
 import { Surface } from '@/components/ui/Surface';
@@ -51,6 +58,12 @@ type Chantier = {
   surface_paquet_m2: number | null;
   zone_vent_rive: boolean | null;
   coef_perte_rendement: number | null;
+  /**
+   * Horaires de pose SAISIS en texte libre (PhotosNotes). Vide = horaires non
+   * configurés : aucun défaut n'est appliqué, et la décision de pose affiche
+   * alors un état explicite « non déterminé » (voir `lib/meteoHoraire.ts`).
+   */
+  horaires: string | null;
 };
 
 type Pointage = {
@@ -155,7 +168,6 @@ function ChantierDetailContent() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Général");
   const [meteo, setMeteo] = useState<JourMeteo | null>(null);
   const [loadingMeteo, setLoadingMeteo] = useState(false);
-  const [detailMeteoOuvert, setDetailMeteoOuvert] = useState(false);
   const [consignesSecurite, setConsignesSecurite] = useState<string | null>(null);
   const [isGeneratingSecurite, setIsGeneratingSecurite] = useState(false);
   
@@ -356,7 +368,15 @@ function ChantierDetailContent() {
     if (tab === "Météo & Intempéries" && chantier) {
       const adresse = chantier.adresse_chantier || chantier.nom || "Ajaccio, Corse";
       setLoadingMeteo(true);
-      fetchMeteo(adresse)
+      // Les horaires de pose du chantier accompagnent la demande : c'est eux
+      // qui permettent à la route d'évaluer une POSE (et non une simple
+      // journée). Sans horaires, la route renvoie `pose.statut: "non_determine"`
+      // et l'écran l'affiche explicitement — jamais un vert silencieux.
+      fetchMeteo(adresse, {
+        horaires: chantier.horaires,
+        materiau: chantier.materiau_structurel,
+        acces: chantier.moyen_acces,
+      })
         .then((m) => setMeteo(m))
         .catch((e) => console.error("Erreur météo chantier:", e))
         .finally(() => setLoadingMeteo(false));
@@ -902,7 +922,15 @@ function ChantierDetailContent() {
         </div>
       )}
 
-      {tab === "Avancement" && <AvancementFacades chantierId={id} />}
+      {tab === "Avancement" && (
+        <div className="space-y-6">
+          {/* Parcours terrain « Ossature posée » : il documente un FAIT de
+              journée (choix A intempéries / choix B autre façade), sans jamais
+              qualifier la journée d'arrêt légal ni toucher aux rapports. */}
+          <OssaturePosee chantierId={id} jour={dateParis()} />
+          <AvancementFacades chantierId={id} />
+        </div>
+      )}
 
       {tab === "Rapport Client" && <RapportClientWrapper chantierId={id} />}
 
@@ -1196,56 +1224,92 @@ function ChantierDetailContent() {
                   <p className="text-xs font-semibold">{meteo.alerte.motif}</p>
                 </div>
 
+                {/* ── DÉCISION DE POSE ────────────────────────────────────────
+                    Distincte de l'alerte générale ci-dessus : elle est
+                    évaluée sur les HORAIRES DE POSE du chantier, et non sur
+                    la journée entière. Un état `non_determine` s'affiche en
+                    clair — il n'est jamais traduit en vert. */}
+                {meteo.pose && (
+                  <div
+                    className={`rounded-lg border p-3 ${
+                      meteo.pose.statut === "non_determine"
+                        ? "border-white/10 bg-transparent text-gray-300"
+                        : meteo.pose.niveau === "rouge"
+                        ? "border-red-500/40 bg-red-900/10 text-red-300"
+                        : meteo.pose.niveau === "orange"
+                        ? "border-orange-500/30 bg-orange-900/10 text-orange-300"
+                        : meteo.pose.niveau === "jaune"
+                        ? "border-yellow-500/30 bg-yellow-900/10 text-yellow-300"
+                        : "border-emerald-500/30 bg-emerald-900/10 text-emerald-300"
+                    }`}
+                  >
+                    <p className="text-2xs uppercase tracking-wide text-gray-500">
+                      Pose sur les horaires du chantier
+                    </p>
+                    <p className="mt-1 text-xs font-semibold">
+                      {meteo.pose.statut === "non_determine"
+                        ? "— Non déterminé · "
+                        : meteo.pose.niveau === "rouge"
+                        ? "🔴 Pose interdite · "
+                        : meteo.pose.niveau === "orange"
+                        ? "🟠 Pose déconseillée · "
+                        : meteo.pose.niveau === "jaune"
+                        ? "🟡 Pose sous surveillance · "
+                        : "🟢 Pose possible · "}
+                      {meteo.pose.motif}
+                    </p>
+                    {meteo.pose.horairesStatut === "non_configuree" && (
+                      <p className="mt-1 text-2xs text-gray-500">
+                        Renseignez les horaires de pose dans « Photos & Notes »
+                        pour obtenir une décision sur vos heures.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ── AVERTISSEMENTS MATÉRIAUX ───────────────────────────────
+                    Distincts du niveau de pose : ils ne changent jamais le
+                    niveau, et sont formulés comme des vérifications à faire. */}
+                {meteo.pose && meteo.pose.avertissements.length > 0 && (
+                  <ul className="space-y-1 rounded-lg border border-white/10 bg-transparent p-3">
+                    {meteo.pose.avertissements.map((a) => (
+                      <li key={a} className="text-2xs text-gray-400">
+                        ⚠️ {a}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Matin</p>
-                    <p className="text-lg font-bold text-white">{meteo.matin.temp}°C</p>
-                    <p className="text-3xs text-gray-400">Rafales {meteo.matin.rafales} km/h</p>
+                    <p className="text-lg font-bold text-white">{texteDegre(meteo.matin.temp)}</p>
+                    <p className="text-3xs text-gray-400">Rafales {texteKmh(meteo.matin.rafales)}</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Après-midi</p>
-                    <p className="text-lg font-bold text-white">{meteo.apresMidi.temp}°C</p>
-                    <p className="text-3xs text-gray-400">Rafales {meteo.apresMidi.rafales} km/h</p>
+                    <p className="text-lg font-bold text-white">{texteDegre(meteo.apresMidi.temp)}</p>
+                    <p className="text-3xs text-gray-400">Rafales {texteKmh(meteo.apresMidi.rafales)}</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Rafales Max</p>
                     <p className="text-lg font-bold text-gray-300">
-                      {Math.max(meteo.matin.rafales, meteo.apresMidi.rafales)} km/h
+                      {texteKmh(maxConnu(meteo.matin.rafales, meteo.apresMidi.rafales))}
                     </p>
                     <p className="text-3xs text-gray-400">Sur la journée</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-transparent p-3">
                     <p className="text-xs text-gray-500">Précipitations</p>
                     <p className="text-lg font-bold text-gray-400">
-                      {meteo.heures.reduce((s, h) => s + h.pluie, 0).toFixed(1)} mm
+                      {texteMm(meteo.cumulPluie ?? sommeConnue(meteo.heures.map((h) => h.pluie)))}
                     </p>
                     <p className="text-3xs text-gray-400">Cumul journalier</p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setDetailMeteoOuvert((v) => !v)}
-                  className="text-xs font-medium text-gray-400 hover:text-gray-200"
-                >
-                  {detailMeteoOuvert ? "▲ Masquer le détail heure par heure" : "▼ Afficher le détail heure par heure"}
-                </button>
-
-                {detailMeteoOuvert && (
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                    {meteo.heures.map((h) => (
-                      <div
-                        key={h.heure}
-                        className="rounded-lg border border-white/10 bg-transparent p-2 text-center"
-                      >
-                        <p className="text-2xs text-gray-500">{h.heure}</p>
-                        <p className="text-xs font-bold text-white">{h.temp}°C</p>
-                        <p className="text-2xs text-gray-400">{h.vent}·{h.rafales} km/h</p>
-                        {h.pluie > 0 && <p className="text-2xs text-gray-300">{h.pluie} mm</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* Détail heure par heure : pluie + rafales, avec les heures
+                    manquantes affichées en tiret. */}
+                <TableauPrecipitations heures={meteo.heures} />
               </>
             ) : (
               <p className="text-xs text-gray-400">

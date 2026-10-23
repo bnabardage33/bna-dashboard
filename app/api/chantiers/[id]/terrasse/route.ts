@@ -106,11 +106,16 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
 
   const typedTerrasse = terrasse as unknown as ChantierTerrasseConfig;
 
-  const { data: reservations } = await supabase
+  const { data: reservations, error: errReservations } = await supabase
     .from("chantier_terrasse_reservations")
     .select("*")
     .eq("terrasse_id", terrasse.id)
+    .eq("entreprise_id", entrepriseId)
     .order("created_at", { ascending: true });
+
+  if (errReservations) {
+    return NextResponse.json({ error: errReservations.message }, { status: 500 });
+  }
 
   const typedReservations = (reservations || []) as unknown as ChantierTerrasseReservation[];
   const resultat = calculerTerrasse(typedTerrasse, typedReservations);
@@ -245,10 +250,16 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
 
   // Persistance des réservations (table dédiée chantier_terrasse_reservations)
   if (Array.isArray(body.reservations) && idEnregistre) {
-    await supabase
+    const { error: errDeleteReservations } = await supabase
       .from("chantier_terrasse_reservations")
       .delete()
-      .eq("terrasse_id", idEnregistre);
+      .eq("terrasse_id", idEnregistre)
+      .eq("entreprise_id", entrepriseId);
+
+    if (errDeleteReservations) {
+      console.error("Erreur suppression réservations terrasse :", errDeleteReservations.message);
+      return NextResponse.json({ error: errDeleteReservations.message }, { status: 500 });
+    }
 
     if (body.reservations.length > 0) {
       const toInsert = body.reservations.map((r) => ({
@@ -263,7 +274,13 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
         diametre: r.diametre ? Number(r.diametre) : null,
         metadata: (r.metadata as Json) || null,
       }));
-      await supabase.from("chantier_terrasse_reservations").insert(toInsert);
+      const { error: errInsertReservations } = await supabase
+        .from("chantier_terrasse_reservations")
+        .insert(toInsert);
+      if (errInsertReservations) {
+        console.error("Erreur insertion réservations terrasse :", errInsertReservations.message);
+        return NextResponse.json({ error: errInsertReservations.message }, { status: 500 });
+      }
     }
   }
 

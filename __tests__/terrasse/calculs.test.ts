@@ -74,5 +74,7 @@ describe("Calculs et quantitatifs Terrasse DTU 51.4", () => {
     const res = calculerTerrasse(configStandard);
     expect(res.chiffrage.lignes.length).toBeGreaterThanOrEqual(4);
     expect(res.chiffrage.totalHt).toBeGreaterThan(1000);
+    const ligneLameDefaut = res.chiffrage.lignes.find((l) => l.code === "LAM-01")!;
+    expect(ligneLameDefaut.designation).toContain("145x21 mm");
   });
 });

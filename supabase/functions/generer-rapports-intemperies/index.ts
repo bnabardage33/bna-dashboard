@@ -20,12 +20,27 @@
 //
 // Secrets nécessaires :
 //   VISUALCROSSING_API_KEY
-//   METEOFRANCE_API_KEY
+//   METEOFRANCE_APPLICATION_ID   (OAuth2 client_credentials pour DPVigilance v1)
 //   SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
 //
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Lecture PARTAGÉE de la Vigilance Météo-France, sans dépendance Next.js : le
+// même fichier (`lib/vigilanceMeteoFrance.ts`) sert les routes `app/api/...` et
+// cette Edge Function. Voir ce fichier pour la sélection de période et la
+// lecture de `phenomenon_max_color_id.color_id`.
+//
+// NB : cet import remonte hors du dossier de la fonction. Le bundler Supabase
+// (esbuild) résout les imports relatifs ; ce point reste à confirmer au premier
+// `supabase functions deploy` — déploiement volontairement HORS PÉRIMÈTRE ici.
+import {
+  extraireDepartement,
+  couleurPourPhenomene,
+  prefixerMotifVigilance,
+  type VigilanceDepartement,
+} from "../../../lib/vigilanceMeteoFrance.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -35,10 +50,10 @@ const supabase = createClient(
 const VISUALCROSSING_API_KEY =
   Deno.env.get("VISUALCROSSING_API_KEY")!;
 
-// À coller en haut de supabase/functions/generer-rapports-intemperies/index.ts
-// à la place de la ligne :
-//   const METEOFRANCE_API_KEY = Deno.env.get("METEOFRANCE_API_KEY")!;
-
+// Authentification Météo-France : OAuth2 client_credentials. Le token est
+// demandé à `URL_TOKEN_METEOFRANCE` puis présenté en `Authorization: Bearer`.
+// (L'ancien appel `apikey: METEOFRANCE_API_KEY` ne fonctionne pas : cette
+// variable n'existe plus et DPVigilance v1 n'accepte pas ce header.)
 const METEOFRANCE_APPLICATION_ID =
   Deno.env.get("METEOFRANCE_APPLICATION_ID")!;
 
@@ -94,16 +109,6 @@ async function obtenirTokenMeteoFrance(): Promise<string> {
   return accessToken;
 }
 
-// -----------------------------------------------------------------------
-// Puis dans fetchVigilance(), remplace :
-//   headers: { apikey: METEOFRANCE_API_KEY },
-// par :
-//   headers: { apikey: await obtenirTokenMeteoFrance() },
-// (et rendre fetchVigilance async si ce n'est pas déjà le cas — ça
-//  l'est déjà vu qu'elle fait un await fetch juste après)
-// -----------------------------------------------------------------------
-  
-
 // -----------------------------------------------------------------------------
 // TYPES
 // -----------------------------------------------------------------------------
@@ -136,13 +141,9 @@ type Periode =
   | "matin"
   | "apresmidi";
 
-type VigilanceInfo = {
-  couleurMax: NiveauAlerte;
-  phenomenes: {
-    nom: string;
-    couleur: NiveauAlerte;
-  }[];
-};
+// Alias du type PARTAGÉ (lib/vigilanceMeteoFrance.ts). Les couleurs y sont
+// typées `CouleurVigilance`, union strictement identique à `NiveauAlerte`.
+type VigilanceInfo = VigilanceDepartement;
 
 type RisqueTechnique = {
   niveau: NiveauAlerte;
@@ -242,6 +243,127 @@ function adresseVersDepartement(
 }
 
 // -----------------------------------------------------------------------------
+// GÉOCODAGE (Nominatim) — validation par code postal
+// -----------------------------------------------------------------------------
+//
+// Visual Crossing acceptait l'adresse brute : son géocodeur interne pouvait
+// retenir l'homonyme d'une AUTRE commune, incompatible avec le code postal du
+// chantier. On résout donc l'adresse ici, avec le même contrat que
+// `lib/deplacement/geocodage.ts` : code postal exact, sinon refus ; ambiguïté,
+// refus. La fonction LÈVE, et le try/catch par chantier le consigne sans
+// produire de rapport sur une commune inventée.
+
+function nomLieu(c: {
+  display_name?: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+  };
+}): string {
+  const a = c.address ?? {};
+  return (
+    a.city ||
+    a.town ||
+    a.village ||
+    a.municipality ||
+    a.county ||
+    (c.display_name || "").split(",")[0] ||
+    ""
+  );
+}
+
+async function geocoderAdresse(
+  adresse: string
+): Promise<{ lat: number; lon: number }> {
+  const q = adresse.trim();
+
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+      q
+    )}&format=jsonv2&limit=5&addressdetails=1&countrycodes=fr`,
+    {
+      headers: {
+        "User-Agent": "BNA-Dashboard/1.0",
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(
+      `Géocodage Nominatim (${res.status})`
+    );
+  }
+
+  const data = await res.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error(
+      `Adresse introuvable : ${q}`
+    );
+  }
+
+  const m = q.match(/(?:^|\D)(\d{5})(?:\D|$)/);
+  const codePostal = m ? m[1] : null;
+
+  let eligibles = data.filter(
+    (c: { lat?: string; lon?: string }) =>
+      c.lat && c.lon
+  );
+
+  if (codePostal) {
+    eligibles = eligibles.filter(
+      (c: {
+        address?: {
+          postcode?: string;
+        };
+      }) =>
+        c.address?.postcode === codePostal
+    );
+
+    if (eligibles.length === 0) {
+      throw new Error(
+        `Aucun lieu au code postal ${codePostal} pour « ${q} »`
+      );
+    }
+  }
+
+  // Sans code postal (ou si un même code couvre plusieurs lieux), on refuse de
+  // « prendre le premier » : c'est précisément le défaut corrigé.
+  const communes = [
+    ...new Set(
+      eligibles.map(
+        (c: {
+          display_name?: string;
+          address?: Record<string, string>;
+        }) => nomLieu(c)
+      )
+    ),
+  ].filter(Boolean);
+
+  if (communes.length > 1) {
+    throw new Error(
+      `Adresse ambiguë pour « ${q} » : ${communes.join(", ")}. Précisez la commune.`
+    );
+  }
+
+  const choisi = eligibles[0];
+  const lat = parseFloat(choisi.lat);
+  const lon = parseFloat(choisi.lon);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new Error(
+      "Coordonnées de géocodage invalides"
+    );
+  }
+
+  return { lat, lon };
+}
+
+// -----------------------------------------------------------------------------
 // MÉTÉO DU JOUR COMPLET - VISUAL CROSSING
 // -----------------------------------------------------------------------------
 
@@ -253,9 +375,13 @@ async function fetchMeteoJour(
   rafalesMax: number;
   pluieCumul: number;
 }> {
+  // Coordonnées validées par le code postal, puis transmises à Visual
+  // Crossing : le fournisseur ne peut donc plus choisir une autre commune.
+  const { lat, lon } = await geocoderAdresse(adresse);
+
   const url =
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/` +
-    `${encodeURIComponent(adresse)}/today` +
+    `${lat},${lon}/today` +
     `?unitGroup=metric` +
     `&key=${VISUALCROSSING_API_KEY}` +
     `&contentType=json` +
@@ -329,217 +455,41 @@ async function fetchMeteoJour(
 // VIGILANCE OFFICIELLE MÉTÉO-FRANCE
 // -----------------------------------------------------------------------------
 
-const COULEUR_PAR_ID: Record<
-  number,
-  NiveauAlerte
-> = {
-  1: "vert",
-  2: "jaune",
-  3: "orange",
-  4: "rouge",
-};
-
-const PHENOMENE_PAR_ID: Record<
-  number,
-  string
-> = {
-  1: "vent",
-  2: "pluie-inondation",
-  3: "orages",
-  4: "inondation",
-  5: "neige-verglas",
-  6: "canicule",
-  7: "grand-froid",
-  8: "avalanches",
-  9: "vagues-submersion",
-};
-
+// La lecture du JSON officiel (choix de la période par ses bornes temporelles,
+// lecture de `phenomenon_max_color_id.color_id`, repli sûr) vit dans
+// `lib/vigilanceMeteoFrance.ts`, PARTAGÉE avec les routes Next. Une seule
+// implémentation : plus de `Number(phenomenon_max_color_id)` qui valait NaN face
+// à l'objet `{ phenomenon_id, color_id }` de l'API et faisait passer un orange
+// pour un vert.
 async function fetchVigilance(
   departement: string
-): Promise<VigilanceInfo> {
+): Promise<VigilanceInfo | null> {
+  const token =
+    await obtenirTokenMeteoFrance();
+
   const res = await fetch(
     "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours",
     {
+      // DPVigilance v1 : token OAuth2 en Authorization: Bearer, PAS `apikey`.
       headers: {
-        apikey: METEOFRANCE_API_KEY,
+        Authorization: `Bearer ${token}`,
       },
     }
   );
 
   if (!res.ok) {
-    throw new Error(
-      `Erreur Vigilance Météo-France (${res.status})`
+    console.error(
+      `Vigilance Météo-France indisponible (${res.status})`
     );
+    return null;
   }
 
   const data = await res.json();
 
-  const periodes =
-    data?.product?.periods ??
-    data?.periods ??
-    [];
-
-  if (
-    !Array.isArray(periodes) ||
-    periodes.length === 0
-  ) {
-    return {
-      couleurMax: "vert",
-      phenomenes: [],
-    };
-  }
-
-  const periodeEnCours =
-    periodes[0];
-
-  // ---------------------------------------------------------------------------
-  // IMPORTANT
-  //
-  // L'API Météo-France peut renvoyer domain_ids sous forme de tableau
-  // ou d'objet.
-  // ---------------------------------------------------------------------------
-
-  const domaines =
-    periodeEnCours?.timelaps?.domain_ids ??
-    periodeEnCours?.domain_ids ??
-    [];
-
-  type DomaineVigilance = {
-    domain_id?: unknown;
-    max_color_id?: unknown;
-    phenomenon_items?: unknown[];
-    phenomenon_max_colors?: unknown[];
-  };
-
-  type PhenomeneBrut = {
-    phenomenon_id?: unknown;
-    phenomenon_max_color_id?: {
-      phenomenon_id?: unknown;
-    };
-    color_id?: unknown;
-    max_color_id?: unknown;
-  };
-
-  const domaineArray: DomaineVigilance[] =
-    (Array.isArray(domaines)
-      ? domaines
-      : Object.values(
-          domaines ?? {}
-        )).filter(
-      (d): d is DomaineVigilance =>
-        typeof d === "object" &&
-        d !== null
-    );
-
-  const deptNormalized =
+  return extraireDepartement(
+    data,
     departement
-      .trim()
-      .toUpperCase();
-
-  const domaineDept =
-    domaineArray.find((d) => {
-      const id = String(
-        d.domain_id ?? ""
-      )
-        .trim()
-        .toUpperCase();
-
-      if (!id) {
-        return false;
-      }
-
-      // Cas standard : 33, 75, 64...
-      if (id === deptNormalized) {
-        return true;
-      }
-
-      // Corse du Sud
-      if (
-        deptNormalized === "2A" &&
-        [
-          "20A",
-          "2A",
-          "200",
-          "201",
-        ].includes(id)
-      ) {
-        return true;
-      }
-
-      // Haute-Corse
-      if (
-        deptNormalized === "2B" &&
-        [
-          "20B",
-          "2B",
-          "202",
-        ].includes(id)
-      ) {
-        return true;
-      }
-
-      return false;
-    });
-
-  if (!domaineDept) {
-    return {
-      couleurMax: "vert",
-      phenomenes: [],
-    };
-  }
-
-  const couleurMax =
-    COULEUR_PAR_ID[
-      String(domaineDept.max_color_id ?? "")
-    ] ?? "vert";
-
-  const phenomenesBrut: PhenomeneBrut[] =
-    (domaineDept.phenomenon_items ??
-      domaineDept.phenomenon_max_colors ??
-      []) as PhenomeneBrut[];
-
-  const phenomenes =
-    phenomenesBrut
-      .map((p) => {
-        const id =
-          p.phenomenon_id ??
-          p.phenomenon_max_color_id
-            ?.phenomenon_id;
-
-        const couleurId =
-          p.phenomenon_max_color_id ??
-          p.color_id ??
-          p.max_color_id;
-
-        if (
-          !id ||
-          !PHENOMENE_PAR_ID[
-            String(id)
-          ]
-        ) {
-          return null;
-        }
-
-        return {
-          nom:
-            PHENOMENE_PAR_ID[
-              String(id)
-            ],
-          couleur:
-            COULEUR_PAR_ID[
-              String(couleurId ?? "")
-            ] ?? "vert",
-        };
-      })
-      .filter(Boolean) as {
-        nom: string;
-        couleur: NiveauAlerte;
-      }[];
-
-  return {
-    couleurMax,
-    phenomenes,
-  };
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -550,12 +500,8 @@ function couleurPhenomene(
   vigilance: VigilanceInfo,
   nom: string
 ): NiveauAlerte {
-  return (
-    vigilance.phenomenes.find(
-      (p) => p.nom === nom
-    )?.couleur ??
-    vigilance.couleurMax
-  );
+  // Délégué à l'implémentation PARTAGÉE avec Next (une seule règle).
+  return couleurPourPhenomene(vigilance, nom);
 }
 
 const ORDRE: Record<
@@ -1125,11 +1071,19 @@ async function modeCapture(
           ? await fetchVigilance(
               departement
             )
-          : {
-              couleurMax:
-                "vert" as NiveauAlerte,
-              phenomenes: [],
-            };
+          : null;
+
+      if (!vigilance) {
+        // Vigilance officielle INDISPONIBLE : on n'enregistre PAS une capture
+        // « verte » inventée (elle serait relue telle quelle en mode génération).
+        resultats.push({
+          chantier:
+            ch.nom ?? ch.id,
+          statut:
+            "capture ignorée : vigilance officielle indisponible",
+        });
+        continue;
+      }
 
       const couleur =
         vigilancePertinente(
@@ -1417,7 +1371,10 @@ async function modeGenerer(
             ch.id,
 
           vigilance_officielle:
-            decision.vigilanceOfficielle,
+            vigilanceMatin === null &&
+            vigilanceApresmidi === null
+              ? "indisponible"
+              : decision.vigilanceOfficielle,
 
           jour_arrete:
             decision.jourArrete,
@@ -1432,7 +1389,11 @@ async function modeGenerer(
             decision.pluieContinue,
 
           motif:
-            decision.motif,
+            prefixerMotifVigilance(
+              decision.motif,
+              vigilanceMatin,
+              vigilanceApresmidi
+            ),
 
           risque_technique_niveau:
             decision

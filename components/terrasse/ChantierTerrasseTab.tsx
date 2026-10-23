@@ -327,11 +327,15 @@ export default function ChantierTerrasseTab({
         </div>
       )}
 
-      {/* Navigation entre sous-vues du module Terrasse */}
-      <div className="flex gap-2 border-b border-white/10 pb-3">
+      {/* Navigation entre sous-vues du module Terrasse.
+          `overflow-x-auto` + `scrollbar-hide` : sur mobile (< 640 px) les 5
+          onglets défilent au doigt au lieu de déborder ; sur desktop, tout
+          tient, le comportement est inchangé. (Motif identique à la fiche
+          chantier, app/terrain/chantier/[id]/page.tsx.) */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide border-b border-white/10 pb-3 -mx-1 px-1">
         <button
           onClick={() => setSousOnglet("config")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "config"
               ? "bg-amber-600 text-white shadow-md"
               : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
@@ -343,7 +347,7 @@ export default function ChantierTerrasseTab({
 
         <button
           onClick={() => setSousOnglet("plan2d")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "plan2d"
               ? "bg-amber-600 text-white shadow-md"
               : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
@@ -355,7 +359,7 @@ export default function ChantierTerrasseTab({
 
         <button
           onClick={() => setSousOnglet("vue3d")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "vue3d"
               ? "bg-amber-600 text-white shadow-md"
               : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
@@ -367,7 +371,7 @@ export default function ChantierTerrasseTab({
 
         <button
           onClick={() => setSousOnglet("reservations")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "reservations"
               ? "bg-amber-600 text-white shadow-md"
               : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
@@ -379,7 +383,7 @@ export default function ChantierTerrasseTab({
 
         <button
           onClick={() => setSousOnglet("quantitatif")}
-          className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "quantitatif"
               ? "bg-amber-600 text-white shadow-md"
               : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"

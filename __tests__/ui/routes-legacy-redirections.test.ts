@@ -128,7 +128,9 @@ describe('PHASE 2 · les routes cockpit devenues obsolètes', () => {
   const COCKPITS = [
     { page: 'app/bureau/page.tsx', destination: '/', raison: "l'accueil est le cockpit unique" },
     { page: 'app/terrain/page.tsx', destination: '/terrain/chantier', raison: 'le cockpit Terrain a disparu' },
-    { page: 'app/terrain/meteo/page.tsx', destination: '/bureau/meteo', raison: 'il ne doit rester qu\'une entrée météo' },
+    // `app/terrain/meteo/page.tsx` n'est PLUS une redirection : la météo
+    // générale y a été restaurée (recherche de ville, matin/après-midi,
+    // heure par heure, J+1 à J+4). Voir le bloc suivant.
   ]
 
   it('chaque cockpit obsolète redirige vers sa destination', () => {
@@ -152,12 +154,42 @@ describe('PHASE 2 · les routes cockpit devenues obsolètes', () => {
     }
   })
 
-  it('la redirection de /bureau et /terrain/meteo est aussi en config', () => {
+  it('la redirection des cockpits restants est aussi en config', () => {
     const config = lire('next.config.ts')
     for (const { destination } of COCKPITS) {
       expect(config, `next.config.ts ne redirige rien vers ${destination}`).toContain(
         `destination: "${destination}"`,
       )
     }
+  })
+})
+
+describe('Restauration · /terrain/meteo est une page réelle, pas une redirection', () => {
+  it('la page ne redirige plus : elle rend la météo générale', () => {
+    const source = code('app/terrain/meteo/page.tsx')
+    expect(source, 'la page appelle encore redirect()').not.toContain('redirect(')
+    // La fonctionnalité restaurée, telle qu'elle existait à f6366a5.
+    expect(source, 'la page n\'affiche plus la recherche de ville').toContain('villeInput')
+    expect(source, 'la page n\'affiche plus les prévisions horaires').toContain('heure par heure')
+    expect(source, 'la page n\'affiche plus le band matin/après-midi').toContain('Après-midi')
+  })
+
+  it('next.config.ts ne redirige plus /terrain/meteo (redirection contradictoire)', () => {
+    // Une redirection permanente rendrait la page restaurée inatteignable et
+    // renverrait l'utilisateur vers la seule veille des intempéries.
+    const config = lire('next.config.ts')
+    expect(config, 'next.config.ts redirige encore /terrain/meteo').not.toContain(
+      'source: "/terrain/meteo"',
+    )
+  })
+
+  it('les deux entrées météo coexistent dans le Drawer, sans croisement', () => {
+    const drawer = lire('components/Drawer.tsx')
+    expect(drawer, 'Drawer : entrée météo générale manquante').toContain(
+      '{ href: "/terrain/meteo", label: "Météo générale" }',
+    )
+    expect(drawer, 'Drawer : entrée veille intempéries manquante').toContain(
+      '{ href: "/bureau/meteo", label: "Météo & intempéries" }',
+    )
   })
 })

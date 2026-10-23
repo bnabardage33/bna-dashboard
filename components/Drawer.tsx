@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown } from "lucide-react";
+import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown, BookOpen } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { LucideIcon } from "lucide-react";
 
@@ -42,7 +42,14 @@ const NAV_ITEMS: EntreeNav[] = [
       { href: "/bureau/clients", label: "Clients" },
       { href: "/bureau/devis-factures", label: "Devis" },
       { href: "/bureau/factures", label: "Factures" },
-      { href: "/bureau/catalogue", label: "Catalogue d'ouvrages" },
+    ],
+  },
+  {
+    label: "Catalogues",
+    icon: BookOpen,
+    children: [
+      { href: "/bureau/catalogue", label: "Catalogue Bardage" },
+      { href: "/bureau/catalogue-terrasse", label: "Catalogue Terrasse" },
     ],
   },
   {
@@ -50,6 +57,10 @@ const NAV_ITEMS: EntreeNav[] = [
     icon: HardHat,
     children: [
       { href: "/terrain/chantier", label: "Liste des chantiers" },
+      // Deux entrées météo distinctes, sans redirection croisée :
+      //   - « Météo générale » = prévisions (ville, jour, heure par heure) ;
+      //   - « Météo & intempéries » = veille officielle + rapports.
+      { href: "/terrain/meteo", label: "Météo générale" },
       { href: "/bureau/meteo", label: "Météo & intempéries" },
       { href: "/bureau/rapports-intemperies", label: "Rapports intempéries" },
       { href: "/bureau/fin-chantier", label: "Fin de chantier / PV" },
@@ -164,7 +175,15 @@ export default function Drawer() {
    */
   const estActif = (href: string) => {
     const cible = cheminDe(href);
-    if (!(cible === "/" ? pathname === "/" : pathname?.startsWith(cible))) return false;
+    // Comparaison bornée au séparateur : `/bureau/catalogue-terrasse` ne doit
+    // PAS allumer `/bureau/catalogue`. Les pages détail restent couvertes
+    // (`/bureau/clients/123` commence bien par `/bureau/clients/`).
+    if (
+      !(cible === "/"
+        ? pathname === "/"
+        : pathname === cible || pathname?.startsWith(`${cible}/`))
+    )
+      return false;
 
     const requeteHref = href.includes("?") ? href.slice(href.indexOf("?")) : "";
     if (!requeteHref) return ongletUrl === null;
@@ -199,15 +218,20 @@ export default function Drawer() {
 
   return (
     <>
-      {/* HAMBURGER BUTTON */}
+      {/* HAMBURGER BUTTON
+
+          Carré visuel discret (`w-10 h-10` = 40 px) posé dans une zone
+          tactile de 44 px (`min-h-11 min-w-11`) : le doigt vise 44 px, l'œil
+          voit 40 px. L'icône passe de 20 à 17 px et le fond de `bg-white/15`
+          à `bg-white/10` pour un remplissage plus léger. */}
       <button
         onClick={() => setOpen(true)}
-        className="relative z-[200] w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 border border-white/15 hover:bg-white/25 transition-all"
+        className="relative z-[200] min-h-11 min-w-11 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all"
         aria-label="Ouvrir le menu"
         aria-expanded={open}
         aria-controls="bna-drawer"
       >
-        <Menu size={20} className="text-white" />
+        <Menu size={17} className="text-white" />
       </button>
 
       {/* OVERLAY */}

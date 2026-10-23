@@ -28,10 +28,13 @@
 // `generer-rapports-intemperies`. L'accueil ne l'interrogeait pas.
 //
 // Ces tests verrouillent le comportement attendu, séparément :
-//   A. VisualCrossing reste tentée EN PREMIER et prime quand elle répond ;
-//      le repli ne prend le relais que sur échec, et coûte alors zéro appel
-//      inutile en production ;
+//   A. le lieu est validé (code postal) AVANT tout appel fournisseur, puis
+//      VisualCrossing est tentée et prime quand elle répond ; le repli ne
+//      prend le relais que sur échec, et coûte alors zéro appel inutile ;
 //   B. le repli traduit Open-Meteo sans jamais inventer de chiffre.
+//
+// Les deux fournisseurs reçoivent les MÊMES coordonnées validées, jamais
+// l'adresse en texte : aucun ne peut donc retenir une autre commune.
 //
 // Aucun appel réseau n'est effectué : `globalThis.fetch` est intercepté. Les
 // réponses sont des FIXTURES recopiées d'une réponse Open-Meteo réelle
@@ -39,6 +42,7 @@
 // ============================================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { viderCacheLocalisation } from "@/lib/meteoLocalisation";
 
 // La route appelle `verifierSession()`, qui lit les cookies via `next/headers`.
 // Hors d'une requête, `cookies()` lève : la session serait jugée invalide et la
@@ -161,6 +165,10 @@ const CLE_VC = "cle-de-test-visuallycrossing";
 beforeEach(() => {
   appels = [];
   reponses = [];
+  // Le cache de résolution vit dans un module singleton : sans ce vidage, une
+  // adresse déjà résolue par un test précédent ne rappellerait pas Nominatim et
+  // fausserait l'observation de l'ordre des appels.
+  viderCacheLocalisation();
   process.env.VISUALCROSSING_API_KEY = CLE_VC;
   installerFetch();
 });
@@ -217,13 +225,30 @@ describe("api/meteo — le repli Open-Meteo est utilisé quand VisualCrossing é
     expect(appels.some((a) => a.url.includes("api.open-meteo.com"))).toBe(true);
   });
 
-  it("VisualCrossing est tenté EN PREMIER (on ne perd pas la source configurée)", async () => {
+  it("valide d'abord le lieu, puis tente VisualCrossing avant Open-Meteo", async () => {
     await getAvecRepli();
+    const iNom = appels.findIndex((a) => a.url.includes("nominatim"));
     const iVc = appels.findIndex((a) => a.url.includes("visualcrossing.com"));
     const iOm = appels.findIndex((a) => a.url.includes("api.open-meteo.com"));
-    expect(iVc).toBeGreaterThanOrEqual(0);
-    expect(iOm).toBeGreaterThanOrEqual(0);
-    expect(iVc).toBeLessThan(iOm);
+    expect(iNom).toBeGreaterThanOrEqual(0);
+    expect(iVc).toBeGreaterThan(iNom);
+    expect(iOm).toBeGreaterThan(iVc);
+  });
+
+  it("les deux fournisseurs reçoivent les MÊMES coordonnées validées, jamais l'adresse", async () => {
+    await getAvecRepli();
+    const vc = appels.find((a) => a.url.includes("visualcrossing.com"))?.url ?? "";
+    const om = appels.find((a) => a.url.includes("api.open-meteo.com"))?.url ?? "";
+
+    // Coordonnées issues du code postal (fixture Nominatim : 44.84, -0.58).
+    expect(vc).toContain("44.84,-0.58");
+    expect(om).toContain("latitude=44.84");
+    expect(om).toContain("longitude=-0.58");
+
+    // VisualCrossing ne reçoit plus l'adresse : il ne peut donc plus retenir
+    // une autre commune de sa propre initiative.
+    expect(decodeURIComponent(vc)).not.toContain("Bellevue");
+    expect(decodeURIComponent(vc)).not.toContain("Saint-Savin");
   });
 
   it("VisualCrossing qui RÉPOND est conservé, et le repli n'est pas appelé", async () => {
@@ -304,6 +329,19 @@ describe("lib/meteoOpenMeteo — traduction fidèle, aucun chiffre fabriqué", (
     expect(json.cumulPluie).toBe(0.7);
   });
 
+  it("J+1 à J+3 portent leur cumul JOURNALIER de pluie, jamais une re-somme", async () => {
+    const { json } = await getAvecRepli();
+    const jours = json.prochainsJours as Array<Record<string, number>>;
+    // `precipitation_sum` est DÉJÀ un cumul de journée : [0.7, 0, 0.78, 0.1]
+    // pour J, J+1, J+2, J+3. On recopie donc 0, 0.8 (0.78 arrondi à 0,1 mm,
+    // comme le reste de la route) et 0.1 — et surtout PAS 0.7 (aujourd'hui) ni
+    // une somme des relevés horaires.
+    expect(jours[0].cumulPluie).toBe(0);
+    expect(jours[1].cumulPluie).toBe(0.8);
+    expect(jours[2].cumulPluie).toBe(0.1);
+    expect(jours.map((j) => j.cumulPluie)).not.toContain(0.7);
+  });
+
   it("matin et après-midi sont découpés sur les heures du jour", async () => {
     const { json } = await getAvecRepli();
     const matin = json.matin as Record<string, number>;
@@ -347,10 +385,10 @@ describe("lib/meteoOpenMeteo — échec franc plutôt que zéros", () => {
     expect(json.cumulPluie).toBeUndefined();
   });
 
-  it("géocodage impossible → 502, pas de météo inventée", async () => {
+  it("géocodage impossible → 422 (lieu non validé), aucun fournisseur appelé", async () => {
     reponses = [
-      { match: /visualcrossing\.com/, status: 401, body: {} },
       { match: /nominatim\.openstreetmap\.org/, body: [] },
+      { match: /visualcrossing\.com/, status: 401, body: {} },
       { match: /api\.open-meteo\.com/, body: OPEN_METEO },
     ];
     const { GET } = await import("@/app/api/meteo/route");
@@ -358,8 +396,39 @@ describe("lib/meteoOpenMeteo — échec franc plutôt que zéros", () => {
       new Request("http://localhost/api/meteo?location=" + encodeURIComponent(ADRESSE)) as never,
     );
     const json = (await res.json()) as Record<string, unknown>;
-    expect(res.status).toBe(502);
+    // Refus explicite : on n'affiche pas la météo d'un lieu choisi par défaut.
+    expect(res.status).toBe(422);
+    expect(json.localisation).toBe(false);
     expect(json.tempActuelle).toBeUndefined();
+    // Et on n'a même pas interrogé un fournisseur sur une adresse non validée.
+    expect(appels.some((a) => a.url.includes("visualcrossing.com"))).toBe(false);
+    expect(appels.some((a) => a.url.includes("api.open-meteo.com"))).toBe(false);
+  });
+
+  it("code postal incompatible → 422, la commune n'est pas choisie au hasard", async () => {
+    reponses = [
+      {
+        match: /nominatim\.openstreetmap\.org/,
+        body: [
+          {
+            lat: "44.0000000",
+            lon: "-0.5000000",
+            display_name: "Hameau des Tilleuls, Ailleurs, 44100, France",
+            address: { postcode: "44100", city: "Ailleurs" },
+          },
+        ],
+      },
+    ];
+    const { GET } = await import("@/app/api/meteo/route");
+    const res = await GET(
+      new Request("http://localhost/api/meteo?location=" + encodeURIComponent(ADRESSE)) as never,
+    );
+    const json = (await res.json()) as Record<string, unknown>;
+    expect(res.status).toBe(422);
+    expect(json.localisation).toBe(false);
+    expect(String(json.error)).toContain("33920");
+    expect(appels.some((a) => a.url.includes("visualcrossing.com"))).toBe(false);
+    expect(appels.some((a) => a.url.includes("api.open-meteo.com"))).toBe(false);
   });
 
   it("adresse vide → `null` sans appel réseau", async () => {

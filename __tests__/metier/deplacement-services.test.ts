@@ -56,37 +56,39 @@ describe("geocoderAdresse (Nominatim)", () => {
     if (!result.ok) expect(result.erreur).toContain("500");
   });
 
-  // Les deux homonymes ci-dessous sont les valeurs réellement mesurées sur
-  // Nominatim pour « 8 lotissement Bellevue, 33920 ». Leur écart d'importance
-  // est de 2,4e-7 : `limit=1` renvoyait Branne, à 40 km de Saint-Savin, et
-  // produisait un chiffrage 4,4 fois trop élevé sans aucun signal.
-  const BELLEVUE_BRANNE = {
+  // Deux homonymes dont l'importance est quasi identique (écart 2,4e-7). Seul
+  // le code postal les départage : `limit=1` renvoyait le mauvais, à des
+  // dizaines de km, et produisait un chiffrage plusieurs fois trop élevé sans
+  // aucun signal. Le premier candidat porte un code postal différent et ne doit
+  // jamais être retenu par défaut.
+  const CANDIDAT_MAUVAIS_CP = {
     lat: "44.8267278",
     lon: "-0.1854268",
     type: "residential",
     importance: 0.053397347219043226,
     display_name:
-      "Lotissement Bellevue, Le Plantier du Maine, Branne, Libourne, Gironde, 33420, France",
-    address: { postcode: "33420", city: "Branne", country: "France" }
+      "Hameau des Tilleuls, Commune-Fantome, 44100, France",
+    address: { postcode: "44100", city: "Commune-Fantome", country: "France" }
   };
-  const BELLEVUE_SAINT_SAVIN = {
+  const CANDIDAT_BON_CP = {
     lat: "45.1370583",
     lon: "-0.4440939",
     type: "residential",
     importance: 0.053397109178301636,
     display_name:
-      "Lotissement les Portes de Bellevue, La Chaise, Saint-Savin, Blaye, Gironde, 33920, France",
+      "Hameau des Tilleuls, La Chaise, Saint-Savin, Blaye, Gironde, 33920, France",
     address: { postcode: "33920", city: "Saint-Savin", country: "France" }
   };
 
   it("retient le homonyme dont le code postal correspond à la saisie, malgré son importance plus faible", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      // Nominatim classe par importance décroissante : Branne arrive en premier.
-      json: async () => [BELLEVUE_BRANNE, BELLEVUE_SAINT_SAVIN]
+      // Nominatim classe par importance décroissante : le mauvais code postal
+      // arrive en premier.
+      json: async () => [CANDIDAT_MAUVAIS_CP, CANDIDAT_BON_CP]
     });
 
-    const result = await geocoderAdresse("8 lotissement Bellevue, 33920");
+    const result = await geocoderAdresse("8 hameau des Tilleuls, 33920");
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.lat).toBe(45.1370583);
@@ -98,16 +100,16 @@ describe("geocoderAdresse (Nominatim)", () => {
   it("refuse de deviner quand aucun candidat n'est dans le code postal saisi, et nomme les codes trouvés", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      json: async () => [BELLEVUE_BRANNE, BELLEVUE_SAINT_SAVIN]
+      json: async () => [CANDIDAT_MAUVAIS_CP, CANDIDAT_BON_CP]
     });
 
-    const result = await geocoderAdresse("8 lotissement Bellevue, 33000");
+    const result = await geocoderAdresse("8 hameau des Tilleuls, 33000");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.erreur).toContain("33000");
       // Les codes réellement trouvés doivent être nommés, sinon
       // l'utilisateur ne peut pas corriger sa saisie.
-      expect(result.erreur).toContain("33420");
+      expect(result.erreur).toContain("44100");
       expect(result.erreur).toContain("33920");
     }
   });
@@ -115,42 +117,67 @@ describe("geocoderAdresse (Nominatim)", () => {
   it("refuse une adresse sans code postal dont les candidats s'étalent sur plusieurs communes", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      json: async () => [BELLEVUE_BRANNE, BELLEVUE_SAINT_SAVIN]
+      json: async () => [CANDIDAT_MAUVAIS_CP, CANDIDAT_BON_CP]
     });
 
-    const result = await geocoderAdresse("8 lotissement Bellevue");
+    const result = await geocoderAdresse("8 hameau des Tilleuls");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.erreur).toContain("ambiguë");
-      expect(result.erreur).toContain("Branne");
+      expect(result.erreur).toContain("Commune-Fantome");
       expect(result.erreur).toContain("Saint-Savin");
     }
   });
 
   it("accepte une adresse sans code postal quand tous les candidats sont dans la même commune", async () => {
     const memeCommune = {
-      ...BELLEVUE_SAINT_SAVIN,
-      lat: "45.1380",
+      ...CANDIDAT_BON_CP,
+      lat: "45.1400000",
       importance: 0.01,
-      display_name: "Rue Bellevue, Saint-Savin, 33920, France"
+      display_name: "Rue des Tilleuls, Saint-Savin, 33920, France"
     };
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      json: async () => [BELLEVUE_SAINT_SAVIN, memeCommune]
+      json: async () => [CANDIDAT_BON_CP, memeCommune]
     });
 
-    const result = await geocoderAdresse("Rue Bellevue");
+    const result = await geocoderAdresse("Rue des Tilleuls");
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data.libelle).toContain("Saint-Savin");
+  });
+
+  it("refuse un code postal exact qui couvre plusieurs communes quand `exigerCommuneUnique` est actif", async () => {
+    const autreCommuneMemeCp = {
+      lat: "45.2000000",
+      lon: "-0.5000000",
+      importance: 0.01,
+      display_name: "Hameau des Tilleuls, Commune-Voisine, 33920, France",
+      address: { postcode: "33920", city: "Commune-Voisine", country: "France" }
+    };
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [CANDIDAT_BON_CP, autreCommuneMemeCp]
+    });
+
+    // Défaut (frais de déplacement) : un code postal exact suffit.
+    const large = await geocoderAdresse("8 hameau des Tilleuls, 33920");
+    expect(large.ok).toBe(true);
+
+    // Météo : on exige un point sans ambiguïté, quitte à refuser.
+    const strict = await geocoderAdresse("8 hameau des Tilleuls, 33920", {
+      exigerCommuneUnique: true
+    });
+    expect(strict.ok).toBe(false);
+    if (!strict.ok) expect(strict.erreur).toContain("ambiguë");
   });
 
   it("demande plusieurs candidats avec addressdetails et restreint la recherche à la France", async () => {
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      json: async () => [BELLEVUE_SAINT_SAVIN]
+      json: async () => [CANDIDAT_BON_CP]
     });
 
-    await geocoderAdresse("8 lotissement Bellevue, 33920");
+    await geocoderAdresse("8 hameau des Tilleuls, 33920");
 
     const url = (global.fetch as any).mock.calls[0][0] as string;
     // limit=1 rendait le filtrage par code postal impossible : il faut voir

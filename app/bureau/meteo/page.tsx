@@ -3,10 +3,17 @@
 import { useEffect, useState } from "react";
 import { CloudSun, Mail, ShieldAlert } from "lucide-react";
 import { Surface } from '@/components/ui/Surface';
+import { SEUILS_ACCES, SEUILS_MATERIAUX } from "@/lib/meteoAlerte";
+import { SEUIL_GEL_C, SEUIL_PLUIE_MM } from "@/lib/intemperiesSeuils";
 
 type JourIntemperie = {
   date: string;
-  pluie: number;
+  /**
+   * Cumul journalier de précipitations (mm) — P5 : `null` vaut « inconnu /
+   * indisponible », affiché « — ». Une donnée absente n'est JAMAIS un « 0 mm »
+   * qui se lirait comme un temps sec garanti.
+   */
+  pluie: number | null;
   vent: number;
   tempMin: number;
   intemperie: boolean;
@@ -18,6 +25,7 @@ type ChantierMeteo = {
   nom: string;
   location: string;
   geocoded: boolean;
+  erreurLocalisation?: string | null;
   jours: JourIntemperie[];
   intemperieAujourdhui: boolean;
   intemperiesProchainesJours: boolean;
@@ -34,6 +42,22 @@ const fmtDate = (iso: string) => {
   const d = new Date(iso + "T12:00:00");
   return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 };
+
+// P5 — le sous-titre annonce les seuils RÉELLEMENT appliqués par
+// `/api/meteo/intemperies` : pluie et gel viennent des constantes partagées
+// (`lib/intemperiesSeuils.ts`, les mêmes que la route) ; le seuil de vent est
+// calculé par chantier comme `min(matériau, accès)` dans le barème partagé
+// `lib/meteoAlerte.ts` — on n'en affiche donc que la PLAGE réelle, dérivée des
+// mêmes tables. Aucun chiffre inventé, aucune valeur recopiée à la main.
+const SEUILS_VENT_MATERIAU = Object.values(SEUILS_MATERIAUX).map((s) => s.vent_critique);
+const SEUILS_VENT_ACCES = Object.values(SEUILS_ACCES).map((s) => s.vent_critique);
+/** Seuil de vent critique le plus bas appliqué par la route (sur toutes les combinaisons matériau × accès). */
+const VENT_MIN_CHANTIER = Math.min(...SEUILS_VENT_MATERIAU, ...SEUILS_VENT_ACCES);
+/** Seuil de vent critique le plus haut : borne par le `min` métier, jamais au-delà du barème. */
+const VENT_MAX_CHANTIER = Math.min(
+  Math.max(...SEUILS_VENT_MATERIAU),
+  Math.max(...SEUILS_VENT_ACCES),
+);
 
 export default function BureauMeteoPage() {
   const [chantiers, setChantiers] = useState<ChantierMeteo[]>([]);
@@ -108,7 +132,7 @@ export default function BureauMeteoPage() {
         <div>
           <h1 className="text-xl font-bold text-white">Veille Météo Intempéries</h1>
           <p className="text-xs text-gray-400">
-            Pluie &gt; 10mm · Vent &gt; 50 km/h · Gel &lt; 0°C — détection auto (Open-Meteo) et trace légale
+            {`Pluie > ${SEUIL_PLUIE_MM} mm (pendant les horaires de pose si lisibles, sinon sur la journée) · Vent > seuil chantier (matériau × accès, ${VENT_MIN_CHANTIER} à ${VENT_MAX_CHANTIER} km/h) · Gel < ${SEUIL_GEL_C} °C — détection auto (Open-Meteo) et trace légale`}
           </p>
         </div>
         <button
@@ -168,6 +192,12 @@ export default function BureauMeteoPage() {
                   </span>
                 </div>
 
+                {ch.erreurLocalisation && (
+                  <div className="rounded-xl border border-amber-500/40 bg-amber-950/20 px-3 py-2 text-2xs font-semibold text-amber-300">
+                    📍 {ch.erreurLocalisation}
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   {ch.jours.slice(0, 4).map((j) => (
                     <div
@@ -180,7 +210,9 @@ export default function BureauMeteoPage() {
                         {fmtDate(j.date)}
                       </div>
                       <div className="flex items-center gap-3 font-mono text-3xs text-gray-400">
-                        <span title="Précipitations">💧 {j.pluie}mm</span>
+                        <span title="Précipitations">
+                          💧 {j.pluie === null ? "—" : `${j.pluie}mm`}
+                        </span>
                         <span title="Vent">💨 {j.vent} km/h</span>
                         <span title="Température min">🌡️ {j.tempMin}°C</span>
                       </div>

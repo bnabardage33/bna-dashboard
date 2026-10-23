@@ -210,7 +210,7 @@ export function calculerTerrasse(
   lignes.push({
     code: "LAM-01",
     categorie: "Platelage",
-    designation: `Lames ${config.essence_bois.toUpperCase()} ${config.section_largeur_mm ?? 145}x${config.epaisseur_lame_mm} mm (longueur ${config.longueur_lame_m} m)`,
+    designation: `Lames ${config.essence_bois.toUpperCase()} ${config.largeur_lame_mm ?? 145}x${config.epaisseur_lame_mm} mm (longueur ${config.longueur_lame_m} m)`,
     quantite: surfaceACommanderM2,
     unite: "m²",
     prixUnitaireHt: tarifLame,

@@ -12,8 +12,13 @@
 //   (trouvable sur portail-api.meteofrance.fr > Mes APIs > ton app
 //    > "Application ID", déjà en base64, PAS le JWT généré à la main)
 
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+
 const URL_TOKEN =
   "https://portail-api.meteofrance.fr/token";
+
+// C5 : borne dure de l'appel OAuth2 Météo-France.
+const TIMEOUT_METEO_MS = 8_000;
 
 // -----------------------------------------------------------------------
 // Cache mémoire (survit tant que le process Node/Deno reste chaud)
@@ -47,14 +52,18 @@ export async function obtenirTokenMeteoFrance(): Promise<string> {
     );
   }
 
-  const response = await fetch(URL_TOKEN, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${applicationId}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+  const response = await fetchWithTimeout(
+    URL_TOKEN,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${applicationId}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials",
     },
-    body: "grant_type=client_credentials",
-  });
+    TIMEOUT_METEO_MS,
+  );
 
   if (!response.ok) {
     const texte = await response.text();
