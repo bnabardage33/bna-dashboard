@@ -237,3 +237,18 @@ Le working tree local de `agent-workflow` contient **39 entrées non commitées*
    - Vérifier l’appartenance de `client_id` à `tenant.entrepriseId` dans `POST /api/devis` et `POST /api/factures`.
    - Mettre à jour `audit_bna_dashboard.md` et `__tests__/system/audit-snapshot-routes.test.ts` (47 routes API).
 4. **Étape 4 — Aligner `main` avec `agent-workflow`** une fois tous les tests au vert.
+
+
+---
+
+## 7. Correctifs validés après l’audit initial — 24 octobre 2026
+
+### 7.1 Géocodeur IGN — validation globale des scores
+
+- **Fichier modifié** : `supabase/functions/generer-rapports-intemperies/index.ts` — `geocoderAdresse`
+- **Défaut initial** : `geocoderAdresse` ne validait pas le score de pertinence lorsqu’un seul candidat était éligible.
+- **Correction** : Validation globale des scores de tous les candidats éligibles ajoutée avant l’arbitrage multi-candidats, en réutilisant `estScoreValide`. La logique de tri, de sélection, d’ambiguïté géographique et de gestion des erreurs reste inchangée.
+- **Tests** : `__tests__/metre/geocodage-ign-edge.test.ts`, avec réponses IGN simulées et dépendance Supabase HTTPS simulée.
+- **Résultats rapportés** : 45/45 tests réussis sous Vitest 4.1.11, `node ./node_modules/.bin/tsc --noEmit` réussi et `git diff --check` réussi.
+- **Limite** : ces résultats valident le périmètre du géocodeur et du comparateur, pas l’intégralité de l’Edge Function dans l’environnement Deno/Supabase cible.
+- **Statut** : correctif validé sur le périmètre testé ; validation complète de l’Edge Function encore distincte.
