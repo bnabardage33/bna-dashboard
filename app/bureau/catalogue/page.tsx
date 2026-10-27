@@ -8,7 +8,9 @@ import { fmtEuro } from "@/lib/financeCalculs";
 import Papa from "papaparse";
 import type { CatalogueItem } from "@/types/finance";
 import type { TablesInsert, TablesUpdate } from "@/types/supabase";
-import ProductFormModal from "@/components/catalogue/ProductFormModal";
+import ProductFormModal, {
+  type ProductImportCandidates,
+} from "@/components/catalogue/ProductFormModal";
 import { fromRow, toInsertPayload } from "@/components/catalogue/mappers";
 import { emptyBardage, type NatureCout, type ProductDraft } from "@/components/catalogue/types";
 
@@ -94,6 +96,11 @@ export default function CataloguePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOuvrage, setEditingOuvrage] = useState<Ouvrage | null>(null);
   const [draftInitial, setDraftInitial] = useState<ProductDraft | null>(null);
+  const [urlImportInitiale, setUrlImportInitiale] = useState("");
+  const [candidatsImport, setCandidatsImport] =
+    useState<ProductImportCandidates | null>(null);
+  const [importContextKey, setImportContextKey] = useState(0);
+  const importTraiteRef = useRef(false);
   const [typeCoutDefaut, setTypeCoutDefaut] = useState<NatureCout>("matiere");
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -122,79 +129,54 @@ export default function CataloguePage() {
   useEffect(() => {
     fetchCatalogue();
 
-    // Vérifier s'il y a un import via le Favori (Bookmarklet)
-    if (typeof window !== "undefined" && window.location.search) {
+    // L'URL est nettoyée synchroniquement après lecture pour éviter le rejeu
+    // du même transfert au montage en mode Strict.
+    if (typeof window !== "undefined" && window.location.search && !importTraiteRef.current) {
       const params = new URLSearchParams(window.location.search);
-      const url = params.get('importUrl');
-      const title = params.get('importTitle');
-      const price = params.get('importPrice');
+      const url = params.get("importUrl");
+      const title = params.get("importTitle");
 
       if (url || title) {
-        const textToSearch = `${url || ''} ${title || ''}`.toLowerCase();
-        let epaisseur_mm = null;
-        let largeur_mm = null;
-        let longueur_mm = null;
-
-        const dim3 = textToSearch.match(/(\d+[.,]?\d*)\s*[x*-]\s*(\d+[.,]?\d*)\s*[x*-]\s*(\d+[.,]?\d*)/);
-        if (dim3) {
-          const v1 = parseFloat(dim3[1].replace(',', '.'));
-          const v2 = parseFloat(dim3[2].replace(',', '.'));
-          const v3 = parseFloat(dim3[3].replace(',', '.'));
-          const sorted = [v1, v2, v3].sort((a, b) => a - b);
-          epaisseur_mm = sorted[0];
-          largeur_mm = sorted[1];
-          longueur_mm = sorted[2];
-        } else {
-          const dim2 = textToSearch.match(/(\d+[.,]?\d*)\s*[x*]\s*(\d+[.,]?\d*)/);
-          if (dim2) {
-            const v1 = parseFloat(dim2[1].replace(',', '.'));
-            const v2 = parseFloat(dim2[2].replace(',', '.'));
-            longueur_mm = Math.max(v1, v2);
-            largeur_mm = Math.min(v1, v2);
-          }
-          const epMatch = textToSearch.match(/(?:ep|epaisseur|ép|épaisseur)\s*[-_:]?\s*(\d+[.,]?\d*)/);
-          if (epMatch) {
-            epaisseur_mm = parseFloat(epMatch[1].replace(',', '.'));
-          } else {
-            const mmMatch = textToSearch.match(/(?<![x*\d])(\d+[.,]?\d*)\s*mm/);
-            if (mmMatch) epaisseur_mm = parseFloat(mmMatch[1].replace(',', '.'));
-          }
-        }
-        if (longueur_mm !== null && longueur_mm > 0 && longueur_mm < 10) longueur_mm *= 1000;
-        if (largeur_mm !== null && largeur_mm > 0 && largeur_mm < 10) largeur_mm *= 1000;
-        if (longueur_mm !== null && longueur_mm >= 10 && longueur_mm <= 100) longueur_mm *= 10;
-        if (largeur_mm !== null && largeur_mm >= 10 && largeur_mm <= 100) largeur_mm *= 10;
-
-        let fournisseur = '';
-        const lowerUrl = (url || '').toLowerCase();
-        if (lowerUrl.includes('leroymerlin')) fournisseur = 'Leroy Merlin';
-        else if (lowerUrl.includes('castorama')) fournisseur = 'Castorama';
-        else if (lowerUrl.includes('bricoman')) fournisseur = 'Bricoman';
-        else if (lowerUrl.includes('pointp')) fournisseur = 'Point.P';
-        else if (lowerUrl.includes('dispano')) fournisseur = 'Dispano';
-        else if (lowerUrl.includes('manomano')) fournisseur = 'ManoMano';
-
-        const parsedPriceTtc = price ? parseFloat(price.replace(',', '.')) : null;
-
+        importTraiteRef.current = true;
         const draft = emptyBardage();
         draft.designation = title || "";
-        draft.fournisseur = fournisseur;
-        draft.prix_ttc = parsedPriceTtc !== null ? String(parsedPriceTtc).replace(".", ",") : "";
-        draft.pu_ht = parsedPriceTtc !== null ? (parsedPriceTtc / 1.2).toFixed(2).replace(".", ",") : "";
-        draft.dimensions_disponibles = (longueur_mm || largeur_mm || epaisseur_mm)
-          ? [{ longueur_mm, largeur_mm, epaisseur_mm }]
-          : [];
 
         setEditingOuvrage(null);
         setDraftInitial(draft);
+        setUrlImportInitiale(url || "");
+        setCandidatsImport({
+          prix: params.get("importPrice") || undefined,
+          fabricant: params.get("importFabricant") || undefined,
+          reference: params.get("importReference") || undefined,
+          unite: params.get("importUnite") || undefined,
+          fournisseur: params.get("importFournisseur") || undefined,
+        });
+        setImportContextKey((key) => key + 1);
         setIsModalOpen(true);
-        // Nettoyer l'URL pour éviter que ça se rouvre au rafraîchissement
-        window.history.replaceState({}, document.title, window.location.pathname);
+
+        const adresse = new URL(window.location.href);
+        [
+          "importUrl",
+          "importTitle",
+          "importPrice",
+          "importFabricant",
+          "importReference",
+          "importUnite",
+          "importFournisseur",
+        ].forEach((cle) => adresse.searchParams.delete(cle));
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${adresse.pathname}${adresse.search}${adresse.hash}`
+        );
       }
     }
   }, []);
 
   const handleOpenModal = (ouvrage?: Ouvrage, typeInit?: "main_oeuvre" | "matiere") => {
+    setUrlImportInitiale("");
+    setCandidatsImport(null);
+    setImportContextKey((key) => key + 1);
     if (ouvrage) {
       setEditingOuvrage(ouvrage);
       setTypeCoutDefaut("matiere");
@@ -238,6 +220,9 @@ export default function CataloguePage() {
         setIsModalOpen(false);
         setEditingOuvrage(null);
         setDraftInitial(null);
+        setUrlImportInitiale("");
+        setCandidatsImport(null);
+        setImportContextKey((key) => key + 1);
         await fetchCatalogue();
       }
     } catch (err) {
@@ -625,11 +610,17 @@ export default function CataloguePage() {
           open={isModalOpen}
           type="BARDAGE"
           initial={draftInitial}
+          importInitialUrl={urlImportInitiale}
+          importCandidates={candidatsImport}
+          importContextKey={importContextKey}
           typeCoutDefaut={typeCoutDefaut}
           onClose={() => {
             setIsModalOpen(false);
             setEditingOuvrage(null);
             setDraftInitial(null);
+            setUrlImportInitiale("");
+            setCandidatsImport(null);
+            setImportContextKey((key) => key + 1);
           }}
           onSave={handleSave}
         />

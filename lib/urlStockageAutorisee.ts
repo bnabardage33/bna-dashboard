@@ -77,6 +77,7 @@ const PLAGES_IPV4_INTERDITES: ReadonlyArray<readonly [string, number]> = [
   ["192.0.0.0", 24], // IETF protocol
   ["192.0.2.0", 24], // documentation
   ["192.168.0.0", 16], // RFC1918 privé
+  ["192.88.99.0", 24], // ancien relais 6to4, réservé
   ["198.18.0.0", 15], // benchmarking
   ["198.51.100.0", 24], // documentation
   ["203.0.113.0", 24], // documentation
@@ -93,9 +94,32 @@ const PLAGES_IPV4_INTERDITES: ReadonlyArray<readonly [string, number]> = [
  * la plage serait silencieusement ignorée.
  */
 const PLAGES_IPV6_INTERDITES: ReadonlyArray<readonly [string, number]> = [
+  ["64:ff9b::", 96], // traduction IPv4/IPv6 : IPv4 intégrée
+  ["64:ff9b:1::", 48], // préfixe de traduction IPv4/IPv6 non global
+  ["100::", 64], // discard-only
+  ["2001:2::", 48], // benchmarking, non globalement joignable
+  ["2001:10::", 28], // ancien préfixe ORCHID
+  ["2001:db8::", 32], // documentation
+  ["2002::", 16], // 6to4 : IPv4 intégrée
   ["fe80::", 10], // fe80::/10 link-local
   ["fc00::", 7], // fc00::/7  ULA (unique local)
   ["ff00::", 8], // ff00::/8  multicast
+  ["3fff::", 20], // documentation
+  ["5f00::", 16], // SRv6 SIDs, non globalement joignable
+];
+
+/**
+ * Allocations plus spécifiques de 2001::/23 indiquées globalement joignables
+ * dans le registre IANA. Le reste de 2001::/23 est refusé par défaut.
+ */
+const PLAGES_IPV6_PUBLIQUES_2001: ReadonlyArray<readonly [string, number]> = [
+  ["2001:1::1", 128], // PCP anycast
+  ["2001:1::2", 128], // TURN anycast
+  ["2001:1::3", 128], // DNS-SD anycast
+  ["2001:3::", 32], // AMT
+  ["2001:4:112::", 48], // AS112-v6
+  ["2001:20::", 28], // ORCHIDv2
+  ["2001:30::", 28], // DETs
 ];
 
 /** IPv6 normalisation → 8 groupes de 16 bits, ou `null` si illisible. */
@@ -162,6 +186,25 @@ function ipv4EnEntier(octets: number[]): number {
   return ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
 }
 
+function ipv6DansPlage(
+  adresse: number[],
+  prefixe: string,
+  bits: number,
+): boolean {
+  const base = ipv6EnGroupes(prefixe);
+  if (!base) return false;
+  const groupes = Math.ceil(bits / 16);
+  for (let i = 0; i < groupes; i++) {
+    const bitsRestants = bits - i * 16;
+    const masque =
+      bitsRestants >= 16
+        ? 0xffff
+        : (0xffff << (16 - bitsRestants)) & 0xffff;
+    if ((adresse[i] & masque) !== (base[i] & masque)) return false;
+  }
+  return true;
+}
+
 /** Vrai si l'adresse est une IP littérale (donc jamais un nom de domaine). */
 export function estIpLitterale(adresse: string): boolean {
   return ipv4EnOctets(adresse) !== null || ipv6EnGroupes(adresse) !== null;
@@ -182,7 +225,7 @@ export function adresseInterdite(adresse: string): boolean {
   }
 
   const v6 = ipv6EnGroupes(adresse);
-  if (!v6) return false; // illisible : laissé au validateur d'origine
+  if (!v6) return true; // entrée malformée : refusée par défaut
 
   // IPv4 mappée ::ffff:a.b.c.d (et ::ffff:7f00:1). Les 32 derniers bits DOIVENT
   // être rejoués dans les règles IPv4 : sans ce cas, « ::ffff:127.0.0.1 » et
@@ -198,20 +241,20 @@ export function adresseInterdite(adresse: string): boolean {
   if (v6.every((g) => g === 0)) return true;
   if (v6.slice(0, 7).every((g) => g === 0) && v6[7] === 1) return true;
 
+  // Espace IPv6 Global Unicast candidat. Les préfixes spéciaux hors de
+  // 2000::/3 sont refusés même s'ils ne figurent pas dans la liste ci-dessous.
+  if (!ipv6DansPlage(v6, "2000::", 3)) return true;
+
   for (const [prefixe, bits] of PLAGES_IPV6_INTERDITES) {
-    const base = ipv6EnGroupes(prefixe);
-    if (!base) continue;
-    const octets = Math.ceil(bits / 16);
-    let conforme = true;
-    for (let i = 0; i < octets; i++) {
-      const bitsRestants = bits - i * 16;
-      const masque = bitsRestants >= 16 ? 0xffff : (0xffff << (16 - bitsRestants)) & 0xffff;
-      if ((v6[i] & masque) !== (base[i] & masque)) {
-        conforme = false;
-        break;
-      }
-    }
-    if (conforme) return true;
+    if (ipv6DansPlage(v6, prefixe, bits)) return true;
+  }
+
+  // 2001::/23 est globalement non joignable sauf allocations plus spécifiques.
+  // Elles sont examinées seulement après les plages explicitement interdites.
+  if (ipv6DansPlage(v6, "2001::", 23)) {
+    return !PLAGES_IPV6_PUBLIQUES_2001.some(([prefixe, bits]) =>
+      ipv6DansPlage(v6, prefixe, bits),
+    );
   }
   return false;
 }

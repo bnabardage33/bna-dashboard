@@ -441,6 +441,11 @@ export type Database = {
           garde_corps_hauteur_cm: number
           coef_perte_lames: number
           coef_perte_lambourdes: number
+          lame_id: string | null
+          clip_id: string | null
+          lambourde_id: string | null
+          plot_id: string | null
+          quantite_accessoires: Json
           resultats_techniques: Json | null
           created_at: string
           updated_at: string
@@ -489,6 +494,11 @@ export type Database = {
           garde_corps_hauteur_cm?: number
           coef_perte_lames?: number
           coef_perte_lambourdes?: number
+          lame_id?: string | null
+          clip_id?: string | null
+          lambourde_id?: string | null
+          plot_id?: string | null
+          quantite_accessoires?: Json
           resultats_techniques?: Json | null
           created_at?: string
           updated_at?: string
@@ -537,11 +547,45 @@ export type Database = {
           garde_corps_hauteur_cm?: number
           coef_perte_lames?: number
           coef_perte_lambourdes?: number
+          lame_id?: string | null
+          clip_id?: string | null
+          lambourde_id?: string | null
+          plot_id?: string | null
+          quantite_accessoires?: Json
           resultats_techniques?: Json | null
           created_at?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chantier_terrasses_lame_id_fkey"
+            columns: ["lame_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_terrasse_lames"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_terrasses_clip_id_fkey"
+            columns: ["clip_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_terrasse_accessoires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_terrasses_lambourde_id_fkey"
+            columns: ["lambourde_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_terrasse_accessoires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_terrasses_plot_id_fkey"
+            columns: ["plot_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_terrasse_accessoires"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chantier_terrasse_reservations: {
         Row: {

@@ -170,7 +170,8 @@ describe('Restauration · /terrain/meteo est une page réelle, pas une redirecti
     expect(source, 'la page appelle encore redirect()').not.toContain('redirect(')
     // La fonctionnalité restaurée, telle qu'elle existait à f6366a5.
     expect(source, 'la page n\'affiche plus la recherche de ville').toContain('villeInput')
-    expect(source, 'la page n\'affiche plus les prévisions horaires').toContain('heure par heure')
+    expect(source, 'la page n\'affiche plus les prévisions horaires').toContain('Prévisions horaires')
+    expect(source, 'la page n\'affiche plus plusieurs jours de prévision').toContain('Prévisions sur plusieurs jours')
     expect(source, 'la page n\'affiche plus le band matin/après-midi').toContain('Après-midi')
   })
 
@@ -183,10 +184,13 @@ describe('Restauration · /terrain/meteo est une page réelle, pas une redirecti
     )
   })
 
-  it('les deux entrées météo coexistent dans le Drawer, sans croisement', () => {
+  it('les deux entrées d’accueil coexistent avec la veille météo distincte', () => {
     const drawer = lire('components/Drawer.tsx')
-    expect(drawer, 'Drawer : entrée météo générale manquante').toContain(
-      '{ href: "/terrain/meteo", label: "Météo générale" }',
+    expect(drawer, 'Drawer : Accueil Météo manquant').toContain(
+      '{ href: "/terrain/meteo", label: "Accueil Météo", icon: CloudSun }',
+    )
+    expect(drawer, 'Drawer : Accueil Chantier manquant').toContain(
+      '{ href: "/terrain/accueil", label: "Accueil Chantier", icon: HardHat }',
     )
     expect(drawer, 'Drawer : entrée veille intempéries manquante').toContain(
       '{ href: "/bureau/meteo", label: "Météo & intempéries" }',

@@ -133,9 +133,46 @@ export interface ChantierTerrasseConfig {
   coef_perte_lames: number;
   coef_perte_lambourdes: number;
 
+  // Sélections du catalogue Terrasse (optionnelles)
+  lame_id?: string | null;
+  clip_id?: string | null;
+  lambourde_id?: string | null;
+  plot_id?: string | null;
+  quantite_accessoires?: QuantiteAccessoiresTerrasse | null;
+  tarifs_catalogue?: TarifsCatalogueTerrasse | null;
+
   // Timestamp
   created_at?: string;
   updated_at?: string;
+}
+
+export interface QuantiteAccessoiresTerrasse {
+  clip?: number;
+  lambourde?: number;
+  plot?: number;
+  [cle: string]: number | undefined;
+}
+
+export interface TarifLameCatalogueTerrasse {
+  id?: string;
+  designation?: string | null;
+  prix_unitaire_lame?: number | null;
+  prix_m2_ht?: number | null;
+}
+
+export interface TarifAccessoireCatalogueTerrasse {
+  id?: string;
+  designation?: string | null;
+  conditionnement?: string | null;
+  prix_conditionnement?: number | null;
+  unite_mesure?: string | null;
+}
+
+export interface TarifsCatalogueTerrasse {
+  lame?: TarifLameCatalogueTerrasse | null;
+  clip?: TarifAccessoireCatalogueTerrasse | null;
+  lambourde?: TarifAccessoireCatalogueTerrasse | null;
+  plot?: TarifAccessoireCatalogueTerrasse | null;
 }
 
 export type StatutControle = "conforme" | "avertissement" | "non_conforme";

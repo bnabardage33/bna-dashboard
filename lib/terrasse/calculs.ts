@@ -4,6 +4,7 @@ import type {
   ChantierTerrasseReservation,
   LigneChiffrageTerrasse,
   ResultatCalculTerrasse,
+  TarifsCatalogueTerrasse,
 } from "./types";
 import {
   calculerEntraxeMaxLambourdes,
@@ -51,10 +52,13 @@ const TARIFS_INDICATIFS: Record<string, number> = {
 
 export function calculerTerrasse(
   config: ChantierTerrasseConfig,
-  reservations: ChantierTerrasseReservation[] = []
+  reservations: ChantierTerrasseReservation[] = [],
+  tarifsCatalogue?: TarifsCatalogueTerrasse | null
 ): ResultatCalculTerrasse {
+  const catalogue = tarifsCatalogue ?? config.tarifs_catalogue ?? null;
+
   if (config.systeme_terrasse === "composite_clip" || config.essence_bois === "composite") {
-    return calculComposite(config, reservations);
+    return calculComposite(config, reservations, catalogue);
   }
 
   const surfaceBruteM2 = Number((config.longueur_m * config.largeur_m).toFixed(2));
@@ -205,19 +209,59 @@ export function calculerTerrasse(
   // --- 8. CHIFFRAGE / NOMENCLATURE ESTIMATIVE ---
   const lignes: LigneChiffrageTerrasse[] = [];
 
-  // Lames
+  // Le prix au m² est prioritaire dans les deux moteurs. Les prix indicatifs
+  // restent le repli lorsque le prix sélectionné n'est pas exploitable.
+  const lameCatalogue = catalogue?.lame;
+  const prixLameM2 = lameCatalogue?.prix_m2_ht;
+  const prixLameUnitaire = lameCatalogue?.prix_unitaire_lame;
+  const designationLame = lameCatalogue?.designation?.trim() ||
+    `Lames ${config.essence_bois.toUpperCase()} ${config.largeur_lame_mm ?? 145}x${config.epaisseur_lame_mm} mm (longueur ${config.longueur_lame_m} m)`;
+  if (typeof prixLameM2 === "number" && Number.isFinite(prixLameM2) && prixLameM2 >= 0) {
+    lignes.push({
+      code: "LAM-01", categorie: "Platelage", designation: designationLame,
+      quantite: surfaceACommanderM2, unite: "m²", prixUnitaireHt: prixLameM2,
+      totalHt: Number((surfaceACommanderM2 * prixLameM2).toFixed(2)),
+    });
+  } else if (typeof prixLameUnitaire === "number" && Number.isFinite(prixLameUnitaire) && prixLameUnitaire >= 0) {
+    lignes.push({
+      code: "LAM-01", categorie: "Platelage", designation: designationLame,
+      quantite: nbLamesStandard, unite: "u", prixUnitaireHt: prixLameUnitaire,
+      totalHt: Number((nbLamesStandard * prixLameUnitaire).toFixed(2)),
+    });
+  } else {
   const tarifLame = TARIFS_INDICATIFS[`lame_${config.essence_bois}`] || 45.0;
   lignes.push({
     code: "LAM-01",
     categorie: "Platelage",
-    designation: `Lames ${config.essence_bois.toUpperCase()} ${config.largeur_lame_mm ?? 145}x${config.epaisseur_lame_mm} mm (longueur ${config.longueur_lame_m} m)`,
+    designation: designationLame,
     quantite: surfaceACommanderM2,
     unite: "m²",
     prixUnitaireHt: tarifLame,
     totalHt: Number((surfaceACommanderM2 * tarifLame).toFixed(2)),
   });
+  }
 
-  // Lambourdes
+  const lambourdeCatalogue = catalogue?.lambourde;
+  const uniteLambourde = (lambourdeCatalogue?.unite_mesure || "").trim().toLocaleLowerCase("fr-FR");
+  const conditionnementLambourde = lambourdeCatalogue?.conditionnement || "";
+  const longueurConditionnement = conditionnementLambourde.match(/(?:^|\D)(\d+(?:[.,]\d+)?)\s*m(?:ètre|etres|ètres)?\b/i);
+  const longueurCatalogueM = longueurConditionnement ? Number(longueurConditionnement[1].replace(",", ".")) : null;
+  const qteAccessoires = config.quantite_accessoires || {};
+  const prixLambourdeCatalogue = lambourdeCatalogue?.prix_conditionnement;
+  const lambourdeAuMl = uniteLambourde === "ml" || uniteLambourde === "mètre linéaire" || uniteLambourde === "metre lineaire";
+  const lambourdeParBarre = ["barre", "u", "unité", "unite", "pièce", "piece"].includes(uniteLambourde) && longueurCatalogueM === config.longueur_lambourde_m;
+  const qteLambourdeCatalogue = typeof qteAccessoires.lambourde === "number"
+    ? qteAccessoires.lambourde
+    : lambourdeAuMl ? lineaireAvecChutesMl : nbBarres;
+  if (lambourdeCatalogue && (lambourdeAuMl || lambourdeParBarre) && typeof prixLambourdeCatalogue === "number" && Number.isFinite(prixLambourdeCatalogue) && prixLambourdeCatalogue >= 0) {
+    lignes.push({
+      code: "STR-01", categorie: "Structure",
+      designation: lambourdeCatalogue.designation?.trim() || `Lambourdes ${config.type_lambourde} section ${sectionMm}`,
+      quantite: qteLambourdeCatalogue, unite: lambourdeAuMl ? "ml" : "u",
+      prixUnitaireHt: prixLambourdeCatalogue,
+      totalHt: Number((qteLambourdeCatalogue * prixLambourdeCatalogue).toFixed(2)),
+    });
+  } else {
   const tarifLambourde = TARIFS_INDICATIFS[`lambourde_${config.type_lambourde}`] || 5.0;
   lignes.push({
     code: "STR-01",
@@ -228,17 +272,24 @@ export function calculerTerrasse(
     prixUnitaireHt: tarifLambourde,
     totalHt: Number((lineaireAvecChutesMl * tarifLambourde).toFixed(2)),
   });
+  }
 
   // Plots
-  const tarifPlot = TARIFS_INDICATIFS[`plot_${config.type_plots}`] || 3.2;
+  const plotCatalogue = catalogue?.plot;
+  const unitePlot = (plotCatalogue?.unite_mesure || "").trim().toLocaleLowerCase("fr-FR");
+  const prixPlotCatalogue = plotCatalogue?.prix_conditionnement;
+  const qtePlotCatalogue = typeof qteAccessoires.plot === "number" ? qteAccessoires.plot : nbPlotsTotal;
+  const plotExploitable = ["u", "unité", "unite", "pièce", "piece"].includes(unitePlot) && typeof prixPlotCatalogue === "number" && Number.isFinite(prixPlotCatalogue) && prixPlotCatalogue >= 0;
+  const tarifPlot = plotExploitable ? prixPlotCatalogue : TARIFS_INDICATIFS[`plot_${config.type_plots}`] || 3.2;
+  const designationPlot = plotCatalogue?.designation?.trim() || `Plots ${config.type_plots} réglables (${config.hauteur_reglage_plots.replace("_", "-")} mm)`;
   lignes.push({
     code: "SUP-01",
     categorie: "Structure",
-    designation: `Plots ${config.type_plots} réglables (${config.hauteur_reglage_plots.replace("_", "-")} mm)`,
-    quantite: nbPlotsTotal,
+    designation: designationPlot,
+    quantite: plotExploitable ? qtePlotCatalogue : nbPlotsTotal,
     unite: "u",
     prixUnitaireHt: tarifPlot,
-    totalHt: Number((nbPlotsTotal * tarifPlot).toFixed(2)),
+    totalHt: Number(((plotExploitable ? qtePlotCatalogue : nbPlotsTotal) * tarifPlot).toFixed(2)),
   });
 
   // Fixations
@@ -253,14 +304,27 @@ export function calculerTerrasse(
       totalHt: Number((nbBoites * TARIFS_INDICATIFS.vis_inox_boite_200).toFixed(2)),
     });
   } else {
+    const clipCatalogue = catalogue?.clip;
+    const uniteClip = (clipCatalogue?.unite_mesure || "").trim().toLocaleLowerCase("fr-FR");
+    const conditionnementClip = clipCatalogue?.conditionnement || "";
+    const tailleBoite = conditionnementClip.match(/(?:bo[iî]te|bte)\s*(?:de\s*)?(\d+)/i);
+    const clipsParBoite = tailleBoite ? Number(tailleBoite[1]) : null;
+    const clipEnBoite = ["boîte", "boite", "bte"].includes(uniteClip) && clipsParBoite === 100;
+    const clipUnitaire = ["u", "unité", "unite", "pièce", "piece"].includes(uniteClip);
+    const qteClipCatalogue = typeof qteAccessoires.clip === "number"
+      ? qteAccessoires.clip
+      : clipEnBoite ? nbBoites : nbVisOuClipsTotal;
+    const prixClipCatalogue = clipCatalogue?.prix_conditionnement;
+    const clipExploitable = (clipEnBoite || clipUnitaire) && typeof prixClipCatalogue === "number" && Number.isFinite(prixClipCatalogue) && prixClipCatalogue >= 0;
+    const tarifClip = clipExploitable ? prixClipCatalogue : TARIFS_INDICATIFS.clips_boite_100;
     lignes.push({
       code: "FIX-02",
       categorie: "Fixation",
-      designation: `Clips invisibles inox + vis de serrage (boîtes de 100)`,
-      quantite: nbBoites,
-      unite: "bte",
-      prixUnitaireHt: TARIFS_INDICATIFS.clips_boite_100,
-      totalHt: Number((nbBoites * TARIFS_INDICATIFS.clips_boite_100).toFixed(2)),
+      designation: clipCatalogue?.designation?.trim() || `Clips invisibles inox + vis de serrage (boîtes de 100)`,
+      quantite: clipExploitable ? qteClipCatalogue : nbBoites,
+      unite: clipEnBoite ? "bte" : clipUnitaire ? "u" : "bte",
+      prixUnitaireHt: tarifClip,
+      totalHt: Number(((clipExploitable ? qteClipCatalogue : nbBoites) * tarifClip).toFixed(2)),
     });
   }
 

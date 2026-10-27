@@ -93,6 +93,7 @@ let conteneur: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  window.history.replaceState({}, "", "/");
   conteneur = document.createElement("div");
   document.body.appendChild(conteneur);
   root = createRoot(conteneur);
@@ -101,6 +102,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   conteneur.remove();
+  vi.restoreAllMocks();
 });
 
 /** Retrouve la carte (le conteneur de la carte) par le titre qu'elle affiche. */
@@ -119,6 +121,49 @@ async function rendre(): Promise<void> {
 }
 
 describe("Catalogue Terrasse — carte d'une prestation de main-d'œuvre", () => {
+  it("reçoit un import sans prix, nettoie uniquement les paramètres d'import et permet une création classique vide", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/bureau/catalogue-terrasse?importUrl=https%3A%2F%2Ffournisseur.example%2Fx" +
+        "&importTitle=Lame%20test&importFabricant=Marque&keep=oui#section"
+    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await rendre();
+
+    expect((conteneur.querySelector("#chp-auto-url") as HTMLInputElement).value)
+      .toBe("https://fournisseur.example/x");
+    expect((conteneur.querySelector("#chp-designation-lame") as HTMLInputElement).value)
+      .toBe("Lame test");
+    expect(conteneur.textContent).toContain("Marque");
+    expect(window.location.search).toContain("keep=oui");
+    expect(window.location.search).not.toContain("importUrl");
+    expect(window.location.search).not.toContain("importTitle");
+    expect(window.location.search).not.toContain("importFabricant");
+    expect(window.location.hash).toBe("#section");
+
+    const urlFetch = (input: Parameters<typeof fetch>[0]): string => {
+      if (typeof input === "string") return input;
+      if (input instanceof URL) return input.href;
+      return input.url;
+    };
+    expect(fetchSpy.mock.calls.filter(([input]) => urlFetch(input).startsWith("/api/scrape?")))
+      .toHaveLength(0);
+
+    const fermer = conteneur.querySelector('button[aria-label="Fermer"]') as HTMLButtonElement;
+    await act(async () => fermer.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    const nouvelleLame = Array.from(conteneur.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Nouvelle Lame")
+    );
+    expect(nouvelleLame).toBeTruthy();
+    await act(async () => nouvelleLame!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect((conteneur.querySelector("#chp-auto-url") as HTMLInputElement).value).toBe("");
+    expect(conteneur.textContent).not.toContain("Marque");
+
+    fetchSpy.mockRestore();
+  });
+
   it("n'affiche ni « Fournisseur non défini » ni bloc fournisseur", async () => {
     await rendre();
     const carte = carteDe("Pose de lambourdes");

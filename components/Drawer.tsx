@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, Home, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown, BookOpen } from "lucide-react";
+import { Menu, X, CloudSun, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown, BookOpen } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { LucideIcon } from "lucide-react";
 
@@ -34,7 +34,8 @@ type EntreeNav = {
 };
 
 const NAV_ITEMS: EntreeNav[] = [
-  { href: "/", label: "Accueil", icon: Home },
+  { href: "/terrain/accueil", label: "Accueil Chantier", icon: HardHat },
+  { href: "/terrain/meteo", label: "Accueil Météo", icon: CloudSun },
   {
     label: "Études / Commercial",
     icon: FolderOpen,
@@ -57,10 +58,8 @@ const NAV_ITEMS: EntreeNav[] = [
     icon: HardHat,
     children: [
       { href: "/terrain/chantier", label: "Liste des chantiers" },
-      // Deux entrées météo distinctes, sans redirection croisée :
-      //   - « Météo générale » = prévisions (ville, jour, heure par heure) ;
-      //   - « Météo & intempéries » = veille officielle + rapports.
-      { href: "/terrain/meteo", label: "Météo générale" },
+      // La météo générale a une entrée dédiée en tête de navigation ; ce
+      // groupe conserve les fonctions de veille et de rapports d'intempéries.
       { href: "/bureau/meteo", label: "Météo & intempéries" },
       { href: "/bureau/rapports-intemperies", label: "Rapports intempéries" },
       { href: "/bureau/fin-chantier", label: "Fin de chantier / PV" },

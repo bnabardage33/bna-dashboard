@@ -5,9 +5,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreTenant } from "@/lib/tenant";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
+import {
+  accessoireCompatibleAvecLame,
+  estPrestationMainOeuvre,
+} from "@/lib/terrasse/compatAccessoires";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
+  QuantiteAccessoiresTerrasse,
+  TarifsCatalogueTerrasse,
 } from "@/lib/terrasse/types";
 import type { Database, Json } from "@/types/supabase";
 
@@ -15,6 +21,102 @@ export const dynamic = "force-dynamic";
 
 interface RouteProps {
   params: Promise<{ id: string }>;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CLES_QUANTITES_ACCESSOIRES = ["clip", "lambourde", "plot"] as const;
+type SlotAccessoire = "clip" | "lambourde" | "plot";
+
+function lireIdCatalogue(value: unknown, champ: string): { id: string | null } | { erreur: string } {
+  if (value === null || value === undefined || (typeof value === "string" && value.trim() === "")) {
+    return { id: null };
+  }
+  if (typeof value !== "string" || !UUID_RE.test(value.trim())) {
+    return { erreur: `${champ} doit être un UUID valide` };
+  }
+  return { id: value.trim() };
+}
+
+function normaliserQuantitesAccessoires(value: unknown):
+  | { quantites: QuantiteAccessoiresTerrasse }
+  | { erreur: string } {
+  if (value === null || value === undefined) return { quantites: {} };
+  if (typeof value !== "object" || Array.isArray(value)) {
+    return { erreur: "quantite_accessoires doit être un objet" };
+  }
+  const quantites: QuantiteAccessoiresTerrasse = {};
+  const source = value as Record<string, unknown>;
+  for (const cle of CLES_QUANTITES_ACCESSOIRES) {
+    const brut = source[cle];
+    if (brut === undefined || brut === null || brut === "") continue;
+    const nombre = typeof brut === "number" ? brut : typeof brut === "string" ? Number(brut.trim()) : NaN;
+    if (!Number.isFinite(nombre) || nombre < 0) {
+      return { erreur: `quantite_accessoires.${cle} doit être un nombre positif ou nul` };
+    }
+    quantites[cle] = nombre;
+  }
+  return { quantites };
+}
+
+type ClientSupabaseTerrasse = Awaited<ReturnType<typeof createClient>>;
+
+async function chargerTarifsCatalogue(
+  supabase: ClientSupabaseTerrasse,
+  entrepriseId: string,
+  ids: { lame: string | null; clip: string | null; lambourde: string | null; plot: string | null },
+  statutReferenceInvalide: 400 | 500
+): Promise<{ tarifs: TarifsCatalogueTerrasse } | { erreur: string; status: 400 | 500 }> {
+  const tarifs: TarifsCatalogueTerrasse = { lame: null, clip: null, lambourde: null, plot: null };
+  let lame: { id: string; type_material: string | null } | null = null;
+
+  if (ids.lame) {
+    const { data, error } = await supabase.from("catalogue_terrasse_lames")
+      .select("id, designation, type_material, prix_unitaire_lame, prix_m2_ht")
+      .eq("id", ids.lame).eq("entreprise_id", entrepriseId).maybeSingle();
+    if (error) return { erreur: error.message, status: 500 };
+    if (!data) return { erreur: "lame_id introuvable ou non autorisé", status: statutReferenceInvalide };
+    lame = { id: data.id, type_material: data.type_material };
+    tarifs.lame = {
+      id: data.id, designation: data.designation,
+      prix_unitaire_lame: data.prix_unitaire_lame, prix_m2_ht: data.prix_m2_ht,
+    };
+  }
+
+  const slots: Array<{ cle: SlotAccessoire; id: string | null; categorie: "CLIP" | "LAMBOURDE" | "PLOT" }> = [
+    { cle: "clip", id: ids.clip, categorie: "CLIP" },
+    { cle: "lambourde", id: ids.lambourde, categorie: "LAMBOURDE" },
+    { cle: "plot", id: ids.plot, categorie: "PLOT" },
+  ];
+  for (const slot of slots) {
+    if (!slot.id) continue;
+    const { data, error } = await supabase.from("catalogue_terrasse_accessoires")
+      .select("id, categorie, type_cout, designation, conditionnement, prix_conditionnement, unite_mesure, materiel_compatibles")
+      .eq("id", slot.id).eq("entreprise_id", entrepriseId).maybeSingle();
+    if (error) return { erreur: error.message, status: 500 };
+    if (!data) return { erreur: `${slot.cle}_id introuvable ou non autorisé`, status: statutReferenceInvalide };
+    if (estPrestationMainOeuvre(data)) {
+      return { erreur: `${slot.cle}_id désigne une prestation main_oeuvre, pas un accessoire matériel`, status: 400 };
+    }
+    if (data.categorie !== slot.categorie) {
+      return { erreur: `${slot.cle}_id doit appartenir à la catégorie ${slot.categorie}`, status: 400 };
+    }
+
+    // Une valeur JSON non nulle représente une règle configurée. En cas de règle
+    // définie, on échoue fermé si la lame manque ou si le lien n'est pas explicite.
+    if (data.materiel_compatibles !== null && data.materiel_compatibles !== undefined) {
+      if (!Array.isArray(data.materiel_compatibles) || !lame ||
+          !accessoireCompatibleAvecLame(data.materiel_compatibles, lame.id, lame.type_material)) {
+        return { erreur: `${slot.cle}_id n'est pas compatible avec la lame sélectionnée`, status: 400 };
+      }
+    }
+    tarifs[slot.cle] = {
+      id: data.id, designation: data.designation,
+      conditionnement: data.conditionnement,
+      prix_conditionnement: data.prix_conditionnement,
+      unite_mesure: data.unite_mesure,
+    };
+  }
+  return { tarifs };
 }
 
 export async function GET(request: NextRequest, { params }: RouteProps) {
@@ -92,6 +194,11 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
       garde_corps_hauteur_cm: 100,
       coef_perte_lames: 1.10,
       coef_perte_lambourdes: 1.08,
+      lame_id: null,
+      clip_id: null,
+      lambourde_id: null,
+      plot_id: null,
+      quantite_accessoires: {},
     };
 
     const resultat = calculerTerrasse(defaultConfig);
@@ -103,8 +210,6 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
       clientNom: (chantier.clients as unknown as { nom: string })?.nom,
     });
   }
-
-  const typedTerrasse = terrasse as unknown as ChantierTerrasseConfig;
 
   const { data: reservations, error: errReservations } = await supabase
     .from("chantier_terrasse_reservations")
@@ -118,7 +223,27 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
   }
 
   const typedReservations = (reservations || []) as unknown as ChantierTerrasseReservation[];
-  const resultat = calculerTerrasse(typedTerrasse, typedReservations);
+  const ids = {
+    lame: typeof terrasse.lame_id === "string" && terrasse.lame_id.trim() ? terrasse.lame_id.trim() : null,
+    clip: typeof terrasse.clip_id === "string" && terrasse.clip_id.trim() ? terrasse.clip_id.trim() : null,
+    lambourde: typeof terrasse.lambourde_id === "string" && terrasse.lambourde_id.trim() ? terrasse.lambourde_id.trim() : null,
+    plot: typeof terrasse.plot_id === "string" && terrasse.plot_id.trim() ? terrasse.plot_id.trim() : null,
+  };
+  const catalogue = await chargerTarifsCatalogue(supabase, entrepriseId, ids, 500);
+  if ("erreur" in catalogue) {
+    return NextResponse.json({ error: catalogue.erreur }, { status: catalogue.status });
+  }
+  const quantitesAccessoires = normaliserQuantitesAccessoires(terrasse.quantite_accessoires);
+  if ("erreur" in quantitesAccessoires) {
+    return NextResponse.json({ error: quantitesAccessoires.erreur }, { status: 500 });
+  }
+  const typedTerrasse: ChantierTerrasseConfig = {
+    ...(terrasse as unknown as ChantierTerrasseConfig),
+    ...{ lame_id: ids.lame, clip_id: ids.clip, lambourde_id: ids.lambourde, plot_id: ids.plot },
+    quantite_accessoires: quantitesAccessoires.quantites,
+    tarifs_catalogue: catalogue.tarifs,
+  };
+  const resultat = calculerTerrasse(typedTerrasse, typedReservations, catalogue.tarifs);
 
   return NextResponse.json({
     existe: true,
@@ -136,14 +261,25 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
   const { entrepriseId } = tenantRes;
 
   const { id: chantierId } = await params;
-  const supabase = await createClient();
-
   let body: Partial<ChantierTerrasseConfig> & { reservations?: ChantierTerrasseReservation[] };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Corps JSON invalide" }, { status: 400 });
   }
+
+  const valLame = lireIdCatalogue(body.lame_id, "lame_id");
+  if ("erreur" in valLame) return NextResponse.json({ error: valLame.erreur }, { status: 400 });
+  const valClip = lireIdCatalogue(body.clip_id, "clip_id");
+  if ("erreur" in valClip) return NextResponse.json({ error: valClip.erreur }, { status: 400 });
+  const valLambourde = lireIdCatalogue(body.lambourde_id, "lambourde_id");
+  if ("erreur" in valLambourde) return NextResponse.json({ error: valLambourde.erreur }, { status: 400 });
+  const valPlot = lireIdCatalogue(body.plot_id, "plot_id");
+  if ("erreur" in valPlot) return NextResponse.json({ error: valPlot.erreur }, { status: 400 });
+  const quantites = normaliserQuantitesAccessoires(body.quantite_accessoires);
+  if ("erreur" in quantites) return NextResponse.json({ error: quantites.erreur }, { status: 400 });
+
+  const supabase = await createClient();
 
   // Vérification appartenance chantier
   const { data: chantier, error: errChantier } = await supabase
@@ -155,6 +291,16 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
 
   if (errChantier || !chantier) {
     return NextResponse.json({ error: "Chantier introuvable ou non autorisé" }, { status: 404 });
+  }
+
+  const catalogue = await chargerTarifsCatalogue(
+    supabase,
+    entrepriseId,
+    { lame: valLame.id, clip: valClip.id, lambourde: valLambourde.id, plot: valPlot.id },
+    400
+  );
+  if ("erreur" in catalogue) {
+    return NextResponse.json({ error: catalogue.erreur }, { status: catalogue.status });
   }
 
   const configToSave: ChantierTerrasseConfig = {
@@ -200,13 +346,23 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
     garde_corps_hauteur_cm: Number(body.garde_corps_hauteur_cm) || 100,
     coef_perte_lames: Number(body.coef_perte_lames) || 1.10,
     coef_perte_lambourdes: Number(body.coef_perte_lambourdes) || 1.08,
+    lame_id: valLame.id,
+    clip_id: valClip.id,
+    lambourde_id: valLambourde.id,
+    plot_id: valPlot.id,
+    quantite_accessoires: quantites.quantites,
+    tarifs_catalogue: catalogue.tarifs,
   };
 
   // Calcul du résultat technique et conformité DTU 51.4
-  const resultat = calculerTerrasse(configToSave);
+  const reservationsPourCalcul = Array.isArray(body.reservations) ? body.reservations : undefined;
+  const resultat = calculerTerrasse(configToSave, reservationsPourCalcul, catalogue.tarifs);
+
+  const { tarifs_catalogue: _tarifsCatalogueNonPersistes, ...configPersistable } = configToSave;
+  void _tarifsCatalogueNonPersistes;
 
   const payloadBase: Database["public"]["Tables"]["chantier_terrasses"]["Insert"] = {
-    ...configToSave,
+    ...configPersistable,
     entreprise_id: entrepriseId,
     resultats_techniques: resultat as unknown as Json,
     updated_at: new Date().toISOString(),
@@ -286,7 +442,7 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
 
   return NextResponse.json({
     ok: true,
-    terrasse: { ...configToSave, id: idEnregistre },
+    terrasse: { ...configToSave, id: idEnregistre, resultats_techniques: resultat },
     resultat,
   });
 }

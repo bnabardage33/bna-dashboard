@@ -169,6 +169,109 @@ describe('SSRF — plages d\'adresses non routables', () => {
     expect(estIpLitterale('stockage.test')).toBe(false)
     expect(estIpLitterale('1a2b3c.test')).toBe(false)
   })
+
+  it('A6 — nouvelles plages IPv4 et frontières de 192.88.99.0/24', () => {
+    for (const ip of ['192.88.99.0', '192.88.99.1', '192.88.99.255']) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, true])
+    }
+    for (const ip of ['192.88.98.255', '192.88.100.0']) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, false])
+    }
+  })
+
+  it('A7 — préfixes IPv6 spéciaux ajoutés et frontières publiques', () => {
+    const interdites = [
+      '64:ff9b::',
+      '64:ff9b::ffff:ffff',
+      '64:ff9b:1::',
+      '64:ff9b:1:ffff:ffff:ffff:ffff:ffff',
+      '100::1',
+      '100::ffff:ffff:ffff:ffff',
+      '2001:2::1',
+      '2001:2:0:ffff:ffff:ffff:ffff:ffff',
+      '2001:10::1',
+      '2001:1f:ffff:ffff:ffff:ffff:ffff:ffff',
+      '2001:db8::1',
+      '2002::1',
+      '3fff::1',
+      '3fff:fff:ffff:ffff:ffff:ffff:ffff:ffff',
+      '5f00::1',
+    ]
+    for (const ip of interdites) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, true])
+    }
+
+    // Les bornes immédiatement extérieures restent admises lorsqu'elles sont
+    // dans l'espace global et hors des exclusions de la politique.
+    for (const ip of [
+      '2001:db7::1',
+      '2001:db9::1',
+      '2001:200::1',
+      '2003::1',
+      '3fff:1000::1',
+      '2001:4860:4860::8888',
+      '2606:4700::1111',
+    ]) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, false])
+    }
+  })
+
+  it('A8 — 2001::/23 : exceptions IANA exactes et adresses voisines refusées', () => {
+    const exceptions = [
+      '2001:1::1',
+      '2001:1::2',
+      '2001:1::3',
+      '2001:3::1',
+      '2001:4:112::1',
+      '2001:20::1',
+      '2001:2f:ffff:ffff:ffff:ffff:ffff:ffff',
+      '2001:30::1',
+      '2001:3f:ffff:ffff:ffff:ffff:ffff:ffff',
+    ]
+    for (const ip of exceptions) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, false])
+    }
+
+    const voisinesNonAutorisees = [
+      '2001::1',
+      '2001:1::',
+      '2001:1::4',
+      '2001:2::1',
+      '2001:4::1',
+      '2001:4:111::1',
+      '2001:4:113::1',
+      '2001:1f::1',
+      '2001:40::1',
+      '2001:1ff:ffff:ffff:ffff:ffff:ffff:ffff',
+    ]
+    for (const ip of voisinesNonAutorisees) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, true])
+    }
+
+    // Frontière supérieure du /23 : le /23 alloué qui suit est admis.
+    expect(adresseInterdite('2001:200::1')).toBe(false)
+  })
+
+  it('A9 — IPv4-mapped et entrées malformées : refus fermé cohérent', () => {
+    for (const ip of [
+      '::ffff:127.0.0.1',
+      '::ffff:169.254.169.254',
+      '::ffff:7f00:1',
+      '::ffff:a00:1',
+      '::ffff:999.1.1.1',
+      'not-an-ip',
+      '192.168.1',
+      '256.1.1.1',
+      '2001:::1',
+      '',
+    ]) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, true])
+    }
+
+    for (const ip of ['::ffff:8.8.8.8', '::ffff:808:808']) {
+      expect([ip, adresseInterdite(ip)]).toEqual([ip, false])
+    }
+  })
 })
 
 // ── B. Validation : allowlist ────────────────────────────────────────────────
@@ -360,6 +463,71 @@ describe('SSRF — validation de l\'URL', () => {
       await refuser(forme)
     }
   })
+
+  it('B17 — validerUrlStockage refuse les nouvelles plages DNS', async () => {
+    const interdites = [
+      '192.88.99.1',
+      '64:ff9b::c000:201',
+      '64:ff9b:1::1',
+      '100::1',
+      '2001::1',
+      '2001:2::1',
+      '2001:10::1',
+      '2001:db8::1',
+      '2002::c000:201',
+      '3fff::1',
+      '5f00::1',
+    ]
+
+    for (const ip of interdites) {
+      await expect(
+        validerUrlStockage(LEGITIME, {
+          bucket: BUCKET,
+          resolveur: async () => [ip],
+        }),
+      ).rejects.toBeInstanceOf(UrlStockageRefusee)
+    }
+  })
+
+  it('B18 — validerUrlStockage accepte les IPv6 publiques et exceptions prévues', async () => {
+    const adresses = [
+      '2001:4860:4860::8888',
+      '2606:4700::1111',
+      '2001:1::1',
+      '2001:1::2',
+      '2001:1::3',
+      '2001:3::1',
+      '2001:4:112::1',
+      '2001:20::1',
+      '2001:2f:ffff:ffff:ffff:ffff:ffff:ffff',
+      '2001:30::1',
+      '2001:3f:ffff:ffff:ffff:ffff:ffff:ffff',
+      '2001:200::1',
+    ]
+
+    for (const ip of adresses) {
+      await expect(
+        validerUrlStockage(LEGITIME, {
+          bucket: BUCKET,
+          resolveur: async () => [ip],
+        }),
+      ).resolves.toBe(LEGITIME)
+    }
+  })
+
+  it('B19 — résolution mixte ou malformée : refus fail-closed', async () => {
+    for (const adresses of [
+      ['8.8.8.8', '2001:4860:4860::8888', '2001:db8::1'],
+      ['pas-une-adresse-ip'],
+    ]) {
+      await expect(
+        validerUrlStockage(LEGITIME, {
+          bucket: BUCKET,
+          resolveur: async () => adresses,
+        }),
+      ).rejects.toBeInstanceOf(UrlStockageRefusee)
+    }
+  })
 })
 
 // ── C. Téléchargement : redirections et plafonds ─────────────────────────────
@@ -532,6 +700,60 @@ describe('SSRF — téléchargement', () => {
         fetcher: erreur as unknown as typeof fetch,
       })
     ).rejects.toBeInstanceOf(UrlStockageRefusee)
+  })
+
+  it('C10 — destination DNS interdite ou malformée : aucun fetch initial', async () => {
+    const interdits = [
+      '192.88.99.1',
+      '64:ff9b::c000:201',
+      '64:ff9b:1::1',
+      '100::1',
+      '2001::1',
+      '2001:2::1',
+      '2001:10::1',
+      '2001:db8::1',
+      '2002::c000:201',
+      '3fff::1',
+      '5f00::1',
+      'pas-une-adresse-ip',
+    ]
+    const fetchMock = vi.fn(async () => reponseImage())
+
+    for (const ip of interdits) {
+      await expect(
+        telechargerImageStockage(LEGITIME, {
+          bucket: BUCKET,
+          tailleMax: 1024,
+          resolveur: async () => [ip],
+          fetcher: fetchMock as unknown as typeof fetch,
+        }),
+      ).rejects.toBeInstanceOf(UrlStockageRefusee)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('C11 — redirection DNS interdite : refusée avant le second fetch', async () => {
+    let appelsDns = 0
+    const cible = `${ORIGINE}/storage/v1/object/public/${BUCKET}/ia-ocr/cible.jpg`
+    const fetchMock = vi.fn(async () =>
+      new Response(null, {
+        status: 302,
+        headers: { location: cible },
+      }),
+    )
+
+    await expect(
+      telechargerImageStockage(LEGITIME, {
+        bucket: BUCKET,
+        tailleMax: 1024,
+        resolveur: async () => {
+          appelsDns++
+          return appelsDns === 1 ? ['8.8.8.8'] : ['2002::c000:201']
+        },
+        fetcher: fetchMock as unknown as typeof fetch,
+      }),
+    ).rejects.toBeInstanceOf(UrlStockageRefusee)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 

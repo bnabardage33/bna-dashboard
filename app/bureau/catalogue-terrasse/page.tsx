@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Edit2, Plus, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +11,9 @@ import {
   type CatalogueTerrasseAccessoire,
   type CatalogueTerrasseLame,
 } from "@/hooks/useCatalogueTerrasse";
-import ProductFormModal from "@/components/catalogue/ProductFormModal";
+import ProductFormModal, {
+  type ProductImportCandidates,
+} from "@/components/catalogue/ProductFormModal";
 import {
   fromRow,
   toInsertPayload,
@@ -21,6 +23,7 @@ import {
 import {
   LIBELLES_ACCESSOIRE,
   LIBELLES_TYPE_MATERIAL,
+  emptyForType,
   type CatAccessoireTerrasse,
   type NatureCout,
   type ProductDraft,
@@ -135,9 +138,59 @@ export default function CatalogueTerrassePage() {
   const [modalOuvert, setModalOuvert] = useState(false);
   const [modalType, setModalType] = useState<TypeTerrasse>("TERRASSE_LAME");
   const [draftInitial, setDraftInitial] = useState<ProductDraft | null>(null);
+  const [urlImportInitiale, setUrlImportInitiale] = useState("");
+  const [candidatsImport, setCandidatsImport] =
+    useState<ProductImportCandidates | null>(null);
+  const [importContextKey, setImportContextKey] = useState(0);
+  const importTraiteRef = useRef(false);
   const [categorieInitiale, setCategorieInitiale] = useState<CatAccessoireTerrasse | null>(null);
   const [typeCoutInitial, setTypeCoutInitial] = useState<NatureCout | undefined>(undefined);
   const [idEnEdition, setIdEnEdition] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (importTraiteRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("importUrl");
+    const titre = params.get("importTitle");
+    if (!url && !titre) return;
+
+    importTraiteRef.current = true;
+    setModalType("TERRASSE_LAME");
+    setDraftInitial({
+      ...emptyForType("TERRASSE_LAME"),
+      designation: titre || "",
+    });
+    setCategorieInitiale(null);
+    setTypeCoutInitial(undefined);
+    setIdEnEdition(null);
+    setUrlImportInitiale(url || "");
+    setCandidatsImport({
+      prix: params.get("importPrice") || undefined,
+      fabricant: params.get("importFabricant") || undefined,
+      reference: params.get("importReference") || undefined,
+      unite: params.get("importUnite") || undefined,
+      fournisseur: params.get("importFournisseur") || undefined,
+    });
+    setImportContextKey((key) => key + 1);
+    setModalOuvert(true);
+
+    const adresse = new URL(window.location.href);
+    [
+      "importUrl",
+      "importTitle",
+      "importPrice",
+      "importFabricant",
+      "importReference",
+      "importUnite",
+      "importFournisseur",
+    ].forEach((cle) => adresse.searchParams.delete(cle));
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${adresse.pathname}${adresse.search}${adresse.hash}`
+    );
+  }, []);
 
   const rechercheBasse = recherche.trim().toLowerCase();
 
@@ -203,6 +256,9 @@ export default function CatalogueTerrassePage() {
     categorie?: CatAccessoireTerrasse | null,
     typeCout?: NatureCout
   ) => {
+    setUrlImportInitiale("");
+    setCandidatsImport(null);
+    setImportContextKey((key) => key + 1);
     setModalType(type);
     setDraftInitial(null);
     // Préremplissage intelligent : un accessoire créé depuis un onglet métier
@@ -215,6 +271,9 @@ export default function CatalogueTerrassePage() {
   };
 
   const ouvrirEdition = (type: TypeTerrasse, ligne: unknown) => {
+    setUrlImportInitiale("");
+    setCandidatsImport(null);
+    setImportContextKey((key) => key + 1);
     setModalType(type);
     setDraftInitial(fromRow(type, ligne));
     setCategorieInitiale(null); // L'édition lit la ligne : pas de préremplissage
@@ -229,6 +288,9 @@ export default function CatalogueTerrassePage() {
     setCategorieInitiale(null);
     setTypeCoutInitial(undefined);
     setIdEnEdition(null);
+    setUrlImportInitiale("");
+    setCandidatsImport(null);
+    setImportContextKey((key) => key + 1);
   };
 
   const enregistrer = async (values: ProductDraft) => {
@@ -694,6 +756,9 @@ export default function CatalogueTerrassePage() {
           open={modalOuvert}
           type={modalType}
           initial={draftInitial}
+          importInitialUrl={urlImportInitiale}
+          importCandidates={candidatsImport}
+          importContextKey={importContextKey}
           initialCategorie={categorieInitiale}
           initialTypeCout={typeCoutInitial}
           onClose={fermerModal}

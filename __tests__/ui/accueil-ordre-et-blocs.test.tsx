@@ -51,6 +51,9 @@ const DASHBOARD = lire("components/DashboardAccueil.tsx");
 const DASHBOARD_CODE = CODE(DASHBOARD);
 const PAGE = lire("app/page.tsx");
 const PAGE_CODE = CODE(PAGE);
+const PAGE_CHANTIER = lire("app/terrain/accueil/page.tsx");
+const PAGE_CHANTIER_CODE = CODE(PAGE_CHANTIER);
+const CHARGEURS = lire("lib/accueil/chargerDonnees.ts");
 
 /** Bloc de `DashboardAccueil` délimité par son bandeau de commentaire `── N.` */
 function blocs(source: string): Array<{ numero: string; titre: string; corps: string }> {
@@ -72,6 +75,14 @@ function blocs(source: string): Array<{ numero: string; titre: string; corps: st
 const BLOCS = blocs(DASHBOARD);
 
 describe("Accueil — l'ordre des blocs est celui validé", () => {
+  it("l’accueil professionnel précède le cockpit sur l’Accueil Chantier", () => {
+    const indexAccueil = PAGE_CHANTIER_CODE.indexOf('<AccueilProfessionnel titre="Accueil Chantier"');
+    const indexCockpit = PAGE_CHANTIER_CODE.indexOf("<DashboardAccueil");
+
+    expect(indexAccueil).toBeGreaterThanOrEqual(0);
+    expect(indexCockpit).toBeGreaterThan(indexAccueil);
+  });
+
   it("cinq blocs, numérotés 1 à 5, sans trou ni doublon", () => {
     // Le bloc 1 est l'en-tête compact (dictée vocale + accès rapides). La météo
     // générale a été remontée en bloc 2, l'impact météo en bloc 3, les
@@ -166,14 +177,30 @@ describe("Accueil — « Chiffres clés » a été supprimé", () => {
     expect(DASHBOARD_CODE).not.toContain("raffraichirStats");
   });
 
-  it("`app/page.tsx` ne charge plus aucun compteur", () => {
+  it("la racine ne charge aucune donnée privée avant de rediriger les sessions", () => {
+    expect(PAGE_CODE).toContain("if (user) redirect('/terrain/meteo')");
+    expect(PAGE_CODE).not.toContain("chargerDonneesAccueil");
+    expect(PAGE_CODE).not.toContain("DashboardAccueil");
+  });
+
+  it("le chargeur partagé ne charge aucun compteur", () => {
+    expect(CHARGEURS).not.toContain("chargerStats");
+    expect(CHARGEURS).not.toContain("statsInitiales");
+    expect(CHARGEURS).toContain("chargerNotes");
+    expect(CHARGEURS).toContain("chargerChantiersAPreparer");
+    expect(CHARGEURS).toContain("chargerNotifications");
+  });
+
+  it("l’Accueil Chantier appelle les trois chargeurs côté serveur", () => {
+    expect(PAGE_CHANTIER_CODE).toContain("chargerDonneesAccueil(supabase)");
+    expect(CHARGEURS).toContain("from('notes_patron')");
+    expect(CHARGEURS).toContain("from('chantiers')");
+    expect(CHARGEURS).toContain("from('notifications')");
+  });
+
+  it("les chargeurs ne chargent aucun compteur", () => {
     expect(PAGE_CODE).not.toContain("chargerStats");
-    expect(PAGE_CODE).not.toContain("statsInitiales");
-    // Les trois chargeurs de données qui restent doivent toujours être là : on
-    // ne supprime pas l'information en supprimant sa tuile.
-    expect(PAGE_CODE).toContain("chargerNotes");
-    expect(PAGE_CODE).toContain("chargerChantiersAPreparer");
-    expect(PAGE_CODE).toContain("chargerNotifications");
+    expect(CHARGEURS).not.toContain("statsInitiales");
   });
 
   it("les écrans métier qui portent ces chiffres sont intacts", () => {
@@ -185,9 +212,10 @@ describe("Accueil — « Chiffres clés » a été supprimé", () => {
 });
 
 describe("Accueil — la météo reste montée par le serveur", () => {
-  it("`app/page.tsx` passe bien `ChantiersMeteoCards` au composant", () => {
-    expect(PAGE).toContain("ChantiersMeteoCards");
-    expect(PAGE).toContain("blocMeteo={<ChantiersMeteoCards />}");
+  it("l’Accueil Chantier passe `ChantiersMeteoCards` au cockpit", () => {
+    expect(PAGE_CHANTIER_CODE).toContain("ChantiersMeteoCards");
+    expect(PAGE_CHANTIER_CODE).toContain("blocMeteo={<ChantiersMeteoCards />}");
+    expect(PAGE_CHANTIER_CODE).toContain("<DashboardAccueil");
   });
 
   it("le composant météo garde sa logique métier existante", () => {

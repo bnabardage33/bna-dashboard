@@ -3,10 +3,11 @@
 // (achat de fournitures) est masqué, mais les champs de tarification
 // (Unité de vente, Prix Unitaire HT, Coût de revient HT, Prix TTC) et la marge
 // brute restent disponibles. Aucune valeur du brouillon n'est purgée.
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import ProductFormModal from "@/components/catalogue/ProductFormModal";
+import type { ProductFormModalProps } from "@/components/catalogue/ProductFormModal";
 import {
   emptyBardage,
   type BardageValues,
@@ -26,6 +27,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   conteneur.remove();
+  vi.restoreAllMocks();
 });
 
 /** Brouillon Bardage, surchargeable. */
@@ -36,17 +38,28 @@ function brouillon(
   return { ...emptyBardage(), type_cout, ...extra };
 }
 
-async function rendre(initial: BardageValues): Promise<void> {
+async function rendre(
+  initial: BardageValues,
+  overrides: Partial<ProductFormModalProps> = {}
+): Promise<void> {
   await act(async () => {
     root.render(
       createElement(ProductFormModal, {
         open: true,
         type: "BARDAGE",
         initial,
+        importContextKey: 0,
         onClose: () => {},
         onSave: () => {},
+        ...overrides,
       })
     );
+  });
+}
+
+async function rendreAvecProps(props: ProductFormModalProps): Promise<void> {
+  await act(async () => {
+    root.render(createElement(ProductFormModal, props));
   });
 }
 
@@ -83,6 +96,74 @@ async function choisir(idSelect: string, valeur: string): Promise<void> {
 }
 
 describe("ProductFormModal — onglet Tarifs Bardage selon type_cout", () => {
+  it("préremplit l'URL, affiche les candidats et ne scrape ni n'enregistre au montage", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const onSave = vi.fn();
+    await rendre(brouillon("matiere"), {
+      importInitialUrl: "https://fournisseur.example/produit",
+      importCandidates: { prix: "12,40", fabricant: "Marque X" },
+      onSave,
+    });
+
+    expect((parId("chp-auto-url") as HTMLInputElement).value)
+      .toBe("https://fournisseur.example/produit");
+    expect(conteneur.textContent).toContain("12,40");
+    expect(conteneur.textContent).toContain("Marque X");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("ne restaure pas d'ancienne URL après saisie, changement de contexte, fermeture et réouverture", async () => {
+    const initial = brouillon("matiere");
+    const props: ProductFormModalProps = {
+      open: true,
+      type: "BARDAGE",
+      initial,
+      importInitialUrl: "https://fournisseur.example/import",
+      importCandidates: { prix: "12,40" },
+      importContextKey: 1,
+      onClose: () => {},
+      onSave: () => {},
+    };
+    await rendreAvecProps(props);
+
+    const champ = parId("chp-auto-url") as HTMLInputElement;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value"
+      )?.set;
+      expect(setter).toBeTruthy();
+      setter!.call(champ, "https://saisie-manuelle.example/produit");
+      champ.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await rendreAvecProps({ ...props, initial: { ...initial } });
+    expect((parId("chp-auto-url") as HTMLInputElement).value)
+      .toBe("https://saisie-manuelle.example/produit");
+
+    await rendreAvecProps({
+      ...props,
+      initial: brouillon("matiere", { designation: "Autre produit" }),
+      importInitialUrl: "",
+      importCandidates: null,
+      importContextKey: 2,
+    });
+    expect((parId("chp-auto-url") as HTMLInputElement).value).toBe("");
+    expect(conteneur.textContent).not.toContain("12,40");
+
+    await rendreAvecProps({ ...props, open: false, importInitialUrl: "", importCandidates: null });
+    await rendreAvecProps({
+      ...props,
+      initial: brouillon("matiere", { designation: "Création classique" }),
+      importInitialUrl: "",
+      importCandidates: null,
+      importContextKey: 3,
+    });
+    expect((parId("chp-auto-url") as HTMLInputElement).value).toBe("");
+    expect(conteneur.textContent).not.toContain("12,40");
+  });
+
   describe("type_cout = matière (comportement inchangé)", () => {
     const matiere = brouillon("matiere", {
       fournisseur: "ACME",

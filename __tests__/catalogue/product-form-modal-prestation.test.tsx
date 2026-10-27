@@ -5,12 +5,14 @@
 //                     et la marge brute conservés ;
 //   * matière       → comportement intégralement inchangé.
 // Le brouillon n'est jamais purgé : repasser en « matiere » restaure les valeurs.
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import ProductFormModal from "@/components/catalogue/ProductFormModal";
+import type { ProductFormModalProps } from "@/components/catalogue/ProductFormModal";
 import {
   emptyTerrasseAccessoire,
+  emptyTerrasseLame,
   type NatureCout,
   type TerrasseAccessoireValues,
 } from "@/components/catalogue/types";
@@ -28,6 +30,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   conteneur.remove();
+  vi.restoreAllMocks();
 });
 
 /** Brouillon d'accessoire Terrasse, surchargeable. */
@@ -45,10 +48,25 @@ async function rendre(initial: TerrasseAccessoireValues): Promise<void> {
         open: true,
         type: "TERRASSE_ACCESSOIRE",
         initial,
+        importContextKey: 0,
         onClose: () => {},
         onSave: () => {},
       })
     );
+  });
+}
+
+async function rendreLame(overrides: Partial<ProductFormModalProps> = {}): Promise<void> {
+  await act(async () => {
+    root.render(createElement(ProductFormModal, {
+      open: true,
+      type: "TERRASSE_LAME",
+      initial: emptyTerrasseLame(),
+      importContextKey: 0,
+      onClose: () => {},
+      onSave: () => {},
+      ...overrides,
+    }));
   });
 }
 
@@ -86,6 +104,58 @@ async function choisir(idSelect: string, valeur: string): Promise<void> {
 }
 
 describe("ProductFormModal — onglet Tarifs d'un accessoire Terrasse", () => {
+  it("préremplit l'URL, affiche les candidats et ne scrape ni n'enregistre au montage", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const onSave = vi.fn();
+    await rendreLame({
+      importInitialUrl: "https://fournisseur.example/lame",
+      importCandidates: { prix: "19,90", reference: "REF-T" },
+      onSave,
+    });
+
+    expect((parId("chp-auto-url") as HTMLInputElement).value)
+      .toBe("https://fournisseur.example/lame");
+    expect(conteneur.textContent).toContain("19,90");
+    expect(conteneur.textContent).toContain("REF-T");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("efface URL et candidats sur changement de contexte puis fermeture/réouverture", async () => {
+    await rendreLame({
+      importInitialUrl: "https://fournisseur.example/ancienne-lame",
+      importCandidates: { prix: "19,90" },
+      importContextKey: 1,
+    });
+    expect((parId("chp-auto-url") as HTMLInputElement).value)
+      .toBe("https://fournisseur.example/ancienne-lame");
+
+    await rendreLame({
+      initial: emptyTerrasseLame(),
+      importInitialUrl: "",
+      importCandidates: null,
+      importContextKey: 2,
+    });
+    expect((parId("chp-auto-url") as HTMLInputElement).value).toBe("");
+    expect(conteneur.textContent).not.toContain("19,90");
+
+    await act(async () => {
+      root.render(createElement(ProductFormModal, {
+        open: false,
+        type: "TERRASSE_LAME",
+        importInitialUrl: "",
+        importCandidates: null,
+        importContextKey: 2,
+        onClose: () => {},
+        onSave: () => {},
+      }));
+    });
+    await rendreLame({ importInitialUrl: "", importCandidates: null, importContextKey: 3 });
+    expect((parId("chp-auto-url") as HTMLInputElement).value).toBe("");
+    expect(conteneur.textContent).not.toContain("19,90");
+  });
+
   describe("type_cout = matière (comportement inchangé)", () => {
     const matiere = brouillon("matiere", {
       fournisseur: "ACME",

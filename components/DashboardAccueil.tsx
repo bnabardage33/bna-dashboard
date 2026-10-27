@@ -287,9 +287,9 @@ export default function DashboardAccueil({
             hauteur du titre, à sa droite. Le sous-titre passe en dessous, sur
             toute la largeur, pour ne pas décaler ce centrage. */}
         <div className="flex items-center justify-between gap-3">
-          <h1 className="min-w-0 text-2xl font-bold leading-tight text-white sm:text-3xl">
-            Accueil
-          </h1>
+          <h2 className="min-w-0 text-xl font-bold leading-tight text-white sm:text-2xl">
+            Votre activité
+          </h2>
 
           {/* Le bouton vocal remplace l'ancien grand conteneur : même composant,
               même traitement IA de la note, présentation compacte. */}
@@ -304,7 +304,7 @@ export default function DashboardAccueil({
         </div>
 
         <p className="text-xs text-gray-400 sm:text-sm">
-          Tableau de bord terrain — l&apos;essentiel en un écran.
+          Suivi quotidien des chantiers et de votre activité.
         </p>
 
         {/* Bulle de dictée : dans le flux, jamais en surimpression de la météo. */}

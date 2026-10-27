@@ -31,18 +31,18 @@ function remplir(d) {
   if (el('fournisseur')) el('fournisseur').value = d.fournisseur || '';
   if (el('reference')) el('reference').value = d.reference || '';
   if (el('description')) el('description').value = d.description || '';
-  if (el('unite') && d.unite) {
+  if (el('unite') && d.unite && d.unite !== 'U') {
     // n'écrase la valeur que si l'option existe dans le <select>
     const existe = [...el('unite').options].some((o) => o.value === d.unite);
     if (existe) el('unite').value = d.unite;
   }
+  if (el('unite_note')) {
+    el('unite_note').textContent = d.unite === 'U'
+      ? 'Unité inconnue : « U » est la valeur de repli de l’extracteur et n’est pas transmise.'
+      : 'Unité candidate issue de la fiche — à vérifier.';
+  }
 
-  // L'app attend un prix TTC et en déduit le HT (page.tsx:272-273).
-  // L'extensionhistoriquement envoyait pu_ht + prix_ttc. On garde les deux
-  // champs pour la relecture, en partant du prix scrapé traité comme TTC.
-  const p = d.prix ? parseFloat(String(d.prix).replace(',', '.')) : null;
-  if (el('prix_ttc')) el('prix_ttc').value = p !== null && !isNaN(p) ? String(p).replace('.', ',') : '';
-  if (el('pu_ht')) el('pu_ht').value = p !== null && !isNaN(p) ? (p / 1.2).toFixed(2).replace('.', ',') : '';
+  if (el('prix_candidat')) el('prix_candidat').value = d.prix || '';
 
   // Dimensions trouvées dans le titre ou la description.
   if (el('epaisseur_mm')) {
@@ -90,9 +90,8 @@ function auDemarrage() {
 // On passe par les memes paramètres que le favori (page.tsx:217-219) :
 // l'app refait la conversion TTC/HT, détecte les dimensions et le
 // fournisseur, puis ouvre sa modale de saisie pour validation.
-function ouvrirDansLApp() {
+function ouvrirDansLApp(catalogue) {
   const designation = el('designation') ? el('designation').value.trim() : '';
-  const ttc = el('prix_ttc') ? el('prix_ttc').value.trim().replace(',', '.') : '';
   if (!designation) {
     afficherStatut('La désignation est obligatoire.', 'error');
     return;
@@ -100,9 +99,21 @@ function ouvrirDansLApp() {
   const params = new URLSearchParams({
     importUrl: currentUrl || '',
     importTitle: designation,
-    importPrice: ttc,
   });
-  chrome.tabs.create({ url: `${APP_URL}/bureau/catalogue?${params.toString()}` });
+  const candidats = {
+    importPrice: el('prix_candidat')?.value.trim() || '',
+    importFabricant: el('fabricant')?.value.trim() || '',
+    importReference: el('reference')?.value.trim() || '',
+    importUnite: el('unite')?.value.trim() || '',
+    importFournisseur: el('fournisseur')?.value.trim() || '',
+  };
+  for (const [cle, valeur] of Object.entries(candidats)) {
+    if (valeur) params.set(cle, valeur);
+  }
+  const chemin = catalogue === 'terrasse'
+    ? '/bureau/catalogue-terrasse'
+    : '/bureau/catalogue';
+  chrome.tabs.create({ url: `${APP_URL}${chemin}?${params.toString()}` });
   afficherStatut('Ouverture de l\'application…', 'ok');
 }
 
@@ -112,10 +123,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 });
 auDemarrage();
 
-const bouton = el('saveBtn');
-if (bouton) {
-  bouton.textContent = 'Ouvrir dans BNA Dashboard';
-  bouton.addEventListener('click', ouvrirDansLApp);
-}
+el('importBardageBtn')?.addEventListener('click', () => ouvrirDansLApp('bardage'));
+el('importTerrasseBtn')?.addEventListener('click', () => ouvrirDansLApp('terrasse'));
 
 document.addEventListener('DOMContentLoaded', auDemarrage);

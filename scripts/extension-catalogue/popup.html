@@ -131,12 +131,8 @@
 
   <div class="grid-2">
     <div class="form-group">
-      <label>Prix TTC (€)</label>
-      <input type="text" id="prix_ttc" placeholder="0.00">
-    </div>
-    <div class="form-group">
-      <label>Prix Unitaire HT (€)</label>
-      <input type="text" id="pu_ht" placeholder="0.00" readonly>
+      <label>Prix repéré — HT/TTC et unité à vérifier</label>
+      <input type="text" id="prix_candidat">
     </div>
   </div>
 
@@ -144,6 +140,7 @@
     <div class="form-group">
       <label>Unité</label>
       <select id="unite">
+        <option value="">Non détectée</option>
         <option value="m²">m²</option>
         <option value="U">Unité (U)</option>
         <option value="ml">ml</option>
@@ -152,6 +149,7 @@
         <option value="L">Litre</option>
         <option value="Pièce">Pièce</option>
       </select>
+      <small id="unite_note">Une unité de repli n’est pas considérée comme détectée.</small>
     </div>
     <div class="form-group">
       <label>Référence</label>
@@ -175,7 +173,8 @@
     <textarea id="description" rows="3" placeholder="Rempli automatiquement depuis la page"></textarea>
   </div>
 
-  <button id="saveBtn">Ouvrir dans BNA Dashboard</button>
+  <button id="importBardageBtn">Ouvrir dans le catalogue Bardage</button>
+  <button id="importTerrasseBtn">Ouvrir dans le catalogue Terrasse</button>
   <div id="status"></div>
 
   <p class="note">

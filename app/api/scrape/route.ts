@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { verifierSession } from '@/lib/auth';
+import { scrapeUrlSecurisee, UrlScrapeRefusee } from '@/lib/validationUrlScrape';
+import { extrairePrixCandidats } from '@/lib/scrapePrix';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const session = await verifierSession();
@@ -9,22 +14,11 @@ export async function GET(request: Request) {
   const urlToScrape = searchParams.get('url');
 
   if (!urlToScrape) {
-    return NextResponse.json({ error: 'Missing URL parameter' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing URL parameter', code: 'URL_INVALIDE' }, { status: 400 });
   }
 
   try {
-    const res = await fetch(urlToScrape, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-      },
-    });
-
-    if (!res.ok) {
-      return NextResponse.json({ error: 'Failed to fetch the URL' }, { status: 500 });
-    }
-
-    const html = await res.text();
+    const html = await scrapeUrlSecurisee(urlToScrape);
     const $ = cheerio.load(html);
 
     // 1. Titre
@@ -41,65 +35,9 @@ export async function GET(request: Request) {
       brand = metaBrand.trim();
     }
 
-    // 3. Prix
-    let price: number | null = null;
-    
-    // A) Chercher dans les données structurées JSON-LD (Standard E-commerce SEO)
-    $('script[type="application/ld+json"]').each((_, el) => {
-      try {
-        const json = JSON.parse($(el).html() || '{}');
-        // Parfois c'est un tableau de JSON-LD
-        const items = Array.isArray(json) ? json : [json];
-        for (const item of items) {
-          if (item['@type'] === 'Product' && item.offers) {
-            if (item.offers.price) {
-              price = parseFloat(item.offers.price);
-              break;
-            } else if (item.offers[0] && item.offers[0].price) {
-              price = parseFloat(item.offers[0].price);
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        // Ignorer les erreurs de parse JSON
-      }
-    });
-
-    // B) Si pas trouvé, chercher dans les meta balises standard
-    if (!price) {
-      const metaPrice = $('meta[property="product:price:amount"]').attr('content');
-      if (metaPrice) price = parseFloat(metaPrice.replace(',', '.'));
-    }
-    
-    // C) Si toujours pas, chercher dans d'autres meta courantes
-    if (!price) {
-      const metaPrice2 = $('meta[itemprop="price"]').attr('content');
-      if (metaPrice2) price = parseFloat(metaPrice2.replace(',', '.'));
-    }
-
-    // D) Fallback heuristique avancé (Leroy Merlin, Casto, etc...)
-    if (!price) {
-      // Cherche dans des classes de prix typiques (ex: 'price', 'prix', 'amount')
-      const priceTexts: string[] = [];
-      $('[class*="price"], [class*="prix"], [data-price]').each((_, el) => {
-        const text = $(el).text().trim();
-        const dataPrice = $(el).attr('data-price');
-        if (dataPrice) priceTexts.push(dataPrice);
-        if (text) priceTexts.push(text);
-      });
-      
-      // On fouille les textes trouvés pour un format de prix avec euro
-      for (const text of priceTexts) {
-        // Ex: 15,99 € ou 15.99 ou 15€99
-        const match = text.match(/(\d+)\s*[.,€]\s*(\d{2})/);
-        if (match) {
-           // Reconstruit le nombre
-           price = parseFloat(`${match[1]}.${match[2]}`);
-           break;
-        }
-      }
-    }
+    // 3. Prix : renvoyer des candidats qualifiés, sans leur inventer une unité
+    // ou une base fiscale. Le formulaire décide si un candidat est mappable.
+    const prix_candidats = extrairePrixCandidats($);
 
     // 4. Déduire le fournisseur depuis l'URL
     let fournisseur = '';
@@ -199,11 +137,19 @@ export async function GET(request: Request) {
       }
     }
 
+    // Page lue mais sans donnée produit exploitable (page rendue en JavaScript,
+    // page de vérification, etc.) : signalé sans présumer de la cause.
+    const avertissements: string[] = [];
+    if (!h1 && !brand && prix_candidats.length === 0) {
+      avertissements.push('PAGE_SANS_DONNEES_PRODUIT');
+    }
+
     return NextResponse.json({
+      avertissements,
       designation: title,
       fabricant: brand,
       fournisseur: fournisseur,
-      prix_ttc: price,
+      prix_candidats,
       longueur_mm,
       largeur_mm,
       epaisseur_mm,
@@ -213,7 +159,17 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Scraping error:', error);
-    return NextResponse.json({ error: 'An error occurred during scraping' }, { status: 500 });
+    if (error instanceof UrlScrapeRefusee) {
+      console.warn('[SSRF Scrape] Requête refusée :', {
+        statut: error.statut,
+        raison: error.messageTechnique,
+      });
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.statut });
+    }
+    console.error('Scraping error:', error instanceof Error ? error.message : 'Erreur inconnue');
+    return NextResponse.json(
+      { error: 'An error occurred during scraping', code: 'ERREUR_INTERNE' },
+      { status: 500 },
+    );
   }
 }

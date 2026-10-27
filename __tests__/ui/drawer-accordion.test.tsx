@@ -34,7 +34,7 @@
 // ============================================================================
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { act, createElement, useState, type ReactNode } from "react";
+import { act, createElement, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 // --- Mocks ------------------------------------------------------------------
@@ -46,8 +46,18 @@ vi.mock("next/navigation", () => ({
 
 // `next/link` exige le contexte App Router : on le remplace par une ancre.
 vi.mock("next/link", () => ({
-  default: ({ href, children, ...rest }: { href: string; children: ReactNode }) =>
-    createElement("a", { href, ...rest }, children),
+  default: ({ href, children, onClick, ...rest }: {
+    href: string;
+    children: ReactNode;
+    onClick?: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
+  }) => createElement("a", {
+    href,
+    ...rest,
+    onClick: (event: ReactMouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      onClick?.(event);
+    },
+  }, children),
 }));
 
 // Le Drawer n'utilise `supabase` que pour la deconnexion.
@@ -209,6 +219,30 @@ describe("Drawer — la catégorie courante se referme aussi", () => {
 });
 
 describe("Drawer — contrat d'accordéon", () => {
+  it("expose les deux accueils avec la bonne route, l’état actif et la fermeture après navigation", async () => {
+    const accueils = [
+      { label: "Accueil Météo", chemin: "/terrain/meteo" },
+      { label: "Accueil Chantier", chemin: "/terrain/accueil" },
+    ];
+
+    for (const { label, chemin } of accueils) {
+      await monter(chemin);
+      const lien = [...conteneur.querySelectorAll("nav a")].find(
+        (element) => element.textContent?.trim() === label,
+      );
+
+      expect(lien?.getAttribute("href")).toBe(chemin);
+      expect(lien?.getAttribute("aria-current")).toBe("page");
+
+      await cliquer(lien ?? null);
+      expect(boutonHamburger()?.getAttribute("aria-expanded")).toBe("false");
+
+      await act(async () => root.unmount());
+      conteneur.innerHTML = "";
+      root = createRoot(conteneur);
+    }
+  });
+
   it("toutes les catégories sont d'abord fermées", async () => {
     await monter("/");
     for (const { label } of GROUPES) {

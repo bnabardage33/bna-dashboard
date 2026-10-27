@@ -26,6 +26,14 @@ import {
 } from "./types";
 import { useScraping } from "./useScraping";
 
+export interface ProductImportCandidates {
+  prix?: string;
+  fabricant?: string;
+  reference?: string;
+  unite?: string;
+  fournisseur?: string;
+}
+
 export interface ProductFormModalProps {
   open: boolean;
   type: CatalogueType;
@@ -36,6 +44,9 @@ export interface ProductFormModalProps {
   typeCoutDefaut?: NatureCout;
   /** Terrasse accessoire uniquement : type de coût pré-sélectionné à la création. */
   initialTypeCout?: NatureCout;
+  importInitialUrl?: string;
+  importCandidates?: ProductImportCandidates | null;
+  importContextKey: number;
   onClose: () => void;
   onSave: (values: ProductDraft) => void | Promise<void>;
 }
@@ -121,6 +132,9 @@ export default function ProductFormModal({
   initialCategorie,
   typeCoutDefaut,
   initialTypeCout,
+  importInitialUrl = "",
+  importCandidates = null,
+  importContextKey,
   onClose,
   onSave,
 }: ProductFormModalProps) {
@@ -140,6 +154,10 @@ export default function ProductFormModal({
   const { importUrl, setImportUrl, isScraping, scrape } = useScraping(type, (patch) => {
     setValues((prev) => appliquerPatch(prev, patch));
   });
+
+  useEffect(() => {
+    setImportUrl(open ? importInitialUrl : "");
+  }, [open, importInitialUrl, importContextKey, type, setImportUrl]);
 
   if (!open) return null;
 
@@ -233,6 +251,31 @@ export default function ProductFormModal({
             {/* ── Bloc Auto-remplir (tous types) ───────────────────────── */}
             {activeTab === "general" && !estMainOeuvre && (
               <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
+                {importCandidates && (
+                  <details className="mb-3 text-sm text-amber-200">
+                    <summary>Données candidates reçues — à vérifier</summary>
+                    <dl>
+                      {Object.entries(importCandidates)
+                        .filter(([, valeur]) => Boolean(valeur))
+                        .map(([cle, valeur]) => (
+                          <div key={cle}>
+                            <dt>{({
+                              prix: "Prix détecté",
+                              fabricant: "Fabricant",
+                              reference: "Référence",
+                              unite: "Unité candidate",
+                              fournisseur: "Fournisseur",
+                            } as const)[cle as keyof ProductImportCandidates]}</dt>
+                            <dd>{valeur}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                    <p>
+                      Ces valeurs ne sont pas vérifiées et restent séparées
+                      du brouillon. Le prix n’a ni unité ni base HT/TTC établie.
+                    </p>
+                  </details>
+                )}
                 <label htmlFor="chp-auto-url" className="block text-xs font-semibold text-cyan-400 mb-2">
                   ⚡ Auto-remplir via une adresse Web (Optionnel)
                 </label>

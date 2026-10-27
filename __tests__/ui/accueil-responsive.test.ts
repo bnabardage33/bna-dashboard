@@ -7,8 +7,8 @@
 // LA REGLE : la composition est mobile d'abord et n'invente aucune donnee.
 // Concretement :
 //
-//   1. CONTENEUR BORNE ET CENTRE. `app/page.tsx` reprend `mx-auto max-w-7xl`
-//      et `px-4`, comme les autres ecrans de l'application.
+//   1. CONTENEURS BORNE ET CENTRE. La racine publique et l'Accueil Chantier
+//      reprennent `mx-auto max-w-7xl` et `px-4`.
 //
 //   2. GRILLES. Une seule colonne sur mobile, deux a partir de `md`, et une
 //      grille de 12 colonnes a partir de `xl` :
@@ -50,14 +50,19 @@ const CODE = (source: string) =>
   source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
 
 const PAGE = CODE(lire("app/page.tsx"));
+const PAGE_CHANTIER = CODE(lire("app/terrain/accueil/page.tsx"));
+const CHARGEURS = CODE(lire("lib/accueil/chargerDonnees.ts"));
+const ACCUEIL_PROFESSIONNEL = CODE(lire("components/AccueilProfessionnel.tsx"));
 const DASHBOARD = CODE(lire("components/DashboardAccueil.tsx"));
 const METEO = CODE(lire("components/ChantiersMeteoCards.tsx"));
 
-/** Les deux `<main>` de `app/page.tsx` (visiteur anonyme puis cockpit). */
-const MAINS = [...PAGE.matchAll(/<main className="([^"]*)"/g)].map((m) => m[1]);
+/** Un `<main>` public à la racine et un dans l'Accueil Chantier authentifié. */
+const MAINS = [PAGE, PAGE_CHANTIER].flatMap((source) =>
+  [...source.matchAll(/<main className="([^"]*)"/g)].map((m) => m[1]),
+);
 
 describe("Accueil — le contenu est borne et centre", () => {
-  it("`app/page.tsx` a bien deux conteneurs de page", () => {
+  it("la racine publique et l'Accueil Chantier ont chacun leur conteneur", () => {
     // Sans ce controle, `MAINS` vide ferait passer les suivants par absence
     // d'objet — le defaut classique d'un test de source.
     expect(MAINS).toHaveLength(2);
@@ -206,12 +211,12 @@ describe("Accueil — les grilles sont celles de la refonte", () => {
 
 describe("Accueil — hierarchie visuelle et comportement mobile", () => {
   it("la page s'ouvre sur un en-tete compact avec `h1` et sous-titre", () => {
-    // En-tete compact : titre et sous-titre d'une ligne. La marque « BNA
-    // Bardage » n'est plus répétée ici : elle est portée par le logo du layout
-    // global (`app/layout.tsx`), le sur-titre rouge faisait doublon.
-    expect(DASHBOARD).toMatch(/<h1[^>]*>[^<]+<\/h1>/);
+    // L'accueil professionnel porte le H1 ; le cockpit conserve son H2.
+    // La marque est déjà affichée par le layout global.
+    expect(ACCUEIL_PROFESSIONNEL).toMatch(/<h1[^>]*>[\s\S]*?\{titre\}[\s\S]*?<\/h1>/);
+    expect(DASHBOARD).toMatch(/<h2[^>]*>[\s\S]*?Votre activité[\s\S]*?<\/h2>/);
     expect(DASHBOARD).toMatch(/<header className="[^"]*"/);
-    expect(DASHBOARD).not.toContain("BNA Bardage");
+    expect(ACCUEIL_PROFESSIONNEL).not.toContain("BNA Bardage");
   });
 
   it("les quatre en-tetes de section gardent l'alignement d'origine", () => {
@@ -334,16 +339,17 @@ describe("Accueil — hierarchie visuelle et comportement mobile", () => {
 });
 
 describe("Accueil — le correctif de rendu ne touche pas au fond", () => {
-  it("la meteo reste montee par le serveur, dans le bloc 3", () => {
-    expect(PAGE).toContain("blocMeteo={<ChantiersMeteoCards />}");
+  it("la meteo reste montee par le serveur sur l'Accueil Chantier", () => {
+    expect(PAGE_CHANTIER).toContain("blocMeteo={<ChantiersMeteoCards />}");
     const meteo = DASHBOARD.slice(DASHBOARD.indexOf("blocMeteo"));
     expect(meteo).toContain("Impact");
   });
 
   it("les trois chargeurs de donnees restent en place", () => {
-    expect(PAGE).toContain("chargerNotes");
-    expect(PAGE).toContain("chargerChantiersAPreparer");
-    expect(PAGE).toContain("chargerNotifications");
+    expect(PAGE_CHANTIER).toContain("chargerDonneesAccueil");
+    expect(CHARGEURS).toContain("chargerNotes");
+    expect(CHARGEURS).toContain("chargerChantiersAPreparer");
+    expect(CHARGEURS).toContain("chargerNotifications");
   });
 
   it("l'assistance vocale garde son handler et son composant", () => {
