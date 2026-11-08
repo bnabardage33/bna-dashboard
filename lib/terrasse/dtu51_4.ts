@@ -391,6 +391,72 @@ export function verifierConformiteDTU51_4(
     }
   }
 
+  // 11. Hauteur maximale des plots polymères réglables (NF DTU 51.4 Décembre 2018 Art. 1 & §5.5.3.4.2 : <= 300 mm sous lame)
+  if (config.type_plots === "reglables" || config.type_plots === "autonivelants") {
+    const hauteurSousLameMm = Math.max(0, Math.round((config.hauteur_sol_cm || 0) * 10 - (config.epaisseur_lame_mm || 21)));
+    if (hauteurSousLameMm > 300) {
+      controles.push({
+        id: "dtu-hauteur-max-plot-polymere",
+        titre: "Hauteur maximale des plots polymères (NF DTU 51.4 Déc. 2018)",
+        regleDtu: "NF DTU 51.4 Art. 1 & §5.5.3.4.2 : Hauteur sous lame limitée à 300 mm (30 cm) sur plots polymères",
+        valeurConstatee: `${hauteurSousLameMm} mm sous lame (> 300 mm)`,
+        statut: "non_conforme",
+        recommandation: "Au-delà de 30 cm sous lame, remplacer les plots polymères par une structure porteuse sur solives (NF DTU 31.1) ou plots béton.",
+        sourceNormative: "NF DTU 51.4 (Déc. 2018) §5.5.3.4.2",
+      });
+    }
+  }
+
+  // 12. Vissage par le dessous en bois massif (NF DTU 51.4 Décembre 2018 §5.5.6.3 : e >= 27 mm et L/e <= 5)
+  if (config.vissage_par_dessous_bois) {
+    const elancement = (config.largeur_lame_mm || 140) / Math.max(1, config.epaisseur_lame_mm || 21);
+    if (config.epaisseur_lame_mm < 27 || elancement > 5) {
+      controles.push({
+        id: "dtu-vissage-dessous-bois",
+        titre: "Fixation par le dessous en bois massif (NF DTU 51.4 Déc. 2018)",
+        regleDtu: "NF DTU 51.4 §5.5.6.3 : Épaisseur minimale e ≥ 27 mm et élancement L/e ≤ 5 obligatoires",
+        valeurConstatee: `e = ${config.epaisseur_lame_mm} mm, L/e = ${elancement.toFixed(1)}`,
+        statut: "non_conforme",
+        recommandation: "Passer en vissage traversant par le dessus (Tableau 9) ou sélectionner une lame d'épaisseur ≥ 27 mm avec L/e ≤ 5.",
+        sourceNormative: "NF DTU 51.4 (Déc. 2018) §5.5.6.3",
+      });
+    } else {
+      controles.push({
+        id: "dtu-vissage-dessous-bois",
+        titre: "Fixation par le dessous en bois massif (NF DTU 51.4 Déc. 2018)",
+        regleDtu: "NF DTU 51.4 §5.5.6.3 : e ≥ 27 mm, L/e ≤ 5 et double vissage en rive aux extrémités",
+        valeurConstatee: `e = ${config.epaisseur_lame_mm} mm, L/e = ${elancement.toFixed(1)}`,
+        statut: "conforme",
+        recommandation: "Doubler le vissage en rive à chaque extrémité de lame.",
+        sourceNormative: "NF DTU 51.4 (Déc. 2018) §5.5.6.3",
+      });
+    }
+  }
+
+  // 13. Contrôle géométrique des réservations et chevêtres d'encadrement
+  if (reservations.length > 0) {
+    const horsEmprise = reservations.some((r) => {
+      const rx = r.x || 0;
+      const ry = r.y || 0;
+      const rw = r.diametre ?? r.longueur ?? r.largeur ?? 0;
+      const rh = r.diametre ?? r.largeur ?? r.longueur ?? 0;
+      return rx < 0 || ry < 0 || rx + rw > config.longueur_m + 1e-3 || ry + rh > config.largeur_m + 1e-3;
+    });
+    controles.push({
+      id: "dtu-reservations-chevetres",
+      titre: "Encadrement des réservations & chevêtres",
+      regleDtu: "NF DTU 51.4 §5.5.3 : Chevêtres et plots de soutien requis autour de chaque réservation (débord bout ≤ 3×e, jeu mur 10 mm)",
+      valeurConstatee: horsEmprise
+        ? "Réservation débordant de l'emprise"
+        : `${reservations.length} réservation(s) encadrée(s) par chevêtres`,
+      statut: horsEmprise ? "non_conforme" : "conforme",
+      recommandation: horsEmprise
+        ? "Repositionner la réservation à l'intérieur des dimensions de la terrasse."
+        : "Maintenir un jeu périphérique de 10 mm autour de l'obstacle et fixer chaque bout de lame coupé sur le chevêtre.",
+      sourceNormative: "NF DTU 51.4 (Déc. 2018)",
+    });
+  }
+
   // Synthèse globale
   const nbNonConformes = controles.filter((c) => c.statut === "non_conforme").length;
   const nbAvertissements = controles.filter((c) => c.statut === "avertissement").length;

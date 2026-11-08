@@ -6,6 +6,7 @@ import { ZoneEnvironnement } from "../types";
 export type FabricantCompositeId =
   | "silvadec"
   | "fiberdeck"
+  | "neowood"
   | "neolife"
   | "ocewood"
   | "trex";

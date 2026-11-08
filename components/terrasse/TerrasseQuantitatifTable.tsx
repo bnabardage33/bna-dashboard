@@ -22,22 +22,51 @@ export default function TerrasseQuantitatifTable({
   const router = useRouter();
 
   const handleCreerCommande = () => {
-    // Préparer les lignes pour la commande fournisseur
-    const lignes = resultat.chiffrage.lignes.map((l) => ({
-      designation: l.designation,
-      quantite: l.quantite,
-      unite: l.unite,
-      pu_ht: l.prixUnitaireHt,
-    }));
+    // Préparer les lignes pour la commande fournisseur (exclusion formelle des prestations de main-d'œuvre)
+    const lignesFournitures = (resultat.chiffrage.lignes || [])
+      .filter((l) => {
+        const cat = (l.categorie || "").toLowerCase();
+        const code = (l.code || "").toUpperCase();
+        const unite = (l.unite || "").toLowerCase();
+        // Exclusion formelle de toute prestation / main-d'œuvre
+        if (
+          cat.includes("main") ||
+          cat.includes("oeuvre") ||
+          cat.includes("pose") ||
+          cat.includes("prestation")
+        ) {
+          return false;
+        }
+        if (code.startsWith("MO-") || code.startsWith("PREST-")) {
+          return false;
+        }
+        if (unite === "h" || unite === "heure" || unite === "heures") {
+          return false;
+        }
+        return true;
+      })
+      .map((l) => ({
+        designation: l.designation,
+        quantite: l.quantite,
+        unite: l.unite,
+        pu_ht: l.prixUnitaireHt,
+      }));
+
+    const zoneNom = `Fournitures Terrasse Bois DTU 51.4 — ${resultat.surfaceBruteM2} m²`;
 
     try {
       localStorage.setItem(
         CLE_PREFILL_COMMANDE,
         JSON.stringify({
-          chantier_id: chantierId,
-          chantier_nom: chantierNom,
-          designation_globale: `Fournitures Terrasse Bois DTU 51.4 — ${resultat.surfaceBruteM2} m²`,
-          lignes,
+          // Clés camelCase lues par app/bureau/fournisseurs/page.tsx
+          chantierId: chantierId || "",
+          chantierNom: chantierNom || "",
+          zoneNom,
+          // Clés snake_case historiques préservées
+          chantier_id: chantierId || "",
+          chantier_nom: chantierNom || "",
+          designation_globale: zoneNom,
+          lignes: lignesFournitures,
         })
       );
       router.push("/bureau/fournisseurs");
@@ -88,6 +117,116 @@ export default function TerrasseQuantitatifTable({
           <p className="text-3xs text-emerald-500/70">Indicatif marché pro</p>
         </div>
       </div>
+
+      {/* Séparation Q_net / Q_tech / Q_appro & Scénarios admissibles (Terrasse Pro) */}
+      {resultat.terrassePro && (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-[#14161b] p-3.5 shadow-md">
+              <p className="text-3xs font-bold uppercase tracking-wider text-sky-400">
+                1. Quantitatif Net Géométrique (Q_net)
+              </p>
+              <p className="mt-1 text-xs text-gray-300">
+                Surface nette :{" "}
+                <span className="font-bold text-white">
+                  {resultat.terrassePro.quantities.geometricNet.netDeckingAreaM2} m²
+                </span>{" "}
+                (réservations déduites :{" "}
+                {resultat.terrassePro.quantities.geometricNet.reservationsDeductedAreaM2} m²)
+              </p>
+              <p className="mt-0.5 text-3xs text-gray-400">
+                Lames nettes : {resultat.terrassePro.quantities.geometricNet.totalBladeNetLinearMeters} ml •{" "}
+                Segments posés : {resultat.terrassePro.geometry.blades.length} (tous ≥ 400 mm)
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#14161b] p-3.5 shadow-md">
+              <p className="text-3xs font-bold uppercase tracking-wider text-amber-400">
+                2. Quantitatif Technique Découpe 1D (Q_tech)
+              </p>
+              <p className="mt-1 text-xs text-gray-300">
+                Barres débitées :{" "}
+                <span className="font-bold text-white">
+                  {resultat.terrassePro.quantities.technicalCut.bladesByCommercialLength[0]?.count ?? 0} lames
+                </span>{" "}
+                &{" "}
+                <span className="font-bold text-white">
+                  {resultat.terrassePro.quantities.technicalCut.joistsByCommercialLength[0]?.count ?? 0} lambourdes
+                </span>
+              </p>
+              <p className="mt-0.5 text-3xs text-gray-400">
+                Chute lames : {resultat.terrassePro.quantities.technicalCut.globalBladeWasteRatePercent}% •{" "}
+                Chutes réemployées ♻️ :{" "}
+                <span className="font-bold text-emerald-400">
+                  {resultat.terrassePro.geometry.blades.filter((b) => b.isFromOffcutReuse).length}
+                </span>
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#14161b] p-3.5 shadow-md">
+              <p className="text-3xs font-bold uppercase tracking-wider text-emerald-400">
+                3. Approvisionnement (+3% Tri DTU & Colisage)
+              </p>
+              <p className="mt-1 text-xs text-gray-300">
+                À commander :{" "}
+                <span className="font-bold text-white">
+                  {resultat.terrassePro.quantities.commercialSupply.totalBladesToOrderCount} lames
+                </span>{" "}
+                (dont +{resultat.terrassePro.quantities.commercialSupply.dtu3PercentSortingMarginBladesCount} marge 3%)
+              </p>
+              <p className="mt-0.5 text-3xs text-gray-400">
+                Fixations : Inox {resultat.terrassePro.quantities.commercialSupply.fastenerSpec.stainlessGrade}
+                {resultat.terrassePro.quantities.commercialSupply.fastenerSpec.diameterMm
+                  ? ` Ø${resultat.terrassePro.quantities.commercialSupply.fastenerSpec.diameterMm}x${resultat.terrassePro.quantities.commercialSupply.fastenerSpec.minLengthMm} mm`
+                  : " (Clips composites)"}{" "}
+                ({resultat.terrassePro.quantities.commercialSupply.fastenerBoxesCount} btes)
+              </p>
+            </div>
+          </div>
+
+          {resultat.terrassePro.topAdmissibleScenarios &&
+            resultat.terrassePro.topAdmissibleScenarios.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-[#14161b] p-3.5 shadow-md">
+                <p className="text-3xs font-bold uppercase tracking-wider text-amber-300 mb-2">
+                  Scénarios d&apos;Optimisation 1D Admissibles (Tous segments ≥ 400 mm & appuis DTU 51.4 validés)
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {resultat.terrassePro.topAdmissibleScenarios.map((sc) => (
+                    <div
+                      key={`${sc.rank}-${sc.poseMode}-${sc.commercialLengthMm}`}
+                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs border ${
+                        sc.rank === 1
+                          ? "bg-emerald-950/30 border-emerald-500/40 text-white"
+                          : "bg-black/30 border-white/10 text-gray-300"
+                      }`}
+                    >
+                      <div>
+                        <span
+                          className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-extrabold mr-2 ${
+                            sc.rank === 1
+                              ? "bg-emerald-500 text-black"
+                              : "bg-white/10 text-gray-300"
+                          }`}
+                        >
+                          #{sc.rank} {sc.rank === 1 ? "Optimal" : "Alternative"}
+                        </span>
+                        <span className="font-semibold">{sc.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-amber-300">
+                          {sc.totalBladesToOrderCount} lames
+                        </span>{" "}
+                        <span className="text-3xs text-gray-400">
+                          (chute {sc.wasteRatePercent}%)
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
+      )}
 
       {/* Tableau détaillé des approvisionnements */}
       <div className="rounded-2xl border border-white/10 bg-[#14161b] overflow-hidden shadow-xl">

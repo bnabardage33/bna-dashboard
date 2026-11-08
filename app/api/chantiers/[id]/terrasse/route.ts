@@ -13,6 +13,7 @@ import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
   QuantiteAccessoiresTerrasse,
+  ResultatCalculTerrasse,
   TarifsCatalogueTerrasse,
 } from "@/lib/terrasse/types";
 import type { Database, Json } from "@/types/supabase";
@@ -56,6 +57,36 @@ function normaliserQuantitesAccessoires(value: unknown):
     quantites[cle] = nombre;
   }
   return { quantites };
+}
+
+const CHAMPS_NUMERIQUES_TERRASSE: Record<string, { min: number; max: number }> = {
+  longueur_m: { min: 0.01, max: 100_000 }, largeur_m: { min: 0.01, max: 100_000 },
+  hauteur_sol_cm: { min: 0, max: 100_000 }, pente_pct: { min: 0, max: 100 },
+  largeur_lame_mm: { min: 1, max: 10_000 }, epaisseur_lame_mm: { min: 1, max: 10_000 },
+  longueur_lame_m: { min: 0.01, max: 100_000 }, espacement_lames_mm: { min: 0, max: 10_000 },
+  section_largeur_mm: { min: 1, max: 10_000 }, section_hauteur_mm: { min: 1, max: 10_000 },
+  longueur_lambourde_m: { min: 0.01, max: 100_000 }, entraxe_lambourdes_cm: { min: 1, max: 10_000 },
+  entraxe_plots_cm: { min: 1, max: 10_000 }, escalier_nb_marches: { min: 0, max: 10_000 },
+  escalier_largeur_m: { min: 0, max: 10_000 }, escalier_giron_cm: { min: 0, max: 10_000 },
+  escalier_hauteur_marche_cm: { min: 0, max: 10_000 }, garde_corps_longueur_ml: { min: 0, max: 100_000 },
+  garde_corps_hauteur_cm: { min: 0, max: 10_000 }, coef_perte_lames: { min: 1, max: 100 },
+  coef_perte_lambourdes: { min: 1, max: 100 },
+};
+
+function lireNombre(valeur: unknown, defaut: number): number {
+  return valeur === undefined ? defaut : typeof valeur === "number" ? valeur : Number((valeur as string).trim());
+}
+
+function validerNombresTerrasse(body: Record<string, unknown>): string | null {
+  for (const [champ, bornes] of Object.entries(CHAMPS_NUMERIQUES_TERRASSE)) {
+    const valeur = body[champ];
+    if (valeur === undefined) continue;
+    const nombre = typeof valeur === "number" ? valeur : typeof valeur === "string" && valeur.trim() ? Number(valeur.trim()) : NaN;
+    if (!Number.isFinite(nombre) || nombre < bornes.min || nombre > bornes.max) {
+      return `${champ} doit être un nombre compris entre ${bornes.min} et ${bornes.max}`;
+    }
+  }
+  return null;
 }
 
 type ClientSupabaseTerrasse = Awaited<ReturnType<typeof createClient>>;
@@ -243,13 +274,43 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
     quantite_accessoires: quantitesAccessoires.quantites,
     tarifs_catalogue: catalogue.tarifs,
   };
-  const resultat = calculerTerrasse(typedTerrasse, typedReservations, catalogue.tarifs);
+
+  // Validation de l'instantané historique s'il existe
+  let resultat: ResultatCalculTerrasse;
+  let sourceResultat: "historique" | "calcule_a_jour";
+
+  if (terrasse.resultats_techniques !== null && terrasse.resultats_techniques !== undefined) {
+    const raw = terrasse.resultats_techniques;
+    const estObjet = typeof raw === "object" && raw !== null && !Array.isArray(raw);
+    const estValide =
+      estObjet &&
+      typeof (raw as Record<string, unknown>).surfaceBruteM2 === "number" &&
+      typeof (raw as Record<string, unknown>).chiffrage === "object" &&
+      (raw as Record<string, unknown>).chiffrage !== null;
+
+    if (!estValide) {
+      return NextResponse.json(
+        {
+          error:
+            "L'instantané des résultats techniques enregistré est invalide ou corrompu. Une révision technique est nécessaire.",
+        },
+        { status: 500 }
+      );
+    }
+    resultat = raw as unknown as ResultatCalculTerrasse;
+    sourceResultat = "historique";
+  } else {
+    // Absence d'instantané historique -> calcul dynamique
+    resultat = calculerTerrasse(typedTerrasse, typedReservations, catalogue.tarifs);
+    sourceResultat = "calcule_a_jour";
+  }
 
   return NextResponse.json({
     existe: true,
     terrasse: typedTerrasse,
     reservations: typedReservations,
     resultat,
+    source_resultat: sourceResultat,
     chantierNom: chantier.nom,
     clientNom: (chantier.clients as unknown as { nom: string })?.nom,
   });
@@ -266,6 +327,31 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Corps JSON invalide" }, { status: 400 });
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Le corps doit être un objet JSON" }, { status: 400 });
+  }
+  const erreurNumerique = validerNombresTerrasse(body as Record<string, unknown>);
+  if (erreurNumerique) return NextResponse.json({ error: erreurNumerique }, { status: 400 });
+  if (body.reservations !== undefined && !Array.isArray(body.reservations)) {
+    return NextResponse.json({ error: "reservations doit être un tableau" }, { status: 400 });
+  }
+  if (Array.isArray(body.reservations)) {
+    for (const [index, reservation] of body.reservations.entries()) {
+      if (!reservation || typeof reservation !== "object" || Array.isArray(reservation)) {
+        return NextResponse.json({ error: `reservations[${index}] doit être un objet` }, { status: 400 });
+      }
+      const resObj = reservation as unknown as Record<string, unknown>;
+      for (const champ of ["x", "y", "largeur", "longueur", "diametre"] as const) {
+        const valeur = resObj[champ];
+        if (valeur === undefined || valeur === null) continue;
+        const strVal = typeof valeur === "string" ? valeur.trim() : null;
+        const nombre = typeof valeur === "number" ? valeur : strVal ? Number(strVal) : NaN;
+        if (!Number.isFinite(nombre) || nombre < 0 || nombre > 100_000) {
+          return NextResponse.json({ error: `reservations[${index}].${champ} doit être un nombre positif ou nul` }, { status: 400 });
+        }
+      }
+    }
   }
 
   const valLame = lireIdCatalogue(body.lame_id, "lame_id");
@@ -311,41 +397,41 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
     zone_environnement: body.zone_environnement || "normal",
     fabricant_composite: body.fabricant_composite || null,
     gamme_composite: body.gamme_composite || null,
-    longueur_m: Number(body.longueur_m) || 6.0,
-    largeur_m: Number(body.largeur_m) || 4.0,
-    hauteur_sol_cm: Number(body.hauteur_sol_cm) || 15.0,
+    longueur_m: lireNombre(body.longueur_m, 6.0),
+    largeur_m: lireNombre(body.largeur_m, 4.0),
+    hauteur_sol_cm: lireNombre(body.hauteur_sol_cm, 15.0),
     type_sol: body.type_sol || "dalle_beton",
-    pente_pct: Number(body.pente_pct) || 1.5,
+    pente_pct: lireNombre(body.pente_pct, 1.5),
     essence_bois: body.essence_bois || "pin_cl4",
     type_pose: body.type_pose || "parallele",
-    largeur_lame_mm: Number(body.largeur_lame_mm) || 145,
-    epaisseur_lame_mm: Number(body.epaisseur_lame_mm) || 21,
-    longueur_lame_m: Number(body.longueur_lame_m) || 4.0,
-    espacement_lames_mm: Number(body.espacement_lames_mm) || 5,
+    largeur_lame_mm: lireNombre(body.largeur_lame_mm, 145),
+    epaisseur_lame_mm: lireNombre(body.epaisseur_lame_mm, 21),
+    longueur_lame_m: lireNombre(body.longueur_lame_m, 4.0),
+    espacement_lames_mm: lireNombre(body.espacement_lames_mm, 5),
     type_fixation: body.type_fixation || "vis_inox",
     type_lambourde: body.type_lambourde || "bois_cl4",
-    section_largeur_mm: Number(body.section_largeur_mm) || 45,
-    section_hauteur_mm: Number(body.section_hauteur_mm) || 70,
-    longueur_lambourde_m: Number(body.longueur_lambourde_m) || 4.0,
-    entraxe_lambourdes_cm: Number(body.entraxe_lambourdes_cm) || 40,
+    section_largeur_mm: lireNombre(body.section_largeur_mm, 45),
+    section_hauteur_mm: lireNombre(body.section_hauteur_mm, 70),
+    longueur_lambourde_m: lireNombre(body.longueur_lambourde_m, 4.0),
+    entraxe_lambourdes_cm: lireNombre(body.entraxe_lambourdes_cm, 40),
     double_lambourdage_aboutage: body.double_lambourdage_aboutage ?? true,
     bande_etancheite_epdm: body.bande_etancheite_epdm ?? true,
     cales_isolation: body.cales_isolation ?? true,
     type_plots: body.type_plots || "reglables",
-    entraxe_plots_cm: Number(body.entraxe_plots_cm) || 60,
+    entraxe_plots_cm: lireNombre(body.entraxe_plots_cm, 60),
     hauteur_reglage_plots: body.hauteur_reglage_plots || "40_60",
     geotextile: body.geotextile ?? true,
     presence_escalier: body.presence_escalier ?? false,
-    escalier_nb_marches: Number(body.escalier_nb_marches) || 2,
-    escalier_largeur_m: Number(body.escalier_largeur_m) || 2.0,
-    escalier_giron_cm: Number(body.escalier_giron_cm) || 28.0,
-    escalier_hauteur_marche_cm: Number(body.escalier_hauteur_marche_cm) || 16.0,
+    escalier_nb_marches: lireNombre(body.escalier_nb_marches, 2),
+    escalier_largeur_m: lireNombre(body.escalier_largeur_m, 2.0),
+    escalier_giron_cm: lireNombre(body.escalier_giron_cm, 28.0),
+    escalier_hauteur_marche_cm: lireNombre(body.escalier_hauteur_marche_cm, 16.0),
     presence_garde_corps: body.presence_garde_corps ?? false,
-    garde_corps_longueur_ml: Number(body.garde_corps_longueur_ml) || 0.0,
+    garde_corps_longueur_ml: lireNombre(body.garde_corps_longueur_ml, 0.0),
     garde_corps_type: body.garde_corps_type || "bois_cables",
-    garde_corps_hauteur_cm: Number(body.garde_corps_hauteur_cm) || 100,
-    coef_perte_lames: Number(body.coef_perte_lames) || 1.10,
-    coef_perte_lambourdes: Number(body.coef_perte_lambourdes) || 1.08,
+    garde_corps_hauteur_cm: lireNombre(body.garde_corps_hauteur_cm, 100),
+    coef_perte_lames: lireNombre(body.coef_perte_lames, 1.10),
+    coef_perte_lambourdes: lireNombre(body.coef_perte_lambourdes, 1.08),
     lame_id: valLame.id,
     clip_id: valClip.id,
     lambourde_id: valLambourde.id,

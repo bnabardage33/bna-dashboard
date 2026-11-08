@@ -370,6 +370,26 @@ beforeEach(() => {
 });
 
 describe("POST /api/chantiers/[id]/terrasse — construction du payload", () => {
+  it.each([
+    [{ longueur_m: "pas-un-nombre" }, "longueur_m"],
+    [{ largeur_m: -1 }, "largeur_m"],
+    [{ pente_pct: null }, "pente_pct"],
+    [{ coef_perte_lames: 1e99 }, "coef_perte_lames"],
+    [{ reservations: "invalide" }, "reservations"],
+  ])("rejette les valeurs numériques ou structures invalides (%j)", async (fragment, champ) => {
+    const res = await POST(requetePost(fragment), paramsRoute());
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain(champ);
+    expect(etat.dernierInsertTerrasse).toBeNull();
+  });
+
+  it("préserve explicitement un zéro valide au lieu de le remplacer par la valeur par défaut", async () => {
+    const res = await POST(requetePost({ pente_pct: 0, garde_corps_longueur_ml: 0 }), paramsRoute());
+    expect(res.status).toBe(200);
+    expect(etat.dernierInsertTerrasse?.pente_pct).toBe(0);
+    expect(etat.dernierInsertTerrasse?.garde_corps_longueur_ml).toBe(0);
+  });
+
   it("inclut lame_id, clip_id, lambourde_id, plot_id et quantite_accessoires lors d'un INSERT", async () => {
     etat.terrasse = null;
 
@@ -966,7 +986,7 @@ describe("Gestion des valeurs nulles et des configurations anciennes", () => {
     expect(json.resultat.chiffrage.totalHt).toBeGreaterThan(0);
   });
 
-  it("normalise les chaînes vides et quantités invalides lors d'un POST", async () => {
+  it("normalise les chaînes vides, valeurs nulles et nombres en chaîne lors d'un POST", async () => {
     etat.terrasse = null;
 
     const res = await POST(
@@ -976,9 +996,9 @@ describe("Gestion des valeurs nulles et des configurations anciennes", () => {
         lambourde_id: null,
         plot_id: undefined,
         quantite_accessoires: {
-          clip: -5,
+          clip: null as unknown as number,
           lambourde: "12" as unknown as number,
-          plot: NaN,
+          plot: "",
         },
       }),
       paramsRoute()
@@ -991,6 +1011,45 @@ describe("Gestion des valeurs nulles et des configurations anciennes", () => {
     expect(payload.lambourde_id).toBeNull();
     expect(payload.plot_id).toBeNull();
     expect(payload.quantite_accessoires).toEqual({ lambourde: 12 });
+  });
+
+  it("rejette (400) les quantités négatives, infinies ou non numériques sans les convertir en zéro", async () => {
+    etat.terrasse = null;
+
+    const resNeg = await POST(
+      requetePost({
+        quantite_accessoires: {
+          clip: -5,
+        },
+      }),
+      paramsRoute()
+    );
+    expect(resNeg.status).toBe(400);
+    const jsonNeg = await resNeg.json();
+    expect(jsonNeg.error).toContain("quantite_accessoires.clip doit être un nombre positif ou nul");
+
+    const resNan = await POST(
+      requetePost({
+        quantite_accessoires: {
+          plot: "invalide" as unknown as number,
+        },
+      }),
+      paramsRoute()
+    );
+    expect(resNan.status).toBe(400);
+    const jsonNan = await resNan.json();
+    expect(jsonNan.error).toContain("quantite_accessoires.plot doit être un nombre positif ou nul");
+  });
+
+  it("rejette (500) un instantané resultats_techniques corrompu lors d'un GET sans le recalculer silencieusement", async () => {
+    etat.terrasse = ligneTerrasseBase({
+      resultats_techniques: { corrompu: true, surfaceBruteM2: "non-nombre" },
+    });
+
+    const res = await GET(requeteGet(), paramsRoute());
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toContain("invalide ou corrompu");
   });
 });
 

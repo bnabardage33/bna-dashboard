@@ -410,7 +410,7 @@ export default function ChantierTerrasseTab({
 
       {sousOnglet === "vue3d" && (
         <div className="space-y-4">
-          <TerrasseVue3D config={config} resultat={resultat} />
+          <TerrasseVue3D config={config} resultat={resultat} reservations={reservations} />
         </div>
       )}
 

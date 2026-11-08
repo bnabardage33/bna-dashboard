@@ -12,6 +12,7 @@ import {
   verifierConformiteDTU51_4,
 } from "./dtu51_4";
 import { calculComposite } from "./composite/calculs";
+import { calculerTerrasseProGeometrie } from "./pro/quantitatifs-contrat";
 
 /** Prix unitaires moyens HT de référence (fournitures pro) pour le chiffrage indicatif */
 const TARIFS_INDICATIFS: Record<string, number> = {
@@ -61,8 +62,22 @@ export function calculerTerrasse(
     return calculComposite(config, reservations, catalogue);
   }
 
+  // Exécution amont des 4 briques du moteur Terrasse Pro (NF DTU 51.4 Décembre 2018)
+  const terrassePro = calculerTerrasseProGeometrie(config, reservations, {
+    formeType: config.forme_terrasse,
+    poseMode: config.mode_calepinage,
+    structureMode: config.mode_structure,
+    solicitationCategory: config.categorie_sollicitation,
+    vissageParDessousBois: config.vissage_par_dessous_bois,
+    retour1LongueurM: config.retour1_longueur_m,
+    retour1LargeurM: config.retour1_largeur_m,
+    retour2LongueurM: config.retour2_longueur_m,
+    retour2LargeurM: config.retour2_largeur_m,
+  });
+
   const surfaceBruteM2 = Number((config.longueur_m * config.largeur_m).toFixed(2));
   const perimetreM = Number((2 * (config.longueur_m + config.largeur_m)).toFixed(2));
+  const surfaceReservationsM2 = terrassePro.quantities.geometricNet.reservationsDeductedAreaM2;
 
   // --- 1. ESCALIER ---
   let surfaceEscalierM2 = 0;
@@ -96,7 +111,9 @@ export function calculerTerrasse(
     limonsNb = Math.max(2, Math.ceil((config.escalier_largeur_m * 100) / 60) + 1);
   }
 
-  const surfaceNetteM2 = Number((surfaceBruteM2 + surfaceEscalierM2).toFixed(2));
+  const surfaceNetteM2 = Number(
+    Math.max(0.1, surfaceBruteM2 - surfaceReservationsM2 + surfaceEscalierM2).toFixed(2)
+  );
 
   // --- 2. LAMBOURDES ---
   const entraxeMaxDtuCm = calculerEntraxeMaxLambourdes(
@@ -120,7 +137,13 @@ export function calculerTerrasse(
     nbRangees += nbJointsAboutage;
   }
 
-  const lineaireMl = Number((nbRangees * longueurLambourdeUnitaireM).toFixed(1));
+  const lineaireChevetresMl =
+    terrassePro.quantities.geometricNet.totalJoistNetLinearMetersByLayer.CHEVETRE_RESERVATION || 0;
+  const lineaireCroiseMl =
+    terrassePro.quantities.geometricNet.totalJoistNetLinearMetersByLayer.SECONDARY_BOTTOM_CROSS || 0;
+  const lineaireMl = Number(
+    (nbRangees * longueurLambourdeUnitaireM + lineaireChevetresMl + lineaireCroiseMl).toFixed(1)
+  );
   const lineaireAvecChutesMl = Number(
     (lineaireMl * config.coef_perte_lambourdes).toFixed(1)
   );
@@ -140,6 +163,11 @@ export function calculerTerrasse(
   const nbPlotsParLambourde = Math.ceil(longueurCm / config.entraxe_plots_cm) + 1;
 
   let nbPlotsTotal = nbRangees * nbPlotsParLambourde;
+
+  //Plots additionnels sous chevêtres de réservations (issus de la Brique 2)
+  const plotsChevetresNb =
+    terrassePro.quantities.geometricNet.exactSupportCountByType.PLOT_CHEVETRE || 0;
+  nbPlotsTotal += plotsChevetresNb;
 
   // Renforts plots pour escalier si présent
   if (config.presence_escalier) {
@@ -204,7 +232,7 @@ export function calculerTerrasse(
   }
 
   // --- 7. CONTRÔLE DE CONFORMITÉ DTU 51.4 ---
-  const conformite = verifierConformiteDTU51_4(config);
+  const conformite = verifierConformiteDTU51_4(config, reservations);
 
   // --- 8. CHIFFRAGE / NOMENCLATURE ESTIMATIVE ---
   const lignes: LigneChiffrageTerrasse[] = [];
@@ -433,12 +461,17 @@ export function calculerTerrasse(
       lineaireMl: lineaireLamesMl,
       surfaceACommanderM2,
       nbLamesStandard,
+      espacementRecommandeMm: config.espacement_lames_mm || 5,
+      jeuAboutageMm: 5,
     },
     fixations: {
       type: config.type_fixation,
       nbVisOuClipsTotal,
       nbBoites,
       clipsDepartFinNb,
+      diametreVisMm: terrassePro.quantities.commercialSupply.fastenerSpec.diameterMm,
+      longueurVisMm: terrassePro.quantities.commercialSupply.fastenerSpec.minLengthMm,
+      inoxGrade: terrassePro.quantities.commercialSupply.fastenerSpec.stainlessGrade,
     },
     escalier: {
       present: config.presence_escalier,
@@ -464,6 +497,7 @@ export function calculerTerrasse(
       lignes,
       totalHt,
     },
+    terrassePro,
     calculeA: new Date().toISOString(),
   };
 }

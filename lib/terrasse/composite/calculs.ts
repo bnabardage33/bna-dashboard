@@ -12,6 +12,7 @@ import { auditComposite } from "./audit";
 import { calculerClipsComposite } from "./clips";
 import { calculerDilatationComposite } from "./dilatation";
 import { getFabricantComposite, getGammeDefaut } from "./fabricants";
+import { calculerTerrasseProGeometrie } from "../pro/quantitatifs-contrat";
 
 export function calculComposite(
   config: ChantierTerrasseConfig,
@@ -239,6 +240,18 @@ export function calculComposite(
   ) / 100;
   const coutM2Ht = Math.round((coutTotalHt / surfaceBruteM2) * 100) / 100;
 
+  const terrassePro = calculerTerrasseProGeometrie(config, reservations, {
+    formeType: config.forme_terrasse,
+    poseMode: config.mode_calepinage,
+    structureMode: config.mode_structure,
+    solicitationCategory: config.categorie_sollicitation,
+    retour1LongueurM: config.retour1_longueur_m,
+    retour1LargeurM: config.retour1_largeur_m,
+    retour2LongueurM: config.retour2_longueur_m,
+    retour2LargeurM: config.retour2_largeur_m,
+    conditionnementBoiteClips: clips.conditionnementBoite,
+  });
+
   return {
     surfaceBruteM2,
     surfaceNetteM2,
@@ -311,6 +324,7 @@ export function calculComposite(
       totalHt: coutTotalHt,
       prixM2Ht: coutM2Ht,
     },
+    terrassePro,
     calculeA: new Date().toISOString(),
   };
 }

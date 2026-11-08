@@ -113,15 +113,115 @@ export default function TerrasseConfigForm({
   }, [lameSelectionnee, config, surfaceTotale]);
 
   const prixEstimeHT = useMemo(() => {
-    const prixLame = lameSelectionnee?.prix_unitaire_lame || 0;
-    const nb = nbLames || 0;
-    const clipsPrix = clips.reduce((s, a) => s + (a.prix_conditionnement || 0), 0);
-    const lambPrix = lambourdes.reduce((s, a) => s + (a.prix_conditionnement || 0), 0);
-    const plotsPrix = plots.reduce((s, a) => s + (a.prix_conditionnement || 0), 0);
+    let total = 0;
+    let auMoinsUnPrixConnu = false;
+
+    // 1. Lames (prix unitaire ou repli prix m² * surface)
+    const surfaceACommander = surfaceTotale * (config.coef_perte_lames || 1.1);
+    if (lameSelectionnee) {
+      if (
+        typeof lameSelectionnee.prix_unitaire_lame === "number" &&
+        Number.isFinite(lameSelectionnee.prix_unitaire_lame) &&
+        lameSelectionnee.prix_unitaire_lame > 0
+      ) {
+        total += lameSelectionnee.prix_unitaire_lame * (nbLames || 0);
+        auMoinsUnPrixConnu = true;
+      } else if (
+        typeof lameSelectionnee.prix_m2_ht === "number" &&
+        Number.isFinite(lameSelectionnee.prix_m2_ht) &&
+        lameSelectionnee.prix_m2_ht > 0
+      ) {
+        total += lameSelectionnee.prix_m2_ht * surfaceACommander;
+        auMoinsUnPrixConnu = true;
+      }
+    }
+
+    // 2. Accessoires sélectionnés (uniquement ceux explicitement choisis ou uniques)
     const qtyAcc = ((config as any)?.quantite_accessoires ?? {}) || {};
-    const accTotal = (clipsPrix + lambPrix + plotsPrix) * (Object.keys(qtyAcc).length ? 1 : 0);
-    return prixLame * nb + accTotal;
-  }, [lameSelectionnee, nbLames, clips, lambourdes, plots, config]);
+
+    // Clips
+    const clipId = (config as any)?.clip_id;
+    const clipSel = clipId
+      ? clips.find((c) => c.id === clipId)
+      : clips.length === 1
+      ? clips[0]
+      : null;
+    if (clipSel && clipSel.type_cout !== "main_oeuvre") {
+      const qte =
+        typeof qtyAcc.clip === "number"
+          ? qtyAcc.clip
+          : clipId
+          ? 1
+          : Object.prototype.hasOwnProperty.call(qtyAcc, "clip")
+          ? 1
+          : 0;
+      if (
+        typeof clipSel.prix_conditionnement === "number" &&
+        Number.isFinite(clipSel.prix_conditionnement) &&
+        clipSel.prix_conditionnement >= 0 &&
+        qte > 0
+      ) {
+        total += clipSel.prix_conditionnement * qte;
+        auMoinsUnPrixConnu = true;
+      }
+    }
+
+    // Lambourdes
+    const lambourdeId = (config as any)?.lambourde_id;
+    const lambSel = lambourdeId
+      ? lambourdes.find((l) => l.id === lambourdeId)
+      : lambourdes.length === 1
+      ? lambourdes[0]
+      : null;
+    if (lambSel && lambSel.type_cout !== "main_oeuvre") {
+      const qte =
+        typeof qtyAcc.lambourde === "number"
+          ? qtyAcc.lambourde
+          : lambourdeId
+          ? 1
+          : Object.prototype.hasOwnProperty.call(qtyAcc, "lambourde")
+          ? 1
+          : 0;
+      if (
+        typeof lambSel.prix_conditionnement === "number" &&
+        Number.isFinite(lambSel.prix_conditionnement) &&
+        lambSel.prix_conditionnement >= 0 &&
+        qte > 0
+      ) {
+        total += lambSel.prix_conditionnement * qte;
+        auMoinsUnPrixConnu = true;
+      }
+    }
+
+    // Plots
+    const plotId = (config as any)?.plot_id;
+    const plotSel = plotId
+      ? plots.find((p) => p.id === plotId)
+      : plots.length === 1
+      ? plots[0]
+      : null;
+    if (plotSel && plotSel.type_cout !== "main_oeuvre") {
+      const qte =
+        typeof qtyAcc.plot === "number"
+          ? qtyAcc.plot
+          : plotId
+          ? 1
+          : Object.prototype.hasOwnProperty.call(qtyAcc, "plot")
+          ? 1
+          : 0;
+      if (
+        typeof plotSel.prix_conditionnement === "number" &&
+        Number.isFinite(plotSel.prix_conditionnement) &&
+        plotSel.prix_conditionnement >= 0 &&
+        qte > 0
+      ) {
+        total += plotSel.prix_conditionnement * qte;
+        auMoinsUnPrixConnu = true;
+      }
+    }
+
+    return auMoinsUnPrixConnu ? total : null;
+  }, [lameSelectionnee, nbLames, surfaceTotale, clips, lambourdes, plots, config]);
 
   return (
     <div className="space-y-6">
@@ -459,7 +559,14 @@ export default function TerrasseConfigForm({
           <div className="flex flex-wrap items-center gap-4">
             <div>Surface : <span className="text-sky-300 font-semibold">{surfaceTotale.toFixed(2)} m²</span></div>
             <div>Nb lames calculé : <span className="text-amber-300 font-semibold">{nbLames}</span></div>
-            <div>Prix estimé HT : <span className="text-emerald-300 font-semibold">{fmtEuro(prixEstimeHT)}</span></div>
+            <div>
+              Prix estimé HT :{" "}
+              {prixEstimeHT !== null ? (
+                <span className="text-emerald-300 font-semibold">{fmtEuro(prixEstimeHT)}</span>
+              ) : (
+                <span className="text-amber-300 font-semibold italic">Tarif non renseigné</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

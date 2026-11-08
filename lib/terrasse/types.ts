@@ -1,6 +1,14 @@
 // Types du domaine Métier TERRASSE — DTU 51.4
 // Indépendant du domaine Bardage (chantier_zones)
 
+import type {
+  TerrasseFormeType,
+  TerrassePoseMode,
+  TerrasseProGeometricResult,
+  TerrasseStructureMode,
+  SolicitationCategory,
+} from "./pro/presets-regles";
+
 export type ZoneEnvironnement = "normal" | "piscine" | "littoral" | "montagne";
 
 export type SystemeTerrasse = "bois_vis" | "bois_clip" | "composite_clip";
@@ -140,6 +148,17 @@ export interface ChantierTerrasseConfig {
   plot_id?: string | null;
   quantite_accessoires?: QuantiteAccessoiresTerrasse | null;
   tarifs_catalogue?: TarifsCatalogueTerrasse | null;
+
+  // Options Géométriques & Structurelles Terrasse Pro (optionnelles, rétrocompatibles)
+  forme_terrasse?: TerrasseFormeType;
+  mode_calepinage?: TerrassePoseMode;
+  mode_structure?: TerrasseStructureMode;
+  categorie_sollicitation?: SolicitationCategory;
+  vissage_par_dessous_bois?: boolean;
+  retour1_longueur_m?: number;
+  retour1_largeur_m?: number;
+  retour2_longueur_m?: number;
+  retour2_largeur_m?: number;
 
   // Timestamp
   created_at?: string;
@@ -284,5 +303,7 @@ export interface ResultatCalculTerrasse {
     totalHt: number;
     prixM2Ht?: number;
   };
+  /** Contrat géométrique, plan de coupe 1D et séparation Q_net / Q_tech / Q_appro issu du moteur Terrasse Pro */
+  terrassePro?: TerrasseProGeometricResult;
   calculeA: string;
 }
