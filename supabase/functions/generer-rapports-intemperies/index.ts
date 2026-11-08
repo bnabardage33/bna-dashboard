@@ -35,6 +35,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // NB : cet import remonte hors du dossier de la fonction. Le bundler Supabase
 // (esbuild) résout les imports relatifs ; ce point reste à confirmer au premier
 // `supabase functions deploy` — déploiement volontairement HORS PÉRIMÈTRE ici.
+import { geocoderAdresse } from "../../../lib/geocodageNominatim.ts";
+
 import {
   extraireDepartement,
   couleurPourPhenomene,
@@ -248,120 +250,10 @@ function adresseVersDepartement(
 //
 // Visual Crossing acceptait l'adresse brute : son géocodeur interne pouvait
 // retenir l'homonyme d'une AUTRE commune, incompatible avec le code postal du
-// chantier. On résout donc l'adresse ici, avec le même contrat que
-// `lib/deplacement/geocodage.ts` : code postal exact, sinon refus ; ambiguïté,
-// refus. La fonction LÈVE, et le try/catch par chantier le consigne sans
-// produire de rapport sur une commune inventée.
-
-function nomLieu(c: {
-  display_name?: string;
-  address?: {
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
-    county?: string;
-  };
-}): string {
-  const a = c.address ?? {};
-  return (
-    a.city ||
-    a.town ||
-    a.village ||
-    a.municipality ||
-    a.county ||
-    (c.display_name || "").split(",")[0] ||
-    ""
-  );
-}
-
-async function geocoderAdresse(
-  adresse: string
-): Promise<{ lat: number; lon: number }> {
-  const q = adresse.trim();
-
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-      q
-    )}&format=jsonv2&limit=5&addressdetails=1&countrycodes=fr`,
-    {
-      headers: {
-        "User-Agent": "BNA-Dashboard/1.0",
-        Accept: "application/json",
-      },
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error(
-      `Géocodage Nominatim (${res.status})`
-    );
-  }
-
-  const data = await res.json();
-
-  if (!Array.isArray(data) || data.length === 0) {
-    throw new Error(
-      `Adresse introuvable : ${q}`
-    );
-  }
-
-  const m = q.match(/(?:^|\D)(\d{5})(?:\D|$)/);
-  const codePostal = m ? m[1] : null;
-
-  let eligibles = data.filter(
-    (c: { lat?: string; lon?: string }) =>
-      c.lat && c.lon
-  );
-
-  if (codePostal) {
-    eligibles = eligibles.filter(
-      (c: {
-        address?: {
-          postcode?: string;
-        };
-      }) =>
-        c.address?.postcode === codePostal
-    );
-
-    if (eligibles.length === 0) {
-      throw new Error(
-        `Aucun lieu au code postal ${codePostal} pour « ${q} »`
-      );
-    }
-  }
-
-  // Sans code postal (ou si un même code couvre plusieurs lieux), on refuse de
-  // « prendre le premier » : c'est précisément le défaut corrigé.
-  const communes = [
-    ...new Set(
-      eligibles.map(
-        (c: {
-          display_name?: string;
-          address?: Record<string, string>;
-        }) => nomLieu(c)
-      )
-    ),
-  ].filter(Boolean);
-
-  if (communes.length > 1) {
-    throw new Error(
-      `Adresse ambiguë pour « ${q} » : ${communes.join(", ")}. Précisez la commune.`
-    );
-  }
-
-  const choisi = eligibles[0];
-  const lat = parseFloat(choisi.lat);
-  const lon = parseFloat(choisi.lon);
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    throw new Error(
-      "Coordonnées de géocodage invalides"
-    );
-  }
-
-  return { lat, lon };
-}
+// chantier. L'implémentation vit dans `lib/geocodageNominatim.ts` (module pur,
+// partagé avec les tests) : code postal exact, sinon refus ; ambiguïté, refus.
+// Elle LÈVE, et le try/catch par chantier le consigne sans produire de rapport
+// sur une commune inventée.
 
 // -----------------------------------------------------------------------------
 // MÉTÉO DU JOUR COMPLET - VISUAL CROSSING
