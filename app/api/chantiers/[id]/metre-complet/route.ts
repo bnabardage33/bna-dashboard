@@ -12,7 +12,7 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resoudreTenant } from "@/lib/tenant";
 import {
   servirPayloadMetreComplet,
   ChantierIntrouvableError,
@@ -25,23 +25,14 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
   const { id } = await params;
 
   try {
     // ── Auth obligatoire ──────────────────────────────────────────────
-    const supabaseAuth = await createClient();
-    const {
-      data: { user },
-    } = await supabaseAuth.auth.getUser();
-    if (!user) {
-      return NextResponse.json(
-        { ok: false, error: "Authentification requise" },
-        { status: 401 },
-      );
-    }
-
     // ── Source de vérité partagée (mêmes données que l'IA Devis) ─────
-    const payload = await servirPayloadMetreComplet(id);
+    const payload = await servirPayloadMetreComplet(id, tenant.entrepriseId);
 
     return NextResponse.json({ ok: true, data: payload });
   } catch (error) {

@@ -232,7 +232,7 @@ export async function POST(req: NextRequest, contexte: { params: Promise<{ id: s
     let payload: unknown = null;
     if (devis.chantier_id) {
       try {
-        payload = await servirPayloadMetreComplet(devis.chantier_id);
+        payload = await servirPayloadMetreComplet(devis.chantier_id, entrepriseId);
       } catch (errMetre) {
         if (errMetre instanceof ChantierIntrouvableError) {
           payload = null;

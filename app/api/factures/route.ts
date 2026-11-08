@@ -130,11 +130,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, entreprise_id")
+      .eq("id", clientId)
+      .eq("entreprise_id", tenant.entrepriseId)
+      .maybeSingle();
+    if (!client) {
+      return NextResponse.json(
+        { ok: false, error: "Client introuvable ou non rattaché à votre entreprise." },
+        { status: 404 }
+      );
+    }
+
     // Contrôle d'appartenance du chantier au tenant
     if (chantierId) {
       const { data: chantier } = await supabaseAdmin
         .from("chantiers")
-        .select("id, entreprise_id")
+        .select("id, entreprise_id, client_id")
         .eq("id", chantierId)
         .eq("entreprise_id", tenant.entrepriseId)
         .maybeSingle();
@@ -145,6 +158,12 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
+      if (chantier.client_id && chantier.client_id !== clientId) {
+        return NextResponse.json(
+          { ok: false, error: "Le client de la facture ne correspond pas au client du chantier." },
+          { status: 400 }
+        );
+      }
     }
 
     // Contrôle d'appartenance du devis au tenant (si fourni)
@@ -152,7 +171,7 @@ export async function POST(req: NextRequest) {
     if (devisId) {
       const { data: devis } = await supabaseAdmin
         .from("devis")
-        .select("id, entreprise_id, retenue_garantie_pct")
+        .select("id, entreprise_id, client_id, chantier_id, retenue_garantie_pct")
         .eq("id", devisId)
         .eq("entreprise_id", tenant.entrepriseId)
         .maybeSingle();
@@ -161,6 +180,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           { ok: false, error: "Devis introuvable ou non rattaché à votre entreprise." },
           { status: 404 }
+        );
+      }
+      if (devis.client_id !== clientId || (chantierId && devis.chantier_id && devis.chantier_id !== chantierId)) {
+        return NextResponse.json(
+          { ok: false, error: "Le devis ne correspond pas au client ou au chantier de la facture." },
+          { status: 400 }
         );
       }
       if (typeof devis.retenue_garantie_pct === "number") {

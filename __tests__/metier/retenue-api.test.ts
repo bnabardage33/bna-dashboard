@@ -182,7 +182,10 @@ describe("PHASE 4 — Intégration API / Routes Retenue de Garantie V2.1", () =>
     });
 
     it("refuse avec 404 si le chantier n'appartient pas au tenant", async () => {
-      mockAdminFrom.mockReturnValue({
+      mockAdminFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: "cli-1", entreprise_id: TENANT_ID }, error: null }),
+      }).mockReturnValueOnce({
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -205,12 +208,16 @@ describe("PHASE 4 — Intégration API / Routes Retenue de Garantie V2.1", () =>
     });
 
     it("refuse avec 409 si le numéro existe déjà", async () => {
-      // 1er appel adminFrom (chantier ok), 2e appel (facture existe déjà)
+      // Client, chantier, puis recherche de numéro existant.
       mockAdminFrom
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: "cli-1", entreprise_id: TENANT_ID }, error: null }),
+        })
         .mockReturnValueOnce({
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: { id: CHANTIER_ID, entreprise_id: TENANT_ID }, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: CHANTIER_ID, entreprise_id: TENANT_ID, client_id: "cli-1" }, error: null }),
         })
         .mockReturnValueOnce({
           select: vi.fn().mockReturnThis(),
@@ -237,9 +244,13 @@ describe("PHASE 4 — Intégration API / Routes Retenue de Garantie V2.1", () =>
     it("émet avec succès la facture et fige les colonnes financières et de retenue", async () => {
       mockAdminFrom
         .mockReturnValueOnce({
+          select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: "cli-1", entreprise_id: TENANT_ID }, error: null }),
+        })
+        .mockReturnValueOnce({
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: { id: CHANTIER_ID, entreprise_id: TENANT_ID }, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: CHANTIER_ID, entreprise_id: TENANT_ID, client_id: "cli-1" }, error: null }),
         })
         .mockReturnValueOnce({
           select: vi.fn().mockReturnThis(),
@@ -293,6 +304,20 @@ describe("PHASE 4 — Intégration API / Routes Retenue de Garantie V2.1", () =>
       expect(insertArg.montant_retenue_ttc).toBe(60);
       expect(insertArg.net_a_payer_ttc).toBe(1140);
     });
+  });
+
+  it("refuse une facture liée à un client d'une autre entreprise avant insertion", async () => {
+    mockAdminFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+    const req = new NextRequest("http://localhost/api/factures", {
+      method: "POST",
+      body: JSON.stringify({ numero: "FAC-X", client_id: "client-b", lignes: [{ qte: 1, pu_ht: 100 }] }),
+    });
+    const res = await FacturesPOST(req);
+    expect(res.status).toBe(404);
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   // =========================================================================
@@ -365,6 +390,49 @@ describe("PHASE 4 — Intégration API / Routes Retenue de Garantie V2.1", () =>
       const json = await res.json();
       expect(json.ok).toBe(true);
       expect(json.data.statut).toBe("annulee");
+    });
+  });
+
+  describe("3 bis. DELETE /api/factures/[id] — contrôle atomique du statut", () => {
+    it("ne supprime pas la facture si elle a quitté le statut brouillon après la lecture", async () => {
+      const read = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: FACTURE_ID, statut: "brouillon" }, error: null }),
+      };
+      const deleteEq = vi.fn().mockReturnThis();
+      const deleteSelect = vi.fn().mockResolvedValue({ data: [], error: null });
+      const conditionalDelete = { eq: deleteEq, select: deleteSelect };
+      mockFrom
+        .mockReturnValueOnce(read)
+        .mockReturnValueOnce({ delete: vi.fn().mockReturnValue(conditionalDelete) });
+
+      const req = new NextRequest(`http://localhost/api/factures/${FACTURE_ID}`, { method: "DELETE" });
+      const res = await FactureDELETE(req, { params: Promise.resolve({ id: FACTURE_ID }) });
+      expect(res.status).toBe(409);
+      expect(deleteEq.mock.calls).toEqual([
+        ["id", FACTURE_ID],
+        ["entreprise_id", TENANT_ID],
+        ["statut", "brouillon"],
+      ]);
+      expect(deleteSelect).toHaveBeenCalledWith("id");
+    });
+
+    it("confirme la suppression quand le DELETE conditionnel retourne la ligne", async () => {
+      mockFrom
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: { id: FACTURE_ID, statut: "brouillon" }, error: null }),
+        })
+        .mockReturnValueOnce({
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnThis(),
+            select: vi.fn().mockResolvedValue({ data: [{ id: FACTURE_ID }], error: null }),
+          }),
+        });
+      const req = new NextRequest(`http://localhost/api/factures/${FACTURE_ID}`, { method: "DELETE" });
+      const res = await FactureDELETE(req, { params: Promise.resolve({ id: FACTURE_ID }) });
+      expect(res.status).toBe(200);
     });
   });
 

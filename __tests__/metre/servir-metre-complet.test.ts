@@ -13,29 +13,29 @@ import {
 const SupabaseMock = vi.hoisted(() => ({
   chantierFetch: vi.fn(),
   zonesFetch: vi.fn(),
+  predicatesByTable: {} as Record<string, Array<[string, unknown]>>,
 }));
 
 vi.mock("@/lib/supabaseAdmin", () => ({
   supabaseAdmin: {
     from: (table: string) => ({
-      select: (_cols: string) =>
-        table === "chantiers"
-          ? {
-              eq: (_a: unknown, _b: unknown) => ({
-                maybeSingle: () => SupabaseMock.chantierFetch(),
-              }),
-            }
-          : {
-              eq: (_a: unknown, _b: unknown) => ({
-                order: (_c: unknown, _d: unknown) => SupabaseMock.zonesFetch(),
-              }),
-            },
+      select: (_cols: string) => {
+        const chain: Record<string, unknown> = {};
+        chain.eq = (a: string, b: unknown) => {
+          (SupabaseMock.predicatesByTable[table] ??= []).push([a, b]);
+          return chain;
+        };
+        chain.maybeSingle = () => SupabaseMock.chantierFetch();
+        chain.order = () => SupabaseMock.zonesFetch();
+        return chain;
+      },
     }),
   },
 }));
 
 const CHANTIER_ROW = {
   id: "c-1",
+  entreprise_id: "ent-1",
   nom: "Villa Test",
   client_id: "cl-1",
   adresse_chantier: "Ajaccio, Corse",
@@ -52,6 +52,7 @@ const CHANTIER_ROW = {
   singularites_nb: 3,
   clients: {
     id: "cl-1",
+    entreprise_id: "ent-1",
     nom: "SARL Exemple",
     societe: "SARL Exemple",
     email: "contact@exemple.fr",
@@ -66,6 +67,7 @@ const CHANTIER_ROW = {
 const ZONE_ROW = {
   id: "z-1",
   chantier_id: "c-1",
+  entreprise_id: "ent-1",
   nom: "Façade Nord",
   type: "facade",
   largeur: 5,
@@ -178,13 +180,20 @@ describe("servirPayloadMetreComplet", () => {
   beforeEach(() => {
     SupabaseMock.chantierFetch.mockReset();
     SupabaseMock.zonesFetch.mockReset();
+    SupabaseMock.predicatesByTable = {};
   });
 
   it("constitue le payload depuis les données persistées (copies strictes, aucun recalcul)", async () => {
     SupabaseMock.chantierFetch.mockResolvedValue({ data: CHANTIER_ROW, error: null });
     SupabaseMock.zonesFetch.mockResolvedValue({ data: [ZONE_ROW], error: null });
 
-    const payload = await servirPayloadMetreComplet("c-1");
+    const payload = await servirPayloadMetreComplet("c-1", "ent-1");
+    expect(SupabaseMock.predicatesByTable.chantiers).toEqual([
+      ["id", "c-1"], ["entreprise_id", "ent-1"],
+    ]);
+    expect(SupabaseMock.predicatesByTable.chantier_zones).toEqual([
+      ["chantier_id", "c-1"], ["entreprise_id", "ent-1"],
+    ]);
 
     expect(payload.chantier.id).toBe("c-1");
     expect(payload.chantier.zone_vent).toBe(1); // donnée brute chantier conservée
@@ -204,14 +213,14 @@ describe("servirPayloadMetreComplet", () => {
   it("chantier introuvable → ChantierIntrouvableError (les routes décident le 404)", async () => {
     SupabaseMock.chantierFetch.mockResolvedValue({ data: null, error: null });
 
-    await expect(servirPayloadMetreComplet("inconnu")).rejects.toThrow(ChantierIntrouvableError);
+    await expect(servirPayloadMetreComplet("inconnu", "ent-1")).rejects.toThrow(ChantierIntrouvableError);
     expect(SupabaseMock.zonesFetch).not.toHaveBeenCalled();
   });
 
   it("erreur supabase → levée (répercutée par les routes en 500)", async () => {
     SupabaseMock.chantierFetch.mockResolvedValue({ data: null, error: new Error("boom") });
 
-    await expect(servirPayloadMetreComplet("c-1")).rejects.toThrow("boom");
+    await expect(servirPayloadMetreComplet("c-1", "ent-1")).rejects.toThrow("boom");
   });
 
   it("resultats_techniques mal formé → null renvoyé tel quel (normalisation JSONB)", async () => {
@@ -221,10 +230,34 @@ describe("servirPayloadMetreComplet", () => {
       error: null,
     });
 
-    const payload = await servirPayloadMetreComplet("c-1");
+    const payload = await servirPayloadMetreComplet("c-1", "ent-1");
     expect(payload.zones[0].metrage).toBeNull();
     expect(payload.zones[0].pose).toBeNull();
     expect(payload.zones[0].calepinage).toBeNull();
     expect(payload.zones[0].entrees).toBeNull();
+  });
+
+  it("refuse une relation client incohérente avec le tenant du chantier", async () => {
+    SupabaseMock.chantierFetch.mockResolvedValue({ data: { ...CHANTIER_ROW, clients: { ...CHANTIER_ROW.clients, entreprise_id: "ent-b" } }, error: null });
+    await expect(servirPayloadMetreComplet("c-1", "ent-1")).rejects.toThrow(ChantierIntrouvableError);
+    expect(SupabaseMock.zonesFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejette un chantier retourné depuis un autre tenant avant de lire ses zones", async () => {
+    SupabaseMock.chantierFetch.mockResolvedValue({ data: { ...CHANTIER_ROW, entreprise_id: "ent-b" }, error: null });
+    await expect(servirPayloadMetreComplet("c-1", "ent-1")).rejects.toThrow(ChantierIntrouvableError);
+    expect(SupabaseMock.predicatesByTable.chantiers).toEqual([
+      ["id", "c-1"], ["entreprise_id", "ent-1"],
+    ]);
+    expect(SupabaseMock.zonesFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejette toute zone dont l'entreprise diverge, même si elle est renvoyée par le mock", async () => {
+    SupabaseMock.chantierFetch.mockResolvedValue({ data: CHANTIER_ROW, error: null });
+    SupabaseMock.zonesFetch.mockResolvedValue({ data: [{ ...ZONE_ROW, entreprise_id: "ent-b" }], error: null });
+    await expect(servirPayloadMetreComplet("c-1", "ent-1")).rejects.toThrow(ChantierIntrouvableError);
+    expect(SupabaseMock.predicatesByTable.chantier_zones).toEqual([
+      ["chantier_id", "c-1"], ["entreprise_id", "ent-1"],
+    ]);
   });
 });

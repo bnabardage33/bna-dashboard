@@ -217,16 +217,29 @@ export async function DELETE(
       );
     }
 
-    const { error: delErr } = await supabase
+    // Le statut est relu dans le prédicat DELETE lui-même : si une autre
+    // requête a émis la facture après la lecture ci-dessus, PostgreSQL ne
+    // supprimera aucune ligne. Le verrou de ligne rend ce contrôle atomique
+    // vis-à-vis d'une mise à jour concurrente du statut.
+    const { data: supprimees, error: delErr } = await supabase
       .from("factures")
       .delete()
       .eq("id", id)
-      .eq("entreprise_id", tenant.entrepriseId);
+      .eq("entreprise_id", tenant.entrepriseId)
+      .eq("statut", "brouillon")
+      .select("id");
 
     if (delErr) {
       return NextResponse.json(
         { ok: false, error: "Échec de la suppression de la facture." },
         { status: 500 }
+      );
+    }
+
+    if (!supprimees || supprimees.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "La facture a changé d'état ou n'est plus supprimable." },
+        { status: 409 }
       );
     }
 

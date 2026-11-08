@@ -25,25 +25,26 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/supabaseAdmin", () => ({
   supabaseAdmin: {
-    from: (table: string) => ({
-      select: (_cols: string) =>
-        table === "chantiers"
-          ? {
-              eq: (_a: unknown, _b: unknown) => ({
-                maybeSingle: () => SupabaseMock.chantierFetch(),
-              }),
-            }
-          : {
-              eq: (_a: unknown, _b: unknown) => ({
-                order: (_c: unknown, _d: unknown) => SupabaseMock.zonesFetch(),
-              }),
-            },
-    }),
+    from: (_table: string) => {
+      const chain: Record<string, unknown> = {};
+      chain.select = () => chain;
+      chain.eq = () => chain;
+      chain.maybeSingle = () => SupabaseMock.chantierFetch();
+      chain.order = () => SupabaseMock.zonesFetch();
+      return chain;
+    },
   },
 }));
 
 import { GET } from "../../app/api/chantiers/[id]/metre-complet/route";
 import type { NextRequest } from "next/server";
+
+/** Tenant de test : UUID valide, identique à celui posé dans le claim Supabase. */
+const ENT = "11111111-1111-4111-8111-111111111111";
+const UTILISATEUR_TENANT = {
+  id: "u-1",
+  app_metadata: { entreprise_id: ENT },
+};
 
 /* ==================================================================
    FIXTURES
@@ -514,12 +515,25 @@ describe("metre-complet : route GET /api/chantiers/[id]/metre-complet", () => {
     const res = await appelGET();
     expect(res.status).toBe(401);
     const body = await res.json();
-    expect(body.ok).toBe(false);
+    expect(body.error).toBeTruthy();
+    expect(SupabaseMock.chantierFetch).not.toHaveBeenCalled();
+  });
+
+  it("session sans claim entreprise → 403 sans aucune requête métier", async () => {
+    SupabaseMock.getUser.mockResolvedValue({
+      data: { user: { id: "u-1", app_metadata: {} } },
+      error: null,
+    });
+
+    const res = await appelGET();
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
     expect(SupabaseMock.chantierFetch).not.toHaveBeenCalled();
   });
 
   it("chantier inexistant → 404", async () => {
-    SupabaseMock.getUser.mockResolvedValue({ data: { user: { id: "u-1" } }, error: null });
+    SupabaseMock.getUser.mockResolvedValue({ data: { user: UTILISATEUR_TENANT }, error: null });
     SupabaseMock.chantierFetch.mockResolvedValue({ data: null, error: null });
 
     const res = await appelGET();
@@ -529,16 +543,29 @@ describe("metre-complet : route GET /api/chantiers/[id]/metre-complet", () => {
     expect(SupabaseMock.zonesFetch).not.toHaveBeenCalled();
   });
 
+  it("chantier appartenant à un autre tenant → 404 avant lecture des zones", async () => {
+    SupabaseMock.getUser.mockResolvedValue({ data: { user: UTILISATEUR_TENANT }, error: null });
+    SupabaseMock.chantierFetch.mockResolvedValue({
+      data: { ...CHANTIER_BASE, entreprise_id: "22222222-2222-4222-8222-222222222222", clients: { ...CLIENT_BASE, entreprise_id: "22222222-2222-4222-8222-222222222222" } },
+      error: null,
+    });
+
+    const res = await appelGET();
+    expect(res.status).toBe(404);
+    expect(SupabaseMock.zonesFetch).not.toHaveBeenCalled();
+  });
+
   it("chantier complet → 200, payload construit depuis les données persistées", async () => {
-    SupabaseMock.getUser.mockResolvedValue({ data: { user: { id: "u-1" } }, error: null });
+    SupabaseMock.getUser.mockResolvedValue({ data: { user: UTILISATEUR_TENANT }, error: null });
     SupabaseMock.chantierFetch.mockResolvedValue({
       data: {
         ...CHANTIER_BASE,
-        clients: { ...CLIENT_BASE },
+        entreprise_id: ENT,
+        clients: { ...CLIENT_BASE, entreprise_id: ENT },
       },
       error: null,
     });
-    SupabaseMock.zonesFetch.mockResolvedValue({ data: [{ ...ZONE_PLAQUES }], error: null });
+    SupabaseMock.zonesFetch.mockResolvedValue({ data: [{ ...ZONE_PLAQUES, entreprise_id: ENT }], error: null });
 
     const res = await appelGET();
     expect(res.status).toBe(200);
