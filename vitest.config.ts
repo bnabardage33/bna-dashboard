@@ -22,5 +22,11 @@ export default defineConfig({
     // pas les assertions. Borner le pool rend `npm test` déterministe — et plus
     // rapide (151 s contre 113 s, `environment` 300 s contre 378 s).
     maxWorkers: 3,
+    // Certains tests montent un DOM complet (React 19 + jsdom) et dépassent
+    // 5 s quand les 3 workers sont occupés : le timeout par défaut produisait
+    // des échecs intermittents sans rapport avec le code testé. On garde une
+    // borne (15 s) pour détecter les vraies boucles infinies.
+    testTimeout: 15_000,
+    hookTimeout: 15_000,
   },
 })

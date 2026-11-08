@@ -241,11 +241,11 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
     expect(search).toContain("href={n.lien || \"/\"}");
   });
 
-  it("« Dicter une note » est aligné à droite du titre « Accueil »", () => {
+  it("« Dicter une note » est aligné à droite du titre « Votre activité »", () => {
     // Titre et bouton partagent la MÊME ligne (`items-center`) : le bouton est
     // ainsi à la hauteur du titre, à sa droite. Le sous-titre vient après.
     const ligneTitre = DASHBOARD.match(
-      /<div className="([^"]*justify-between[^"]*)">\s*<h1[\s\S]*?<BoutonMicroNote/,
+      /<div className="([^"]*justify-between[^"]*)">\s*<h2[\s\S]*?<BoutonMicroNote/,
     );
     expect(ligneTitre, "ligne titre + bouton introuvable").not.toBeNull();
     expect(ligneTitre![1]).toMatch(/\bitems-center\b/);
@@ -269,6 +269,6 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
 
   it("le doublon rouge « BNA Bardage » a disparu de l'accueil", () => {
     expect(DASHBOARD).not.toContain("BNA Bardage");
-    expect(DASHBOARD).toMatch(/<h1[^>]*>[^<]*Accueil[^<]*<\/h1>/);
+    expect(DASHBOARD).toMatch(/<h2[^>]*>[^<]*Votre activité[^<]*<\/h2>/);
   });
 });

@@ -335,7 +335,13 @@ describe('LOT 2C — plus aucun formatage monétaire artisanal', () => {
     // la carte prestation (`pu_revient`, `pu_ht`) et 1 dans le bloc « Marge
     // brute estimée » du modal. Aucun nouvel importateur : la page catalogue
     // Terrasse et le modal générique importaient déjà fmtEuro.
-    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(173)
+    //
+    // LOT catalogue/prices (branche fix/dashboard-catalogue-prix-tenant) :
+    // + 2 appels réels dans app/bureau/catalogue/page.tsx (prix de vente et
+    // coût de revient résolus par `resoudrePrixOuvrage`), toujours sans
+    // nouvel importateur. Le décompte passe donc de 173 à 175 ; le contrat de
+    // fond reste « aucune conversion artisanale hors exceptions documentées ».
+    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(175)
     expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(33)
   })
 
