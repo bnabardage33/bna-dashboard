@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { verifierSession } from "@/lib/auth";
+import { resoudreTenant } from "@/lib/tenant";
 import {
   calculerDevis,
   creerLigneAChiffrer,
@@ -29,6 +29,7 @@ import {
   cheminMetreDisponible,
 } from "@/lib/iaDevisMetre";
 import { estDelaiDepasse } from "@/lib/fetchWithTimeout";
+import { resoudrePrixOuvrage } from "@/lib/catalogue/resoudrePrix";
 
 const googleProvider = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -335,8 +336,8 @@ async function cheminLegacy(
 // ── POST ───────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const session = await verifierSession();
-  if (!session.authentifie) return session.reponse;
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
   try {
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       return NextResponse.json({ error: "Clé API Google AI manquante dans la configuration." }, { status: 503 });
@@ -360,9 +361,32 @@ export async function POST(req: NextRequest) {
       .from("catalogue_ouvrages")
       .select("id, designation, description, famille_label, unite, pu_ht, pu_revient, type_cout");
 
-    const catalogueComplet: CatalogueOuvrage[] = (catalogueData ?? []).map(
-      (o) => o as unknown as CatalogueOuvrage
+    const { data: surchargesData } = await supabaseAdmin
+      .from("catalogue_ouvrages_prix")
+      .select("ouvrage_id, pu_ht, pu_revient")
+      .eq("entreprise_id", tenant.entrepriseId);
+
+    const surchargesMap = new Map(
+      (surchargesData ?? []).map((s) => [s.ouvrage_id, s])
     );
+
+    const catalogueComplet: CatalogueOuvrage[] = (catalogueData ?? []).map((o) => {
+      const resolu = resoudrePrixOuvrage(
+        { pu_ht: o.pu_ht, pu_revient: o.pu_revient },
+        surchargesMap.get(o.id)
+      );
+      return {
+        id: o.id,
+        designation: o.designation,
+        description: o.description,
+        famille_label: o.famille_label,
+        unite: o.unite,
+        pu_ht: resolu.pu_ht ?? o.pu_ht,
+        pu_revient: resolu.pu_revient ?? o.pu_revient,
+        type_cout: o.type_cout,
+      } as unknown as CatalogueOuvrage;
+    });
+
     const catalogueMap = new Map<string, CatalogueOuvrage>(
       catalogueComplet.map((o) => [o.id, o])
     );
@@ -375,7 +399,7 @@ export async function POST(req: NextRequest) {
       // Les règles 1,5 / 2 / 6 ne sont JAMAIS appliquées sur ce chemin :
       // toutes les quantités proviennent du JSONB persisté.
       try {
-        const payload = await servirPayloadMetreComplet(chantierId);
+        const payload = await servirPayloadMetreComplet(chantierId, tenant.entrepriseId);
 
         if (!cheminMetreDisponible(payload)) {
           // Aucune zone calculée → tout est « À CHIFFRER », aucune quantité inventée.

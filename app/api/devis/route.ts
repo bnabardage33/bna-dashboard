@@ -9,6 +9,7 @@ import {
   type LigneDevis,
 } from "@/lib/devisCalcul";
 import { validerTauxRetenue } from "@/lib/retenueCalculs";
+import { resoudrePrixOuvrage, type LignePrixResolue } from "@/lib/catalogue/resoudrePrix";
 
 // Route protégée : NON listée dans PUBLIC_PATHS (lib/supabase/middleware.ts) →
 // le middleware redirige les accès anonymes vers /login. Les données métier
@@ -97,6 +98,16 @@ function normaliserLigne(brute: LigneBrute, catalogue: Map<string, CatalogueRow>
     };
   }
 
+  if (ouvrage.pu_ht === null || ouvrage.statut_vente === "a_chiffrer") {
+    return {
+      ...creerLigneAChiffrer(
+        ouvrage.designation,
+        texte(brute.description) || ouvrage.description || "Tarif non renseigné — à chiffrer."
+      ),
+      zone_id,
+    };
+  }
+
   const uniteBas = ouvrage.unite.toLowerCase();
   if (
     uniteBas.includes("unit") ||
@@ -130,9 +141,11 @@ type CatalogueRow = {
   designation: string;
   description: string | null;
   unite: string;
-  pu_ht: number;
-  pu_revient: number;
+  pu_ht: number | null;
+  pu_revient: number | null;
   type_cout: string | null;
+  statut_vente?: string;
+  statut_cout?: string;
 };
 
 export async function POST(req: NextRequest) {
@@ -154,14 +167,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Client manquant." }, { status: 400 });
     }
 
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, entreprise_id")
+      .eq("id", clientId)
+      .eq("entreprise_id", tenant.entrepriseId)
+      .maybeSingle();
+    if (!client) {
+      return NextResponse.json({ error: "Client introuvable ou non rattaché à votre entreprise." }, { status: 404 });
+    }
+
     const lignesBrutes: LigneBrute[] = Array.isArray(body.lignes) ? body.lignes : [];
 
     const { data: catalogueData } = await supabaseAdmin
       .from("catalogue_ouvrages")
       .select("id, designation, description, unite, pu_ht, pu_revient, type_cout");
 
+    const { data: surchargesData } = await supabaseAdmin
+      .from("catalogue_ouvrages_prix")
+      .select("ouvrage_id, pu_ht, pu_revient")
+      .eq("entreprise_id", tenant.entrepriseId);
+
+    const surchargesMap = new Map(
+      (surchargesData ?? []).map((s) => [s.ouvrage_id, s])
+    );
+
     const catalogue = new Map<string, CatalogueRow>(
-      (catalogueData ?? []).map((o) => [o.id, o as unknown as CatalogueRow])
+      (catalogueData ?? []).map((o) => {
+        const resolu = resoudrePrixOuvrage(
+          { pu_ht: o.pu_ht, pu_revient: o.pu_revient },
+          surchargesMap.get(o.id)
+        );
+        return [
+          o.id,
+          {
+            id: o.id,
+            designation: o.designation,
+            description: o.description,
+            unite: o.unite,
+            pu_ht: resolu.pu_ht,
+            pu_revient: resolu.pu_revient,
+            type_cout: o.type_cout,
+            statut_vente: resolu.statut_vente,
+            statut_cout: resolu.statut_cout,
+          },
+        ];
+      })
     );
 
     const lignes = lignesBrutes.map((l) => normaliserLigne(l, catalogue));
@@ -174,7 +225,7 @@ export async function POST(req: NextRequest) {
     if (chantierId) {
       const { data: chantier } = await supabaseAdmin
         .from("chantiers")
-        .select("id, surface_m2, entreprise_id")
+        .select("id, surface_m2, entreprise_id, client_id")
         .eq("id", chantierId)
         .eq("entreprise_id", tenant.entrepriseId)
         .maybeSingle();
@@ -184,6 +235,9 @@ export async function POST(req: NextRequest) {
           { error: "Chantier introuvable ou non rattaché à votre entreprise." },
           { status: 404 }
         );
+      }
+      if (chantier.client_id && chantier.client_id !== clientId) {
+        return NextResponse.json({ error: "Le client du devis ne correspond pas au client du chantier." }, { status: 400 });
       }
       if (chantier?.surface_m2 && chantier.surface_m2 > 0) {
         surface_m2 = chantier.surface_m2;

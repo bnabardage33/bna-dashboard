@@ -296,6 +296,9 @@ describe("verrous statiques côté route / source partagée", () => {
     expect(source).toMatch(/servirPayloadMetreComplet/);
     expect(source).toMatch(/mapperQuantitesPersistees/);
     expect(source).toMatch(/construireLignesDepuisPostes/);
+    expect(source).toMatch(/resoudreTenant/);
+    expect(source).toMatch(/servirPayloadMetreComplet\(chantierId, tenant\.entrepriseId\)/);
+    expect(source).not.toMatch(/verifierSession/);
   });
 
   it("metre-complet ET ia-devis utilisent la MÊME fonction de source", () => {
@@ -309,6 +312,15 @@ describe("verrous statiques côté route / source partagée", () => {
     expect(ia).toMatch(/@\/lib\/servir-metre-complet/);
     expect(metro).toMatch(/@\/lib\/servir-metre-complet/);
     expect(ia).not.toMatch(/fetch\(/);
+  });
+
+  it("les parcours IA devis et analyse passent le tenant résolu au helper partagé", () => {
+    const ia = readFileSync("./app/api/ia-devis/route.ts", "utf8");
+    const analyse = readFileSync("./app/api/devis/[id]/analyse/route.ts", "utf8");
+    expect(ia).toMatch(/const tenant = await resoudreTenant\(\)/);
+    expect(ia).toMatch(/servirPayloadMetreComplet\(chantierId, tenant\.entrepriseId\)/);
+    expect(analyse).toMatch(/const tenant = await resoudreTenant\(\)/);
+    expect(analyse).toMatch(/servirPayloadMetreComplet\(devis\.chantier_id, entrepriseId\)/);
   });
 
   it("aucun moteur métier n'est importé par la route IA (ni calculerZone ni pose/calepinage)", () => {
