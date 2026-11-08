@@ -35,7 +35,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // NB : cet import remonte hors du dossier de la fonction. Le bundler Supabase
 // (esbuild) résout les imports relatifs ; ce point reste à confirmer au premier
 // `supabase functions deploy` — déploiement volontairement HORS PÉRIMÈTRE ici.
-import { geocoderAdresse } from "../../../lib/geocodageNominatim.ts";
+import { geocoderAdresse } from "../../../lib/geocodageBAN.ts";
 
 import {
   extraireDepartement,
@@ -245,15 +245,18 @@ function adresseVersDepartement(
 }
 
 // -----------------------------------------------------------------------------
-// GÉOCODAGE (Nominatim) — validation par code postal
+// GÉOCODAGE (BAN) — validation par code postal
 // -----------------------------------------------------------------------------
 //
 // Visual Crossing acceptait l'adresse brute : son géocodeur interne pouvait
 // retenir l'homonyme d'une AUTRE commune, incompatible avec le code postal du
-// chantier. L'implémentation vit dans `lib/geocodageNominatim.ts` (module pur,
+// chantier. L'implémentation vit dans `lib/geocodageBAN.ts` (module pur,
 // partagé avec les tests) : code postal exact, sinon refus ; ambiguïté, refus.
 // Elle LÈVE, et le try/catch par chantier le consigne sans produire de rapport
 // sur une commune inventée.
+//
+// La BAN (`api-adresse.data.gouv.fr`) remplace Nominatim ici : ce dernier
+// répond 403 aux IP d'egress de Supabase.
 
 // -----------------------------------------------------------------------------
 // MÉTÉO DU JOUR COMPLET - VISUAL CROSSING

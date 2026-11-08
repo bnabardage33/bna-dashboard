@@ -1,7 +1,7 @@
-// __tests__/metre/geocodage-nominatim.test.ts
+// __tests__/metre/geocodage-ban.test.ts
 //
-// Tests du géocodeur Nominatim / OpenStreetMap, partagé par l'Edge Function
-// `generer-rapports-intemperies` et les routes Next (`lib/geocodageNominatim`).
+// Tests du géocodeur de la Base Adresse Nationale, partagé par l'Edge Function
+// `generer-rapports-intemperies` et le module `lib/geocodageBAN`.
 //
 // Le contrat vérifié est celui de l'implémentation RÉELLE : code postal exact,
 // refus des résultats vides ou ambigus, validation des coordonnées. Aucun appel
@@ -9,33 +9,30 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { geocoderAdresse } from "@/lib/geocodageNominatim";
+import { geocoderAdresse } from "@/lib/geocodageBAN";
 
 type Candidat = {
-  lat?: string;
-  lon?: string;
-  display_name?: string;
-  address?: {
+  geometry?: { coordinates?: [number | string, number | string] };
+  properties?: {
+    label?: string;
     postcode?: string;
     city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
-    county?: string;
+    citycode?: string;
   };
 };
 
 function candidat(
-  lat: string | undefined,
-  lon: string | undefined,
+  lon: number | string | undefined,
+  lat: number | string | undefined,
   codePostal: string | undefined,
   commune: string | undefined,
 ): Candidat {
   return {
-    lat,
-    lon,
-    display_name: commune ? `${commune}, France` : undefined,
-    address: {
+    geometry: {
+      coordinates: [lon as number, lat as number],
+    },
+    properties: {
+      label: commune ? `${commune}, France` : undefined,
       postcode: codePostal,
       city: commune,
     },
@@ -49,7 +46,11 @@ function reponseJson(payload: unknown, status = 200): Response {
   });
 }
 
-describe("geocoderAdresse — Edge Function (Nominatim)", () => {
+function reponseBAN(features: Candidat[], status = 200): Response {
+  return reponseJson({ type: "FeatureCollection", features }, status);
+}
+
+describe("geocoderAdresse — BAN (api-adresse.data.gouv.fr)", () => {
   const originalFetch = globalThis.fetch;
   let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -63,9 +64,9 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
     vi.restoreAllMocks();
   });
 
-  it("convertit lat/lon textuels en nombres et interroge Nominatim", async () => {
-        fetchMock.mockResolvedValueOnce(
-      reponseJson([candidat("44.837789", "-0.57918", "33000", "Bordeaux")])
+  it("interroge la BAN et convertit lon/lat en nombres", async () => {
+    fetchMock.mockResolvedValueOnce(
+      reponseBAN([candidat("-0.57918", "44.837789", "33000", "Bordeaux")])
     );
 
     const coords = await geocoderAdresse("Place de la Bourse, 33000 Bordeaux");
@@ -75,22 +76,19 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
 
     const url = new URL(fetchMock.mock.calls[0][0]);
     expect(url.origin + url.pathname).toBe(
-      "https://nominatim.openstreetmap.org/search"
+      "https://api-adresse.data.gouv.fr/search/"
     );
     expect(url.searchParams.get("q")).toBe(
       "Place de la Bourse, 33000 Bordeaux"
     );
-    expect(url.searchParams.get("format")).toBe("jsonv2");
     expect(url.searchParams.get("limit")).toBe("5");
-    expect(url.searchParams.get("addressdetails")).toBe("1");
-    expect(url.searchParams.get("countrycodes")).toBe("fr");
   });
 
   it("filtre strictement sur le code postal saisi", async () => {
-        fetchMock.mockResolvedValueOnce(
-      reponseJson([
-        candidat("44.82672", "-0.18542", "44100", "Nantes"),
-        candidat("45.13705", "-0.44409", "33920", "Saint-Savin"),
+    fetchMock.mockResolvedValueOnce(
+      reponseBAN([
+        candidat("-0.18542", "44.82672", "44100", "Nantes"),
+        candidat("-0.44409", "45.13705", "33920", "Saint-Savin"),
       ])
     );
 
@@ -103,17 +101,17 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
   });
 
   it("refuse quand aucun candidat ne porte le code postal saisi", async () => {
-        fetchMock.mockResolvedValueOnce(
-      reponseJson([candidat("47.218371", "-1.553621", "44100", "Nantes")])
+    fetchMock.mockResolvedValueOnce(
+      reponseBAN([candidat("-1.553621", "47.218371", "44100", "Nantes")])
     );
 
-    await expect(geocoderAdresse("8 hameau des Tilleuls, 33920")).rejects.toThrow(
-      "Aucun lieu au code postal 33920"
-    );
+    await expect(
+      geocoderAdresse("8 hameau des Tilleuls, 33920")
+    ).rejects.toThrow("Aucun lieu au code postal 33920");
   });
 
   it("refuse une réponse vide", async () => {
-        fetchMock.mockResolvedValueOnce(reponseJson([]));
+    fetchMock.mockResolvedValueOnce(reponseBAN([]));
 
     await expect(
       geocoderAdresse("Rue Inexistante Sans Issue 99999")
@@ -121,10 +119,10 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
   });
 
   it("refuse plusieurs communes quand aucun code postal ne tranche", async () => {
-        fetchMock.mockResolvedValueOnce(
-      reponseJson([
-        candidat("44.837789", "-0.57918", "33000", "Bordeaux"),
-        candidat("44.842", "-0.645", "33700", "Mérignac"),
+    fetchMock.mockResolvedValueOnce(
+      reponseBAN([
+        candidat("-0.57918", "44.837789", "33000", "Bordeaux"),
+        candidat("-0.645", "44.842", "33700", "Mérignac"),
       ])
     );
 
@@ -134,10 +132,10 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
   });
 
   it("refuse plusieurs communes même avec un code postal commun", async () => {
-        fetchMock.mockResolvedValueOnce(
-      reponseJson([
-        candidat("44.837789", "-0.57918", "33000", "Bordeaux"),
-        candidat("44.838", "-0.58", "33000", "Le Bouscat"),
+    fetchMock.mockResolvedValueOnce(
+      reponseBAN([
+        candidat("-0.57918", "44.837789", "33000", "Bordeaux"),
+        candidat("-0.58", "44.838", "33000", "Le Bouscat"),
       ])
     );
 
@@ -147,20 +145,19 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
   });
 
   it("propage les erreurs HTTP (429 et 5xx)", async () => {
-    
     fetchMock.mockResolvedValueOnce(reponseJson({}, 429));
     await expect(geocoderAdresse("1 rue X, 33000 Bordeaux")).rejects.toThrow(
-      "Géocodage Nominatim (429)"
+      "Géocodage BAN (429)"
     );
 
     fetchMock.mockResolvedValueOnce(reponseJson({}, 503));
     await expect(geocoderAdresse("1 rue X, 33000 Bordeaux")).rejects.toThrow(
-      "Géocodage Nominatim (503)"
+      "Géocodage BAN (503)"
     );
   });
 
   it("propage une erreur réseau inattendue", async () => {
-        fetchMock.mockRejectedValueOnce(new Error("ECONNRESET"));
+    fetchMock.mockRejectedValueOnce(new Error("ECONNRESET"));
 
     await expect(geocoderAdresse("1 rue X, 33000 Bordeaux")).rejects.toThrow(
       "ECONNRESET"
@@ -168,16 +165,22 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
   });
 
   it("refuse des coordonnées absentes ou non finies", async () => {
-    
     fetchMock.mockResolvedValueOnce(
-      reponseJson([candidat(undefined, undefined, "33000", "Bordeaux")])
+      reponseBAN([candidat(undefined, undefined, "33000", "Bordeaux")])
     );
     await expect(geocoderAdresse("Rue X, Bordeaux")).rejects.toThrow(
       "Coordonnées de géocodage invalides"
     );
 
     fetchMock.mockResolvedValueOnce(
-      reponseJson([candidat("nord", "ouest", "33000", "Bordeaux")])
+      reponseBAN([candidat("nord", "ouest", "33000", "Bordeaux")])
+    );
+    await expect(geocoderAdresse("Rue X, Bordeaux")).rejects.toThrow(
+      "Coordonnées de géocodage invalides"
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      reponseBAN([{ properties: { postcode: "33000", city: "Bordeaux" } }])
     );
     await expect(geocoderAdresse("Rue X, Bordeaux")).rejects.toThrow(
       "Coordonnées de géocodage invalides"
@@ -185,7 +188,6 @@ describe("geocoderAdresse — Edge Function (Nominatim)", () => {
   });
 
   it("refuse une adresse vide sans appel réseau", async () => {
-    
     await expect(geocoderAdresse("   ")).rejects.toThrow("Adresse vide");
     expect(fetchMock).not.toHaveBeenCalled();
   });
