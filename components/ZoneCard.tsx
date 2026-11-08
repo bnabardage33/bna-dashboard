@@ -17,6 +17,7 @@ import {
 import PlanCalepinage from "@/components/PlanCalepinage";
 import FicheDebitPDF from "@/components/FicheDebitPDF";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
+import { BardagePlan3D } from "@/components/calepinage/BardagePlan3D";
 import {
   extraireEntrees,
   lesEntreesOntChangent,
@@ -256,7 +257,7 @@ export default function ZoneCard({
   onPersistResult?: (result: ResultatMetre) => void;
 }) {
   const [modalDebitOuvert, setModalDebitOuvert] = useState(false);
-  const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4">("nesting");
+  const [ongletDebit, setOngletDebit] = useState<"nesting" | "fiche_a4" | "vue_3d_dtu">("nesting");
   const [replie, setReplie] = useState(false);
   // Accordéon des spécifications DTU : fermé par défaut (le mobile reste lisible).
   const [specsPoseOuvertes, setSpecsPoseOuvertes] = useState(false);
@@ -1487,13 +1488,28 @@ export default function ZoneCard({
         )}
 
         {(calc.surfaceNette > 0 || pose) && (
-          <button
-            type="button"
-            onClick={() => setModalDebitOuvert(true)}
-            className="flex-1 rounded-lg border border-slate-600 bg-slate-800 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-700 transition-colors text-center"
-          >
-            📄 Fiche Débit & Atelier
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setOngletDebit("vue_3d_dtu");
+                setModalDebitOuvert(true);
+              }}
+              className="flex-1 rounded-lg border border-orange-500/40 bg-orange-500/10 py-2 text-sm font-medium text-orange-300 hover:bg-orange-500/20 transition-colors text-center flex items-center justify-center gap-1.5"
+            >
+              <span>🧊</span> Vue 3D Éclatée DTU
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOngletDebit("nesting");
+                setModalDebitOuvert(true);
+              }}
+              className="flex-1 rounded-lg border border-slate-600 bg-slate-800 py-2 text-sm font-medium text-slate-200 hover:border-slate-500 hover:bg-slate-700 transition-colors text-center"
+            >
+              📄 Fiche Débit & Atelier
+            </button>
+          </>
         )}
 
         {onCreerCommande &&
@@ -1520,7 +1536,7 @@ export default function ZoneCard({
         >
           <div className="mx-auto max-w-4xl space-y-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/90 p-3 rounded-2xl print:hidden">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setOngletDebit("nesting")}
@@ -1531,6 +1547,17 @@ export default function ZoneCard({
                   }`}
                 >
                   <span>📐</span> Plan de Découpe &amp; Nesting
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOngletDebit("vue_3d_dtu")}
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                    ongletDebit === "vue_3d_dtu"
+                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <span>🧊</span> Vue 3D Éclatée DTU
                 </button>
                 <button
                   type="button"
@@ -1563,7 +1590,57 @@ export default function ZoneCard({
               </div>
             </div>
 
-            {ongletDebit === "nesting" && calepinage ? (
+            {ongletDebit === "vue_3d_dtu" && peutCalepiner ? (
+              <div className="rounded-2xl border border-slate-700 bg-slate-900/95 p-4 shadow-2xl">
+                {(() => {
+                  const poseEffective =
+                    pose ??
+                    calculerPose(
+                      zone.famille_pose ?? "hpl",
+                      zone.largeur,
+                      hauteurTotale,
+                      zone.angle,
+                      zoneVent,
+                      zone.largeur_lame_mm ?? defautModule(zone.famille_pose ?? "hpl"),
+                      {
+                        zoneVentRive: configTechnique.zone_vent_rive ?? zone.angle,
+                        epaisseurIsolantMm: configTechnique.epaisseur_isolant_mm ?? 120,
+                        typeIsolant: configTechnique.type_isolant ?? "laine_roche",
+                        surfacePaquetM2: configTechnique.surface_paquet_m2 ?? 4.8,
+                        moduleLargeurMm: zone.module_largeur_mm ?? null,
+                        moduleHauteurMm: zone.module_hauteur_mm ?? null,
+                        sensPose: sensPoseEffectif,
+                      }
+                    );
+                  const facadeData = {
+                    id: zone.id || "zone-active",
+                    nom: zone.nom || "Façade",
+                    famille: zone.famille_pose ?? "hpl",
+                    L: zone.largeur,
+                    Hm: hauteurTotale,
+                    hMurM: zone.hauteur_mur,
+                    hFaiteM: zone.hauteur_faite ?? undefined,
+                    estPignon: zone.type === "pignon",
+                    surfaceM2: calc.surfaceNette,
+                    cal: calepinage,
+                    pose: poseEffective,
+                    ouverturesCalculees: zone.ouvertures
+                      .filter((o) => o.largeur > 0 && o.hauteur > 0)
+                      .map((o, idx) => ({
+                        id: o.id,
+                        nom: o.type === "porte" ? `Porte ${idx + 1}` : `Fenêtre ${idx + 1}`,
+                        type: o.type,
+                        xM: Math.min(Math.max(0.2, (idx + 1) * (zone.largeur / (zone.ouvertures.length + 1)) - o.largeur / 2), Math.max(0, zone.largeur - o.largeur)),
+                        yM: o.type === "porte" ? 0 : Math.min(1.0, Math.max(0, zone.hauteur_mur - o.hauteur - 0.2)),
+                        largeurM: o.largeur,
+                        hauteurM: o.hauteur,
+                        surfaceM2: o.largeur * o.hauteur,
+                      })),
+                  };
+                  return <BardagePlan3D activeFacade={facadeData} allFacades={[facadeData]} />;
+                })()}
+              </div>
+            ) : ongletDebit === "nesting" && calepinage ? (
               <div className="rounded-2xl border border-slate-700 bg-slate-800/90 p-4 shadow-2xl">
                 <VisualiseurDebitPlaques calepinage={calepinage} titreZone={zone.nom} />
               </div>

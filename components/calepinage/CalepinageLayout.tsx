@@ -381,6 +381,7 @@ function CalepinageLayoutContent({ zoneId }: CalepinageLayoutProps) {
               openings={ouvertures}
               zoneWidthMm={zoneWidthMm}
               zoneHeightMm={zoneHeightMm}
+              zone={zone}
             />
           </div>
         )}

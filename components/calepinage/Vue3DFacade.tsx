@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Module, ModuleGroup, Opening } from "@/types/calepinage";
+import type { Module, ModuleGroup, Opening, ChantierZone } from "@/types/calepinage";
 import type { ModuleAffichable } from "@/hooks/calepinage/useCanvasRenderer";
 import { use3DGestures } from "@/hooks/calepinage/use3DGestures";
 import { couleurGroupe } from "@/lib/calepinage/palette";
 import { libelleMateriau, libelleTraitement } from "@/lib/calepinage/bordereau";
+import { calculerCalepinage } from "@/lib/calepinageCalcul";
+import { calculerPose } from "@/lib/poseCalcul";
+import { BardagePlan3D, type Facade3DData } from "@/components/calepinage/BardagePlan3D";
+import { Layers, Box } from "lucide-react";
 import {
   MAX_ELEMENTS_DOM,
   ELEMENTS_FIXES,
@@ -49,6 +53,8 @@ export interface Vue3DFacadeProps {
   zoneWidthMm: number;
   /** Hauteur totale de la zone en mm. */
   zoneHeightMm: number;
+  /** Données complètes de la zone Chantier (permet la vue 3D éclatée DTU). */
+  zone?: ChantierZone;
   onModuleSelect?: (module: Module) => void;
   /** Appelé quand un tap hors module désélectionne. */
   onModuleDeselect?: () => void;
@@ -119,9 +125,11 @@ export default function Vue3DFacade({
   openings,
   zoneWidthMm,
   zoneHeightMm,
+  zone,
   onModuleSelect,
   onModuleDeselect,
 }: Vue3DFacadeProps) {
+  const [modeRendu, setModeRendu] = useState<"css3d" | "dtu">("dtu");
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<Vue3D>({ ...VUE_DE_FACE });
@@ -237,6 +245,77 @@ export default function Vue3DFacade({
     [simplifie, modules, groups, ouvertures.length, reste],
   );
 
+  // Construction des données Facade3DData pour la vue 3D éclatée DTU (BardagePlan3D)
+  const facade3DData = useMemo<Facade3DData | null>(() => {
+    const W = zone?.largeur ? zone.largeur : zoneWidthMm / 1000;
+    const H = zone?.hauteur_mur ? zone.hauteur_mur : zoneHeightMm / 1000;
+    if (W <= 0 || H <= 0) return null;
+
+    const estPignon = zone?.type === "pignon";
+    const hFaite = zone?.hauteur_faite ?? (estPignon ? H * 1.3 : undefined);
+
+    const rawLongueurMm = zone?.plaque_longueur_mm && zone.plaque_longueur_mm > 0 ? (zone.plaque_longueur_mm < 20 ? zone.plaque_longueur_mm * 1000 : zone.plaque_longueur_mm) : 3050;
+    const rawLargeurMm = zone?.plaque_largeur_mm && zone.plaque_largeur_mm > 0 ? (zone.plaque_largeur_mm < 20 ? zone.plaque_largeur_mm * 1000 : zone.plaque_largeur_mm) : 1300;
+    const modLargeurMm = zone?.module_largeur_mm && zone.module_largeur_mm > 0 ? (zone.module_largeur_mm < 20 ? zone.module_largeur_mm * 1000 : zone.module_largeur_mm) : 1000;
+    const modHauteurMm = zone?.module_hauteur_mm && zone.module_hauteur_mm > 0 ? (zone.module_hauteur_mm < 20 ? zone.module_hauteur_mm * 1000 : zone.module_hauteur_mm) : 600;
+
+    const cal = calculerCalepinage({
+      zoneLargeurM: W,
+      zoneHauteurM: H,
+      plaqueLongueurMm: rawLongueurMm,
+      plaqueLargeurMm: rawLargeurMm,
+      moduleLargeurMm: modLargeurMm,
+      moduleHauteurMm: modHauteurMm,
+      sensPose: "horizontal",
+      estPignon,
+      hauteurFaiteM: hFaite,
+      autoriserRotation: true,
+      minRiveWidthMm: 250,
+      antiMicroPignon: true,
+    });
+
+    const pose = calculerPose(
+      (zone?.famille_pose as any) ?? "hpl",
+      W,
+      hFaite ?? H,
+      zone?.angle ?? false,
+      1,
+      modLargeurMm,
+      {
+        epaisseurIsolantMm: 120,
+        typeIsolant: "laine_roche",
+        moduleLargeurMm: modLargeurMm,
+        moduleHauteurMm: modHauteurMm,
+      }
+    );
+
+    const ouverturesCalculees = ouvertures.map((o) => ({
+      id: o.id,
+      nom: o.type === "porte" ? "Porte" : "Fenêtre",
+      type: (o.type === "porte" ? "porte" : "fenetre") as "porte" | "fenetre",
+      xM: o.x_mm / 1000,
+      yM: o.y_mm / 1000,
+      largeurM: o.width_mm / 1000,
+      hauteurM: o.height_mm / 1000,
+      surfaceM2: (o.width_mm * o.height_mm) / 1000000,
+    }));
+
+    return {
+      id: zone?.id || "zone-calepinage",
+      nom: zone?.nom || "Façade bardage",
+      famille: (zone?.famille_pose as any) ?? "hpl",
+      L: W,
+      Hm: hFaite ?? H,
+      hMurM: H,
+      hFaiteM: hFaite,
+      estPignon,
+      surfaceM2: W * H,
+      cal,
+      pose,
+      ouverturesCalculees,
+    };
+  }, [zone, zoneWidthMm, zoneHeightMm, ouvertures]);
+
   const placement = (r: { x_mm: number; y_mm: number; width_mm: number; height_mm: number }) => ({
     position: "absolute" as const,
     left: r.x_mm * echelle,
@@ -247,24 +326,60 @@ export default function Vue3DFacade({
   });
 
   return (
-    <>
-      <div
-        ref={containerRef}
-        role="img"
-        aria-label={`Vue 3D de la façade, ${modules.length} modules`}
-        className="relative select-none rounded-xl"
-        style={{
-          perspective: `${PERSPECTIVE_PX}px`,
-          width: "100%",
-          height: HAUTEUR,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f3f4f6",
-          touchAction: "none",
-        }}
-      >
+    <div className="space-y-2">
+      {/* Sélecteur de mode 3D : Vue Éclatée DTU vs Modules CSS 3D */}
+      <div className="flex items-center justify-between gap-2 px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-xl">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setModeRendu("dtu")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
+              modeRendu === "dtu"
+                ? "bg-orange-500 text-white shadow-sm shadow-orange-500/20"
+                : "bg-slate-800 text-slate-300 border border-slate-700 hover:text-white"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" /> Coupe 3D Éclatée DTU
+          </button>
+          <button
+            type="button"
+            onClick={() => setModeRendu("css3d")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
+              modeRendu === "css3d"
+                ? "bg-sky-500 text-slate-950 shadow-sm shadow-sky-500/20"
+                : "bg-slate-800 text-slate-300 border border-slate-700 hover:text-white"
+            }`}
+          >
+            <Box className="w-3.5 h-3.5" /> Modules CSS 3D ({modules.length})
+          </button>
+        </div>
+        <span className="text-[11px] text-slate-400 hidden sm:inline">
+          {modeRendu === "dtu" ? "Support + ITE + Chevrons + Panneaux" : "Trame calepinée interactive"}
+        </span>
+      </div>
+
+      {modeRendu === "dtu" && facade3DData ? (
+        <div className="rounded-xl border border-slate-800 bg-slate-950 p-2 sm:p-3">
+          <BardagePlan3D activeFacade={facade3DData} allFacades={[facade3DData]} />
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          role="img"
+          aria-label={`Vue 3D de la façade, ${modules.length} modules`}
+          className="relative select-none rounded-xl"
+          style={{
+            perspective: `${PERSPECTIVE_PX}px`,
+            width: "100%",
+            height: HAUTEUR,
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#f3f4f6",
+            touchAction: "none",
+          }}
+        >
         {zoneValide && echelle > 0 && (
           <div
             ref={sceneRef}
@@ -377,8 +492,9 @@ export default function Vue3DFacade({
           </p>
         )}
       </div>
+      )}
 
       {selectionne && <FicheModule module={selectionne} onClose={fermerFiche} />}
-    </>
+    </div>
   );
 }

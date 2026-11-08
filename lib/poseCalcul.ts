@@ -98,34 +98,55 @@ export function getModeleEquerre(epaisseurIsolantMm: number): string {
 }
 
 /**
- * Rive minimale recommandée pour une bande de façade (règle du façadier).
- * En deçà, la bande de rive est retirée au profit d'une plaque entière
- * afin d'obtenir des rives plus larges et harmonieuses.
+ * Rive minimale recommandée pour une bande de façade (règle du façadier & DTU).
+ * En deçà, la bande de rive est absorbée au profit de plaques réparties
+ * afin d'obtenir des rives plus larges, esthétiques et conformes.
  */
 export const RIVE_MIN_MM = 150;
+export const DEFAULT_MIN_RIVE_WIDTH_MM = 250;
+export const MIN_RIVE_WIDTH = DEFAULT_MIN_RIVE_WIDTH_MM;
 
 /**
- * Découpage esthétique CENTRÉ de la façade en plaques entières :
- *  - le nombre de plaques entières `n` (largeur physique) est maximal,
+ * Découpage esthétique CENTRÉ de la façade en plaques entières avec règle anti-micro-plaques :
+ *  - le nombre de plaques entières `n` (largeur physique) est maximisé,
  *  - l'espace restant est divisé EXACTEMENT en deux : riveGauche = riveDroite,
- *  - si la rive est trop étroite (< RIVE_MIN_MM), on retire une plaque et on
- *    recalcule pour obtenir des rives plus larges.
+ *  - si la rive est trop étroite (< minRiveMm), on retire une plaque pour élargir les rives,
+ *  - si nModules === 1 et que la rive reste inférieure au seuil minimal (ex: mur de 1050 mm
+ *    avec module de 1000 mm -> rives résiduelles de 25 mm), on élimine la micro-bande
+ *    en divisant le mur en 2 panneaux égaux équilibrés (525 mm + 525 mm >= seuil).
  * Cette répartition est la SOURCE UNIQUE utilisée par le calepinage (plaques)
  * et par l'ossature (chevrons) : les deux restent ainsi parfaitement synchronisées.
  */
-export function decoupageModulesCentres(largeurMm: number, moduleMm: number): { nModules: number; riveMm: number } {
+export function decoupageModulesCentres(
+  largeurMm: number,
+  moduleMm: number,
+  minRiveMm: number = RIVE_MIN_MM
+): { nModules: number; riveMm: number } {
   const largeur = Math.max(0, Math.round(largeurMm));
   const module = Math.max(1, Math.round(moduleMm));
+  const minRive = Math.max(0, Math.round(minRiveMm));
 
   if (largeur <= 0) return { nModules: 0, riveMm: 0 };
   if (largeur < module) return { nModules: 0, riveMm: largeur / 2 };
+  if (largeur === module) return { nModules: 1, riveMm: 0 };
 
   let nModules = Math.floor(largeur / module);
   let riveMm = (largeur - nModules * module) / 2;
-  while (riveMm < RIVE_MIN_MM && nModules > 1) {
+
+  while (riveMm < minRive && nModules > 1) {
     nModules -= 1;
     riveMm = (largeur - nModules * module) / 2;
   }
+
+  // Cas nModules === 1 avec micro-rives résiduelles (ex: 25 mm, 50 mm)
+  // Découpe en 2 panneaux symétriques pour absorber la micro-chute
+  if (riveMm < minRive && nModules === 1) {
+    if (largeur >= 2 * minRive) {
+      nModules = 0;
+      riveMm = largeur / 2;
+    }
+  }
+
   return { nModules, riveMm };
 }
 
@@ -143,7 +164,8 @@ export function decoupageModulesCentres(largeurMm: number, moduleMm: number): { 
 export function positionsChevronsCalepinage(
   largeurM: number,
   moduleLargeurMm: number,
-  entraxeReelMm: number
+  entraxeReelMm: number,
+  minRiveMm: number = RIVE_MIN_MM
 ): number[] {
   const largeurMm = Math.round(largeurM * 1000);
   const moduleMm = Math.max(1, Math.round(moduleLargeurMm));
@@ -151,8 +173,14 @@ export function positionsChevronsCalepinage(
 
   if (largeurMm <= 0) return [0];
 
-  const { nModules, riveMm } = decoupageModulesCentres(largeurMm, moduleMm);
-  if (nModules === 0) return [0, largeurMm / 1000];
+  const { nModules, riveMm } = decoupageModulesCentres(largeurMm, moduleMm, minRiveMm);
+  if (nModules === 0) {
+    if (riveMm > 0 && largeurMm >= 2 * minRiveMm) {
+      const riveM = Math.round(riveMm) / 1000;
+      return [0, riveM, largeurMm / 1000];
+    }
+    return [0, largeurMm / 1000];
+  }
 
   const riveM = Math.round(riveMm) / 1000;
   // Chaque plaque (moduleMm) est divisée en `moduleMm / entraxeMm` intervalles.

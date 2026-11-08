@@ -53,6 +53,7 @@ export default function VisualiseurDebitPlaques({
           <p className="mt-0.5 text-lg font-black text-sky-400">{calepinage.nbPiecesPosees} modules</p>
           <p className="text-2xs text-slate-400 font-mono">
             Net: {calepinage.surfaceZoneM2.toFixed(2)} m²
+            {calepinage.nbPiecesCouplees ? ` · ${calepinage.nbPiecesCouplees} pignons couplés` : ""}
           </p>
         </div>
 
@@ -276,6 +277,19 @@ export default function VisualiseurDebitPlaques({
                       rx="3"
                     />
 
+                    {/* Trait de coupe diagonal si bloc de 2 pignons couplés tête-bêche */}
+                    {piece.coupleAvec && (
+                      <line
+                        x1={pX}
+                        y1={pY + pH * 0.72}
+                        x2={pX + pW}
+                        y2={pY + pH * 0.28}
+                        stroke="#0f172a"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 2"
+                      />
+                    )}
+
                     {/* Lignes de cotes intérieures si l'espace le permet */}
                     {pW > 35 && pH > 24 && (
                       <>
@@ -299,7 +313,9 @@ export default function VisualiseurDebitPlaques({
                           textAnchor="middle"
                           dominantBaseline="middle"
                         >
-                          {piece.largeurMm} × {piece.hauteurMm}
+                          {piece.pignonDetails && !piece.coupleAvec
+                            ? `${piece.largeurMm} × ${piece.pignonDetails.hLeftMm}/${piece.pignonDetails.hRightMm}`
+                            : `${piece.largeurMm} × ${piece.hauteurMm}`}
                         </text>
                       </>
                     )}
@@ -375,11 +391,21 @@ export default function VisualiseurDebitPlaques({
                           : "bg-slate-700 text-slate-200"
                       }`}
                     >
-                      {p.type === "pignon" ? "Rampant pignon" : p.type === "coupe" ? "Rive ajustée" : "Module plein"}
+                      {p.coupleAvec
+                        ? "Pignons couplés ♻️"
+                        : p.type === "pignon"
+                        ? "Rampant pignon"
+                        : p.type === "coupe"
+                        ? "Rive ajustée"
+                        : "Module plein"}
                     </span>
                   </td>
                   <td className="py-2 text-right font-mono font-semibold text-slate-100">{p.largeurMm} mm</td>
-                  <td className="py-2 text-right font-mono font-semibold text-slate-100">{p.hauteurMm} mm</td>
+                  <td className="py-2 text-right font-mono font-semibold text-slate-100">
+                    {p.pignonDetails && !p.coupleAvec
+                      ? `${p.hauteurMm} mm (${p.pignonDetails.hLeftMm}/${p.pignonDetails.hRightMm})`
+                      : `${p.hauteurMm} mm`}
+                  </td>
                   <td className="py-2 text-right font-mono text-slate-400">
                     X={p.xMm} mm, Y={p.yMm} mm
                   </td>
