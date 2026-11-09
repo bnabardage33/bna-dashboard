@@ -48,7 +48,7 @@ export default function AccueilProfessionnel({
         className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#242424] via-[#1E1E1E] to-[#191919] p-4 shadow-lg sm:p-6"
       >
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#FF6F60]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#E79A68]">
             BNA Dashboard · Pilotage BTP
           </p>
           <h1 id="accueil-titre" className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
@@ -75,9 +75,9 @@ export default function AccueilProfessionnel({
           {METIERS.map(({ nom, description, icone: Icone, href, action }) => {
             const contenu = (
               <Surface className={`flex h-full min-h-44 flex-col p-4 sm:min-h-48 sm:p-5 ${
-                href ? 'transition-colors group-hover:border-[#E53935]/50 group-hover:bg-[#252525]' : ''
+                href ? 'transition-colors group-hover:border-[#B85B2B]/50 group-hover:bg-[#252525]' : ''
               }`}>
-                <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#E53935]/25 bg-[#E53935]/10 text-[#FF6F60]">
+                <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#E79A68]">
                   <Icone aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
                 </span>
                 <span className="text-lg font-bold text-white">{nom}</span>
@@ -85,7 +85,7 @@ export default function AccueilProfessionnel({
                 {action && (
                   <span className="mt-auto flex items-center gap-2 pt-5 text-sm font-semibold text-gray-300 transition-colors group-hover:text-white">
                     {action}
-                    <ArrowRight aria-hidden="true" className="h-4 w-4 text-[#FF6F60] transition-transform group-hover:translate-x-1" />
+                    <ArrowRight aria-hidden="true" className="h-4 w-4 text-[#E79A68] transition-transform group-hover:translate-x-1" />
                   </span>
                 )}
               </Surface>
@@ -96,7 +96,7 @@ export default function AccueilProfessionnel({
                 key={nom}
                 href={href}
                 aria-label={`${nom} — chantiers existants, hub commun`}
-                className="group block min-w-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#E53935] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212]"
+                className="group block min-w-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212]"
               >
                 {contenu}
               </Link>
@@ -121,7 +121,7 @@ export default function AccueilProfessionnel({
             <Link
               key={href}
               href={href}
-              className="inline-flex min-h-12 items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:border-[#E53935]/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E53935]"
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:border-[#B85B2B]/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
             >
               <span>{libelle}</span>
               <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" />

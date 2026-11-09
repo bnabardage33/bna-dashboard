@@ -1,38 +1,91 @@
 # 📋 Audit — BNA Dashboard
 
-> Fichier de référence unique pour reprendre le projet. Il décrit **l'état réel
-> du dépôt**, vérifié à `ad6404a`. Toute affirmation y est soit vérifiable dans
-> le code, soit explicitement marquée « non vérifié ».
+> Fichier de référence pour reprendre le projet. Le snapshot courant ci-dessous
+> a été vérifié le **2026-11-08** sur `main` et auprès des services connectés.
+> Les sections historiques plus bas peuvent contenir des constats anciens :
+> utiliser le snapshot et « Audit de production — 2026-11-08 » comme référence
+> pour l'état présent.
 >
 > Convention : les chemins sont relatifs à la racine du dépôt.
 
 ---
 
-## 📸 Snapshot
+## 📸 Snapshot courant — 2026-11-08
 
 | | |
 |---|---|
-| Branche | `agent-workflow` |
-| `HEAD` | `71d2f88` — (Post-correction sécurité RLS + Robustesse) |
-| `origin/main` | `ad6404a` (aligné, 0 commit d'écart) |
-| Arbre de travail | propre |
-| Stack | Next.js `16.3` (App Router) · React `19.2.8` · TypeScript `5.9.3` · Tailwind CSS `4` · Supabase `2.112.4` + `@supabase/ssr` `0.12.5` · Vitest `4` |
-| Routes | **38** pages (`app/**/page.tsx`) · **47** routes API (`app/api/**/route.ts`) |
-| Base | **41** migrations SQL · `types/supabase.ts` (3003 l.) déclare 58 entrées : 44 tables, 1 vue, 13 fonctions |
+| Branche / HEAD | `main` · `ca229a689959723fea2c4a31f38a094e79e738f2` (`fix(meteo): basculer le géocodage vers la BAN`) |
+| Remote | `origin/main` aligné sur HEAD ; une seule branche locale et distante (`main`) |
+| Arbre de travail | propre au début de cet audit ; aucun stash |
+| Worktrees | checkout courant + `/tmp/opencode/baseline` détaché sur `f2eabd0` (à préserver) |
+| Stack | Next.js `16.3` · React `19.2.8` · TypeScript `5.9` · Tailwind `4` · Vitest `4` · Node Vercel `24.x` |
+| Taille | 42 pages · 47 routes API · 62 migrations SQL locales · 138 fichiers sous `__tests__` · 1 fonction Edge |
+| Supabase | projet `onhygmsxfdjkcjjnhabo` ; inventaire/advisors consultés en lecture seule |
+| Vercel | dernier déploiement Production `READY`, commit identique à HEAD |
 
-### Portes de qualité (mesurées à `ad6404a`)
+### Portes de qualité (mesurées sur le contenu de HEAD)
 
 | Porte | Résultat |
 |---|---|
+| `npm test -- --reporter=dot` | **2 120 tests**, 136 fichiers passés |
 | `npx tsc --noEmit` | **0 erreur** |
-| `npx eslint app components hooks lib types` | **0 erreur, 0 warning** |
-| `npx eslint .` (dépôt entier) | 0 erreur, **26 warning** (tests) |
-| `npx vitest run` | **1121 / 1121** verts, 66 fichiers |
-| `npm run build` | ✓ 51 / 51 pages |
+| `npm run lint` | **0 erreur, 51 warnings** (dont des `any` dans du code applicatif) |
+| `npm run build` | ✓ build Next.js, 50/50 pages statiques générées ; 50 routes API annoncées au build |
 | `git diff --check` | vide |
 
-Les 26 warnings du dépôt entier sont des avertissements de tests, aucun en
-production. Le compte `any` d'ESLint en production est **0**.
+Le nombre de routes affiché par le build ne correspond pas exactement au
+comptage des fichiers (`app/api/**/route.ts`) ; conserver les deux métriques
+distinctes. Les validations ci-dessus ont été faites avant le commit de HEAD,
+dont le contenu correspond à celui audité ; cet audit documentaire n'a pas
+relancé toute la suite.
+
+### Audit de production — 2026-11-08
+
+- **Vercel :** déploiement Production `READY` sur le commit de HEAD. Le statut
+  vert confirme le build/déploiement Vercel, pas le déploiement des fonctions
+  Supabase ni la conformité du schéma distant.
+- **Supabase migrations :** le journal distant contient quatre entrées ; les
+  deux nouvelles migrations ci-dessous correspondent aux fichiers locaux
+  `20261108211444` et `20261108211748`. Les entrées distantes
+  `20261026125819` et `20261026125929` n'ont toujours pas de fichier local.
+  La dérive historique demeure : ne pas appliquer automatiquement les 62
+  migrations locales en bloc avec `db push`.
+- **Fonction Edge intempéries :** distante ACTIVE, version 26, `verify_jwt=true` ;
+  déployée depuis le code de `main`, avec `lib/geocodageBAN.ts` et
+  `lib/vigilanceMeteoFrance.ts` empaquetés. Vérification distante : source BAN
+  présente, URL Nominatim absente. Le problème de géocodage de production est
+  corrigé ; le handler écrit en base, donc aucun rapport métier réel n'a été
+  généré pour ce contrôle.
+- **RPC calepinage corrigée en production :** migrations
+  `20261108211444_secure_upsert_calepinage_zone_tenant` et
+  `20261108211748_set_upsert_calepinage_security_invoker` appliquées. La RPC
+  dérive le tenant du claim signé `app_metadata.entreprise_id`, rejette tout
+  `p_entreprise_id` différent, vérifie l'entreprise de la zone, et fonctionne
+  maintenant en `SECURITY INVOKER` avec les policies RLS. Privilèges vérifiés :
+  `authenticated` uniquement ; `anon` et `service_role` refusés. Le test distant
+  d'un tenant forgé a été rejeté avant écriture ; l'advisor ne la signale plus.
+- **Autres avis Supabase :** 9 signatures `SECURITY DEFINER` exécutables par
+  `authenticated` à examiner ; protection contre les mots de passe compromis
+  désactivée (WARN) ; une table `devis_otp` avec RLS sans policy (INFO, à valider
+  comme table réservée au service role). Performance : 31 FKs sans index, 22
+  alertes d'initplan RLS, 37 index signalés inutilisés et 5 groupes d'index
+  dupliqués. Les avis d'index sont des pistes, pas une instruction de suppression.
+- **OTP :** le code courant stocke un HMAC et les tentatives/cooldown en base ;
+  fournisseurs Twilio/Vonage disponibles. Le mock console refuse explicitement
+  de fonctionner en production. Le SMS réel dépend donc de la configuration
+  d'un fournisseur et de ses secrets dans l'environnement de production.
+- **Erreurs API :** plusieurs routes renvoient encore un champ `debug` alimenté
+  par le message d'exception (`transcrire-note`, `ia-avancement`,
+  `dashboard-patron` GET/POST, `reformuler-note`). Vérifier qu'aucun détail
+  fournisseur/interne ne fuit aux clients ; retourner un message générique et
+  garder le détail dans les journaux serveur.
+- **Portail client :** des valeurs de démonstration (« Villa Arcachon »,
+  « 33380 Arcachon », `BNA-7429`, numéro WhatsApp de test) sont encore présentes
+  comme valeurs de repli dans la page. Confirmer que ces fallbacks ne peuvent
+  pas induire un vrai client en erreur si les données sont absentes.
+- **À corriger dans le rapport antérieur :** les anciennes valeurs `1121 tests`,
+  `38 pages`, `41 migrations`, les affirmations d'OTP en mémoire/jamais envoyé,
+  et « aucun accès Supabase » sont périmées pour cet état.
 
 ---
 
@@ -100,7 +153,7 @@ que l'utilisateur a cliqué », « ouvert parce que c'est la catégorie courante
 
 ---
 
-## 🎨 Charte graphique
+## 🎨 Charte graphique — palette cuivre mise à jour le 2026-11-09
 
 Palette centralisée dans le bloc `@theme` de `app/globals.css`. C'est la **source
 unique** : les composants consomment les tokens, pas des littéraux.
@@ -113,16 +166,17 @@ unique** : les composants consomment les tokens, pas des littéraux.
 | `--color-surface-drawer` | `#1A1A1A` | fond du menu hamburger |
 | `--color-surface-mobile` | `#232323` | carte sur petit écran |
 | `--color-border` / `--color-divider` | `#2E2E2E` / `#3A3A3A` | bordures |
-| `--color-brand` | `#E53935` | action principale, rouge BNA |
-| `--color-brand-dark` / `--color-brand-light` | `#C62828` / `#FF6F60` | survol, variantes |
+| `--color-brand` | `#B85B2B` | cuivre, action principale BNA |
+| `--color-brand-dark` / `--color-brand-light` | `#8F431C` / `#E79A68` | cuivre sombre au survol, cuivre clair sur fond sombre |
 | `--color-ink-title` / `--color-ink` | `#F5F5F5` / `#E0E0E0` | titres, texte |
 | `--color-ink-muted` / `--color-ink-disabled` | `#BDBDBD` / `#757575` | texte secondaire |
 | `--foreground` | `#E0E0E0` | couleur de texte globale |
 
-Les échelles `red-*` et `gray-*` sont **redéfinies** dans le même bloc pour
-s'aligner sur ces tokens.
+Les échelles `red-*` et `gray-*` sont **redéfinies** dans le même bloc : les
+actions de marque utilisent le cuivre, les textes d'erreur (`red-300` et
+`red-400`) restent rouges. Les gris conservent leur rendu argenté.
 
-### Le reflet rouge
+### Le reflet cuivre
 
 Le halo rouge du haut de page est porté par le `background-image` du
 `<main id="main-content-wrapper">` de `app/layout.tsx`, avec `bg-top`,
@@ -131,7 +185,7 @@ pour toutes les pages. Il ne doit pas être redéfini localement : c'est exactem
 ce qui avait produit deux copies divergentes dans `app/page.tsx`.
 
 > Note Tailwind : le moteur minifie `ellipse at top` en `at top` et
-> `rgba(229,57,53,0.15)` en `#e5393526`. C'est normal, pas une régression.
+> `rgba(184,91,43,0.15)` en `#b85b2b26`. C'est normal, pas une régression.
 
 ### Standard des modales
 
@@ -552,9 +606,10 @@ qu'un script de diagnostic (`inventaire_sql_diagnostic.sql`), pas une migration.
 `supabase/functions/generer-rapports-intemperies/index.ts` — deux modes :
 `capture` (photographie de la vigilance Météo-France pour chaque chantier actif,
 matin et après-midi) et `generer` (relit les captures, récupère la météo réelle,
-décide si la journée est arrêtée ou soumise à validation). **Le déploiement n'est
-pas vérifiable depuis ce dépôt** (ni `SUPABASE_ACCESS_TOKEN`, ni
-`supabase/config.toml`).
+décide si la journée est arrêtée ou soumise à validation). L'état distant est
+ACTIVE, version 26, `verify_jwt=true`. Le source déployé inclut le module BAN
+partagé et ne contient plus l'URL Nominatim. Voir le snapshot courant pour le
+détail de validation.
 
 ---
 
@@ -736,8 +791,10 @@ lecture de l'adresse de départ se fait dans la page hôte et transite en prop.
 
 ### Dette de tests connue
 
-**Aucun test ne couvre l'OTP de signature devis** (`send-otp` / `verify-otp`),
-alors que ces routes présentent les défauts les plus graves décrits ci-dessous.
+Des tests dédiés OTP existent désormais, notamment
+`__tests__/securite/otp-contrats-officiels.test.ts` et
+`__tests__/securite/otp-fuite-journaux.test.ts`. Le nombre et le périmètre exacts
+de tests dédiés aux routes `send-otp` / `verify-otp` restent à maintenir à jour.
 
 ---
 
@@ -747,15 +804,12 @@ alors que ces routes présentent les défauts les plus graves décrits ci-dessou
 
 **[RESOLU] Routes OTP legacy supprimées. Parcours signé unique via espace-client.**
 
-**2. L'OTP de signature n'est jamais envoyé.** `send-otp` journalise le code en
-`console.log` sous le libellé `[SMS MOCK]` : aucun fournisseur SMS n'est appelé.
-La signature électronique par code est donc **non fonctionnelle en production**.
-
-**3. Le verrou anti-bruteforce de l'OTP est en mémoire.** `verify-otp` tient le
-compteur dans une `Map` au niveau du module : il est propre à chaque instance et
-se réinitialise à chaque démarrage à froid. Le commentaire du code l'admet
-lui-même (« le lock définitif (par base de données) reste recommandé »). Même
-remarque pour le cooldown d'une minute de `send-otp`.
+**OTP — ancien constat résolu dans le code courant.** L'OTP est stocké sous forme
+de HMAC dans `devis_otp`, et les tentatives/cooldown s'appuient sur la base et
+une RPC transactionnelle. Twilio et Vonage sont supportés. Le mock journalise un
+code uniquement hors production et échoue explicitement en `NODE_ENV=production`.
+L'envoi réel dépend de la configuration du fournisseur et de ses secrets dans
+Vercel ; aucun SMS réel n'a été envoyé pendant cet audit.
 
 ### Fonctionnel
 
@@ -777,9 +831,9 @@ occurrences (`sky-400`, `sky-500`, `sky-600`, `blue-500`…). L'éradication est
 **7. Standard des modales non appliqué uniformément.** 8 fichiers en `pt-48`,
 2 en `pt-44`.
 
-**8. Palette du portail client.** `#E30613` y est encore utilisé (17 occurrences)
-alors que le reste de l'application est passé à `--color-brand` (`#E53935`, 48
-occurrences). Divergence assumée à arbitriter.
+**[RÉSOLU] Palette du portail client.** Les accents de marque du portail ont été
+alignés sur le cuivre `#B85B2B`; le rouge est conservé pour les messages
+d'erreur et les actions de suppression.
 
 **9. `#232323` non appliqué.** Le token `--color-surface-mobile` existe mais la
 carte mobile ne l'utilise pas.
@@ -799,16 +853,16 @@ explicitement avant de commencer.
 
 **13. C6 — dépendances ESLint / npm.** Non traités.
 
-**14. B4 — schéma réel non versionné.** Aucun `supabase db dump` du schéma
-réellement en base. L'écart entre les migrations et la PROD ne peut pas être
-clôturé. **Bloqué** : pas d'accès à la base depuis cet environnement. Aucune
-conclusion n'est affirmée tant que ce n'est pas vérifié.
+**14. B4 — dérive entre migrations locales et journal distant.** L'inventaire
+Supabase en lecture seule est désormais disponible, mais le journal distant
+n'est pas réconcilié : il ne liste que deux migrations sans fichier local,
+contre 60 fichiers dans le dépôt. Cela ne prouve pas quelles modifications de
+schéma sont réellement présentes. Produire/comparer un dump et rapprocher les
+migrations avant toute commande d'application.
 
-> L'accès à la base est possible **depuis le SQL Editor de Supabase**, en
-> lecture seule. C'est ainsi qu'ont été confirmées les migrations
-> `20260929` et `20260930`, et c'est le moyen de fermer B4 : un dump du schéma
-> réel reste le seul contrôle qui couvre **toutes** les tables d'un coup, alors
-> que les requêtes sur `pg_proc` ne couvrent que les fonctions.
+> Le dump complet du schéma distant n'a pas été obtenu dans cet audit ; les
+> advisors, l'inventaire des tables et le journal des migrations ne remplacent
+> pas une comparaison exhaustive du schéma.
 
 **15. Décalage de distance sur le trajet.** Écart observé entre la distance OSRM
 (24,94 km) et celle d'un affichage Google Maps (28 km) sur un même trajet.
@@ -832,7 +886,7 @@ point section par section.
 
 ### Le fond est global, le reflet ne l'est pas
 
-Le fond `#121212` est sur le `<body>` depuis toujours. Le **reflet rouge**, lui,
+Le fond `#121212` est sur le `<body>` depuis toujours. Le **reflet**, lui,
 était local et dupliqué deux fois dans `app/page.tsx`. Il a été porté par le
 `background-image` du `<main id="main-content-wrapper">` du layout racine, ce qui
 le définit une seule fois pour toutes les pages.

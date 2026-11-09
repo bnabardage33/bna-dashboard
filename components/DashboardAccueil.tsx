@@ -316,7 +316,7 @@ export default function DashboardAccueil({
               phaseDictee === 'erreur'
                 ? 'border-red-500/30 bg-red-950/30'
                 : phaseDictee === 'enregistrement'
-                  ? 'border-[#E53935]/40 bg-[#E53935]/10'
+                  ? 'border-[#B85B2B]/40 bg-[#B85B2B]/10'
                   : 'border-white/10 bg-white/[0.04]'
             }`}
           >
@@ -325,7 +325,7 @@ export default function DashboardAccueil({
                 {phaseDictee === 'erreur' ? (
                   <ShieldAlert className="h-4 w-4 text-red-400" />
                 ) : phaseDictee === 'enregistrement' ? (
-                  <Mic className="h-4 w-4 animate-pulse text-[#E53935]" />
+                  <Mic className="h-4 w-4 animate-pulse text-[#B85B2B]" />
                 ) : (
                   <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                 )}
@@ -350,23 +350,23 @@ export default function DashboardAccueil({
         <nav aria-label="Accès rapides" className="grid grid-cols-3 gap-1.5">
           <Link
             href="/bureau/meteo"
-            className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 text-center text-2xs font-semibold leading-tight text-gray-300 transition-colors hover:border-[#E53935]/40 hover:text-white"
+            className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 text-center text-2xs font-semibold leading-tight text-gray-300 transition-colors hover:border-[#B85B2B]/40 hover:text-white"
           >
-            <ShieldAlert className="h-4 w-4 shrink-0 text-[#E53935]" />
+            <ShieldAlert className="h-4 w-4 shrink-0 text-[#B85B2B]" />
             <span className="min-w-0">Intempéries</span>
           </Link>
           <Link
             href="/boite-a-outils"
-            className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 text-center text-2xs font-semibold leading-tight text-gray-300 transition-colors hover:border-[#E53935]/40 hover:text-white"
+            className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 text-center text-2xs font-semibold leading-tight text-gray-300 transition-colors hover:border-[#B85B2B]/40 hover:text-white"
           >
-            <Wrench className="h-4 w-4 shrink-0 text-[#E53935]" />
+            <Wrench className="h-4 w-4 shrink-0 text-[#B85B2B]" />
             <span className="min-w-0">Boîte à outils</span>
           </Link>
           <Link
             href="/terrain/notes"
-            className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 text-center text-2xs font-semibold leading-tight text-gray-300 transition-colors hover:border-[#E53935]/40 hover:text-white"
+            className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 text-center text-2xs font-semibold leading-tight text-gray-300 transition-colors hover:border-[#B85B2B]/40 hover:text-white"
           >
-            <FileText className="h-4 w-4 shrink-0 text-[#E53935]" />
+            <FileText className="h-4 w-4 shrink-0 text-[#B85B2B]" />
             <span className="min-w-0">Notes</span>
           </Link>
         </nav>
@@ -381,12 +381,12 @@ export default function DashboardAccueil({
       <section className="xl:col-span-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-            <CloudSun className="h-5 w-5 shrink-0 text-[#E53935]" />
+            <CloudSun className="h-5 w-5 shrink-0 text-[#B85B2B]" />
             Météo générale
           </h2>
           <Link
             href="/terrain/meteo"
-            className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#E53935] transition-colors hover:text-red-400"
+            className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] transition-colors hover:text-red-400"
           >
             Prévisions complètes <ArrowRight className="h-3 w-3" />
           </Link>
@@ -399,12 +399,12 @@ export default function DashboardAccueil({
         <section className="xl:col-span-7">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-              <CloudSun className="h-5 w-5 shrink-0 text-[#E53935]" />
+              <CloudSun className="h-5 w-5 shrink-0 text-[#B85B2B]" />
               Impact météo sur les chantiers
             </h2>
             <Link
               href="/bureau/meteo"
-              className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#E53935] transition-colors hover:text-red-400"
+              className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] transition-colors hover:text-red-400"
             >
               Météo & intempéries <ArrowRight className="h-3 w-3" />
             </Link>
@@ -418,12 +418,12 @@ export default function DashboardAccueil({
         <section className="md:col-span-2 xl:col-span-12">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-              <HardHat className="h-5 w-5 shrink-0 text-[#E53935]" />
+              <HardHat className="h-5 w-5 shrink-0 text-[#B85B2B]" />
               Chantiers à préparer
             </h2>
             <Link
               href="/terrain/chantier"
-              className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#E53935] transition-colors hover:text-red-400"
+              className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] transition-colors hover:text-red-400"
             >
               Tout voir <ArrowRight className="h-3 w-3" />
             </Link>
@@ -436,9 +436,9 @@ export default function DashboardAccueil({
           ) : (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {chantiersAPreparer.map((c) => (
-                <Surface as="li" key={c.id} className="p-3.5 transition-colors hover:border-[#E53935]/40">
+                <Surface as="li" key={c.id} className="p-3.5 transition-colors hover:border-[#B85B2B]/40">
                   <Link href={`/terrain/chantier/${c.id}`} className="group block">
-                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-[#E53935]">
+                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-[#B85B2B]">
                       {c.nom || 'Chantier sans nom'}
                     </p>
                     {c.adresse && (
@@ -462,12 +462,12 @@ export default function DashboardAccueil({
       <section className="md:col-span-2 xl:col-span-12">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-            <Bell className="h-5 w-5 shrink-0 text-[#E53935]" />
+            <Bell className="h-5 w-5 shrink-0 text-[#B85B2B]" />
             Notes & alertes
           </h2>
           <Link
             href="/terrain/notes"
-            className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#E53935] transition-colors hover:text-red-400"
+            className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] transition-colors hover:text-red-400"
           >
             Toutes les notes <ArrowRight className="h-3 w-3" />
           </Link>
@@ -484,7 +484,7 @@ export default function DashboardAccueil({
           <div className={notifications ? 'lg:col-span-2' : ''}>
             <div className="mb-2 flex items-center justify-between gap-2">
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                <FileText className="h-4 w-4 shrink-0 text-[#E53935]" />
+                <FileText className="h-4 w-4 shrink-0 text-[#B85B2B]" />
                 Dernières notes
               </h3>
               <span className="shrink-0 text-2xs text-gray-500">3 dernières</span>
@@ -495,7 +495,7 @@ export default function DashboardAccueil({
                 <Link
                   key={n.id}
                   href="/terrain/notes"
-                  className="group flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E] p-3 transition-colors hover:border-[#E53935]/50"
+                  className="group flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E] p-3 transition-colors hover:border-[#B85B2B]/50"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-4xs font-bold uppercase tracking-wider text-gray-400">
@@ -505,7 +505,7 @@ export default function DashboardAccueil({
                       {n.created_at ? new Date(n.created_at).toLocaleDateString('fr-FR') : ''}
                     </span>
                   </div>
-                  <h4 className="mt-1.5 line-clamp-2 text-sm font-semibold text-white transition-colors group-hover:text-[#E53935]">
+                  <h4 className="mt-1.5 line-clamp-2 text-sm font-semibold text-white transition-colors group-hover:text-[#B85B2B]">
                     {n.titre || 'Note sans titre'}
                   </h4>
                   <p className="mt-1 line-clamp-2 text-xs text-gray-400">{n.contenu}</p>
@@ -524,11 +524,11 @@ export default function DashboardAccueil({
             <div>
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                  <Bell className="h-4 w-4 shrink-0 text-[#E53935]" />
+                  <Bell className="h-4 w-4 shrink-0 text-[#B85B2B]" />
                   Alertes
                 </h3>
                 {nonLues > 0 && (
-                  <span className="shrink-0 rounded-full bg-[#E53935] px-2 py-0.5 text-4xs font-bold text-white">
+                  <span className="shrink-0 rounded-full bg-[#B85B2B] px-2 py-0.5 text-4xs font-bold text-white">
                     {nonLues} non lue{nonLues > 1 ? 's' : ''}
                   </span>
                 )}
@@ -556,7 +556,7 @@ export default function DashboardAccueil({
                         <p className="mt-1.5 text-sm font-semibold text-white">
                           {n.lu ? '' : (
                             <span
-                              className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full bg-[#E53935] align-middle"
+                              className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full bg-[#B85B2B] align-middle"
                               aria-label="non lue"
                             />
                           )}

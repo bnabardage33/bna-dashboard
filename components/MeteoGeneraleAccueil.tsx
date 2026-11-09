@@ -146,7 +146,7 @@ export default function MeteoGeneraleAccueil() {
             value={villeInput}
             onChange={(e) => setVilleInput(e.target.value)}
             placeholder="Rechercher une ville..."
-            className="min-h-11 w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-gray-200 outline-none transition-colors focus:border-[#E53935]/50"
+            className="min-h-11 w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-gray-200 outline-none transition-colors focus:border-[#B85B2B]/50"
           />
         </div>
         {/* Loupe blanche sur fond rouge BNA : même emplacement, même alignement
@@ -155,7 +155,7 @@ export default function MeteoGeneraleAccueil() {
         <button
           type="submit"
           aria-label="Rechercher la ville"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#E53935] text-white transition-colors hover:bg-[#c62828]"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#B85B2B] text-white transition-colors hover:bg-[#8f431c]"
         >
           <Search className="h-5 w-5" aria-hidden />
         </button>
@@ -163,7 +163,7 @@ export default function MeteoGeneraleAccueil() {
 
       {loadingMeteo ? (
         <div className="flex items-center justify-center p-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E53935] border-t-transparent" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#B85B2B] border-t-transparent" />
         </div>
       ) : meteo ? (
         <div className="flex flex-col">

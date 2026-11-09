@@ -183,9 +183,9 @@ export default function BoutonMicroNote({
       disabled={enCours}
       aria-label={etat === 'enregistrement' ? 'Arrêter la dictée' : 'Dicter une note'}
       className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-colors
-        ${etat === 'enregistrement' ? 'bg-[#E53935]/80 text-white animate-pulse' : ''}
+        ${etat === 'enregistrement' ? 'bg-[#B85B2B]/80 text-white animate-pulse' : ''}
         ${enCours ? 'bg-white/10 text-gray-400 cursor-not-allowed' : ''}
-        ${etat === 'inactif' || etat === 'erreur' ? 'bg-[#E53935] text-white hover:bg-red-700' : ''}
+        ${etat === 'inactif' || etat === 'erreur' ? 'bg-[#B85B2B] text-white hover:bg-red-700' : ''}
       `}
     >
       {enCours && <Loader2 className="h-4 w-4 shrink-0 animate-spin" />}

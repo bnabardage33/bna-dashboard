@@ -452,7 +452,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         
         {/* CARTE TITRE */}
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
-          <span className="bg-[#E30613] text-[#FFFFFF] px-3 py-1 rounded-full text-xs font-bold inline-block mb-3">★ CLIENT PREMIUM</span>
+          <span className="bg-[#B85B2B] text-[#FFFFFF] px-3 py-1 rounded-full text-xs font-bold inline-block mb-3">★ CLIENT PREMIUM</span>
           <h1 className="font-black text-2xl text-[#111111] mb-1 leading-tight">Bardage métallique — {chantierData?.nom || "Villa Arcachon"}</h1>
           <p className="text-xs text-gray-500 font-medium">Résidence privée • {chantierData?.adresse_chantier || "33380 Arcachon"} • Chantier #{chantierData?.id?.substring(0,6).toUpperCase() || 'BNA-7429'}</p>
         </section>
@@ -461,11 +461,11 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
         <section className="bg-[#FFFFFF] border border-[#111111] rounded-2xl p-4 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-[#111111]">Progression du chantier</h2>
-            <span className="bg-[#E30613] text-white text-sm font-bold px-3 py-1 rounded-full">{avancementDynamique}%</span>
+            <span className="bg-[#B85B2B] text-white text-sm font-bold px-3 py-1 rounded-full">{avancementDynamique}%</span>
           </div>
           
           <div className="w-full bg-[#F2F2F2] h-3 rounded-full mb-2 overflow-hidden">
-            <div className="bg-[#E30613] h-3 rounded-full transition-all duration-1000" style={{ width: `${avancementDynamique}%` }}></div>
+            <div className="bg-[#B85B2B] h-3 rounded-full transition-all duration-1000" style={{ width: `${avancementDynamique}%` }}></div>
           </div>
           
           <p className="text-xs text-gray-500 mb-5">{avancementDynamique}% terminé • Estimation fin: {calculateEstimatedEndDate()}</p>
@@ -557,7 +557,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                           {estSigne ? (
                             <p className="text-xs font-semibold text-[#111111]">Statut : Validé et Signé</p>
                           ) : (
-                            <p className="text-xs font-semibold text-[#E30613]">Action requise : En attente de signature</p>
+                            <p className="text-xs font-semibold text-[#B85B2B]">Action requise : En attente de signature</p>
                           )}
                           <p className="text-xs text-gray-500 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
                         </div>
@@ -577,7 +577,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                             e.stopPropagation();
                             ouvrirSignature(devis.id, devis.numero, devis.retenue_garantie_pct);
                           }}
-                          className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition hover:bg-red-700"
+                          className="bg-[#B85B2B] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition hover:bg-red-700"
                         >
                           ✍️ Signer par SMS
                         </button>
@@ -640,7 +640,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                           {estPayee ? (
                             <p className="text-xs font-semibold text-[#111111]">Statut : Réglée / Complétée</p>
                           ) : (
-                            <p className="text-xs font-semibold text-[#E30613]">Action requise : À régler</p>
+                            <p className="text-xs font-semibold text-[#B85B2B]">Action requise : À régler</p>
                           )}
                           <p className="text-xs text-gray-500 mt-0.5">Total TTC : {totalTTC.toFixed(2)} €</p>
                         </div>
@@ -648,7 +648,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                       {estPayee ? (
                         <button className="text-[#111111] text-xs font-bold px-3 py-1.5 transition">Consulter</button>
                       ) : (
-                        <button className="bg-[#E30613] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Action</button>
+                        <button className="bg-[#B85B2B] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition">Action</button>
                       )}
                     </div>
                   );
@@ -709,7 +709,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                       )}
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-[#111111] truncate">{rapport.semaine_label}</p>
-                        <p className="text-xs font-semibold text-[#E30613]">
+                        <p className="text-xs font-semibold text-[#B85B2B]">
                           Avancement : +{delta} point{Math.abs(delta) > 1 ? "s" : ""}
                         </p>
                       </div>
@@ -739,9 +739,9 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                 return (
                   <div
                     key={intemp.id}
-                    className="p-3 rounded-xl border bg-[#FDF1F0] border-[#E30613]/40 flex items-start gap-3"
+                    className="p-3 rounded-xl border bg-[#F6EEE8] border-[#B85B2B]/40 flex items-start gap-3"
                   >
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#E30613] text-white">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#B85B2B] text-white">
                       <CloudRain size={18} />
                     </div>
                     <div className="min-w-0">
@@ -749,7 +749,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                         Chantier à l'arrêt le {dateLabel}
                       </p>
                       <p className="text-xs text-[#111111]/80 mt-0.5">{intemp.motif}</p>
-                      <p className="text-[11px] font-semibold text-[#E30613] mt-1">
+                      <p className="text-[11px] font-semibold text-[#B85B2B] mt-1">
                         {intemp.numero ? `Justificatif ${intemp.numero} — ` : ""}Reprise prévue dès la fin des intempéries.
                       </p>
                     </div>
@@ -791,7 +791,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       <div className={`fixed bottom-0 left-0 right-0 h-[85vh] max-h-[800px] bg-white rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 z-[9999] ${isChatOpen ? 'translate-y-0' : 'translate-y-full'}`}>
         <div className="bg-[#111111] text-white p-5 flex justify-between items-center rounded-t-[32px]">
           <div className="flex items-center gap-2">
-            <span className="text-[#E30613] text-xl">✦</span>
+            <span className="text-[#B85B2B] text-xl">✦</span>
             <span className="font-bold text-lg">Assistant IA BNA</span>
           </div>
           <button onClick={closeChat} className="text-white/70 hover:text-white transition cursor-pointer w-8 h-8 flex items-center justify-center bg-white/10 rounded-full">
@@ -835,7 +835,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
           <button 
             type="submit" 
             disabled={!inputValue.trim() || isLoading}
-            className="bg-[#E30613] hover:bg-[#C00510] disabled:opacity-50 text-white w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer shadow-md shrink-0"
+            className="bg-[#B85B2B] hover:bg-[#8F431C] disabled:opacity-50 text-white w-12 h-12 rounded-full flex items-center justify-center transition cursor-pointer shadow-md shrink-0"
           >
             <Send size={20} />
           </button>
@@ -846,7 +846,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
       <div className="fixed bottom-0 left-0 right-0 bg-white h-[110px] px-4 flex items-center gap-3 z-50">
         <button 
           onClick={() => window.open(`https://wa.me/33600000000?text=${encodeURIComponent('Bonjour BNA Bardage Chantier ' + (chantierData?.id?.substring(0,6).toUpperCase() || 'F59932'))}`, '_blank')}
-          className="flex-1 bg-[#E30613] text-white rounded-full h-[60px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg"
+          className="flex-1 bg-[#B85B2B] text-white rounded-full h-[60px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg"
         >
           💬 BNA Bardage
         </button>
@@ -956,7 +956,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               <div className="p-6 flex flex-col gap-3">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                    <FileText size={14} className="text-[#E30613]" />
+                    <FileText size={14} className="text-[#B85B2B]" />
                     <span>Conditions Générales de Vente (CGV)</span>
                   </div>
                   <p className="text-[11px] text-slate-500">
@@ -970,7 +970,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
                 <button
                   type="button"
                   onClick={() => ouvrirSignature(activeDoc.id, activeDoc.numero, activeDoc.retenue_garantie_pct)}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-[#E30613] text-white font-bold text-lg hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-[#B85B2B] text-white font-bold text-lg hover:bg-red-700 transition-all shadow-xl shadow-red-500/20"
                 >
                   <PenLine size={18} />
                   Recevoir le code et signer
@@ -1020,7 +1020,7 @@ export default function ClientPortalPrototype({ params }: { params: Promise<{ co
               <button
                 type="button"
                 onClick={() => { void preparerEtImprimer(); }}
-                className="bg-[#E30613] text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition hover:bg-[#C00510] flex items-center gap-1.5"
+                className="bg-[#B85B2B] text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition hover:bg-[#8F431C] flex items-center gap-1.5"
               >
                 <Printer size={14} />
                 Imprimer / PDF

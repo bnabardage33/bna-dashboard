@@ -123,7 +123,7 @@ export default function MeteoPage() {
       <header className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)] lg:items-end">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white sm:text-3xl">
-            <CloudSun className="h-7 w-7 shrink-0 text-[#E53935]" />
+            <CloudSun className="h-7 w-7 shrink-0 text-[#B85B2B]" />
             Accueil Météo
           </h1>
           <p className="mt-1 text-sm text-gray-400">
@@ -144,12 +144,12 @@ export default function MeteoPage() {
               value={villeInput}
               onChange={(e) => setVilleInput(e.target.value)}
               placeholder="Rechercher une ville..."
-              className="min-h-11 w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-gray-200 outline-none transition-colors focus:border-[#E53935]/50"
+              className="min-h-11 w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-3 text-sm text-gray-200 outline-none transition-colors focus:border-[#B85B2B]/50"
             />
           </div>
           <button
             type="submit"
-            className="min-h-11 shrink-0 rounded-lg bg-[#E53935] px-4 text-sm font-bold text-white transition-colors hover:bg-red-700"
+            className="min-h-11 shrink-0 rounded-lg bg-[#B85B2B] px-4 text-sm font-bold text-white transition-colors hover:bg-red-700"
           >
             Rechercher
           </button>
@@ -158,7 +158,7 @@ export default function MeteoPage() {
 
       {loadingMeteo ? (
         <Surface className="flex min-h-64 items-center justify-center" radius="2xl" aria-label="Chargement météo">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E53935] border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#B85B2B] border-t-transparent" />
         </Surface>
       ) : meteo ? (
         <div className="space-y-5 sm:space-y-6">
@@ -271,11 +271,11 @@ export default function MeteoPage() {
           </section>
 
           <nav aria-label="Autres vues météo et chantier" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Link href="/bureau/meteo" className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-semibold text-gray-200 transition-colors hover:border-[#E53935]/50">
-              Veille des intempéries <ArrowRight className="h-4 w-4 shrink-0 text-[#E53935]" />
+            <Link href="/bureau/meteo" className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-semibold text-gray-200 transition-colors hover:border-[#B85B2B]/50">
+              Veille des intempéries <ArrowRight className="h-4 w-4 shrink-0 text-[#B85B2B]" />
             </Link>
-            <Link href="/terrain/accueil" className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-semibold text-gray-200 transition-colors hover:border-[#E53935]/50">
-              Impact météo sur les chantiers <ArrowRight className="h-4 w-4 shrink-0 text-[#E53935]" />
+            <Link href="/terrain/accueil" className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-semibold text-gray-200 transition-colors hover:border-[#B85B2B]/50">
+              Impact météo sur les chantiers <ArrowRight className="h-4 w-4 shrink-0 text-[#B85B2B]" />
             </Link>
           </nav>
         </div>

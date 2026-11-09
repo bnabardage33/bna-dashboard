@@ -284,25 +284,25 @@ export default function Drawer() {
                   suppressHydrationWarning
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
                     active
-                      ? "bg-[#E53935]/15 border border-[#E53935]/30 text-white"
+                      ? "bg-[#B85B2B]/15 border border-[#B85B2B]/30 text-white"
                       : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   <div
                     suppressHydrationWarning
                     className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      active ? "bg-[#E53935]/20" : "bg-white/[0.05]"
+                      active ? "bg-[#B85B2B]/20" : "bg-white/[0.05]"
                     }`}
                   >
                     <Icon
                       size={16}
-                      className={active ? "text-[#E53935]" : "text-[#D0D0D0]"}
+                      className={active ? "text-[#B85B2B]" : "text-[#D0D0D0]"}
                       strokeWidth={active ? 2.5 : 1.8}
                     />
                   </div>
                   <span suppressHydrationWarning className="flex-1">{item.label}</span>
                   {active && (
-                    <div suppressHydrationWarning className="w-1.5 h-1.5 rounded-full bg-[#E53935] shrink-0" />
+                    <div suppressHydrationWarning className="w-1.5 h-1.5 rounded-full bg-[#B85B2B] shrink-0" />
                   )}
                 </Link>
               );
@@ -333,19 +333,19 @@ export default function Drawer() {
                   suppressHydrationWarning
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] text-left ${
                     groupeActif
-                      ? "bg-[#E53935]/15 border border-[#E53935]/30 text-white"
+                      ? "bg-[#B85B2B]/15 border border-[#B85B2B]/30 text-white"
                       : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   <div
                     suppressHydrationWarning
                     className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      groupeActif ? "bg-[#E53935]/20" : "bg-white/[0.05]"
+                      groupeActif ? "bg-[#B85B2B]/20" : "bg-white/[0.05]"
                     }`}
                   >
                     <Icon
                       size={16}
-                      className={groupeActif ? "text-[#E53935]" : "text-[#D0D0D0]"}
+                      className={groupeActif ? "text-[#B85B2B]" : "text-[#D0D0D0]"}
                       strokeWidth={groupeActif ? 2.5 : 1.8}
                     />
                   </div>
@@ -373,7 +373,7 @@ export default function Drawer() {
                             suppressHydrationWarning
                             className={`block py-2.5 px-3 rounded-xl transition-all text-[13px] ${
                               enfantActif
-                                ? "bg-[#E53935]/15 text-white font-medium"
+                                ? "bg-[#B85B2B]/15 text-white font-medium"
                                 : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
                             }`}
                           >
@@ -397,7 +397,7 @@ export default function Drawer() {
             suppressHydrationWarning
             className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
               (open || mounted ? estActif("/parametres") : false)
-                ? "bg-[#E53935]/15 border border-[#E53935]/30 text-white"
+                ? "bg-[#B85B2B]/15 border border-[#B85B2B]/30 text-white"
                 : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
              }`}
            >

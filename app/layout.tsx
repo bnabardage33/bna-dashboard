@@ -43,7 +43,7 @@ export default function RootLayout({
           seul conteneur qui englobe aussi le header, donc le reflet part du
           tout-haut de la page et passe derrière le logo. Motivation détaillée
           dans le commentaire situé plus bas, au-dessus de `<main>`. */}
-      <body className="bg-[#121212] min-h-screen text-gray-300 antialiased selection:bg-[#E53935]/30 selection:text-red-200 flex flex-col bg-[radial-gradient(ellipse_at_top,rgba(229,57,53,0.15),transparent_60%)] bg-size-[100%_380px] bg-no-repeat bg-top">
+      <body className="bg-[#121212] min-h-screen text-gray-300 antialiased selection:bg-[#B85B2B]/30 selection:text-red-200 flex flex-col bg-[radial-gradient(ellipse_at_top,rgba(184,91,43,0.15),transparent_60%)] bg-size-[100%_380px] bg-no-repeat bg-top">
         <a href="#main-content-wrapper" className="skip-link">Aller au contenu principal</a>
         <RegisterSW />
         <InactivityLogout />
@@ -140,10 +140,8 @@ export default function RootLayout({
             barre ni conteneur supplémentaire. Aucun autre élément n'a bougé —
             `<main>` conserve ses classes d'origine, seul le fond rouge a monté.
 
-            Rouge passé de l'ancien `rgba(227,6,19,…)` (= #E30613, échappé à la
-            migration de palette car écrit en `rgba()` et non en hex) au rouge de la
-            charte `#E53935`, à l'opacité 0.15 inchangée : le reflet reste aussi
-            subtil qu'avant. */}
+            Le reflet suit maintenant le cuivre de la marque (#B85B2B), à
+            l'opacité 0.15 inchangée. */}
         <main
           id="main-content-wrapper"
           className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12"

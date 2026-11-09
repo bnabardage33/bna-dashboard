@@ -16,7 +16,7 @@ export default function Error({
         </p>
         <button
           onClick={() => reset()}
-          className="w-full py-3 bg-[#E53935] text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
+          className="w-full py-3 bg-[#B85B2B] text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
         >
           Réessayer
         </button>

@@ -710,7 +710,7 @@ export default function FournisseursPage() {
                     id={miseEnAvant ? "commande-notification" : undefined}
                     className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-[#1E1E1E] p-4 ${
                       miseEnAvant
-                        ? "border-[#E53935] ring-1 ring-[#E53935]/40"
+                        ? "border-[#B85B2B] ring-1 ring-[#B85B2B]/40"
                         : enRetard
                           ? "border-red-500/40"
                           : "border-white/10"
@@ -720,7 +720,7 @@ export default function FournisseursPage() {
                       <p className="font-medium text-white">
                         {c.designation}
                         {miseEnAvant && (
-                          <span className="ml-2 rounded-full bg-[#E53935]/20 px-2 py-0.5 text-2xs font-bold text-red-200">
+                          <span className="ml-2 rounded-full bg-[#B85B2B]/20 px-2 py-0.5 text-2xs font-bold text-red-200">
                             Ouvert depuis une notification
                           </span>
                         )}

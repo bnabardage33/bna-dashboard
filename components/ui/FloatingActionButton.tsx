@@ -51,12 +51,12 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react'
  * changé.
  *
  * Mesuré sur le CSS émis par Tailwind 4.3.3, les deux valeurs divergeaient :
- * `bg-red-600` valait `#E7000B` et `--color-brand` `#E30613`, soit 4 unités
+ * `bg-red-600` valait `#E7000B` et `--color-brand` `#B85B2B`, soit 4 unités
  * d'écart sur le rouge, 6 sur le vert et 8 sur le bleu. L'arbitrage produit
  * D2-a/b — unifier ou non — était resté non tranché, et les deux coexistaient.
  *
  * La charte graphique l'a résolu SANS toucher ce composant : `--color-red-600`
- * a été redéfini à `#E53935`, ce qui fait converger `bg-red-600` et
+ * a été redéfini à `#B85B2B`, ce qui fait converger `bg-red-600` et
  * `--color-brand` sur une valeur identique. La divergence décrite ci-dessus
  * n'existe donc plus.
  *

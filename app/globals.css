@@ -14,7 +14,7 @@
  */
 @theme {
   /*
-   * PALETTE PREMIUM BNA BARDAGE.
+   * PALETTE BNA — CHARBON, CUIVRE ET ARGENT.
    *
    * Ce bloc est le point d'entrée UNIQUE de la nouvelle palette. Les entrées
    * `--color-red-*` et `--color-gray-*` ci-dessous REDÉFINISSENT des classes
@@ -39,9 +39,9 @@
   --color-divider: #3A3A3A; /* séparateur interne */
 
   /* ── Marque ───────────────────────────────────────────────────────────── */
-  --color-brand: #E53935; /* action principale */
-  --color-brand-dark: #C62828; /* survol / variante sombre */
-  --color-brand-light: #FF6F60; /* notification / variante claire */
+  --color-brand: #B85B2B; /* cuivre : action principale */
+  --color-brand-dark: #8F431C; /* cuivre sombre : survol */
+  --color-brand-light: #E79A68; /* cuivre clair : accent sur fond sombre */
 
   /* ── Encre (textes) ───────────────────────────────────────────────────── */
   --color-ink-title: #F5F5F5; /* titres */
@@ -57,15 +57,15 @@
   --color-state-neutral: #9E9E9E;
 
   /*
-   * ── Rouge BNA : ÉCHELLE REDÉFINIE ──────────────────────────────────────
+   * ── Cuivre BNA : ÉCHELLE REDÉFINIE ─────────────────────────────────────
    *
-   * Le rouge reste un ACCENT : il est porté par les actions, les alertes
-   * critiques et les états actifs, jamais par les titres ni les surfaces.
+   * Le cuivre porte les actions de marque et les états actifs. Les messages
+   * d'erreur gardent leur texte rouge via les paliers red-300 / red-400.
    *
    *   red-300 / red-400  teintes de texte d'alerte (danger, « Annulée », …)
-   *   red-500            variante claire  → notifications
-   *   red-600            ACTION PRINCIPALE  (bg-red-600, border-red-600)
-   *   red-700            survol           (bg-red-700)
+   *   red-500            cuivre clair     → accents sur fond sombre
+   *   red-600            ACTION PRINCIPALE (bg-red-600, border-red-600)
+   *   red-700            cuivre sombre    → survol (bg-red-700)
    *   red-900 / red-950  fond d'alerte, accordé aux nouvelles surfaces
    *
    * Les paliers 100 à 800 de l'échelle Tailwind d'origine sont volontairement
@@ -74,9 +74,9 @@
    */
   --color-red-300: #EF9A9A;
   --color-red-400: #EF5350;
-  --color-red-500: #FF6F60;
-  --color-red-600: #E53935;
-  --color-red-700: #C62828;
+  --color-red-500: #E79A68;
+  --color-red-600: #B85B2B;
+  --color-red-700: #8F431C;
   --color-red-900: #3A1512;
   --color-red-950: #2B1210;
 
