@@ -1,3 +1,5 @@
+import { fetchNominatim } from "./nominatimQueue";
+
 export type ResultatService<T> = 
   | { ok: true; data: T }
   | { ok: false; erreur: string };
@@ -90,9 +92,6 @@ export async function geocoderAdresse(
 ): Promise<ResultatService<Coordonnees>> {
   if (!adresse.trim()) return { ok: false, erreur: "Adresse vide." };
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-
   try {
     const url = new URL("https://nominatim.openstreetmap.org/search");
     url.searchParams.append("q", adresse.trim());
@@ -105,18 +104,19 @@ export async function geocoderAdresse(
     // gagner la course. La route météo le fait déjà pour la même raison.
     url.searchParams.append("countrycodes", "fr");
 
-    const res = await fetch(url.toString(), {
-      headers: { "User-Agent": userAgentNominatim() },
-      signal: controller.signal
-    });
+    const resultat = await fetchNominatim(
+      url.toString(),
+      userAgentNominatim()
+    );
 
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      return { ok: false, erreur: `Erreur API Nominatim: ${res.status}` };
+    if (resultat.status !== 200) {
+      return {
+        ok: false,
+        erreur: `Erreur API Nominatim: ${resultat.status}`
+      };
     }
 
-    const data = (await res.json()) as NominatimCandidat[];
+    const data = resultat.data as NominatimCandidat[];
     if (!Array.isArray(data) || data.length === 0) {
       // Nominatim ne répond rien quand il ne reconnaît pas la chaîne. La cause
       // la plus fréquente n'est pas une adresse fausse mais un séparant
@@ -193,7 +193,7 @@ export async function geocoderAdresse(
       }
     };
   } catch (e: unknown) {
-    clearTimeout(timeout);
+
     if (e instanceof DOMException && e.name === "AbortError") {
       return { ok: false, erreur: "Le service a mis trop de temps à répondre (timeout)." };
     }
