@@ -159,10 +159,11 @@ export default function SearchNav() {
   const boutonLoupeRef = useRef<HTMLButtonElement>(null);
 
   const isClientPage = pathname?.startsWith("/espace-client");
+  const isMasque = isClientPage || pathname === "/login";
 
   // O3-B6 — RULES OF HOOKS (correction).
   //
-  // Le `if (isClientPage) return null;` était placé AVANT les deux `useEffect`
+  // Le `if (isMasque) return null;` était placé AVANT les deux `useEffect`
   // (l.38-39 de la version précédente) : le NOMBRE DE HOOKS dépendait alors de
   // `pathname`. Or `usePathname()` change lors d'une navigation client SANS
   // remontage du layout racine. Passer de `/espace-client/[code_acces]` à une
@@ -174,18 +175,17 @@ export default function SearchNav() {
   // ni eslint-plugin-react-hooks, et aucun test ne montait ce composant.
   //
   // Correction : le garde est appliqué à l'INTÉRIEUR des effets (pas de rendu,
-  // pas de polling, pas d'écouteur sur les pages client) et le `return null` est
-  // descendu APRÈS le dernier hook. Le comportement est strictement inchangé :
-  // SearchNav reste absent de `/espace-client`.
+  // pas de polling, pas d'écouteur sur les pages client ni sur /login) et le
+  // `return null` est descendu APRÈS le dernier hook.
   useEffect(() => {
-    if (isClientPage) return;
+    if (isMasque) return;
     chargerNotifications();
     const interval = setInterval(chargerNotifications, 30000);
     return () => clearInterval(interval);
-  }, [isClientPage]);
+  }, [isMasque]);
 
   useEffect(() => {
-    if (isClientPage) return;
+    if (isMasque) return;
     function handleClick(e: MouseEvent) {
       const cible = e.target as Node;
       if (searchRef.current && !searchRef.current.contains(cible)) setOpen(false);
@@ -274,7 +274,7 @@ export default function SearchNav() {
   }
 
   // Return conditionnel APRÈS tous les hooks (cf. commentaire O3-B6 ci-dessus).
-  if (isClientPage) return null;
+  if (isMasque) return null;
 
   return (
     <div className="flex items-center gap-3 relative">

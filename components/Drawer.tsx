@@ -210,8 +210,8 @@ export default function Drawer() {
     });
   };
 
-  // Masquer le drawer sur l'espace client
-  if (pathname?.startsWith("/espace-client")) {
+  // Masquer le drawer sur l'espace client et la page de connexion
+  if (pathname?.startsWith("/espace-client") || pathname === "/login") {
     return null;
   }
 

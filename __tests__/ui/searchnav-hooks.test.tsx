@@ -177,11 +177,16 @@ describe("O3-B6 / SearchNav — Rules of Hooks", () => {
     expect(conteneur.querySelector("input")?.getAttribute("placeholder")).toBe("Rechercher...");
   });
 
-  it("ne s'applique qu'aux préfixes client (garde non surchargée)", async () => {
-    for (const chemin of ["/", "/bureau", "/terrain/chantier/abc", "/bureau-clients", "/login"]) {
+  it("ne s'applique qu'aux préfixes client et login (garde non surchargée)", async () => {
+    for (const chemin of ["/", "/bureau", "/terrain/chantier/abc", "/bureau-clients"]) {
       await monter(chemin);
       expect(cloche(), `attendu sur ${chemin}`).not.toBeNull();
     }
+  });
+
+  it("ne rend rien sur la page /login (cloche et recherche masquées)", async () => {
+    await monter("/login");
+    expect(cloche()).toBeNull();
   });
 });
 

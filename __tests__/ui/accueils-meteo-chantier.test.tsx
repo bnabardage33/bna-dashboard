@@ -45,23 +45,10 @@ beforeEach(() => {
 });
 
 describe('Accueils Météo et Chantier', () => {
-  it('garde l’accueil public et le lien de connexion sans lire de données privées', async () => {
-    const rendu = await Home();
-    const arbre = elements(rendu);
-    const liens = arbre.filter((element) =>
-      (element.props as { href?: string }).href === '/login',
-    );
-
-    expect(etat.destinationRedirect).toBeNull();
-    expect(liens).toHaveLength(1);
+  it('redirige immédiatement les visiteurs non connectés vers /login', async () => {
+    await expect(Home()).rejects.toThrow('REDIRECT:/login');
+    expect(etat.destinationRedirect).toBe('/login');
     expect(etat.from).not.toHaveBeenCalled();
-    expect(arbre.some((element) =>
-      typeof element.type === 'function' && element.type.name === 'AccueilProfessionnel',
-    )).toBe(true);
-    expect(arbre.some((element) => {
-      const props = element.props as { children?: ReactNode };
-      return props.children === 'Connectez-vous pour accéder au tableau de bord';
-    })).toBe(true);
   });
 
   it('redirige une session active avant tout chargement du cockpit', async () => {
