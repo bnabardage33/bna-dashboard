@@ -133,10 +133,10 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
     expect(search, "le volet mobile doit être ancré à 142 px").toContain("top-[142px]");
   });
 
-  it("le logo fait 180 px de large, hauteur auto (proportions d'origine)", () => {
+  it("le logo fait 270 px de large (1.5x), hauteur auto (proportions d'origine)", () => {
     const image = HEADER.match(/<Image[\s\S]*?className="([^"]*)"/);
     expect(image, "logo introuvable").not.toBeNull();
-    expect(image![1]).toContain("w-[180px]");
+    expect(image![1]).toContain("w-[270px]");
     // `h-auto` + `object-contain` : le ratio du fichier est conservé.
     expect(image![1]).toContain("h-auto");
     expect(image![1]).toContain("object-contain");
@@ -172,7 +172,7 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
     // même déformerait le dessin. La hauteur est portée par le CADRE, jamais
     // par l'image.
     const image = HEADER.match(/<Image[\s\S]*?className="([^"]*)"/);
-    expect(image![1]).toContain("w-[180px]");
+    expect(image![1]).toContain("w-[270px]");
     expect(image![1]).not.toMatch(/\bh-\[\d+px\]/);
   });
 

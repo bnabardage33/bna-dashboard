@@ -34,7 +34,7 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = '/';
+      window.location.href = '/terrain/meteo';
     } catch {
       setError('Connexion impossible. Vérifiez votre réseau et réessayez.');
       setLoading(false);

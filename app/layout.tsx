@@ -111,7 +111,7 @@ export default function RootLayout({
                 alt="BNA Bardage"
                 width={500}
                 height={500}
-                className="w-[180px] max-w-full h-auto object-contain pointer-events-none"
+                className="w-[270px] max-w-full h-auto object-contain pointer-events-none"
               />
             </div>
           </div>
