@@ -1,7 +1,13 @@
 // Brique 1 — Presets & Règles utiles (Bois massif NF DTU 51.4 Décembre 2018 vs Composite Fabricants)
 // Source de vérité normative exclusive : §3 à §20 de dossier_technique_dtu_51_4_terrasse_pro.md
 
-import type { ChantierTerrasseConfig, EssenceBois, ZoneEnvironnement } from "../types";
+import type {
+  ChantierTerrasseConfig,
+  EssenceBois,
+  ZoneEnvironnement,
+  ResultatPlateauMobile,
+  ConfigTerrasseMobile,
+} from "../types";
 import { getFabricantComposite, getGammeDefaut } from "../composite/fabricants";
 
 export type RuleNature =
@@ -79,6 +85,38 @@ export interface CuttingBarPlan {
   offcutStatus: "REUSED_IN_PLAN" | "REUSABLE_STOCK" | "WASTE_SCRAP";
 }
 
+export interface PlacedMobilePanel {
+  id: string;
+  nom: string;
+  xMm: number;
+  yMm: number;
+  widthMm: number;
+  lengthMm: number;
+  directionVector: { x: number; y: number };
+  travelDistanceMm: number;
+  chassisJoists: PlacedJoistSegment[];
+  blades: PlacedBladeSegment[];
+  wheels: Array<{
+    id: string;
+    centerMm: Point2D;
+    railId: string;
+  }>;
+}
+
+export interface PlacedMobileStructure {
+  active: boolean;
+  panels: PlacedMobilePanel[];
+  rails: Array<{
+    id: string;
+    startMm: Point2D;
+    endMm: Point2D;
+    lengthMm: number;
+  }>;
+  totalRailLinearMeters: number;
+  totalWheelsCount: number;
+  chassisProfilesLinearMeters: number;
+}
+
 export interface DistinctQuantitiesBreakdown {
   /** 1. Quantités nettes géométriques (Q_net) */
   geometricNet: {
@@ -88,6 +126,10 @@ export interface DistinctQuantitiesBreakdown {
     totalJoistNetLinearMetersByLayer: Record<string, number>;
     exactSupportCountByType: Record<string, number>;
     exactFastenerCount: number;
+    mobileDeckingNetAreaM2?: number;
+    mobileRailsNetLinearMeters?: number;
+    mobileChassisNetLinearMeters?: number;
+    mobileWheelsCount?: number;
   };
   /** 2. Quantités techniques découpées (Q_tech) */
   technicalCut: {
@@ -111,6 +153,14 @@ export interface DistinctQuantitiesBreakdown {
     fastenerBoxesCount: number;
     spacersOrCalesCount: number;
     bituminousTapeLinearMeters: number;
+    mobileSupply?: {
+      railsInoxLinearMeters: number;
+      railsInoxBarsCount: number;
+      wheelsCount: number;
+      chassisAluLinearMeters: number;
+      chassisAluBarsCount: number;
+      motorisationUnit?: boolean;
+    };
   };
 }
 
@@ -142,10 +192,12 @@ export interface TerrasseProGeometricResult {
     blades: PlacedBladeSegment[];
     joists: PlacedJoistSegment[];
     supports: PlacedSupportPoint[];
+    mobileStructure?: PlacedMobileStructure;
   };
   cuttingPlan: CuttingBarPlan[];
   topAdmissibleScenarios?: AdmissibleScenarioSummary[];
   quantities: DistinctQuantitiesBreakdown;
+  terrasseMobile?: ResultatPlateauMobile;
 }
 
 /** Constantes métier et normatives figées (NF DTU 51.4 Décembre 2018 & Règles internes BNA) */

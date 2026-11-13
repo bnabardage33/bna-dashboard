@@ -25,6 +25,10 @@ import {
   calculerCalepinageEtDecoupe1D,
   type CalepinageOptions,
 } from "./calepinage-decoupe";
+import {
+  resoudreConfigTerrasseMobile,
+  calculerSousEnsembleTerrasseMobile,
+} from "./terrasse-mobile";
 
 export interface CalculerTerrasseProOptions
   extends GeometrieTerrasseOptions,
@@ -154,6 +158,18 @@ export function calculerTerrasseProGeometrie(
 
   const spacersOrCalesCount = config.cales_isolation ? structure.supports.length : 0;
 
+  // 6.bis Calcul du sous-ensemble Terrasse Mobile si réservation piscine présente
+  const poolRes = reservations.find((r) => r.type_reservation === "piscine");
+  const mobileConfigEffective = resoudreConfigTerrasseMobile(config, poolRes);
+  const mobileResult =
+    poolRes && mobileConfigEffective
+      ? calculerSousEnsembleTerrasseMobile({
+          config,
+          poolReservation: poolRes,
+          mobileConfig: mobileConfigEffective,
+        })
+      : null;
+
   const quantities: DistinctQuantitiesBreakdown = {
     geometricNet: {
       netDeckingAreaM2: structure.netAreaM2,
@@ -162,6 +178,10 @@ export function calculerTerrasseProGeometrie(
       totalJoistNetLinearMetersByLayer,
       exactSupportCountByType,
       exactFastenerCount,
+      mobileDeckingNetAreaM2: mobileResult?.resultatPlateau.dimensionsPlateau.surfaceM2,
+      mobileRailsNetLinearMeters: mobileResult?.resultatPlateau.rails.lineaireTotalM,
+      mobileChassisNetLinearMeters: mobileResult?.resultatPlateau.structureChassis.lineaireProfilesAluM,
+      mobileWheelsCount: mobileResult?.resultatPlateau.roulement.nbGaletsTotal,
     },
     technicalCut: {
       bladesByCommercialLength: [
@@ -195,6 +215,16 @@ export function calculerTerrasseProGeometrie(
       fastenerBoxesCount,
       spacersOrCalesCount,
       bituminousTapeLinearMeters,
+      mobileSupply: mobileResult
+        ? {
+            railsInoxLinearMeters: mobileResult.resultatPlateau.rails.lineaireTotalM,
+            railsInoxBarsCount: Math.ceil(mobileResult.resultatPlateau.rails.lineaireTotalM / 3.0),
+            wheelsCount: mobileResult.resultatPlateau.roulement.nbGaletsTotal,
+            chassisAluLinearMeters: mobileResult.resultatPlateau.structureChassis.lineaireProfilesAluM,
+            chassisAluBarsCount: Math.ceil(mobileResult.resultatPlateau.structureChassis.lineaireProfilesAluM / 6.0),
+            motorisationUnit: mobileConfigEffective?.motorise,
+          }
+        : undefined,
     },
   };
 
@@ -215,10 +245,12 @@ export function calculerTerrasseProGeometrie(
       blades: calepinage.blades,
       joists: structure.joists,
       supports: structure.supports,
+      mobileStructure: mobileResult?.mobileStructure,
     },
     cuttingPlan: calepinage.cuttingPlan,
     topAdmissibleScenarios: calepinage.topAdmissibleScenarios,
     quantities,
+    terrasseMobile: mobileResult?.resultatPlateau,
   };
 }
 

@@ -325,6 +325,7 @@ export function calculComposite(
       prixM2Ht: coutM2Ht,
     },
     terrassePro,
+    terrasseMobile: terrassePro?.terrasseMobile,
     calculeA: new Date().toISOString(),
   };
 }

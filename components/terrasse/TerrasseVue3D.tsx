@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useCallback } from "react";
+import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import * as THREE from "three";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
@@ -12,6 +16,10 @@ import type {
   PlacedSupportPoint,
 } from "@/lib/terrasse/pro/presets-regles";
 import {
+  resoudreConfigTerrasseMobile,
+  calculerSousEnsembleTerrasseMobile,
+} from "@/lib/terrasse/pro/terrasse-mobile";
+import {
   Rotate3d,
   ZoomIn,
   ZoomOut,
@@ -22,6 +30,12 @@ import {
   Recycle,
   X,
   Box,
+  Play,
+  Pause,
+  MoveHorizontal,
+  Sliders,
+  ShieldCheck,
+  Loader2,
 } from "lucide-react";
 
 interface TerrasseVue3DProps {
@@ -30,388 +44,312 @@ interface TerrasseVue3DProps {
   reservations?: ChantierTerrasseReservation[];
 }
 
-interface Point3D {
-  x: number;
-  y: number;
-  z: number;
+interface ComponentMeta {
+  kind: "LAME" | "LAMBOURDE" | "PLOT" | "RESERVATION" | "RAIL_MOBILE" | "CHASSIS_MOBILE";
+  title: string;
+  subtitle: string;
+  details: Array<[string, string]>;
 }
 
-interface Poly3D {
-  id: string;
-  layerId: number; // 1: Sol, 2: Plots, 3: Solives/Lambourdes/Chevêtres, 4: Lames, 5: Réservations/Escalier/Garde-corps
-  pts: Point3D[];
-  fill: string;
-  stroke: string;
-  strokeWidth: number;
-  opacity?: number;
-  label?: string;
-  meta?: {
-    kind: "LAME" | "LAMBOURDE" | "PLOT" | "RESERVATION";
-    title: string;
-    subtitle: string;
-    details: Array<[string, string]>;
-  };
-}
-
-function createBoxPolys(params: {
-  baseId: string;
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  z0: number;
-  z1: number;
-  colors: { top: string; sideX: string; sideY: string; stroke: string };
-  layerId: number;
-  strokeWidth?: number;
-  opacity?: number;
-  label?: string;
-  meta?: Poly3D["meta"];
-}): Poly3D[] {
-  const {
-    baseId,
-    x0,
-    y0,
-    x1,
-    y1,
-    z0,
-    z1,
-    colors,
-    layerId,
-    strokeWidth = 0.7,
-    opacity,
-    label,
-    meta,
-  } = params;
-
-  const minX = Math.min(x0, x1);
-  const maxX = Math.max(x0, x1);
-  const minY = Math.min(y0, y1);
-  const maxY = Math.max(y0, y1);
-
-  return [
-    // Face supérieure (z = z1)
-    {
-      id: `${baseId}-top`,
-      layerId,
-      pts: [
-        { x: minX, y: minY, z: z1 },
-        { x: maxX, y: minY, z: z1 },
-        { x: maxX, y: maxY, z: z1 },
-        { x: minX, y: maxY, z: z1 },
-      ],
-      fill: colors.top,
-      stroke: colors.stroke,
-      strokeWidth,
-      opacity,
-      label,
-      meta,
-    },
-    // Chant avant (y = maxY)
-    {
-      id: `${baseId}-front`,
-      layerId,
-      pts: [
-        { x: minX, y: maxY, z: z0 },
-        { x: maxX, y: maxY, z: z0 },
-        { x: maxX, y: maxY, z: z1 },
-        { x: minX, y: maxY, z: z1 },
-      ],
-      fill: colors.sideX,
-      stroke: colors.stroke,
-      strokeWidth: strokeWidth * 0.85,
-      opacity,
-      meta,
-    },
-    // Chant arrière (y = minY)
-    {
-      id: `${baseId}-back`,
-      layerId,
-      pts: [
-        { x: maxX, y: minY, z: z0 },
-        { x: minX, y: minY, z: z0 },
-        { x: minX, y: minY, z: z1 },
-        { x: maxX, y: minY, z: z1 },
-      ],
-      fill: colors.sideX,
-      stroke: colors.stroke,
-      strokeWidth: strokeWidth * 0.85,
-      opacity,
-      meta,
-    },
-    // Chant droit (x = maxX)
-    {
-      id: `${baseId}-right`,
-      layerId,
-      pts: [
-        { x: maxX, y: minY, z: z0 },
-        { x: maxX, y: maxY, z: z0 },
-        { x: maxX, y: maxY, z: z1 },
-        { x: maxX, y: minY, z: z1 },
-      ],
-      fill: colors.sideY,
-      stroke: colors.stroke,
-      strokeWidth: strokeWidth * 0.85,
-      opacity,
-      meta,
-    },
-    // Chant gauche (x = minX)
-    {
-      id: `${baseId}-left`,
-      layerId,
-      pts: [
-        { x: minX, y: maxY, z: z0 },
-        { x: minX, y: minY, z: z0 },
-        { x: minX, y: minY, z: z1 },
-        { x: minX, y: maxY, z: z1 },
-      ],
-      fill: colors.sideY,
-      stroke: colors.stroke,
-      strokeWidth: strokeWidth * 0.85,
-      opacity,
-      meta,
-    },
-  ];
-}
-
-function getBladePalette(essence: ChantierTerrasseConfig["essence_bois"], isOffcut: boolean, highlightOffcuts: boolean) {
-  if (isOffcut && highlightOffcuts) {
-    return {
-      top: "#059669",
-      sideX: "#047857",
-      sideY: "#065f46",
-      stroke: "#6ee7b7",
-    };
-  }
+// Couleurs par essence
+function getWoodColor(essence: ChantierTerrasseConfig["essence_bois"]): string {
   switch (essence) {
     case "ipe":
     case "cumaru":
-      return {
-        top: "#7c3f1d",
-        sideX: "#5c2d12",
-        sideY: "#451a03",
-        stroke: "#291002",
-      };
+      return "#7c3f1d";
     case "composite":
-      return {
-        top: "#475569",
-        sideX: "#334155",
-        sideY: "#1e293b",
-        stroke: "#0f172a",
-      };
+      return "#475569";
     case "douglas":
     case "meleze":
-      return {
-        top: "#b45309",
-        sideX: "#92400e",
-        sideY: "#78350f",
-        stroke: "#451a03",
-      };
+      return "#b45309";
+    case "bambou_thermo":
+      return "#5c3317";
     default:
-      return {
-        top: "#a16207",
-        sideX: "#854d0e",
-        sideY: "#713f12",
-        stroke: "#422006",
-      };
+      return "#a16207";
   }
 }
 
-export default function TerrasseVue3D({
+// =========================================================================
+// SCÈNE THREE.JS INTERNE
+// =========================================================================
+interface SceneThreeProps {
+  config: ChantierTerrasseConfig;
+  resultat: ResultatCalculTerrasse;
+  reservations: ChantierTerrasseReservation[];
+  eclate: boolean;
+  highlightOffcuts: boolean;
+  showSol: boolean;
+  showPlots: boolean;
+  showLambourdes: boolean;
+  showLames: boolean;
+  showRailsMobile: boolean;
+  openingRatio: number;
+  onSelectMeta: (meta: ComponentMeta | null) => void;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+}
+
+function SceneContent({
   config,
   resultat,
-  reservations = [],
-}: TerrasseVue3DProps) {
-  // Caméra orbitale (yaw = azimut horizontal, pitch = élévation verticale)
-  const [yawDeg, setYawDeg] = useState<number>(-34);
-  const [pitchDeg, setPitchDeg] = useState<number>(36);
-  const [zoom, setZoom] = useState<number>(1);
+  reservations,
+  eclate,
+  highlightOffcuts,
+  showSol,
+  showPlots,
+  showLambourdes,
+  showLames,
+  showRailsMobile,
+  openingRatio,
+  onSelectMeta,
+  controlsRef,
+}: SceneThreeProps) {
+  const L = Math.max(1, config.longueur_m || 6.0);
+  const W = Math.max(1, config.largeur_m || 4.0);
+  const cx = L / 2;
+  const cy = W / 2;
 
-  // Mode éclaté DTU 51.4 (sépare verticalement Sol / Plots / Lambourdes & Chevêtres / Lames)
-  const [eclate, setEclate] = useState<boolean>(true);
-  const [highlightOffcuts, setHighlightOffcuts] = useState<boolean>(true);
+  // Décalage vertical en mode éclaté DTU 51.4 (m)
+  const gapY = eclate ? 0.35 : 0;
 
-  // Visibilité des couches
-  const [showSol, setShowSol] = useState<boolean>(true);
-  const [showPlots, setShowPlots] = useState<boolean>(true);
-  const [showLambourdes, setShowLambourdes] = useState<boolean>(true);
-  const [showLames, setShowLames] = useState<boolean>(true);
+  // Hauteurs / Altitudes réelles
+  const ySol = 0;
+  const plotH = Math.max(0.04, Math.min(0.3, (config.hauteur_sol_cm || 15) / 100));
+  const yPlot = ySol + 0.02 + gapY * 0.7;
 
-  // Élément 3D sélectionné au clic
-  const [selectedMeta, setSelectedMeta] = useState<NonNullable<Poly3D["meta"]> | null>(null);
+  const lambH = Math.max(0.045, (config.section_hauteur_mm || 70) / 1000);
+  const yLamb = yPlot + plotH + gapY * 1.1;
 
-  const dragRef = useRef<{
-    startX: number;
-    startY: number;
-    startYaw: number;
-    startPitch: number;
-    moved: boolean;
-  } | null>(null);
+  const lameH = Math.max(0.021, (config.epaisseur_lame_mm || 21) / 1000);
+  const yLame = yLamb + lambH + gapY * 1.4;
 
-  const resetCamera = useCallback(() => {
-    setYawDeg(-34);
-    setPitchDeg(36);
-    setZoom(1);
-  }, []);
+  const proGeo = resultat.terrassePro?.geometry;
 
-  const setVueHaut = () => {
-    setYawDeg(0);
-    setPitchDeg(82);
-    setZoom(1.05);
-  };
+  // 1. InstancedMesh pour les lames fixes (séparées en standard et chutes)
+  const { standardBlades, offcutBlades } = useMemo(() => {
+    const std: Array<{ blade: PlacedBladeSegment; meta: ComponentMeta }> = [];
+    const off: Array<{ blade: PlacedBladeSegment; meta: ComponentMeta }> = [];
 
-  const setVueCoupeDtu = () => {
-    setYawDeg(-18);
-    setPitchDeg(14);
-    setEclate(true);
-    setZoom(1.15);
-  };
+    const blades = proGeo?.blades ?? [];
+    for (let i = 0; i < blades.length; i++) {
+      const b = blades[i];
+      const meta: ComponentMeta = {
+        kind: "LAME",
+        title: `Lame Rangée #${b.rowIndex + 1} · Segment #${b.segmentIndexInRow + 1}`,
+        subtitle: `Longueur nette : ${b.lengthNetMm} mm · Largeur : ${b.widthNetMm} mm`,
+        details: [
+          [
+            "Origine de coupe",
+            b.isFromOffcutReuse
+              ? `♻️ Chute réemployée (issue de ${b.sourceCommercialBarId})`
+              : `Barre neuve (${b.sourceCommercialBarId})`,
+          ],
+          ["Appuis lambourdes", `${b.supportJoistIds.length} appuis (${b.spanCount} travées)`],
+          ["Jonctions gauche / droite", `${b.leftJointType} → ${b.rightJointType}`],
+          ["Porte-à-faux d'extrémité", `${b.leftOverhangMm} mm / ${b.rightOverhangMm} mm`],
+        ],
+      };
 
-  // Construction de la scène 3D réelle à partir de resultat.terrassePro.geometry
-  const scene3D = useMemo(() => {
-    const polys: Poly3D[] = [];
-    const L = Math.max(1, config.longueur_m);
-    const W = Math.max(1, config.largeur_m);
-    const cx = L / 2;
-    const cy = W / 2;
-
-    // Écartement vertical en mode vue éclatée DTU
-    const gapZ = eclate ? 0.28 : 0;
-
-    // Altitudes des couches en mètres
-    const zSol0 = -0.08;
-    const zSol1 = 0;
-
-    const plotH = Math.max(0.05, Math.min(0.3, (config.hauteur_sol_cm || 15) / 100));
-    const zPlot0 = zSol1 + gapZ * 0.8;
-    const zPlot1 = zPlot0 + plotH * 0.65;
-
-    const lambH = Math.max(0.045, (config.section_hauteur_mm || 70) / 1000);
-    const zLamb0 = zPlot1 + gapZ * 1.1;
-    const zLamb1 = zLamb0 + lambH * 1.2;
-
-    const lameH = Math.max(0.021, (config.epaisseur_lame_mm || 21) / 1000);
-    const zLame0 = zLamb1 + gapZ * 1.4;
-    const zLame1 = zLame0 + lameH * 1.8;
-
-    const proGeo = resultat.terrassePro?.geometry;
-
-    // 1. COUCHE SOL / DALLE BÉTON / GÉOTEXTILE
-    if (showSol) {
-      const isDalle = config.type_sol === "dalle_beton";
-      polys.push(
-        ...createBoxPolys({
-          baseId: "sol-dalle",
-          x0: -cx,
-          y0: -cy,
-          x1: L - cx,
-          y1: W - cy,
-          z0: zSol0,
-          z1: zSol1,
-          colors: isDalle
-            ? { top: "#1e293b", sideX: "#0f172a", sideY: "#090d16", stroke: "#334155" }
-            : { top: "#292524", sideX: "#1c1917", sideY: "#0c0a09", stroke: "#44403c" },
-          layerId: 1,
-          strokeWidth: 0.9,
-        })
-      );
-    }
-
-    // 2. COUCHE PLOTS RÉGLABLES / CALES SUR DALLE (coordonnées réelles)
-    if (showPlots && proGeo && proGeo.supports.length > 0) {
-      // Échantillonnage intelligent si très grand nombre de plots pour fluidité SVG
-      const maxPlots = 180;
-      const step = Math.max(1, Math.ceil(proGeo.supports.length / maxPlots));
-      for (let i = 0; i < proGeo.supports.length; i += step) {
-        const sup: PlacedSupportPoint = proGeo.supports[i];
-        const sx = sup.centerMm.xMm / 1000 - cx;
-        const sy = sup.centerMm.yMm / 1000 - cy;
-        const halfR = sup.type === "CALE_SUR_DALLE" ? 0.05 : 0.075;
-
-        const isChevetre = sup.type === "PLOT_CHEVETRE";
-        const isCale = sup.type === "CALE_SUR_DALLE";
-
-        polys.push(
-          ...createBoxPolys({
-            baseId: `plot-${sup.id}`,
-            x0: sx - halfR,
-            y0: sy - halfR,
-            x1: sx + halfR,
-            y1: sy + halfR,
-            z0: zPlot0,
-            z1: zPlot1,
-            colors: isChevetre
-              ? { top: "#38bdf8", sideX: "#0284c7", sideY: "#0369a1", stroke: "#bae6fd" }
-              : isCale
-              ? { top: "#10b981", sideX: "#059669", sideY: "#047857", stroke: "#6ee7b7" }
-              : { top: "#f59e0b", sideX: "#d97706", sideY: "#b45309", stroke: "#fde68a" },
-            layerId: 2,
-            strokeWidth: 0.6,
-            meta: {
-              kind: "PLOT",
-              title: isChevetre
-                ? `Plot de chevêtre (${sup.id})`
-                : isCale
-                ? `Cale d'isolation sur dalle (${sup.id})`
-                : `Plot réglable (${sup.id})`,
-              subtitle: `Coordonnées : X ${(sup.centerMm.xMm / 1000).toFixed(2)} m · Y ${(sup.centerMm.yMm / 1000).toFixed(2)} m`,
-              details: [
-                ["Type d'appui", sup.type],
-                ["Hauteur sous lame", `${sup.heightMm} mm (max polymère DTU : 300 mm)`],
-                ["Résistance exigée F_Rk", `≥ ${sup.requiredCapacityFrkKn} kN`],
-                ["Jonction de lambourde", sup.isJoistSpliceCentered ? "Oui (centrée sur plot)" : "Appui courant"],
-              ],
-            },
-          })
-        );
+      if (b.isFromOffcutReuse) {
+        off.push({ blade: b, meta });
+      } else {
+        std.push({ blade: b, meta });
       }
     }
+    return { standardBlades: std, offcutBlades: off };
+  }, [proGeo?.blades]);
 
-    // 3. COUCHE STRUCTURE : LAMBOURDES COURANTES, DOUBLES LAMBOURDES D'ABOUTAGE & CHEVÊTRES
-    if (showLambourdes && proGeo && proGeo.joists.length > 0) {
-      for (const j of proGeo.joists) {
-        const xStart = j.startMm.xMm / 1000 - cx;
-        const yStart = j.startMm.yMm / 1000 - cy;
-        const xEnd = j.endMm.xMm / 1000 - cx;
-        const yEnd = j.endMm.yMm / 1000 - cy;
-        const halfW = Math.max(0.025, (j.widthMm / 1000) * 0.6);
+  // Références d'InstancedMesh pour les lames fixes
+  const stdBladesMeshRef = useRef<THREE.InstancedMesh | null>(null);
+  const offBladesMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
-        const isHorizontal = Math.abs(xEnd - xStart) >= Math.abs(yEnd - yStart);
-        const x0 = isHorizontal ? Math.min(xStart, xEnd) : xStart - halfW;
-        const x1 = isHorizontal ? Math.max(xStart, xEnd) : xStart + halfW;
-        const y0 = isHorizontal ? yStart - halfW : Math.min(yStart, yEnd);
-        const y1 = isHorizontal ? yStart + halfW : Math.max(yStart, yEnd);
+  useEffect(() => {
+    if (!stdBladesMeshRef.current || standardBlades.length === 0) return;
+    const dummy = new THREE.Object3D();
+    const mesh = stdBladesMeshRef.current;
 
-        const isChevetre = j.role === "CHEVETRE";
-        const isDouble =
-          j.role === "DOUBLE_ABOUTAGE_GAUCHE" || j.role === "DOUBLE_ABOUTAGE_DROITE";
-        const isSecondary = j.layer === "SECONDARY_BOTTOM_CROSS";
+    standardBlades.forEach(({ blade: b }, idx) => {
+      const p0 = b.polygonMm[0];
+      const p2 = b.polygonMm[2];
+      const minX = (p0?.xMm ?? 0) / 1000;
+      const maxX = (p2?.xMm ?? (b.lengthNetMm || 1000)) / 1000;
+      const minY = (p0?.yMm ?? 0) / 1000;
+      const maxY = (p2?.yMm ?? (b.widthNetMm || 145)) / 1000;
 
-        const zJ0 = isSecondary ? zLamb0 - lambH * 1.15 : zLamb0;
-        const zJ1 = isSecondary ? zLamb0 - 0.005 : zLamb1;
+      const segLenX = Math.max(0.05, Math.abs(maxX - minX));
+      const segWidthZ = Math.max(0.04, Math.abs(maxY - minY));
 
-        polys.push(
-          ...createBoxPolys({
-            baseId: `joist-${j.id}`,
-            x0,
-            y0,
-            x1,
-            y1,
-            z0: zJ0,
-            z1: zJ1,
-            colors: isChevetre
-              ? { top: "#38bdf8", sideX: "#0284c7", sideY: "#0369a1", stroke: "#e0f2fe" }
+      const posX = (minX + maxX) / 2 - cx;
+      const posZ = (minY + maxY) / 2 - cy;
+      const posY = yLame + lameH / 2;
+
+      dummy.position.set(posX, posY, posZ);
+      dummy.scale.set(segLenX, lameH, segWidthZ);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(idx, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [standardBlades, yLame, lameH, cx, cy]);
+
+  useEffect(() => {
+    if (!offBladesMeshRef.current || offcutBlades.length === 0) return;
+    const dummy = new THREE.Object3D();
+    const mesh = offBladesMeshRef.current;
+
+    offcutBlades.forEach(({ blade: b }, idx) => {
+      const p0 = b.polygonMm[0];
+      const p2 = b.polygonMm[2];
+      const minX = (p0?.xMm ?? 0) / 1000;
+      const maxX = (p2?.xMm ?? (b.lengthNetMm || 1000)) / 1000;
+      const minY = (p0?.yMm ?? 0) / 1000;
+      const maxY = (p2?.yMm ?? (b.widthNetMm || 145)) / 1000;
+
+      const segLenX = Math.max(0.05, Math.abs(maxX - minX));
+      const segWidthZ = Math.max(0.04, Math.abs(maxY - minY));
+
+      const posX = (minX + maxX) / 2 - cx;
+      const posZ = (minY + maxY) / 2 - cy;
+      const posY = yLame + lameH / 2;
+
+      dummy.position.set(posX, posY, posZ);
+      dummy.scale.set(segLenX, lameH, segWidthZ);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(idx, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [offcutBlades, yLame, lameH, cx, cy]);
+
+  // 2. InstancedMesh pour les Plots / Cales
+  const plotsData = useMemo(() => {
+    const supports = proGeo?.supports ?? [];
+    return supports.map((s) => ({
+      sup: s,
+      meta: {
+        kind: "PLOT" as const,
+        title:
+          s.type === "PLOT_CHEVETRE"
+            ? `Plot de renfort chevêtre (${s.id})`
+            : s.type === "CALE_SUR_DALLE"
+            ? `Cale d'isolation sur dalle (${s.id})`
+            : `Plot réglable polymère (${s.id})`,
+        subtitle: `Coord: X ${(s.centerMm.xMm / 1000).toFixed(2)}m · Y ${(s.centerMm.yMm / 1000).toFixed(2)}m`,
+        details: [
+          ["Type d'appui", s.type],
+          ["Hauteur sous lame", `${s.heightMm} mm (max DTU : 300 mm)`],
+          ["Capacité F_Rk", `≥ ${s.requiredCapacityFrkKn} kN`],
+          ["Jonction aboutage", s.isJoistSpliceCentered ? "Centrée sur plot" : "Courante"],
+        ] as Array<[string, string]>,
+      },
+    }));
+  }, [proGeo?.supports]);
+
+  const plotsMeshRef = useRef<THREE.InstancedMesh | null>(null);
+
+  useEffect(() => {
+    if (!plotsMeshRef.current || plotsData.length === 0) return;
+    const dummy = new THREE.Object3D();
+    const mesh = plotsMeshRef.current;
+
+    plotsData.forEach(({ sup }, idx) => {
+      const posX = sup.centerMm.xMm / 1000 - cx;
+      const posZ = sup.centerMm.yMm / 1000 - cy;
+      const radius = sup.type === "CALE_SUR_DALLE" ? 0.05 : 0.085;
+      const h = Math.max(0.04, sup.heightMm / 1000);
+      const posY = yPlot + h / 2;
+
+      dummy.position.set(posX, posY, posZ);
+      dummy.scale.set(radius * 2, h, radius * 2);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(idx, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [plotsData, yPlot, cx, cy]);
+
+  // 3. Calcul de la terrasse mobile et de ses panneaux
+  const poolRes = reservations.find((r) => r.type_reservation === "piscine");
+  const mobileConfig = useMemo(
+    () => resoudreConfigTerrasseMobile(config, poolRes),
+    [config, poolRes]
+  );
+
+  const mobileResult = useMemo(() => {
+    if (!poolRes || !mobileConfig) return null;
+    return calculerSousEnsembleTerrasseMobile({
+      config,
+      poolReservation: poolRes,
+      mobileConfig,
+    });
+  }, [config, poolRes, mobileConfig]);
+
+  const woodColor = getWoodColor(config.essence_bois);
+  const offcutColor = highlightOffcuts ? "#059669" : woodColor;
+
+  return (
+    <>
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[10, 20, 15]} intensity={1.2} castShadow />
+      <directionalLight position={[-10, 15, -10]} intensity={0.4} />
+
+      {/* 1. COUCHE SOL / DALLE BÉTON (Layer 1) */}
+      {showSol && (
+        <mesh position={[0, -0.04, 0]} receiveShadow>
+          <boxGeometry args={[L + 0.3, 0.08, W + 0.3]} />
+          <meshStandardMaterial
+            color={config.type_sol === "dalle_beton" ? "#1e293b" : "#292524"}
+            roughness={0.85}
+          />
+        </mesh>
+      )}
+
+      {/* 2. COUCHE PLOTS RÉGLABLES (Layer 2) */}
+      {showPlots && plotsData.length > 0 && (
+        <instancedMesh
+          ref={plotsMeshRef}
+          args={[undefined, undefined, plotsData.length]}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.instanceId !== undefined && plotsData[e.instanceId]) {
+              onSelectMeta(plotsData[e.instanceId].meta);
+            }
+          }}
+        >
+          <cylinderGeometry args={[0.5, 0.5, 1, 16]} />
+          <meshStandardMaterial color="#f59e0b" roughness={0.4} metalness={0.1} />
+        </instancedMesh>
+      )}
+
+      {/* 3. COUCHE STRUCTURE LAMBOURDES, DOUBLES & CHEVÊTRES (Layer 3) */}
+      {showLambourdes && proGeo?.joists && (
+        <group>
+          {proGeo.joists.map((j) => {
+            const x0 = j.startMm.xMm / 1000 - cx;
+            const z0 = j.startMm.yMm / 1000 - cy;
+            const x1 = j.endMm.xMm / 1000 - cx;
+            const z1 = j.endMm.yMm / 1000 - cy;
+
+            const dx = x1 - x0;
+            const dz = z1 - z0;
+            const len = Math.max(0.04, Math.hypot(dx, dz));
+            const angle = Math.atan2(dz, dx);
+            const posX = (x0 + x1) / 2;
+            const posZ = (z0 + z1) / 2;
+            const isSecondary = j.layer === "SECONDARY_BOTTOM_CROSS";
+            const posY = isSecondary ? yLamb - lambH * 1.1 : yLamb + lambH / 2;
+
+            const isChevetre = j.role === "CHEVETRE";
+            const isDouble =
+              j.role === "DOUBLE_ABOUTAGE_GAUCHE" || j.role === "DOUBLE_ABOUTAGE_DROITE";
+            const joistColor = isChevetre
+              ? "#38bdf8"
               : isDouble
-              ? { top: "#fb923c", sideX: "#ea580c", sideY: "#c2410c", stroke: "#ffedd5" }
+              ? "#fb923c"
               : config.type_lambourde === "alu_structure"
-              ? { top: "#94a3b8", sideX: "#64748b", sideY: "#475569", stroke: "#cbd5e1" }
-              : { top: "#d97706", sideX: "#b45309", sideY: "#78350f", stroke: "#451a03" },
-            layerId: 3,
-            strokeWidth: 0.7,
-            meta: {
+              ? "#94a3b8"
+              : "#d97706";
+
+            const meta: ComponentMeta = {
               kind: "LAMBOURDE",
               title: isChevetre
-                ? `Chevêtre de réservation (${j.id})`
+                ? `Chevêtre de renfort (${j.id})`
                 : isDouble
                 ? `Lambourde jumelée d'aboutage (${j.id})`
                 : `Lambourde porteuse (${j.id})`,
@@ -420,287 +358,435 @@ export default function TerrasseVue3D({
                 ["Rôle structurel", j.role],
                 ["Couche", j.layer],
                 ["Nombre de plots d'appui", `${j.supportIds.length} plots`],
-                ["Portée max entre plots", `${j.maxSpanBetweenSupportsMm} mm (plafond DTU : 700 mm)`],
+                ["Portée max admissible", `${j.maxSpanBetweenSupportsMm} mm (max DTU : 700 mm)`],
               ],
-            },
-          })
-        );
-      }
-    }
+            };
 
-    // 4. COUCHE PLATELAGE : SEGMENTS DE LAMES RÉELS + JOINTS D'ABOUTAGE + CHUTES RÉEMPLOYÉES
-    if (showLames && proGeo && proGeo.blades.length > 0) {
-      // Limiter le nombre de segments 3D si la terrasse est immense (> 220 segments)
-      const maxBlades = 220;
-      const stepB = Math.max(1, Math.ceil(proGeo.blades.length / maxBlades));
-      for (let i = 0; i < proGeo.blades.length; i += stepB) {
-        const seg: PlacedBladeSegment = proGeo.blades[i];
-        if (seg.polygonMm.length < 4) continue;
-        const p0 = seg.polygonMm[0];
-        const p2 = seg.polygonMm[2];
-        const x0 = p0.xMm / 1000 - cx + 0.004;
-        const y0 = p0.yMm / 1000 - cy + 0.002;
-        const x1 = p2.xMm / 1000 - cx - 0.004;
-        const y1 = p2.yMm / 1000 - cy - 0.002;
+            return (
+              <mesh
+                key={j.id}
+                position={[posX, posY, posZ]}
+                rotation={[0, -angle, 0]}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectMeta(meta);
+                }}
+              >
+                <boxGeometry args={[len, lambH, j.widthMm / 1000]} />
+                <meshStandardMaterial
+                  color={joistColor}
+                  roughness={0.6}
+                  metalness={config.type_lambourde === "alu_structure" ? 0.6 : 0.05}
+                />
+              </mesh>
+            );
+          })}
+        </group>
+      )}
 
-        const palette = getBladePalette(
-          config.essence_bois,
-          seg.isFromOffcutReuse,
-          highlightOffcuts
-        );
+      {/* 4. COUCHE PLATELAGE FIXE — LAMES INSTANCED MESH (Layer 4) */}
+      {showLames && (
+        <group>
+          {standardBlades.length > 0 && (
+            <instancedMesh
+              ref={stdBladesMeshRef}
+              args={[undefined, undefined, standardBlades.length]}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.instanceId !== undefined && standardBlades[e.instanceId]) {
+                  onSelectMeta(standardBlades[e.instanceId].meta);
+                }
+              }}
+            >
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={woodColor} roughness={0.65} />
+            </instancedMesh>
+          )}
 
-        polys.push(
-          ...createBoxPolys({
-            baseId: `blade-${seg.id}`,
-            x0,
-            y0,
-            x1,
-            y1,
-            z0: zLame0,
-            z1: zLame1,
-            colors: palette,
-            layerId: 4,
-            strokeWidth: seg.isFromOffcutReuse && highlightOffcuts ? 1.1 : 0.65,
-            label:
-              seg.isFromOffcutReuse && highlightOffcuts && seg.lengthNetMm >= 550
-                ? "♻️"
-                : undefined,
-            meta: {
-              kind: "LAME",
-              title: `Rangée #${seg.rowIndex + 1} · Segment #${seg.segmentIndexInRow + 1}`,
-              subtitle: `Longueur nette : ${seg.lengthNetMm} mm (${(seg.lengthNetMm / 10).toFixed(1)} cm) · Largeur : ${seg.widthNetMm} mm`,
-              details: [
-                [
-                  "Origine de coupe",
-                  seg.isFromOffcutReuse
-                    ? `♻️ Chute réemployée (issue de ${seg.sourceCommercialBarId})`
-                    : `Barre neuve (${seg.sourceCommercialBarId})`,
-                ],
-                ["Appuis sous ce segment", `${seg.supportJoistIds.length} lambourdes (${seg.spanCount} travées)`],
-                ["Jonction gauche / droite", `${seg.leftJointType} → ${seg.rightJointType}`],
-                [" Porte-à-faux gauche / droite", `${seg.leftOverhangMm} mm / ${seg.rightOverhangMm} mm`],
-              ],
-            },
-          })
-        );
-      }
-    }
+          {offcutBlades.length > 0 && (
+            <instancedMesh
+              ref={offBladesMeshRef}
+              args={[undefined, undefined, offcutBlades.length]}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.instanceId !== undefined && offcutBlades[e.instanceId]) {
+                  onSelectMeta(offcutBlades[e.instanceId].meta);
+                }
+              }}
+            >
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color={offcutColor} roughness={0.6} />
+            </instancedMesh>
+          )}
+        </group>
+      )}
 
-    // 5. RÉSERVATIONS (Piscines, Arbres, Trappes) en volume 3D
-    if (reservations.length > 0) {
-      reservations.forEach((res, idx) => {
+      {/* 5. COUCHE RÉSERVATIONS & BASSIN PISCINE (Layer 5) */}
+      {reservations.map((res, idx) => {
         const rx = (res.x || 0) - cx;
-        const ry = (res.y || 0) - cy;
+        const rz = (res.y || 0) - cy;
         const rw = res.diametre ? res.diametre : res.largeur || 0.6;
         const rh = res.diametre ? res.diametre : res.longueur || 0.6;
-        const x0 = res.diametre ? rx - rw / 2 : rx;
-        const y0 = res.diametre ? ry - rh / 2 : ry;
-
         const isPool = res.type_reservation === "piscine";
         const isTree = res.type_reservation === "arbre";
 
-        polys.push(
-          ...createBoxPolys({
-            baseId: `res-${idx}`,
-            x0,
-            y0,
-            x1: x0 + rw,
-            y1: y0 + rh,
-            z0: zSol0,
-            z1: zLame1 + 0.03,
-            colors: isPool
-              ? {
-                  top: "rgba(14, 165, 233, 0.78)",
-                  sideX: "rgba(2, 132, 199, 0.85)",
-                  sideY: "rgba(3, 105, 161, 0.85)",
-                  stroke: "#38bdf8",
-                }
-              : isTree
-              ? {
-                  top: "rgba(22, 163, 74, 0.82)",
-                  sideX: "rgba(21, 128, 61, 0.85)",
-                  sideY: "rgba(20, 83, 45, 0.85)",
-                  stroke: "#4ade80",
-                }
-              : {
-                  top: "rgba(51, 65, 85, 0.88)",
-                  sideX: "#1e293b",
-                  sideY: "#0f172a",
-                  stroke: "#f59e0b",
-                },
-            layerId: 5,
-            strokeWidth: 1.2,
-            label: res.nom,
-            meta: {
-              kind: "RESERVATION",
-              title: `Réservation : ${res.nom}`,
-              subtitle: `Type : ${res.type_reservation.toUpperCase()}`,
+        const meta: ComponentMeta = {
+          kind: "RESERVATION",
+          title: `Réservation : ${res.nom}`,
+          subtitle: `Type : ${res.type_reservation.toUpperCase()}`,
+          details: [
+            ["Position (X, Y)", `${(res.x || 0).toFixed(2)}m, ${(res.y || 0).toFixed(2)}m`],
+            ["Dimensions", `${rw.toFixed(2)}m × ${rh.toFixed(2)}m`],
+            ["Renfort DTU 51.4", "Chevêtres d'encadrement générés"],
+          ],
+        };
+
+        if (isPool) {
+          return (
+            <group key={idx} position={[rx + rw / 2, ySol, rz + rh / 2]}>
+              {/* Eau de piscine avec transparence réaliste */}
+              <mesh
+                position={[0, 0.05, 0]}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectMeta(meta);
+                }}
+              >
+                <boxGeometry args={[rw, 0.1, rh]} />
+                <meshStandardMaterial
+                  color="#0ea5e9"
+                  transparent
+                  opacity={0.82}
+                  roughness={0.08}
+                  metalness={0.2}
+                />
+              </mesh>
+              {/* Fond de bassin / parois */}
+              <mesh position={[0, -0.4, 0]}>
+                <boxGeometry args={[rw + 0.08, 0.8, rh + 0.08]} />
+                <meshStandardMaterial color="#0284c7" roughness={0.3} />
+              </mesh>
+            </group>
+          );
+        }
+
+        if (isTree) {
+          return (
+            <mesh
+              key={idx}
+              position={[rx, ySol + 0.4, rz]}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectMeta(meta);
+              }}
+            >
+              <cylinderGeometry args={[rw / 2, rw / 2, 0.8, 16]} />
+              <meshStandardMaterial color="#15803d" roughness={0.7} />
+            </mesh>
+          );
+        }
+
+        return (
+          <mesh
+            key={idx}
+            position={[rx + rw / 2, ySol + 0.05, rz + rh / 2]}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectMeta(meta);
+            }}
+          >
+            <boxGeometry args={[rw, 0.1, rh]} />
+            <meshStandardMaterial color="#334155" roughness={0.5} />
+          </mesh>
+        );
+      })}
+
+      {/* 6. COUCHE LAYER 6 : RAILS INOX ET TERRASSE MOBILE COULISSANTE */}
+      {showRailsMobile && mobileResult && (
+        <group>
+          {/* Rails inox au sol */}
+          {mobileResult.mobileStructure.rails.map((rail) => {
+            const rx0 = rail.startMm.xMm / 1000 - cx;
+            const rz0 = rail.startMm.yMm / 1000 - cy;
+            const rx1 = rail.endMm.xMm / 1000 - cx;
+            const rz1 = rail.endMm.yMm / 1000 - cy;
+            const rLen = Math.hypot(rx1 - rx0, rz1 - rz0);
+            const rAngle = Math.atan2(rz1 - rz0, rx1 - rx0);
+
+            const metaRail: ComponentMeta = {
+              kind: "RAIL_MOBILE",
+              title: `Rail Inox 316L de Guidage (${rail.id})`,
+              subtitle: `Longueur nette : ${(rail.lengthMm / 1000).toFixed(2)} m · Profilé Vé au sol`,
               details: [
-                ["Position (X, Y)", `${(res.x || 0).toFixed(2)} m, ${(res.y || 0).toFixed(2)} m`],
-                [
-                  "Dimensions",
-                  res.diametre
-                    ? `Ø ${res.diametre.toFixed(2)} m`
-                    : `${(res.largeur || 0.6).toFixed(2)} m × ${(res.longueur || 0.6).toFixed(2)} m`,
-                ],
-                ["Renfort DTU 51.4", "Chevêtres d'encadrement + plots dédiés générés"],
+                ["Matériau", "Inox A4 Marine (AISI 316L) anti-corrosion chlore/sel"],
+                ["Section", "Profilé Vé 50×15 mm encastré / posé"],
+                ["Linéaire total rails", `${mobileResult.resultatPlateau.rails.lineaireTotalM} m`],
+                ["Zone de refoulement", `${mobileResult.resultatPlateau.rails.zoneRefoulementM} m`],
               ],
-            },
-          })
-        );
+            };
+
+            return (
+              <mesh
+                key={rail.id}
+                position={[(rx0 + rx1) / 2, ySol + 0.012, (rz0 + rz1) / 2]}
+                rotation={[0, -rAngle, 0]}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectMeta(metaRail);
+                }}
+              >
+                <boxGeometry args={[rLen, 0.015, 0.04]} />
+                <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.2} />
+              </mesh>
+            );
+          })}
+
+          {/* Panneaux Mobiles (1 plateau ou 2 demi-plateaux) avec translation T(t) */}
+          {mobileResult.mobileStructure.panels.map((panel, pIdx) => {
+            // Calcul de la translation dynamique T(t) le long des rails
+            const travelM = (panel.travelDistanceMm / 1000) * openingRatio;
+            const transX = travelM * panel.directionVector.x;
+            const transZ = travelM * panel.directionVector.y;
+
+            const pW = panel.widthMm / 1000;
+            const pL = panel.lengthMm / 1000;
+            const initPosX = panel.xMm / 1000 - cx;
+            const initPosZ = panel.yMm / 1000 - cy;
+            const currentPosX = initPosX + transX;
+            const currentPosZ = initPosZ + transZ;
+
+            const chassisH = mobileResult.resultatPlateau.hauteurChassisMm / 1000;
+            const panelY = ySol + 0.03 + chassisH / 2;
+
+            const metaChassis: ComponentMeta = {
+              kind: "CHASSIS_MOBILE",
+              title: `Plateau Mobile (${panel.nom})`,
+              subtitle: `Course : ${(panel.travelDistanceMm / 1000).toFixed(2)} m · Mode ${mobileResult.resultatPlateau.mode}`,
+              details: [
+                ["Dimensions plateau", `${pW.toFixed(2)} m × ${pL.toFixed(2)} m`],
+                ["Châssis porteur", `Aluminium ${mobileResult.resultatPlateau.structureChassis.sectionAluMm} mm`],
+                ["Galets de roulement", `${panel.wheels.length} galets inox A4`],
+                ["Charge admissible", `${mobileResult.resultatPlateau.dimensionsPlateau.poidsTotalChargeKg} kg`],
+                ["Position actuelle", `${Math.round(openingRatio * 100)} % d'ouverture`],
+              ],
+            };
+
+            return (
+              <group key={panel.id} position={[currentPosX, 0, currentPosZ]}>
+                {/* Cadre et traverses en profilés aluminium du châssis */}
+                {panel.chassisJoists.map((j) => {
+                  const jx0 = j.startMm.xMm / 1000;
+                  const jz0 = j.startMm.yMm / 1000;
+                  const jx1 = j.endMm.xMm / 1000;
+                  const jz1 = j.endMm.yMm / 1000;
+                  const jlen = Math.hypot(jx1 - jx0, jz1 - jz0);
+                  const jangle = Math.atan2(jz1 - jz0, jx1 - jx0);
+
+                  return (
+                    <mesh
+                      key={j.id}
+                      position={[(jx0 + jx1) / 2, panelY, (jz0 + jz1) / 2]}
+                      rotation={[0, -jangle, 0]}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectMeta(metaChassis);
+                      }}
+                    >
+                      <boxGeometry args={[jlen, chassisH, 0.04]} />
+                      <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} />
+                    </mesh>
+                  );
+                })}
+
+                {/* Galets de roulement inox sous le châssis */}
+                {panel.wheels.map((w) => {
+                  const wx = w.centerMm.xMm / 1000;
+                  const wz = w.centerMm.yMm / 1000;
+                  return (
+                    <mesh key={w.id} position={[wx, ySol + 0.025, wz]} rotation={[0, 0, Math.PI / 2]}>
+                      <cylinderGeometry args={[0.035, 0.035, 0.03, 16]} />
+                      <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+                    </mesh>
+                  );
+                })}
+
+                {/* Platelage de lames monté sur le châssis mobile */}
+                {panel.blades.map((b) => {
+                  const p0 = b.polygonMm[0];
+                  const p2 = b.polygonMm[2];
+                  const bx0 = (p0?.xMm ?? 0) / 1000;
+                  const bz0 = (p0?.yMm ?? 0) / 1000;
+                  const bx1 = (p2?.xMm ?? (b.lengthNetMm || 1000)) / 1000;
+                  const bz1 = (p2?.yMm ?? (b.widthNetMm || 145)) / 1000;
+
+                  const blen = Math.abs(bx1 - bx0);
+                  const bwidth = Math.abs(bz1 - bz0);
+                  const bY = panelY + chassisH / 2 + lameH / 2;
+
+                  return (
+                    <mesh
+                      key={b.id}
+                      position={[(bx0 + bx1) / 2, bY, (bz0 + bz1) / 2]}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectMeta(metaChassis);
+                      }}
+                    >
+                      <boxGeometry args={[blen, lameH, bwidth]} />
+                      <meshStandardMaterial color={woodColor} roughness={0.6} />
+                    </mesh>
+                  );
+                })}
+              </group>
+            );
+          })}
+        </group>
+      )}
+
+      <OrbitControls
+        ref={controlsRef}
+        makeDefault
+        enableDamping
+        dampingFactor={0.08}
+        minDistance={1.2}
+        maxDistance={40}
+        maxPolarAngle={Math.PI / 2 - 0.02}
+      />
+    </>
+  );
+}
+
+// =========================================================================
+// COMPOSANT PRINCIPAL EXPORTÉ
+// =========================================================================
+export default function TerrasseVue3D({
+  config,
+  resultat,
+  reservations = [],
+}: TerrasseVue3DProps) {
+  const [mounted, setMounted] = useState(false);
+
+  // Vues et caméra
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+
+  // Toggles de couches & Modes DTU
+  const [eclate, setEclate] = useState(false);
+  const [highlightOffcuts, setHighlightOffcuts] = useState(true);
+  const [showSol, setShowSol] = useState(true);
+  const [showPlots, setShowPlots] = useState(true);
+  const [showLambourdes, setShowLambourdes] = useState(true);
+  const [showLames, setShowLames] = useState(true);
+  const [showRailsMobile, setShowRailsMobile] = useState(true);
+
+  // Animation de terrasse mobile coulissante
+  const [openingRatio, setOpeningRatio] = useState<number>(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Sélection d'élément inspecté
+  const [selectedMeta, setSelectedMeta] = useState<ComponentMeta | null>(null);
+
+  // Montage côté client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Détection d'une terrasse mobile pour l'afficher ou l'activer
+  const poolReservation = reservations.find((r) => r.type_reservation === "piscine");
+  const mobileConfig = useMemo(
+    () => resoudreConfigTerrasseMobile(config, poolReservation),
+    [config, poolReservation]
+  );
+  const mobileResult = useMemo(() => {
+    if (!poolReservation || !mobileConfig) return null;
+    return calculerSousEnsembleTerrasseMobile({
+      config,
+      poolReservation,
+      mobileConfig,
+    });
+  }, [config, poolReservation, mobileConfig]);
+
+  // Animation automatique fluide T(t)
+  useEffect(() => {
+    if (!isAnimating) return;
+    let step = 0.015;
+    const interval = setInterval(() => {
+      setOpeningRatio((prev) => {
+        let next = prev + step;
+        if (next >= 1) {
+          next = 1;
+          step = -0.015;
+        } else if (next <= 0) {
+          next = 0;
+          step = 0.015;
+        }
+        return Math.max(0, Math.min(1, next));
       });
-    }
+    }, 32);
 
-    // 6. ESCALIER 3D (si présent)
-    if (config.presence_escalier && config.escalier_nb_marches > 0) {
-      const stairW = Math.min(L, Math.max(0.8, config.escalier_largeur_m || 2.0));
-      const gironM = Math.max(0.22, (config.escalier_giron_cm || 28) / 100);
-      const marcheH = Math.max(0.12, (config.escalier_hauteur_marche_cm || 16) / 100);
-      const palette = getBladePalette(config.essence_bois, false, false);
+    return () => clearInterval(interval);
+  }, [isAnimating]);
 
-      for (let m = 0; m < config.escalier_nb_marches; m++) {
-        const my0 = W - cy + m * gironM;
-        const my1 = my0 + gironM;
-        const mz1 = zLame1 - (m + 1) * marcheH * 0.6;
-        const mz0 = mz1 - lameH * 1.5;
-        polys.push(
-          ...createBoxPolys({
-            baseId: `stair-${m}`,
-            x0: -stairW / 2,
-            y0: my0,
-            x1: stairW / 2,
-            y1: my1,
-            z0: mz0,
-            z1: mz1,
-            colors: palette,
-            layerId: 5,
-            strokeWidth: 0.8,
-          })
-        );
-      }
-    }
+  // Commandes de caméra présélectionnées
+  const resetCamera = useCallback(() => {
+    if (!controlsRef.current) return;
+    controlsRef.current.reset();
+    controlsRef.current.object.position.set(6, 6, 7);
+    controlsRef.current.target.set(0, 0, 0);
+  }, []);
 
-    return {
-      polys,
-      span: Math.max(L, W, 3.5),
-      stats: {
-        nbBlades: proGeo?.blades.length ?? 0,
-        nbOffcutsReused: proGeo?.blades.filter((b) => b.isFromOffcutReuse).length ?? 0,
-        nbJoists: proGeo?.joists.length ?? 0,
-        nbDoubleJoists:
-          proGeo?.joists.filter(
-            (j) =>
-              j.role === "DOUBLE_ABOUTAGE_GAUCHE" || j.role === "DOUBLE_ABOUTAGE_DROITE"
-          ).length ?? 0,
-        nbChevetres: proGeo?.joists.filter((j) => j.role === "CHEVETRE").length ?? 0,
-        nbSupports: proGeo?.supports.length ?? 0,
-      },
-    };
-  }, [
-    config,
-    resultat,
-    reservations,
-    eclate,
-    highlightOffcuts,
-    showSol,
-    showPlots,
-    showLambourdes,
-    showLames,
-  ]);
+  const setVueHaut = useCallback(() => {
+    if (!controlsRef.current) return;
+    controlsRef.current.object.position.set(0, 11, 0.01);
+    controlsRef.current.target.set(0, 0, 0);
+  }, []);
 
-  // Projection 3D -> 2D SVG avec tri en profondeur (algorithme du peintre issu de BNA-App)
-  const projected = useMemo(() => {
-    const yaw = (yawDeg * Math.PI) / 180;
-    const pitch = (pitchDeg * Math.PI) / 180;
-    const cosY = Math.cos(yaw);
-    const sinY = Math.sin(yaw);
-    const cosP = Math.cos(pitch);
-    const sinP = Math.sin(pitch);
+  const setVueCoupeDtu = useCallback(() => {
+    if (!controlsRef.current) return;
+    setEclate(true);
+    controlsRef.current.object.position.set(7, 1.8, 3.5);
+    controlsRef.current.target.set(0, 0.4, 0);
+  }, []);
 
-    const camDist = scene3D.span * 2.8;
-
-    const projectPt = (p: Point3D) => {
-      // Rotation dans le plan horizontal (X, Y) d'angle yaw
-      const x1 = p.x * cosY - p.y * sinY;
-      const y1 = p.x * sinY + p.y * cosY;
-
-      // Inclinaison selon pitch (entre l'axe de profondeur y1 et la hauteur z)
-      const screenY = y1 * sinP - p.z * cosP;
-      const depth = y1 * cosP + p.z * sinP;
-
-      const perspective = camDist / Math.max(1.2, camDist + depth * 0.45);
-      return {
-        sx: x1 * perspective,
-        sy: screenY * perspective,
-        depth,
-      };
-    };
-
-    const items = scene3D.polys.map((poly) => {
-      const pPts = poly.pts.map(projectPt);
-      const avgDepth = pPts.reduce((s, q) => s + q.depth, 0) / pPts.length;
-      const avgZ = poly.pts.reduce((s, q) => s + q.z, 0) / poly.pts.length;
-      const cx = pPts.reduce((s, q) => s + q.sx, 0) / pPts.length;
-      const cy = pPts.reduce((s, q) => s + q.sy, 0) / pPts.length;
-
-      return {
-        poly,
-        pointsAttr: pPts.map((q) => `${q.sx.toFixed(3)},${q.sy.toFixed(3)}`).join(" "),
-        avgDepth,
-        avgZ,
-        cx,
-        cy,
-      };
-    });
-
-    // Tri du plus éloigné au plus proche, avec priorité d'altitude des couches (Sol < Plots < Lambourdes < Lames)
-    items.sort((a, b) => {
-      if (a.poly.layerId !== b.poly.layerId) {
-        return a.poly.layerId - b.poly.layerId;
-      }
-      if (Math.abs(a.avgZ - b.avgZ) > 0.008) {
-        return a.avgZ - b.avgZ;
-      }
-      return a.avgDepth - b.avgDepth;
-    });
-
-    return items;
-  }, [scene3D, yawDeg, pitchDeg]);
-
-  const halfSpan = (scene3D.span * 0.72) / Math.max(0.5, zoom);
-  const viewBox = `${-halfSpan} ${-halfSpan * 0.68} ${halfSpan * 2} ${halfSpan * 1.36}`;
-
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    dragRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      startYaw: yawDeg,
-      startPitch: pitchDeg,
-      moved: false,
-    };
+  const handleZoomIn = () => {
+    if (!controlsRef.current) return;
+    const cam = controlsRef.current.object;
+    cam.position.multiplyScalar(0.85);
   };
 
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      dragRef.current.moved = true;
-    }
-    setYawDeg(Math.max(-175, Math.min(175, dragRef.current.startYaw + dx * 0.45)));
-    setPitchDeg(Math.max(8, Math.min(86, dragRef.current.startPitch + dy * 0.35)));
+  const handleZoomOut = () => {
+    if (!controlsRef.current) return;
+    const cam = controlsRef.current.object;
+    cam.position.multiplyScalar(1.18);
   };
 
-  const handlePointerUp = () => {
-    dragRef.current = null;
-  };
+  const proGeo = resultat.terrassePro?.geometry;
+  const nbBlades = proGeo?.blades.length ?? 0;
+  const nbOffcutsReused = proGeo?.blades.filter((b) => b.isFromOffcutReuse).length ?? 0;
+  const nbJoists = proGeo?.joists.length ?? 0;
+  const nbDoubleJoists =
+    proGeo?.joists.filter(
+      (j) => j.role === "DOUBLE_ABOUTAGE_GAUCHE" || j.role === "DOUBLE_ABOUTAGE_DROITE"
+    ).length ?? 0;
+  const nbChevetres = proGeo?.joists.filter((j) => j.role === "CHEVETRE").length ?? 0;
+  const nbSupports = proGeo?.supports.length ?? 0;
+
+  if (!mounted) {
+    return (
+      <div className="relative w-full h-[480px] rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-[#0d0f12] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-gray-400 text-xs">
+          <Loader2 className="animate-spin text-amber-500" size={24} />
+          <span>Chargement du moteur 3D Three.js...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
       <div className="relative w-full rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-[#0d0f12] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        {/* Barre d'outils supérieure : Vues caméra + Mode Éclaté DTU + Filtres de couches */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-black/50 px-3.5 py-2.5">
-          {/* Vues caméra & Éclaté DTU */}
+        {/* BARRE D'OUTILS SUPÉRIEURE : Vues Caméra + Mode Éclaté + Curseur Terrasse Mobile */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-black/60 px-3.5 py-2.5">
+          {/* Vues Caméra & Éclaté */}
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
@@ -722,7 +808,7 @@ export default function TerrasseVue3D({
               onClick={setVueHaut}
               className="px-2.5 py-1 rounded-lg text-2xs font-semibold bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10"
             >
-              Vue de dessus
+              Vue du dessus
             </button>
 
             <button
@@ -735,7 +821,7 @@ export default function TerrasseVue3D({
               }`}
             >
               <Layers size={12} />
-              {eclate ? "Vue éclatée DTU : ACTIVE" : "Vue compacte réelle"}
+              {eclate ? "Éclaté DTU : ACTIF" : "Vue réelle"}
             </button>
 
             <button
@@ -748,12 +834,54 @@ export default function TerrasseVue3D({
               }`}
             >
               <Recycle size={12} />
-              Chutes ♻️ ({scene3D.stats.nbOffcutsReused})
+              Chutes ♻️ ({nbOffcutsReused})
             </button>
           </div>
 
-          {/* Toggles de couches & Zoom */}
+          {/* CURSEUR D'OUVERTURE DE LA TERRASSE MOBILE (Layer 6) */}
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-2.5 py-1 rounded-xl">
+            <MoveHorizontal size={13} className="text-sky-400" />
+            <button
+              type="button"
+              onClick={() => setIsAnimating((v) => !v)}
+              className="p-1 rounded text-sky-400 hover:text-sky-300 hover:bg-white/10 transition"
+              title={isAnimating ? "Mettre en pause" : "Animer l'ouverture"}
+            >
+              {isAnimating ? <Pause size={12} /> : <Play size={12} />}
+            </button>
+            <span className="text-2xs font-semibold text-gray-200 whitespace-nowrap">
+              Coulissement : <strong className="text-sky-300">{Math.round(openingRatio * 100)} %</strong>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={openingRatio}
+              onChange={(e) => {
+                setOpeningRatio(parseFloat(e.target.value));
+                setIsAnimating(false);
+              }}
+              className="w-20 sm:w-28 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-sky-500"
+              title="Curseur d'ouverture de la terrasse mobile"
+            />
+          </div>
+
+          {/* TOGGLES DES COUCHES & ZOOM */}
           <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowRailsMobile((v) => !v)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-3xs font-semibold border ${
+                showRailsMobile
+                  ? "bg-sky-600/30 text-sky-200 border-sky-500/40"
+                  : "bg-white/5 text-gray-500 border-white/5"
+              }`}
+              title="Afficher/Masquer les Rails et le Châssis mobile"
+            >
+              {showRailsMobile ? <Eye size={11} /> : <EyeOff size={11} />}
+              Rails & Mobile (L6)
+            </button>
             <button
               type="button"
               onClick={() => setShowLames((v) => !v)}
@@ -764,7 +892,7 @@ export default function TerrasseVue3D({
               }`}
             >
               {showLames ? <Eye size={11} /> : <EyeOff size={11} />}
-              Lames ({scene3D.stats.nbBlades})
+              Lames ({nbBlades})
             </button>
             <button
               type="button"
@@ -776,7 +904,7 @@ export default function TerrasseVue3D({
               }`}
             >
               {showLambourdes ? <Eye size={11} /> : <EyeOff size={11} />}
-              Structure ({scene3D.stats.nbJoists})
+              Structure ({nbJoists})
             </button>
             <button
               type="button"
@@ -788,7 +916,7 @@ export default function TerrasseVue3D({
               }`}
             >
               {showPlots ? <Eye size={11} /> : <EyeOff size={11} />}
-              Plots ({scene3D.stats.nbSupports})
+              Plots ({nbSupports})
             </button>
             <button
               type="button"
@@ -802,10 +930,11 @@ export default function TerrasseVue3D({
               Sol
             </button>
 
+            {/* Zoom et Reset */}
             <div className="flex items-center gap-0.5 ml-1 rounded-lg bg-white/5 p-0.5 border border-white/10">
               <button
                 type="button"
-                onClick={() => setZoom((z) => Math.min(2.4, +(z * 1.2).toFixed(2)))}
+                onClick={handleZoomIn}
                 className="p-1 rounded text-gray-300 hover:text-white hover:bg-white/10"
                 title="Zoom avant"
               >
@@ -813,7 +942,7 @@ export default function TerrasseVue3D({
               </button>
               <button
                 type="button"
-                onClick={() => setZoom((z) => Math.max(0.55, +(z / 1.2).toFixed(2)))}
+                onClick={handleZoomOut}
                 className="p-1 rounded text-gray-300 hover:text-white hover:bg-white/10"
                 title="Zoom arrière"
               >
@@ -831,59 +960,33 @@ export default function TerrasseVue3D({
           </div>
         </div>
 
-        {/* Scène 3D Vectorielle SVG */}
-        <div className="relative w-full h-[470px] bg-gradient-to-b from-[#0b0e14] via-[#111622] to-[#0b0d13]">
-          <svg
-            viewBox={viewBox}
-            className="w-full h-full cursor-grab active:cursor-grabbing select-none touch-none block"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            role="img"
-            aria-label="Modélisation 3D éclatée DTU 51.4 de la terrasse"
+        {/* CONTENEUR THREE.JS / R3F (60 FPS INSTANCED MESH) */}
+        <div className="relative w-full h-[490px] bg-gradient-to-b from-[#0b0e14] via-[#111622] to-[#0b0d13]">
+          <Canvas
+            camera={{ position: [6, 5.5, 7.5], fov: 42 }}
+            shadows
+            className="w-full h-full cursor-grab active:cursor-grabbing block"
           >
-            {projected.map(({ poly, pointsAttr, cx, cy }) => (
-              <g
-                key={poly.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (dragRef.current?.moved) return;
-                  if (poly.meta) {
-                    setSelectedMeta(poly.meta);
-                  }
-                }}
-                className={poly.meta ? "cursor-pointer hover:opacity-90" : undefined}
-              >
-                <polygon
-                  points={pointsAttr}
-                  fill={poly.fill}
-                  fillOpacity={poly.opacity ?? 1}
-                  stroke={poly.stroke}
-                  strokeWidth={poly.strokeWidth * 0.015}
-                  strokeLinejoin="round"
-                />
-                {poly.label && (
-                  <text
-                    x={cx}
-                    y={cy}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="#ffffff"
-                    fontSize={0.11}
-                    fontWeight="bold"
-                    style={{ pointerEvents: "none" }}
-                  >
-                    {poly.label}
-                  </text>
-                )}
-              </g>
-            ))}
-          </svg>
+            <SceneContent
+              config={config}
+              resultat={resultat}
+              reservations={reservations}
+              eclate={eclate}
+              highlightOffcuts={highlightOffcuts}
+              showSol={showSol}
+              showPlots={showPlots}
+              showLambourdes={showLambourdes}
+              showLames={showLames}
+              showRailsMobile={showRailsMobile}
+              openingRatio={openingRatio}
+              onSelectMeta={setSelectedMeta}
+              controlsRef={controlsRef}
+            />
+          </Canvas>
 
-          {/* Panneau d'inspection d'un composant 3D cliqué */}
+          {/* FICHE D'INSPECTION DU COMPOSANT SÉLECTIONNÉ AU CLIC */}
           {selectedMeta && (
-            <div className="absolute bottom-3 right-3 z-20 w-80 max-w-[92%] rounded-xl border border-amber-500/40 bg-[#0f131a]/95 p-3.5 text-xs text-white shadow-2xl backdrop-blur-md">
+            <div className="absolute bottom-3 right-3 z-20 w-80 max-w-[92%] rounded-xl border border-amber-500/40 bg-[#0f131a]/95 p-3.5 text-xs text-white shadow-2xl backdrop-blur-md animate-in fade-in duration-150">
               <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-2">
                 <div>
                   <span className="inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-300">
@@ -913,33 +1016,44 @@ export default function TerrasseVue3D({
           )}
         </div>
 
-        {/* Légende & Compteurs géométriques réels en bas de la vue 3D */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-black/50 px-4 py-2.5 text-3xs text-gray-300">
+        {/* LÉGENDE & COMPTEURS GÉOMÉTRIQUES RÉELS */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-black/60 px-4 py-2.5 text-3xs text-gray-300">
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-xs bg-amber-600 inline-block border border-white/20" />
-              Segments lames : <strong>{scene3D.stats.nbBlades}</strong>
+              Lames : <strong>{nbBlades}</strong>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
-              Chutes réemployées ♻️ : <strong className="text-emerald-400">{scene3D.stats.nbOffcutsReused}</strong>
+              Chutes ♻️ : <strong className="text-emerald-400">{nbOffcutsReused}</strong>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-xs bg-orange-500 inline-block" />
-              Doubles lambourdes d&apos;aboutage : <strong className="text-orange-300">{scene3D.stats.nbDoubleJoists}</strong>
+              Doubles lambourdes : <strong className="text-orange-300">{nbDoubleJoists}</strong>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-xs bg-sky-400 inline-block" />
-              Chevêtres réservations : <strong className="text-sky-300">{scene3D.stats.nbChevetres}</strong>
+              Chevêtres : <strong className="text-sky-300">{nbChevetres}</strong>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-yellow-400 inline-block" />
-              Plots : <strong>{scene3D.stats.nbSupports}</strong>
+              Plots : <strong>{nbSupports}</strong>
             </span>
+            {poolReservation && (
+              <span className="flex items-center gap-1.5 text-sky-300">
+                <span className="h-2.5 w-2.5 rounded-xs bg-sky-500 inline-block" />
+                Terrasse Mobile :{" "}
+                <strong>
+                  {mobileResult
+                    ? `${mobileResult.resultatPlateau.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} (${mobileResult.resultatPlateau.rails.lineaireTotalM}m rails)`
+                    : "Prête à configurer"}
+                </strong>
+              </span>
+            )}
           </div>
           <span className="text-gray-400 flex items-center gap-1">
             <Box size={11} className="text-amber-400" />
-            Glisser pour tourner · Cliquer sur une lame, lambourde ou plot pour inspecter
+            Three.js WebGL (InstancedMesh) · Glisser pour tourner · Clic pour inspecter
           </span>
         </div>
       </div>

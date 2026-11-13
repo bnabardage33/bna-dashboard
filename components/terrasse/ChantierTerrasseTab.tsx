@@ -149,6 +149,18 @@ export default function ChantierTerrasseTab({
       largeur: type === "piscine" ? 4.0 : type === "arbre" || type === "poteau" ? undefined : 0.6,
       longueur: type === "piscine" ? 2.5 : type === "arbre" || type === "poteau" ? undefined : 0.6,
       diametre: type === "arbre" ? 0.8 : type === "poteau" ? 0.3 : undefined,
+      terrasse_mobile:
+        type === "piscine"
+          ? {
+              active: true,
+              mode: "1_plateau",
+              sens_refoulement: "droite",
+              hauteur_chassis_alu_mm: 100,
+              jeu_fonctionnel_peripherique_mm: 20,
+              section_profil_alu_mm: "80x40",
+              charge_exploitation_kn_m2: 2.5,
+            }
+          : undefined,
     };
     setReservations((prev) => [...prev, nouvelle]);
     setSavedSuccess(false);
@@ -571,6 +583,150 @@ export default function ChantierTerrasseTab({
                 </table>
               </div>
             )}
+
+            {/* CONFIGURATION SPÉCIFIQUE TERRASSE MOBILE COULISSANTE SUR RAILS */}
+            {reservations.map((res, idx) => {
+              if (res.type_reservation !== "piscine") return null;
+              const mob = res.terrasse_mobile || {
+                active: true,
+                mode: "1_plateau",
+                sens_refoulement: "droite",
+                hauteur_chassis_alu_mm: 100,
+                jeu_fonctionnel_peripherique_mm: 20,
+                section_profil_alu_mm: "80x40",
+                charge_exploitation_kn_m2: 2.5,
+              };
+
+              return (
+                <div
+                  key={`mob-config-${idx}`}
+                  className="mt-4 rounded-xl border border-sky-300 bg-gradient-to-br from-sky-50/80 via-white to-sky-50/30 p-4 shadow-xs"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🏊</span>
+                      <div>
+                        <h4 className="text-xs font-bold text-sky-950">
+                          Terrasse Mobile Coulissante sur Rails · {res.nom}
+                        </h4>
+                        <p className="text-3xs text-sky-700">
+                          Châssis aluminium porteur + rails inox au sol (conformité DTU 51.4 & NF P90-308)
+                        </p>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-sky-900">
+                      <input
+                        type="checkbox"
+                        checked={mob.active}
+                        onChange={(e) =>
+                          handleUpdateReservation(idx, {
+                            terrasse_mobile: { ...mob, active: e.target.checked },
+                          })
+                        }
+                        className="rounded border-sky-300 text-sky-600 focus:ring-sky-500"
+                      />
+                      Activer la terrasse mobile
+                    </label>
+                  </div>
+
+                  {mob.active && (
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                          Mode de plateau
+                        </label>
+                        <select
+                          value={mob.mode}
+                          onChange={(e) =>
+                            handleUpdateReservation(idx, {
+                              terrasse_mobile: {
+                                ...mob,
+                                mode: e.target.value as "1_plateau" | "2_demi_plateaux",
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                        >
+                          <option value="1_plateau">1 Plateau monobloc</option>
+                          <option value="2_demi_plateaux">2 Demi-plateaux (ouverture centrale symétrique)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                          Sens de refoulement
+                        </label>
+                        <select
+                          value={mob.sens_refoulement}
+                          onChange={(e) =>
+                            handleUpdateReservation(idx, {
+                              terrasse_mobile: {
+                                ...mob,
+                                sens_refoulement: e.target.value as
+                                  | "droite"
+                                  | "gauche"
+                                  | "bas"
+                                  | "haut",
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                        >
+                          <option value="droite">➡️ Vers la droite (latéral)</option>
+                          <option value="gauche">⬅️ Vers la gauche (latéral)</option>
+                          <option value="bas">⬇️ Vers le bas (longitudinal)</option>
+                          <option value="haut">⬆️ Vers le haut (longitudinal)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                          Hauteur châssis alu (mm)
+                        </label>
+                        <input
+                          type="number"
+                          min="60"
+                          max="200"
+                          step="10"
+                          value={mob.hauteur_chassis_alu_mm}
+                          onChange={(e) =>
+                            handleUpdateReservation(idx, {
+                              terrasse_mobile: {
+                                ...mob,
+                                hauteur_chassis_alu_mm: parseInt(e.target.value) || 100,
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                          Jeu périphérique (mm)
+                        </label>
+                        <input
+                          type="number"
+                          min="10"
+                          max="50"
+                          step="5"
+                          value={mob.jeu_fonctionnel_peripherique_mm}
+                          onChange={(e) =>
+                            handleUpdateReservation(idx, {
+                              terrasse_mobile: {
+                                ...mob,
+                                jeu_fonctionnel_peripherique_mm: parseInt(e.target.value) || 20,
+                              },
+                            })
+                          }
+                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

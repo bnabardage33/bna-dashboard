@@ -498,6 +498,7 @@ export function calculerTerrasse(
       totalHt,
     },
     terrassePro,
+    terrasseMobile: terrassePro.terrasseMobile,
     calculeA: new Date().toISOString(),
   };
 }

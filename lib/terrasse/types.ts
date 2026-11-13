@@ -66,6 +66,75 @@ export type TypeReservationTerrasse =
   | "local_technique"
   | "autre";
 
+export type ModeTerrasseMobile = "1_plateau" | "2_demi_plateaux";
+export type SensRefoulementTerrasseMobile = "gauche" | "droite" | "haut" | "bas";
+
+export interface ConfigTerrasseMobile {
+  active: boolean;
+  mode: ModeTerrasseMobile;
+  sens_refoulement: SensRefoulementTerrasseMobile;
+  hauteur_chassis_alu_mm: number;           // Hauteur de réservation châssis (ex: 80 à 120 mm, défaut 100 mm)
+  jeu_fonctionnel_peripherique_mm: number;  // Jeu fonctionnel de sécurité périphérique (défaut 20 mm)
+  longueur_rails_sol_m?: number;            // Longueur des rails inox au sol (bassin + zone de refoulement)
+  largeur_degagement_m?: number;            // Zone de dégagement nécessaire (m)
+  section_profil_alu_mm?: string;           // Section des profilés châssis alu (défaut "80x40" ou "100x50")
+  charge_exploitation_kn_m2?: number;       // Charge d'exploitation nominale (défaut 2.5 kN/m² selon DTU 51.4)
+  motorise?: boolean;                       // Option motorisation / entraînement par crémaillère
+}
+
+export interface ResultatPlateauMobile {
+  active: boolean;
+  mode: ModeTerrasseMobile;
+  sensRefoulement: SensRefoulementTerrasseMobile;
+  hauteurChassisMm: number;
+  jeuPeripheriqueMm: number;
+  dimensionsPlateau: {
+    longueurM: number;
+    largeurM: number;
+    epaisseurTotaleMm: number;
+    surfaceM2: number;
+    poidsPropreKg: number;
+    poidsTotalChargeKg: number;
+  };
+  rails: {
+    type: "rail_inox_v_sol" | "rail_inox_plat_galet_gorge";
+    lineaireTotalM: number;
+    nbRails: number;
+    longueurUnitaireM: number;
+    entraxeRailsM: number;
+    zoneRefoulementM: number;
+  };
+  roulement: {
+    nbGaletsTotal: number;
+    chargeParGaletKg: number;
+    diametreGaletMm: number;
+    reference: string;
+  };
+  structureChassis: {
+    lineaireProfilesAluM: number;
+    sectionAluMm: string;
+    nbTraverses: number;
+    entraxeTraversesMm: number;
+    poidsAluKg: number;
+  };
+  platelage: {
+    surfaceLamesM2: number;
+    lineaireLamesM: number;
+    nbLames: number;
+    visOuClipsNb: number;
+  };
+  plateaux: Array<{
+    id: string;
+    nom: string;
+    xInitialM: number;
+    yInitialM: number;
+    longueurM: number;
+    largeurM: number;
+    sensOuvertureVector: { x: number; y: number };
+    courseMaxM: number;
+  }>;
+}
+
 export interface ChantierTerrasseReservation {
   id?: string;
   terrasse_id: string;
@@ -77,6 +146,7 @@ export interface ChantierTerrasseReservation {
   largeur?: number;
   longueur?: number;
   diametre?: number;
+  terrasse_mobile?: ConfigTerrasseMobile;
   metadata?: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
@@ -159,6 +229,9 @@ export interface ChantierTerrasseConfig {
   retour1_largeur_m?: number;
   retour2_longueur_m?: number;
   retour2_largeur_m?: number;
+
+  // Terrasse Mobile coulissante sur rails au-dessus du bassin
+  terrasse_mobile?: ConfigTerrasseMobile;
 
   // Timestamp
   created_at?: string;
@@ -305,5 +378,7 @@ export interface ResultatCalculTerrasse {
   };
   /** Contrat géométrique, plan de coupe 1D et séparation Q_net / Q_tech / Q_appro issu du moteur Terrasse Pro */
   terrassePro?: TerrasseProGeometricResult;
+  /** Sous-ensemble terrasse mobile coulissante sur rails si configurée */
+  terrasseMobile?: ResultatPlateauMobile;
   calculeA: string;
 }
