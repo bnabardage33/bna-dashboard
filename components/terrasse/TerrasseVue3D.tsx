@@ -45,7 +45,7 @@ interface TerrasseVue3DProps {
 }
 
 interface ComponentMeta {
-  kind: "LAME" | "LAMBOURDE" | "PLOT" | "RESERVATION" | "RAIL_MOBILE" | "CHASSIS_MOBILE";
+  kind: "LAME" | "LAMBOURDE" | "PLOT" | "RESERVATION" | "RAIL_MOBILE" | "CHASSIS_MOBILE" | "MOTEUR_MOBILE";
   title: string;
   subtitle: string;
   details: Array<[string, string]>;
@@ -689,7 +689,7 @@ function SceneContent({
       {showRailsMobile && mobileResult && (
         <group>
           {/* Rails discrets : profilés plats extra-plats (28×5 mm) en inox brossé posés à fleur sur la plage fixe */}
-          {mobileResult.mobileStructure.rails.map((rail) => {
+          {mobileResult.mobileStructure.rails.map((rail, rIdx) => {
             const rx0 = rail.startMm.xMm / 1000 - cx;
             const rz0 = rail.startMm.yMm / 1000 - cy;
             const rx1 = rail.endMm.xMm / 1000 - cx;
@@ -700,6 +700,11 @@ function SceneContent({
             const railThickness = 0.005; // 5 mm extra-plat
             const railWidth = 0.028; // 28 mm discret
             const railY = yDeckTop + railThickness / 2;
+
+            const mot = mobileResult.resultatPlateau.motorisation;
+            const hasMotorisation = Boolean(mot?.active && mot.typeMotorisation !== "aucune");
+            const isGuideRail = rIdx === 0; // Le premier rail sert de rail d'entraînement et de guidage motorisé
+            const isDeuxPlateaux = mobileResult.resultatPlateau.mode === "2_demi_plateaux";
 
             const metaRail: ComponentMeta = {
               kind: "RAIL_MOBILE",
@@ -714,25 +719,171 @@ function SceneContent({
               ],
             };
 
+            const metaCremaillere: ComponentMeta = {
+              kind: "MOTEUR_MOBILE",
+              title: `Crémaillère M4 Acier/Nylon (${mot?.lineaireCremaillereM ?? 0} m)`,
+              subtitle: `Module 4 silencieux · ${mot?.barresCremaillereCount ?? 0} barres de 1 m synchronisées`,
+              details: [
+                ["Matériau", "Nylon armé cœur acier zingué / Inox A4"],
+                ["Module", "Module 4 avec pattes de fixation réglables en hauteur"],
+                ["Linéaire total", `${mot?.lineaireCremaillereM ?? 0} m (Course utile + 0,50 m de sécurité)`],
+                ["Sécurité NF P90-308", "Engrenage sous carter protecteur anti-pincement"],
+              ],
+            };
+
+            const metaMoteur: ComponentMeta = {
+              kind: "MOTEUR_MOBILE",
+              title: `Motoréducteur 24V DC (${mot?.puissanceMoteurUnitaireN ?? 0} N)`,
+              subtitle: `${mot?.typeMotorisation === "solaire" ? "Kit Solaire Autonome 24V" : "Alimentation Filaire TBTS 24V"} · NF P90-308`,
+              details: [
+                ["Puissance unitaire", `${mot?.puissanceMoteurUnitaireN ?? 0} N (Couple de démarrage renforcé)`],
+                ["Puissance totale", `${mot?.puissanceTractionTotaleN ?? 0} N (${mot?.nbMoteurs ?? 1} moteur(s))`],
+                [
+                  "Alimentation",
+                  mot?.typeMotorisation === "solaire"
+                    ? "24V DC (2× batteries 12V 14Ah AGM + Régulateur MPPT)"
+                    : "230V AC → 24V DC TBTS (Transformateur IP65)",
+                ],
+                ["Sécurité anti-pincement", "Détection ampérométrique d'obstacle conforme NF P90-308"],
+                ["Débrayage manuel", "Clé de secours ergonomique quart de tour"],
+                ["Fins de course", `${mot?.finsDeCourse?.nbCapteurs ?? 2} capteurs magnétiques étanches IP68`],
+                ["Télécommande", `${mot?.telecommande?.nbTelecommandes ?? 2} émetteurs rolling-code 868 MHz`],
+              ],
+            };
+
+            const metaSolaire: ComponentMeta = {
+              kind: "MOTEUR_MOBILE",
+              title: "Panneau Solaire Photovoltaïque Déporté 30 Wc",
+              subtitle: "Recharge solaire autonome 24V DC · Sans tranchée ni raccordement réseau",
+              details: [
+                ["Puissance crête", "30 Wc cellules monocristallines haute performance"],
+                ["Support", "Pied inox 316L avec rotule orientable inclinée à 35°"],
+                ["Régulateur", "Régulateur de charge solaire intelligent MPPT 24V intégré"],
+                ["Batteries", "2× 12V 14Ah AGM étanches sans entretien en série"],
+                ["Autonomie", "Jusqu'à 30 cycles complets d'ouverture sans ensoleillement"],
+                ["Protection", "Boîtier étanche résistant aux UV et à l'ambiance piscine IP65"],
+              ],
+            };
+
+            // Positions des moteurs le long du rail de guidage
+            const motorOffsets = isDeuxPlateaux
+              ? [rLen / 2 - 0.12, -rLen / 2 + 0.12]
+              : [rLen / 2 - 0.12];
+
             return (
-              <mesh
+              <group
                 key={rail.id}
                 position={[(rx0 + rx1) / 2, railY, (rz0 + rz1) / 2]}
                 rotation={[0, -rAngle, 0]}
-                castShadow
-                receiveShadow
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectMeta(metaRail);
-                }}
               >
-                <boxGeometry args={[rLen, railThickness, railWidth]} />
-                <meshStandardMaterial
-                  color="#d1d5db"
-                  metalness={0.96}
-                  roughness={0.22}
-                />
-              </mesh>
+                {/* Profilé plat inox du rail */}
+                <mesh
+                  castShadow
+                  receiveShadow
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectMeta(metaRail);
+                  }}
+                >
+                  <boxGeometry args={[rLen, railThickness, railWidth]} />
+                  <meshStandardMaterial
+                    color="#d1d5db"
+                    metalness={0.96}
+                    roughness={0.22}
+                  />
+                </mesh>
+
+                {/* MODÉLISATION MOTORISATION : CRÉMAILLÈRE, BLOC MOTEUR & PANNEAU SOLAIRE */}
+                {hasMotorisation && isGuideRail && mot && (
+                  <group>
+                    {/* 1. Crémaillère continue longeant le rail inox */}
+                    <mesh
+                      position={[0, (0.015 - railThickness) / 2, railWidth / 2 + 0.012]}
+                      castShadow
+                      receiveShadow
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectMeta(metaCremaillere);
+                      }}
+                    >
+                      <boxGeometry args={[rLen, 0.015, 0.012]} />
+                      <meshStandardMaterial
+                        color="#1e293b"
+                        metalness={0.7}
+                        roughness={0.32}
+                      />
+                    </mesh>
+
+                    {/* 2. Bloc(s) moteur(s) compact(s) en bout de rail */}
+                    {motorOffsets.map((mX, mIdx) => (
+                      <group
+                        key={`motor-${mIdx}`}
+                        position={[mX, (0.14 - railThickness) / 2, railWidth / 2 + 0.045]}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectMeta(metaMoteur);
+                        }}
+                      >
+                        {/* Carter moteur compact IP65 anthracite */}
+                        <mesh castShadow receiveShadow>
+                          <boxGeometry args={[0.18, 0.14, 0.14]} />
+                          <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.25} />
+                        </mesh>
+                        {/* Capot de déverrouillage manuel de secours */}
+                        <mesh position={[0, 0.072, 0]} castShadow>
+                          <cylinderGeometry args={[0.022, 0.022, 0.008, 16]} />
+                          <meshStandardMaterial color="#f59e0b" metalness={0.6} roughness={0.3} />
+                        </mesh>
+                        {/* Pignon denté d'entraînement sur la crémaillère */}
+                        <mesh position={[0, -0.05, -0.035]} rotation={[0, 0, Math.PI / 2]} castShadow>
+                          <cylinderGeometry args={[0.024, 0.024, 0.018, 16]} />
+                          <meshStandardMaterial color="#94a3b8" metalness={0.95} roughness={0.2} />
+                        </mesh>
+                        {/* Témoin LED de sécurité NF P90-308 */}
+                        <mesh position={[0.07, 0.04, 0.071]}>
+                          <sphereGeometry args={[0.005, 8, 8]} />
+                          <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={2} />
+                        </mesh>
+                      </group>
+                    ))}
+
+                    {/* 3. Panneau solaire photovoltaïque déporté si motorisation solaire */}
+                    {mot.typeMotorisation === "solaire" && (
+                      <group
+                        position={[rLen / 2 - 0.12, (0.01 - railThickness) / 2, railWidth / 2 + 0.3]}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectMeta(metaSolaire);
+                        }}
+                      >
+                        {/* Embase de fixation inox */}
+                        <mesh position={[0, 0.004, 0]} castShadow receiveShadow>
+                          <cylinderGeometry args={[0.045, 0.045, 0.008, 16]} />
+                          <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.2} />
+                        </mesh>
+                        {/* Mât inox 316L */}
+                        <mesh position={[0, 0.14, 0]} castShadow>
+                          <cylinderGeometry args={[0.009, 0.009, 0.28, 12]} />
+                          <meshStandardMaterial color="#cbd5e1" metalness={0.92} roughness={0.18} />
+                        </mesh>
+                        {/* Panneau PV incliné à 35° face au soleil */}
+                        <group position={[0, 0.28, 0]} rotation={[0.55, 0, 0]}>
+                          {/* Cadre alu */}
+                          <mesh castShadow receiveShadow>
+                            <boxGeometry args={[0.26, 0.012, 0.34]} />
+                            <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.25} />
+                          </mesh>
+                          {/* Surface des cellules photovoltaïques */}
+                          <mesh position={[0, 0.007, 0]}>
+                            <boxGeometry args={[0.24, 0.002, 0.32]} />
+                            <meshStandardMaterial color="#0a192f" roughness={0.15} metalness={0.8} />
+                          </mesh>
+                        </group>
+                      </group>
+                    )}
+                  </group>
+                )}
+              </group>
             );
           })}
 
@@ -1371,7 +1522,12 @@ export default function TerrasseVue3D({
                 Terrasse Mobile :{" "}
                 <strong>
                   {mobileResult
-                    ? `${mobileResult.resultatPlateau.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} · Caisson fermé (jupe 4 faces) · Rails inox brossé`
+                    ? `${mobileResult.resultatPlateau.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} · Caisson fermé · ${
+                        mobileResult.resultatPlateau.motorisation?.active &&
+                        mobileResult.resultatPlateau.motorisation.typeMotorisation !== "aucune"
+                          ? `Motorisation ${mobileResult.resultatPlateau.motorisation.typeMotorisation === "solaire" ? "Solaire 24V" : "Filaire"} (${mobileResult.resultatPlateau.motorisation.puissanceMoteurUnitaireN} N)`
+                          : "Manuelle"
+                      }`
                     : "Prête à configurer"}
                 </strong>
               </span>

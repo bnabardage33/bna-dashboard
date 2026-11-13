@@ -5,6 +5,7 @@ import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
   ResultatCalculTerrasse,
+  TypeMotorisationTerrasse,
   TypeReservationTerrasse,
 } from "@/lib/terrasse/types";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
@@ -595,7 +596,10 @@ export default function ChantierTerrasseTab({
                 jeu_fonctionnel_peripherique_mm: 20,
                 section_profil_alu_mm: "80x40",
                 charge_exploitation_kn_m2: 2.5,
+                type_motorisation: "aucune" as TypeMotorisationTerrasse,
               };
+
+              const motSpec = resultat?.terrasseMobile?.motorisation;
 
               return (
                 <div
@@ -630,98 +634,181 @@ export default function ChantierTerrasseTab({
                   </div>
 
                   {mob.active && (
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                      <div>
-                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
-                          Mode de plateau
-                        </label>
-                        <select
-                          value={mob.mode}
-                          onChange={(e) =>
-                            handleUpdateReservation(idx, {
-                              terrasse_mobile: {
-                                ...mob,
-                                mode: e.target.value as "1_plateau" | "2_demi_plateaux",
-                              },
-                            })
-                          }
-                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
-                        >
-                          <option value="1_plateau">1 Plateau monobloc</option>
-                          <option value="2_demi_plateaux">2 Demi-plateaux (ouverture centrale symétrique)</option>
-                        </select>
+                    <div className="mt-3 space-y-3 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Mode de plateau
+                          </label>
+                          <select
+                            value={mob.mode}
+                            onChange={(e) =>
+                              handleUpdateReservation(idx, {
+                                terrasse_mobile: {
+                                  ...mob,
+                                  mode: e.target.value as "1_plateau" | "2_demi_plateaux",
+                                },
+                              })
+                            }
+                            className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                          >
+                            <option value="1_plateau">1 Plateau monobloc</option>
+                            <option value="2_demi_plateaux">2 Demi-plateaux (ouverture centrale symétrique)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Sens de refoulement
+                          </label>
+                          <select
+                            value={mob.sens_refoulement}
+                            onChange={(e) =>
+                              handleUpdateReservation(idx, {
+                                terrasse_mobile: {
+                                  ...mob,
+                                  sens_refoulement: e.target.value as
+                                    | "droite"
+                                    | "gauche"
+                                    | "bas"
+                                    | "haut",
+                                },
+                              })
+                            }
+                            className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                          >
+                            <option value="droite">➡️ Vers la droite (latéral)</option>
+                            <option value="gauche">⬅️ Vers la gauche (latéral)</option>
+                            <option value="bas">⬇️ Vers le bas (longitudinal)</option>
+                            <option value="haut">⬆️ Vers le haut (longitudinal)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Motorisation (NF P90-308)
+                          </label>
+                          <select
+                            value={mob.type_motorisation || "aucune"}
+                            onChange={(e) =>
+                              handleUpdateReservation(idx, {
+                                terrasse_mobile: {
+                                  ...mob,
+                                  type_motorisation: e.target.value as TypeMotorisationTerrasse,
+                                },
+                              })
+                            }
+                            className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                          >
+                            <option value="aucune">Manuelle (sans moteur)</option>
+                            <option value="solaire">☀️ Solaire autonome 24V (Batteries + Panneau PV)</option>
+                            <option value="filaire">🔌 Filaire 230V / 24V TBTS (Transformateur IP65)</option>
+                          </select>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
-                          Sens de refoulement
-                        </label>
-                        <select
-                          value={mob.sens_refoulement}
-                          onChange={(e) =>
-                            handleUpdateReservation(idx, {
-                              terrasse_mobile: {
-                                ...mob,
-                                sens_refoulement: e.target.value as
-                                  | "droite"
-                                  | "gauche"
-                                  | "bas"
-                                  | "haut",
-                              },
-                            })
-                          }
-                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
-                        >
-                          <option value="droite">➡️ Vers la droite (latéral)</option>
-                          <option value="gauche">⬅️ Vers la gauche (latéral)</option>
-                          <option value="bas">⬇️ Vers le bas (longitudinal)</option>
-                          <option value="haut">⬆️ Vers le haut (longitudinal)</option>
-                        </select>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Hauteur châssis alu (mm)
+                          </label>
+                          <input
+                            type="number"
+                            min="60"
+                            max="200"
+                            step="10"
+                            value={mob.hauteur_chassis_alu_mm}
+                            onChange={(e) =>
+                              handleUpdateReservation(idx, {
+                                terrasse_mobile: {
+                                  ...mob,
+                                  hauteur_chassis_alu_mm: parseInt(e.target.value) || 100,
+                                },
+                              })
+                            }
+                            className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Jeu périphérique (mm)
+                          </label>
+                          <input
+                            type="number"
+                            min="10"
+                            max="50"
+                            step="5"
+                            value={mob.jeu_fonctionnel_peripherique_mm}
+                            onChange={(e) =>
+                              handleUpdateReservation(idx, {
+                                terrasse_mobile: {
+                                  ...mob,
+                                  jeu_fonctionnel_peripherique_mm: parseInt(e.target.value) || 20,
+                                },
+                              })
+                            }
+                            className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Charge exploitation plateau
+                          </label>
+                          <input
+                            type="text"
+                            disabled
+                            value="2,5 kN/m² (250 kg/m²)"
+                            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-500 cursor-not-allowed"
+                          />
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
-                          Hauteur châssis alu (mm)
-                        </label>
-                        <input
-                          type="number"
-                          min="60"
-                          max="200"
-                          step="10"
-                          value={mob.hauteur_chassis_alu_mm}
-                          onChange={(e) =>
-                            handleUpdateReservation(idx, {
-                              terrasse_mobile: {
-                                ...mob,
-                                hauteur_chassis_alu_mm: parseInt(e.target.value) || 100,
-                              },
-                            })
-                          }
-                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-3xs font-semibold text-gray-600 mb-1">
-                          Jeu périphérique (mm)
-                        </label>
-                        <input
-                          type="number"
-                          min="10"
-                          max="50"
-                          step="5"
-                          value={mob.jeu_fonctionnel_peripherique_mm}
-                          onChange={(e) =>
-                            handleUpdateReservation(idx, {
-                              terrasse_mobile: {
-                                ...mob,
-                                jeu_fonctionnel_peripherique_mm: parseInt(e.target.value) || 20,
-                              },
-                            })
-                          }
-                          className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
-                        />
-                      </div>
+                      {/* BADGE TECHNIQUE MOTORISATION ENRICHI SI MOTORISÉ */}
+                      {motSpec && motSpec.active && motSpec.typeMotorisation !== "aucune" && (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-950">
+                          <div className="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-1.5 mb-2">
+                            <span className="font-bold flex items-center gap-1.5 text-amber-900">
+                              <span>⚡</span>
+                              Motorisation {motSpec.typeMotorisation === "solaire" ? "Solaire Autonome 24V" : "Filaire 230V / 24V TBTS"}
+                            </span>
+                            <span className="text-3xs font-semibold px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-900">
+                              Norme NF P90-308 Conforme
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-2xs">
+                            <div>
+                              <span className="text-amber-800">Motoréducteur(s) :</span>{" "}
+                              <strong className="text-amber-950">
+                                {motSpec.nbMoteurs} × {motSpec.puissanceMoteurUnitaireN} N
+                              </strong>{" "}
+                              (Total {motSpec.puissanceTractionTotaleN} N)
+                            </div>
+                            <div>
+                              <span className="text-amber-800">Crémaillère M4 :</span>{" "}
+                              <strong className="text-amber-950">
+                                {motSpec.lineaireCremaillereM} m
+                              </strong>{" "}
+                              ({motSpec.barresCremaillereCount} barres acier/nylon)
+                            </div>
+                            <div>
+                              <span className="text-amber-800">Alimentation :</span>{" "}
+                              <strong className="text-amber-950">
+                                {motSpec.typeMotorisation === "solaire"
+                                  ? "PV 30 Wc + 2× 12V 14Ah"
+                                  : "230V → 24V TBTS IP65"}
+                              </strong>
+                            </div>
+                            <div>
+                              <span className="text-amber-800">Sécurité & Pilotage :</span>{" "}
+                              <strong className="text-amber-950">
+                                Fins de course IP68 + {motSpec.telecommande.nbTelecommandes} télécommandes
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

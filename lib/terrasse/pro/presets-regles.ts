@@ -7,6 +7,7 @@ import type {
   ZoneEnvironnement,
   ResultatPlateauMobile,
   ConfigTerrasseMobile,
+  TypeMotorisationTerrasse,
 } from "../types";
 import { getFabricantComposite, getGammeDefaut } from "../composite/fabricants";
 
@@ -115,6 +116,7 @@ export interface PlacedMobileStructure {
   totalRailLinearMeters: number;
   totalWheelsCount: number;
   chassisProfilesLinearMeters: number;
+  motorisation?: ResultatPlateauMobile["motorisation"];
 }
 
 export interface DistinctQuantitiesBreakdown {
@@ -130,6 +132,8 @@ export interface DistinctQuantitiesBreakdown {
     mobileRailsNetLinearMeters?: number;
     mobileChassisNetLinearMeters?: number;
     mobileWheelsCount?: number;
+    mobileCremaillereNetLinearMeters?: number;
+    mobileMotorsCount?: number;
   };
   /** 2. Quantités techniques découpées (Q_tech) */
   technicalCut: {
@@ -160,6 +164,19 @@ export interface DistinctQuantitiesBreakdown {
       chassisAluLinearMeters: number;
       chassisAluBarsCount: number;
       motorisationUnit?: boolean;
+      motorisation?: {
+        type: TypeMotorisationTerrasse;
+        nbMoteurs: number;
+        puissanceN: number;
+        lineaireCremaillereM: number;
+        barresCremaillereCount: number;
+        coffretCommande: string;
+        panneauSolaireUnit?: number;
+        batteriesCount?: number;
+        alimentationFilaireUnit?: number;
+        finsDeCourseCount: number;
+        telecommandesCount: number;
+      };
     };
   };
 }

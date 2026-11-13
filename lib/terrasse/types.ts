@@ -68,6 +68,7 @@ export type TypeReservationTerrasse =
 
 export type ModeTerrasseMobile = "1_plateau" | "2_demi_plateaux";
 export type SensRefoulementTerrasseMobile = "gauche" | "droite" | "haut" | "bas";
+export type TypeMotorisationTerrasse = "aucune" | "solaire" | "filaire";
 
 export interface ConfigTerrasseMobile {
   active: boolean;
@@ -80,6 +81,8 @@ export interface ConfigTerrasseMobile {
   section_profil_alu_mm?: string;           // Section des profilés châssis alu (défaut "80x40" ou "100x50")
   charge_exploitation_kn_m2?: number;       // Charge d'exploitation nominale (défaut 2.5 kN/m² selon DTU 51.4)
   motorise?: boolean;                       // Option motorisation / entraînement par crémaillère
+  type_motorisation?: TypeMotorisationTerrasse; // "aucune" | "solaire" | "filaire" (défaut "aucune")
+  puissance_moteur_n?: number;              // Puissance / effort de traction en Newtons (calculée automatiquement)
 }
 
 export interface ResultatPlateauMobile {
@@ -122,6 +125,31 @@ export interface ResultatPlateauMobile {
     lineaireLamesM: number;
     nbLames: number;
     visOuClipsNb: number;
+  };
+  motorisation: {
+    active: boolean;
+    typeMotorisation: TypeMotorisationTerrasse;
+    nbMoteurs: number; // 1 pour 1_plateau, 2 synchronisés pour 2_demi_plateaux
+    puissanceTractionTotaleN: number;
+    puissanceMoteurUnitaireN: number;
+    lineaireCremaillereM: number;
+    barresCremaillereCount: number;
+    coffretCommande: {
+      type: "solaire_autonome_24v" | "filaire_230v_24v" | "aucun";
+      designation: string;
+      batteries?: string;
+      panneauPhotovoltaiqueWp?: number;
+      tensionV: number;
+    };
+    finsDeCourse: {
+      type: "magnetique_ip68";
+      nbCapteurs: number;
+    };
+    telecommande: {
+      conformeNFP90_308: boolean;
+      nbTelecommandes: number;
+      description: string;
+    };
   };
   plateaux: Array<{
     id: string;
@@ -289,7 +317,15 @@ export interface RapportConformiteDTU {
 
 export interface LigneChiffrageTerrasse {
   code: string;
-  categorie: "Structure" | "Platelage" | "Fixation" | "Accessoires" | "Escalier" | "Garde-corps";
+  categorie:
+    | "Structure"
+    | "Platelage"
+    | "Fixation"
+    | "Accessoires"
+    | "Escalier"
+    | "Garde-corps"
+    | "Terrasse Mobile"
+    | "Motorisation Mobile";
   designation: string;
   quantite: number;
   unite: string;

@@ -5,12 +5,16 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import type {
   ChantierTerrasseConfig,
+  ConfigTerrasseMobile,
   EssenceBois,
   HauteurReglagePlots,
+  ModeTerrasseMobile,
+  SensRefoulementTerrasseMobile,
   SystemeTerrasse,
   TypeFixation,
   TypeGardeCorps,
   TypeLambourde,
+  TypeMotorisationTerrasse,
   TypePlots,
   TypePose,
   TypeSol,
@@ -854,6 +858,146 @@ export default function TerrasseConfigForm({
             </div>
           )}
         </div>
+
+        {/* TERRASSE MOBILE COULISSANTE SUR RAILS (NF P90-308) */}
+        {(() => {
+          const currentMob: ConfigTerrasseMobile = config.terrasse_mobile || {
+            active: false,
+            mode: "1_plateau",
+            sens_refoulement: "droite",
+            hauteur_chassis_alu_mm: 100,
+            jeu_fonctionnel_peripherique_mm: 20,
+            type_motorisation: "aucune",
+          };
+
+          return (
+            <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+                  🏊 Terrasse Mobile Coulissante (NF P90-308)
+                </h3>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#777777]">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(config.terrasse_mobile?.active)}
+                    onChange={(e) => {
+                      onChange({
+                        terrasse_mobile: { ...currentMob, active: e.target.checked },
+                      });
+                    }}
+                    className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
+                  />
+                  Activer la terrasse mobile
+                </label>
+              </div>
+
+              {config.terrasse_mobile?.active && (
+                <div className="space-y-3 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-[#777777]">Mode de plateau</label>
+                      <select
+                        value={currentMob.mode}
+                        onChange={(e) =>
+                          onChange({
+                            terrasse_mobile: {
+                              ...currentMob,
+                              mode: e.target.value as ModeTerrasseMobile,
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                      >
+                        <option value="1_plateau">1 Plateau monobloc</option>
+                        <option value="2_demi_plateaux">2 Demi-plateaux (ouverture symétrique)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#777777]">Sens de refoulement</label>
+                      <select
+                        value={currentMob.sens_refoulement}
+                        onChange={(e) =>
+                          onChange({
+                            terrasse_mobile: {
+                              ...currentMob,
+                              sens_refoulement: e.target.value as SensRefoulementTerrasseMobile,
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                      >
+                        <option value="droite">➡️ Vers la droite (latéral)</option>
+                        <option value="gauche">⬅️ Vers la gauche (latéral)</option>
+                        <option value="bas">⬇️ Vers le bas (longitudinal)</option>
+                        <option value="haut">⬆️ Vers le haut (longitudinal)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#777777]">Motorisation</label>
+                      <select
+                        value={currentMob.type_motorisation || "aucune"}
+                        onChange={(e) =>
+                          onChange({
+                            terrasse_mobile: {
+                              ...currentMob,
+                              type_motorisation: e.target.value as TypeMotorisationTerrasse,
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                      >
+                        <option value="aucune">Manuelle (sans moteur)</option>
+                        <option value="solaire">☀️ Solaire autonome 24V</option>
+                        <option value="filaire">🔌 Filaire 230V / 24V TBTS</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-[#777777]">Hauteur châssis alu (mm)</label>
+                      <input
+                        type="number"
+                        min="60"
+                        max="200"
+                        step="10"
+                        value={currentMob.hauteur_chassis_alu_mm}
+                        onChange={(e) =>
+                          onChange({
+                            terrasse_mobile: {
+                              ...currentMob,
+                              hauteur_chassis_alu_mm: parseInt(e.target.value, 10) || 100,
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-[#777777]">Jeu périphérique (mm)</label>
+                      <input
+                        type="number"
+                        min="10"
+                        max="50"
+                        step="5"
+                        value={currentMob.jeu_fonctionnel_peripherique_mm}
+                        onChange={(e) =>
+                          onChange({
+                            terrasse_mobile: {
+                              ...currentMob,
+                              jeu_fonctionnel_peripherique_mm: parseInt(e.target.value, 10) || 20,
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

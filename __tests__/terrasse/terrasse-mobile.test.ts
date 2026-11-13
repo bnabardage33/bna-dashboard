@@ -183,4 +183,113 @@ describe("Terrasse Mobile Coulissante sur Rails (Piscine)", () => {
     expect(q.commercialSupply.mobileSupply?.wheelsCount).toBe(mob.roulement.nbGaletsTotal);
     expect(q.commercialSupply.mobileSupply?.chassisAluBarsCount).toBeGreaterThan(0);
   });
+
+  it("5. Calcule la motorisation solaire pour un mode 1_plateau (effort traction, crémaillère, kit PV et batteries)", () => {
+    const configSolaire = {
+      ...poolReservation.terrasse_mobile!,
+      type_motorisation: "solaire" as const,
+    };
+
+    const res = calculerSousEnsembleTerrasseMobile({
+      config: baseConfig,
+      poolReservation,
+      mobileConfig: configSolaire,
+    });
+
+    const mot = res.resultatPlateau.motorisation;
+    expect(mot).toBeDefined();
+    expect(mot.active).toBe(true);
+    expect(mot.typeMotorisation).toBe("solaire");
+    expect(mot.nbMoteurs).toBe(1);
+
+    // Effort de traction minimum 600 N (arrondi supérieur à 50 N)
+    expect(mot.puissanceTractionTotaleN).toBeGreaterThanOrEqual(600);
+    expect(mot.puissanceMoteurUnitaireN).toBe(mot.puissanceTractionTotaleN);
+
+    // Crémaillère : course (4.24 m) + 0.50 m = 4.74 m -> 5 barres de 1m
+    expect(mot.lineaireCremaillereM).toBe(4.74);
+    expect(mot.barresCremaillereCount).toBe(5);
+
+    // Kit solaire autonome 24V
+    expect(mot.coffretCommande.type).toBe("solaire_autonome_24v");
+    expect(mot.coffretCommande.tensionV).toBe(24);
+    expect(mot.coffretCommande.panneauPhotovoltaiqueWp).toBe(30);
+    expect(mot.coffretCommande.batteries).toContain("Batteries 12V 14Ah");
+
+    // Sécurité et télécommande NF P90-308
+    expect(mot.finsDeCourse.nbCapteurs).toBe(2);
+    expect(mot.finsDeCourse.type).toBe("magnetique_ip68");
+    expect(mot.telecommande.nbTelecommandes).toBe(2);
+    expect(mot.telecommande.conformeNFP90_308).toBe(true);
+  });
+
+  it("6. Calcule la motorisation filaire pour un mode 2_demi_plateaux (2 moteurs synchronisés, crémaillère doublée, TBTS 24V)", () => {
+    const configDeuxPlateauxFilaire = {
+      ...poolReservation.terrasse_mobile!,
+      mode: "2_demi_plateaux" as const,
+      type_motorisation: "filaire" as const,
+    };
+
+    const res = calculerSousEnsembleTerrasseMobile({
+      config: baseConfig,
+      poolReservation,
+      mobileConfig: configDeuxPlateauxFilaire,
+    });
+
+    const mot = res.resultatPlateau.motorisation;
+    expect(mot.active).toBe(true);
+    expect(mot.typeMotorisation).toBe("filaire");
+    expect(mot.nbMoteurs).toBe(2);
+
+    // Crémaillère doublée pour les 2 demi-plateaux
+    // Course d'un demi-plateau : 2.17 m + 0.50 m = 2.67 m * 2 = 5.34 m -> 6 barres
+    expect(mot.lineaireCremaillereM).toBe(5.34);
+    expect(mot.barresCremaillereCount).toBe(6);
+
+    // Puissance unitaire minimale 500 N par demi-plateau
+    expect(mot.puissanceMoteurUnitaireN).toBeGreaterThanOrEqual(500);
+
+    // Alimentation filaire TBTS 24V étanche IP65
+    expect(mot.coffretCommande.type).toBe("filaire_230v_24v");
+    expect(mot.coffretCommande.tensionV).toBe(24);
+    expect(mot.finsDeCourse.nbCapteurs).toBe(4);
+  });
+
+  it("7. Intègre les fournitures de motorisation dans quantitatifs-contrat et chiffrage (Q_net, Q_tech, Q_appro)", () => {
+    const poolResaMotorisee: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        type_motorisation: "solaire",
+      },
+    };
+
+    const resultat = calculerTerrasse(baseConfig, [poolResaMotorisee]);
+
+    // 1. Quantités géométriques nettes
+    const q = resultat.terrassePro!.quantities;
+    expect(q.geometricNet.mobileCremaillereNetLinearMeters).toBeGreaterThan(0);
+    expect(q.geometricNet.mobileMotorsCount).toBe(1);
+
+    // 2. Approvisionnement commercial motorisation
+    const mobSupply = q.commercialSupply.mobileSupply;
+    expect(mobSupply).toBeDefined();
+    expect(mobSupply?.motorisation).toBeDefined();
+    expect(mobSupply?.motorisation?.nbMoteurs).toBe(1);
+    expect(mobSupply?.motorisation?.barresCremaillereCount).toBeGreaterThanOrEqual(5);
+    expect(mobSupply?.motorisation?.panneauSolaireUnit).toBe(1);
+    expect(mobSupply?.motorisation?.batteriesCount).toBe(2);
+
+    // 3. Postes chiffrage détaillés
+    const lignes = resultat.chiffrage.lignes;
+    const refCodes = lignes.map((l) => l.code);
+    expect(refCodes).toContain("MOB-01"); // Rails inox
+    expect(refCodes).toContain("MOB-02"); // Châssis alu
+    expect(refCodes).toContain("MOB-03"); // Galets roulement
+    expect(refCodes).toContain("MOT-01"); // Motoréducteur 24V
+    expect(refCodes).toContain("MOT-02"); // Crémaillère M4
+    expect(refCodes).toContain("MOT-03"); // Coffret commande / Solaire
+    expect(refCodes).toContain("MOT-04"); // Fins de course magnétiques
+    expect(refCodes).toContain("MOT-05"); // Télécommandes NF P90-308
+  });
 });

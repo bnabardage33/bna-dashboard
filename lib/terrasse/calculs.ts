@@ -424,6 +424,95 @@ export function calculerTerrasse(
     });
   }
 
+  // Fournitures Terrasse Mobile & Motorisation (si présente)
+  const mob = terrassePro.terrasseMobile;
+  if (mob && mob.active) {
+    lignes.push({
+      code: "MOB-01",
+      categorie: "Terrasse Mobile",
+      designation: `Rails de guidage extra-plats en acier Inox 316L (AISI 316) anti-corrosion`,
+      quantite: mob.rails.lineaireTotalM,
+      unite: "ml",
+      prixUnitaireHt: 58.0,
+      totalHt: Number((mob.rails.lineaireTotalM * 58.0).toFixed(2)),
+    });
+
+    lignes.push({
+      code: "MOB-02",
+      categorie: "Terrasse Mobile",
+      designation: `Profilés porteurs aluminium ${mob.structureChassis.sectionAluMm}mm pour châssis mobile`,
+      quantite: mob.structureChassis.lineaireProfilesAluM,
+      unite: "ml",
+      prixUnitaireHt: 34.0,
+      totalHt: Number((mob.structureChassis.lineaireProfilesAluM * 34.0).toFixed(2)),
+    });
+
+    lignes.push({
+      code: "MOB-03",
+      categorie: "Terrasse Mobile",
+      designation: `${mob.roulement.reference} (charge max ${mob.roulement.chargeParGaletKg}kg/pt)`,
+      quantite: mob.roulement.nbGaletsTotal,
+      unite: "u",
+      prixUnitaireHt: 42.0,
+      totalHt: Number((mob.roulement.nbGaletsTotal * 42.0).toFixed(2)),
+    });
+
+    if (mob.motorisation && mob.motorisation.active) {
+      const mot = mob.motorisation;
+      lignes.push({
+        code: "MOT-01",
+        categorie: "Motorisation Mobile",
+        designation: `Motoréducteur basse tension 24V DC spécial terrasse mobile (${mot.puissanceMoteurUnitaireN} N traction)`,
+        quantite: mot.nbMoteurs,
+        unite: "u",
+        prixUnitaireHt: 480.0,
+        totalHt: Number((mot.nbMoteurs * 480.0).toFixed(2)),
+      });
+
+      if (mot.lineaireCremaillereM > 0) {
+        lignes.push({
+          code: "MOT-02",
+          categorie: "Motorisation Mobile",
+          designation: `Crémaillère renforcée module 4 à âme acier surmoulée nylon anti-bruit`,
+          quantite: mot.barresCremaillereCount,
+          unite: "m",
+          prixUnitaireHt: 28.0,
+          totalHt: Number((mot.barresCremaillereCount * 28.0).toFixed(2)),
+        });
+      }
+
+      lignes.push({
+        code: "MOT-03",
+        categorie: "Motorisation Mobile",
+        designation: mot.coffretCommande.designation,
+        quantite: 1,
+        unite: "kit",
+        prixUnitaireHt: mot.typeMotorisation === "solaire" ? 340.0 : 190.0,
+        totalHt: mot.typeMotorisation === "solaire" ? 340.0 : 190.0,
+      });
+
+      lignes.push({
+        code: "MOT-04",
+        categorie: "Motorisation Mobile",
+        designation: `Kit capteurs fins de course magnétiques étanches IP68 (${mot.finsDeCourse.nbCapteurs} capteurs)`,
+        quantite: 1,
+        unite: "kit",
+        prixUnitaireHt: 75.0,
+        totalHt: 75.0,
+      });
+
+      lignes.push({
+        code: "MOT-05",
+        categorie: "Motorisation Mobile",
+        designation: mot.telecommande.description,
+        quantite: mot.telecommande.nbTelecommandes,
+        unite: "u",
+        prixUnitaireHt: 48.0,
+        totalHt: Number((mot.telecommande.nbTelecommandes * 48.0).toFixed(2)),
+      });
+    }
+  }
+
   const totalHt = Number(
     lignes.reduce((acc, curr) => acc + curr.totalHt, 0).toFixed(2)
   );

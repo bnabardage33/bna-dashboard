@@ -107,11 +107,14 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
   });
   y -= 16;
 
+  const hasMobile = Boolean(resultat.terrasseMobile && resultat.terrasseMobile.active);
+  const cadreHeight = hasMobile ? 74 : 60;
+
   page.drawRectangle({
     x: 40,
-    y: y - 60,
+    y: y - cadreHeight,
     width: width - 80,
-    height: 60,
+    height: cadreHeight,
     color: lightBg,
     borderColor: rgb(0.85, 0.88, 0.92),
     borderWidth: 1,
@@ -187,7 +190,21 @@ export async function genererPdfTerrasse(donnees: DonneesExportTerrasse): Promis
     color: grayColor,
   });
 
-  y -= 80;
+  if (hasMobile && resultat.terrasseMobile) {
+    const mob = resultat.terrasseMobile;
+    const motTxt = mob.motorisation?.active
+      ? `Motorisation ${mob.motorisation.typeMotorisation === "solaire" ? "Solaire 24V" : "Filaire 230V"} (${mob.motorisation.puissanceTractionTotaleN}N, ${mob.motorisation.lineaireCremaillereM}m crémaillère)`
+      : "Manuelle sur rails";
+    ecrire(`Terrasse Mobile : ${mob.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} · Rails : ${mob.rails.lineaireTotalM}m · ${motTxt}`, {
+      x: col1X,
+      y: y - 62,
+      size: 7.5,
+      font: fontBold,
+      color: primaryColor,
+    });
+  }
+
+  y -= (hasMobile ? 94 : 80);
 
   // --- AUDIT DE CONFORMITÉ DTU 51.4 ---
   const dtuStatut = resultat.conformite.statutGlobal;

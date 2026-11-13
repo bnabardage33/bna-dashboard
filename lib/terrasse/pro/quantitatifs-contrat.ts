@@ -182,6 +182,12 @@ export function calculerTerrasseProGeometrie(
       mobileRailsNetLinearMeters: mobileResult?.resultatPlateau.rails.lineaireTotalM,
       mobileChassisNetLinearMeters: mobileResult?.resultatPlateau.structureChassis.lineaireProfilesAluM,
       mobileWheelsCount: mobileResult?.resultatPlateau.roulement.nbGaletsTotal,
+      mobileCremaillereNetLinearMeters: mobileResult?.resultatPlateau.motorisation?.active
+        ? mobileResult.resultatPlateau.motorisation.lineaireCremaillereM
+        : undefined,
+      mobileMotorsCount: mobileResult?.resultatPlateau.motorisation?.active
+        ? mobileResult.resultatPlateau.motorisation.nbMoteurs
+        : undefined,
     },
     technicalCut: {
       bladesByCommercialLength: [
@@ -222,7 +228,25 @@ export function calculerTerrasseProGeometrie(
             wheelsCount: mobileResult.resultatPlateau.roulement.nbGaletsTotal,
             chassisAluLinearMeters: mobileResult.resultatPlateau.structureChassis.lineaireProfilesAluM,
             chassisAluBarsCount: Math.ceil(mobileResult.resultatPlateau.structureChassis.lineaireProfilesAluM / 6.0),
-            motorisationUnit: mobileConfigEffective?.motorise,
+            motorisationUnit: mobileResult.resultatPlateau.motorisation.active,
+            motorisation: mobileResult.resultatPlateau.motorisation.active
+              ? {
+                  type: mobileResult.resultatPlateau.motorisation.typeMotorisation,
+                  nbMoteurs: mobileResult.resultatPlateau.motorisation.nbMoteurs,
+                  puissanceN: mobileResult.resultatPlateau.motorisation.puissanceMoteurUnitaireN,
+                  lineaireCremaillereM: mobileResult.resultatPlateau.motorisation.lineaireCremaillereM,
+                  barresCremaillereCount: mobileResult.resultatPlateau.motorisation.barresCremaillereCount,
+                  coffretCommande: mobileResult.resultatPlateau.motorisation.coffretCommande.designation,
+                  panneauSolaireUnit:
+                    mobileResult.resultatPlateau.motorisation.typeMotorisation === "solaire" ? 1 : undefined,
+                  batteriesCount:
+                    mobileResult.resultatPlateau.motorisation.typeMotorisation === "solaire" ? 2 : undefined,
+                  alimentationFilaireUnit:
+                    mobileResult.resultatPlateau.motorisation.typeMotorisation === "filaire" ? 1 : undefined,
+                  finsDeCourseCount: mobileResult.resultatPlateau.motorisation.finsDeCourse.nbCapteurs,
+                  telecommandesCount: mobileResult.resultatPlateau.motorisation.telecommande.nbTelecommandes,
+                }
+              : undefined,
           }
         : undefined,
     },

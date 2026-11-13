@@ -6,6 +6,7 @@ import type {
   ChantierTerrasseReservation,
   ConfigTerrasseMobile,
   ResultatPlateauMobile,
+  TypeMotorisationTerrasse,
 } from "../types";
 import {
   CONSTANTES_TERRASSE_PRO,
@@ -24,14 +25,30 @@ export function resoudreConfigTerrasseMobile(
   poolRes?: ChantierTerrasseReservation
 ): ConfigTerrasseMobile | null {
   if (poolRes?.terrasse_mobile && poolRes.terrasse_mobile.active) {
-    return poolRes.terrasse_mobile;
+    const typeMot: TypeMotorisationTerrasse =
+      poolRes.terrasse_mobile.type_motorisation ??
+      (poolRes.terrasse_mobile.motorise ? "solaire" : "aucune");
+    return {
+      ...poolRes.terrasse_mobile,
+      motorise: typeMot !== "aucune",
+      type_motorisation: typeMot,
+    };
   }
   if (config.terrasse_mobile && config.terrasse_mobile.active) {
-    return config.terrasse_mobile;
+    const typeMot: TypeMotorisationTerrasse =
+      config.terrasse_mobile.type_motorisation ??
+      (config.terrasse_mobile.motorise ? "solaire" : "aucune");
+    return {
+      ...config.terrasse_mobile,
+      motorise: typeMot !== "aucune",
+      type_motorisation: typeMot,
+    };
   }
   // Si réservation piscine présente avec metadata terrasse_mobile
   if (poolRes?.metadata?.terrasse_mobile) {
     const meta = poolRes.metadata.terrasse_mobile as Partial<ConfigTerrasseMobile>;
+    const typeMot: TypeMotorisationTerrasse =
+      meta.type_motorisation ?? (meta.motorise ? "solaire" : "aucune");
     return {
       active: true,
       mode: meta.mode ?? "1_plateau",
@@ -40,7 +57,9 @@ export function resoudreConfigTerrasseMobile(
       jeu_fonctionnel_peripherique_mm: meta.jeu_fonctionnel_peripherique_mm ?? 20,
       section_profil_alu_mm: meta.section_profil_alu_mm ?? "80x40",
       charge_exploitation_kn_m2: meta.charge_exploitation_kn_m2 ?? 2.5,
-      motorise: meta.motorise ?? false,
+      motorise: typeMot !== "aucune",
+      type_motorisation: typeMot,
+      puissance_moteur_n: meta.puissance_moteur_n,
     };
   }
   return null;
@@ -461,6 +480,69 @@ export function calculerSousEnsembleTerrasseMobile(
   const totalWheelsCount = panels.reduce((acc, p) => acc + p.wheels.length, 0);
   const chargeParGaletKg = Math.round(poidsTotalChargeKg / Math.max(1, totalWheelsCount));
 
+  // 4. Calcul et dimensionnement de la motorisation (solaire ou filaire)
+  const typeMotorisation: TypeMotorisationTerrasse =
+    mob.type_motorisation ?? (mob.motorise ? "solaire" : "aucune");
+  const isMotorise = typeMotorisation !== "aucune";
+
+  // Effort de traction nécessaire à partir du poids propre du plateau (sans surcharge, NF P90-308)
+  // Prise en compte du frottement statique de démarrage + joints (0.20), pente/vent (150 N) et sécurité (1.5)
+  const effortTractionTheoriqueN = Math.round(poidsPropreKg * 9.81 * 0.20 * 1.5 + 150);
+  const puissanceTractionTotaleN = Math.max(600, Math.ceil(effortTractionTheoriqueN / 50) * 50);
+
+  const nbMoteurs = isMotorise ? (isDeuxPlateaux ? 2 : 1) : 0;
+  const puissanceMoteurUnitaireN = isMotorise
+    ? isDeuxPlateaux
+      ? Math.max(500, Math.ceil(puissanceTractionTotaleN / 2 / 50) * 50)
+      : puissanceTractionTotaleN
+    : 0;
+
+  // Linéaire de crémaillère à fixer le long d'un rail : Course_max + 0.50 m (doublé si 2_demi_plateaux)
+  const coursePlateauM = panels[0] ? panels[0].travelDistanceMm / 1000 : 2.5;
+  const lineaireCremaillereM = isMotorise
+    ? Number(((coursePlateauM + 0.50) * (isDeuxPlateaux ? 2 : 1)).toFixed(2))
+    : 0;
+  const barresCremaillereCount = Math.ceil(lineaireCremaillereM); // Barres de 1m module 4 acier/nylon
+
+  const motorisation = {
+    active: isMotorise,
+    typeMotorisation,
+    nbMoteurs,
+    puissanceTractionTotaleN: isMotorise ? puissanceTractionTotaleN : 0,
+    puissanceMoteurUnitaireN: isMotorise ? puissanceMoteurUnitaireN : 0,
+    lineaireCremaillereM,
+    barresCremaillereCount,
+    coffretCommande: {
+      type: (typeMotorisation === "solaire"
+        ? "solaire_autonome_24v"
+        : typeMotorisation === "filaire"
+        ? "filaire_230v_24v"
+        : "aucun") as "solaire_autonome_24v" | "filaire_230v_24v" | "aucun",
+      designation:
+        typeMotorisation === "solaire"
+          ? "Coffret autonome solaire IP65 avec régulateur MPPT et 2 batteries 12V 14Ah AGM (24V)"
+          : typeMotorisation === "filaire"
+          ? "Coffret d'alimentation étanche IP65 transformateur 230V AC / 24V DC TBTS"
+          : "Sans motorisation (manuelle)",
+      batteries:
+        typeMotorisation === "solaire"
+          ? "2x Batteries 12V 14Ah étanches AGM en série (24V)"
+          : undefined,
+      panneauPhotovoltaiqueWp: typeMotorisation === "solaire" ? 30 : undefined,
+      tensionV: 24,
+    },
+    finsDeCourse: {
+      type: "magnetique_ip68" as const,
+      nbCapteurs: isMotorise ? (isDeuxPlateaux ? 4 : 2) : 0,
+    },
+    telecommande: {
+      conformeNFP90_308: true,
+      nbTelecommandes: isMotorise ? 2 : 0,
+      description:
+        "Télécommandes 4 canaux sécurisées à code tournant avec bouton anti-pincement (norme sécurité NF P90-308)",
+    },
+  };
+
   const resultatPlateau: ResultatPlateauMobile = {
     active: true,
     mode: mob.mode,
@@ -504,6 +586,7 @@ export function calculerSousEnsembleTerrasseMobile(
       nbLames: nbLamesMobile,
       visOuClipsNb: nbVisMobile,
     },
+    motorisation,
     plateaux: panels.map((p) => ({
       id: p.id,
       nom: p.nom,
@@ -523,6 +606,7 @@ export function calculerSousEnsembleTerrasseMobile(
     totalRailLinearMeters: lineaireTotalRailsM,
     totalWheelsCount,
     chassisProfilesLinearMeters: Number((totalLinearAluMm / 1000).toFixed(2)),
+    motorisation,
   };
 
   return {

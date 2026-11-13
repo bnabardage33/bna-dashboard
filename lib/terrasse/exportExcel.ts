@@ -156,6 +156,27 @@ export async function genererExcelTerrasse(
   wsDtu.addRow(["Nombre de lames standard :", `${resultat.lames.nbLamesStandard} unités`]);
   wsDtu.addRow(["Nombre de fixations prévues :", `${resultat.fixations.nbVisOuClipsTotal} (${resultat.fixations.nbBoites} boîtes)`]);
 
+  if (resultat.terrasseMobile && resultat.terrasseMobile.active) {
+    const mob = resultat.terrasseMobile;
+    wsDtu.addRow([]);
+    wsDtu.addRow(["TERRASSE MOBILE & MOTORISATION (NF P90-308 / DTU 51.4)"]);
+    wsDtu.addRow(["Mode de couverture :", mob.mode === "2_demi_plateaux" ? "2 demi-plateaux (ouverture centrale symétrique)" : "1 plateau monobloc"]);
+    wsDtu.addRow(["Dimensions plateau(x) :", `${mob.dimensionsPlateau.longueurM} m × ${mob.dimensionsPlateau.largeurM} m (Surface: ${mob.dimensionsPlateau.surfaceM2} m²)`]);
+    wsDtu.addRow(["Poids propre plateau / En charge :", `${mob.dimensionsPlateau.poidsPropreKg} kg / ${mob.dimensionsPlateau.poidsTotalChargeKg} kg`]);
+    wsDtu.addRow(["Rails inox 316L au sol :", `${mob.rails.lineaireTotalM} ml (${mob.rails.nbRails} rails de ${mob.rails.longueurUnitaireM} m)`]);
+    wsDtu.addRow(["Galets inox sur roulements :", `${mob.roulement.nbGaletsTotal} unités (${mob.roulement.reference})`]);
+    wsDtu.addRow(["Châssis porteur aluminium :", `${mob.structureChassis.lineaireProfilesAluM} ml profilés ${mob.structureChassis.sectionAluMm} mm (${mob.structureChassis.poidsAluKg} kg)`]);
+    if (mob.motorisation && mob.motorisation.active) {
+      const mot = mob.motorisation;
+      wsDtu.addRow(["Type de motorisation :", mot.typeMotorisation === "solaire" ? "Solaire autonome 24V DC (Panneau PV 30Wc + Batteries AGM)" : "Filaire 230V AC / 24V DC TBTS (NF C 15-100)"]);
+      wsDtu.addRow(["Nombre de moteurs & effort :", `${mot.nbMoteurs} moteur(s) (${mot.puissanceMoteurUnitaireN} N unitaire, ${mot.puissanceTractionTotaleN} N total)`]);
+      wsDtu.addRow(["Crémaillère de guidage :", `${mot.lineaireCremaillereM} ml (${mot.barresCremaillereCount} barres de 1 m, module 4)`]);
+      wsDtu.addRow(["Fins de course & Sécurité :", `${mot.finsDeCourse.nbCapteurs} capteurs magnétiques IP68 · Télécommandes sécurisées NF P90-308`]);
+    } else {
+      wsDtu.addRow(["Motorisation :", "Manuelle (traction manuelle sur rails inox)"]);
+    }
+  }
+
   wsDtu.getColumn(1).width = 28;
   wsDtu.getColumn(2).width = 45;
   wsDtu.getColumn(3).width = 30;
