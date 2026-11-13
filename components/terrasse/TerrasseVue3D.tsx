@@ -69,6 +69,132 @@ function getWoodColor(essence: ChantierTerrasseConfig["essence_bois"]): string {
   }
 }
 
+/**
+ * Générateur procédural de textures PBR pour platelage bois / composite rainuré
+ * Évite tout chargement réseau ou image externe, 100 % autonome et performant.
+ */
+function createDeckWoodTextures(essence: ChantierTerrasseConfig["essence_bois"]) {
+  if (typeof document === "undefined") return { map: null, bumpMap: null };
+
+  const width = 512;
+  const height = 512;
+
+  // 1. Texture Albedo / Diffuse (Map)
+  const colorCanvas = document.createElement("canvas");
+  colorCanvas.width = width;
+  colorCanvas.height = height;
+  const ctx = colorCanvas.getContext("2d");
+  if (!ctx) return { map: null, bumpMap: null };
+
+  let baseColor = "#a16207";
+  let grooveColor = "#78350f";
+  let grainColor = "#854d0e";
+
+  switch (essence) {
+    case "ipe":
+    case "cumaru":
+      baseColor = "#7c3f1d";
+      grooveColor = "#451a03";
+      grainColor = "#5c2a12";
+      break;
+    case "composite":
+      baseColor = "#475569";
+      grooveColor = "#1e293b";
+      grainColor = "#334155";
+      break;
+    case "douglas":
+    case "meleze":
+      baseColor = "#b45309";
+      grooveColor = "#78350f";
+      grainColor = "#92400e";
+      break;
+    case "bambou_thermo":
+      baseColor = "#5c3317";
+      grooveColor = "#2d1606";
+      grainColor = "#42210b";
+      break;
+  }
+
+  // Fond bois/composite
+  ctx.fillStyle = baseColor;
+  ctx.fillRect(0, 0, width, height);
+
+  // Veinage bois fin
+  ctx.strokeStyle = grainColor;
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 0.22;
+  for (let i = 0; i < 180; i++) {
+    const y = Math.random() * height;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(
+      width * 0.33,
+      y + (Math.random() - 0.5) * 6,
+      width * 0.66,
+      y + (Math.random() - 0.5) * 6,
+      width,
+      y
+    );
+    ctx.stroke();
+  }
+
+  // Rainures longitudinales antidérapantes (profil DTU 51.4 / composite)
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = grooveColor;
+  ctx.lineWidth = 2.5;
+  const grooveSpacing = essence === "composite" ? 16 : 24;
+  for (let y = 0; y < height; y += grooveSpacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1.0;
+
+  // 2. Texture de relief (Bump Map)
+  const bumpCanvas = document.createElement("canvas");
+  bumpCanvas.width = width;
+  bumpCanvas.height = height;
+  const bCtx = bumpCanvas.getContext("2d");
+  if (!bCtx) return { map: null, bumpMap: null };
+
+  // Surface supérieure claire
+  bCtx.fillStyle = "#d4d4d8";
+  bCtx.fillRect(0, 0, width, height);
+
+  // Micro-rugosité
+  const imgData = bCtx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 16;
+    const v = Math.min(255, Math.max(0, 212 + noise));
+    data[i] = v;
+    data[i + 1] = v;
+    data[i + 2] = v;
+  }
+  bCtx.putImageData(imgData, 0, 0);
+
+  // Creux sombres des rainures
+  bCtx.strokeStyle = "#18181b";
+  bCtx.lineWidth = 3;
+  for (let y = 0; y < height; y += grooveSpacing) {
+    bCtx.beginPath();
+    bCtx.moveTo(0, y);
+    bCtx.lineTo(width, y);
+    bCtx.stroke();
+  }
+
+  const mapTexture = new THREE.CanvasTexture(colorCanvas);
+  mapTexture.wrapS = THREE.RepeatWrapping;
+  mapTexture.wrapT = THREE.RepeatWrapping;
+
+  const bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+  bumpTexture.wrapS = THREE.RepeatWrapping;
+  bumpTexture.wrapT = THREE.RepeatWrapping;
+
+  return { map: mapTexture, bumpMap: bumpTexture };
+}
+
 // =========================================================================
 // SCÈNE THREE.JS INTERNE
 // =========================================================================
@@ -283,11 +409,32 @@ function SceneContent({
   const woodColor = getWoodColor(config.essence_bois);
   const offcutColor = highlightOffcuts ? "#059669" : woodColor;
 
+  // Textures PBR procédurales pour le platelage bois/composite
+  const deckTextures = useMemo(() => {
+    return createDeckWoodTextures(config.essence_bois);
+  }, [config.essence_bois]);
+
+  // Niveau supérieur de la plage fixe (altitude référence pour rails discrets et jupe d'applique)
+  const yDeckTop = yLame + lameH;
+
   return (
     <>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[10, 20, 15]} intensity={1.2} castShadow />
-      <directionalLight position={[-10, 15, -10]} intensity={0.4} />
+      <ambientLight intensity={0.7} />
+      <directionalLight
+        position={[7, 13, 9]}
+        intensity={1.65}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.00015}
+        shadow-camera-left={-9}
+        shadow-camera-right={9}
+        shadow-camera-top={9}
+        shadow-camera-bottom={-9}
+        shadow-camera-near={0.5}
+        shadow-camera-far={35}
+      />
+      <directionalLight position={[-7, 10, -7]} intensity={0.45} />
 
       {/* 1. COUCHE SOL / DALLE BÉTON (Layer 1) */}
       {showSol && (
@@ -305,6 +452,8 @@ function SceneContent({
         <instancedMesh
           ref={plotsMeshRef}
           args={[undefined, undefined, plotsData.length]}
+          castShadow
+          receiveShadow
           onClick={(e) => {
             e.stopPropagation();
             if (e.instanceId !== undefined && plotsData[e.instanceId]) {
@@ -367,6 +516,8 @@ function SceneContent({
                 key={j.id}
                 position={[posX, posY, posZ]}
                 rotation={[0, -angle, 0]}
+                castShadow
+                receiveShadow
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectMeta(meta);
@@ -384,13 +535,15 @@ function SceneContent({
         </group>
       )}
 
-      {/* 4. COUCHE PLATELAGE FIXE — LAMES INSTANCED MESH (Layer 4) */}
+      {/* 4. COUCHE PLATELAGE FIXE — LAMES INSTANCED MESH AVEC TEXTURE PBR (Layer 4) */}
       {showLames && (
         <group>
           {standardBlades.length > 0 && (
             <instancedMesh
               ref={stdBladesMeshRef}
               args={[undefined, undefined, standardBlades.length]}
+              castShadow
+              receiveShadow
               onClick={(e) => {
                 e.stopPropagation();
                 if (e.instanceId !== undefined && standardBlades[e.instanceId]) {
@@ -399,7 +552,14 @@ function SceneContent({
               }}
             >
               <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={woodColor} roughness={0.65} />
+              <meshStandardMaterial
+                color={woodColor}
+                roughness={0.52}
+                metalness={0.04}
+                map={deckTextures.map ?? undefined}
+                bumpMap={deckTextures.bumpMap ?? undefined}
+                bumpScale={0.03}
+              />
             </instancedMesh>
           )}
 
@@ -407,6 +567,8 @@ function SceneContent({
             <instancedMesh
               ref={offBladesMeshRef}
               args={[undefined, undefined, offcutBlades.length]}
+              castShadow
+              receiveShadow
               onClick={(e) => {
                 e.stopPropagation();
                 if (e.instanceId !== undefined && offcutBlades[e.instanceId]) {
@@ -415,13 +577,20 @@ function SceneContent({
               }}
             >
               <boxGeometry args={[1, 1, 1]} />
-              <meshStandardMaterial color={offcutColor} roughness={0.6} />
+              <meshStandardMaterial
+                color={offcutColor}
+                roughness={0.5}
+                metalness={0.04}
+                map={deckTextures.map ?? undefined}
+                bumpMap={deckTextures.bumpMap ?? undefined}
+                bumpScale={0.03}
+              />
             </instancedMesh>
           )}
         </group>
       )}
 
-      {/* 5. COUCHE RÉSERVATIONS & BASSIN PISCINE (Layer 5) */}
+      {/* 5. COUCHE RÉSERVATIONS & BASSIN PISCINE AVEC EAU BLEU-TURQUOISE PBR (Layer 5) */}
       {reservations.map((res, idx) => {
         const rx = (res.x || 0) - cx;
         const rz = (res.y || 0) - cy;
@@ -442,29 +611,41 @@ function SceneContent({
         };
 
         if (isPool) {
+          const poolDepth = 0.75;
+          const copingBorder = 0.12;
+
           return (
-            <group key={idx} position={[rx + rw / 2, ySol, rz + rh / 2]}>
-              {/* Eau de piscine avec transparence réaliste */}
+            <group key={idx} position={[rx + rw / 2, 0, rz + rh / 2]}>
+              {/* Margelle de piscine en pierre claire à fleur du platelage */}
+              <mesh position={[0, yLame + lameH / 2, 0]} receiveShadow>
+                <boxGeometry args={[rw + copingBorder * 2, lameH, rh + copingBorder * 2]} />
+                <meshStandardMaterial color="#e2e8f0" roughness={0.65} metalness={0.05} />
+              </mesh>
+
+              {/* Eau de piscine bleu-turquoise semi-transparente */}
               <mesh
-                position={[0, 0.05, 0]}
+                position={[0, yLame - 0.02, 0]}
+                receiveShadow
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectMeta(meta);
                 }}
               >
-                <boxGeometry args={[rw, 0.1, rh]} />
+                <boxGeometry args={[rw, 0.04, rh]} />
                 <meshStandardMaterial
-                  color="#0ea5e9"
+                  color="#06b6d4"
                   transparent
-                  opacity={0.82}
-                  roughness={0.08}
-                  metalness={0.2}
+                  opacity={0.78}
+                  roughness={0.04}
+                  metalness={0.14}
+                  depthWrite={false}
                 />
               </mesh>
-              {/* Fond de bassin / parois */}
-              <mesh position={[0, -0.4, 0]}>
-                <boxGeometry args={[rw + 0.08, 0.8, rh + 0.08]} />
-                <meshStandardMaterial color="#0284c7" roughness={0.3} />
+
+              {/* Cuvelage / parois et fond de bassin bleu lagon avec ombres portées */}
+              <mesh position={[0, yLame - poolDepth / 2, 0]} receiveShadow>
+                <boxGeometry args={[rw + 0.02, poolDepth, rh + 0.02]} />
+                <meshStandardMaterial color="#0284c7" roughness={0.35} metalness={0.08} />
               </mesh>
             </group>
           );
@@ -475,6 +656,8 @@ function SceneContent({
             <mesh
               key={idx}
               position={[rx, ySol + 0.4, rz]}
+              castShadow
+              receiveShadow
               onClick={(e) => {
                 e.stopPropagation();
                 onSelectMeta(meta);
@@ -490,6 +673,7 @@ function SceneContent({
           <mesh
             key={idx}
             position={[rx + rw / 2, ySol + 0.05, rz + rh / 2]}
+            receiveShadow
             onClick={(e) => {
               e.stopPropagation();
               onSelectMeta(meta);
@@ -501,10 +685,10 @@ function SceneContent({
         );
       })}
 
-      {/* 6. COUCHE LAYER 6 : RAILS INOX ET TERRASSE MOBILE COULISSANTE */}
+      {/* 6. COUCHE LAYER 6 : RAILS PLATS DISCRETS ET CAISSON MOBILE FERMÉ AVEC JUPE PÉRIPHÉRIQUE */}
       {showRailsMobile && mobileResult && (
         <group>
-          {/* Rails inox au sol */}
+          {/* Rails discrets : profilés plats extra-plats (28×5 mm) en inox brossé posés à fleur sur la plage fixe */}
           {mobileResult.mobileStructure.rails.map((rail) => {
             const rx0 = rail.startMm.xMm / 1000 - cx;
             const rz0 = rail.startMm.yMm / 1000 - cy;
@@ -513,13 +697,18 @@ function SceneContent({
             const rLen = Math.hypot(rx1 - rx0, rz1 - rz0);
             const rAngle = Math.atan2(rz1 - rz0, rx1 - rx0);
 
+            const railThickness = 0.005; // 5 mm extra-plat
+            const railWidth = 0.028; // 28 mm discret
+            const railY = yDeckTop + railThickness / 2;
+
             const metaRail: ComponentMeta = {
               kind: "RAIL_MOBILE",
-              title: `Rail Inox 316L de Guidage (${rail.id})`,
-              subtitle: `Longueur nette : ${(rail.lengthMm / 1000).toFixed(2)} m · Profilé Vé au sol`,
+              title: `Rail plat discret Inox brossé 316L (${rail.id})`,
+              subtitle: `Longueur : ${(rail.lengthMm / 1000).toFixed(2)} m · Profilé plat extra-plat (28×5 mm)`,
               details: [
-                ["Matériau", "Inox A4 Marine (AISI 316L) anti-corrosion chlore/sel"],
-                ["Section", "Profilé Vé 50×15 mm encastré / posé"],
+                ["Matériau", "Inox A4 Marine (AISI 316L) brossé grain 220 anti-corrosion"],
+                ["Profilé", "Rail plat biseauté anti-trébuchement conforme pieds nus"],
+                ["Pose", "Posé à fleur sur la plage fixe dans le sens du coulissement"],
                 ["Linéaire total rails", `${mobileResult.resultatPlateau.rails.lineaireTotalM} m`],
                 ["Zone de refoulement", `${mobileResult.resultatPlateau.rails.zoneRefoulementM} m`],
               ],
@@ -528,22 +717,28 @@ function SceneContent({
             return (
               <mesh
                 key={rail.id}
-                position={[(rx0 + rx1) / 2, ySol + 0.012, (rz0 + rz1) / 2]}
+                position={[(rx0 + rx1) / 2, railY, (rz0 + rz1) / 2]}
                 rotation={[0, -rAngle, 0]}
+                castShadow
+                receiveShadow
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectMeta(metaRail);
                 }}
               >
-                <boxGeometry args={[rLen, 0.015, 0.04]} />
-                <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.2} />
+                <boxGeometry args={[rLen, railThickness, railWidth]} />
+                <meshStandardMaterial
+                  color="#d1d5db"
+                  metalness={0.96}
+                  roughness={0.22}
+                />
               </mesh>
             );
           })}
 
-          {/* Panneaux Mobiles (1 plateau ou 2 demi-plateaux) avec translation T(t) */}
+          {/* Panneaux Mobiles : Caisson fermé avec Jupe périphérique complète (pose en applique) */}
           {mobileResult.mobileStructure.panels.map((panel, pIdx) => {
-            // Calcul de la translation dynamique T(t) le long des rails
+            // Translation dynamique T(t) le long des rails
             const travelM = (panel.travelDistanceMm / 1000) * openingRatio;
             const transX = travelM * panel.directionVector.x;
             const transZ = travelM * panel.directionVector.y;
@@ -555,25 +750,51 @@ function SceneContent({
             const currentPosX = initPosX + transX;
             const currentPosZ = initPosZ + transZ;
 
+            // Altitudes réelles du caisson mobile au-dessus de la plage fixe
             const chassisH = mobileResult.resultatPlateau.hauteurChassisMm / 1000;
-            const panelY = ySol + 0.03 + chassisH / 2;
+            const yChassisBottom = yDeckTop + 0.005 + 0.012; // 12 mm au-dessus du rail
+            const panelChassisY = yChassisBottom + chassisH / 2;
+            const yChassisTop = yChassisBottom + chassisH;
+            const mobileLameY = yChassisTop + lameH / 2;
+            const yMobileDeckTop = yChassisTop + lameH;
+
+            // Jupe périphérique verticale (pose en applique sur les 4 côtés)
+            // S'étend du sommet des lames jusqu'à 8 mm au-dessus de la plage fixe
+            const ySkirtBottom = yDeckTop + 0.008;
+            const jupeH = yMobileDeckTop - ySkirtBottom;
+            const jupeCenterY = (yMobileDeckTop + ySkirtBottom) / 2;
+            const epJupe = lameH; // Épaisseur de la lame de rive (ex: 21 mm)
 
             const metaChassis: ComponentMeta = {
               kind: "CHASSIS_MOBILE",
               title: `Plateau Mobile (${panel.nom})`,
-              subtitle: `Course : ${(panel.travelDistanceMm / 1000).toFixed(2)} m · Mode ${mobileResult.resultatPlateau.mode}`,
+              subtitle: `Course : ${(panel.travelDistanceMm / 1000).toFixed(2)} m · Caisson fermé monobloc`,
               details: [
                 ["Dimensions plateau", `${pW.toFixed(2)} m × ${pL.toFixed(2)} m`],
-                ["Châssis porteur", `Aluminium ${mobileResult.resultatPlateau.structureChassis.sectionAluMm} mm`],
-                ["Galets de roulement", `${panel.wheels.length} galets inox A4`],
+                ["Châssis porteur", `Aluminium ${mobileResult.resultatPlateau.structureChassis.sectionAluMm} mm (${Math.round(chassisH * 1000)} mm)`],
+                ["Habillage périphérique", `Jupe 4 faces en applique (${Math.round(jupeH * 1000)} mm)`],
+                ["Galets de roulement", `${panel.wheels.length} galets inox A4 masqués`],
                 ["Charge admissible", `${mobileResult.resultatPlateau.dimensionsPlateau.poidsTotalChargeKg} kg`],
                 ["Position actuelle", `${Math.round(openingRatio * 100)} % d'ouverture`],
               ],
             };
 
+            const metaJupe: ComponentMeta = {
+              kind: "CHASSIS_MOBILE",
+              title: "Bandeau de finition périphérique (Jupe en applique)",
+              subtitle: `Caisson fermé monobloc · Lames de rive ${config.essence_bois}`,
+              details: [
+                ["Type d'habillage", "Pose en applique 4 côtés (vis invisibles inox)"],
+                ["Hauteur bandeau", `${Math.round(jupeH * 1000)} mm (masque intégral châssis + roulettes)`],
+                ["Garde au sol", "8 mm au-dessus de la plage fixe"],
+                ["Épaisseur bandeau", `${Math.round(epJupe * 1000)} mm`],
+                ["Rôle esthétique", "Finition caisson fermé monobloc DTU 51.4"],
+              ],
+            };
+
             return (
               <group key={panel.id} position={[currentPosX, 0, currentPosZ]}>
-                {/* Cadre et traverses en profilés aluminium du châssis */}
+                {/* 1. CADRE ET TRAVERSES ALUMINIUM DU CHÂSSIS PORTANT */}
                 {panel.chassisJoists.map((j) => {
                   const jx0 = j.startMm.xMm / 1000;
                   const jz0 = j.startMm.yMm / 1000;
@@ -585,32 +806,41 @@ function SceneContent({
                   return (
                     <mesh
                       key={j.id}
-                      position={[(jx0 + jx1) / 2, panelY, (jz0 + jz1) / 2]}
+                      position={[(jx0 + jx1) / 2, panelChassisY, (jz0 + jz1) / 2]}
                       rotation={[0, -jangle, 0]}
+                      castShadow
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectMeta(metaChassis);
                       }}
                     >
                       <boxGeometry args={[jlen, chassisH, 0.04]} />
-                      <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} />
+                      <meshStandardMaterial color="#475569" metalness={0.85} roughness={0.3} />
                     </mesh>
                   );
                 })}
 
-                {/* Galets de roulement inox sous le châssis */}
+                {/* 2. GALETS DE ROULEMENT INOX SOUS LE CHÂSSIS (roulant sur les rails plats) */}
                 {panel.wheels.map((w) => {
                   const wx = w.centerMm.xMm / 1000;
                   const wz = w.centerMm.yMm / 1000;
+                  const wheelRadius = 0.022;
+                  const yWheel = yDeckTop + 0.005 + wheelRadius;
+
                   return (
-                    <mesh key={w.id} position={[wx, ySol + 0.025, wz]} rotation={[0, 0, Math.PI / 2]}>
-                      <cylinderGeometry args={[0.035, 0.035, 0.03, 16]} />
-                      <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
+                    <mesh
+                      key={w.id}
+                      position={[wx, yWheel, wz]}
+                      rotation={[0, 0, Math.PI / 2]}
+                      castShadow
+                    >
+                      <cylinderGeometry args={[wheelRadius, wheelRadius, 0.028, 16]} />
+                      <meshStandardMaterial color="#cbd5e1" metalness={0.95} roughness={0.2} />
                     </mesh>
                   );
                 })}
 
-                {/* Platelage de lames monté sur le châssis mobile */}
+                {/* 3. PLATELAGE DE LAMES DU CAISSON MOBILE (avec textures PBR rainurées) */}
                 {panel.blades.map((b) => {
                   const p0 = b.polygonMm[0];
                   const p2 = b.polygonMm[2];
@@ -621,22 +851,118 @@ function SceneContent({
 
                   const blen = Math.abs(bx1 - bx0);
                   const bwidth = Math.abs(bz1 - bz0);
-                  const bY = panelY + chassisH / 2 + lameH / 2;
 
                   return (
                     <mesh
                       key={b.id}
-                      position={[(bx0 + bx1) / 2, bY, (bz0 + bz1) / 2]}
+                      position={[(bx0 + bx1) / 2, mobileLameY, (bz0 + bz1) / 2]}
+                      castShadow
+                      receiveShadow
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectMeta(metaChassis);
                       }}
                     >
                       <boxGeometry args={[blen, lameH, bwidth]} />
-                      <meshStandardMaterial color={woodColor} roughness={0.6} />
+                      <meshStandardMaterial
+                        color={woodColor}
+                        roughness={0.52}
+                        metalness={0.04}
+                        map={deckTextures.map ?? undefined}
+                        bumpMap={deckTextures.bumpMap ?? undefined}
+                        bumpScale={0.03}
+                      />
                     </mesh>
                   );
                 })}
+
+                {/* 4. HABILLAGE COMPLET EN APPLIQUE : JUPE PÉRIPHÉRIQUE VERTICALE (4 CÔTÉS) */}
+                {/* Masque intégralement le châssis alu et les galets de roulement sous tous les profils */}
+                <group>
+                  {/* Face avant (Z = 0) */}
+                  <mesh
+                    position={[pW / 2, jupeCenterY, -epJupe / 2]}
+                    castShadow
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectMeta(metaJupe);
+                    }}
+                  >
+                    <boxGeometry args={[pW + 2 * epJupe, jupeH, epJupe]} />
+                    <meshStandardMaterial
+                      color={woodColor}
+                      roughness={0.52}
+                      metalness={0.04}
+                      map={deckTextures.map ?? undefined}
+                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      bumpScale={0.03}
+                    />
+                  </mesh>
+
+                  {/* Face arrière (Z = pL) */}
+                  <mesh
+                    position={[pW / 2, jupeCenterY, pL + epJupe / 2]}
+                    castShadow
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectMeta(metaJupe);
+                    }}
+                  >
+                    <boxGeometry args={[pW + 2 * epJupe, jupeH, epJupe]} />
+                    <meshStandardMaterial
+                      color={woodColor}
+                      roughness={0.52}
+                      metalness={0.04}
+                      map={deckTextures.map ?? undefined}
+                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      bumpScale={0.03}
+                    />
+                  </mesh>
+
+                  {/* Face latérale gauche (X = 0) */}
+                  <mesh
+                    position={[-epJupe / 2, jupeCenterY, pL / 2]}
+                    castShadow
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectMeta(metaJupe);
+                    }}
+                  >
+                    <boxGeometry args={[epJupe, jupeH, pL]} />
+                    <meshStandardMaterial
+                      color={woodColor}
+                      roughness={0.52}
+                      metalness={0.04}
+                      map={deckTextures.map ?? undefined}
+                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      bumpScale={0.03}
+                    />
+                  </mesh>
+
+                  {/* Face latérale droite (X = pW) */}
+                  <mesh
+                    position={[pW + epJupe / 2, jupeCenterY, pL / 2]}
+                    castShadow
+                    receiveShadow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectMeta(metaJupe);
+                    }}
+                  >
+                    <boxGeometry args={[epJupe, jupeH, pL]} />
+                    <meshStandardMaterial
+                      color={woodColor}
+                      roughness={0.52}
+                      metalness={0.04}
+                      map={deckTextures.map ?? undefined}
+                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      bumpScale={0.03}
+                    />
+                  </mesh>
+                </group>
               </group>
             );
           })}
@@ -1045,7 +1371,7 @@ export default function TerrasseVue3D({
                 Terrasse Mobile :{" "}
                 <strong>
                   {mobileResult
-                    ? `${mobileResult.resultatPlateau.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} (${mobileResult.resultatPlateau.rails.lineaireTotalM}m rails)`
+                    ? `${mobileResult.resultatPlateau.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} · Caisson fermé (jupe 4 faces) · Rails inox brossé`
                     : "Prête à configurer"}
                 </strong>
               </span>
@@ -1053,7 +1379,7 @@ export default function TerrasseVue3D({
           </div>
           <span className="text-gray-400 flex items-center gap-1">
             <Box size={11} className="text-amber-400" />
-            Three.js WebGL (InstancedMesh) · Glisser pour tourner · Clic pour inspecter
+            Rendu PBR Three.js · Ombres douces · Jupe d'applique · Glisser pour tourner
           </span>
         </div>
       </div>
