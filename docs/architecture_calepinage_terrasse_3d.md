@@ -81,6 +81,9 @@ L'inspection de `package.json` révèle une caractéristique architecturale maje
     "next": "^16.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "@react-three/fiber": "^8.20.0",
+    "@react-three/drei": "^9.122.0",
+    "three": "^0.174.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
     "exceljs": "^4.4.0",
@@ -92,19 +95,18 @@ L'inspection de `package.json` révèle une caractéristique architecturale maje
 }
 ```
 
-- **Bibliothèques 3D (Three.js, @react-three/fiber, Babylon.js) :** **Aucune**.
-- **Bibliothèques géométriques / découpe (Clipper, Earcut, Turf.js, MaxRectsPacker) :** **Aucune**.
-- **Choix d'architecture :** L'intégralité du moteur géométrique, de l'optimiseur de découpe 1D et du moteur de rendu 3D vectoriel est **implémentée sur-mesure en TypeScript pur**. Cela évite tout surpoids de bundle, assure une exécution ultra-rapide sur terminaux mobiles (chantier) et garantit une fidélité stricte aux équations du DTU 51.4 sans dépendance tierce.
+- **Bibliothèques 3D :** **Three.js** avec **@react-three/fiber** et **@react-three/drei** pour le rendu matériel GPU haute performance (WebGL / PBR / ombres douces et InstancedMesh).
+- **Moteur géométrique & calepinage :** Implémenté en TypeScript pur ultra-optimisé selon les règles NF DTU 51.4 et DTA (aucun framework lourd externe pour la géométrie).
 
 ---
 
-## 2. Architecture du Moteur 3D
+## 2. Architecture du Moteur 3D Three.js PBR
 
-Le moteur 3D réside dans [`components/terrasse/TerrasseVue3D.tsx`](file:///data/data/com.termux/files/home/bna-dashboard/components/terrasse/TerrasseVue3D.tsx) (948 lignes). Il s'agit d'un visualiseur 3D temps réel vectoriel SVG développé spécifiquement pour le contrôle technique de pose.
+Le moteur 3D réside dans [`components/terrasse/TerrasseVue3D.tsx`](file:///data/data/com.termux/files/home/bna-dashboard/components/terrasse/TerrasseVue3D.tsx). Il s'agit d'un visualiseur WebGL 3D temps réel 60 FPS intégrant matériaux PBR réalistes, éclairage directionnel avec ombres portées douces, et animation cinématique de coulissement.
 
 ### 2.1 Modélisation de la scène et des couches DTU 51.4
 
-La scène décompose la terrasse en un assemblage volumétrique de parallélépipèdes 3D (polygones à 6 faces générés par la fonction `createBoxPolys`), structurés en 5 couches ordonnées (`layerId`) :
+La scène décompose la terrasse en 6 couches ordonnées (`layerId`) :
 
 ```mermaid
 graph TD
