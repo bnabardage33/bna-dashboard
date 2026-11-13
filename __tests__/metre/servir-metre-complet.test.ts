@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   servirPayloadMetreComplet,
   ChantierIntrouvableError,
+  MetierIncompatibleError,
 } from "@/lib/servir-metre-complet";
 
 const SupabaseMock = vi.hoisted(() => ({
@@ -259,5 +260,11 @@ describe("servirPayloadMetreComplet", () => {
     expect(SupabaseMock.predicatesByTable.chantier_zones).toEqual([
       ["chantier_id", "c-1"], ["entreprise_id", "ent-1"],
     ]);
+  });
+
+  it("rejette un chantier dont le métier est explicitement incompatible (ex. terrasse)", async () => {
+    SupabaseMock.chantierFetch.mockResolvedValue({ data: { ...CHANTIER_ROW, metier: "terrasse" }, error: null });
+    await expect(servirPayloadMetreComplet("c-1", "ent-1")).rejects.toThrow(MetierIncompatibleError);
+    expect(SupabaseMock.zonesFetch).not.toHaveBeenCalled();
   });
 });

@@ -53,6 +53,9 @@ vi.mock("@/lib/supabase", () => ({
       };
       etat.select = () => etat;
       etat.order = () => etat;
+      etat.or = () => etat;
+      etat.neq = () => etat;
+      etat.eq = () => etat;
       etat.maybeSingle = async () => ({ data: null, error: null });
       etat.single = async () => ({ data: null, error: null });
       // `clients` doit renvoyer une ligne : sans elle, le `<select>` du

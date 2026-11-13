@@ -90,15 +90,28 @@ function nouvelId(): string | undefined {
 export default function OssaturePosee({
   chantierId,
   jour,
+  facadesActives,
 }: {
   chantierId: string;
   /** Journée concernée (AAAA-MM-JJ), en date française. */
   jour: string;
+  /** Façades actives du chantier (1 à 4) */
+  facadesActives?: Array<{ id: string; label: string }>;
 }) {
   const [evenements, setEvenements] = useState<EvenementOssature[]>([]);
   const [chargement, setChargement] = useState(true);
   const [enregistrement, setEnregistrement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  const listeFacades = useMemo(() => {
+    if (facadesActives && facadesActives.length > 0) {
+      return facadesActives.map((f) => ({
+        id: (FACADES.includes(f.id as FacadeOssature) ? f.id : "nord") as FacadeOssature,
+        label: f.label || (LIBELLES_FACADE[f.id as FacadeOssature] ?? f.id),
+      }));
+    }
+    return FACADES.map((f) => ({ id: f, label: LIBELLES_FACADE[f] }));
+  }, [facadesActives]);
 
   // Saisie du formulaire. Aucun choix n'est présélectionné : l'équipe choisit
   // explicitement l'un des DEUX cas, jamais par défaut.
@@ -364,22 +377,22 @@ export default function OssaturePosee({
                 : "Façade où l'ossature a été posée finalement"}
             </label>
             <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {FACADES.map((f) => (
+              {listeFacades.map((f) => (
                 <button
-                  key={f}
+                  key={f.id}
                   type="button"
                   onClick={() => {
-                    setFacade(f);
+                    setFacade(f.id);
                     setErreur(null);
                   }}
-                  aria-pressed={facade === f}
+                  aria-pressed={facade === f.id}
                   className={`min-h-11 rounded-lg border px-2 text-2xs font-medium transition-colors ${
-                    facade === f
+                    facade === f.id
                       ? "border-white/40 bg-white/[0.06] text-white"
                       : "border-white/10 bg-transparent text-gray-400 hover:border-white/25"
                   }`}
                 >
-                  {LIBELLES_FACADE[f]}
+                  {f.label}
                 </button>
               ))}
             </div>
@@ -395,22 +408,22 @@ export default function OssaturePosee({
                 ailleurs.
               </p>
               <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {FACADES.filter((f) => f !== facade).map((f) => (
+                {listeFacades.filter((f) => f.id !== facade).map((f) => (
                   <button
-                    key={f}
+                    key={f.id}
                     type="button"
                     onClick={() => {
-                      setFacadeInitiale(f);
+                      setFacadeInitiale(f.id);
                       setErreur(null);
                     }}
-                    aria-pressed={facadeInitiale === f}
+                    aria-pressed={facadeInitiale === f.id}
                     className={`min-h-11 rounded-lg border px-2 text-2xs font-medium transition-colors ${
-                      facadeInitiale === f
+                      facadeInitiale === f.id
                         ? "border-white/40 bg-white/[0.06] text-white"
                         : "border-white/10 bg-transparent text-gray-400 hover:border-white/25"
                     }`}
                   >
-                    {LIBELLES_FACADE[f]}
+                    {f.label}
                   </button>
                 ))}
               </div>

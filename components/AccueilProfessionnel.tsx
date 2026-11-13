@@ -12,10 +12,10 @@ const METIERS = [
   },
   {
     nom: 'Terrasse',
-    description: 'L’entrée chantier Terrasse dédiée reste à développer.',
+    description: 'Hub dédié, calepinage 2D/3D DTU 51.4 et suivi d’exécution.',
     icone: Layers3,
-    href: null,
-    action: null,
+    href: '/terrain/terrasse',
+    action: 'Chantiers terrasse · hub dédié',
   },
   {
     nom: 'Clôture',

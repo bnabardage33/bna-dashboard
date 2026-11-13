@@ -697,7 +697,7 @@ export default function TerrasseVue3D({
 
   return (
     <div className="space-y-3">
-      <div className="relative w-full rounded-2xl border border-white/10 bg-[#0d0f12] overflow-hidden shadow-2xl">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-[#0d0f12] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         {/* Barre d'outils supérieure : Vues caméra + Mode Éclaté DTU + Filtres de couches */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-black/50 px-3.5 py-2.5">
           {/* Vues caméra & Éclaté DTU */}

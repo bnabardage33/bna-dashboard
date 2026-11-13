@@ -253,9 +253,9 @@ export default function ChantierTerrasseTab({
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-2xl border border-white/10 bg-[#14161b]">
-        <div className="flex items-center gap-3 text-sm text-gray-400">
-          <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA]">
+        <div className="flex items-center gap-3 text-sm text-[#777777]">
+          <Loader2 className="h-5 w-5 animate-spin text-[#B85B2B]" />
           Chargement du module Terrasse DTU 51.4…
         </div>
       </div>
@@ -265,18 +265,18 @@ export default function ChantierTerrasseTab({
   return (
     <div className="space-y-5">
       {/* Barre d'en-tête du sous-onglet Terrasse */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-white/10 bg-[#14161b] p-4 shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-base">🪵</span>
-            <h2 className="text-sm font-bold text-white uppercase tracking-wide">
+            <h2 className="text-sm sm:text-base font-bold text-[#23272B] uppercase tracking-wide">
               Module Métier Terrasse · DTU 51.4
             </h2>
-            <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-3xs font-semibold text-amber-400 border border-amber-500/30">
+            <span className="rounded-full bg-[#B85B2B]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#B85B2B] border border-[#B85B2B]/20">
               Indépendant Bardage
             </span>
           </div>
-          <p className="mt-0.5 text-3xs text-gray-400">
+          <p className="mt-1 text-xs text-[#777777]">
             Platelage extérieur bois, lambourdage, plots réglables, escaliers et garde-corps
           </p>
         </div>
@@ -284,7 +284,7 @@ export default function ChantierTerrasseTab({
         {/* Boutons d'actions globales */}
         <div className="flex flex-wrap items-center gap-2">
           {savedSuccess && (
-            <span className="flex items-center gap-1 text-3xs font-bold text-emerald-400 animate-pulse">
+            <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 animate-pulse">
               <Check size={13} /> Enregistré
             </span>
           )}
@@ -292,7 +292,7 @@ export default function ChantierTerrasseTab({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-md disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] px-4 py-2 text-xs font-bold text-white transition shadow-sm disabled:opacity-50"
           >
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             {saving ? "Enregistrement…" : "Enregistrer"}
@@ -301,7 +301,7 @@ export default function ChantierTerrasseTab({
           <button
             onClick={handleExportPdf}
             disabled={exportingPdf}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-white/10 transition shadow-sm disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-3.5 py-2 text-xs font-semibold text-[#23272B] transition shadow-xs disabled:opacity-50"
             title="Exporter la fiche technique et rapport de conformité DTU 51.4 en PDF"
           >
             {exportingPdf ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
@@ -311,7 +311,7 @@ export default function ChantierTerrasseTab({
           <button
             onClick={handleExportExcel}
             disabled={exportingExcel}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-white/10 transition shadow-sm disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-3.5 py-2 text-xs font-semibold text-[#23272B] transition shadow-xs disabled:opacity-50"
             title="Exporter le quantitatif complet en Excel"
           >
             {exportingExcel ? <Loader2 size={13} className="animate-spin" /> : <FileSpreadsheet size={13} />}
@@ -321,7 +321,7 @@ export default function ChantierTerrasseTab({
       </div>
 
       {errorMsg && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-300">
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-900">
           <AlertCircle size={15} />
           {errorMsg}
         </div>
@@ -332,13 +332,13 @@ export default function ChantierTerrasseTab({
           onglets défilent au doigt au lieu de déborder ; sur desktop, tout
           tient, le comportement est inchangé. (Motif identique à la fiche
           chantier, app/terrain/chantier/[id]/page.tsx.) */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide border-b border-white/10 pb-3 -mx-1 px-1">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide border-b border-[#F0F0F0] pb-3 -mx-1 px-1">
         <button
           onClick={() => setSousOnglet("config")}
           className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "config"
-              ? "bg-amber-600 text-white shadow-md"
-              : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+              ? "bg-[#23272B] text-white shadow-xs"
+              : "bg-[#F8F9FA] text-[#777777] hover:text-[#23272B] hover:bg-white border border-[#E5E5E5]"
           }`}
         >
           <SlidersHorizontal size={14} />
@@ -349,8 +349,8 @@ export default function ChantierTerrasseTab({
           onClick={() => setSousOnglet("plan2d")}
           className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "plan2d"
-              ? "bg-amber-600 text-white shadow-md"
-              : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+              ? "bg-[#23272B] text-white shadow-xs"
+              : "bg-[#F8F9FA] text-[#777777] hover:text-[#23272B] hover:bg-white border border-[#E5E5E5]"
           }`}
         >
           <LayoutGrid size={14} />
@@ -361,8 +361,8 @@ export default function ChantierTerrasseTab({
           onClick={() => setSousOnglet("vue3d")}
           className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "vue3d"
-              ? "bg-amber-600 text-white shadow-md"
-              : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+              ? "bg-[#23272B] text-white shadow-xs"
+              : "bg-[#F8F9FA] text-[#777777] hover:text-[#23272B] hover:bg-white border border-[#E5E5E5]"
           }`}
         >
           <Rotate3d size={14} />
@@ -373,8 +373,8 @@ export default function ChantierTerrasseTab({
           onClick={() => setSousOnglet("reservations")}
           className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "reservations"
-              ? "bg-amber-600 text-white shadow-md"
-              : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+              ? "bg-[#23272B] text-white shadow-xs"
+              : "bg-[#F8F9FA] text-[#777777] hover:text-[#23272B] hover:bg-white border border-[#E5E5E5]"
           }`}
         >
           <Box size={14} />
@@ -385,8 +385,8 @@ export default function ChantierTerrasseTab({
           onClick={() => setSousOnglet("quantitatif")}
           className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all ${
             sousOnglet === "quantitatif"
-              ? "bg-amber-600 text-white shadow-md"
-              : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+              ? "bg-[#23272B] text-white shadow-xs"
+              : "bg-[#F8F9FA] text-[#777777] hover:text-[#23272B] hover:bg-white border border-[#E5E5E5]"
           }`}
         >
           <FileSpreadsheet size={14} />
@@ -416,13 +416,13 @@ export default function ChantierTerrasseTab({
 
       {sousOnglet === "reservations" && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
+          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
                   🕳️ Réservations & Trémies dans le platelage
                 </h3>
-                <p className="mt-1 text-3xs text-gray-400">
+                <p className="mt-1 text-xs text-[#777777]">
                   Découpes intégrées (piscines, trappes de visite, skimmers, arbres, poteaux) avec renforts de lambourdes automatiques.
                 </p>
               </div>
@@ -431,31 +431,31 @@ export default function ChantierTerrasseTab({
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleAddReservation("piscine")}
-                  className="flex items-center gap-1 rounded-xl bg-sky-600/30 border border-sky-500/40 px-3 py-1.5 text-3xs font-bold text-sky-200 hover:bg-sky-600/50 transition"
+                  className="flex items-center gap-1 rounded-xl bg-sky-50 border border-sky-200 px-3 py-1.5 text-xs font-bold text-sky-800 hover:bg-sky-100 transition shadow-2xs"
                 >
                   <Plus size={12} /> + Piscine
                 </button>
                 <button
                   onClick={() => handleAddReservation("trappe")}
-                  className="flex items-center gap-1 rounded-xl bg-amber-600/30 border border-amber-500/40 px-3 py-1.5 text-3xs font-bold text-amber-200 hover:bg-amber-600/50 transition"
+                  className="flex items-center gap-1 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 transition shadow-2xs"
                 >
                   <Plus size={12} /> + Trappe / Regard
                 </button>
                 <button
                   onClick={() => handleAddReservation("skimmer")}
-                  className="flex items-center gap-1 rounded-xl bg-cyan-600/30 border border-cyan-500/40 px-3 py-1.5 text-3xs font-bold text-cyan-200 hover:bg-cyan-600/50 transition"
+                  className="flex items-center gap-1 rounded-xl bg-cyan-50 border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-800 hover:bg-cyan-100 transition shadow-2xs"
                 >
                   <Plus size={12} /> + Skimmer
                 </button>
                 <button
                   onClick={() => handleAddReservation("arbre")}
-                  className="flex items-center gap-1 rounded-xl bg-emerald-600/30 border border-emerald-500/40 px-3 py-1.5 text-3xs font-bold text-emerald-200 hover:bg-emerald-600/50 transition"
+                  className="flex items-center gap-1 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-2xs"
                 >
                   <Plus size={12} /> + Arbre
                 </button>
                 <button
                   onClick={() => handleAddReservation("poteau")}
-                  className="flex items-center gap-1 rounded-xl bg-gray-600/30 border border-gray-500/40 px-3 py-1.5 text-3xs font-bold text-gray-200 hover:bg-gray-600/50 transition"
+                  className="flex items-center gap-1 rounded-xl bg-gray-50 border border-[#E5E5E5] px-3 py-1.5 text-xs font-bold text-[#23272B] hover:bg-white transition shadow-2xs"
                 >
                   <Plus size={12} /> + Poteau
                 </button>
@@ -463,14 +463,14 @@ export default function ChantierTerrasseTab({
             </div>
 
             {reservations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-xs text-gray-500">
+              <div className="rounded-xl border border-dashed border-[#DCDCDC] bg-[#F8F9FA] p-8 text-center text-xs text-[#777777]">
                 Aucune réservation configurée. Cliquez sur les boutons ci-dessus pour intégrer une piscine, une trappe ou un obstacle.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-white/10 text-3xs font-semibold uppercase text-gray-400">
+                    <tr className="border-b border-[#F0F0F0] text-3xs font-semibold uppercase text-[#777777]">
                       <th className="py-2.5 px-3">Type</th>
                       <th className="py-2.5 px-3">Nom</th>
                       <th className="py-2.5 px-3">Pos X (m)</th>
@@ -481,10 +481,10 @@ export default function ChantierTerrasseTab({
                       <th className="py-2.5 px-3 text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-[#F0F0F0]">
                     {reservations.map((res, idx) => (
-                      <tr key={idx} className="hover:bg-white/5 transition">
-                        <td className="py-2.5 px-3 font-semibold text-white capitalize">
+                      <tr key={idx} className="hover:bg-[#F8F9FA] transition">
+                        <td className="py-2.5 px-3 font-semibold text-[#23272B] capitalize">
                           {res.type_reservation === "piscine" && "🏊 Piscine"}
                           {res.type_reservation === "trappe" && "🚪 Trappe"}
                           {res.type_reservation === "skimmer" && "💧 Skimmer"}
@@ -497,7 +497,7 @@ export default function ChantierTerrasseTab({
                             type="text"
                             value={res.nom}
                             onChange={(e) => handleUpdateReservation(idx, { nom: e.target.value })}
-                            className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                            className="rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-2 py-1 text-xs text-[#23272B] focus:border-[#B85B2B]"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -507,7 +507,7 @@ export default function ChantierTerrasseTab({
                             min="0"
                             value={res.x}
                             onChange={(e) => handleUpdateReservation(idx, { x: parseFloat(e.target.value) || 0 })}
-                            className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                            className="w-20 rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-2 py-1 text-xs text-[#23272B] focus:border-[#B85B2B]"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -517,7 +517,7 @@ export default function ChantierTerrasseTab({
                             min="0"
                             value={res.y}
                             onChange={(e) => handleUpdateReservation(idx, { y: parseFloat(e.target.value) || 0 })}
-                            className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                            className="w-20 rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-2 py-1 text-xs text-[#23272B] focus:border-[#B85B2B]"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -528,7 +528,7 @@ export default function ChantierTerrasseTab({
                               min="0.1"
                               value={res.largeur ?? 0.6}
                               onChange={(e) => handleUpdateReservation(idx, { largeur: parseFloat(e.target.value) || 0.6 })}
-                              className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                              className="w-20 rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-2 py-1 text-xs text-[#23272B] focus:border-[#B85B2B]"
                             />
                           )}
                         </td>
@@ -540,7 +540,7 @@ export default function ChantierTerrasseTab({
                               min="0.1"
                               value={res.longueur ?? 0.6}
                               onChange={(e) => handleUpdateReservation(idx, { longueur: parseFloat(e.target.value) || 0.6 })}
-                              className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                              className="w-20 rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-2 py-1 text-xs text-[#23272B] focus:border-[#B85B2B]"
                             />
                           )}
                         </td>
@@ -552,14 +552,14 @@ export default function ChantierTerrasseTab({
                               min="0.1"
                               value={res.diametre ?? 0.8}
                               onChange={(e) => handleUpdateReservation(idx, { diametre: parseFloat(e.target.value) || 0.8 })}
-                              className="w-20 rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+                              className="w-20 rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-2 py-1 text-xs text-[#23272B] focus:border-[#B85B2B]"
                             />
                           )}
                         </td>
                         <td className="py-2.5 px-3 text-right">
                           <button
                             onClick={() => handleRemoveReservation(idx)}
-                            className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition"
+                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition"
                             title="Supprimer la réservation"
                           >
                             <Trash2 size={14} />

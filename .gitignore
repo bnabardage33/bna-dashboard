@@ -62,4 +62,5 @@ globalCalepinage.js
 .env.check
 # supabase cli temporary artifacts
 /supabase/.temp/
+/scratch/
 .env*

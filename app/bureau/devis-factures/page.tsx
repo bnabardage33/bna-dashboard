@@ -158,6 +158,11 @@ function DevisContenu() {
   const [modeSignature, setModeSignature] = useState(false);
   const [signatureData, setSignatureData] = useState<{ image: string; nom: string } | null>(null);
 
+  // Modale de conversion Devis -> Chantier avec qualification explicite du métier
+  const [devisToConvert, setDevisToConvert] = useState<Devis | null>(null);
+  const [metierConversion, setMetierConversion] = useState<"bardage" | "terrasse">("bardage");
+  const [conversionEnCours, setConversionEnCours] = useState(false);
+
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -740,8 +745,24 @@ function DevisContenu() {
     fetchTout();
   }
 
-  async function transformerEnChantier(d: Devis) {
-    if (!confirm(`Transformer le devis ${d.numero} en chantier actif ?`)) return;
+  function initierConversionChantier(d: Devis) {
+    const texte = `${d.type_travaux || ""} ${d.objet || ""}`.toLowerCase();
+    const metierDetecte = texte.includes("terrasse") ? "terrasse" : "bardage";
+    setMetierConversion(metierDetecte);
+    setDevisToConvert(d);
+  }
+
+  async function transformerEnChantier(d: Devis, metierForce?: "bardage" | "terrasse") {
+    // Si appelé sans métier explicite, ouvrir la modale de qualification obligatoire
+    if (!metierForce) {
+      initierConversionChantier(d);
+      return;
+    }
+    await executerConversionEnChantier(d, metierForce);
+  }
+
+  async function executerConversionEnChantier(d: Devis, metierChoisi: "bardage" | "terrasse") {
+    setConversionEnCours(true);
 
     // O3-B8 : `chantiers` est la RACINE de la hiérarchie entreprise — NOT NULL
     // sans DEFAULT, et SANS trigger possible (`tg_set_entreprise_par_chantier()`
@@ -760,32 +781,72 @@ function DevisContenu() {
       alert(
         "Impossible de transformer le devis en chantier : votre session ne contient pas d'entreprise identifiée. Le devis reste inchangé."
       );
+      setConversionEnCours(false);
+      setDevisToConvert(null);
       return;
     }
 
+    const isTerrasse = metierChoisi === "terrasse";
+    const checklist = isTerrasse
+      ? {
+          metier: "terrasse",
+          phases_dtu: {
+            support: { statut: "a_faire", notes: "Préparation terrain" },
+            implantation: { statut: "a_faire", notes: "Piquetage / équerrage" },
+            plots: { statut: "a_faire", notes: "Disposition plots" },
+            lambourdes: { statut: "a_faire", notes: "Solivage et bandes" },
+            platelage: { statut: "a_faire", notes: "Fixation lames" },
+            finitions: { statut: "a_faire", notes: "Rives et réceptions" },
+          },
+        }
+      : { tasseaux: false, pare_pluie: false, pose: false, finition: false };
+
+    const nouveauChantierId = crypto.randomUUID();
+
     const { error: chantierError } = await supabase.from("chantiers").insert({
+      id: nouveauChantierId,
       nom: d.objet || d.type_travaux || d.numero,
       client_id: d.client_id,
       adresse_chantier: d.adresse_chantier,
       statut: "prevu",
-      materiau_structurel: MATERIAU_STRUCTUREL_DEFAUT,
-      moyen_acces: MOYEN_ACCES_DEFAUT,
+      materiau_structurel: isTerrasse ? "pin_cl4" : MATERIAU_STRUCTUREL_DEFAUT,
+      moyen_acces: isTerrasse ? "plain_pied" : MOYEN_ACCES_DEFAUT,
       zone_vent: ZONE_VENT_DEFAUT,
       prix_vente_ht: d.total_ht ?? null,
       surface_m2: d.surface_m2 ?? null,
-      code_acces: "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      checklist: { tasseaux: false, pare_pluie: false, pose: false, finition: false },
+      code_acces: (isTerrasse ? "BNA-T" : "BNA-") + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      metier: metierChoisi,
+      checklist,
       entreprise_id,
-    });
+    } as any);
 
     if (chantierError) {
       alert("Erreur création chantier : " + chantierError.message);
+      setConversionEnCours(false);
+      setDevisToConvert(null);
       return;
     }
 
-    await supabase.from("devis").update({ statut: "accepte" }).eq("id", d.id);
+    if (isTerrasse) {
+      await (supabase.from("chantier_terrasses") as any).insert({
+        chantier_id: nouveauChantierId,
+        entreprise_id,
+        nom: "Terrasse principale",
+        type_sol: "dalle_beton",
+        essence_bois: "pin_cl4",
+        systeme_terrasse: "bois_vis",
+        longueur_m: 6.0,
+        largeur_m: 4.0,
+        hauteur_sol_cm: 15.0,
+        pente_pct: 1.5,
+      });
+    }
+
+    await supabase.from("devis").update({ statut: "accepte", chantier_id: nouveauChantierId }).eq("id", d.id);
+    setConversionEnCours(false);
+    setDevisToConvert(null);
     fetchTout();
-    alert("Chantier créé à partir du devis.");
+    alert(`Chantier ${isTerrasse ? "Terrasse" : "Bardage"} créé à partir du devis.`);
   }
 
   async function supprimerDevis(d: Devis) {
@@ -1090,6 +1151,103 @@ function DevisContenu() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modale obligatoire de conversion Devis -> Chantier (Bardage ou Terrasse) */}
+      {devisToConvert && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => { if (!conversionEnCours) setDevisToConvert(null); }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#1E1E1E] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-6 space-y-5 animate-in fade-in"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-white">Transformer en chantier</h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Devis {devisToConvert.numero} · {devisToConvert.clients?.societe || devisToConvert.clients?.nom || "—"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDevisToConvert(null)}
+                disabled={conversionEnCours}
+                className="text-gray-400 hover:text-white p-1.5"
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Sélection obligatoire du corps d&apos;état
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  data-testid="option-conversion-bardage"
+                  onClick={() => setMetierConversion("bardage")}
+                  className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
+                    metierConversion === "bardage"
+                      ? "border-[#B85B2B] bg-[#B85B2B]/20 text-white shadow-sm"
+                      : "border-white/10 bg-white/5 text-gray-400 hover:border-gray-500"
+                  }`}
+                >
+                  <p className="text-sm font-bold flex items-center gap-2">
+                    <span>🏢</span>
+                    <span>Bardage</span>
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Façades, ITE, ossature bois/métal, fiches de débit
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="option-conversion-terrasse"
+                  onClick={() => setMetierConversion("terrasse")}
+                  className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
+                    metierConversion === "terrasse"
+                      ? "border-[#B85B2B] bg-[#B85B2B]/20 text-white shadow-sm"
+                      : "border-white/10 bg-white/5 text-gray-400 hover:border-gray-500"
+                  }`}
+                >
+                  <p className="text-sm font-bold flex items-center gap-2">
+                    <span>🪵</span>
+                    <span>Terrasse</span>
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Platelage, lambourdage, plots DTU 51.4
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setDevisToConvert(null)}
+                disabled={conversionEnCours}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                data-testid="confirmer-conversion-chantier"
+                disabled={conversionEnCours}
+                onClick={() => executerConversionEnChantier(devisToConvert, metierConversion)}
+                className="rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              >
+                {conversionEnCours && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                <span>Confirmer et créer le chantier</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

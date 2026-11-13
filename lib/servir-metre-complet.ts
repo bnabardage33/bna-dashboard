@@ -35,11 +35,18 @@ export class ChantierIntrouvableError extends Error {
   }
 }
 
+export class MetierIncompatibleError extends Error {
+  constructor(metier: string) {
+    super(`Incohérence métier : le métré bardage n'est pas applicable à un chantier de type ${metier}`);
+    this.name = "MetierIncompatibleError";
+  }
+}
+
 export async function servirPayloadMetreComplet(chantierId: string, entrepriseId: string): Promise<PayloadMetreComplet> {
-  const requeteChantier = await supabaseAdmin
-    .from("chantiers")
+  const requeteChantier = await (supabaseAdmin
+    .from("chantiers") as any)
     .select(
-      "id, entreprise_id, nom, client_id, adresse_chantier, materiau_structurel, moyen_acces, " +
+      "id, entreprise_id, nom, metier, client_id, adresse_chantier, materiau_structurel, moyen_acces, " +
         "zone_vent, coef_perte_rendement, type_isolant, epaisseur_isolant_mm, " +
         "surface_paquet_m2, zone_vent_rive, surface_m2, quantite_coupes_ml, singularites_nb, " +
         "clients(id, entreprise_id, nom, societe, email, tel, adresse_facturation, code_postal, ville, siret)",
@@ -50,9 +57,15 @@ export async function servirPayloadMetreComplet(chantierId: string, entrepriseId
 
   if (requeteChantier.error) throw requeteChantier.error;
   const chantier = requeteChantier.data as
-    | (ChantierMetreComplet & { clients: ClientMetreComplet | null })
+    | (ChantierMetreComplet & { clients: ClientMetreComplet | null; metier?: string })
     | null;
   if (!chantier) throw new ChantierIntrouvableError(chantierId);
+
+  // Protection métier : refuser les chantiers dont le métier n'est pas bardage
+  if (chantier.metier && chantier.metier !== "bardage") {
+    throw new MetierIncompatibleError(chantier.metier);
+  }
+
   const contexteChantier = chantier as typeof chantier & {
     entreprise_id: string;
     clients: (ClientMetreComplet & { entreprise_id?: string }) | null;

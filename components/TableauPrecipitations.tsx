@@ -56,11 +56,14 @@ export default function TableauPrecipitations({
   heures,
   libelleFerme = "▼ Voir les précipitations",
   libelleOuvert = "▲ Masquer les précipitations",
+  variante = "sombre",
 }: {
   heures: HeureMeteo[];
   libelleFerme?: string;
   libelleOuvert?: string;
+  variante?: "sombre" | "clair";
 }) {
+  const estClair = variante === "clair";
   const [ouvert, setOuvert] = useState(false);
 
   // Reclassement des heures à l'AFFICHAGE, et non à l'import : le cache de
@@ -97,14 +100,22 @@ export default function TableauPrecipitations({
           e.stopPropagation();
           setOuvert((v) => !v);
         }}
-        className="w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-left text-xs font-medium text-gray-300 hover:border-white/20 hover:text-white"
+        className={
+          estClair
+            ? "w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-left text-xs font-semibold text-[#23272B] hover:border-[#B85B2B]/40 hover:text-[#B85B2B] transition-colors"
+            : "w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-left text-xs font-medium text-gray-300 hover:border-white/20 hover:text-white"
+        }
       >
         {ouvert ? libelleOuvert : libelleFerme}
       </button>
 
       {ouvert && (
         <div
-          className="overflow-x-auto rounded-lg border border-white/10"
+          className={
+            estClair
+              ? "overflow-x-auto rounded-xl border border-[#E5E5E5] bg-white shadow-xs"
+              : "overflow-x-auto rounded-lg border border-white/10"
+          }
           // Le dépliant est cliquable en lui-même : on empêche que son
           // défilement ou son clic ne remonte au `<Link>`.
           onClick={(e) => {
@@ -114,12 +125,24 @@ export default function TableauPrecipitations({
         >
           <table className="w-full min-w-[340px] text-left text-2xs">
             <thead>
-              <tr className="border-b border-white/10 text-gray-500">
-                <th className="px-2 py-1.5 font-medium sticky left-0 bg-[#0b0f1a]">Heure</th>
-                <th className="px-2 py-1.5 font-medium">Pluie</th>
-                <th className="px-2 py-1.5 font-medium">Rafales</th>
-                <th className="px-2 py-1.5 font-medium">Temp.</th>
-                <th className="px-2 py-1.5 font-medium">Nature</th>
+              <tr
+                className={
+                  estClair
+                    ? "border-b border-[#E5E5E5] bg-[#F8F9FA] text-[#777777]"
+                    : "border-b border-white/10 text-gray-500"
+                }
+              >
+                <th
+                  className={`px-2.5 py-2 font-bold sticky left-0 ${
+                    estClair ? "bg-[#F8F9FA] text-[#23272B]" : "bg-[#0b0f1a]"
+                  }`}
+                >
+                  Heure
+                </th>
+                <th className="px-2.5 py-2 font-bold">Pluie</th>
+                <th className="px-2.5 py-2 font-bold">Rafales</th>
+                <th className="px-2.5 py-2 font-bold">Temp.</th>
+                <th className="px-2.5 py-2 font-bold">Nature</th>
               </tr>
             </thead>
             <tbody>
@@ -127,34 +150,58 @@ export default function TableauPrecipitations({
                 <tr
                   key={h.heure}
                   className={
-                    h.statut === "ecoulee"
+                    estClair
+                      ? h.statut === "ecoulee"
+                        ? "border-b border-[#F0F0F0] text-[#888888] bg-gray-50/50"
+                        : "border-b border-[#F0F0F0] text-[#23272B] hover:bg-[#F8F9FA]"
+                      : h.statut === "ecoulee"
                       ? "border-b border-white/5 text-gray-500"
                       : "border-b border-white/5 text-gray-300"
                   }
                 >
-                  <td className="px-2 py-1.5 sticky left-0 bg-[#0b0f1a] whitespace-nowrap">
+                  <td
+                    className={`px-2.5 py-2 sticky left-0 whitespace-nowrap font-medium ${
+                      estClair
+                        ? h.statut === "ecoulee"
+                          ? "bg-gray-50/50 text-[#888888]"
+                          : "bg-white text-[#23272B]"
+                        : "bg-[#0b0f1a]"
+                    }`}
+                  >
                     {h.heure}
                     {h.statut === "ecoulee" ? " ·" : ""}
                   </td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">{texteMm(h.pluie)}</td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">{texteKmh(h.rafales)}</td>
-                  <td className="px-2 py-1.5 whitespace-nowrap">{texteDegre(h.temp)}</td>
+                  <td className="px-2.5 py-2 whitespace-nowrap font-mono">{texteMm(h.pluie)}</td>
+                  <td className="px-2.5 py-2 whitespace-nowrap font-mono">{texteKmh(h.rafales)}</td>
+                  <td className="px-2.5 py-2 whitespace-nowrap font-mono">{texteDegre(h.temp)}</td>
                   {/* La nature n'est affirmée QUE si la source le permet :
                       sinon tiret, jamais une supposition. */}
-                  <td className="px-2 py-1.5 whitespace-nowrap text-gray-500">
+                  <td
+                    className={`px-2.5 py-2 whitespace-nowrap ${
+                      estClair ? "text-[#777777]" : "text-gray-500"
+                    }`}
+                  >
                     {texteNature(h.nature)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="px-2 py-1.5 text-2xs text-gray-600">
+          <p
+            className={`px-2.5 py-2 text-2xs ${
+              estClair ? "text-[#777777]" : "text-gray-600"
+            }`}
+          >
             Heure suivie de « · » = heure déjà écoulée. Tiret « — » = donnée non
             renvoyée par la source, jamais 0. « Nature » n&apos;est affirmée que
             si la source le permet.
           </p>
           {couverture && (
-            <p className="px-2 pb-1.5 text-2xs text-gray-600">
+            <p
+              className={`px-2.5 pb-2 text-2xs ${
+                estClair ? "text-[#777777]" : "text-gray-600"
+              }`}
+            >
               Période couverte : {couverture.periode}
               {couverture.sansDonnees > 0 &&
                 ` · ${couverture.sansDonnees} heure(s) sans donnée de pluie`}

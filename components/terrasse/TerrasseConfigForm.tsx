@@ -226,13 +226,13 @@ export default function TerrasseConfigForm({
   return (
     <div className="space-y-6">
       {/* 0. SYSTÈME MÉTIER & ENVIRONNEMENT */}
-      <div className="rounded-2xl border border-sky-500/30 bg-[#12161f] p-5 shadow-xl">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
             ⚙️ Système Constructif & Environnement
           </h3>
           {(zoneActuelle === "piscine" || zoneActuelle === "littoral") && (
-            <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-3xs font-medium text-emerald-300 border border-emerald-500/30">
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
               ⚓ Inox A4 Marine (AISI 316) obligatoire
             </span>
           )}
@@ -241,7 +241,7 @@ export default function TerrasseConfigForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Sélection du système constructif */}
           <div>
-            <label className="text-3xs font-medium text-gray-300">Système de terrasse</label>
+            <label className="text-xs font-semibold text-[#777777]">Système de terrasse</label>
             <select
               value={systemeActuel}
               onChange={(e) => {
@@ -267,7 +267,7 @@ export default function TerrasseConfigForm({
                   });
                 }
               }}
-              className="mt-1 w-full rounded-xl border border-sky-500/40 bg-sky-950/20 px-3 py-2 text-xs font-semibold text-white focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="bois_vis">🪵 Bois Naturel — Vissage Apparent (DTU 51.4)</option>
               <option value="bois_clip">🪚 Bois Naturel — Clips Invisibles (Avis Techniques)</option>
@@ -277,11 +277,11 @@ export default function TerrasseConfigForm({
 
           {/* Sélection de la zone environnementale */}
           <div>
-            <label className="text-3xs font-medium text-gray-300">Zone Environnementale</label>
+            <label className="text-xs font-semibold text-[#777777]">Zone Environnementale</label>
             <select
               value={zoneActuelle}
               onChange={(e) => onChange({ zone_environnement: e.target.value as ZoneEnvironnement })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="normal">Normal / Standard (Inox A2)</option>
               <option value="piscine">🏊 Plage de Piscine (Chlore / Sel → Inox A4)</option>
@@ -294,12 +294,12 @@ export default function TerrasseConfigForm({
           {systemeActuel === "composite_clip" && (
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-3xs font-medium text-gray-300">Fabricant Composite</label>
+                <label className="text-xs font-semibold text-[#777777]">Fabricant Composite</label>
                 <span
-                  className={`text-3xs font-bold px-1.5 py-0.5 rounded ${
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                     dtaExpire
-                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                      : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                      ? "bg-amber-50 text-amber-900 border border-amber-200"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
                   }`}
                 >
                   {dtaExpire ? "⚠️ DTA expiré" : "✅ DTA CSTB actif"}
@@ -320,7 +320,7 @@ export default function TerrasseConfigForm({
                     pente_pct: defGamme.penteMinimalePct,
                   });
                 }}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
               >
                 {Object.values(FABRICANTS_COMPOSITE).map((fab) => (
                   <option key={fab.id} value={fab.id}>
@@ -328,7 +328,7 @@ export default function TerrasseConfigForm({
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-3xs text-gray-400">
+              <p className="mt-1 text-[11px] text-[#777777]">
                 DTA {fabricantComposite.dta.numero} • Expiration {fabricantComposite.dta.expirationDTA}
               </p>
             </div>
@@ -337,50 +337,50 @@ export default function TerrasseConfigForm({
       </div>
 
       {/* 1. GÉOMÉTRIE & SOL */}
-      <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2 mb-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2 mb-4">
           📐 1. Géométrie & Implantation
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
-            <label className="text-3xs font-medium text-gray-400">Longueur (m)</label>
+            <label className="text-xs font-semibold text-[#777777]">Longueur (m)</label>
             <input
               type="number"
               step="0.1"
               min="0.5"
               value={config.longueur_m}
               onChange={(e) => onChange({ longueur_m: parseFloat(e.target.value) || 0 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Largeur (m)</label>
+            <label className="text-xs font-semibold text-[#777777]">Largeur (m)</label>
             <input
               type="number"
               step="0.1"
               min="0.5"
               value={config.largeur_m}
               onChange={(e) => onChange({ largeur_m: parseFloat(e.target.value) || 0 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Hauteur sol fini (cm)</label>
+            <label className="text-xs font-semibold text-[#777777]">Hauteur sol fini (cm)</label>
             <input
               type="number"
               step="1"
               min="0"
               value={config.hauteur_sol_cm}
               onChange={(e) => onChange({ hauteur_sol_cm: parseFloat(e.target.value) || 0 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Type de support / sol</label>
+            <label className="text-xs font-semibold text-[#777777]">Type de support / sol</label>
             <select
               value={config.type_sol}
               onChange={(e) => onChange({ type_sol: e.target.value as TypeSol })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="dalle_beton">Dalle béton existante</option>
               <option value="terre_meuble">Terre naturelle / Sol meuble</option>
@@ -389,42 +389,42 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Pente d&apos;écoulement (%)</label>
+            <label className="text-xs font-semibold text-[#777777]">Pente d&apos;écoulement (%)</label>
             <input
               type="number"
               step="0.1"
               min="0"
               value={config.pente_pct}
               onChange={(e) => onChange({ pente_pct: parseFloat(e.target.value) || 0 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
-            <p className="mt-1 text-3xs text-gray-500">Min 1.5% selon DTU 51.4</p>
+            <p className="mt-1 text-[11px] text-[#777777]">Min 1.5% selon DTU 51.4</p>
           </div>
         </div>
       </div>
 
       {/* 2. LAMES DE PLATELAGE */}
-      <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
             🌲 2. Lames de platelage (DTU 51.4)
           </h3>
           <Link
             href="/bureau/catalogue-terrasse"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-3xs font-medium text-gray-400 transition-colors hover:border-sky-500/40 hover:text-sky-300"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1 text-xs font-semibold text-[#23272B] transition-colors hover:border-[#B85B2B]/40 hover:text-[#B85B2B]"
             title="Ouvrir le catalogue Terrasse (lames & accessoires)"
           >
-            <BookOpen className="h-3.5 w-3.5" />
+            <BookOpen className="h-3.5 w-3.5 text-[#B85B2B]" />
             Gérer mes lames
           </Link>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="text-3xs font-medium text-gray-400">Essence de bois</label>
+            <label className="text-xs font-semibold text-[#777777]">Essence de bois</label>
             <select
               value={config.essence_bois}
               onChange={(e) => onChange({ essence_bois: e.target.value as EssenceBois })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="pin_cl4">Pin sylvestre autoclave Classe 4</option>
               <option value="douglas">Douglas purgé d&apos;aubier (Cl. 3b)</option>
@@ -436,7 +436,7 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Lame sélectionnée (catalogue Terrasse)</label>
+            <label className="text-xs font-semibold text-[#777777]">Lame sélectionnée (catalogue Terrasse)</label>
             <select
               value={((config as any)?.lame_id ?? "") as string || ""}
               onChange={(e) => {
@@ -447,7 +447,7 @@ export default function TerrasseConfigForm({
                   ...(l ? { largeur_lame_mm: l.largeur_utile_mm || config.largeur_lame_mm, epaisseur_lame_mm: l.epaisseur_mm || config.epaisseur_lame_mm, longueur_lame_m: (l.longueur_mm || 0) / 1000 || config.longueur_lame_m, essence_bois: (l.essence || config.essence_bois) as any } : {}),
                 } as any);
               }}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="">-- Choisir une lame --</option>
               {lamesTriees.map((l) => (
@@ -456,14 +456,14 @@ export default function TerrasseConfigForm({
                 </option>
               ))}
             </select>
-            {loading && <p className="mt-1 text-3xs text-gray-500">Chargement du catalogue Terrasse...</p>}
+            {loading && <p className="mt-1 text-[11px] text-[#777777]">Chargement du catalogue Terrasse...</p>}
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Clips compatibles</label>
+            <label className="text-xs font-semibold text-[#777777]">Clips compatibles</label>
             <select
               value={((config as any)?.clip_id) || ""}
               onChange={(e) => onChange({ clip_id: e.target.value || undefined } as Partial<ChantierTerrasseConfig> & Record<string, unknown>)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
               disabled={!lameSelectionnee || clips.length === 0}
             >
               <option value="">{!lameSelectionnee ? "Sélectionner une lame d'abord" : clips.length ? "-- Choisir un clip --" : "Aucun clip compatible"}</option>
@@ -475,11 +475,11 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Lambourdes compatibles</label>
+            <label className="text-xs font-semibold text-[#777777]">Lambourdes compatibles</label>
             <select
               value={((config as any)?.lambourde_id) || ""}
               onChange={(e) => onChange({ lambourde_id: e.target.value || undefined } as Partial<ChantierTerrasseConfig> & Record<string, unknown>)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
               disabled={!lameSelectionnee || lambourdes.length === 0}
             >
               <option value="">{!lameSelectionnee ? "Sélectionner une lame d'abord" : lambourdes.length ? "-- Choisir une lambourde --" : "Aucune lambourde compatible"}</option>
@@ -491,11 +491,11 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Plots compatibles</label>
+            <label className="text-xs font-semibold text-[#777777]">Plots compatibles</label>
             <select
               value={((config as any)?.plot_id) || ""}
               onChange={(e) => onChange({ plot_id: e.target.value || undefined } as Partial<ChantierTerrasseConfig> & Record<string, unknown>)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
               disabled={!lameSelectionnee || plots.length === 0}
             >
               <option value="">{!lameSelectionnee ? "Sélectionner une lame d'abord" : plots.length ? "-- Choisir un plot --" : "Aucun plot compatible"}</option>
@@ -507,23 +507,23 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Espacement / jeu entre lames (mm)</label>
+            <label className="text-xs font-semibold text-[#777777]">Espacement / jeu entre lames (mm)</label>
             <input
               type="number"
               min="2"
               max="10"
               value={config.espacement_lames_mm}
               onChange={(e) => onChange({ espacement_lames_mm: parseInt(e.target.value, 10) || 5 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
-            <p className="mt-1 text-3xs text-gray-500">DTU 51.4 : 4 à 7 mm</p>
+            <p className="mt-1 text-[11px] text-[#777777]">DTU 51.4 : 4 à 7 mm</p>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Orientation de pose</label>
+            <label className="text-xs font-semibold text-[#777777]">Orientation de pose</label>
             <select
               value={config.type_pose}
               onChange={(e) => onChange({ type_pose: e.target.value as TypePose })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="parallele">Parallèle à la façade / longueur</option>
               <option value="perpendiculaire">Perpendiculaire à la façade</option>
@@ -531,18 +531,18 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Type de fixation</label>
+            <label className="text-xs font-semibold text-[#777777]">Type de fixation</label>
             <select
               value={config.type_fixation}
               onChange={(e) => onChange({ type_fixation: e.target.value as TypeFixation })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="vis_inox">Vissage apparent inox A2 / A4 (2 vis/appui)</option>
               <option value="clips_invisibles">Clips invisibles (lames rainurées)</option>
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Majoration chutes platelage (%)</label>
+            <label className="text-xs font-semibold text-[#777777]">Majoration chutes platelage (%)</label>
             <input
               type="number"
               step="0.01"
@@ -550,21 +550,21 @@ export default function TerrasseConfigForm({
               max="1.3"
               value={config.coef_perte_lames}
               onChange={(e) => onChange({ coef_perte_lames: parseFloat(e.target.value) || 1.1 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
-            <p className="mt-1 text-3xs text-gray-500">1.10 = +10% de commande</p>
+            <p className="mt-1 text-[11px] text-[#777777]">1.10 = +10% de commande</p>
           </div>
         </div>
-        <div className="mt-3 rounded-xl border border-white/5 bg-black/20 p-3 text-2xs text-gray-300">
+        <div className="mt-4 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-xs text-[#23272B]">
           <div className="flex flex-wrap items-center gap-4">
-            <div>Surface : <span className="text-sky-300 font-semibold">{surfaceTotale.toFixed(2)} m²</span></div>
-            <div>Nb lames calculé : <span className="text-amber-300 font-semibold">{nbLames}</span></div>
+            <div>Surface : <span className="text-[#23272B] font-bold">{surfaceTotale.toFixed(2)} m²</span></div>
+            <div>Nb lames calculé : <span className="text-[#B85B2B] font-bold">{nbLames}</span></div>
             <div>
               Prix estimé HT :{" "}
               {prixEstimeHT !== null ? (
-                <span className="text-emerald-300 font-semibold">{fmtEuro(prixEstimeHT)}</span>
+                <span className="text-emerald-700 font-bold">{fmtEuro(prixEstimeHT)}</span>
               ) : (
-                <span className="text-amber-300 font-semibold italic">Tarif non renseigné</span>
+                <span className="text-amber-700 font-semibold italic">Tarif non renseigné</span>
               )}
             </div>
           </div>
@@ -572,17 +572,17 @@ export default function TerrasseConfigForm({
       </div>
 
       {/* 3. LAMBOURDES & STRUCTURE */}
-      <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-orange-400 flex items-center gap-2 mb-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2 mb-4">
           🪵 3. Lambourdes & Ossature porteuse
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="text-3xs font-medium text-gray-400">Type de lambourde</label>
+            <label className="text-xs font-semibold text-[#777777]">Type de lambourde</label>
             <select
               value={config.type_lambourde}
               onChange={(e) => onChange({ type_lambourde: e.target.value as TypeLambourde })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="bois_cl4">Pin traité autoclave Classe 4</option>
               <option value="bois_exotique">Bois exotique (Badi / Itauba Cl. 4)</option>
@@ -590,96 +590,96 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Section Largeur × Hauteur (mm)</label>
+            <label className="text-xs font-semibold text-[#777777]">Section Largeur × Hauteur (mm)</label>
             <div className="mt-1 flex items-center gap-2">
               <input
                 type="number"
                 min="40"
                 value={config.section_largeur_mm}
                 onChange={(e) => onChange({ section_largeur_mm: parseInt(e.target.value, 10) || 45 })}
-                className="w-1/2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                className="w-1/2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 placeholder="Larg."
               />
-              <span className="text-gray-500">×</span>
+              <span className="text-[#999999]">×</span>
               <input
                 type="number"
                 min="40"
                 value={config.section_hauteur_mm}
                 onChange={(e) => onChange({ section_hauteur_mm: parseInt(e.target.value, 10) || 70 })}
-                className="w-1/2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                className="w-1/2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 placeholder="Haut."
               />
             </div>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Entraxe des lambourdes (cm)</label>
+            <label className="text-xs font-semibold text-[#777777]">Entraxe des lambourdes (cm)</label>
             <input
               type="number"
               min="20"
               max="80"
               value={config.entraxe_lambourdes_cm}
               onChange={(e) => onChange({ entraxe_lambourdes_cm: parseInt(e.target.value, 10) || 40 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
-            <p className="mt-1 text-3xs text-gray-500">DTU : ≤ 20× épaisseur de lame</p>
+            <p className="mt-1 text-[11px] text-[#777777]">DTU : ≤ 20× épaisseur de lame</p>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Longueur barre lambourde (m)</label>
+            <label className="text-xs font-semibold text-[#777777]">Longueur barre lambourde (m)</label>
             <input
               type="number"
               step="0.5"
               min="2.0"
               value={config.longueur_lambourde_m}
               onChange={(e) => onChange({ longueur_lambourde_m: parseFloat(e.target.value) || 4.0 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
           </div>
         </div>
 
         {/* Options de protection DTU */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-white/5">
-          <label className="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-black/20 border border-white/5 hover:border-white/20">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#F0F0F0]">
+          <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-[#F8F9FA] border border-[#E5E5E5] hover:border-[#B85B2B]/40 hover:bg-white transition-all">
             <input
               type="checkbox"
               checked={config.double_lambourdage_aboutage}
               onChange={(e) => onChange({ double_lambourdage_aboutage: e.target.checked })}
-              className="rounded border-white/20 text-orange-600 focus:ring-0"
+              className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
             />
-            <span className="text-2xs text-gray-300 font-medium">Double lambourdage aux aboutages (DTU 51.4)</span>
+            <span className="text-xs text-[#23272B] font-semibold">Double lambourdage aux aboutages (DTU 51.4)</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-black/20 border border-white/5 hover:border-white/20">
+          <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-[#F8F9FA] border border-[#E5E5E5] hover:border-[#B85B2B]/40 hover:bg-white transition-all">
             <input
               type="checkbox"
               checked={config.bande_etancheite_epdm}
               onChange={(e) => onChange({ bande_etancheite_epdm: e.target.checked })}
-              className="rounded border-white/20 text-orange-600 focus:ring-0"
+              className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
             />
-            <span className="text-2xs text-gray-300 font-medium">Bande de protection bitumineuse / EPDM</span>
+            <span className="text-xs text-[#23272B] font-semibold">Bande de protection bitumineuse / EPDM</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-black/20 border border-white/5 hover:border-white/20">
+          <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-[#F8F9FA] border border-[#E5E5E5] hover:border-[#B85B2B]/40 hover:bg-white transition-all">
             <input
               type="checkbox"
               checked={config.cales_isolation}
               onChange={(e) => onChange({ cales_isolation: e.target.checked })}
-              className="rounded border-white/20 text-orange-600 focus:ring-0"
+              className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
             />
-            <span className="text-2xs text-gray-300 font-medium">Cales d&apos;isolation sous lambourdes</span>
+            <span className="text-xs text-[#23272B] font-semibold">Cales d&apos;isolation sous lambourdes</span>
           </label>
         </div>
       </div>
 
       {/* 4. PLOTS & SUPPORTS */}
-      <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-yellow-400 flex items-center gap-2 mb-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2 mb-4">
           🟡 4. Plots & Fondations
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="text-3xs font-medium text-gray-400">Type de plots</label>
+            <label className="text-xs font-semibold text-[#777777]">Type de plots</label>
             <select
               value={config.type_plots}
               onChange={(e) => onChange({ type_plots: e.target.value as TypePlots })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="reglables">Plots réglables PVC haute résistance</option>
               <option value="autonivelants">Plots autonivelants (rattrapage pente)</option>
@@ -689,23 +689,23 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Entraxe des plots (cm)</label>
+            <label className="text-xs font-semibold text-[#777777]">Entraxe des plots (cm)</label>
             <input
               type="number"
               min="30"
               max="100"
               value={config.entraxe_plots_cm}
               onChange={(e) => onChange({ entraxe_plots_cm: parseInt(e.target.value, 10) || 60 })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             />
-            <p className="mt-1 text-3xs text-gray-500">Portée max lambourde : ~60-70 cm</p>
+            <p className="mt-1 text-[11px] text-[#777777]">Portée max lambourde : ~60-70 cm</p>
           </div>
           <div>
-            <label className="text-3xs font-medium text-gray-400">Plage de réglage des plots</label>
+            <label className="text-xs font-semibold text-[#777777]">Plage de réglage des plots</label>
             <select
               value={config.hauteur_reglage_plots}
               onChange={(e) => onChange({ hauteur_reglage_plots: e.target.value as HauteurReglagePlots })}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
+              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:ring-1 focus:ring-[#B85B2B] transition-all"
             >
               <option value="20_30">20 à 30 mm</option>
               <option value="40_60">40 à 60 mm (Standard)</option>
@@ -715,14 +715,14 @@ export default function TerrasseConfigForm({
             </select>
           </div>
           <div className="flex items-center pt-5">
-            <label className="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-black/20 border border-white/5 hover:border-white/20 w-full">
+            <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-[#F8F9FA] border border-[#E5E5E5] hover:border-[#B85B2B]/40 hover:bg-white transition-all w-full">
               <input
                 type="checkbox"
                 checked={config.geotextile}
                 onChange={(e) => onChange({ geotextile: e.target.checked })}
-                className="rounded border-white/20 text-yellow-500 focus:ring-0"
+                className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
               />
-              <span className="text-2xs text-gray-300 font-medium">Feutre géotextile anti-repousse</span>
+              <span className="text-xs text-[#23272B] font-semibold">Feutre géotextile anti-repousse</span>
             </label>
           </div>
         </div>
@@ -731,17 +731,17 @@ export default function TerrasseConfigForm({
       {/* 5. ESCALIERS & GARDE-CORPS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* ESCALIER */}
-        <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
+        <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
               🪜 Escaliers & Marches
             </h3>
-            <label className="flex items-center gap-2 cursor-pointer text-2xs text-gray-400">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#777777]">
               <input
                 type="checkbox"
                 checked={config.presence_escalier}
                 onChange={(e) => onChange({ presence_escalier: e.target.checked })}
-                className="rounded border-white/20 text-emerald-500 focus:ring-0"
+                className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
               />
               Activer l&apos;escalier
             </label>
@@ -750,47 +750,47 @@ export default function TerrasseConfigForm({
           {config.presence_escalier && (
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
-                <label className="text-3xs font-medium text-gray-400">Nombre de marches</label>
+                <label className="text-xs font-semibold text-[#777777]">Nombre de marches</label>
                 <input
                   type="number"
                   min="1"
                   max="12"
                   value={config.escalier_nb_marches}
                   onChange={(e) => onChange({ escalier_nb_marches: parseInt(e.target.value, 10) || 1 })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 />
               </div>
               <div>
-                <label className="text-3xs font-medium text-gray-400">Largeur emmarchement (m)</label>
+                <label className="text-xs font-semibold text-[#777777]">Largeur emmarchement (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0.8"
                   value={config.escalier_largeur_m}
                   onChange={(e) => onChange({ escalier_largeur_m: parseFloat(e.target.value) || 1.5 })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 />
               </div>
               <div>
-                <label className="text-3xs font-medium text-gray-400">Giron de marche (cm)</label>
+                <label className="text-xs font-semibold text-[#777777]">Giron de marche (cm)</label>
                 <input
                   type="number"
                   min="20"
                   max="40"
                   value={config.escalier_giron_cm}
                   onChange={(e) => onChange({ escalier_giron_cm: parseFloat(e.target.value) || 28 })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 />
               </div>
               <div>
-                <label className="text-3xs font-medium text-gray-400">Hauteur de marche (cm)</label>
+                <label className="text-xs font-semibold text-[#777777]">Hauteur de marche (cm)</label>
                 <input
                   type="number"
                   min="12"
                   max="22"
                   value={config.escalier_hauteur_marche_cm}
                   onChange={(e) => onChange({ escalier_hauteur_marche_cm: parseFloat(e.target.value) || 16 })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 />
               </div>
             </div>
@@ -798,17 +798,17 @@ export default function TerrasseConfigForm({
         </div>
 
         {/* GARDE-CORPS */}
-        <div className="rounded-2xl border border-white/10 bg-[#16181d] p-5 shadow-lg">
+        <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
               🛡️ Garde-corps (NF P01-012)
             </h3>
-            <label className="flex items-center gap-2 cursor-pointer text-2xs text-gray-400">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#777777]">
               <input
                 type="checkbox"
                 checked={config.presence_garde_corps}
                 onChange={(e) => onChange({ presence_garde_corps: e.target.checked })}
-                className="rounded border-white/20 text-sky-500 focus:ring-0"
+                className="rounded border-[#CCCCCC] text-[#B85B2B] focus:ring-0"
               />
               Activer le garde-corps
             </label>
@@ -817,22 +817,22 @@ export default function TerrasseConfigForm({
           {config.presence_garde_corps && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div>
-                <label className="text-3xs font-medium text-gray-400">Longueur totale (ml)</label>
+                <label className="text-xs font-semibold text-[#777777]">Longueur totale (ml)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
                   value={config.garde_corps_longueur_ml}
                   onChange={(e) => onChange({ garde_corps_longueur_ml: parseFloat(e.target.value) || 0 })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 />
               </div>
               <div>
-                <label className="text-3xs font-medium text-gray-400">Modèle</label>
+                <label className="text-xs font-semibold text-[#777777]">Modèle</label>
                 <select
                   value={config.garde_corps_type}
                   onChange={(e) => onChange({ garde_corps_type: e.target.value as TypeGardeCorps })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 >
                   <option value="bois_cables">Poteaux bois + câbles inox</option>
                   <option value="alu_verre">Aluminium + verre trempé</option>
@@ -841,15 +841,15 @@ export default function TerrasseConfigForm({
                 </select>
               </div>
               <div>
-                <label className="text-3xs font-medium text-gray-400">Hauteur (cm)</label>
+                <label className="text-xs font-semibold text-[#777777]">Hauteur (cm)</label>
                 <input
                   type="number"
                   min="80"
                   value={config.garde_corps_hauteur_cm}
                   onChange={(e) => onChange({ garde_corps_hauteur_cm: parseInt(e.target.value, 10) || 100 })}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
                 />
-                <p className="mt-1 text-3xs text-gray-500">Norme : min 100 cm</p>
+                <p className="mt-1 text-2xs text-[#777777]">Norme : min 100 cm</p>
               </div>
             </div>
           )}

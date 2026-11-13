@@ -159,15 +159,23 @@ export async function GET(request: NextRequest, { params }: RouteProps) {
   const supabase = await createClient();
 
   // Vérification de l'appartenance du chantier
-  const { data: chantier, error: errChantier } = await supabase
-    .from("chantiers")
-    .select("id, nom, clients(nom)")
+  const { data: chantier, error: errChantier } = await (supabase
+    .from("chantiers") as any)
+    .select("id, nom, metier, clients(nom)")
     .eq("id", chantierId)
     .eq("entreprise_id", entrepriseId)
     .single();
 
   if (errChantier || !chantier) {
     return NextResponse.json({ error: "Chantier introuvable ou non autorisé" }, { status: 404 });
+  }
+
+  // Cloisonnement strict : si le chantier est expressément un autre métier (ex: bardage), refuser
+  if (chantier.metier && chantier.metier !== "terrasse") {
+    return NextResponse.json(
+      { error: `Incohérence métier : le chantier est de type ${chantier.metier}, impossible de charger une terrasse.` },
+      { status: 400 }
+    );
   }
 
   // Lecture de la terrasse
@@ -368,15 +376,23 @@ export async function POST(request: NextRequest, { params }: RouteProps) {
   const supabase = await createClient();
 
   // Vérification appartenance chantier
-  const { data: chantier, error: errChantier } = await supabase
-    .from("chantiers")
-    .select("id, nom")
+  const { data: chantier, error: errChantier } = await (supabase
+    .from("chantiers") as any)
+    .select("id, nom, metier")
     .eq("id", chantierId)
     .eq("entreprise_id", entrepriseId)
     .single();
 
   if (errChantier || !chantier) {
     return NextResponse.json({ error: "Chantier introuvable ou non autorisé" }, { status: 404 });
+  }
+
+  // Cloisonnement strict : refuser l'enregistrement de terrasse sur un chantier non terrasse
+  if (chantier.metier && chantier.metier !== "terrasse") {
+    return NextResponse.json(
+      { error: `Incohérence métier : impossible d'enregistrer une terrasse sur un chantier de type ${chantier.metier}.` },
+      { status: 400 }
+    );
   }
 
   const catalogue = await chargerTarifsCatalogue(

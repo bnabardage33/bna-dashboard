@@ -16,6 +16,7 @@ import { resoudreTenant } from "@/lib/tenant";
 import {
   servirPayloadMetreComplet,
   ChantierIntrouvableError,
+  MetierIncompatibleError,
 } from "@/lib/servir-metre-complet";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,12 @@ export async function GET(
       return NextResponse.json(
         { ok: false, error: "Chantier introuvable" },
         { status: 404 },
+      );
+    }
+    if (error instanceof MetierIncompatibleError) {
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 400 },
       );
     }
     console.error("Erreur API metre-complet:", error);

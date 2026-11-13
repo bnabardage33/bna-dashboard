@@ -163,6 +163,14 @@ async function cliquerTransformer(): Promise<boolean> {
   await act(async () => {
     bouton.click();
   });
+  const boutonConfirmer = conteneur.querySelector(
+    'button[data-testid="confirmer-conversion-chantier"]',
+  ) as HTMLButtonElement | null;
+  if (boutonConfirmer) {
+    await act(async () => {
+      boutonConfirmer.click();
+    });
+  }
   return true;
 }
 
