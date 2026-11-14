@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   const charge = await chargerDonneesExport(request);
   if (!charge.ok) return charge.reponse;
   try {
+    charge.data.inclureProfils = true;
     const octets = await genererExcel(charge.data);
     return reponseFichier(octets, TYPE_XLSX, nomFichier(charge.data.zone.nom, "xlsx"));
   } catch (e: unknown) {

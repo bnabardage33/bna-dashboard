@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   const charge = await chargerDonneesExport(request);
   if (!charge.ok) return charge.reponse;
   try {
+    charge.data.inclureProfils = true;
     const octets = await genererPdf(charge.data);
     return reponseFichier(octets, TYPE_PDF, nomFichier(charge.data.zone.nom, "pdf"));
   } catch (e: unknown) {

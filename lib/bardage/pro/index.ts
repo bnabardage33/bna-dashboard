@@ -4,4 +4,5 @@
 export * from "./presets-regles";
 export * from "./geometrie-ossature";
 export * from "./calepinage-decoupe";
+export * from "./profils-finitions";
 export * from "./quantitatifs-contrat";

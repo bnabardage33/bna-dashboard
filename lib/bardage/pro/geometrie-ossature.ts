@@ -26,6 +26,8 @@ export interface FacadeConfigInput {
   hauteurMurM: number;
   hauteurFaiteM?: number | null; // Pour les pignons
   angle?: boolean; // Zone d'angle de bâtiment (vent fort)
+  nbAnglesSortants?: number; // Nombre d'angles sortants du bâtiment
+  nbAnglesRentrants?: number; // Nombre d'angles rentrants
   ouvertures?: OuvertureFacade[];
 }
 

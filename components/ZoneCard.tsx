@@ -14,6 +14,7 @@ import {
   calculerCalepinage,
   SensPose,
 } from "@/lib/calepinageCalcul";
+import { calculerHabillageOuverturesEtProfils1D } from "@/lib/bardage/pro";
 import PlanCalepinage from "@/components/PlanCalepinage";
 import FicheDebitPDF from "@/components/FicheDebitPDF";
 import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
@@ -349,6 +350,29 @@ export default function ZoneCard({
             }
           )
       : null;
+
+  const profilsFinitions = useMemo(() => {
+    if (!zone.largeur || zone.largeur <= 0 || !zone.hauteur_mur || zone.hauteur_mur <= 0) {
+      return null;
+    }
+    const ouvInputs = (zone.ouvertures || []).map((o, idx) => ({
+      id: o.id || `ouv-${idx + 1}`,
+      nom: `Ouverture #${idx + 1} (${o.type})`,
+      type: o.type,
+      largeurM: o.largeur,
+      hauteurM: o.hauteur,
+    }));
+    return calculerHabillageOuverturesEtProfils1D({
+      id: zone.id,
+      nom: zone.nom,
+      type: zone.type,
+      largeurM: zone.largeur,
+      hauteurMurM: zone.hauteur_mur,
+      hauteurFaiteM: zone.hauteur_faite,
+      angle: zone.angle,
+      ouvertures: ouvInputs,
+    });
+  }, [zone.id, zone.nom, zone.type, zone.largeur, zone.hauteur_mur, zone.hauteur_faite, zone.angle, zone.ouvertures]);
 
   /* ============================================================
      CALEPINAGE HPL
@@ -1408,6 +1432,47 @@ export default function ZoneCard({
             </div>
           )}
             </>
+          )}
+
+          {/* Habillage complet des ouvertures & cornières d'angle (Optimisation 1D barres 3,00 m) */}
+          {profilsFinitions && (
+            <div className="mt-3 rounded-md border border-indigo-500/30 bg-indigo-950/20 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-3xs font-bold uppercase tracking-wide text-indigo-300">
+                  📐 Habillage des Ouvertures & Profilés de Finition (Alu — Barres 3,00 m)
+                </p>
+                <span className="rounded-full bg-indigo-900/60 px-2 py-0.5 text-3xs font-semibold text-indigo-200">
+                  {profilsFinitions.totaux.totalBarres3MACommander} barres à commander
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <Chiffre
+                  label="Bavettes d'appui (+60 mm)"
+                  value={`${profilsFinitions.familles.bavettesAppui.lineairePoseNetMl.toFixed(2)} ml (${profilsFinitions.familles.bavettesAppui.nbBarresACommander} b)`}
+                />
+                <Chiffre
+                  label="Tableaux latéraux (2×H)"
+                  value={`${profilsFinitions.familles.tableauxLateraux.lineairePoseNetMl.toFixed(2)} ml (${profilsFinitions.familles.tableauxLateraux.nbBarresACommander} b)`}
+                />
+                <Chiffre
+                  label="Linteaux goutte d'eau (+40 mm)"
+                  value={`${profilsFinitions.familles.linteauxGoutteEau.lineairePoseNetMl.toFixed(2)} ml (${profilsFinitions.familles.linteauxGoutteEau.nbBarresACommander} b)`}
+                />
+                <Chiffre
+                  label="Cornières rives/angles"
+                  value={`${profilsFinitions.familles.cornieresAnglesRives.lineairePoseNetMl.toFixed(2)} ml (${profilsFinitions.familles.cornieresAnglesRives.nbBarresACommander} b)`}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-3xs text-indigo-300/80 pt-1 border-t border-indigo-800/40">
+                <span>Total posé net : {profilsFinitions.totaux.lineairePoseNetMl.toFixed(2)} ml</span>
+                <span>
+                  Débité : {profilsFinitions.totaux.lineaireDebiteMl.toFixed(2)} ml (chute{" "}
+                  {profilsFinitions.totaux.tauxChuteGlobalPct} %)
+                </span>
+              </div>
+            </div>
           )}
 
           <p className="text-xs italic text-amber-400">

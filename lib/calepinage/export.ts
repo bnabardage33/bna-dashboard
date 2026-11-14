@@ -27,6 +27,11 @@ import {
   type LigneBordereau,
 } from "@/lib/calepinage/bordereau";
 import type { ChantierZone, Module, ModuleGroup, Opening, Percage } from "@/types/calepinage";
+import {
+  calculerHabillageOuverturesEtProfils1D,
+  type HabillageProfilsResult,
+  type ProfilFacadeInput,
+} from "@/lib/bardage/pro";
 
 export const TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 export const TYPE_PDF = "application/pdf";
@@ -46,6 +51,8 @@ export interface DonneesExport {
   modules: Module[];
   openings: Opening[];
   percages?: Percage[];
+  /** Inclure l'habillage des ouvertures et profilés de finitions (barres 3,00 m) */
+  inclureProfils?: boolean;
 }
 
 type Resultat<T> = { ok: true; data: T } | { ok: false; reponse: NextResponse };
@@ -240,6 +247,32 @@ export function reponseFichier(octets: Uint8Array, type: string, nom: string): N
 /** Neutralise l'injection de formule (=, +, -, @) dans une cellule texte saisie par l'utilisateur. */
 const texteCellule = (v: string): string => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
 
+/**
+ * Prépare et calcule l'habillage complet des ouvertures et profilés de finitions (débit 1D barres 3,00 m).
+ */
+export function preparerProfilsZone(d: DonneesExport): HabillageProfilsResult {
+  const ouvertures = (d.openings || []).map((o, idx) => ({
+    id: o.id || `ouv-${idx + 1}`,
+    nom: `Baie #${idx + 1} (${o.type || "fenetre"})`,
+    type: o.type,
+    largeurM: o.width_mm / 1000,
+    hauteurM: o.height_mm / 1000,
+  }));
+
+  const facadeInput: ProfilFacadeInput = {
+    id: d.zone.id,
+    nom: d.zone.nom,
+    type: (d.zone.type as "facade" | "pignon") || "facade",
+    largeurM: d.zone.largeur,
+    hauteurMurM: d.zone.hauteur_mur,
+    hauteurFaiteM: d.zone.hauteur_faite,
+    angle: Boolean((d.zone as Record<string, unknown>).angle),
+    ouvertures,
+  };
+
+  return calculerHabillageOuverturesEtProfils1D(facadeInput);
+}
+
 export async function genererExcel(d: DonneesExport): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
   wb.created = new Date();
@@ -360,6 +393,137 @@ export async function genererExcel(d: DonneesExport): Promise<Uint8Array> {
       rowObj.p = trous.length > 0 ? `${trous.length} trous` : "Aucun";
     }
     wm.addRow(rowObj);
+  }
+
+  // Feuille 3 : « Profilés & Finitions » (Habillage baies, bavettes, tableaux, linteaux et angles en barres 3,00 m)
+  if (d.inclureProfils) {
+    const profils = preparerProfilsZone(d);
+    const wp = wb.addWorksheet("Profilés & Finitions");
+
+    wp.addRow(["SYNTHÈSE DES PROFILS & HABILLAGE DES OUVERTURES (BARRES COMMERCIALES 3,00 M)"]).font = {
+      bold: true,
+      size: 12,
+    };
+    wp.addRow([]);
+
+    wp.addRow([
+      "Désignation Profilé",
+      "Règle de Dimensionnement",
+      "Linéaire Posé Net Q_net (ml)",
+      "Barres 3,00 m Q_appro (u)",
+      "Linéaire Débité Q_tech (ml)",
+      "Chute Totale (ml)",
+      "Taux de Chute (%)",
+    ]);
+    const rTitreProfil = wp.lastRow;
+    if (rTitreProfil) {
+      rTitreProfil.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E40AF" } };
+      rTitreProfil.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    }
+
+    const fam = profils.familles;
+    wp.addRow([
+      fam.bavettesAppui.nomCommercial,
+      "Largeur baie + 60 mm (oreilles et relevés latéraux)",
+      fam.bavettesAppui.lineairePoseNetMl,
+      fam.bavettesAppui.nbBarresACommander,
+      fam.bavettesAppui.lineaireDebiteMl,
+      fam.bavettesAppui.chuteTotaleMl,
+      `${fam.bavettesAppui.tauxChutePct} %`,
+    ]);
+    wp.addRow([
+      fam.tableauxLateraux.nomCommercial,
+      "Hauteur baie × 2 (tableaux gauche & droit)",
+      fam.tableauxLateraux.lineairePoseNetMl,
+      fam.tableauxLateraux.nbBarresACommander,
+      fam.tableauxLateraux.lineaireDebiteMl,
+      fam.tableauxLateraux.chuteTotaleMl,
+      `${fam.tableauxLateraux.tauxChutePct} %`,
+    ]);
+    wp.addRow([
+      fam.linteauxGoutteEau.nomCommercial,
+      "Largeur baie + 40 mm (linteau goutte d'eau)",
+      fam.linteauxGoutteEau.lineairePoseNetMl,
+      fam.linteauxGoutteEau.nbBarresACommander,
+      fam.linteauxGoutteEau.lineaireDebiteMl,
+      fam.linteauxGoutteEau.chuteTotaleMl,
+      `${fam.linteauxGoutteEau.tauxChutePct} %`,
+    ]);
+    wp.addRow([
+      fam.cornieresAnglesRives.nomCommercial,
+      "Hauteur des rives / arrêts de façade",
+      fam.cornieresAnglesRives.lineairePoseNetMl,
+      fam.cornieresAnglesRives.nbBarresACommander,
+      fam.cornieresAnglesRives.lineaireDebiteMl,
+      fam.cornieresAnglesRives.chuteTotaleMl,
+      `${fam.cornieresAnglesRives.tauxChutePct} %`,
+    ]);
+
+    const rowTotalProfils = wp.addRow([
+      "TOTAL TOUS PROFILS",
+      "Barres standard de 3,00 m (trait de scie 3 mm)",
+      profils.totaux.lineairePoseNetMl,
+      profils.totaux.totalBarres3MACommander,
+      profils.totaux.lineaireDebiteMl,
+      profils.totaux.chuteTotaleMl,
+      `${profils.totaux.tauxChuteGlobalPct} %`,
+    ]);
+    rowTotalProfils.font = { bold: true };
+    rowTotalProfils.border = { top: { style: "medium" }, bottom: { style: "double" } };
+
+    wp.addRow([]);
+    wp.addRow([]);
+
+    // Détail par baie / ouverture
+    wp.addRow(["DÉTAIL DE FABRICATION PAR OUVERTURE (CHANTIER_ZONES_OPENINGS)"]).font = {
+      bold: true,
+      size: 11,
+    };
+    wp.addRow([]);
+
+    wp.addRow([
+      "N° Baie",
+      "Type",
+      "Largeur (mm)",
+      "Hauteur (mm)",
+      "Bavette alu (+60 mm)",
+      "Tableaux 2×H (mm)",
+      "Linteau (+40 mm)",
+      "Linéaire Total Baie (ml)",
+    ]);
+    const rTitreBaie = wp.lastRow;
+    if (rTitreBaie) {
+      rTitreBaie.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF374151" } };
+      rTitreBaie.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    }
+
+    if (profils.detailsParOuverture.length === 0) {
+      wp.addRow(["Aucune baie sur cette zone", "—", "—", "—", "—", "—", "—", 0]);
+    } else {
+      for (const ouv of profils.detailsParOuverture) {
+        wp.addRow([
+          ouv.ouvertureNom,
+          ouv.type,
+          Math.round(ouv.largeurM * 1000),
+          Math.round(ouv.hauteurM * 1000),
+          ouv.bavetteAppui ? `${ouv.bavetteAppui.longueurMm} mm` : "— (porte)",
+          `${ouv.tableauxLateraux.longueurUnitaireMm} mm (×2)`,
+          `${ouv.linteauGoutteEau.longueurMm} mm`,
+          ouv.lineaireTotalOuvertureM,
+        ]);
+      }
+    }
+
+    wp.columns = [
+      { width: 34 },
+      { width: 36 },
+      { width: 18 },
+      { width: 18 },
+      { width: 18 },
+      { width: 18 },
+      { width: 16 },
+      { width: 18 },
+    ];
   }
 
   return new Uint8Array(await wb.xlsx.writeBuffer());
@@ -594,6 +758,11 @@ export async function genererPdf(d: DonneesExport): Promise<Uint8Array> {
   );
   ligne(["TOTAL", String(totaux.nbModules), "", "", nombre(totaux.surfaceM2), "", "", ""], gras, rgb(0.9, 0.9, 0.92));
 
+  // Habillage des ouvertures & profilés de finition (barres commerciales 3,00 m)
+  if (d.inclureProfils) {
+    dessinerPageProfilsFinitions(pdf, d, normale, gras);
+  }
+
   // Schémas de perçage par groupe (si des perçages sont générés)
   dessinerSchemasPercage(pdf, d, normale, gras);
 
@@ -792,6 +961,253 @@ function dessinerSchemasPercage(
 
     if (colIdx === cols - 1 || idx === schemasGroupes.length - 1) {
       y -= cadreHauteur + 12;
+    }
+  }
+}
+
+/**
+ * Dessine la page dédiée à l'habillage complet des ouvertures et cornières de rives/angles
+ * avec la synthèse d'optimisation 1D dans des barres de 3,00 m (trait de scie 3 mm).
+ */
+function dessinerPageProfilsFinitions(
+  pdf: PDFDocument,
+  d: DonneesExport,
+  normale: PDFFont,
+  gras: PDFFont,
+): void {
+  const profils = preparerProfilsZone(d);
+  const page = pdf.addPage([A4_L, A4_H]);
+  let y = A4_H - MARGE;
+
+  // En-tête de page
+  page.drawRectangle({
+    x: MARGE,
+    y: y - 28,
+    width: A4_L - 2 * MARGE,
+    height: 28,
+    color: rgb(0.12, 0.22, 0.38),
+  });
+  page.drawText("HABILLAGE DES OUVERTURES & PROFILS DE FINITION (ALUMINIUM)", {
+    x: MARGE + 12,
+    y: y - 18,
+    size: 11,
+    font: gras,
+    color: rgb(1, 1, 1),
+  });
+  y -= 44;
+
+  page.drawText(
+    `Zone : ${d.zone.nom}  |  Barres standard : 3,00 m  |  Trait de scie : 3 mm  |  Matière : Alu laqué RAL`,
+    { x: MARGE, y, size: 9, font: normale, color: rgb(0.35, 0.35, 0.35) }
+  );
+  y -= 18;
+
+  // Tableau de synthèse
+  const tableW = A4_L - 2 * MARGE;
+  const cols = [
+    { titre: "Profilé aluminium", w: 175, droite: false },
+    { titre: "Règle de dimensionnement", w: 145, droite: false },
+    { titre: "Posé net (ml)", w: 75, droite: true },
+    { titre: "Barres 3m", w: 60, droite: true },
+    { titre: "Débité (ml)", w: 65, droite: true },
+    { titre: "Chute %", w: 50, droite: true },
+  ];
+
+  page.drawRectangle({
+    x: MARGE,
+    y: y - HAUTEUR_LIGNE + 5,
+    width: tableW,
+    height: HAUTEUR_LIGNE,
+    color: rgb(0.15, 0.2, 0.28),
+  });
+  let curX = MARGE;
+  for (const c of cols) {
+    const textW = gras.widthOfTextAtSize(c.titre, 8);
+    page.drawText(c.titre, {
+      x: c.droite ? curX + c.w - 4 - textW : curX + 4,
+      y: y - 8,
+      size: 8,
+      font: gras,
+      color: rgb(1, 1, 1),
+    });
+    curX += c.w;
+  }
+  y -= HAUTEUR_LIGNE;
+
+  const f = profils.familles;
+  const lignesSynth = [
+    {
+      p: "Bavettes d'appui (alu avec oreilles)",
+      r: "Largeur baie + 60 mm",
+      net: f.bavettesAppui.lineairePoseNetMl.toFixed(2),
+      barres: String(f.bavettesAppui.nbBarresACommander),
+      deb: f.bavettesAppui.lineaireDebiteMl.toFixed(2),
+      chute: `${f.bavettesAppui.tauxChutePct}%`,
+    },
+    {
+      p: "Tableaux latéraux (2 joues/cornières)",
+      r: "Hauteur baie × 2",
+      net: f.tableauxLateraux.lineairePoseNetMl.toFixed(2),
+      barres: String(f.tableauxLateraux.nbBarresACommander),
+      deb: f.tableauxLateraux.lineaireDebiteMl.toFixed(2),
+      chute: `${f.tableauxLateraux.tauxChutePct}%`,
+    },
+    {
+      p: "Linteaux avec goutte d'eau",
+      r: "Largeur baie + 40 mm",
+      net: f.linteauxGoutteEau.lineairePoseNetMl.toFixed(2),
+      barres: String(f.linteauxGoutteEau.nbBarresACommander),
+      deb: f.linteauxGoutteEau.lineaireDebiteMl.toFixed(2),
+      chute: `${f.linteauxGoutteEau.tauxChutePct}%`,
+    },
+    {
+      p: "Cornières d'angle & arrêts de rives",
+      r: "Hauteur rives façade",
+      net: f.cornieresAnglesRives.lineairePoseNetMl.toFixed(2),
+      barres: String(f.cornieresAnglesRives.nbBarresACommander),
+      deb: f.cornieresAnglesRives.lineaireDebiteMl.toFixed(2),
+      chute: `${f.cornieresAnglesRives.tauxChutePct}%`,
+    },
+  ];
+
+  for (let i = 0; i < lignesSynth.length; i++) {
+    const l = lignesSynth[i];
+    if (i % 2 === 1) {
+      page.drawRectangle({
+        x: MARGE,
+        y: y - HAUTEUR_LIGNE + 5,
+        width: tableW,
+        height: HAUTEUR_LIGNE,
+        color: rgb(0.96, 0.96, 0.98),
+      });
+    }
+    const vals = [l.p, l.r, l.net, l.barres, l.deb, l.chute];
+    let xC = MARGE;
+    cols.forEach((col, cIdx) => {
+      const val = vals[cIdx];
+      const valW = normale.widthOfTextAtSize(val, 8.5);
+      page.drawText(val, {
+        x: col.droite ? xC + col.w - 4 - valW : xC + 4,
+        y: y - 8,
+        size: 8.5,
+        font: normale,
+      });
+      xC += col.w;
+    });
+    page.drawLine({
+      start: { x: MARGE, y: y - HAUTEUR_LIGNE + 5 },
+      end: { x: MARGE + tableW, y: y - HAUTEUR_LIGNE + 5 },
+      thickness: 0.4,
+      color: rgb(0.85, 0.85, 0.85),
+    });
+    y -= HAUTEUR_LIGNE;
+  }
+
+  // Ligne Total
+  page.drawRectangle({
+    x: MARGE,
+    y: y - HAUTEUR_LIGNE + 5,
+    width: tableW,
+    height: HAUTEUR_LIGNE,
+    color: rgb(0.9, 0.93, 0.97),
+  });
+  const totVals = [
+    "TOTAL TOUS PROFILS",
+    "Barres de 3,00 m (trait de scie 3mm)",
+    profils.totaux.lineairePoseNetMl.toFixed(2),
+    String(profils.totaux.totalBarres3MACommander),
+    profils.totaux.lineaireDebiteMl.toFixed(2),
+    `${profils.totaux.tauxChuteGlobalPct}%`,
+  ];
+  let xTot = MARGE;
+  cols.forEach((col, cIdx) => {
+    const val = totVals[cIdx];
+    const valW = gras.widthOfTextAtSize(val, 8.5);
+    page.drawText(val, {
+      x: col.droite ? xTot + col.w - 4 - valW : xTot + 4,
+      y: y - 8,
+      size: 8.5,
+      font: gras,
+    });
+    xTot += col.w;
+  });
+  y -= HAUTEUR_LIGNE + 22;
+
+  // Tableau 2 : Détail des ouvertures
+  if (profils.detailsParOuverture.length > 0) {
+    page.drawText("DÉTAIL DES PIÈCES À DÉBITER PAR OUVERTURE (CHANTIER_ZONES_OPENINGS)", {
+      x: MARGE,
+      y,
+      size: 10,
+      font: gras,
+      color: rgb(0.15, 0.2, 0.3),
+    });
+    y -= 14;
+
+    const colsOuv = [
+      { titre: "Baie", w: 105 },
+      { titre: "Type", w: 60 },
+      { titre: "L x H (mm)", w: 85 },
+      { titre: "Bavette alu (+60mm)", w: 105 },
+      { titre: "Tableaux (2×H)", w: 95 },
+      { titre: "Linteau (+40mm)", w: 105 },
+    ];
+    page.drawRectangle({
+      x: MARGE,
+      y: y - HAUTEUR_LIGNE + 5,
+      width: tableW,
+      height: HAUTEUR_LIGNE,
+      color: rgb(0.2, 0.25, 0.35),
+    });
+    let xO = MARGE;
+    for (const c of colsOuv) {
+      page.drawText(c.titre, {
+        x: xO + 4,
+        y: y - 8,
+        size: 8,
+        font: gras,
+        color: rgb(1, 1, 1),
+      });
+      xO += c.w;
+    }
+    y -= HAUTEUR_LIGNE;
+
+    for (let i = 0; i < profils.detailsParOuverture.length; i++) {
+      const o = profils.detailsParOuverture[i];
+      if (i % 2 === 1) {
+        page.drawRectangle({
+          x: MARGE,
+          y: y - HAUTEUR_LIGNE + 5,
+          width: tableW,
+          height: HAUTEUR_LIGNE,
+          color: rgb(0.97, 0.97, 0.97),
+        });
+      }
+      const valsO = [
+        o.ouvertureNom,
+        o.type,
+        `${Math.round(o.largeurM * 1000)} × ${Math.round(o.hauteurM * 1000)}`,
+        o.bavetteAppui ? `${o.bavetteAppui.longueurMm} mm` : "— (porte)",
+        `${o.tableauxLateraux.longueurUnitaireMm} mm (×2)`,
+        `${o.linteauGoutteEau.longueurMm} mm`,
+      ];
+      let xRow = MARGE;
+      colsOuv.forEach((col, cIdx) => {
+        page.drawText(valsO[cIdx], {
+          x: xRow + 4,
+          y: y - 8,
+          size: 8.5,
+          font: normale,
+        });
+        xRow += col.w;
+      });
+      page.drawLine({
+        start: { x: MARGE, y: y - HAUTEUR_LIGNE + 5 },
+        end: { x: MARGE + tableW, y: y - HAUTEUR_LIGNE + 5 },
+        thickness: 0.3,
+        color: rgb(0.85, 0.85, 0.85),
+      });
+      y -= HAUTEUR_LIGNE;
     }
   }
 }

@@ -11,6 +11,10 @@ import {
   type PanneauPose,
   type PlaqueDebitPro,
 } from "./calepinage-decoupe";
+import {
+  calculerHabillageOuverturesEtProfils1D,
+  type HabillageProfilsResult,
+} from "./profils-finitions";
 
 export interface DistinctQuantitiesBardage {
   /** Quantités nettes géométriques posées (aucun déchet) */
@@ -24,6 +28,14 @@ export interface DistinctQuantitiesBardage {
     lineaireVentilationBasseMl: number;
     lineaireVentilationHauteMl: number;
     lineaireCornieresAnglesMl: number;
+    /** Profilés de finition & habillage ouvertures (Q_net posé) */
+    profilsFinitions: {
+      bavettesAppuiMl: number;
+      tableauxLaterauxMl: number;
+      linteauxGoutteEauMl: number;
+      cornieresAnglesRivesMl: number;
+      totalProfilsMl: number;
+    };
   };
   /** Quantités techniques découpées (matière brute consommée avec chutes et traits de scie) */
   qTech: {
@@ -33,6 +45,13 @@ export interface DistinctQuantitiesBardage {
     surfaceChutesTotaleM2: number;
     surfaceChutesReemployablesM2: number;
     tauxChuteReelPct: number;
+    /** Profilés débités dans des barres de 3,00 m avec trait de scie 3 mm (Q_tech) */
+    profilsFinitions: {
+      lineaireDebiteMl: number;
+      chuteTotaleMl: number;
+      tauxChuteProfilsPct: number;
+      totalBarres3MDebitees: number;
+    };
   };
   /** Quantités d'approvisionnement (marge chantier + colisage / conditionnement boîtes et unités de vente) */
   qAppro: {
@@ -55,6 +74,15 @@ export interface DistinctQuantitiesBardage {
       cornieresAnglesPieces: number;
       longueurPieceM: number;
     };
+    /** Profilés d'habillage à commander en barres de 3,00 m (Q_appro) */
+    profilsFinitions: {
+      barresBavettesAppui3M: number;
+      barresTableauxLateraux3M: number;
+      barresLinteauxGoutteEau3M: number;
+      barresCornieresAngles3M: number;
+      totalBarresProfils3MACommander: number;
+      longueurBarreStandardM: number;
+    };
     margeTriColisagePct: number;
   };
 }
@@ -69,6 +97,7 @@ export interface BardageProGeometricResult {
     panneauxPoses: PanneauPose[];
     ossature: OssatureSecondaireResult;
     debitPlaques: PlaqueDebitPro[];
+    habillageOuvertures: HabillageProfilsResult;
   };
   quantities: DistinctQuantitiesBardage;
   diagnostic: {
@@ -122,7 +151,12 @@ export function calculerBardagePro(
     { entraxeForceMm: options.entraxeForceMm }
   );
 
-  // 3. Calculs des quantitatifs stricts (Q_net, Q_tech, Q_appro)
+  // 3. Calcul de l'habillage complet des ouvertures (bavettes, tableaux, linteaux) et cornières d'angle (1D)
+  const habillage = calculerHabillageOuverturesEtProfils1D(facade, {
+    margeSecuritePct: margePct,
+  });
+
+  // 4. Calculs des quantitatifs stricts (Q_net, Q_tech, Q_appro)
   const nbVisPointsFixes = calepinage.panneaux.reduce((s, p) => s + p.nbPointsFixes, 0);
   const nbVisPointsGlissants = calepinage.panneaux.reduce((s, p) => s + p.nbPointsGlissants, 0);
   const nbVisTotalNet = nbVisPointsFixes + nbVisPointsGlissants;
@@ -137,6 +171,13 @@ export function calculerBardagePro(
     lineaireVentilationBasseMl: ossature.grilleVentilationBasseMl,
     lineaireVentilationHauteMl: ossature.grilleVentilationHauteMl,
     lineaireCornieresAnglesMl: ossature.cornieresAnglesMl,
+    profilsFinitions: {
+      bavettesAppuiMl: habillage.familles.bavettesAppui.lineairePoseNetMl,
+      tableauxLaterauxMl: habillage.familles.tableauxLateraux.lineairePoseNetMl,
+      linteauxGoutteEauMl: habillage.familles.linteauxGoutteEau.lineairePoseNetMl,
+      cornieresAnglesRivesMl: habillage.familles.cornieresAnglesRives.lineairePoseNetMl,
+      totalProfilsMl: habillage.totaux.lineairePoseNetMl,
+    },
   };
 
   const qTech: DistinctQuantitiesBardage["qTech"] = {
@@ -146,6 +187,12 @@ export function calculerBardagePro(
     surfaceChutesTotaleM2: Number((calepinage.surfaceBrutePlaquesM2 - calepinage.surfaceNetteM2).toFixed(2)),
     surfaceChutesReemployablesM2: calepinage.totalChutesReemployablesM2,
     tauxChuteReelPct: calepinage.tauxChuteReelPct,
+    profilsFinitions: {
+      lineaireDebiteMl: habillage.totaux.lineaireDebiteMl,
+      chuteTotaleMl: habillage.totaux.chuteTotaleMl,
+      tauxChuteProfilsPct: habillage.totaux.tauxChuteGlobalPct,
+      totalBarres3MDebitees: habillage.totaux.totalBarres3MACommander,
+    },
   };
 
   // Approvisionnement avec marge et conditionnements marchands
@@ -188,6 +235,14 @@ export function calculerBardagePro(
       cornieresAnglesPieces: nbCornieresAngles,
       longueurPieceM: longPieceProfilM,
     },
+    profilsFinitions: {
+      barresBavettesAppui3M: habillage.familles.bavettesAppui.nbBarresACommander,
+      barresTableauxLateraux3M: habillage.familles.tableauxLateraux.nbBarresACommander,
+      barresLinteauxGoutteEau3M: habillage.familles.linteauxGoutteEau.nbBarresACommander,
+      barresCornieresAngles3M: habillage.familles.cornieresAnglesRives.nbBarresACommander,
+      totalBarresProfils3MACommander: habillage.totaux.totalBarres3MACommander,
+      longueurBarreStandardM: 3.0,
+    },
     margeTriColisagePct: margePct,
   };
 
@@ -206,6 +261,7 @@ export function calculerBardagePro(
       panneauxPoses: calepinage.panneaux,
       ossature,
       debitPlaques: calepinage.plaquesDebit,
+      habillageOuvertures: habillage,
     },
     quantities: {
       qNet,
