@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
+import { PDFDocument } from "pdf-lib";
 import {
   resoudreConfigTerrasseMobile,
   calculerSousEnsembleTerrasseMobile,
 } from "@/lib/terrasse/pro/terrasse-mobile";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
 import { extraireTarifsFournituresMobile } from "@/lib/terrasse/catalogueMobileDefaut";
+import { genererPdfTerrasse } from "@/lib/terrasse/exportPdf";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
@@ -494,5 +496,76 @@ describe("Terrasse Mobile Coulissante sur Rails (Piscine)", () => {
       mobileConfig: poolResaHeritee.terrasse_mobile!,
     });
     expect(calculC.resultatPlateau.dimensionsPlateau.essenceBois).toBe(baseConfig.essence_bois);
+  });
+
+  it("10. Génère le dossier technique PDF avec la planche dédiée Plan d'implantation Terrasse Mobile & Rails", async () => {
+    // 1. Calcul du projet avec terrasse mobile motorisée solaire
+    const poolResaMotorisee: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        type_motorisation: "solaire",
+      },
+    };
+
+    const resultatMobile = calculerTerrasse(baseConfig, [poolResaMotorisee]);
+    expect(resultatMobile.terrasseMobile).toBeDefined();
+    expect(resultatMobile.terrasseMobile?.active).toBe(true);
+
+    // 2. Génération du PDF avec la terrasse mobile (doit produire 2 pages)
+    const pdfBytesMobile = await genererPdfTerrasse({
+      terrasse: baseConfig,
+      resultat: resultatMobile,
+      chantierNom: "Villa Bord de Mer avec Piscine",
+      clientNom: "M. et Mme Dupont",
+      reservations: [poolResaMotorisee],
+    });
+
+    expect(pdfBytesMobile).toBeInstanceOf(Uint8Array);
+    expect(pdfBytesMobile.length).toBeGreaterThan(2000);
+
+    const docMobile = await PDFDocument.load(pdfBytesMobile);
+    // Doit comporter exactement 2 pages (Page 1 = DTU 51.4 & Chiffrage, Page 2 = Plan d'implantation Terrasse Mobile)
+    expect(docMobile.getPageCount()).toBe(2);
+
+    const page2 = docMobile.getPage(1);
+    expect(page2.getWidth()).toBeCloseTo(595.28, 1);
+    expect(page2.getHeight()).toBeCloseTo(841.89, 1);
+
+    // 3. Cas 2 demi-plateaux motorisés : génération sans erreur
+    const poolResaDeuxPlateaux: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        mode: "2_demi_plateaux",
+        type_motorisation: "filaire",
+      },
+    };
+
+    const resDeuxPlateaux = calculerTerrasse(baseConfig, [poolResaDeuxPlateaux]);
+    const pdfBytesDeux = await genererPdfTerrasse({
+      terrasse: baseConfig,
+      resultat: resDeuxPlateaux,
+      chantierNom: "Projet 2 Demi-Plateaux",
+      clientNom: "Résidence Les Pins",
+      reservations: [poolResaDeuxPlateaux],
+    });
+
+    expect(pdfBytesDeux).toBeInstanceOf(Uint8Array);
+    const docDeux = await PDFDocument.load(pdfBytesDeux);
+    expect(docDeux.getPageCount()).toBe(2);
+
+    // 4. Projet sans terrasse mobile : ne doit générer qu'une seule page (non-régression)
+    const resSansMobile = calculerTerrasse(baseConfig, []);
+    const pdfBytesSansMobile = await genererPdfTerrasse({
+      terrasse: baseConfig,
+      resultat: resSansMobile,
+      chantierNom: "Terrasse Bois Seule",
+      clientNom: "M. Martin",
+    });
+
+    expect(pdfBytesSansMobile).toBeInstanceOf(Uint8Array);
+    const docSansMobile = await PDFDocument.load(pdfBytesSansMobile);
+    expect(docSansMobile.getPageCount()).toBe(1);
   });
 });

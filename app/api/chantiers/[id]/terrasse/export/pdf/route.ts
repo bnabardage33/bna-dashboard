@@ -7,6 +7,7 @@ import { resoudreTenant } from "@/lib/tenant";
 import { genererPdfTerrasse } from "@/lib/terrasse/exportPdf";
 import type {
   ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
   ResultatCalculTerrasse,
 } from "@/lib/terrasse/types";
 
@@ -302,11 +303,19 @@ export async function POST(_request: NextRequest, { params }: RouteProps) {
 
   try {
     const nomChantier = chantier.nom.trim();
+
+    // Récupération des réservations associées (pour cotations fines et terrasse mobile)
+    const { data: reservationsData } = await supabase
+      .from("chantier_terrasse_reservations")
+      .select("*")
+      .eq("terrasse_id", terrasseData.id);
+
     const pdfBytes = await genererPdfTerrasse({
       terrasse: validationConfig.config,
       resultat: validationResultat.resultat,
       chantierNom: nomChantier,
       clientNom: (chantier.clients as unknown as { nom: string })?.nom,
+      reservations: (reservationsData as unknown as ChantierTerrasseReservation[]) || undefined,
     });
 
     const nomFichier = `terrasse-dtu51.4-${nomChantier.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
