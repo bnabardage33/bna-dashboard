@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
+  EssenceBois,
   ResultatCalculTerrasse,
   TypeMotorisationTerrasse,
   TypeReservationTerrasse,
@@ -95,7 +96,7 @@ export default function ChantierTerrasseTab({
 
   // Calcul instantané en mémoire dès que la configuration ou les réservations changent
   const resultat = useMemo<ResultatCalculTerrasse>(() => {
-    return calculerTerrasse(config, reservations);
+    return calculerTerrasse(config, reservations, config.tarifs_catalogue);
   }, [config, reservations]);
 
   // Chargement initial depuis l'API
@@ -763,6 +764,61 @@ export default function ChantierTerrasseTab({
                             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-500 cursor-not-allowed"
                           />
                         </div>
+                      </div>
+
+                      {/* DISSOCIATION ESTHÉTIQUE ESSENCE / FINITION PLATEAU MOBILE */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-sky-100">
+                        <div>
+                          <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                            Finition / Essence plateau mobile
+                          </label>
+                          <select
+                            value={mob.essence_bois || ""}
+                            onChange={(e) =>
+                              handleUpdateReservation(idx, {
+                                terrasse_mobile: {
+                                  ...mob,
+                                  essence_bois: (e.target.value as EssenceBois) || undefined,
+                                },
+                              })
+                            }
+                            className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                          >
+                            <option value="">Identique à la plage fixe ({config.essence_bois})</option>
+                            <option value="ipe">Bois exotique Ipé (brun foncé)</option>
+                            <option value="cumaru">Bois exotique Cumaru (brun doré)</option>
+                            <option value="pin_cl4">Pin sylvestre autoclave Cl.4 (blond)</option>
+                            <option value="douglas">Douglas purgé d'aubier (miel orangé)</option>
+                            <option value="meleze">Mélèze de Sibérie (miel clair)</option>
+                            <option value="bambou_thermo">Bambou thermo-traité (caramel)</option>
+                            <option value="composite">Lames composites</option>
+                          </select>
+                        </div>
+
+                        {(mob.essence_bois === "composite" ||
+                          (!mob.essence_bois && config.essence_bois === "composite")) && (
+                          <div>
+                            <label className="block text-3xs font-semibold text-gray-600 mb-1">
+                              Teinte composite du plateau mobile
+                            </label>
+                            <select
+                              value={mob.teinte_composite || "anthracite"}
+                              onChange={(e) =>
+                                handleUpdateReservation(idx, {
+                                  terrasse_mobile: {
+                                    ...mob,
+                                    teinte_composite: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-full rounded-lg border border-[#DCDCDC] bg-white px-2.5 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B]"
+                            >
+                              <option value="anthracite">Gris Anthracite (RAL 7016)</option>
+                              <option value="brun">Brun Havane / Marron chaud</option>
+                              <option value="gris_clair">Gris Minéral / Clair</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
 
                       {/* BADGE TECHNIQUE MOTORISATION ENRICHI SI MOTORISÉ */}

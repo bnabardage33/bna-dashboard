@@ -83,6 +83,8 @@ export interface ConfigTerrasseMobile {
   motorise?: boolean;                       // Option motorisation / entraînement par crémaillère
   type_motorisation?: TypeMotorisationTerrasse; // "aucune" | "solaire" | "filaire" (défaut "aucune")
   puissance_moteur_n?: number;              // Puissance / effort de traction en Newtons (calculée automatiquement)
+  essence_bois?: EssenceBois;               // Dissociation esthétique : essence/coloris du plateau mobile (défaut = identique plage fixe)
+  teinte_composite?: string;                // Teinte composite si composite (ex: "anthracite", "havane", "gris_clair")
 }
 
 export interface ResultatPlateauMobile {
@@ -98,6 +100,8 @@ export interface ResultatPlateauMobile {
     surfaceM2: number;
     poidsPropreKg: number;
     poidsTotalChargeKg: number;
+    essenceBois: EssenceBois;
+    teinteComposite?: string;
   };
   rails: {
     type: "rail_inox_v_sol" | "rail_inox_plat_galet_gorge";
@@ -293,6 +297,17 @@ export interface TarifsCatalogueTerrasse {
   clip?: TarifAccessoireCatalogueTerrasse | null;
   lambourde?: TarifAccessoireCatalogueTerrasse | null;
   plot?: TarifAccessoireCatalogueTerrasse | null;
+  fournituresMobile?: Record<
+    string,
+    {
+      id?: string;
+      code: string;
+      designation?: string;
+      unite?: string;
+      pu_ht: number;
+      pu_revient?: number;
+    }
+  >;
 }
 
 export type StatutControle = "conforme" | "avertissement" | "non_conforme";

@@ -60,6 +60,8 @@ export function resoudreConfigTerrasseMobile(
       motorise: typeMot !== "aucune",
       type_motorisation: typeMot,
       puissance_moteur_n: meta.puissance_moteur_n,
+      essence_bois: meta.essence_bois,
+      teinte_composite: meta.teinte_composite,
     };
   }
   return null;
@@ -556,6 +558,8 @@ export function calculerSousEnsembleTerrasseMobile(
       surfaceM2: surfacePlateauM2,
       poidsPropreKg,
       poidsTotalChargeKg,
+      essenceBois: mob.essence_bois ?? config.essence_bois,
+      teinteComposite: mob.teinte_composite,
     },
     rails: {
       type: "rail_inox_v_sol",

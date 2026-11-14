@@ -9,6 +9,7 @@ import {
   accessoireCompatibleAvecLame,
   estPrestationMainOeuvre,
 } from "@/lib/terrasse/compatAccessoires";
+import { extraireTarifsFournituresMobile } from "@/lib/terrasse/catalogueMobileDefaut";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
@@ -147,6 +148,18 @@ async function chargerTarifsCatalogue(
       unite_mesure: data.unite_mesure,
     };
   }
+
+  // Fournitures Terrasse Mobile & Motorisation
+  const { data: dataMobile } = await supabase
+    .from("catalogue_terrasse_accessoires")
+    .select("id, designation, categorie, type_cout, conditionnement, prix_conditionnement, pu_ht, pu_revient, unite_mesure, specifications_dt")
+    .eq("entreprise_id", entrepriseId)
+    .eq("categorie", "TERRASSE_MOBILE");
+
+  if (dataMobile && dataMobile.length > 0) {
+    tarifs.fournituresMobile = extraireTarifsFournituresMobile(dataMobile);
+  }
+
   return { tarifs };
 }
 

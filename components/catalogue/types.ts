@@ -31,7 +31,8 @@ export type CatAccessoireTerrasse =
   | "CONCASSE"
   | "DALLE_BETON"
   | "CACHE"
-  | "PROFILE_PVC";
+  | "PROFILE_PVC"
+  | "TERRASSE_MOBILE";
 
 export type NatureCout = "matiere" | "main_oeuvre";
 
@@ -124,6 +125,7 @@ export const ENUMS_CAT_ACCESSOIRE: CatAccessoireTerrasse[] = [
   "DALLE_BETON",
   "CACHE",
   "PROFILE_PVC",
+  "TERRASSE_MOBILE",
 ];
 export const UNITES_VENTE = ["m²", "ml", "unité", "U", "heure", "forfait"] as const;
 
@@ -146,6 +148,7 @@ export const LIBELLES_ACCESSOIRE: Record<CatAccessoireTerrasse, string> = {
   DALLE_BETON: "Dalle béton",
   CACHE: "Cache",
   PROFILE_PVC: "Profilé PVC",
+  TERRASSE_MOBILE: "Terrasse Mobile & Motorisation",
 };
 
 /** Fabriques d'état vide, indexées par type. */

@@ -29,6 +29,7 @@ import {
   type ProductDraft,
   type TypeMaterialTerrasse,
 } from "@/components/catalogue/types";
+import { FOURNITURES_DEFAUT_TERRASSE_MOBILE } from "@/lib/terrasse/catalogueMobileDefaut";
 
 /** Types Terrasse gérés par cette page (sous-ensemble de `CatalogueType`). */
 type TypeTerrasse = "TERRASSE_LAME" | "TERRASSE_ACCESSOIRE";
@@ -44,6 +45,7 @@ type FiltreOnglet =
   | "structure"
   | "preparation"
   | "fixations"
+  | "terrasse_mobile"
   | "prestations";
 
 /**
@@ -58,6 +60,7 @@ const ONGLETS: { id: FiltreOnglet; libelle: string }[] = [
   { id: "structure", libelle: "Structure" },
   { id: "preparation", libelle: "Préparation" },
   { id: "fixations", libelle: "Fixations" },
+  { id: "terrasse_mobile", libelle: "Terrasse Mobile & Motorisation" },
   { id: "prestations", libelle: "Prestations" },
 ];
 
@@ -65,6 +68,7 @@ const LIBELLES_GROUPES: Record<GroupeAccessoire, string> = {
   structure: "Structure",
   preparation: "Préparation",
   fixations: "Fixations",
+  terrasse_mobile: "Terrasse Mobile & Motorisation",
 };
 
 /**
@@ -77,6 +81,7 @@ const CATEGORIE_DEFAUT_GROUPE: Record<GroupeAccessoire, CatAccessoireTerrasse> =
   structure: "LAMBOURDE",
   preparation: "GEOTEXTILE",
   fixations: "CLIP",
+  terrasse_mobile: "TERRASSE_MOBILE",
 };
 
 const GROUPE_PAR_DEFAUT: GroupeAccessoire = "fixations";
@@ -89,6 +94,9 @@ const GROUPE_PAR_DEFAUT: GroupeAccessoire = "fixations";
 function getGroupeMetier(categorie: string | null): GroupeAccessoire {
   if (!categorie) return GROUPE_PAR_DEFAUT; // Défaut sûr
   const c = categorie.toUpperCase();
+
+  // Terrasse Mobile & Motorisation
+  if (["TERRASSE_MOBILE", "MOTORISATION"].includes(c)) return "terrasse_mobile";
 
   // Structure porteuse
   if (["LAMBOURDE", "SOLIVE", "PLOT"].includes(c)) return "structure";
@@ -146,6 +154,49 @@ export default function CatalogueTerrassePage() {
   const [categorieInitiale, setCategorieInitiale] = useState<CatAccessoireTerrasse | null>(null);
   const [typeCoutInitial, setTypeCoutInitial] = useState<NatureCout | undefined>(undefined);
   const [idEnEdition, setIdEnEdition] = useState<string | null>(null);
+  const [initialisantMobile, setInitialisantMobile] = useState(false);
+
+  const initialiserFournituresMobile = async () => {
+    try {
+      setInitialisantMobile(true);
+      const { entreprise_id } = await resoudreContexteEntreprise(null);
+      if (!entreprise_id) {
+        alert("Impossible d'identifier votre entreprise. Veuillez vous reconnecter.");
+        return;
+      }
+
+      const rowsToInsert = FOURNITURES_DEFAUT_TERRASSE_MOBILE.map((f) => ({
+        entreprise_id,
+        designation: f.designation,
+        description: f.description,
+        categorie: "TERRASSE_MOBILE",
+        conditionnement: f.conditionnement,
+        prix_conditionnement: f.pu_ht,
+        unite_mesure: f.unite_mesure,
+        pu_ht: f.pu_ht,
+        pu_revient: f.pu_revient,
+        type_cout: "matiere",
+        specifications_dt: { code_article: f.code },
+      }));
+
+      const { error } = await supabase
+        .from("catalogue_terrasse_accessoires")
+        .insert(rowsToInsert as any);
+
+      if (error) {
+        console.error("Erreur initialisation fournitures mobile:", error);
+        alert(`Erreur: ${error.message}`);
+        return;
+      }
+
+      refetch();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de l'initialisation des fournitures.");
+    } finally {
+      setInitialisantMobile(false);
+    }
+  };
 
   useEffect(() => {
     if (importTraiteRef.current) return;
@@ -235,6 +286,7 @@ export default function CatalogueTerrassePage() {
       structure: [],
       preparation: [],
       fixations: [],
+      terrasse_mobile: [],
     };
     for (const a of accessoiresFiltres) {
       // Les prestations ne sont pas réparties par groupe : elles ont leur
@@ -386,14 +438,17 @@ export default function CatalogueTerrassePage() {
   const afficherPrestations = filtre === "tout" || filtre === "prestations";
   const groupesVisibles: GroupeAccessoire[] =
     filtre === "tout"
-      ? ["structure", "preparation", "fixations"]
+      ? ["structure", "preparation", "fixations", "terrasse_mobile"]
       : filtre === "lames" || filtre === "prestations"
         ? []
         : [filtre];
 
-  /** Onglet « groupe métier » actif (structure/préparation/fixations), sinon null. */
+  /** Onglet « groupe métier » actif (structure/préparation/fixations/terrasse_mobile), sinon null. */
   const groupeOngletActif: GroupeAccessoire | null =
-    filtre === "structure" || filtre === "preparation" || filtre === "fixations"
+    filtre === "structure" ||
+    filtre === "preparation" ||
+    filtre === "fixations" ||
+    filtre === "terrasse_mobile"
       ? filtre
       : null;
 
@@ -716,9 +771,29 @@ export default function CatalogueTerrassePage() {
                     </span>
                   </h2>
                   {items.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
-                      Aucun accessoire dans « {LIBELLES_GROUPES[groupe]} » pour cette recherche.
-                    </div>
+                    groupe === "terrasse_mobile" ? (
+                      <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-6 text-center space-y-3">
+                        <div className="text-sm font-semibold text-sky-200">
+                          🏊 Les 9 références de base Terrasse Mobile & Motorisation (profilés alu, rails inox, galets, moteur 24V, crémaillère, kits solaire/filaire, fins de course, télécommandes) sont prêtes.
+                        </div>
+                        <p className="text-xs text-sky-300/80 max-w-xl mx-auto">
+                          Initialisez ces 9 références pré-remplies dans votre catalogue pour personnaliser vos prix de vente et vos coûts de revient.
+                        </p>
+                        <button
+                          type="button"
+                          disabled={initialisantMobile}
+                          onClick={initialiserFournituresMobile}
+                          className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-500 transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          <Plus className="h-4 w-4" />
+                          {initialisantMobile ? "Initialisation en cours..." : "Pré-remplir les 9 fournitures de référence"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
+                        Aucun accessoire dans « {LIBELLES_GROUPES[groupe]} » pour cette recherche.
+                      </div>
+                    )
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {items.map(carteAccessoire)}

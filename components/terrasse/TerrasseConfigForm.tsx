@@ -955,6 +955,60 @@ export default function TerrasseConfigForm({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                      <label className="text-xs font-semibold text-[#777777]">
+                        Finition / Essence plateau mobile (Dissociation plage)
+                      </label>
+                      <select
+                        value={currentMob.essence_bois || ""}
+                        onChange={(e) =>
+                          onChange({
+                            terrasse_mobile: {
+                              ...currentMob,
+                              essence_bois: (e.target.value as EssenceBois) || undefined,
+                            },
+                          })
+                        }
+                        className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                      >
+                        <option value="">Identique à la plage fixe ({config.essence_bois})</option>
+                        <option value="ipe">Bois exotique Ipé (brun foncé)</option>
+                        <option value="cumaru">Bois exotique Cumaru (brun doré)</option>
+                        <option value="pin_cl4">Pin sylvestre autoclave Cl.4 (blond)</option>
+                        <option value="douglas">Douglas purgé d'aubier (miel orangé)</option>
+                        <option value="meleze">Mélèze de Sibérie (miel clair)</option>
+                        <option value="bambou_thermo">Bambou thermo-traité (caramel)</option>
+                        <option value="composite">Lames composites</option>
+                      </select>
+                    </div>
+
+                    {(currentMob.essence_bois === "composite" ||
+                      (!currentMob.essence_bois && config.essence_bois === "composite")) && (
+                      <div>
+                        <label className="text-xs font-semibold text-[#777777]">
+                          Teinte composite du plateau mobile
+                        </label>
+                        <select
+                          value={currentMob.teinte_composite || "anthracite"}
+                          onChange={(e) =>
+                            onChange({
+                              terrasse_mobile: {
+                                ...currentMob,
+                                teinte_composite: e.target.value,
+                              },
+                            })
+                          }
+                          className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                        >
+                          <option value="anthracite">Gris Anthracite (RAL 7016)</option>
+                          <option value="brun">Brun Havane / Marron chaud</option>
+                          <option value="gris_clair">Gris Minéral / Clair</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
                       <label className="text-xs font-semibold text-[#777777]">Hauteur châssis alu (mm)</label>
                       <input
                         type="number"

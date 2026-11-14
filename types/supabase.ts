@@ -3794,7 +3794,7 @@ export type Database = {
       }
     }
     Enums: {
-      cat_accessoire_terrasse: "CLIP" | "LAMBOURDE" | "PLOT" | "VIS" | "BANDEROLE" | "SOLIVE" | "GEOTEXTILE" | "GRAVIER" | "CONCASSE" | "DALLE_BETON" | "CACHE" | "PROFILE_PVC"
+      cat_accessoire_terrasse: "CLIP" | "LAMBOURDE" | "PLOT" | "VIS" | "BANDEROLE" | "SOLIVE" | "GEOTEXTILE" | "GRAVIER" | "CONCASSE" | "DALLE_BETON" | "CACHE" | "PROFILE_PVC" | "TERRASSE_MOBILE"
       type_material_terrasse: "BOIS_NATUREL" | "COMPOSITE" | "PVC"
     }
     CompositeTypes: {
@@ -3923,7 +3923,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      cat_accessoire_terrasse: ["CLIP", "LAMBOURDE", "PLOT", "VIS", "BANDEROLE", "SOLIVE", "GEOTEXTILE", "GRAVIER", "CONCASSE", "DALLE_BETON", "CACHE", "PROFILE_PVC"],
+      cat_accessoire_terrasse: ["CLIP", "LAMBOURDE", "PLOT", "VIS", "BANDEROLE", "SOLIVE", "GEOTEXTILE", "GRAVIER", "CONCASSE", "DALLE_BETON", "CACHE", "PROFILE_PVC", "TERRASSE_MOBILE"],
       type_material_terrasse: ["BOIS_NATUREL", "COMPOSITE", "PVC"],
     },
   },

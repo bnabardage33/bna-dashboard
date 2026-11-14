@@ -4,9 +4,11 @@ import {
   calculerSousEnsembleTerrasseMobile,
 } from "@/lib/terrasse/pro/terrasse-mobile";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
+import { extraireTarifsFournituresMobile } from "@/lib/terrasse/catalogueMobileDefaut";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
+  TarifsCatalogueTerrasse,
 } from "@/lib/terrasse/types";
 
 describe("Terrasse Mobile Coulissante sur Rails (Piscine)", () => {
@@ -291,5 +293,206 @@ describe("Terrasse Mobile Coulissante sur Rails (Piscine)", () => {
     expect(refCodes).toContain("MOT-03"); // Coffret commande / Solaire
     expect(refCodes).toContain("MOT-04"); // Fins de course magnétiques
     expect(refCodes).toContain("MOT-05"); // Télécommandes NF P90-308
+  });
+
+  it("8. Relie les fournitures de terrasse mobile et motorisation aux tarifs personnalisés du catalogue", () => {
+    // 1. Test du mapper extraireTarifsFournituresMobile depuis les lignes d'accessoires Supabase
+    const mockAccessoiresSupabase = [
+      {
+        id: "acc-1",
+        designation: "Rail Inox 316L Spécial Bord de Mer",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 65.0,
+        pu_revient: 42.0,
+        unite_mesure: "ml",
+        specifications_dt: { code_article: "MOB-01" },
+      },
+      {
+        id: "acc-2",
+        designation: "Profilé aluminium structurel 80x40 renforcé",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 40.0,
+        pu_revient: 25.0,
+        unite_mesure: "ml",
+        specifications_dt: { code_article: "MOB-02" },
+      },
+      {
+        id: "acc-3",
+        designation: "Galet double inox avec roulements étanches céramique",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 49.0,
+        pu_revient: 30.0,
+        unite_mesure: "u",
+        specifications_dt: { code_article: "MOB-03" },
+      },
+      {
+        id: "acc-4",
+        designation: "Motoréducteur 24V TBTS Somfy Pro 800N",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 550.0,
+        pu_revient: 360.0,
+        unite_mesure: "u",
+        specifications_dt: { code_article: "MOT-01" },
+      },
+      {
+        id: "acc-5",
+        designation: "Crémaillère M4 silencieuse acier/nylon",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 32.0,
+        pu_revient: 20.0,
+        unite_mesure: "m",
+        specifications_dt: { code_article: "MOT-02" },
+      },
+      {
+        id: "acc-6",
+        designation: "Kit Solaire Autonome 24V (Panneau 50 Wc + 2 batteries)",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 390.0,
+        pu_revient: 260.0,
+        unite_mesure: "kit",
+        specifications_dt: { code_article: "MOT-03-SOL" },
+      },
+      {
+        id: "acc-7",
+        designation: "Kit capteurs magnétiques étanches de fin de course",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 85.0,
+        pu_revient: 50.0,
+        unite_mesure: "kit",
+        specifications_dt: { code_article: "MOT-04" },
+      },
+      {
+        id: "acc-8",
+        designation: "Télécommande de sécurité 868 MHz 4 canaux",
+        categorie: "TERRASSE_MOBILE",
+        pu_ht: 55.0,
+        pu_revient: 30.0,
+        unite_mesure: "u",
+        specifications_dt: { code_article: "MOT-05" },
+      },
+    ];
+
+    const fournituresCatalogue = extraireTarifsFournituresMobile(mockAccessoiresSupabase);
+    expect(fournituresCatalogue["MOB-01"]?.pu_ht).toBe(65.0);
+    expect(fournituresCatalogue["MOB-02"]?.pu_ht).toBe(40.0);
+    expect(fournituresCatalogue["MOB-03"]?.pu_ht).toBe(49.0);
+    expect(fournituresCatalogue["MOT-01"]?.pu_ht).toBe(550.0);
+    expect(fournituresCatalogue["MOT-02"]?.pu_ht).toBe(32.0);
+    expect(fournituresCatalogue["MOT-03-SOL"]?.pu_ht).toBe(390.0);
+    expect(fournituresCatalogue["MOT-04"]?.pu_ht).toBe(85.0);
+    expect(fournituresCatalogue["MOT-05"]?.pu_ht).toBe(55.0);
+
+    // 2. Chiffrage avec tarifs catalogue personnalisés
+    const poolResaMotorisee: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        type_motorisation: "solaire",
+      },
+    };
+
+    const tarifsPerso: TarifsCatalogueTerrasse = {
+      fournituresMobile: fournituresCatalogue,
+    };
+
+    const resPerso = calculerTerrasse(baseConfig, [poolResaMotorisee], tarifsPerso);
+    const lignesPerso = resPerso.chiffrage.lignes;
+
+    const ligneRail = lignesPerso.find((l) => l.code === "MOB-01");
+    expect(ligneRail?.prixUnitaireHt).toBe(65.0);
+    expect(ligneRail?.designation).toBe("Rail Inox 316L Spécial Bord de Mer");
+
+    const ligneAlu = lignesPerso.find((l) => l.code === "MOB-02");
+    expect(ligneAlu?.prixUnitaireHt).toBe(40.0);
+
+    const ligneGalet = lignesPerso.find((l) => l.code === "MOB-03");
+    expect(ligneGalet?.prixUnitaireHt).toBe(49.0);
+
+    const ligneMot = lignesPerso.find((l) => l.code === "MOT-01");
+    expect(ligneMot?.prixUnitaireHt).toBe(550.0);
+
+    const ligneCremaillere = lignesPerso.find((l) => l.code === "MOT-02");
+    expect(ligneCremaillere?.prixUnitaireHt).toBe(32.0);
+
+    const ligneCoffret = lignesPerso.find((l) => l.code === "MOT-03");
+    expect(ligneCoffret?.prixUnitaireHt).toBe(390.0);
+
+    const ligneFdc = lignesPerso.find((l) => l.code === "MOT-04");
+    expect(ligneFdc?.prixUnitaireHt).toBe(85.0);
+
+    const ligneTel = lignesPerso.find((l) => l.code === "MOT-05");
+    expect(ligneTel?.prixUnitaireHt).toBe(55.0);
+
+    // 3. Chiffrage sans tarifs (fallback automatique sur les prix de référence par défaut)
+    const resDefaut = calculerTerrasse(baseConfig, [poolResaMotorisee]);
+    const lignesDefaut = resDefaut.chiffrage.lignes;
+
+    expect(lignesDefaut.find((l) => l.code === "MOB-01")?.prixUnitaireHt).toBe(58.0);
+    expect(lignesDefaut.find((l) => l.code === "MOB-02")?.prixUnitaireHt).toBe(34.0);
+    expect(lignesDefaut.find((l) => l.code === "MOB-03")?.prixUnitaireHt).toBe(42.0);
+    expect(lignesDefaut.find((l) => l.code === "MOT-01")?.prixUnitaireHt).toBe(480.0);
+    expect(lignesDefaut.find((l) => l.code === "MOT-02")?.prixUnitaireHt).toBe(28.0);
+    expect(lignesDefaut.find((l) => l.code === "MOT-03")?.prixUnitaireHt).toBe(340.0);
+    expect(lignesDefaut.find((l) => l.code === "MOT-04")?.prixUnitaireHt).toBe(75.0);
+    expect(lignesDefaut.find((l) => l.code === "MOT-05")?.prixUnitaireHt).toBe(48.0);
+  });
+
+  it("9. Permet la dissociation esthétique (essence / teinte différente entre plage fixe et plateau mobile)", () => {
+    // Cas A : Plage fixe en pin sylvestre, plateau mobile en bois exotique Cumaru
+    const poolResaExotique: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        essence_bois: "cumaru",
+      },
+    };
+
+    const configA = resoudreConfigTerrasseMobile(baseConfig, poolResaExotique);
+    expect(configA?.essence_bois).toBe("cumaru");
+
+    const calculA = calculerSousEnsembleTerrasseMobile({
+      config: baseConfig,
+      poolReservation: poolResaExotique,
+      mobileConfig: configA!,
+    });
+    expect(calculA.resultatPlateau.dimensionsPlateau.essenceBois).toBe("cumaru");
+
+    // Cas B : Plage fixe en bois (pin_cl4), plateau mobile en lames composites gris anthracite
+    const poolResaComposite: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        essence_bois: "composite",
+        teinte_composite: "anthracite",
+      },
+    };
+
+    const configB = resoudreConfigTerrasseMobile(baseConfig, poolResaComposite);
+    expect(configB?.essence_bois).toBe("composite");
+    expect(configB?.teinte_composite).toBe("anthracite");
+
+    const calculB = calculerSousEnsembleTerrasseMobile({
+      config: baseConfig,
+      poolReservation: poolResaComposite,
+      mobileConfig: configB!,
+    });
+    expect(calculB.resultatPlateau.dimensionsPlateau.essenceBois).toBe("composite");
+    expect(calculB.resultatPlateau.dimensionsPlateau.teinteComposite).toBe("anthracite");
+
+    // Cas C : Sans essence spécifique spécifiée sur le plateau mobile -> hérite automatiquement de la plage fixe
+    const poolResaHeritee: ChantierTerrasseReservation = {
+      ...poolReservation,
+      terrasse_mobile: {
+        ...poolReservation.terrasse_mobile!,
+        essence_bois: undefined,
+      },
+    };
+
+    const calculC = calculerSousEnsembleTerrasseMobile({
+      config: baseConfig,
+      poolReservation: poolResaHeritee,
+      mobileConfig: poolResaHeritee.terrasse_mobile!,
+    });
+    expect(calculC.resultatPlateau.dimensionsPlateau.essenceBois).toBe(baseConfig.essence_bois);
   });
 });

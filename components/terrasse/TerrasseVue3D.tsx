@@ -51,19 +51,28 @@ interface ComponentMeta {
   details: Array<[string, string]>;
 }
 
-// Couleurs par essence
-function getWoodColor(essence: ChantierTerrasseConfig["essence_bois"]): string {
+// Couleurs par essence et teinte
+function getWoodColor(
+  essence: ChantierTerrasseConfig["essence_bois"],
+  teinte?: string
+): string {
+  if (essence === "composite") {
+    if (teinte === "brun" || teinte === "marron" || teinte === "havane") return "#5c4033";
+    if (teinte === "gris_clair") return "#94a3b8";
+    return "#334155"; // gris anthracite par défaut
+  }
   switch (essence) {
     case "ipe":
+      return "#5c2c16"; // brun chaud profond
     case "cumaru":
-      return "#7c3f1d";
-    case "composite":
-      return "#475569";
+      return "#7c3f1d"; // brun doré
     case "douglas":
     case "meleze":
-      return "#b45309";
+      return "#b45309"; // miel orangé
     case "bambou_thermo":
-      return "#5c3317";
+      return "#45220c"; // caramel foncé
+    case "pin_cl4":
+      return "#c29b62"; // blond résineux
     default:
       return "#a16207";
   }
@@ -73,7 +82,10 @@ function getWoodColor(essence: ChantierTerrasseConfig["essence_bois"]): string {
  * Générateur procédural de textures PBR pour platelage bois / composite rainuré
  * Évite tout chargement réseau ou image externe, 100 % autonome et performant.
  */
-function createDeckWoodTextures(essence: ChantierTerrasseConfig["essence_bois"]) {
+function createDeckWoodTextures(
+  essence: ChantierTerrasseConfig["essence_bois"],
+  teinte?: string
+) {
   if (typeof document === "undefined") return { map: null, bumpMap: null };
 
   const width = 512;
@@ -90,29 +102,49 @@ function createDeckWoodTextures(essence: ChantierTerrasseConfig["essence_bois"])
   let grooveColor = "#78350f";
   let grainColor = "#854d0e";
 
-  switch (essence) {
-    case "ipe":
-    case "cumaru":
-      baseColor = "#7c3f1d";
-      grooveColor = "#451a03";
-      grainColor = "#5c2a12";
-      break;
-    case "composite":
-      baseColor = "#475569";
-      grooveColor = "#1e293b";
-      grainColor = "#334155";
-      break;
-    case "douglas":
-    case "meleze":
-      baseColor = "#b45309";
-      grooveColor = "#78350f";
-      grainColor = "#92400e";
-      break;
-    case "bambou_thermo":
-      baseColor = "#5c3317";
-      grooveColor = "#2d1606";
-      grainColor = "#42210b";
-      break;
+  if (essence === "composite") {
+    if (teinte === "brun" || teinte === "marron" || teinte === "havane") {
+      baseColor = "#5c4033";
+      grooveColor = "#2d1f19";
+      grainColor = "#3d2b22";
+    } else if (teinte === "gris_clair") {
+      baseColor = "#94a3b8";
+      grooveColor = "#475569";
+      grainColor = "#64748b";
+    } else {
+      baseColor = "#334155";
+      grooveColor = "#0f172a";
+      grainColor = "#1e293b";
+    }
+  } else {
+    switch (essence) {
+      case "ipe":
+        baseColor = "#5c2c16";
+        grooveColor = "#2e150a";
+        grainColor = "#42200f";
+        break;
+      case "cumaru":
+        baseColor = "#7c3f1d";
+        grooveColor = "#451a03";
+        grainColor = "#5c2a12";
+        break;
+      case "douglas":
+      case "meleze":
+        baseColor = "#b45309";
+        grooveColor = "#78350f";
+        grainColor = "#92400e";
+        break;
+      case "bambou_thermo":
+        baseColor = "#45220c";
+        grooveColor = "#241005";
+        grainColor = "#331808";
+        break;
+      case "pin_cl4":
+        baseColor = "#c29b62";
+        grooveColor = "#855826";
+        grainColor = "#9c6f37";
+        break;
+    }
   }
 
   // Fond bois/composite
@@ -413,6 +445,19 @@ function SceneContent({
   const deckTextures = useMemo(() => {
     return createDeckWoodTextures(config.essence_bois);
   }, [config.essence_bois]);
+
+  // Teinte et textures dissociées pour le plateau mobile (Dissociation esthétique Plage vs Plateau)
+  const mobileEssence =
+    mobileResult?.resultatPlateau.dimensionsPlateau.essenceBois ??
+    mobileConfig?.essence_bois ??
+    config.essence_bois;
+  const mobileTeinte =
+    mobileResult?.resultatPlateau.dimensionsPlateau.teinteComposite ??
+    mobileConfig?.teinte_composite;
+  const mobileWoodColor = getWoodColor(mobileEssence, mobileTeinte);
+  const mobileDeckTextures = useMemo(() => {
+    return createDeckWoodTextures(mobileEssence, mobileTeinte);
+  }, [mobileEssence, mobileTeinte]);
 
   // Niveau supérieur de la plage fixe (altitude référence pour rails discrets et jupe d'applique)
   const yDeckTop = yLame + lameH;
@@ -922,6 +967,7 @@ function SceneContent({
               subtitle: `Course : ${(panel.travelDistanceMm / 1000).toFixed(2)} m · Caisson fermé monobloc`,
               details: [
                 ["Dimensions plateau", `${pW.toFixed(2)} m × ${pL.toFixed(2)} m`],
+                ["Finition platelage", `${mobileEssence}${mobileTeinte ? ` (${mobileTeinte})` : ""}`],
                 ["Châssis porteur", `Aluminium ${mobileResult.resultatPlateau.structureChassis.sectionAluMm} mm (${Math.round(chassisH * 1000)} mm)`],
                 ["Habillage périphérique", `Jupe 4 faces en applique (${Math.round(jupeH * 1000)} mm)`],
                 ["Galets de roulement", `${panel.wheels.length} galets inox A4 masqués`],
@@ -933,9 +979,10 @@ function SceneContent({
             const metaJupe: ComponentMeta = {
               kind: "CHASSIS_MOBILE",
               title: "Bandeau de finition périphérique (Jupe en applique)",
-              subtitle: `Caisson fermé monobloc · Lames de rive ${config.essence_bois}`,
+              subtitle: `Caisson fermé monobloc · Lames de rive ${mobileEssence}${mobileTeinte ? ` (${mobileTeinte})` : ""}`,
               details: [
                 ["Type d'habillage", "Pose en applique 4 côtés (vis invisibles inox)"],
+                ["Essence / Finition", `${mobileEssence}${mobileTeinte ? ` · Teinte : ${mobileTeinte}` : ""}`],
                 ["Hauteur bandeau", `${Math.round(jupeH * 1000)} mm (masque intégral châssis + roulettes)`],
                 ["Garde au sol", "8 mm au-dessus de la plage fixe"],
                 ["Épaisseur bandeau", `${Math.round(epJupe * 1000)} mm`],
@@ -1016,11 +1063,11 @@ function SceneContent({
                     >
                       <boxGeometry args={[blen, lameH, bwidth]} />
                       <meshStandardMaterial
-                        color={woodColor}
+                        color={mobileWoodColor}
                         roughness={0.52}
                         metalness={0.04}
-                        map={deckTextures.map ?? undefined}
-                        bumpMap={deckTextures.bumpMap ?? undefined}
+                        map={mobileDeckTextures.map ?? undefined}
+                        bumpMap={mobileDeckTextures.bumpMap ?? undefined}
                         bumpScale={0.03}
                       />
                     </mesh>
@@ -1042,11 +1089,11 @@ function SceneContent({
                   >
                     <boxGeometry args={[pW + 2 * epJupe, jupeH, epJupe]} />
                     <meshStandardMaterial
-                      color={woodColor}
+                      color={mobileWoodColor}
                       roughness={0.52}
                       metalness={0.04}
-                      map={deckTextures.map ?? undefined}
-                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      map={mobileDeckTextures.map ?? undefined}
+                      bumpMap={mobileDeckTextures.bumpMap ?? undefined}
                       bumpScale={0.03}
                     />
                   </mesh>
@@ -1063,11 +1110,11 @@ function SceneContent({
                   >
                     <boxGeometry args={[pW + 2 * epJupe, jupeH, epJupe]} />
                     <meshStandardMaterial
-                      color={woodColor}
+                      color={mobileWoodColor}
                       roughness={0.52}
                       metalness={0.04}
-                      map={deckTextures.map ?? undefined}
-                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      map={mobileDeckTextures.map ?? undefined}
+                      bumpMap={mobileDeckTextures.bumpMap ?? undefined}
                       bumpScale={0.03}
                     />
                   </mesh>
@@ -1084,11 +1131,11 @@ function SceneContent({
                   >
                     <boxGeometry args={[epJupe, jupeH, pL]} />
                     <meshStandardMaterial
-                      color={woodColor}
+                      color={mobileWoodColor}
                       roughness={0.52}
                       metalness={0.04}
-                      map={deckTextures.map ?? undefined}
-                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      map={mobileDeckTextures.map ?? undefined}
+                      bumpMap={mobileDeckTextures.bumpMap ?? undefined}
                       bumpScale={0.03}
                     />
                   </mesh>
@@ -1105,11 +1152,11 @@ function SceneContent({
                   >
                     <boxGeometry args={[epJupe, jupeH, pL]} />
                     <meshStandardMaterial
-                      color={woodColor}
+                      color={mobileWoodColor}
                       roughness={0.52}
                       metalness={0.04}
-                      map={deckTextures.map ?? undefined}
-                      bumpMap={deckTextures.bumpMap ?? undefined}
+                      map={mobileDeckTextures.map ?? undefined}
+                      bumpMap={mobileDeckTextures.bumpMap ?? undefined}
                       bumpScale={0.03}
                     />
                   </mesh>
@@ -1181,6 +1228,14 @@ export default function TerrasseVue3D({
       mobileConfig,
     });
   }, [config, poolReservation, mobileConfig]);
+
+  const mobileEssence =
+    mobileResult?.resultatPlateau.dimensionsPlateau.essenceBois ??
+    mobileConfig?.essence_bois ??
+    config.essence_bois;
+  const mobileTeinte =
+    mobileResult?.resultatPlateau.dimensionsPlateau.teinteComposite ??
+    mobileConfig?.teinte_composite;
 
   // Animation automatique fluide T(t)
   useEffect(() => {
@@ -1523,6 +1578,10 @@ export default function TerrasseVue3D({
                 <strong>
                   {mobileResult
                     ? `${mobileResult.resultatPlateau.mode === "2_demi_plateaux" ? "2 demi-plateaux" : "1 plateau"} · Caisson fermé · ${
+                        mobileEssence !== config.essence_bois
+                          ? `Finition ${mobileEssence}${mobileTeinte ? ` (${mobileTeinte})` : ""} · `
+                          : ""
+                      }${
                         mobileResult.resultatPlateau.motorisation?.active &&
                         mobileResult.resultatPlateau.motorisation.typeMotorisation !== "aucune"
                           ? `Motorisation ${mobileResult.resultatPlateau.motorisation.typeMotorisation === "solaire" ? "Solaire 24V" : "Filaire"} (${mobileResult.resultatPlateau.motorisation.puissanceMoteurUnitaireN} N)`

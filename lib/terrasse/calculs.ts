@@ -427,88 +427,145 @@ export function calculerTerrasse(
   // Fournitures Terrasse Mobile & Motorisation (si présente)
   const mob = terrassePro.terrasseMobile;
   if (mob && mob.active) {
+    const mobCat = catalogue?.fournituresMobile;
+    const resoudreTarifFourniture = (
+      code: string,
+      prixDefaut: number,
+      designationDefaut: string
+    ) => {
+      const art = mobCat?.[code];
+      const prix =
+        art && typeof art.pu_ht === "number" && art.pu_ht >= 0
+          ? art.pu_ht
+          : prixDefaut;
+      const des = art?.designation ? art.designation.trim() : designationDefaut;
+      return { prix, designation: des };
+    };
+
+    const { prix: tarifRail, designation: desRail } = resoudreTarifFourniture(
+      "MOB-01",
+      58.0,
+      `Rails de guidage extra-plats en acier Inox 316L (AISI 316) anti-corrosion`
+    );
     lignes.push({
       code: "MOB-01",
       categorie: "Terrasse Mobile",
-      designation: `Rails de guidage extra-plats en acier Inox 316L (AISI 316) anti-corrosion`,
+      designation: desRail,
       quantite: mob.rails.lineaireTotalM,
       unite: "ml",
-      prixUnitaireHt: 58.0,
-      totalHt: Number((mob.rails.lineaireTotalM * 58.0).toFixed(2)),
+      prixUnitaireHt: tarifRail,
+      totalHt: Number((mob.rails.lineaireTotalM * tarifRail).toFixed(2)),
     });
 
+    const { prix: tarifAlu, designation: desAlu } = resoudreTarifFourniture(
+      "MOB-02",
+      34.0,
+      `Profilés porteurs aluminium ${mob.structureChassis.sectionAluMm}mm pour châssis mobile`
+    );
     lignes.push({
       code: "MOB-02",
       categorie: "Terrasse Mobile",
-      designation: `Profilés porteurs aluminium ${mob.structureChassis.sectionAluMm}mm pour châssis mobile`,
+      designation: desAlu,
       quantite: mob.structureChassis.lineaireProfilesAluM,
       unite: "ml",
-      prixUnitaireHt: 34.0,
-      totalHt: Number((mob.structureChassis.lineaireProfilesAluM * 34.0).toFixed(2)),
+      prixUnitaireHt: tarifAlu,
+      totalHt: Number((mob.structureChassis.lineaireProfilesAluM * tarifAlu).toFixed(2)),
     });
 
+    const { prix: tarifGalet, designation: desGalet } = resoudreTarifFourniture(
+      "MOB-03",
+      42.0,
+      `${mob.roulement.reference} (charge max ${mob.roulement.chargeParGaletKg}kg/pt)`
+    );
     lignes.push({
       code: "MOB-03",
       categorie: "Terrasse Mobile",
-      designation: `${mob.roulement.reference} (charge max ${mob.roulement.chargeParGaletKg}kg/pt)`,
+      designation: desGalet,
       quantite: mob.roulement.nbGaletsTotal,
       unite: "u",
-      prixUnitaireHt: 42.0,
-      totalHt: Number((mob.roulement.nbGaletsTotal * 42.0).toFixed(2)),
+      prixUnitaireHt: tarifGalet,
+      totalHt: Number((mob.roulement.nbGaletsTotal * tarifGalet).toFixed(2)),
     });
 
     if (mob.motorisation && mob.motorisation.active) {
       const mot = mob.motorisation;
+      const { prix: tarifMot, designation: desMot } = resoudreTarifFourniture(
+        "MOT-01",
+        480.0,
+        `Motoréducteur basse tension 24V DC spécial terrasse mobile (${mot.puissanceMoteurUnitaireN} N traction)`
+      );
       lignes.push({
         code: "MOT-01",
         categorie: "Motorisation Mobile",
-        designation: `Motoréducteur basse tension 24V DC spécial terrasse mobile (${mot.puissanceMoteurUnitaireN} N traction)`,
+        designation: desMot,
         quantite: mot.nbMoteurs,
         unite: "u",
-        prixUnitaireHt: 480.0,
-        totalHt: Number((mot.nbMoteurs * 480.0).toFixed(2)),
+        prixUnitaireHt: tarifMot,
+        totalHt: Number((mot.nbMoteurs * tarifMot).toFixed(2)),
       });
 
       if (mot.lineaireCremaillereM > 0) {
+        const { prix: tarifCremaillere, designation: desCremaillere } = resoudreTarifFourniture(
+          "MOT-02",
+          28.0,
+          `Crémaillère renforcée module 4 à âme acier surmoulée nylon anti-bruit`
+        );
         lignes.push({
           code: "MOT-02",
           categorie: "Motorisation Mobile",
-          designation: `Crémaillère renforcée module 4 à âme acier surmoulée nylon anti-bruit`,
+          designation: desCremaillere,
           quantite: mot.barresCremaillereCount,
           unite: "m",
-          prixUnitaireHt: 28.0,
-          totalHt: Number((mot.barresCremaillereCount * 28.0).toFixed(2)),
+          prixUnitaireHt: tarifCremaillere,
+          totalHt: Number((mot.barresCremaillereCount * tarifCremaillere).toFixed(2)),
         });
       }
 
+      const codeCoffret = mot.typeMotorisation === "solaire" ? "MOT-03-SOL" : "MOT-03-FIL";
+      const prixCoffretDefaut = mot.typeMotorisation === "solaire" ? 340.0 : 190.0;
+      const { prix: tarifCoffret, designation: desCoffret } = resoudreTarifFourniture(
+        codeCoffret,
+        prixCoffretDefaut,
+        mot.coffretCommande.designation
+      );
       lignes.push({
         code: "MOT-03",
         categorie: "Motorisation Mobile",
-        designation: mot.coffretCommande.designation,
+        designation: desCoffret,
         quantite: 1,
         unite: "kit",
-        prixUnitaireHt: mot.typeMotorisation === "solaire" ? 340.0 : 190.0,
-        totalHt: mot.typeMotorisation === "solaire" ? 340.0 : 190.0,
+        prixUnitaireHt: tarifCoffret,
+        totalHt: tarifCoffret,
       });
 
+      const { prix: tarifFdc, designation: desFdc } = resoudreTarifFourniture(
+        "MOT-04",
+        75.0,
+        `Kit capteurs fins de course magnétiques étanches IP68 (${mot.finsDeCourse.nbCapteurs} capteurs)`
+      );
       lignes.push({
         code: "MOT-04",
         categorie: "Motorisation Mobile",
-        designation: `Kit capteurs fins de course magnétiques étanches IP68 (${mot.finsDeCourse.nbCapteurs} capteurs)`,
+        designation: desFdc,
         quantite: 1,
         unite: "kit",
-        prixUnitaireHt: 75.0,
-        totalHt: 75.0,
+        prixUnitaireHt: tarifFdc,
+        totalHt: tarifFdc,
       });
 
+      const { prix: tarifTel, designation: desTel } = resoudreTarifFourniture(
+        "MOT-05",
+        48.0,
+        mot.telecommande.description
+      );
       lignes.push({
         code: "MOT-05",
         categorie: "Motorisation Mobile",
-        designation: mot.telecommande.description,
+        designation: desTel,
         quantite: mot.telecommande.nbTelecommandes,
         unite: "u",
-        prixUnitaireHt: 48.0,
-        totalHt: Number((mot.telecommande.nbTelecommandes * 48.0).toFixed(2)),
+        prixUnitaireHt: tarifTel,
+        totalHt: Number((mot.telecommande.nbTelecommandes * tarifTel).toFixed(2)),
       });
     }
   }
