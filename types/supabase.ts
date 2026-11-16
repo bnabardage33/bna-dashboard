@@ -3781,69 +3781,87 @@ export type Database = {
         Row: {
           cause_probable: string | null
           chantier_id: string | null
+          client_id: string | null
           created_at: string | null
           date_intervention: string | null
           description: string | null
           diagnostic_dtu: string | null
           entreprise_id: string
+          facturable: boolean
           id: string
           intervenant: string | null
           localisation: string | null
           materiel_prevu: Json | null
+          metier: string
           moyen_acces: string | null
           photos: Json | null
+          pv_reception_id: string | null
           respect_dtu: boolean | null
           signature_client: string | null
           signature_technicien: string | null
           sous_garantie: boolean | null
           statut: string | null
           temps_estime: string | null
+          type_garantie: string | null
+          type_origine: string
           type_sinistre: string | null
           updated_at: string | null
         }
         Insert: {
           cause_probable?: string | null
           chantier_id?: string | null
+          client_id?: string | null
           created_at?: string | null
           date_intervention?: string | null
           description?: string | null
           diagnostic_dtu?: string | null
           entreprise_id: string
+          facturable?: boolean
           id?: string
           intervenant?: string | null
           localisation?: string | null
           materiel_prevu?: Json | null
+          metier?: string
           moyen_acces?: string | null
           photos?: Json | null
+          pv_reception_id?: string | null
           respect_dtu?: boolean | null
           signature_client?: string | null
           signature_technicien?: string | null
           sous_garantie?: boolean | null
           statut?: string | null
           temps_estime?: string | null
+          type_garantie?: string | null
+          type_origine?: string
           type_sinistre?: string | null
           updated_at?: string | null
         }
         Update: {
           cause_probable?: string | null
           chantier_id?: string | null
+          client_id?: string | null
           created_at?: string | null
           date_intervention?: string | null
           description?: string | null
           diagnostic_dtu?: string | null
           entreprise_id?: string
+          facturable?: boolean
           id?: string
           intervenant?: string | null
           localisation?: string | null
           materiel_prevu?: Json | null
+          metier?: string
           moyen_acces?: string | null
           photos?: Json | null
+          pv_reception_id?: string | null
           respect_dtu?: boolean | null
           signature_client?: string | null
           signature_technicien?: string | null
           sous_garantie?: boolean | null
           statut?: string | null
           temps_estime?: string | null
+          type_garantie?: string | null
+          type_origine?: string
           type_sinistre?: string | null
           updated_at?: string | null
         }
@@ -3856,10 +3874,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_sav_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_sav_entreprise_fk"
             columns: ["entreprise_id"]
             isOneToOne: false
             referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_sav_pv_reception_id_fkey"
+            columns: ["pv_reception_id"]
+            isOneToOne: false
+            referencedRelation: "pv_receptions"
             referencedColumns: ["id"]
           },
         ]

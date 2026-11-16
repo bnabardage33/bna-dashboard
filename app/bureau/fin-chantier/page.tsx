@@ -22,6 +22,20 @@ import Image from "next/image";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import RetenueGarantieChantier from "@/components/RetenueGarantieChantier";
+import {
+  construireOuvragesCloture,
+  construireOuvragesTerrasse,
+  getDefaultsFinChantierParMetier,
+  infererMetierDepuisTypeTravaux,
+  normaliserMetierFinChantier,
+  type MetierFinChantier,
+} from "@/lib/finChantierMetier";
+
+const BADGE_METIER_FIN: Record<MetierFinChantier, string> = {
+  bardage: "border-blue-200 bg-blue-50 text-blue-700",
+  terrasse: "border-amber-200 bg-amber-50 text-amber-800",
+  cloture: "border-[#B85B2B]/30 bg-[#B85B2B]/10 text-[#B85B2B]",
+};
 
 type PVRow = {
   id: string;
@@ -46,8 +60,9 @@ type PVRow = {
   signataire_entreprise_nom: string | null;
   checklist_repli: ChecklistRepli;
   created_at: string;
+  metier?: MetierFinChantier;
   // Données enrichies
-  chantiers?: { nom: string | null; adresse_chantier: string | null } | null;
+  chantiers?: { nom: string | null; adresse_chantier: string | null; metier?: string | null } | null;
   clients?: { nom: string | null; email: string | null; telephone: string | null } | null;
   devis?: { numero: string | null } | null;
 };
@@ -57,6 +72,7 @@ type ChantierOption = {
   nom: string | null;
   adresse_chantier: string | null;
   materiau_structurel: string | null;
+  metier?: string | null;
   client_id: string;
   clients: { nom: string; adresse?: string | null; email?: string | null; telephone?: string | null } | null;
 };
@@ -96,6 +112,7 @@ type ChantierSupabaseRow = {
   nom: string | null;
   adresse_chantier: string | null;
   materiau_structurel: string | null;
+  metier?: string | null;
   client_id: string | null;
 };
 
@@ -136,6 +153,7 @@ export default function FinChantierPage() {
   const [loading, setLoading] = useState(true);
   const [recherche, setRecherche] = useState("");
   const [filtre, setFiltre] = useState<"tous" | "sans_reserve" | "avec_reserves" | "reserves_levees">("tous");
+  const [filtreMetier, setFiltreMetier] = useState<"tous" | MetierFinChantier>("tous");
 
   // Modals
   const [modalFormOuvert, setModalFormOuvert] = useState(false);
@@ -167,55 +185,102 @@ export default function FinChantierPage() {
   const [formSignEntrepriseNom, setFormSignEntrepriseNom] = useState("BNA BARDAGE");
   const [sauvegardeEnCours, setSauvegardeEnCours] = useState(false);
 
-  // Calcul des zones d'un chantier
-  const chargerZonesPourChantier = useCallback(async (chId: string): Promise<ZoneMetre[]> => {
-    if (!chId) return [];
-    try {
-      const { data } = await supabase
-        .from("chantier_zones")
-        .select("*")
-        .eq("chantier_id", chId)
-        .order("created_at", { ascending: true });
+  // Calcul des ouvrages / métrés d'un chantier selon son métier
+  const chargerOuvragesPourChantier = useCallback(
+    async (
+      chId: string,
+      metierRaw?: string | null
+    ): Promise<{ zones: ZoneMetre[]; terrasseMobileActive: boolean }> => {
+      if (!chId) return { zones: [], terrasseMobileActive: false };
+      const metier = normaliserMetierFinChantier(metierRaw);
+      try {
+        if (metier === "terrasse") {
+          const { data } = await supabase
+            .from("chantier_terrasses")
+            .select("*")
+            .eq("chantier_id", chId)
+            .maybeSingle();
+          if (!data) return { zones: [], terrasseMobileActive: false };
+          const zones = construireOuvragesTerrasse(data);
+          const rt = (data.resultats_techniques || {}) as {
+            terrasseMobile?: { active?: boolean };
+          };
+          return {
+            zones,
+            terrasseMobileActive: Boolean(rt?.terrasseMobile?.active),
+          };
+        }
 
-      if (!data || data.length === 0) return [];
+        if (metier === "cloture") {
+          const [{ data: cl }, { data: tr }] = await Promise.all([
+            supabase
+              .from("chantier_clotures")
+              .select("*")
+              .eq("chantier_id", chId)
+              .maybeSingle(),
+            supabase
+              .from("chantier_cloture_troncons")
+              .select("*")
+              .eq("chantier_id", chId)
+              .order("ordre", { ascending: true }),
+          ]);
+          return {
+            zones: construireOuvragesCloture(cl, tr ?? []),
+            terrasseMobileActive: false,
+          };
+        }
 
-      return data.map((z: ZoneSupabaseRow) => {
-        const l = Number(z.largeur) || 0;
-        const h = Number(z.hauteur_mur) || 0;
-        const hf = Number(z.hauteur_faite) || 0;
-        const isPignon = z.type === "pignon";
-        const surfaceBrute = isPignon && hf > h ? l * h + (l * (hf - h)) / 2 : l * h;
-        const surfaceOuvertures = ((z.ouvertures as OuvertureZoneRow[] | null) ?? []).reduce(
-          (s: number, o: OuvertureZoneRow) =>
-            s + (Number(o.largeur) || 0) * (Number(o.hauteur) || 0) * (Number(o.quantite) || 1),
-          0
-        );
-        const surfaceNette = Math.max(0, surfaceBrute - surfaceOuvertures);
+        const { data } = await supabase
+          .from("chantier_zones")
+          .select("*")
+          .eq("chantier_id", chId)
+          .order("created_at", { ascending: true });
 
-        return {
-          id: z.id,
-          nom: z.nom || "Zone",
-          type: (z.type === "pignon" ? "pignon" : "facade") as "facade" | "pignon",
-          largeur: l,
-          hauteur_mur: h,
-          hauteur_faite: z.hauteur_faite ? hf : null,
-          surfaceBrute: Math.round(surfaceBrute * 100) / 100,
-          surfaceOuvertures: Math.round(surfaceOuvertures * 100) / 100,
-          surfaceNette: Math.round(surfaceNette * 100) / 100,
-          materiau: z.materiau || "Bardage rapporté",
-        };
-      });
-    } catch {
-      return [];
-    }
-  }, []);
+        if (!data || data.length === 0) {
+          return { zones: [], terrasseMobileActive: false };
+        }
+
+        const zones = data.map((z: ZoneSupabaseRow) => {
+          const l = Number(z.largeur) || 0;
+          const h = Number(z.hauteur_mur) || 0;
+          const hf = Number(z.hauteur_faite) || 0;
+          const isPignon = z.type === "pignon";
+          const surfaceBrute = isPignon && hf > h ? l * h + (l * (hf - h)) / 2 : l * h;
+          const surfaceOuvertures = ((z.ouvertures as OuvertureZoneRow[] | null) ?? []).reduce(
+            (s: number, o: OuvertureZoneRow) =>
+              s + (Number(o.largeur) || 0) * (Number(o.hauteur) || 0) * (Number(o.quantite) || 1),
+            0
+          );
+          const surfaceNette = Math.max(0, surfaceBrute - surfaceOuvertures);
+
+          return {
+            id: z.id,
+            nom: z.nom || "Zone",
+            type: (z.type === "pignon" ? "pignon" : "facade") as "facade" | "pignon",
+            largeur: l,
+            hauteur_mur: h,
+            hauteur_faite: z.hauteur_faite ? hf : null,
+            surfaceBrute: Math.round(surfaceBrute * 100) / 100,
+            surfaceOuvertures: Math.round(surfaceOuvertures * 100) / 100,
+            surfaceNette: Math.round(surfaceNette * 100) / 100,
+            materiau: z.materiau || "Bardage rapporté",
+            unite: "m2" as const,
+          };
+        });
+        return { zones, terrasseMobileActive: false };
+      } catch {
+        return { zones: [], terrasseMobileActive: false };
+      }
+    },
+    []
+  );
 
   // Chargement des données
   const chargerDonnees = useCallback(async () => {
     setLoading(true);
     const [pvsRes, chantiersRes, clientsRes, devisRes] = await Promise.all([
       supabase.from("pv_receptions").select("*").order("created_at", { ascending: false }),
-      supabase.from("chantiers").select("id, nom, adresse_chantier, materiau_structurel, client_id"),
+      supabase.from("chantiers").select("id, nom, adresse_chantier, materiau_structurel, client_id, metier"),
       supabase.from("clients").select("id, nom, email, tel, adresse_facturation"),
       supabase.from("devis").select("id, numero"),
     ]);
@@ -234,6 +299,7 @@ export default function FinChantierPage() {
         nom: (c.nom as string) || "Chantier sans nom",
         adresse_chantier: c.adresse_chantier as string,
         materiau_structurel: c.materiau_structurel as string,
+        metier: (c.metier as string) || "bardage",
         client_id: c.client_id as string,
         clients: client
           ? {
@@ -253,19 +319,22 @@ export default function FinChantierPage() {
 
     if (pvsRes.data) {
       const enrichis: PVRow[] = (pvsRes.data ?? []).map((r) => {
-        const ch = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
+        const ch = chantiersMap.get(r.chantier_id as string) as ChantierOption | undefined;
         const cl = (clientsMap.get(r.client_id as string) || ch?.clients || {}) as {nom: string; email?: string; tel?: string} | undefined;
-        const chantier = chantiersMap.get(r.chantier_id as string) as PVRow | undefined;
         const d = devisMap.get(r.devis_id as string);
+        const metierResolu = normaliserMetierFinChantier(
+          ch?.metier || infererMetierDepuisTypeTravaux(r.type_travaux)
+        );
         return {
           ...r,
           nom: '',
+          metier: metierResolu,
           zones_metres: (Array.isArray(r.zones_metres) ? r.zones_metres : []) as ZoneMetre[],
           photos: (Array.isArray(r.photos) ? r.photos : []) as PhotoFinChantier[],
           notice_entretien: (r.notice_entretien || DEFAULT_NOTICE) as NoticeEntretien,
           reserves: (Array.isArray(r.reserves) ? r.reserves : []) as Reserve[],
           checklist_repli: (r.checklist_repli || DEFAULT_REPLI) as ChecklistRepli,
-          chantiers: ch ? { nom: ch.nom as string, adresse_chantier: ch.adresse_chantier as string } : null,
+          chantiers: ch ? { nom: ch.nom as string, adresse_chantier: ch.adresse_chantier as string, metier: ch.metier } : null,
           clients: cl ? { nom: cl.nom as string, email: (cl.email || '') as string, telephone: (cl.tel || '') as string } : null,
           devis: d ? { numero: d.numero as string } : null,
         } as PVRow;
@@ -296,30 +365,34 @@ export default function FinChantierPage() {
     setFormId(null);
     const targetChantierId = preselectedChantierId || chantiers[0]?.id || "";
     const ch = chantiers.find((c) => c.id === targetChantierId);
+    const metierCh = normaliserMetierFinChantier(ch?.metier);
 
-    const zonesRecup = targetChantierId ? await chargerZonesPourChantier(targetChantierId) : [];
+    const { zones, terrasseMobileActive } = targetChantierId
+      ? await chargerOuvragesPourChantier(targetChantierId, metierCh)
+      : { zones: [], terrasseMobileActive: false };
+
+    const defaults = getDefaultsFinChantierParMetier(metierCh, {
+      materiauStructurel: ch?.materiau_structurel,
+      terrasseMobileActive,
+    });
 
     setFormChantierId(targetChantierId);
     setFormClientId(ch?.client_id || "");
     setFormDateReception(new Date().toISOString().slice(0, 10));
     setFormStatut("sans_reserve");
-    setFormTypeTravaux("Travaux de bardage et isolation extérieure (ITE)");
+    setFormTypeTravaux(defaults.typeTravaux);
     setFormAdresseChantier(ch?.adresse_chantier || "");
-    setFormMateriauxUtilises(
-      ch?.materiau_structurel
-        ? `Bardage ${ch.materiau_structurel} / Équerres Isolco / Isolant ITE`
-        : "Panneaux HPL / Équerres Isolco 3000 P2 / Isolant Laine minérale"
-    );
+    setFormMateriauxUtilises(defaults.materiauxDefaut);
     setFormObservations("");
-    setFormZonesMetres(zonesRecup);
+    setFormZonesMetres(zones);
     setFormPhotos([]);
-    setFormNoticeEntretien(DEFAULT_NOTICE);
+    setFormNoticeEntretien(defaults.noticeEntretien);
     setFormReserves([]);
-    setFormChecklistRepli(DEFAULT_REPLI);
+    setFormChecklistRepli(defaults.checklistRepli);
     setFormSignClient(null);
     setFormSignClientNom(ch?.clients?.nom || "");
     setFormSignEntreprise(null);
-    setFormSignEntrepriseNom("BNA BARDAGE");
+    setFormSignEntrepriseNom("BNA BTP");
 
     setModalFormOuvert(true);
   }
@@ -350,16 +423,29 @@ export default function FinChantierPage() {
     setModalFormOuvert(true);
   }
 
-  // Changement de chantier dans le formulaire -> auto-complète les données et charge les zones
+  // Changement de chantier dans le formulaire -> auto-complète selon le métier
   async function handleChantierChange(chId: string) {
     setFormChantierId(chId);
     const ch = chantiers.find((c) => c.id === chId);
+    const metierCh = normaliserMetierFinChantier(ch?.metier);
+    const { zones, terrasseMobileActive } = await chargerOuvragesPourChantier(
+      chId,
+      metierCh
+    );
+    const defaults = getDefaultsFinChantierParMetier(metierCh, {
+      materiauStructurel: ch?.materiau_structurel,
+      terrasseMobileActive,
+    });
+
     if (ch) {
       setFormClientId(ch.client_id || "");
-      if (!formAdresseChantier) setFormAdresseChantier(ch.adresse_chantier || "");
-      if (!formSignClientNom && ch.clients?.nom) setFormSignClientNom(ch.clients.nom);
+      setFormAdresseChantier(ch.adresse_chantier || "");
+      setFormSignClientNom(ch.clients?.nom || "");
+      setFormTypeTravaux(defaults.typeTravaux);
+      setFormMateriauxUtilises(defaults.materiauxDefaut);
+      setFormNoticeEntretien(defaults.noticeEntretien);
+      setFormChecklistRepli(defaults.checklistRepli);
     }
-    const zones = await chargerZonesPourChantier(chId);
     setFormZonesMetres(zones);
   }
 
@@ -581,8 +667,12 @@ export default function FinChantierPage() {
     );
   }
 
-  // Filtrage des PV
+  // Filtrage des PV (Statut + Métier + Recherche)
   const pvsFiltres = pvs.filter((pv) => {
+    const metierPv = normaliserMetierFinChantier(
+      pv.metier || pv.chantiers?.metier || infererMetierDepuisTypeTravaux(pv.type_travaux)
+    );
+    if (filtreMetier !== "tous" && metierPv !== filtreMetier) return false;
     if (filtre === "sans_reserve" && pv.statut !== "sans_reserve") return false;
     if (filtre === "avec_reserves" && pv.statut !== "avec_reserves") return false;
     if (filtre === "reserves_levees" && pv.statut !== "reserves_levees") return false;
@@ -604,72 +694,80 @@ export default function FinChantierPage() {
   const nbReservesLevees = pvs.filter((p) => p.statut === "reserves_levees").length;
 
   return (
-    <div className="space-y-6">
-      {/* En-tête de la page */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-white">Fin de chantier &amp; Réceptions</h1>
-          <p className="text-xs text-gray-400">
-            Procès-verbaux de réception (Art. 1792-6), métrés détaillés, annexes photos, notices d&apos;entretien et garanties décennales.
-          </p>
-        </div>
+    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] px-4 py-6 sm:py-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6 pb-24">
+        {/* En-tête blanc épuré + Terracotta #B85B2B */}
+        <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-7 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#B85B2B]">
+                BNA Pilotage BTP · Multi-Métiers
+              </p>
+              <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl font-bold text-[#23272B]">
+                Fin de chantier &amp; Réceptions
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-[#777777]">
+                Procès-verbaux de réception (Art. 1792-6), métrés multi-métiers, notices d&apos;entretien et retenues de garantie 5 %.
+              </p>
+            </div>
 
-        <button
-          onClick={() => ouvrirNouveauPV()}
-          className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
-        >
-          <span>+</span> Nouveau PV de Réception
-        </button>
-      </div>
+            <button
+              onClick={() => ouvrirNouveauPV()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-all"
+            >
+              <span>+</span> Nouveau PV de Réception
+            </button>
+          </div>
 
-      {/* Sélecteur de vue : PVs vs Retenues de garantie */}
-      <div className="flex border-b border-white/10 gap-6 text-xs font-bold">
-        <button
-          onClick={() => setVueOnglet("pvs")}
-          className={`pb-3 transition-colors border-b-2 ${
-            vueOnglet === "pvs"
-              ? "border-red-600 text-white"
-              : "border-transparent text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          📋 Procès-Verbaux de Réception ({totalPV})
-        </button>
-        <button
-          onClick={() => setVueOnglet("retenues")}
-          className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
-            vueOnglet === "retenues"
-              ? "border-red-600 text-white"
-              : "border-transparent text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          <span>💰 Retenues de Garantie 5 % &amp; Réserves</span>
-          {nbReservesLevees > 0 && (
-            <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-3xs px-2 py-0.5 border border-emerald-500/30">
-              Déblocable
-            </span>
-          )}
-        </button>
-      </div>
+          {/* Sélecteur de vue : PVs vs Retenues de garantie */}
+          <div className="mt-5 flex border-b border-[#F0F0F0] gap-6 text-xs font-bold">
+            <button
+              onClick={() => setVueOnglet("pvs")}
+              className={`pb-3 transition-colors border-b-2 ${
+                vueOnglet === "pvs"
+                  ? "border-[#B85B2B] text-[#B85B2B]"
+                  : "border-transparent text-[#777777] hover:text-[#23272B]"
+              }`}
+            >
+              📋 Procès-Verbaux de Réception ({totalPV})
+            </button>
+            <button
+              onClick={() => setVueOnglet("retenues")}
+              className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
+                vueOnglet === "retenues"
+                  ? "border-[#B85B2B] text-[#B85B2B]"
+                  : "border-transparent text-[#777777] hover:text-[#23272B]"
+              }`}
+            >
+              <span>💰 Retenues de Garantie 5 % &amp; Réserves</span>
+              {nbReservesLevees > 0 && (
+                <span className="rounded-full bg-emerald-50 text-emerald-700 text-[10px] px-2 py-0.5 border border-emerald-200">
+                  Déblocable
+                </span>
+              )}
+            </button>
+          </div>
+        </section>
 
       {vueOnglet === "retenues" ? (
         <div className="space-y-4">
-          <Surface radius="2xl" className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="rounded-2xl border border-[#E5E5E5] bg-white flex flex-wrap items-center justify-between gap-3 p-4 shadow-xs">
             <div>
-              <p className="text-xs font-bold text-white">Chantier concerné :</p>
-              <p className="text-2xs text-gray-400">Consulter le compte séquestre de retenue de garantie et les réserves</p>
+              <p className="text-xs font-bold text-[#23272B]">Chantier concerné :</p>
+              <p className="text-[11px] text-[#777777]">Consulter le compte séquestre de retenue de garantie et les réserves</p>
             </div>
             <select
               value={chantierRetenueId || chantiers[0]?.id || ""}
               onChange={(e) => setChantierRetenueId(e.target.value)}
-              className="rounded-xl border border-white/10 bg-[#1E1E1E]/80 px-3.5 py-2 text-xs text-white focus:border-red-600 focus:outline-none min-w-[240px]"
+              className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none min-w-[260px]"
             >
               {chantiers.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.nom || "Chantier sans nom"}
+                  [{(c.metier || "bardage").toUpperCase()}] {c.nom || "Chantier sans nom"}
                 </option>
               ))}
             </select>
-          </Surface>
+          </div>
 
           {(chantierRetenueId || chantiers[0]?.id) && (
             <RetenueGarantieChantier
@@ -681,42 +779,78 @@ export default function FinChantierPage() {
         </div>
       ) : (
         <>
-          {/* KPI Cards */}
+          {/* KPI Cards blanches */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Surface className="p-4 shadow-sm" radius="2xl">
-          <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Total PV Émis</p>
-          <p className="mt-0.5 text-2xl font-black text-white font-mono">{totalPV}</p>
-          <p className="text-3xs text-gray-500">Chantiers clôturés</p>
-        </Surface>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
-          <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Sans Réserve</p>
-          <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbSansReserve}</p>
-          <p className="text-3xs text-gray-400/80">GPA &amp; Décennale actives</p>
+        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Total PV Émis</p>
+          <p className="mt-0.5 text-2xl font-black text-[#23272B] font-mono">{totalPV}</p>
+          <p className="text-[11px] text-[#999999]">Chantiers clôturés</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-sm">
-          <p className="text-2xs font-bold uppercase tracking-wider text-gray-400">Avec Réserves</p>
-          <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbAvecReserves}</p>
-          <p className="text-3xs text-gray-400/80">En cours de levée</p>
+        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Sans Réserve</p>
+          <p className="mt-0.5 text-2xl font-black text-emerald-700 font-mono">{nbSansReserve}</p>
+          <p className="text-[11px] text-[#999999]">GPA &amp; Décennale actives</p>
         </div>
 
-        <div className="rounded-2xl border border-red-600/30 bg-sky-950/20 p-4 shadow-sm">
-          <p className="text-2xs font-bold uppercase tracking-wider text-gray-300">Réserves Levées</p>
-          <p className="mt-0.5 text-2xl font-black text-gray-400 font-mono">{nbReservesLevees}</p>
-          <p className="text-3xs text-red-600/80">Solde déblocable</p>
+        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Avec Réserves</p>
+          <p className="mt-0.5 text-2xl font-black text-amber-600 font-mono">{nbAvecReserves}</p>
+          <p className="text-[11px] text-[#999999]">En cours de levée</p>
+        </div>
+
+        <div className="rounded-2xl border border-[#B85B2B]/30 bg-white p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">Réserves Levées</p>
+          <p className="mt-0.5 text-2xl font-black text-[#B85B2B] font-mono">{nbReservesLevees}</p>
+          <p className="text-[11px] text-[#999999]">Solde déblocable</p>
         </div>
       </div>
 
-      {/* Barre de Filtres & Recherche */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      {/* Barre de Filtres Métiers + Statut + Recherche */}
+      <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+            {(
+              [
+                { id: "tous", label: "Tous métiers" },
+                { id: "bardage", label: "Bardage" },
+                { id: "terrasse", label: "Terrasse" },
+                { id: "cloture", label: "Clôture" },
+              ] as const
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setFiltreMetier(m.id)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                  filtreMetier === m.id
+                    ? "bg-white text-[#B85B2B] shadow-xs"
+                    : "text-[#777777] hover:text-[#23272B]"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-full sm:w-72">
+            <input
+              type="text"
+              value={recherche}
+              onChange={(e) => setRecherche(e.target.value)}
+              placeholder="Rechercher par n°, chantier, client…"
+              className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs text-[#23272B] placeholder:text-[#999999] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+            />
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFiltre("tous")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "tous"
-                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
             }`}
           >
             Tous ({pvs.length})
@@ -725,8 +859,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("sans_reserve")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "sans_reserve"
-                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
             }`}
           >
             Sans réserve ({nbSansReserve})
@@ -735,87 +869,85 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("avec_reserves")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "avec_reserves"
-                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
             }`}
           >
             Avec réserves ({nbAvecReserves})
           </button>
           <button
             onClick={() => setFiltre("reserves_levees")}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`text-xs whitespace-nowrap transition-all ${
               filtre === "reserves_levees"
-                ? "bg-gray-300 text-slate-950 font-bold"
-                : "border border-white/10 bg-[#1E1E1E] text-gray-300 hover:bg-[#1E1E1E]"
+                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
             }`}
           >
             Réserves levées ({nbReservesLevees})
           </button>
         </div>
-
-        <div className="w-full sm:w-72">
-          <input
-            type="text"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher par n°, chantier, client…"
-            className="w-full rounded-xl border border-white/10 bg-[#1E1E1E] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none shadow-sm"
-          />
-        </div>
       </div>
 
-      {/* Liste des PV en Cartes Mobiles */}
+      {/* Liste des PV en Cartes blanches */}
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
+        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-12 text-center text-xs text-[#777777]">
           Chargement des procès-verbaux…
         </div>
       ) : pvsFiltres.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#1E1E1E]/30 p-12 text-center space-y-3">
-          <p className="text-sm font-medium text-gray-400">Aucun procès-verbal de réception pour ce filtre.</p>
+        <div className="rounded-2xl border border-dashed border-[#DCDCDC] bg-white p-12 text-center space-y-3">
+          <p className="text-sm font-medium text-[#777777]">Aucun procès-verbal de réception pour ce filtre.</p>
           <button
             onClick={() => ouvrirNouveauPV()}
-            className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700"
+            className="rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#D97732]"
           >
             + Rédiger un premier PV de réception
           </button>
         </div>
       ) : (
-        <div className="grid gap-3.5 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {pvsFiltres.map((pv) => {
             const nbRes = pv.reserves.length;
             const nbLevees = pv.reserves.filter((r) => r.levee).length;
-            const surfaceTotale = (pv.zones_metres || []).reduce(
+            const metierPv = normaliserMetierFinChantier(
+              pv.metier || pv.chantiers?.metier || infererMetierDepuisTypeTravaux(pv.type_travaux)
+            );
+            const totalMetre = (pv.zones_metres || []).reduce(
               (s, z) => s + (z.surfaceNette || 0),
               0
             );
+            const uniteMetre = metierPv === "cloture" ? "ml" : "m²";
             const nbPhotos = (pv.photos || []).length;
 
             return (
-              <Surface
+              <div
                 key={pv.id}
-                className="flex flex-col justify-between p-4.5 shadow-md transition-all hover:border-red-600/60 hover:bg-[#1E1E1E]"
-                radius="2xl"
+                className="flex flex-col justify-between rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs transition-all hover:border-[#B85B2B]/60"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-gray-300">{pv.numero}</span>
-                        <span className="text-xs text-gray-500">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${BADGE_METIER_FIN[metierPv]}`}
+                        >
+                          {metierPv}
+                        </span>
+                        <span className="font-mono text-xs font-bold text-[#23272B]">{pv.numero}</span>
+                        <span className="text-xs text-[#888888]">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
                       </div>
-                      <h2 className="text-base font-bold text-white mt-0.5">{pv.chantiers?.nom || "Chantier"}</h2>
-                      <p className="text-xs text-gray-400">{pv.clients?.nom || "Client direct"}</p>
+                      <h2 className="text-base font-bold text-[#23272B] mt-1">{pv.chantiers?.nom || "Chantier"}</h2>
+                      <p className="text-xs text-[#777777]">{pv.clients?.nom || "Client direct"}</p>
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-wider ${
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
                         pv.statut === "sans_reserve"
-                          ? "bg-red-600/20 text-gray-400 border border-white/10"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           : pv.statut === "reserves_levees"
-                          ? "bg-red-600/20 text-gray-300 border border-red-600/30"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           : pv.statut === "refuse"
-                          ? "bg-red-900/200/20 text-red-400 border border-red-500/30"
-                          : "bg-red-600/20 text-gray-400 border border-white/10"
+                          ? "bg-red-50 text-red-700 border border-red-200"
+                          : "bg-amber-50 text-amber-800 border border-amber-200"
                       }`}
                     >
                       {pv.statut === "sans_reserve"
@@ -828,43 +960,45 @@ export default function FinChantierPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-transparent p-2.5 border border-white/10 text-center">
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#F8F9FA] p-2.5 border border-[#E5E5E5] text-center">
                     <div>
-                      <p className="text-2xs uppercase tracking-wide text-gray-500">Surface</p>
-                      <p className="text-xs font-bold text-gray-200 mt-0.5">
-                        {surfaceTotale > 0 ? `${surfaceTotale.toFixed(1)} m²` : "—"}
+                      <p className="text-[10px] uppercase tracking-wide text-[#888888]">
+                        {metierPv === "cloture" ? "Linéaire" : "Surface"}
+                      </p>
+                      <p className="text-xs font-bold text-[#23272B] mt-0.5">
+                        {totalMetre > 0 ? `${totalMetre.toFixed(1)} ${uniteMetre}` : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-2xs uppercase tracking-wide text-gray-500">Réserves</p>
-                      <p className="text-xs font-bold text-gray-200 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-[#888888]">Réserves</p>
+                      <p className="text-xs font-bold text-[#23272B] mt-0.5">
                         {nbRes === 0 ? "0" : `${nbLevees}/${nbRes}`}
                       </p>
                     </div>
                     <div>
-                      <p className="text-2xs uppercase tracking-wide text-gray-500">Photos</p>
-                      <p className="text-xs font-bold text-gray-200 mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-[#888888]">Photos</p>
+                      <p className="text-xs font-bold text-[#23272B] mt-0.5">
                         {nbPhotos > 0 ? `📷 ${nbPhotos}` : "0"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3">
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#F0F0F0] pt-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
                       onClick={() => {
                         setPvSelectionne(pv);
                         setModalPdfOuvert(true);
                       }}
-                      className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] flex items-center gap-1"
+                      className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:border-[#B85B2B] flex items-center gap-1"
                     >
                       📄 PDF
                     </button>
 
                     <button
                       onClick={() => handleCreerFactureSolde(pv)}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1E1E1E]/40 flex items-center gap-1"
+                      className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:border-[#B85B2B] flex items-center gap-1"
                     >
                       🧾 Solde
                     </button>
@@ -875,7 +1009,7 @@ export default function FinChantierPage() {
                           setPvSelectionne(pv);
                           setModalReservesOuvert(true);
                         }}
-                        className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-gray-400 hover:bg-[#1E1E1E]/40"
+                        className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1.5 text-xs font-semibold text-[#23272B]"
                       >
                         🔧 Réserves
                       </button>
@@ -889,7 +1023,7 @@ export default function FinChantierPage() {
                             nom: pv.chantiers?.nom || "Chantier",
                           })
                         }
-                        className="rounded-xl border border-red-600/30 bg-red-600/10 px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-600/20 flex items-center gap-1"
+                        className="rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-2.5 py-1.5 text-xs font-semibold text-[#B85B2B] hover:bg-[#B85B2B]/20 flex items-center gap-1"
                         title="Consulter et libérer la retenue de garantie 5 %"
                       >
                         💰 Retenue 5%
@@ -900,7 +1034,7 @@ export default function FinChantierPage() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => ouvrirEditionPV(pv)}
-                      className="rounded-xl border border-white/10 bg-transparent p-1.5 text-xs text-gray-300 hover:bg-[#1E1E1E]"
+                      className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1.5 text-xs text-[#555555] hover:text-[#23272B]"
                       aria-label="Modifier le PV"
                       title="Modifier le PV"
                     >
@@ -909,7 +1043,7 @@ export default function FinChantierPage() {
 
                     <button
                       onClick={() => handleSupprimerPV(pv.id, pv.numero)}
-                      className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
+                      className="text-xs text-[#999999] hover:text-red-600 p-1.5 transition-colors"
                       aria-label="Supprimer le PV"
                       title="Supprimer le PV"
                     >
@@ -917,7 +1051,7 @@ export default function FinChantierPage() {
                     </button>
                   </div>
                 </div>
-              </Surface>
+              </div>
             );
           })}
         </div>
@@ -1672,7 +1806,13 @@ export default function FinChantierPage() {
             {/* Document PDF rendu */}
             <Surface className="p-2 shadow-2xl print:border-none print:p-0">
               <PVReceptionPDF
-                pv={pvSelectionne}
+                pv={{
+                  ...pvSelectionne,
+                  metier:
+                    pvSelectionne.metier ||
+                    pvSelectionne.chantiers?.metier ||
+                    infererMetierDepuisTypeTravaux(pvSelectionne.type_travaux),
+                }}
                 entreprise={DEFAULT_ENTREPRISE}
                 client={{
                   nom: pvSelectionne.clients?.nom || "Client",
@@ -1690,6 +1830,7 @@ export default function FinChantierPage() {
           </Surface>
         </div>
       )}
+      </div>
     </div>
   );
 }

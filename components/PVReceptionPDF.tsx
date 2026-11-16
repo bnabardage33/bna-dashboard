@@ -23,6 +23,7 @@ export type ZoneMetre = {
   surfaceOuvertures: number;
   surfaceNette: number;
   materiau: string;
+  unite?: "m2" | "ml";
 };
 
 export type PhotoFinChantier = {
@@ -50,6 +51,7 @@ export type PVReceptionData = {
   numero: string;
   date_reception: string;
   statut: StatutPV;
+  metier?: "bardage" | "terrasse" | "cloture" | string | null;
   type_travaux: string | null;
   adresse_chantier: string | null;
   materiaux_utilises: string | null;
@@ -136,6 +138,18 @@ export default function PVReceptionPDF({
   const totalBrut = zones.reduce((s, z) => s + (z.surfaceBrute || 0), 0);
   const totalOuvertures = zones.reduce((s, z) => s + (z.surfaceOuvertures || 0), 0);
   const totalNet = zones.reduce((s, z) => s + (z.surfaceNette || 0), 0);
+  const estCloture =
+    pv.metier === "cloture" ||
+    zones.some((z) => z.unite === "ml") ||
+    (pv.type_travaux || "").toLowerCase().includes("clôture") ||
+    (pv.type_travaux || "").toLowerCase().includes("cloture");
+  const estTerrasse =
+    pv.metier === "terrasse" ||
+    (pv.type_travaux || "").toLowerCase().includes("terrasse");
+  const metierBadge = estCloture ? "CLÔTURE" : estTerrasse ? "TERRASSE" : "BARDAGE";
+  const uniteOuvrage = estCloture ? "ml" : "m²";
+  const libelleRepliMateriel =
+    estCloture || estTerrasse ? "Abords nettoyés et repli matériel" : "Échafaudage démonté";
 
   const notice = pv.notice_entretien || {
     remise_fiches_techniques: true,
@@ -170,9 +184,14 @@ export default function PVReceptionPDF({
         </div>
 
         <div className="text-right">
-          <span className="inline-block rounded bg-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white font-mono">
-            {pv.numero}
-          </span>
+          <div className="flex items-center justify-end gap-1.5">
+            <span className="inline-block rounded bg-[#B85B2B]/15 border border-[#B85B2B]/30 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#B85B2B]">
+              {metierBadge}
+            </span>
+            <span className="inline-block rounded bg-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white font-mono">
+              {pv.numero}
+            </span>
+          </div>
           <p className="mt-1.5 text-[11px] font-bold text-slate-800">
             Date de réception : {new Date(pv.date_reception).toLocaleDateString("fr-FR")}
           </p>
@@ -249,22 +268,31 @@ export default function PVReceptionPDF({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-800 flex items-center gap-1.5">
-              <span>📐</span> Métrés &amp; Surfaces Posées sur l&apos;Ouvrage
+              <span>📐</span>{" "}
+              {estCloture
+                ? "Tronçons & Linéaires Clôture Réceptionnés"
+                : estTerrasse
+                  ? "Platelage & Ouvrages Terrasse Réceptionnés"
+                  : "Métrés & Surfaces Posées sur l'Ouvrage"}
             </p>
             <span className="text-[10px] font-semibold text-slate-500">
-              {zones.length} zone(s) traitée(s)
+              {zones.length} {estCloture ? "tronçon(s)" : "zone(s)"} traité(s)
             </span>
           </div>
 
           <table className="w-full border-collapse border border-slate-300 text-[11px]">
             <thead>
               <tr className="bg-slate-100 text-left font-bold text-slate-700 text-[10px] uppercase">
-                <th className="border border-slate-300 p-2">Désignation / Zone</th>
+                <th className="border border-slate-300 p-2">Désignation</th>
                 <th className="border border-slate-300 p-2 text-center">Type</th>
                 <th className="border border-slate-300 p-2 text-center">Dimensions</th>
-                <th className="border border-slate-300 p-2 text-right">Surface Brute</th>
-                <th className="border border-slate-300 p-2 text-right">Déductions Baies</th>
-                <th className="border border-slate-300 p-2 text-right font-black">Surface Nette Posée</th>
+                <th className="border border-slate-300 p-2 text-right">
+                  {estCloture ? "Linéaire Brut" : "Surface Brute"}
+                </th>
+                <th className="border border-slate-300 p-2 text-right">Déductions</th>
+                <th className="border border-slate-300 p-2 text-right font-black">
+                  {estCloture ? "Linéaire Réceptionné" : "Surface Nette Posée"}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -275,20 +303,20 @@ export default function PVReceptionPDF({
                     {z.materiau && <span className="block text-[10px] text-slate-500 font-normal">{z.materiau}</span>}
                   </td>
                   <td className="border border-slate-300 p-2 text-center capitalize text-slate-600">
-                    {z.type === "pignon" ? "Pignon" : "Façade"}
+                    {estCloture ? "Tronçon" : estTerrasse ? "Platelage" : z.type === "pignon" ? "Pignon" : "Façade"}
                   </td>
                   <td className="border border-slate-300 p-2 text-center text-slate-600">
                     {z.largeur} m × {z.hauteur_mur} m
                     {z.hauteur_faite ? ` (Faîte ${z.hauteur_faite}m)` : ""}
                   </td>
                   <td className="border border-slate-300 p-2 text-right text-slate-600">
-                    {z.surfaceBrute.toFixed(2)} m²
+                    {z.surfaceBrute.toFixed(2)} {z.unite === "ml" ? "ml" : "m²"}
                   </td>
                   <td className="border border-slate-300 p-2 text-right text-slate-500">
-                    {z.surfaceOuvertures > 0 ? `- ${z.surfaceOuvertures.toFixed(2)} m²` : "—"}
+                    {z.surfaceOuvertures > 0 ? `- ${z.surfaceOuvertures.toFixed(2)} ${uniteOuvrage}` : "—"}
                   </td>
                   <td className="border border-slate-300 p-2 text-right font-bold text-slate-900">
-                    {z.surfaceNette.toFixed(2)} m²
+                    {z.surfaceNette.toFixed(2)} {z.unite === "ml" ? "ml" : "m²"}
                   </td>
                 </tr>
               ))}
@@ -299,13 +327,13 @@ export default function PVReceptionPDF({
                   Totalisation globale réceptionnée :
                 </td>
                 <td className="border border-slate-300 p-2 text-right text-slate-700">
-                  {totalBrut.toFixed(2)} m²
+                  {totalBrut.toFixed(2)} {uniteOuvrage}
                 </td>
                 <td className="border border-slate-300 p-2 text-right text-slate-500">
-                  {totalOuvertures > 0 ? `- ${totalOuvertures.toFixed(2)} m²` : "0.00 m²"}
+                  {totalOuvertures > 0 ? `- ${totalOuvertures.toFixed(2)} ${uniteOuvrage}` : `0.00 ${uniteOuvrage}`}
                 </td>
-                <td className="border border-slate-300 p-2 text-right text-sm font-black text-red-600">
-                  {totalNet.toFixed(2)} m²
+                <td className="border border-slate-300 p-2 text-right text-sm font-black text-[#B85B2B]">
+                  {totalNet.toFixed(2)} {uniteOuvrage}
                 </td>
               </tr>
             </tfoot>
@@ -461,7 +489,7 @@ export default function PVReceptionPDF({
               <span>{pv.checklist_repli.dechets_evacues ? "☑️" : "⬜"}</span> Déchets évacués
             </p>
             <p className="flex items-center gap-1.5 text-slate-700">
-              <span>{pv.checklist_repli.echafaudage_demonte ? "☑️" : "⬜"}</span> Échafaudage démonté
+              <span>{pv.checklist_repli.echafaudage_demonte ? "☑️" : "⬜"}</span> {libelleRepliMateriel}
             </p>
             <p className="flex items-center gap-1.5 text-slate-700">
               <span>{pv.checklist_repli.fiches_techniques_remises ? "☑️" : "⬜"}</span> Fiches remises

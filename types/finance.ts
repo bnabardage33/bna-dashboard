@@ -206,7 +206,13 @@ export interface CommandeFinance {
 
 export interface TicketSav {
   id: string;
-  chantier_id: string;
+  chantier_id: string | null;
+  client_id?: string | null;
+  type_origine?: "chantier_bna" | "client_externe";
+  metier?: "bardage" | "terrasse" | "cloture";
+  type_garantie?: "gpa_1an" | "biennale_2ans" | "decennale_10ans" | "hors_garantie_externe" | null;
+  pv_reception_id?: string | null;
+  facturable?: boolean;
   statut: string;
   sous_garantie: boolean;
   type_sinistre: string;
@@ -224,7 +230,9 @@ export interface TicketSav {
   created_at?: string;
   signature_technicien: string | null;
   signature_client: string | null;
-  chantiers?: { nom: string; client_id: string; adresse_chantier: string; clients?: { id: string; nom: string; societe: string } } | null;
+  chantiers?: { nom: string; client_id: string; adresse_chantier: string; metier?: string; date_fin?: string | null; clients?: { id: string; nom: string; societe: string } } | null;
+  clients?: { id: string; nom: string; societe: string | null; adresse_facturation?: string | null } | null;
+  pv_receptions?: { id: string; numero: string; date_reception: string } | null;
 }
 
 export interface EntrepriseSettings {
