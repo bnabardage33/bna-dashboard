@@ -11,10 +11,16 @@
 //   * Ce fichier est une transformation de données, PAS un moteur.
 
 import type { PayloadMetreComplet, EntreeZoneMetreComplet, StatutCompletude } from "@/lib/metre-complet";
+import {
+  CADENCES_DEFAUT,
+  calculerTempsPoseBardage,
+  type CadencesTempsPose,
+} from "@/lib/tempsPoseCalcul";
+import type { ResultatMetre } from "@/lib/metre-serialization";
 
 // ── Types publics ─────────────────────────────────────────────────────
 
-export type CategoriePoste = "metrage" | "pose" | "isolant" | "calepinage";
+export type CategoriePoste = "metrage" | "pose" | "isolant" | "calepinage" | "main_oeuvre";
 
 export type PosteTechnique = {
   zoneId: string;
@@ -27,7 +33,16 @@ export type PosteTechnique = {
   unite: string;
   /** Précisions techniques (entraxe, joint, type isolant…) — non quantitatives. */
   contexte: string[];
+  /** Champs optionnels utilisés pour les postes de main-d'œuvre générés en heures. */
+  puHt?: number;
+  puRevient?: number;
+  typeCout?: "matiere" | "main_oeuvre";
 };
+
+export interface OptionsMappingPostes {
+  inclureMainOeuvre?: boolean;
+  cadences?: Partial<CadencesTempsPose>;
+}
 
 export type ResultatMapping = {
   postes: PosteTechnique[];
@@ -135,11 +150,87 @@ function postesPourZone(zone: EntreeZoneMetreComplet): PosteTechnique[] {
 
 // ── Fonction principale ────────────────────────────────────────────────
 
-export function mapperQuantitesPersistees(payload: PayloadMetreComplet): ResultatMapping {
+const LIBELLES_PHASES_BARDAGE: Array<{
+  cle: "ossature" | "isolation" | "bardage" | "finitions";
+  libelle: string;
+}> = [
+  { cle: "isolation", libelle: "Main-d'œuvre — Pose Isolation ITE" },
+  { cle: "ossature", libelle: "Main-d'œuvre — Pose Ossature & EPDM" },
+  { cle: "bardage", libelle: "Main-d'œuvre — Pose Parement Bardage" },
+  { cle: "finitions", libelle: "Main-d'œuvre — Finitions & Habillage Ouvertures" },
+];
+
+function postesMainOeuvrePourZone(
+  zone: EntreeZoneMetreComplet,
+  cadences: CadencesTempsPose,
+): PosteTechnique[] {
+  if (!zone.metrage) return [];
+  const resMetre: ResultatMetre = {
+    version_moteur: "1.0.0",
+    calcule_le: "",
+    entrees: {
+      type: zone.zone.type === "pignon" ? "pignon" : "facade",
+      largeur: zone.zone.largeur,
+      hauteur_mur: zone.zone.hauteur_mur,
+      hauteur_faite: zone.zone.hauteur_faite,
+      materiau: zone.zone.materiau === "plaques" ? "plaques" : "lames",
+      famille_pose:
+        (zone.zone.famille_pose as ResultatMetre["entrees"]["famille_pose"]) ?? null,
+      angle: false,
+      largeur_lame_mm: null,
+      plaque_longueur_mm: null,
+      plaque_largeur_mm: null,
+      module_largeur_mm: null,
+      module_hauteur_mm: null,
+      sens_pose:
+        (zone.zone.sens_pose as ResultatMetre["entrees"]["sens_pose"]) ?? null,
+      type_isolant: null,
+      epaisseur_isolant_mm: null,
+      surface_paquet_m2: null,
+      zone_vent_rive: null,
+      coef_perte_rendement: null,
+      ouvertures: [],
+    },
+    resultat_zone: zone.metrage as ResultatMetre["resultat_zone"],
+    resultat_pose: zone.pose as ResultatMetre["resultat_pose"],
+    resultat_calepinage: zone.calepinage as ResultatMetre["resultat_calepinage"],
+  };
+
+  const estimation = calculerTempsPoseBardage(resMetre, { cadences });
+  const postesMo: PosteTechnique[] = [];
+
+  for (const phase of LIBELLES_PHASES_BARDAGE) {
+    const heures = estimation.parPhase[phase.cle];
+    if (heures > 0) {
+      postesMo.push({
+        zoneId: zone.zone.id,
+        zoneNom: zone.zone.nom,
+        categorie: "main_oeuvre",
+        libelle: phase.libelle,
+        quantite: heures,
+        unite: "h",
+        contexte: [`Zone ${zone.zone.nom}`, `Taux horaire vente ${cadences.taux_horaire_vente_ht.toFixed(2)} € HT/h`],
+        puHt: cadences.taux_horaire_vente_ht,
+        puRevient: cadences.taux_horaire_charge_ht,
+        typeCout: "main_oeuvre",
+      });
+    }
+  }
+  return postesMo;
+}
+
+export function mapperQuantitesPersistees(
+  payload: PayloadMetreComplet,
+  options: OptionsMappingPostes = {},
+): ResultatMapping {
   const postes: PosteTechnique[] = [];
+  const cadences: CadencesTempsPose = { ...CADENCES_DEFAUT, ...options.cadences };
 
   for (const zone of payload.zones) {
     postes.push(...postesPourZone(zone));
+    if (options.inclureMainOeuvre) {
+      postes.push(...postesMainOeuvrePourZone(zone, cadences));
+    }
   }
 
   // Zones nécessitant un chiffrage complémentaire :

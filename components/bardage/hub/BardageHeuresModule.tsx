@@ -40,6 +40,7 @@ export default function BardageHeuresModule({
         </div>
 
         <ChantiersCalepinageView
+          chantierId={chantierId}
           initialSurface={surfaceM2 || 0}
           initialCoupes={coupesMl || 0}
           initialSingularites={singularitesNb || 0}

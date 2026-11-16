@@ -23,6 +23,7 @@ import type { TablesInsert, TablesUpdate } from "@/types/supabase";
 import ProductFormModal, {
   type ProductImportCandidates,
 } from "@/components/catalogue/ProductFormModal";
+import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import { fromRow, toInsertPayload } from "@/components/catalogue/mappers";
 import { emptyBardage, type NatureCout, type ProductDraft } from "@/components/catalogue/types";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
@@ -650,6 +651,8 @@ export default function CataloguePage() {
             </button>
           </div>
         </header>
+
+        <CadencesMainOeuvreSection metier="bardage" />
 
         {/* Bannière explicative Option A */}
         <div className="rounded-xl border border-sky-500/20 bg-sky-950/20 px-4 py-3 text-xs text-sky-200 flex items-start sm:items-center gap-3">

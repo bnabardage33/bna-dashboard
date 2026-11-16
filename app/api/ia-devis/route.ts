@@ -23,6 +23,7 @@ import {
 } from "@/lib/catalogueMatching";
 import { servirPayloadMetreComplet, ChantierIntrouvableError } from "@/lib/servir-metre-complet";
 import { mapperQuantitesPersistees } from "@/lib/metreVersPostes";
+import { chargerCadencesTempsPose } from "@/lib/tempsPoseCalcul";
 import {
   construireLignesDepuisPostes,
   construireLignesAChiffrerManquantes,
@@ -416,7 +417,14 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        const { postes, meta } = mapperQuantitesPersistees(payload);
+        const inclureMainOeuvre = body.inclure_main_oeuvre === true;
+        const cadences = inclureMainOeuvre
+          ? await chargerCadencesTempsPose(supabaseAdmin)
+          : undefined;
+        const { postes, meta } = mapperQuantitesPersistees(payload, {
+          inclureMainOeuvre,
+          cadences,
+        });
 
         // ── Mapping pure transformation → LigneDevis (aucun recalcul). ──
         const lignesPostes: LigneDevis[] = construireLignesDepuisPostes(postes, catalogueComplet);

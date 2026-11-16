@@ -5,19 +5,19 @@ import {
   calculerTempsBudget, 
   calculerTempsPlanification, 
   calculerBilanRentabilite,
-  calculerTempsConsommeMeteo
-} from "@/lib/gaelLogic";
+  calculerTempsConsommeMeteo,
+  calculerTempsPoseBardage,
+  chargerCadencesTempsPose,
+  CADENCES_DEFAUT,
+  type CadencesTempsPose,
+  type ResultatTempsPoseBardage,
+} from "@/lib/tempsPoseCalcul";
+import type { ResultatMetre } from "@/lib/metre-serialization";
 import { validerPointageAvecMeteo, supprimerPointageGlob, reinitialiserPointagesChantier } from "@/app/actions/pointage";
 import { Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Tables } from "@/types/supabase";
 import { Surface } from '@/components/ui/Surface';
-
-const MOCK_CATALOGUE = {
-  surface: 0.5,
-  coupe: 0.3,
-  singularite: 1.5
-};
 
 const METEO_ICONS: Record<string, string> = {
   'Clément': '☀️',
@@ -26,14 +26,38 @@ const METEO_ICONS: Record<string, string> = {
   'Non relevée': '➖'
 };
 
+function extraireResultatsMetre(rows: Array<{ resultats_techniques: unknown }> | null | undefined): ResultatMetre[] {
+  if (!rows) return [];
+  const res: ResultatMetre[] = [];
+  for (const r of rows) {
+    const rt = r.resultats_techniques as ResultatMetre | null;
+    if (rt && typeof rt === "object" && rt.resultat_zone && rt.entrees) {
+      res.push(rt);
+    }
+  }
+  return res;
+}
+
 /**
  * Vue 1 : Chantiers & Calepinage
  */
-export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0, initialSingularites = 0 }) {
+export function ChantiersCalepinageView({
+  chantierId,
+  initialSurface = 0,
+  initialCoupes = 0,
+  initialSingularites = 0,
+}: {
+  chantierId?: string;
+  initialSurface?: number;
+  initialCoupes?: number;
+  initialSingularites?: number;
+}) {
   const [surface, setSurface] = useState<number>(initialSurface);
   const [coupes, setCoupes] = useState<number>(initialCoupes);
   const [singularites, setSingularites] = useState<number>(initialSingularites);
   const [coef, setCoef] = useState<number>(1.8);
+  const [cadences, setCadences] = useState<CadencesTempsPose>(CADENCES_DEFAUT);
+  const [zonesMetre, setZonesMetre] = useState<ResultatMetre[]>([]);
 
   React.useEffect(() => {
     setSurface(initialSurface);
@@ -41,19 +65,55 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
     setSingularites(initialSingularites);
   }, [initialSurface, initialCoupes, initialSingularites]);
 
-  const tempsBudget = calculerTempsBudget(
-    surface, MOCK_CATALOGUE.surface,
-    coupes, MOCK_CATALOGUE.coupe,
-    singularites, MOCK_CATALOGUE.singularite
-  );
+  React.useEffect(() => {
+    let actif = true;
+    async function charger() {
+      const c = await chargerCadencesTempsPose(supabase);
+      if (!actif) return;
+      setCadences(c);
+      if (chantierId) {
+        const { data } = await supabase
+          .from("chantier_zones")
+          .select("resultats_techniques")
+          .eq("chantier_id", chantierId);
+        if (actif && data) {
+          setZonesMetre(extraireResultatsMetre(data));
+        }
+      }
+    }
+    charger();
+    return () => {
+      actif = false;
+    };
+  }, [chantierId]);
 
-  const tempsPlanification = calculerTempsPlanification(tempsBudget, coef);
+  const estimationDetaillee: ResultatTempsPoseBardage | null =
+    zonesMetre.length > 0
+      ? calculerTempsPoseBardage(zonesMetre, { cadences, coefPerteRendement: coef })
+      : null;
+
+  const tempsBudget = estimationDetaillee
+    ? estimationDetaillee.totalHeures
+    : calculerTempsBudget(
+        surface,
+        cadences.bardage_ossature_h_m2 + cadences.bardage_parement_clin_h_m2,
+        coupes,
+        cadences.bardage_corniere_h_ml,
+        singularites,
+        cadences.bardage_ouverture_h_u,
+      );
+
+  const tempsPlanification = estimationDetaillee
+    ? estimationDetaillee.tempsPlanification
+    : calculerTempsPlanification(tempsBudget, coef);
 
   return (
     <Surface className="p-6 space-y-4">
       <h3 className="text-lg font-bold text-white">Chantiers & Calepinage</h3>
       <p className="text-sm text-gray-400">
-        Entrez les données du calepinage pour calculer le temps budget.
+        {estimationDetaillee
+          ? "Temps budget calculé automatiquement depuis le métré réel des zones et les cadences de catalogue_temps."
+          : "Entrez les données du calepinage pour calculer le temps budget selon les cadences de catalogue_temps."}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -62,11 +122,11 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
           <input id="chp-surface-m" type="number" value={surface} onChange={(e) => setSurface(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label htmlFor="chp-coupes-ml" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coupes (ml)</label>
+          <label htmlFor="chp-coupes-ml" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Coupes / Cornières (ml)</label>
           <input id="chp-coupes-ml" type="number" value={coupes} onChange={(e) => setCoupes(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
         <div>
-          <label htmlFor="chp-singularites-nb" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Singularités (nb)</label>
+          <label htmlFor="chp-singularites-nb" className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Singularités / Ouvertures (nb)</label>
           <input id="chp-singularites-nb" type="number" value={singularites} onChange={(e) => setSingularites(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
         <div>
@@ -74,6 +134,27 @@ export function ChantiersCalepinageView({ initialSurface = 0, initialCoupes = 0,
           <input id="chp-coef-de-perte-de-rendement" type="number" step="0.1" value={coef} onChange={(e) => setCoef(Number(e.target.value))} className="w-full rounded-lg border border-white/10 bg-[#121212] px-3 py-2 text-sm text-white" />
         </div>
       </div>
+
+      {estimationDetaillee && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+          <div className="rounded-lg bg-[#121212] border border-white/10 p-2.5">
+            <p className="text-[10px] uppercase text-gray-500">Ossature</p>
+            <p className="text-sm font-bold text-white">{estimationDetaillee.parPhase.ossature.toFixed(2)} h</p>
+          </div>
+          <div className="rounded-lg bg-[#121212] border border-white/10 p-2.5">
+            <p className="text-[10px] uppercase text-gray-500">Isolation</p>
+            <p className="text-sm font-bold text-white">{estimationDetaillee.parPhase.isolation.toFixed(2)} h</p>
+          </div>
+          <div className="rounded-lg bg-[#121212] border border-white/10 p-2.5">
+            <p className="text-[10px] uppercase text-gray-500">Bardage</p>
+            <p className="text-sm font-bold text-white">{estimationDetaillee.parPhase.bardage.toFixed(2)} h</p>
+          </div>
+          <div className="rounded-lg bg-[#121212] border border-white/10 p-2.5">
+            <p className="text-[10px] uppercase text-gray-500">Finitions</p>
+            <p className="text-sm font-bold text-white">{estimationDetaillee.parPhase.finitions.toFixed(2)} h</p>
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 p-4 rounded-lg bg-[#121212] border border-white/10 grid grid-cols-2 gap-4">
         <div>
@@ -298,19 +379,32 @@ export function TableauDeBordRentabiliteView({ chantierId, chantierNom }: { chan
 
   const fetchData = async () => {
     if (!chantierId) return;
-    const { data: chantier } = await supabase
-      .from("chantiers")
-      .select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee)")
-      .eq("id", chantierId)
-      .single();
+    const [{ data: chantier }, { data: zones }, cadences] = await Promise.all([
+      supabase
+        .from("chantiers")
+        .select("id, nom, surface_m2, quantite_coupes_ml, singularites_nb, pointages_globaux(volume_heures_declare, coef_meteo, meteo_relevee)")
+        .eq("id", chantierId)
+        .single(),
+      supabase
+        .from("chantier_zones")
+        .select("resultats_techniques")
+        .eq("chantier_id", chantierId),
+      chargerCadencesTempsPose(supabase),
+    ]);
     
     if (chantier) {
-      // Calcul du budget à la volée avec les données du chantier
-      const budget = calculerTempsBudget(
-        chantier.surface_m2 || 0, MOCK_CATALOGUE.surface,
-        chantier.quantite_coupes_ml || 0, MOCK_CATALOGUE.coupe,
-        chantier.singularites_nb || 0, MOCK_CATALOGUE.singularite
-      );
+      const zonesMetre = extraireResultatsMetre(zones);
+      const budget =
+        zonesMetre.length > 0
+          ? calculerTempsPoseBardage(zonesMetre, { cadences }).totalHeures
+          : calculerTempsBudget(
+              chantier.surface_m2 || 0,
+              cadences.bardage_ossature_h_m2 + cadences.bardage_parement_clin_h_m2,
+              chantier.quantite_coupes_ml || 0,
+              cadences.bardage_corniere_h_ml,
+              chantier.singularites_nb || 0,
+              cadences.bardage_ouverture_h_u,
+            );
       
       const formatted = {
         id: chantier.id,

@@ -247,21 +247,38 @@ export type Database = {
       }
       catalogue_temps: {
         Row: {
+          entreprise_id: string | null
           id: string
+          metier: string | null
           nom_tache: string
           temps_unitaire_heure: number
+          updated_at: string
         }
         Insert: {
+          entreprise_id?: string | null
           id?: string
+          metier?: string | null
           nom_tache: string
           temps_unitaire_heure: number
+          updated_at?: string
         }
         Update: {
+          entreprise_id?: string | null
           id?: string
+          metier?: string | null
           nom_tache?: string
           temps_unitaire_heure?: number
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_temps_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catalogue_terrasse_accessoires: {
         Row: {

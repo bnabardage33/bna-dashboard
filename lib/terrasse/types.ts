@@ -340,7 +340,8 @@ export interface LigneChiffrageTerrasse {
     | "Escalier"
     | "Garde-corps"
     | "Terrasse Mobile"
-    | "Motorisation Mobile";
+    | "Motorisation Mobile"
+    | "Main-d'œuvre";
   designation: string;
   quantite: number;
   unite: string;

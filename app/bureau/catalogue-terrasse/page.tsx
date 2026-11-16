@@ -14,6 +14,7 @@ import {
 import ProductFormModal, {
   type ProductImportCandidates,
 } from "@/components/catalogue/ProductFormModal";
+import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import {
   fromRow,
   toInsertPayload,
@@ -587,6 +588,8 @@ export default function CatalogueTerrassePage() {
             </button>
           </div>
         </header>
+
+        <CadencesMainOeuvreSection metier="terrasse" />
 
         {/* Filtres */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1E1E1E]/50 p-4 rounded-xl border border-white/10">

@@ -76,6 +76,22 @@ export function construireLignesDepuisPostes(
   const lignes: LigneDevis[] = [];
 
   for (const poste of postes) {
+    if (poste.typeCout === "main_oeuvre" && typeof poste.puHt === "number") {
+      lignes.push({
+        catalogue_id: null,
+        designation: `${poste.libelle} (${poste.zoneNom})`,
+        description: poste.contexte.join(" — "),
+        qte: poste.quantite,
+        unite: poste.unite || "h",
+        pu_ht: poste.puHt,
+        pu_revient: poste.puRevient ?? 0,
+        type_cout: "main_oeuvre",
+        a_chiffrer: false,
+        zone_id: poste.zoneId,
+      });
+      continue;
+    }
+
     const corr = meilleureCorrespondance(
       `${poste.libelle} ${poste.contexte.join(" ")}`,
       catalogueItems,

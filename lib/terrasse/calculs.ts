@@ -13,6 +13,16 @@ import {
 } from "./dtu51_4";
 import { calculComposite } from "./composite/calculs";
 import { calculerTerrasseProGeometrie } from "./pro/quantitatifs-contrat";
+import {
+  CADENCES_DEFAUT,
+  calculerTempsPoseTerrasse,
+  type CadencesTempsPose,
+} from "@/lib/tempsPoseCalcul";
+
+export interface OptionsCalculTerrasse {
+  inclureMainOeuvre?: boolean;
+  cadences?: Partial<CadencesTempsPose>;
+}
 
 /** Prix unitaires moyens HT de référence (fournitures pro) pour le chiffrage indicatif */
 const TARIFS_INDICATIFS: Record<string, number> = {
@@ -54,12 +64,17 @@ const TARIFS_INDICATIFS: Record<string, number> = {
 export function calculerTerrasse(
   config: ChantierTerrasseConfig,
   reservations: ChantierTerrasseReservation[] = [],
-  tarifsCatalogue?: TarifsCatalogueTerrasse | null
+  tarifsCatalogue?: TarifsCatalogueTerrasse | null,
+  options: OptionsCalculTerrasse = {},
 ): ResultatCalculTerrasse {
   const catalogue = tarifsCatalogue ?? config.tarifs_catalogue ?? null;
 
   if (config.systeme_terrasse === "composite_clip" || config.essence_bois === "composite") {
-    return calculComposite(config, reservations, catalogue);
+    const resComposite = calculComposite(config, reservations, catalogue);
+    if (options.inclureMainOeuvre) {
+      return ajouterMainOeuvreTerrasse(resComposite, options.cadences);
+    }
+    return resComposite;
   }
 
   // Exécution amont des 4 briques du moteur Terrasse Pro (NF DTU 51.4 Décembre 2018)
@@ -574,7 +589,7 @@ export function calculerTerrasse(
     lignes.reduce((acc, curr) => acc + curr.totalHt, 0).toFixed(2)
   );
 
-  return {
+  const resultatBase: ResultatCalculTerrasse = {
     surfaceBruteM2,
     surfaceNetteM2,
     perimetreM,
@@ -646,5 +661,76 @@ export function calculerTerrasse(
     terrassePro,
     terrasseMobile: terrassePro.terrasseMobile,
     calculeA: new Date().toISOString(),
+  };
+
+  if (options.inclureMainOeuvre) {
+    return ajouterMainOeuvreTerrasse(resultatBase, options.cadences);
+  }
+  return resultatBase;
+}
+
+function ajouterMainOeuvreTerrasse(
+  resultat: ResultatCalculTerrasse,
+  cadencesPartiel?: Partial<CadencesTempsPose>,
+): ResultatCalculTerrasse {
+  const cadences: CadencesTempsPose = { ...CADENCES_DEFAUT, ...cadencesPartiel };
+  const temps = calculerTempsPoseTerrasse(resultat, { cadences });
+  const tauxVente = cadences.taux_horaire_vente_ht;
+
+  const phases: Array<{
+    code: string;
+    cle: keyof typeof temps.parPhase;
+    designation: string;
+  }> = [
+    {
+      code: "MO-TER-01",
+      cle: "terrassement_support",
+      designation: "Main-d'œuvre — Préparation sol & géotextile",
+    },
+    {
+      code: "MO-TER-02",
+      cle: "structure_plots_lambourdes",
+      designation: "Main-d'œuvre — Pose plots & lambourdage",
+    },
+    {
+      code: "MO-TER-03",
+      cle: "pose_platelage",
+      designation: "Main-d'œuvre — Pose & fixation du platelage",
+    },
+    {
+      code: "MO-TER-04",
+      cle: "finitions_rives",
+      designation: "Main-d'œuvre — Finitions, escalier, garde-corps & terrasse mobile",
+    },
+  ];
+
+  const lignesMo: LigneChiffrageTerrasse[] = [];
+  for (const ph of phases) {
+    const heures = temps.parPhase[ph.cle];
+    if (heures > 0) {
+      lignesMo.push({
+        code: ph.code,
+        categorie: "Main-d'œuvre",
+        designation: ph.designation,
+        quantite: heures,
+        unite: "h",
+        prixUnitaireHt: tauxVente,
+        totalHt: Number((heures * tauxVente).toFixed(2)),
+      });
+    }
+  }
+
+  const lignesCompletes = [...resultat.chiffrage.lignes, ...lignesMo];
+  const totalHt = Number(
+    lignesCompletes.reduce((acc, curr) => acc + curr.totalHt, 0).toFixed(2),
+  );
+
+  return {
+    ...resultat,
+    chiffrage: {
+      ...resultat.chiffrage,
+      lignes: lignesCompletes,
+      totalHt,
+    },
   };
 }

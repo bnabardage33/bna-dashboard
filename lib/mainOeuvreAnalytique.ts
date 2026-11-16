@@ -1,5 +1,8 @@
 import { supabase } from "@/lib/supabase";
-import { calculerTempsConsommeMeteo } from "@/lib/gaelLogic";
+import {
+  calculerTempsConsommeMeteo,
+  chargerCadencesTempsPose,
+} from "@/lib/tempsPoseCalcul";
 import { mapperLignesPersistees } from "@/lib/devisAnalyse";
 
 export type RentabilitePhase = {
@@ -13,16 +16,19 @@ export type RentabilitePhase = {
 };
 
 export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise<RentabilitePhase[]> {
-  // 1. Récupérer les pointages
-  const { data: pointages } = await supabase
-    .from("pointages")
-    .select("heures, taux_horaire_charge, phase_travail")
-    .eq("chantier_id", chantierId);
-
-  const { data: pointagesGlobaux } = await supabase
-    .from("pointages_globaux")
-    .select("volume_heures_declare, coef_meteo, phase_travail")
-    .eq("chantier_id", chantierId);
+  // 1. Récupérer les pointages & cadences (taux horaire chargé)
+  const [{ data: pointages }, { data: pointagesGlobaux }, cadences] = await Promise.all([
+    supabase
+      .from("pointages")
+      .select("heures, taux_horaire_charge, phase_travail")
+      .eq("chantier_id", chantierId),
+    supabase
+      .from("pointages_globaux")
+      .select("volume_heures_declare, coef_meteo, phase_travail")
+      .eq("chantier_id", chantierId),
+    chargerCadencesTempsPose(supabase),
+  ]);
+  const tauxHoraireCharge = cadences.taux_horaire_charge_ht > 0 ? cadences.taux_horaire_charge_ht : 28.5;
 
   // 2. Calculer le Coût Réel par phase
   const coutsReels: Record<string, number> = {
@@ -103,8 +109,8 @@ export async function analyserRentabiliteMainOeuvre(chantierId: string): Promise
     const ecart = vendu - reel;
     const performance = vendu > 0 ? (ecart / vendu) * 100 : reel > 0 ? -100 : 0;
 
-    // Calcul de la performance météo (Gaël Logic)
-    let tempsBudgetPhase = vendu > 0 ? vendu / 28.50 : 0; // Taux moyen horaire
+    // Calcul de la performance météo
+    let tempsBudgetPhase = vendu > 0 ? vendu / tauxHoraireCharge : 0; // Taux horaire chargé paramétrable (défaut 28.50 €)
     
     // Récupérer les pointages globaux pour cette phase
     const pGlobauxPhase = (pointagesGlobaux || []).filter(pg => (pg.phase_travail || "general") === p.key);

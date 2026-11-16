@@ -14,6 +14,14 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { validerPointageAvecMeteo, supprimerPointageGlob } from "@/app/actions/pointage";
+import {
+  calculerTempsPoseTerrasse,
+  chargerCadencesTempsPose,
+  CADENCES_DEFAUT,
+  type CadencesTempsPose,
+  type ResultatTempsPoseTerrasse,
+} from "@/lib/tempsPoseCalcul";
+import type { ResultatCalculTerrasse } from "@/lib/terrasse/types";
 
 export interface TerrasseHeuresModuleProps {
   chantierId: string;
@@ -49,6 +57,7 @@ export default function TerrasseHeuresModule({
 }: TerrasseHeuresModuleProps) {
   const [ouvriers, setOuvriers] = useState<ProfileOuvrier[]>([]);
   const [pointages, setPointages] = useState<PointageTerrasseRow[]>([]);
+  const [estimationPrevue, setEstimationPrevue] = useState<ResultatTempsPoseTerrasse | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -78,12 +87,43 @@ export default function TerrasseHeuresModule({
         }
       }
 
-      // 2. Historique des pointages du chantier
-      const { data: ptgGlobaux } = await supabase
-        .from("pointages_globaux")
-        .select("id, date_saisie, volume_heures_declare, meteo_relevee, commentaire, user_id")
-        .eq("chantier_id", chantierId)
-        .order("date_saisie", { ascending: false });
+      // 2. Historique des pointages du chantier + configuration terrasse & cadences
+      const [{ data: ptgGlobaux }, { data: terrasseRow }, cadences] = await Promise.all([
+        supabase
+          .from("pointages_globaux")
+          .select("id, date_saisie, volume_heures_declare, meteo_relevee, commentaire, user_id")
+          .eq("chantier_id", chantierId)
+          .order("date_saisie", { ascending: false }),
+        supabase
+          .from("chantier_terrasses")
+          .select("longueur_m, largeur_m, presence_escalier, presence_garde_corps, garde_corps_longueur_ml, resultats_techniques")
+          .eq("chantier_id", chantierId)
+          .limit(1)
+          .maybeSingle(),
+        chargerCadencesTempsPose(supabase),
+      ]);
+
+      if (terrasseRow) {
+        const rt = terrasseRow.resultats_techniques as ResultatCalculTerrasse | null;
+        if (rt && typeof rt === "object" && typeof rt.surfaceNetteM2 === "number") {
+          setEstimationPrevue(calculerTempsPoseTerrasse(rt, { cadences }));
+        } else if (terrasseRow.longueur_m && terrasseRow.largeur_m) {
+          const surfFallback = Number((terrasseRow.longueur_m * terrasseRow.largeur_m).toFixed(2));
+          const resultatFallback = {
+            surfaceNetteM2: surfFallback,
+            escalier: { present: Boolean(terrasseRow.presence_escalier) },
+            gardeCorps: {
+              present: Boolean(terrasseRow.presence_garde_corps),
+              longueurMl: Number(terrasseRow.garde_corps_longueur_ml) || 0,
+            },
+          } as ResultatCalculTerrasse;
+          setEstimationPrevue(calculerTempsPoseTerrasse(resultatFallback, { cadences }));
+        } else {
+          setEstimationPrevue(null);
+        }
+      } else {
+        setEstimationPrevue(null);
+      }
 
       if (ptgGlobaux) {
         const formates: PointageTerrasseRow[] = ptgGlobaux.map((p) => {
@@ -161,13 +201,19 @@ export default function TerrasseHeuresModule({
   }
 
   const totalHeures = pointages.reduce((acc, p) => acc + p.heures, 0);
+  const totalPrevu = estimationPrevue?.totalHeures ?? 0;
+  const ecartTotalH = totalPrevu - totalHeures;
+  const ecartTotalPct = totalPrevu > 0 ? (ecartTotalH / totalPrevu) * 100 : 0;
 
   // Répartition par phase
   const heuresParPhase = PHASES_TERRASSE_HEURES.map((p) => {
     const totalP = pointages
       .filter((pt) => pt.phase?.includes(p.label.split(". ")[1] || ""))
       .reduce((acc, curr) => acc + curr.heures, 0);
-    return { ...p, total: totalP };
+    const prevuP = estimationPrevue?.parPhase[p.id] ?? 0;
+    const ecartP = prevuP - totalP;
+    const ecartPctP = prevuP > 0 ? (ecartP / prevuP) * 100 : 0;
+    return { ...p, total: totalP, prevu: prevuP, ecartH: ecartP, ecartPct: ecartPctP };
   });
 
   return (
@@ -189,27 +235,87 @@ export default function TerrasseHeuresModule({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2 text-right">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Total heures pointées</p>
-            <p className="text-2xl font-bold tracking-tight text-[#B85B2B]">
-              {totalHeures.toFixed(1)} h
-            </p>
+          <div className="flex flex-wrap items-center gap-3">
+            {estimationPrevue && (
+              <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2 text-right">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Heures prévues</p>
+                <p className="text-2xl font-bold tracking-tight text-[#23272B]">
+                  {totalPrevu.toFixed(1)} h
+                </p>
+              </div>
+            )}
+            <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2 text-right">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Heures réalisées</p>
+              <p className="text-2xl font-bold tracking-tight text-[#B85B2B]">
+                {totalHeures.toFixed(1)} h
+              </p>
+            </div>
+            {estimationPrevue && (
+              <div
+                className={`rounded-2xl border px-4 py-2 text-right ${
+                  ecartTotalH >= 0
+                    ? "border-emerald-200 bg-emerald-50/70"
+                    : "border-red-200 bg-red-50/70"
+                }`}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Écart prévu / réalisé</p>
+                <p
+                  className={`text-xl font-bold tracking-tight ${
+                    ecartTotalH >= 0 ? "text-emerald-700" : "text-red-700"
+                  }`}
+                >
+                  {ecartTotalH >= 0 ? "+" : ""}
+                  {ecartTotalH.toFixed(1)} h ({ecartTotalPct >= 0 ? "+" : ""}
+                  {ecartTotalPct.toFixed(0)}%)
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Répartition par phase terrasse */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {heuresParPhase.map((ph) => (
-            <div
-              key={ph.id}
-              className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-left"
-            >
-              <p className="text-[11px] font-semibold text-[#777777] truncate">{ph.label}</p>
-              <p className="mt-1 text-lg font-bold text-[#23272B]">
-                {ph.total.toFixed(1)} <span className="text-xs font-normal text-[#777777]">h</span>
-              </p>
-            </div>
-          ))}
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {heuresParPhase.map((ph) => {
+            const pctBarre = ph.prevu > 0 ? Math.min((ph.total / ph.prevu) * 100, 100) : 0;
+            const depassement = ph.prevu > 0 && ph.total > ph.prevu;
+            return (
+              <div
+                key={ph.id}
+                className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-left space-y-1.5"
+              >
+                <p className="text-[11px] font-semibold text-[#777777] truncate">{ph.label}</p>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-lg font-bold text-[#23272B]">
+                    {ph.total.toFixed(1)} <span className="text-xs font-normal text-[#777777]">h</span>
+                  </p>
+                  {estimationPrevue && (
+                    <span className="text-[11px] font-medium text-[#777777]">
+                      / {ph.prevu.toFixed(1)} h prévues
+                    </span>
+                  )}
+                </div>
+                {estimationPrevue && ph.prevu > 0 && (
+                  <>
+                    <div className="h-1.5 w-full rounded-full bg-[#E5E5E5] overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${depassement ? "bg-red-500" : "bg-emerald-500"}`}
+                        style={{ width: `${pctBarre}%` }}
+                      />
+                    </div>
+                    <p
+                      className={`text-[11px] font-semibold ${
+                        ph.ecartH >= 0 ? "text-emerald-700" : "text-red-700"
+                      }`}
+                    >
+                      Écart : {ph.ecartH >= 0 ? "+" : ""}
+                      {ph.ecartH.toFixed(1)} h ({ph.ecartPct >= 0 ? "+" : ""}
+                      {ph.ecartPct.toFixed(0)}%)
+                    </p>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
