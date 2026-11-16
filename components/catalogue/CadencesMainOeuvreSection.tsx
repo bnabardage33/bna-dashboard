@@ -153,52 +153,66 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
     setMessage(null);
   }
 
+  const metierLibelle =
+    metier === "bardage"
+      ? "Bardage"
+      : metier === "terrasse"
+        ? "Terrasse"
+        : "Clôture";
+
+  const metierCadencesLibelle =
+    metier === "bardage"
+      ? "Bardage"
+      : metier === "terrasse"
+        ? "Terrasse & Mobile"
+        : "Clôture";
+
   return (
-    <section className="rounded-xl border border-white/10 bg-[#1E1E1E]/60 overflow-hidden">
+    <section className="rounded-2xl border border-[#E5E5E5] bg-white text-zinc-900 overflow-hidden shadow-xs">
       <button
         type="button"
         onClick={() => setOuvert((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-[#F8F9FA] transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300 border border-violet-500/30">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#B85B2B]/10 text-[#B85B2B] border border-[#B85B2B]/20">
             <Clock className="h-4 w-4" />
           </span>
           <div>
-            <h2 className="text-sm font-bold text-white">
+            <h2 className="text-sm font-bold text-[#23272B]">
               Cadences &amp; Taux horaire main-d&apos;œuvre
             </h2>
-            <p className="text-xs text-gray-400">
-              Paramétrage des temps unitaires ({metier === "bardage" ? "Bardage" : "Terrasse"}) et taux horaires entreprise (table{" "}
-              <code className="font-mono text-[11px] text-violet-300">catalogue_temps</code>)
+            <p className="text-xs text-[#666666]">
+              Paramétrage des temps unitaires ({metierLibelle}) et taux horaires entreprise (table{" "}
+              <code className="font-mono text-[11px] font-semibold text-[#B85B2B]">catalogue_temps</code>)
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-300">
-          <span className="hidden sm:inline font-mono bg-[#121212] border border-white/10 px-2.5 py-1 rounded-md">
+        <div className="flex items-center gap-3 text-xs text-[#555555]">
+          <span className="hidden sm:inline font-mono bg-[#F8F9FA] border border-[#E5E5E5] px-2.5 py-1 rounded-lg text-[#23272B]">
             Vente : {fmtEuro(cadences.taux_horaire_vente_ht)} · Chargé : {fmtEuro(cadences.taux_horaire_charge_ht)}
           </span>
-          {ouvert ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+          {ouvert ? <ChevronUp className="h-4 w-4 text-[#777777]" /> : <ChevronDown className="h-4 w-4 text-[#777777]" />}
         </div>
       </button>
 
       {ouvert && (
-        <div className="border-t border-white/10 px-4 py-4 space-y-5">
+        <div className="border-t border-[#E5E5E5] px-4 py-4 space-y-5">
           {chargement ? (
-            <p className="text-xs text-gray-400">Chargement des cadences...</p>
+            <p className="text-xs text-[#777777]">Chargement des cadences...</p>
           ) : (
             <>
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-violet-300 mb-2.5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B] mb-2.5">
                   Taux horaires entreprise
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {CHAMPS_TAUX_HORAIRES.map((champ) => (
                     <label
                       key={champ.cle}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#121212]/70 px-3.5 py-2.5"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5"
                     >
-                      <span className="text-xs font-medium text-gray-200">{champ.label}</span>
+                      <span className="text-xs font-medium text-[#23272B]">{champ.label}</span>
                       <div className="flex items-center gap-1.5">
                         <input
                           type="number"
@@ -211,9 +225,9 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
                               [champ.cle]: Number(e.target.value),
                             }))
                           }
-                          className="w-24 rounded-md border border-white/15 bg-[#1E1E1E] px-2.5 py-1 text-right text-xs font-mono font-semibold text-white"
+                          className="w-24 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 text-right text-xs font-mono font-semibold text-zinc-900 focus:border-[#B85B2B] focus:outline-none"
                         />
-                        <span className="text-[11px] text-gray-400 w-12">{champ.unite}</span>
+                        <span className="text-[11px] text-[#666666] w-12">{champ.unite}</span>
                       </div>
                     </label>
                   ))}
@@ -221,16 +235,16 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
               </div>
 
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-violet-300 mb-2.5">
-                  Cadences de pose ({metier === "bardage" ? "Bardage" : "Terrasse & Mobile"})
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B] mb-2.5">
+                  Cadences de pose ({metierCadencesLibelle})
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {champsMetier.map((champ) => (
                     <label
                       key={champ.cle}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#121212]/70 px-3.5 py-2.5"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5"
                     >
-                      <span className="text-xs font-medium text-gray-200">{champ.label}</span>
+                      <span className="text-xs font-medium text-[#23272B]">{champ.label}</span>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <input
                           type="number"
@@ -243,9 +257,9 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
                               [champ.cle]: Number(e.target.value),
                             }))
                           }
-                          className="w-20 rounded-md border border-white/15 bg-[#1E1E1E] px-2.5 py-1 text-right text-xs font-mono font-semibold text-white"
+                          className="w-20 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 text-right text-xs font-mono font-semibold text-zinc-900 focus:border-[#B85B2B] focus:outline-none"
                         />
-                        <span className="text-[11px] text-gray-400 w-10">{champ.unite}</span>
+                        <span className="text-[11px] text-[#666666] w-10">{champ.unite}</span>
                       </div>
                     </label>
                   ))}
@@ -254,10 +268,10 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
 
               {message && (
                 <p
-                  className={`text-xs font-medium px-3 py-2 rounded-lg ${
+                  className={`text-xs font-medium px-3 py-2 rounded-xl border ${
                     message.type === "ok"
-                      ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                      : "bg-red-500/15 text-red-300 border border-red-500/30"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-red-50 text-red-700 border-red-200"
                   }`}
                 >
                   {message.texte}
@@ -268,7 +282,7 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
                 <button
                   type="button"
                   onClick={handleReinitialiser}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#121212] px-3.5 py-2 text-xs font-semibold text-gray-300 hover:bg-white/10"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-semibold text-[#555555] hover:bg-white hover:text-[#23272B]"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   Valeurs par défaut
@@ -277,7 +291,7 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
                   type="button"
                   onClick={handleEnregistrer}
                   disabled={sauvegarde}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] disabled:opacity-50"
                 >
                   <Save className="h-3.5 w-3.5" />
                   {sauvegarde ? "Enregistrement..." : "Enregistrer les cadences"}

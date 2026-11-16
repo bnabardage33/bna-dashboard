@@ -470,16 +470,18 @@ export default function CatalogueTerrassePage() {
     return (
       <div
         key={a.id}
-        className={`flex flex-col rounded-xl border p-5 transition-colors ${
+        className={`flex flex-col rounded-2xl border p-5 shadow-xs transition-colors ${
           prestation
-            ? "border-violet-500/40 bg-violet-500/[0.06] hover:border-violet-500/60"
-            : "border-white/10 bg-[#1E1E1E]/50 hover:border-white/10"
+            ? "border-[#B85B2B]/30 bg-white hover:border-[#B85B2B]/60"
+            : "border-[#E5E5E5] bg-white hover:border-[#B85B2B]/40"
         }`}
       >
         <div className="flex justify-between items-start mb-2">
           <span
-            className={`inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit ${
-              prestation ? "bg-violet-600/30 text-violet-300" : "bg-amber-600/20 text-amber-300"
+            className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border w-fit ${
+              prestation
+                ? "border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]"
+                : "border-amber-200 bg-amber-50 text-amber-800"
             }`}
           >
             {prestation ? "Main-d'œuvre" : libelleCategorieAccessoire(a.categorie)}
@@ -487,55 +489,49 @@ export default function CatalogueTerrassePage() {
           <div className="flex gap-2">
             <button
               onClick={() => ouvrirEdition("TERRASSE_ACCESSOIRE", a)}
-              className="text-gray-500 hover:text-gray-400"
+              className="rounded-lg p-1 text-[#888888] hover:bg-[#F3F3F1] hover:text-[#23272B]"
               aria-label={`Modifier ${etiquette}`}
             >
               <Edit2 className="h-4 w-4" />
             </button>
             <button
               onClick={() => supprimer("TERRASSE_ACCESSOIRE", a.id, etiquette)}
-              className="text-gray-500 hover:text-rose-400"
+              className="rounded-lg p-1 text-[#888888] hover:bg-red-50 hover:text-red-600"
               aria-label={`Supprimer ${etiquette}`}
             >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </div>
-        <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
+        <h3 className="font-bold text-[#23272B] text-sm leading-tight mb-1">
           {etiquette}
         </h3>
-        {/* Une prestation n'a pas de conditionnement matériel : on masque la
-            mention même si des valeurs historiques subsistent dans la ligne
-            (vestiges d'une ligne basculée de "matiere" en "main_oeuvre"). */}
         {!prestation && a.conditionnement && (
-          <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">
+          <p className="text-[11px] text-[#666666] font-mono mb-2">
             {a.conditionnement}
           </p>
         )}
-        <p className="text-xs text-gray-500 line-clamp-3 mb-4 flex-grow">
+        <p className="text-xs text-[#666666] line-clamp-3 mb-4 flex-grow">
           {a.description}
         </p>
-        <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
-          {/* Une prestation de main-d'œuvre n'a pas de fournisseur : on masque
-              la mention, tandis que matières et accessoires gardent l'affichage
-              actuel (valeur saisie ou « Fournisseur non défini »). */}
+        <div className="mt-auto flex items-end justify-between border-t border-[#F0F0F0] pt-3">
           {!prestation && (
-            <span className="text-xs font-medium text-gray-500">
+            <span className="text-xs font-medium text-[#777777]">
               {a.fournisseur || "Fournisseur non défini"}
             </span>
           )}
           {prestation ? (
-            <div className="flex flex-col items-end gap-0.5">
-              <span className="text-xs font-medium text-violet-300/80">
+            <div className="ml-auto flex flex-col items-end gap-0.5">
+              <span className="text-xs font-medium text-[#777777]">
                 Revient : {fmtEuro(a.pu_revient ?? 0)} HT
               </span>
-              <span className="text-lg font-black text-gray-200">
+              <span className="text-lg font-black text-[#B85B2B]">
                 {fmtEuro(a.pu_ht ?? 0)} HT
               </span>
             </div>
           ) : (
             a.prix_conditionnement != null && (
-              <span className="text-lg font-black text-gray-200">
+              <span className="text-lg font-black text-[#23272B]">
                 {fmtEuro(Number(a.prix_conditionnement))}
               </span>
             )
@@ -546,135 +542,137 @@ export default function CatalogueTerrassePage() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <Link
-              href="/bureau"
-              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-400 transition-colors mb-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Retour au Bureau
-            </Link>
-            <h1 className="text-3xl font-bold text-white">Catalogue Terrasse</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Gérez vos lames et accessoires de terrasse, organisés par groupe
-              métier selon le flux de chantier.
-            </p>
+    <div className="min-h-screen bg-[#F3F3F1] pb-24 text-[#23272B]">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+        <header className="rounded-2xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <Link
+                href="/bureau"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] transition-colors mb-2"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Retour au Bureau
+              </Link>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+                BNA Pilotage BTP · Catalogue Terrasse
+              </p>
+              <h1 className="text-xl font-bold text-[#23272B]">Catalogue Terrasse</h1>
+              <p className="text-xs text-[#777777] mt-0.5">
+                Lames, accessoires, prestations main-d&apos;œuvre et kit Terrasse Mobile &amp; Motorisation
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", null, "main_oeuvre")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-xs font-bold text-[#23272B] hover:bg-white transition-colors"
+                title="Créer une prestation de main-d'œuvre (pose, préparation, finition…)"
+              >
+                <Plus className="h-3.5 w-3.5 text-[#B85B2B]" />
+                Nouvelle Prestation
+              </button>
+              <button
+                onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", categorieOngletActif)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3.5 py-2.5 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouvel Accessoire
+              </button>
+              <button
+                onClick={() => ouvrirCreation("TERRASSE_LAME")}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Nouvelle Lame
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", null, "main_oeuvre")}
-              className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
-              title="Créer une prestation de main-d'œuvre (pose, préparation, finition…)"
-            >
-              <Plus className="h-4 w-4" />
-              Nouvelle Prestation
-            </button>
-            <button
-              onClick={() => ouvrirCreation("TERRASSE_ACCESSOIRE", categorieOngletActif)}
-              className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-500 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Nouvel Accessoire
-            </button>
-            <button
-              onClick={() => ouvrirCreation("TERRASSE_LAME")}
-              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-600 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Nouvelle Lame
-            </button>
+
+          {/* Filtres */}
+          <div className="mt-5 flex flex-col gap-3 pt-4 border-t border-[#F0F0F0] lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-1.5">
+              {ONGLETS.map((o) => (
+                <button
+                  key={o.id}
+                  onClick={() => setFiltre(o.id)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
+                    filtre === o.id
+                      ? "bg-[#B85B2B] text-white"
+                      : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                  }`}
+                >
+                  {o.libelle}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {afficherLames && (
+                <select
+                  id="filtre-materiau"
+                  aria-label="Matériau"
+                  value={filtreMateriau}
+                  onChange={(e) => setFiltreMateriau(e.target.value)}
+                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                >
+                  <option value="All">Tous matériaux</option>
+                  <option value="BOIS_NATUREL">Bois naturel</option>
+                  <option value="COMPOSITE">Composite</option>
+                  <option value="PVC">PVC</option>
+                </select>
+              )}
+
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
+                <input
+                  type="text"
+                  placeholder="Rechercher (essence / référence)..."
+                  value={recherche}
+                  onChange={(e) => setRecherche(e.target.value)}
+                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] py-2 pl-9 pr-4 text-xs text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRecherche("");
+                  setFiltre("tout");
+                  setFiltreMateriau("All");
+                }}
+                className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-semibold text-[#666666] hover:bg-white hover:text-[#23272B]"
+              >
+                Réinitialiser
+              </button>
+            </div>
           </div>
         </header>
 
         <CadencesMainOeuvreSection metier="terrasse" />
 
-        {/* Filtres */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1E1E1E]/50 p-4 rounded-xl border border-white/10">
-          <div className="flex flex-wrap gap-2">
-            {ONGLETS.map((o) => (
-              <button
-                key={o.id}
-                onClick={() => setFiltre(o.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border ${
-                  filtre === o.id
-                    ? "bg-red-600/20 text-gray-300 border-white/10"
-                    : "bg-[#1E1E1E] text-gray-400 border-white/10 hover:border-slate-500"
-                }`}
-              >
-                {o.libelle}
-              </button>
-            ))}
-          </div>
-
-          {afficherLames && (
-            <div className="flex items-center gap-2">
-              <label htmlFor="filtre-materiau" className="text-xs text-gray-400">
-                Matériau
-              </label>
-              <select
-                id="filtre-materiau"
-                value={filtreMateriau}
-                onChange={(e) => setFiltreMateriau(e.target.value)}
-                className="rounded border border-slate-600 bg-transparent p-1 text-xs text-gray-200"
-              >
-                <option value="All">Tous</option>
-                <option value="BOIS_NATUREL">Bois naturel</option>
-                <option value="COMPOSITE">Composite</option>
-                <option value="PVC">PVC</option>
-              </select>
-            </div>
-          )}
-
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Rechercher (essence / référence)..."
-              value={recherche}
-              onChange={(e) => setRecherche(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-transparent py-2 pl-9 pr-4 text-sm text-gray-200 outline-none focus:border-white/10"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setRecherche("");
-              setFiltre("tout");
-              setFiltreMateriau("All");
-            }}
-            className="ml-2 rounded bg-[#1E1E1E] px-3 py-1 text-xs text-gray-200 hover:bg-[#1E1E1E]"
-          >
-            Réinitialiser
-          </button>
-        </div>
-
         {error && (
-          <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             Erreur de chargement du catalogue Terrasse : {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex h-32 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent" />
+          <div className="flex h-32 items-center justify-center rounded-2xl border border-[#E5E5E5] bg-white">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#E5E5E5] border-t-[#B85B2B]" />
           </div>
         ) : (
           <>
             {/* ── Section Lames ─────────────────────────────────────── */}
             {afficherLames && (
               <section className="space-y-3">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <h2 className="text-base font-bold text-[#23272B] flex items-center gap-2">
                   Lames
-                  <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-2xs font-semibold text-gray-400 border border-white/10">
+                  <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#666666] border border-[#E5E5E5]">
                     {lamesFiltrees.length}
                   </span>
                 </h2>
                 {lamesFiltrees.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
+                  <div className="rounded-2xl border border-dashed border-[#E5E5E5] bg-white py-12 text-center text-xs text-[#777777]">
                     Aucune lame trouvée pour cette recherche.
                   </div>
                 ) : (
@@ -684,21 +682,21 @@ export default function CatalogueTerrassePage() {
                       return (
                         <div
                           key={l.id}
-                          className="flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E]/50 p-5 transition-colors hover:border-white/10"
+                          className="flex flex-col rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs transition-colors hover:border-[#B85B2B]/40"
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-wrap gap-1.5">
                               <span
-                                className={`inline-block px-2 py-1 text-2xs font-bold uppercase tracking-wider rounded w-fit ${
+                                className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border w-fit ${
                                   l.type_material === "COMPOSITE"
-                                    ? "bg-cyan-600/20 text-cyan-300"
-                                    : "bg-emerald-600/20 text-emerald-300"
+                                    ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                    : "border-emerald-200 bg-emerald-50 text-emerald-700"
                                 }`}
                               >
                                 {libelleTypeMaterial(l.type_material)}
                               </span>
                               {l.essence && (
-                                <span className="inline-block px-2 py-1 bg-[#1E1E1E] text-gray-300 text-2xs font-bold uppercase tracking-wider rounded w-fit">
+                                <span className="inline-block px-2.5 py-1 border border-[#E5E5E5] bg-[#F8F9FA] text-[#555555] text-[10px] font-bold uppercase tracking-wider rounded-full w-fit">
                                   {l.essence}
                                 </span>
                               )}
@@ -706,46 +704,46 @@ export default function CatalogueTerrassePage() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => ouvrirEdition("TERRASSE_LAME", l)}
-                                className="text-gray-500 hover:text-gray-400"
+                                className="rounded-lg p-1 text-[#888888] hover:bg-[#F3F3F1] hover:text-[#23272B]"
                                 aria-label={`Modifier ${etiquetteLame(l)}`}
                               >
                                 <Edit2 className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => supprimer("TERRASSE_LAME", l.id, etiquetteLame(l))}
-                                className="text-gray-500 hover:text-rose-400"
+                                className="rounded-lg p-1 text-[#888888] hover:bg-red-50 hover:text-red-600"
                                 aria-label={`Supprimer ${etiquetteLame(l)}`}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
-                          <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
+                          <h3 className="font-bold text-[#23272B] text-sm leading-tight mb-1">
                             {etiquetteLame(l)}
                           </h3>
                           {dims && (
-                            <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">{dims}</p>
+                            <p className="text-[11px] text-[#666666] font-mono mb-2">{dims}</p>
                           )}
                           {l.reference_fournisseur && (
-                            <p className="text-3xs text-gray-500 mb-1">
+                            <p className="text-[11px] text-[#888888] mb-1">
                               Réf. {l.reference_fournisseur}
                             </p>
                           )}
-                          <p className="text-xs text-gray-500 line-clamp-3 mb-4 flex-grow">
+                          <p className="text-xs text-[#666666] line-clamp-3 mb-4 flex-grow">
                             {l.description}
                           </p>
-                          <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
-                            <span className="text-xs font-medium text-gray-500">
+                          <div className="mt-auto flex items-end justify-between border-t border-[#F0F0F0] pt-3">
+                            <span className="text-xs font-medium text-[#777777]">
                               {l.fournisseur || "Fournisseur non défini"}
                             </span>
                             <div className="flex flex-col items-end gap-0.5">
                               {l.prix_unitaire_lame != null && (
-                                <span className="text-lg font-black text-gray-200">
+                                <span className="text-lg font-black text-[#23272B]">
                                   {fmtEuro(Number(l.prix_unitaire_lame))} HT/u
                                 </span>
                               )}
                               {l.prix_m2_ht != null && (
-                                <span className="text-xs font-medium text-gray-400">
+                                <span className="text-xs font-semibold text-[#B85B2B]">
                                   {fmtEuro(Number(l.prix_m2_ht))} HT/m²
                                 </span>
                               )}
@@ -762,38 +760,36 @@ export default function CatalogueTerrassePage() {
             {/* ── Sections Accessoires par groupe métier ─────────────── */}
             {groupesVisibles.map((groupe) => {
               const items = accessoiresGroupes[groupe];
-              // En vue « Tout », on ignore silencieusement les groupes vides ;
-              // un onglet dédié affiche toujours son état vide explicite.
               if (filtre === "tout" && items.length === 0) return null;
               return (
                 <section key={groupe} className="space-y-3">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h2 className="text-base font-bold text-[#23272B] flex items-center gap-2">
                     {LIBELLES_GROUPES[groupe]}
-                    <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-2xs font-semibold text-gray-400 border border-white/10">
+                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#666666] border border-[#E5E5E5]">
                       {items.length}
                     </span>
                   </h2>
                   {items.length === 0 ? (
                     groupe === "terrasse_mobile" ? (
-                      <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-6 text-center space-y-3">
-                        <div className="text-sm font-semibold text-sky-200">
-                          🏊 Les 9 références de base Terrasse Mobile & Motorisation (profilés alu, rails inox, galets, moteur 24V, crémaillère, kits solaire/filaire, fins de course, télécommandes) sont prêtes.
+                      <div className="rounded-2xl border border-[#B85B2B]/25 bg-white p-6 text-center space-y-3 shadow-xs">
+                        <div className="text-sm font-bold text-[#23272B]">
+                          Les 9 références de base Terrasse Mobile &amp; Motorisation (profilés alu, rails inox, galets, moteur 24V, crémaillère, kits solaire/filaire, fins de course, télécommandes) sont prêtes.
                         </div>
-                        <p className="text-xs text-sky-300/80 max-w-xl mx-auto">
+                        <p className="text-xs text-[#666666] max-w-xl mx-auto">
                           Initialisez ces 9 références pré-remplies dans votre catalogue pour personnaliser vos prix de vente et vos coûts de revient.
                         </p>
                         <button
                           type="button"
                           disabled={initialisantMobile}
                           onClick={initialiserFournituresMobile}
-                          className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-500 transition-colors shadow-sm disabled:opacity-50"
+                          className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#9E4B20] transition-colors shadow-xs disabled:opacity-50"
                         >
                           <Plus className="h-4 w-4" />
                           {initialisantMobile ? "Initialisation en cours..." : "Pré-remplir les 9 fournitures de référence"}
                         </button>
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
+                      <div className="rounded-2xl border border-dashed border-[#E5E5E5] bg-white py-12 text-center text-xs text-[#777777]">
                         Aucun accessoire dans « {LIBELLES_GROUPES[groupe]} » pour cette recherche.
                       </div>
                     )
@@ -810,14 +806,14 @@ export default function CatalogueTerrassePage() {
             {afficherPrestations &&
               (filtre !== "tout" || accessoiresPrestations.length > 0) && (
                 <section className="space-y-3">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h2 className="text-base font-bold text-[#23272B] flex items-center gap-2">
                     Prestations
-                    <span className="rounded-full bg-[#1E1E1E] px-2 py-0.5 text-2xs font-semibold text-gray-400 border border-white/10">
+                    <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#666666] border border-[#E5E5E5]">
                       {accessoiresPrestations.length}
                     </span>
                   </h2>
                   {accessoiresPrestations.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/30 py-12 text-center text-gray-500">
+                    <div className="rounded-2xl border border-dashed border-[#E5E5E5] bg-white py-12 text-center text-xs text-[#777777]">
                       Aucune prestation pour cette recherche.
                     </div>
                   ) : (

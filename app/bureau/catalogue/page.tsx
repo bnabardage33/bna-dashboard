@@ -598,193 +598,194 @@ export default function CataloguePage() {
   });
 
   return (
-    <div className="min-h-screen bg-transparent p-4 lg:p-8 text-white">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <Link
-              href="/bureau"
-              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300 transition-colors mb-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Retour au Bureau
-            </Link>
-            <h1 className="text-3xl font-bold text-white">Catalogue des Ouvrages</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Référentiel commun avec tarifs et coûts personnalisés pour votre entreprise.
-            </p>
+    <div className="min-h-screen bg-[#F3F3F1] pb-24 text-[#23272B]">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+        <header className="rounded-2xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <Link
+                href="/bureau"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] transition-colors mb-2"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Retour au Bureau
+              </Link>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+                BNA Pilotage BTP · Catalogue des Ouvrages
+              </p>
+              <h1 className="text-xl font-bold text-[#23272B]">Catalogue des Ouvrages</h1>
+              <p className="text-xs text-[#777777] mt-0.5">
+                Référentiel commun Bardage &amp; ITE avec tarifs et coûts personnalisés pour votre entreprise.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-xs font-bold text-[#23272B] hover:bg-white transition-colors disabled:opacity-50"
+              >
+                {isImporting ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#B85B2B] border-t-transparent" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5 text-[#B85B2B]" />
+                )}
+                {isImporting ? "Importation..." : "Importer CSV"}
+              </button>
+              <button
+                onClick={() => handleOpenModal(undefined, "main_oeuvre")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3.5 py-2.5 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 transition-colors"
+                title="Créer une prestation de main-d'œuvre (pose, dépose, finition…)"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouvelle Main-d&apos;œuvre
+              </button>
+              <button
+                onClick={() => handleOpenModal()}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Nouvel Ouvrage
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="file"
-              accept=".csv"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isImporting}
-              className="flex items-center gap-2 rounded-lg bg-[#1E1E1E] px-4 py-2 text-sm font-bold text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-            >
-              {isImporting ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-              {isImporting ? "Importation..." : "Importer CSV"}
-            </button>
-            <button
-              onClick={() => handleOpenModal(undefined, "main_oeuvre")}
-              className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
-              title="Créer une prestation de main-d'œuvre (pose, dépose, finition…)"
-            >
-              <Plus className="h-4 w-4" />
-              Nouvelle Main-d&apos;œuvre
-            </button>
-            <button
-              onClick={() => handleOpenModal()}
-              className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-500 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Nouvel Ouvrage
-            </button>
+
+          {/* Filtres */}
+          <div className="mt-5 space-y-3 pt-4 border-t border-[#F0F0F0]">
+            {/* Catégorie */}
+            <div className="flex flex-wrap gap-1.5">
+              {displayCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setActiveCategory(cat);
+                    setActiveSubCategory("Tous");
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
+                    activeCategory === cat
+                      ? "bg-[#B85B2B] text-white"
+                      : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {activeCategory === "Parements & Bardages" && (
+              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#F0F0F0]">
+                {["Tous", "Bois Massif", "Lame Composite", "HPL (Trespa/Polyrey)", "Fibrociment"].map(
+                  (sub) => (
+                    <button
+                      key={sub}
+                      onClick={() => setActiveSubCategory(sub)}
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors border ${
+                        activeSubCategory === sub
+                          ? "border-[#B85B2B] bg-[#B85B2B]/10 text-[#B85B2B]"
+                          : "border-[#E5E5E5] bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* Type de prestation */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-[#777777] font-bold uppercase tracking-wider mr-1">
+                  Type :
+                </span>
+                {(["tous", "matiere", "main_oeuvre"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTypeFiltre(t)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors border ${
+                      typeFiltre === t
+                        ? "border-[#23272B] bg-[#23272B] text-white"
+                        : "border-[#E5E5E5] bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                    }`}
+                  >
+                    {t === "tous" ? "Tous" : t === "matiere" ? "Matériaux" : "Main-d'œuvre"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Fabricant */}
+                <select
+                  id="chp-fabricant"
+                  aria-label="Fabricant"
+                  value={activeFabricant}
+                  onChange={(e) => setActiveFabricant(e.target.value)}
+                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                >
+                  <option value="All">Tous fabricants</option>
+                  {Array.from(new Set(ouvrages.map((o) => o.fabricant).filter(Boolean)))
+                    .sort()
+                    .map((fab) => (
+                      <option key={fab} value={fab}>
+                        {fab}
+                      </option>
+                    ))}
+                </select>
+
+                {/* Recherche texte */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher (couleur / code décor)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] py-2 pl-9 pr-4 text-xs text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                  />
+                </div>
+
+                {/* Reset Filters Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveFabricant("All");
+                    setActiveCategory("Toutes");
+                    setActiveSubCategory("Tous");
+                    setTypeFiltre("tous");
+                  }}
+                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-semibold text-[#666666] hover:bg-white hover:text-[#23272B]"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
           </div>
         </header>
 
         <CadencesMainOeuvreSection metier="bardage" />
 
         {/* Bannière explicative Option A */}
-        <div className="rounded-xl border border-sky-500/20 bg-sky-950/20 px-4 py-3 text-xs text-sky-200 flex items-start sm:items-center gap-3">
-          <Info className="h-5 w-5 shrink-0 text-sky-400 mt-0.5 sm:mt-0" />
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-xs text-[#23272B] flex items-start sm:items-center gap-3">
+          <Info className="h-5 w-5 shrink-0 text-sky-600 mt-0.5 sm:mt-0" />
           <div className="leading-relaxed">
-            <strong className="font-semibold text-sky-300">Mode Multi-Entreprise (Option A) :</strong> Le
+            <strong className="font-bold text-sky-900">Mode Multi-Entreprise (Option A) :</strong> Le
             référentiel technique est partagé. Utilisez le bouton d&apos;édition sur un ouvrage pour
             personnaliser votre prix de vente et votre coût de revient. Vos surcharges sont strictement
             isolées et appliquées par défaut à vos devis.
           </div>
         </div>
 
-        {/* Filtres */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-[#1E1E1E]/50 p-4 rounded-xl border border-white/10">
-          {/* Catégorie */}
-          <div className="flex flex-wrap gap-2">
-            {displayCategories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  setActiveCategory(cat);
-                  setActiveSubCategory("Tous");
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
-                  activeCategory === cat
-                    ? "bg-red-600/20 text-red-400 border border-red-500/30"
-                    : "bg-[#1E1E1E] text-gray-400 border border-white/10 hover:border-slate-500"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {activeCategory === "Parements & Bardages" && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 mt-2 w-full">
-              {["Tous", "Bois Massif", "Lame Composite", "HPL (Trespa/Polyrey)", "Fibrociment"].map(
-                (sub) => (
-                  <button
-                    key={sub}
-                    onClick={() => setActiveSubCategory(sub)}
-                    className={`px-3 py-1 rounded-full text-3xs font-semibold transition-colors ${
-                      activeSubCategory === sub
-                        ? "bg-cyan-600/20 text-cyan-400 border border-cyan-500/30"
-                        : "bg-[#1E1E1E] text-gray-500 border border-white/5 hover:border-slate-600"
-                    }`}
-                  >
-                    {sub}
-                  </button>
-                )
-              )}
-            </div>
-          )}
-
-          {/* Type de prestation */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide">
-              Type :
-            </span>
-            {(["tous", "matiere", "main_oeuvre"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTypeFiltre(t)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors border ${
-                  typeFiltre === t
-                    ? t === "main_oeuvre"
-                      ? "bg-violet-600/30 border-violet-500/50 text-violet-300"
-                      : "bg-emerald-600/20 border-emerald-500/40 text-emerald-300"
-                    : "bg-[#1E1E1E] text-gray-400 border-white/10 hover:border-slate-500"
-                }`}
-              >
-                {t === "tous" ? "Tous" : t === "matiere" ? "Matériaux" : "Main-d'œuvre"}
-              </button>
-            ))}
-          </div>
-
-          {/* Fabricant */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="chp-fabricant" className="text-xs text-gray-400">
-              Fabricant
-            </label>
-            <select
-              id="chp-fabricant"
-              value={activeFabricant}
-              onChange={(e) => setActiveFabricant(e.target.value)}
-              className="rounded border border-slate-600 bg-transparent p-1 text-xs text-gray-200"
-            >
-              <option value="All" className="bg-[#18181b]">
-                Tous
-              </option>
-              {Array.from(new Set(ouvrages.map((o) => o.fabricant).filter(Boolean)))
-                .sort()
-                .map((fab) => (
-                  <option key={fab} value={fab} className="bg-[#18181b]">
-                    {fab}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Recherche texte */}
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Rechercher (couleur / code décor)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-slate-600 bg-transparent py-2 pl-9 pr-4 text-sm text-gray-200 outline-none focus:border-white/20"
-            />
-          </div>
-
-          {/* Reset Filters Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setSearchQuery("");
-              setActiveFabricant("All");
-              setActiveCategory("Toutes");
-              setActiveSubCategory("Tous");
-              setTypeFiltre("tous");
-            }}
-            className="ml-2 rounded bg-[#1E1E1E] px-3 py-1 text-xs text-gray-200 hover:bg-white/10"
-          >
-            Réinitialiser
-          </button>
-        </div>
-
         {/* Liste */}
         {isLoading ? (
-          <div className="flex h-32 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-transparent"></div>
+          <div className="flex h-32 items-center justify-center rounded-2xl border border-[#E5E5E5] bg-white">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#E5E5E5] border-t-[#B85B2B]"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -801,43 +802,43 @@ export default function CataloguePage() {
               return (
                 <div
                   key={o.id}
-                  className={`flex flex-col rounded-xl border p-5 transition-colors ${
+                  className={`flex flex-col rounded-2xl border p-5 shadow-xs transition-colors ${
                     o.type_cout === "main_oeuvre"
-                      ? "border-violet-500/40 bg-violet-500/[0.06] hover:border-violet-500/60"
-                      : "border-white/10 bg-[#1E1E1E]/50 hover:border-white/20"
+                      ? "border-[#B85B2B]/30 bg-white hover:border-[#B85B2B]/60"
+                      : "border-[#E5E5E5] bg-white hover:border-[#B85B2B]/40"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2 gap-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span
-                        className={`inline-block px-2 py-0.5 text-2xs font-bold uppercase tracking-wider rounded ${
+                        className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
                           o.type_cout === "main_oeuvre"
-                            ? "bg-violet-600/30 text-violet-300"
-                            : "bg-emerald-600/20 text-emerald-300"
+                            ? "border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
                         }`}
                       >
                         {o.type_cout === "main_oeuvre" ? "Main-d'œuvre" : "Matériau"}
                       </span>
-                      <span className="inline-block px-2 py-0.5 bg-[#1E1E1E] text-gray-300 text-2xs font-bold uppercase tracking-wider rounded">
+                      <span className="inline-block px-2 py-0.5 border border-[#E5E5E5] bg-[#F8F9FA] text-[#555555] text-[10px] font-bold uppercase tracking-wider rounded-full">
                         {mapToMainFamily(o.famille_label || o.categorie, o.type_cout)}
                       </span>
 
                       {/* Statut Tarif Vente */}
                       {resolu.statut_vente === "personnalise" ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 text-2xs font-semibold text-emerald-400 border border-emerald-500/30">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="h-3 w-3" />
                           Tarif personnalisé
                         </span>
                       ) : resolu.statut_vente === "indicatif_non_personnalise" ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-2xs font-semibold text-amber-300 border border-amber-500/30"
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200"
                           title="Tarif indicatif non personnalisé. Cliquez sur Personnaliser pour adapter le prix de votre entreprise."
                         >
                           <AlertTriangle className="h-3 w-3" />
                           Tarif indicatif
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded bg-zinc-700/40 px-2 py-0.5 text-2xs font-semibold text-zinc-300 border border-zinc-600/50">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#F8F9FA] px-2 py-0.5 text-[10px] font-semibold text-[#666666] border border-[#E5E5E5]">
                           À chiffrer
                         </span>
                       )}
@@ -845,18 +846,18 @@ export default function CataloguePage() {
                       {/* Statut Coût Revient */}
                       {resolu.statut_cout === "a_completer" ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded bg-rose-500/15 px-2 py-0.5 text-2xs font-semibold text-rose-300 border border-rose-500/30"
+                          className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 border border-red-200"
                           title="Coût de revient absent : la marge brute restera indicative tant que le coût n'est pas complété."
                         >
                           <AlertTriangle className="h-3 w-3" />
                           Coût manquant
                         </span>
                       ) : o.surchargePuRevient !== undefined && o.surchargePuRevient !== null ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-3xs font-medium text-sky-400 bg-sky-500/10 border border-sky-500/20">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium text-sky-700 bg-sky-50 border border-sky-200">
                           Coût perso
                         </span>
                       ) : (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-3xs font-medium text-zinc-400 bg-zinc-700/30">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium text-[#777777] bg-[#F8F9FA] border border-[#E5E5E5]">
                           Coût indicatif
                         </span>
                       )}
@@ -865,7 +866,7 @@ export default function CataloguePage() {
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => ouvrirModalPrix(o)}
-                        className="text-gray-400 hover:text-white p-1 rounded hover:bg-white/10 transition-colors"
+                        className="text-[#888888] hover:text-[#23272B] p-1 rounded-lg hover:bg-[#F3F3F1] transition-colors"
                         title="Personnaliser les tarifs de cet ouvrage pour votre entreprise"
                         aria-label={`Personnaliser les tarifs de ${o.designation}`}
                       >
@@ -874,7 +875,7 @@ export default function CataloguePage() {
                       {o.aUneSurcharge && (
                         <button
                           onClick={() => handleResetPrix(o.id)}
-                          className="text-amber-400/80 hover:text-amber-300 p-1 rounded hover:bg-amber-500/10 transition-colors"
+                          className="text-amber-600 hover:text-amber-700 p-1 rounded-lg hover:bg-amber-50 transition-colors"
                           title="Réinitialiser au tarif indicatif commun"
                           aria-label={`Réinitialiser le tarif de ${o.designation}`}
                         >
@@ -884,7 +885,7 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-gray-200 text-sm leading-tight mb-1">
+                  <h3 className="font-bold text-[#23272B] text-sm leading-tight mb-1">
                     {o.designation}
                   </h3>
 
@@ -929,47 +930,47 @@ export default function CataloguePage() {
                     }
 
                     return text ? (
-                      <p className="text-3xs text-gray-400 font-mono mb-2 opacity-90">{text}</p>
+                      <p className="text-[11px] text-[#666666] font-mono mb-2">{text}</p>
                     ) : (
                       <div className="mb-2"></div>
                     );
                   })()}
 
-                  <p className="text-xs text-gray-500 line-clamp-3 mb-4 flex-grow">
+                  <p className="text-xs text-[#666666] line-clamp-3 mb-4 flex-grow">
                     {o.description}
                   </p>
 
-                  <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
-                    <span className="text-xs font-medium text-gray-500">Unité : {o.unite}</span>
+                  <div className="mt-auto flex items-end justify-between border-t border-[#F0F0F0] pt-3">
+                    <span className="text-xs font-medium text-[#777777]">Unité : {o.unite}</span>
                     <div className="flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-3xs uppercase tracking-wider text-gray-500">Revient :</span>
+                        <span className="text-[10px] uppercase tracking-wider text-[#777777]">Revient :</span>
                         <span
                           className={`text-xs font-medium ${
                             resolu.statut_cout === "a_completer"
-                              ? "text-rose-400 italic"
-                              : "text-violet-300/80"
+                              ? "text-red-600 italic"
+                              : "text-[#555555]"
                           }`}
                         >
                           {hasPuRevient ? `${fmtEuro(resolu.pu_revient!)} HT` : "Non renseigné"}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-3xs uppercase tracking-wider text-gray-500">Vente :</span>
-                        <span className="text-lg font-black text-gray-200">
+                        <span className="text-[10px] uppercase tracking-wider text-[#777777]">Vente :</span>
+                        <span className="text-lg font-black text-[#23272B]">
                           {hasPuHt ? `${fmtEuro(resolu.pu_ht!)} HT` : "— HT"}
                         </span>
                       </div>
                       {margeUnitaire !== null ? (
                         <span
-                          className={`text-3xs font-medium ${
-                            margeUnitaire >= 0 ? "text-emerald-400" : "text-rose-400"
+                          className={`text-[11px] font-semibold ${
+                            margeUnitaire >= 0 ? "text-emerald-700" : "text-red-600"
                           }`}
                         >
                           Marge : {fmtEuro(margeUnitaire)} HT ({tauxMarge?.toFixed(1)} %)
                         </span>
                       ) : resolu.statut_cout === "a_completer" ? (
-                        <span className="text-3xs text-amber-400/90 font-medium">
+                        <span className="text-[11px] text-amber-700 font-medium">
                           Marge indicative (coût absent)
                         </span>
                       ) : null}
@@ -979,7 +980,7 @@ export default function CataloguePage() {
               );
             })}
             {filteredOuvrages.length === 0 && (
-              <div className="col-span-full py-12 text-center text-gray-500">
+              <div className="col-span-full rounded-2xl border border-dashed border-[#E5E5E5] bg-white py-12 text-center text-xs text-[#777777]">
                 Aucun ouvrage trouvé pour cette recherche.
               </div>
             )}
@@ -988,35 +989,35 @@ export default function CataloguePage() {
 
         {/* Modal Personnalisation Tarif Ouvrage pour le Tenant */}
         {modalPrixOuvrage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#18181b] p-6 shadow-2xl space-y-5">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+            <div className="w-full max-w-lg rounded-2xl border border-[#E5E5E5] bg-white p-6 shadow-xl space-y-5 text-[#23272B]">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="rounded bg-sky-500/10 px-2 py-0.5 text-2xs font-bold text-sky-400 border border-sky-500/20">
+                    <span className="rounded-full bg-[#B85B2B]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#B85B2B] border border-[#B85B2B]/25">
                       Tarif Entreprise
                     </span>
-                    <span className="text-2xs text-gray-400 font-mono">
+                    <span className="text-xs text-[#777777] font-mono">
                       Unité : {modalPrixOuvrage.unite}
                     </span>
                   </div>
-                  <h2 className="text-lg font-bold text-white leading-snug">
+                  <h2 className="text-lg font-bold text-[#23272B] leading-snug">
                     {modalPrixOuvrage.designation}
                   </h2>
                 </div>
                 <button
                   onClick={fermerModalPrix}
-                  className="rounded-lg p-1 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                  className="rounded-lg p-1 text-[#777777] hover:bg-[#F3F3F1] hover:text-[#23272B] transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Fiche technique commune (Lecture seule) */}
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs space-y-1.5 text-gray-300">
+              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-xs space-y-1.5 text-[#555555]">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Catégorie :</span>
-                  <span className="font-medium text-gray-300">
+                  <span className="text-[#777777]">Catégorie :</span>
+                  <span className="font-semibold text-[#23272B]">
                     {mapToMainFamily(
                       modalPrixOuvrage.famille_label || modalPrixOuvrage.categorie,
                       modalPrixOuvrage.type_cout
@@ -1025,17 +1026,17 @@ export default function CataloguePage() {
                 </div>
                 {modalPrixOuvrage.fabricant && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Fabricant :</span>
-                    <span className="font-medium text-gray-300">{modalPrixOuvrage.fabricant}</span>
+                    <span className="text-[#777777]">Fabricant :</span>
+                    <span className="font-semibold text-[#23272B]">{modalPrixOuvrage.fabricant}</span>
                   </div>
                 )}
                 {modalPrixOuvrage.gamme && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Gamme :</span>
-                    <span className="font-medium text-gray-300">{modalPrixOuvrage.gamme}</span>
+                    <span className="text-[#777777]">Gamme :</span>
+                    <span className="font-semibold text-[#23272B]">{modalPrixOuvrage.gamme}</span>
                   </div>
                 )}
-                <div className="border-t border-white/5 pt-2 flex justify-between text-2xs text-gray-400">
+                <div className="border-t border-[#E5E5E5] pt-2 flex justify-between text-[11px] text-[#666666]">
                   <span>Tarif indicatif commun : {fmtEuro(modalPrixOuvrage.pu_ht)} HT</span>
                   <span>
                     Coût commun :{" "}
@@ -1051,7 +1052,7 @@ export default function CataloguePage() {
                 <div>
                   <label
                     htmlFor="saisie-pu-ht"
-                    className="block text-xs font-semibold text-gray-300 mb-1"
+                    className="block text-xs font-semibold text-[#23272B] mb-1"
                   >
                     Prix de vente HT (€ HT / {modalPrixOuvrage.unite})
                   </label>
@@ -1063,9 +1064,9 @@ export default function CataloguePage() {
                     placeholder={String(modalPrixOuvrage.pu_ht ?? 0)}
                     value={prixSaisieHt}
                     onChange={(e) => setPrixSaisieHt(e.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-sm text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
                   />
-                  <p className="mt-1 text-3xs text-gray-500">
+                  <p className="mt-1 text-[11px] text-[#777777]">
                     Ce tarif remplacera le prix indicatif commun par défaut dans vos nouveaux devis.
                   </p>
                 </div>
@@ -1073,7 +1074,7 @@ export default function CataloguePage() {
                 <div>
                   <label
                     htmlFor="saisie-pu-revient"
-                    className="block text-xs font-semibold text-gray-300 mb-1"
+                    className="block text-xs font-semibold text-[#23272B] mb-1"
                   >
                     Coût de revient HT (€ HT / {modalPrixOuvrage.unite})
                   </label>
@@ -1089,9 +1090,9 @@ export default function CataloguePage() {
                     }
                     value={prixSaisieRevient}
                     onChange={(e) => setPrixSaisieRevient(e.target.value)}
-                    className="w-full rounded-lg border border-slate-600 bg-transparent px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-sm text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
                   />
-                  <p className="mt-1 text-3xs text-gray-500">
+                  <p className="mt-1 text-[11px] text-[#777777]">
                     Coût d&apos;achat matière ou taux horaire pour calculer précisément vos marges.
                   </p>
                 </div>
@@ -1105,7 +1106,7 @@ export default function CataloguePage() {
                     const marge = ht - revient;
                     const taux = ht > 0 ? (marge / ht) * 100 : 0;
                     return (
-                      <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/20 p-2.5 text-xs text-emerald-300 flex items-center justify-between">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800 flex items-center justify-between">
                         <span>Marge unitaire prévisionnelle :</span>
                         <strong className="font-bold">
                           {fmtEuro(marge)} HT ({taux.toFixed(1)} %)
@@ -1114,8 +1115,8 @@ export default function CataloguePage() {
                     );
                   } else if (ht !== null && revient === null) {
                     return (
-                      <div className="rounded-lg border border-amber-500/20 bg-amber-950/20 p-2.5 text-xs text-amber-300 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
                         <span>
                           Coût de revient non renseigné : la marge sera signalée comme indicative.
                         </span>
@@ -1125,13 +1126,13 @@ export default function CataloguePage() {
                   return null;
                 })()}
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between pt-3 border-t border-[#E5E5E5]">
                   <div>
                     {modalPrixOuvrage.aUneSurcharge && (
                       <button
                         type="button"
                         onClick={() => handleResetPrix(modalPrixOuvrage.id)}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-amber-400 hover:bg-amber-500/10 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Réinitialiser au tarif commun
@@ -1143,14 +1144,14 @@ export default function CataloguePage() {
                     <button
                       type="button"
                       onClick={fermerModalPrix}
-                      className="rounded-lg border border-white/10 px-4 py-2 text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+                      className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:bg-[#F3F3F1] transition-colors"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={isSavingPrix}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9E4B20] transition-colors disabled:opacity-50"
                     >
                       {isSavingPrix ? (
                         <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
