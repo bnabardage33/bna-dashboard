@@ -13,7 +13,7 @@
 //     `points` n'est pas stocké) ; leur surface est donc majorée ;
 //   * les ouvertures ne modifient pas le placement des pièces.
 
-import type { PieceCalepinage, ResultatCalepinage } from "@/lib/calepinageCalcul";
+import type { PieceCalepinage, ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
 import type { CuttingListItem, Treatment } from "@/types/calepinage";
 
 export interface ModuleGenere {

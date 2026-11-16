@@ -111,7 +111,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 import BardageCalepinageModule from "@/components/bardage/hub/BardageCalepinageModule";
-import type { ConfigTechnique } from "@/components/ZoneCard";
+import type { ConfigTechnique } from "@/components/calepinage/CarteZoneBardage";
 
 // Harnais React 19 createRoot + act
 const racines: Root[] = [];

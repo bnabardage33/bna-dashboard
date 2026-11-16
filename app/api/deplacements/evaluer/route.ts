@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifierSession } from "@/lib/auth";
 import { evaluerDistances } from "@/lib/deplacement/service";
 import { calculerMontantDeplacement, calculerTaxesDeplacement } from "@/lib/deplacement/calcul";
-import { getEntrepriseCouranteId, lireTarifCommercial } from "../utils";
+import { getEntrepriseCouranteId, lireTarifCommercial } from "@/lib/deplacement/tenantHelpers";
 
 export async function POST(req: NextRequest) {
   const session = await verifierSession();

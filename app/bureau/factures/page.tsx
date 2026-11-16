@@ -9,7 +9,7 @@ import DocumentPDF from "@/components/DocumentPDF";
 import SignaturePad from "@/components/SignaturePad";
 import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
 import { AlertCircle, PenTool } from "lucide-react";
-import { prochainNumeroFacture } from "@/lib/documents";
+import { prochainNumeroFacture } from "@/lib/numerotationDocuments";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';

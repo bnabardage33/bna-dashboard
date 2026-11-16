@@ -58,7 +58,7 @@ const SITES_CORRIGES = [
   'app/bureau/sav/page.tsx',
   'app/bureau/portails-clients/page.tsx',
   'app/(dashboard)/finance/components/TresorerieWidget.tsx',
-  'app/(dashboard)/finance/components/UrsaafWidget.tsx',
+  'app/(dashboard)/finance/components/UrssafWidget.tsx',
   'components/CommandeModal.tsx',
 ]
 

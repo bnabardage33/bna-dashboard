@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Materiau, Acces } from "@/lib/meteoAlerte";
 import { composerAdresseDepart } from "@/lib/deplacement/adresse";
-import type { ConfigTechnique } from "@/components/ZoneCard";
+import type { ConfigTechnique } from "@/components/calepinage/CarteZoneBardage";
 
 import BardageCardNavigation, {
   ModuleBardageKey,

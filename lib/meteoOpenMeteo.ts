@@ -79,7 +79,7 @@
 // deplacement — y compris son comportement fail-closed sur le code postal.
 
 import { geocoderAdresse } from "@/lib/deplacement/geocodage";
-import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { fetchWithTimeout } from "@/lib/requeteTimeout";
 
 // C5 : borne dure de l'appel Open-Meteo.
 const TIMEOUT_METEO_MS = 8_000;

@@ -10,7 +10,7 @@ import {
   calculerEntraxeMaxLambourdes,
   calculerPorteeMaxLambourde,
   verifierConformiteDTU51_4,
-} from "./dtu51_4";
+} from "./dtu514";
 import { calculComposite } from "./composite/calculs";
 import { calculerTerrasseProGeometrie } from "./pro/quantitatifs-contrat";
 import {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import { X, Search, Loader2 } from "lucide-react";
-import { LigneCommande } from "@/components/ZoneCard";
+import { LigneCommande } from "@/components/calepinage/CarteZoneBardage";
 import { useRouter } from "next/navigation";
 import BonCommandePDF, { BonCommandeData } from "@/components/BonCommandePDF";
 import { Entreprise } from "@/types/entreprise";

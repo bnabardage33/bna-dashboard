@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { resoudreChantierParCodeAcces } from '@/lib/espace-chantier-code';
-import { anonymizeText, deanonymizeText } from '@/lib/anonymizeText';
+import { anonymizeText, deanonymizeText } from '@/lib/anonymisationTexte';
 
 // Chatbot de l'Espace Client, SCOPÉ au code d'accès (préfixe /api/espace-client/*,
 // donc public par middleware) :

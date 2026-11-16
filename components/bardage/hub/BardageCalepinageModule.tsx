@@ -9,10 +9,10 @@ import ZoneCard, {
   LigneCommande,
   ConfigTechnique,
   calculerZone,
-} from "@/components/ZoneCard";
+} from "@/components/calepinage/CarteZoneBardage";
 import type { ResultatMetre } from "@/lib/metre-serialization";
 import CommandeModal from "@/components/CommandeModal";
-import { calculerBesoinsBardage } from "@/lib/poseCalcul";
+import { calculerBesoinsBardage } from "@/lib/bardage/poseCalcul";
 import {
   SlidersHorizontal,
   Plus,

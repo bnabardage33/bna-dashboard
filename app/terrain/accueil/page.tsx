@@ -22,7 +22,7 @@ export default async function AccueilChantierPage() {
 
   return (
     <div className="relative w-full overflow-hidden">
-      <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-[20px] pt-6">
+      <div id="accueil-container" className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-6 sm:gap-8 px-4 pb-8">
         <AccueilProfessionnel titre="Accueil Chantier" />
         <DashboardAccueil
           notesInitiales={notes}
@@ -30,7 +30,7 @@ export default async function AccueilChantierPage() {
           notifications={notifications}
           blocMeteo={<ChantiersMeteoCards />}
         />
-      </main>
+      </div>
     </div>
   );
 }

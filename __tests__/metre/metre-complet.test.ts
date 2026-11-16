@@ -5,13 +5,13 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ResultatMetre } from "@/lib/metre-serialization";
-import type { ResultatPose } from "@/lib/poseCalcul";
-import type { Zone } from "@/components/ZoneCard";
+import type { ResultatPose } from "@/lib/bardage/poseCalcul";
+import type { Zone } from "@/components/calepinage/CarteZoneBardage";
 import {
   construirePayload,
   type ChantierMetreComplet,
   type ClientMetreComplet,
-} from "@/lib/metre-complet";
+} from "@/lib/metreComplet";
 
 const SupabaseMock = vi.hoisted(() => ({
   getUser: vi.fn(),

@@ -4,8 +4,8 @@ import {
   type Facade3DData,
   type OuvertureCalculee,
 } from "@/components/calepinage/BardagePlan3D";
-import { calculerPose } from "@/lib/poseCalcul";
-import { calculerCalepinage } from "@/lib/calepinageCalcul";
+import { calculerPose } from "@/lib/bardage/poseCalcul";
+import { calculerCalepinage } from "@/lib/calepinage/calepinageCalcul";
 
 describe("Bardage 3D Three.js PBR - Matériaux & Détails architecturaux", () => {
   it("génère des configurations de textures PBR distinctes selon les familles de parement", () => {

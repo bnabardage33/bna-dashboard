@@ -33,9 +33,9 @@ import {
   ZONE_VENT_DEFAUT,
 } from "@/lib/chantierDefaults";
 import DocumentPDF, { DocumentData } from "@/components/DocumentPDF";
-import { prochainNumero, prochainNumeroDevis, prochainNumeroFacture } from "@/lib/documents";
+import { prochainNumero, prochainNumeroDevis, prochainNumeroFacture } from "@/lib/numerotationDocuments";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
-import { calculerBesoinsBardage } from "@/lib/poseCalcul";
+import { calculerBesoinsBardage } from "@/lib/bardage/poseCalcul";
 import SignaturePad from "@/components/SignaturePad";
 import { PenTool, Sparkles, Loader2 } from "lucide-react";
 import { Surface } from '@/components/ui/Surface';

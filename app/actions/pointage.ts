@@ -2,7 +2,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { resoudreTenant } from "@/lib/tenant";
-import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { fetchWithTimeout } from "@/lib/requeteTimeout";
 
 async function getSupabase() {
   const { cookies } = await import("next/headers");

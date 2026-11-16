@@ -24,9 +24,9 @@ import {
   type ChantierMetreComplet,
   type ClientMetreComplet,
   type PayloadMetreComplet,
-} from "@/lib/metre-complet";
+} from "@/lib/metreComplet";
 import type { ResultatMetre } from "@/lib/metre-serialization";
-import type { Zone } from "@/components/ZoneCard";
+import type { Zone } from "@/components/calepinage/CarteZoneBardage";
 
 export class ChantierIntrouvableError extends Error {
   constructor(chantierId: string) {

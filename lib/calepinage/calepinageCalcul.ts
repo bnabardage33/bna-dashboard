@@ -21,7 +21,7 @@ import {
   DEFAULT_MIN_RIVE_WIDTH_MM,
   MIN_RIVE_WIDTH,
   decoupageModulesCentres,
-} from "./poseCalcul";
+} from "@/lib/bardage/poseCalcul";
 
 export { LIMITE_DTU_MM, RIVE_MIN_MM, DEFAULT_MIN_RIVE_WIDTH_MM, MIN_RIVE_WIDTH };
 export type SensPose = "horizontal" | "vertical";

@@ -18,7 +18,7 @@
 | Remote | `origin/main` aligné sur HEAD ; une seule branche locale et distante (`main`) |
 | Arbre de travail | propre ; aucun stash |
 | Stack | Next.js `16.3.5` · React `19.2.8` · TypeScript `5.9.3` · Tailwind `4` · Vitest `4.1.11` · Node `24.x` |
-| Taille | 42 pages · 47 routes API · 62 migrations SQL locales · 137 fichiers sous `__tests__` · 1 fonction Edge |
+| Taille | 42 pages · **48** routes API · 62 migrations SQL locales · 137 fichiers sous `__tests__` · 1 fonction Edge |
 | Supabase | projet `onhygmsxfdjkcjjnhabo` ; inventaire/advisors consultés en lecture seule |
 | Vercel | dernier déploiement Production `READY` |
 
@@ -434,6 +434,7 @@ le trajet (cf. Module Déplacements).
 | `/api/calepinage/export/excel` | Export Excel du bordereau de débit et de la liste des modules |
 | `/api/calepinage/export/pdf` | Export PDF A4 avec plan vectoriel et schémas de perçage cotés |
 | `/api/catalogue-terrasse` | Lecture du catalogue Terrasse (lames et accessoires compatibles par tenant) |
+| `/api/chantiers/[id]/corbeille` | Mise à la corbeille et restauration d'un chantier (POST/DELETE) |
 | `/api/chantiers/[id]/terrasse` | Configuration terrasse DTU 51.4 et persistance (GET/POST) |
 | `/api/chantiers/[id]/terrasse/export/excel` | Export Excel du calepinage terrasse |
 | `/api/chantiers/[id]/terrasse/export/pdf` | Export PDF de conformité terrasse DTU 51.4 |

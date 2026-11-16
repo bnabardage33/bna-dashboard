@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
-import { compresserImage } from "@/lib/imageCompress";
+import { compresserImage } from "@/lib/compressionImage";
 import Image from "next/image";
 import { Surface } from '@/components/ui/Surface';
 

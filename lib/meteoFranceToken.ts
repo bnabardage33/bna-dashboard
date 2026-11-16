@@ -12,7 +12,7 @@
 //   (trouvable sur portail-api.meteofrance.fr > Mes APIs > ton app
 //    > "Application ID", déjà en base64, PAS le JWT généré à la main)
 
-import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
+import { fetchWithTimeout } from "@/lib/requeteTimeout";
 
 const URL_TOKEN =
   "https://portail-api.meteofrance.fr/token";

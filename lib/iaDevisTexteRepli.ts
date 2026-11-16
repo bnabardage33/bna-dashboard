@@ -4,7 +4,7 @@
 // calepinage (poseCalcul) : les quantités sont dérivées de la surface nette
 // factuelle. Le chemin metre-complet (chantier_id) n'utilise JAMAIS ce module.
 
-import { calculerBesoinsBardage } from "@/lib/poseCalcul";
+import { calculerBesoinsBardage } from "@/lib/bardage/poseCalcul";
 import { normaliser as normaliserMatching } from "@/lib/catalogueMatching";
 import { type CoutType, type LigneDevis } from "@/lib/devisCalcul";
 

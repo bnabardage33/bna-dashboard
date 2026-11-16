@@ -24,7 +24,7 @@ import {
   type ProductDraftPatch,
   type TypeMaterialTerrasse,
 } from "./types";
-import { useScraping } from "./useScraping";
+import { useScraping } from "@/hooks/useScrapingCatalogue";
 
 export interface ProductImportCandidates {
   prix?: string;

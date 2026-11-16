@@ -7,8 +7,8 @@
  * « Espace client ». Garder une barre d'onglets ici aurait réintroduit la
  * navigation parallèle que la refonte supprime.
  *
- * Le conteneur `max-w-5xl` est conservé à l'identique : il fait partie de la
- * mise en page existante, pas de la navigation.
+ * Le conteneur adopte une largeur fluide adaptée aux écrans desktop
+ * tout en préservant le padding de gouttière et l'espacement vertical d'origine.
  *
  * Les URL de ce groupe n'ont pas bougé ; le groupe reste donc accessible par
  * Favoris, notifications (`notifications.lien`) et liens Espace Client.
@@ -18,5 +18,5 @@ export default function BureauLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>;
+  return <div className="w-full mx-auto px-4 py-6">{children}</div>;
 }

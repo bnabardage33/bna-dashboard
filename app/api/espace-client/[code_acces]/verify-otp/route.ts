@@ -57,8 +57,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { autoriserSignature, ERREUR_CODE_ACCES } from '../_garde-signature';
-import { verifierEncreSignature } from '../_encre-signature';
+import { autoriserSignature, ERREUR_CODE_ACCES } from '@/lib/signature/gardeSignature';
+import { verifierEncreSignature } from '@/lib/signature/encreSignature';
 import {
   condenserCodeOtp,
   doitIncrementerTentatives,
@@ -68,7 +68,7 @@ import {
   messageRefusPublic,
   statutHttpRefusPublic,
   type LigneOtp,
-} from '@/lib/otp';
+} from '@/lib/codeVerificationClient';
 
 /**
  * Bornes de l'image de signature. Les MÊMES que celles de la RPC — redondance

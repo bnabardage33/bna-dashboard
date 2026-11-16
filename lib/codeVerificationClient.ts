@@ -51,7 +51,7 @@
 // immediate et bruyante. `OTP_HMAC_SECRET` n'est de toute facon pas expose au
 // navigateur (pas de prefixe NEXT_PUBLIC_).
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
-import { fetchWithTimeout, ErreurTimeout } from "@/lib/fetchWithTimeout";
+import { fetchWithTimeout, ErreurTimeout } from "@/lib/requeteTimeout";
 
 // =============================================================================
 // 1) SECRET DE HACHAGE

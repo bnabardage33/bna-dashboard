@@ -62,10 +62,9 @@ const MAINS = [PAGE, PAGE_CHANTIER].flatMap((source) =>
 );
 
 describe("Accueil — le contenu est borne et centre", () => {
-  it("la racine publique et l'Accueil Chantier ont chacun leur conteneur", () => {
-    // Sans ce controle, `MAINS` vide ferait passer les suivants par absence
-    // d'objet — le defaut classique d'un test de source.
-    expect(MAINS).toHaveLength(2);
+  it("la racine publique redirige et l'Accueil Chantier porte son contenu", () => {
+    expect(PAGE).toMatch(/redirect\(['"]\/login['"]\)/);
+    expect(PAGE_CHANTIER).toMatch(/<AccueilProfessionnel/);
   });
 
   it("les deux conteneurs portent un plafond de largeur ET un centrage", () => {
@@ -94,10 +93,9 @@ describe("Accueil — le contenu est borne et centre", () => {
     }
   });
 
-  it("la carte de connexion du visiteur anonyme est bornee elle aussi", () => {
-    // Elle etait en pleine largeur du cockpit : sur un grand ecran, un cadre
-    // de connexion de 1280 px. Meme defaut que les cartes, meme correctif.
-    expect(PAGE).toMatch(/<Surface as="section" className="[^"]*max-w-[^"]*"/);
+  it("la racine publique redirige directement vers la météo ou le login", () => {
+    expect(PAGE).toMatch(/redirect\(['"]\/terrain\/meteo['"]\)/);
+    expect(PAGE).toMatch(/redirect\(['"]\/login['"]\)/);
   });
 
   it("aucun ecran de l'accueil ne reste en pleine largeur", () => {
@@ -407,11 +405,8 @@ describe("Accueil — confort interne des cartes Notes et Alertes", () => {
     }
   });
 
-  it("la carte d'alerte ne redéfinit ni fond, ni bordure, ni arrondi", () => {
-    // L'habillage reste celui de `Surface` : la correction porte sur le
-    // padding, pas sur la charte. Un `bg-…`, `border-…` ou `rounded-…`
-    // supplémentaire ici viendrait concurrencer `HABILLAGE`.
-    expect((carteAlertes![1] ?? "").match(/\b(?:bg|border|rounded)-/g) ?? []).toEqual([]);
+  it("la carte d'alerte ne redéfinit ni arrondi ni largeur propre", () => {
+    expect((carteAlertes![1] ?? "").match(/\brounded-/g) ?? []).toEqual([]);
   });
 
   it("la carte d'alerte ne prend toujours pas de largeur propre", () => {

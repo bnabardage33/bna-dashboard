@@ -3,7 +3,7 @@ import {
   calculerEntraxeMaxLambourdes,
   calculerPorteeMaxLambourde,
   verifierConformiteDTU51_4,
-} from "@/lib/terrasse/dtu51_4";
+} from "@/lib/terrasse/dtu514";
 import type { ChantierTerrasseConfig } from "@/lib/terrasse/types";
 
 const configBase: ChantierTerrasseConfig = {

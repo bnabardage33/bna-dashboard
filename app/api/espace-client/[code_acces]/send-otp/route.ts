@@ -37,7 +37,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import {
   autoriserSignature,
   ERREUR_CODE_ACCES,
-} from '../_garde-signature';
+} from '@/lib/signature/gardeSignature';
 import {
   composerMessageOtp,
   condenserCodeOtp,
@@ -45,7 +45,7 @@ import {
   extraireIp,
   genererCodeOtp,
   selectionnerFournisseurSms,
-} from '@/lib/otp';
+} from '@/lib/codeVerificationClient';
 
 // Fenêtre de cooldown entre deux envois pour un même devis. Persistée en base
 // (colonne `created_at` de `devis_otp`) et NON en mémoire : un `Map` module-level

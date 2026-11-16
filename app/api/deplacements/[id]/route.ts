@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifierSession } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database } from "@/types/supabase";
-import { getEntrepriseCouranteId } from "../utils";
+import { getEntrepriseCouranteId } from "@/lib/deplacement/tenantHelpers";
 
 export async function PATCH(
   req: NextRequest,

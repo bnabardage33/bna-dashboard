@@ -106,7 +106,7 @@ describe("Phase E — Sécurisation du Cloisonnement Métier Bardage / Terrasse"
   it("8. Route & Service Métré complet : refus des chantiers dont le métier n'est pas Bardage", () => {
     const servicePath = path.resolve(
       process.cwd(),
-      "lib/servir-metre-complet.ts"
+      "lib/servirMetreComplet.ts"
     );
     const serviceContent = fs.readFileSync(servicePath, "utf-8");
     expect(serviceContent).toContain("MetierIncompatibleError");

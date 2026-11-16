@@ -96,7 +96,6 @@ const SITES = [
   'app/bureau/factures/page.tsx',
   'app/bureau/fin-chantier/page.tsx',
   'app/bureau/fournisseurs/page.tsx',
-  'app/terrain/chantier/page.tsx',
   'app/terrain/notes/page.tsx',
 ]
 
@@ -448,7 +447,7 @@ describe('LOT 2E — FloatingActionButton', () => {
         if (!/\.tsx$/.test(chemin)) continue
         if (lire(chemin).includes(`className="${cible}"`)) n += 1
       }
-      expect(n, 'le nombre de fermetures de modale a changé').toBe(7)
+      expect(n, 'le nombre de fermetures de modale a changé').toBe(6)
     })
 
     it("aucune primitive Button générique n'a été introduite", () => {

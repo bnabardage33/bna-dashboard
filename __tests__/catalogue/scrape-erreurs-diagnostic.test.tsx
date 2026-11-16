@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { UrlScrapeRefusee } from "@/lib/validationUrlScrape";
-import { messagePourEchec, useScraping } from "@/components/catalogue/useScraping";
+import { messagePourEchec, useScraping } from "@/hooks/useScrapingCatalogue";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

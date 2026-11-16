@@ -44,7 +44,7 @@ const delegue = new Proxy(
 )
 vi.mock('@/lib/supabaseAdmin', () => ({ supabaseAdmin: delegue }))
 
-vi.mock('@/lib/anonymizeText', () => ({
+vi.mock('@/lib/anonymisationTexte', () => ({
   anonymizeText: async (text: string) => ({ anonymizedText: text, mapping: {} }),
   deanonymizeText: (text: string) => text,
 }))

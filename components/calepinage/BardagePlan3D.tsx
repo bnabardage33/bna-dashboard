@@ -22,9 +22,9 @@ import {
   Sparkles,
   Info,
 } from "lucide-react";
-import type { PieceCalepinage, ResultatCalepinage } from "@/lib/calepinageCalcul";
-import { getHauteurToit } from "@/lib/calepinageCalcul";
-import type { FamillePose, ResultatPose } from "@/lib/poseCalcul";
+import type { PieceCalepinage, ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
+import { getHauteurToit } from "@/lib/calepinage/calepinageCalcul";
+import type { FamillePose, ResultatPose } from "@/lib/bardage/poseCalcul";
 
 // =========================================================================
 // TYPES & CONTRATS

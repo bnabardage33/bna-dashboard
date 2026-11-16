@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { PlaqueDebit, ResultatCalepinage } from "@/lib/calepinageCalcul";
+import { PlaqueDebit, ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
 import { Layers, Scissors, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 
 export default function VisualiseurDebitPlaques({

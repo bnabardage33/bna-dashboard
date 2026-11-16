@@ -8,16 +8,16 @@ import {
   calculerPose,
   FamillePose,
   LABELS_FAMILLE,
-} from "@/lib/poseCalcul";
-import { simulerPoseComposite } from "@/lib/poseCompositeCalcul";
+} from "@/lib/bardage/poseCalcul";
+import { simulerPoseComposite } from "@/lib/bardage/poseCompositeCalcul";
 import {
   calculerCalepinage,
   SensPose,
-} from "@/lib/calepinageCalcul";
+} from "@/lib/calepinage/calepinageCalcul";
 import { calculerHabillageOuverturesEtProfils1D } from "@/lib/bardage/pro";
-import PlanCalepinage from "@/components/PlanCalepinage";
-import FicheDebitPDF from "@/components/FicheDebitPDF";
-import VisualiseurDebitPlaques from "@/components/VisualiseurDebitPlaques";
+import PlanCalepinage from "@/components/calepinage/PlanCalepinage";
+import FicheDebitPDF from "@/components/calepinage/FicheDebitPDF";
+import VisualiseurDebitPlaques from "@/components/calepinage/VisualiseurDebitPlaques";
 import { BardagePlan3D } from "@/components/calepinage/BardagePlan3D";
 import {
   extraireEntrees,

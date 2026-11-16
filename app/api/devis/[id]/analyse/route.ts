@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { TablesInsert } from "@/types/supabase";
 
 import { calculerDevis } from "@/lib/devisCalcul";
-import { ChantierIntrouvableError, servirPayloadMetreComplet } from "@/lib/servir-metre-complet";
+import { ChantierIntrouvableError, servirPayloadMetreComplet } from "@/lib/servirMetreComplet";
 import { scoreConceptVsItem } from "@/lib/catalogueMatching";
 import {
   construireContexteBNA,
@@ -19,7 +19,7 @@ import {
 } from "@/lib/devisAnalyse";
 import { preparerRemplacement, type AnalysePersistee } from "@/lib/devisHistorique";
 import { resoudreTenant } from "@/lib/tenant";
-import { estDelaiDepasse } from "@/lib/fetchWithTimeout";
+import { estDelaiDepasse } from "@/lib/requeteTimeout";
 import type { Json } from "@/types/supabase";
 
 // SÉCURITÉ TENANT :

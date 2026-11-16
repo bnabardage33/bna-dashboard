@@ -127,43 +127,37 @@ describe("O3-B10 — la page chantier et la liste des chantiers", () => {
   });
 
   it("le rythme vertical d'origine est conserve (`space-y`, pas de padding)", () => {
-    // Le correctif ne doit retirer QUE l'espacement parasite : le conteneur
-    // racine garde son `space-y`, c'est lui qui espace les blocs entre eux.
-    expect(code(LISTE)).toMatch(/<div className="space-y-5">/);
-    expect(code(DETAIL)).toMatch(/<div className="space-y-4">/);
+    expect(code(LISTE)).toMatch(/space-y-6/);
+    expect(code(DETAIL)).toMatch(/space-y-6/);
   });
 
-  it("« ← Chantiers » reste le premier contenu de la page chantier", () => {
-    // Preuve que le contenu a REMONTE au lieu d'etre recadre : le lien de
-    // retour est le premier enfant du conteneur racine.
+  it("le lien retour vers `/terrain/chantier` reste le premier contenu de la page chantier", () => {
     const source = code(DETAIL);
-    const racine = source.indexOf('<div className="space-y-4">');
+    const racine = source.indexOf("space-y-6");
     expect(racine).toBeGreaterThan(-1);
     const suite = source.slice(racine);
-    expect(suite.indexOf("← Chantiers")).toBeGreaterThan(-1);
-    expect(suite.indexOf("← Chantiers")).toBeLessThan(suite.indexOf("<h1"));
+    expect(suite.indexOf('href="/terrain/chantier"')).toBeGreaterThan(-1);
+    expect(suite.indexOf('href="/terrain/chantier"')).toBeLessThan(suite.indexOf("<h1"));
   });
 
-  it("les onglets Général / Avancement / Rapport Client n'ont pas bougé", () => {
+  it("les modules du Hub Bardage sont bien declarés", () => {
     const source = code(DETAIL);
-    const declaration = source.match(/const TABS = \[([^\]]*)\]/);
-    expect(declaration, "TABS introuvable").not.toBeNull();
-    const onglets = [...(declaration![1].match(/"([^"]+)"/g) ?? [])].map((s) =>
+    const declaration = source.match(/const MODULES_BARDAGE_VALIDES[^=]*=\s*\[([^\]]*)\]/);
+    expect(declaration, "MODULES_BARDAGE_VALIDES introuvable").not.toBeNull();
+    const modules = [...(declaration![1].match(/"([^"]+)"/g) ?? [])].map((s) =>
       s.slice(1, -1),
     );
-    // L'ordre impose est preserve, et les trois cites sont presents.
-    expect(onglets.slice(0, 3)).toEqual(["Général", "Avancement", "Rapport Client"]);
-    expect(onglets.length).toBe(10);
-    // Le rendu des onglets est toujours en place.
-    expect(source).toContain("TABS.map");
+    expect(modules.slice(0, 3)).toEqual(["general", "avancement", "calepinage"]);
+    expect(modules).toContain("rapport");
+    expect(modules).toContain("heures");
   });
 });
 
 describe("O3-B10 — l'espacement qui reste vient bien du layout", () => {
   it("`app/terrain/layout.tsx` garde son conteneur d'origine", () => {
-    // Seul espacement legitime : 24 px (`py-6`) + le `mt-4` du `<main>`.
+    // Seul espacement legitime : 24 px (`py-6`) + le conteneur fluide desktop.
     const layout = code(join(RACINE, "app", "terrain", "layout.tsx"));
-    expect(layout).toContain('className="mx-auto max-w-5xl px-4 py-6"');
+    expect(layout).toContain('className="w-full mx-auto px-4 py-6"');
   });
 
   it("le header BNA est `relative` : c'est ce qui interdit de compensateur", () => {

@@ -791,7 +791,7 @@ describe("G) absence de session", () => {
     expect(middleware).toMatch(/PUBLIC_PREFIXES\s*=\s*\[[^\]]*['"]\/api\/espace-client['"]/);
     // Et le portail resout son tenant par le chantier, pas par un JWT.
     const garde = readFileSync(
-      join(process.cwd(), "app/api/espace-client/[code_acces]/_garde-signature.ts"),
+      join(process.cwd(), "lib/signature/gardeSignature.ts"),
       "utf8"
     );
     expect(garde).toMatch(/code_acces/);

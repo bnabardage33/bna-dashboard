@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import type { PayloadMetreComplet } from "@/lib/metre-complet";
+import type { PayloadMetreComplet } from "@/lib/metreComplet";
 import {
   construireLignesDepuisPostes,
   construireLignesAChiffrerManquantes,
@@ -309,8 +309,8 @@ describe("verrous statiques côté route / source partagée", () => {
     );
     // Les deux routes délèguent à « servirPayloadMetreComplet » (lib partagée),
     // jamais à un auto-appel HTTP.
-    expect(ia).toMatch(/@\/lib\/servir-metre-complet/);
-    expect(metro).toMatch(/@\/lib\/servir-metre-complet/);
+    expect(ia).toMatch(/@\/lib\/servirMetreComplet/);
+    expect(metro).toMatch(/@\/lib\/servirMetreComplet/);
     expect(ia).not.toMatch(/fetch\(/);
   });
 

@@ -33,7 +33,7 @@ const spies = vi.hoisted(() => ({
   getUser: vi.fn(),
 }))
 
-vi.mock('@/lib/anonymizeText', () => ({
+vi.mock('@/lib/anonymisationTexte', () => ({
   anonymizeText: (...args: unknown[]) => spies.anonymizeText(...args),
   // Désanonymisation réelle (simple ré-injection des balises).
   deanonymizeText: (text: string, mapping: Record<string, string>): string => {

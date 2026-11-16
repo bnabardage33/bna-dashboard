@@ -66,7 +66,7 @@ import {
   MAX_TENTATIVES,
   DUREE_VERROU_MS,
   type LigneOtp,
-} from "@/lib/otp";
+} from "@/lib/codeVerificationClient";
 
 import { sansCommentaires } from "./_lecture-source";
 
@@ -377,7 +377,7 @@ describe("CONTRAT 2 — l'OTP ancien est refuse SANS cout pour le client", () =>
     // `RE_REFUS`, la route court-circuiterait AVANT la RPC sur le mauvais motif
     // et ce refus deviendrait un cout pour le client. Le motif n'existe pas cote
     // TS — il est produit par le SQL seul — et c'est deliberé.
-    const lib = readFileSync(join(process.cwd(), "lib/otp.ts"), "utf8");
+    const lib = readFileSync(join(process.cwd(), "lib/codeVerificationClient.ts"), "utf8");
     const blocReRefus = lib.slice(
       lib.indexOf("const RE_REFUS"),
       lib.indexOf("function refus(", lib.indexOf("const RE_REFUS"))
@@ -457,7 +457,7 @@ describe("coherence generale des deux contrats", () => {
     // On lit les deux fichiers SANS commentaires : le motif est cite en prose
     // dans les deux, et une recherche en texte brut ne distingue pas la
     // documentation de la logique.
-    const lib = sansCommentaires(readFileSync(join(process.cwd(), "lib/otp.ts"), "utf8"));
+    const lib = sansCommentaires(readFileSync(join(process.cwd(), "lib/codeVerificationClient.ts"), "utf8"));
     const route = sansCommentaires(
       readFileSync(join(process.cwd(), "app/api/espace-client/[code_acces]/verify-otp/route.ts"), "utf8")
     );

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Clock, Save, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import { fmtEuro } from "@/lib/financeCalculs";
 import {
   CADENCES_DEFAUT,
   fusionnerCadencesDepuisCatalogueTemps,
@@ -62,6 +63,10 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
     let actif = true;
     async function charger() {
       setChargement(true);
+      if (typeof supabase?.from !== "function") {
+        setChargement(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("catalogue_temps")
         .select("nom_tache, temps_unitaire_heure, entreprise_id");
@@ -159,7 +164,7 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
         </div>
         <div className="flex items-center gap-3 text-xs text-gray-300">
           <span className="hidden sm:inline font-mono bg-[#121212] border border-white/10 px-2.5 py-1 rounded-md">
-            Vente : {cadences.taux_horaire_vente_ht.toFixed(2)} € · Chargé : {cadences.taux_horaire_charge_ht.toFixed(2)} €
+            Vente : {fmtEuro(cadences.taux_horaire_vente_ht)} · Chargé : {fmtEuro(cadences.taux_horaire_charge_ht)}
           </span>
           {ouvert ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
         </div>

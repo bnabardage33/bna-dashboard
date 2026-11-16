@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculerCalepinage } from "@/lib/calepinageCalcul";
+import { calculerCalepinage } from "@/lib/calepinage/calepinageCalcul";
 
 describe("Bardage Pignon Couplage et Anti-Micro-Pièces", () => {
   it("calcule les rampants et détails atelier de pignon (pignonDetails)", () => {

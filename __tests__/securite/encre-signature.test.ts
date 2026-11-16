@@ -47,8 +47,8 @@ import { sansCommentaires } from './_lecture-source';
 import {
   verifierEncreSignature,
   SEUIL_ENCRE_SERVEUR,
-} from '@/app/api/espace-client/[code_acces]/_encre-signature';
-import { condenserCodeOtp, messageRefusPublic } from '@/lib/otp';
+} from '@/lib/signature/encreSignature';
+import { condenserCodeOtp, messageRefusPublic } from '@/lib/codeVerificationClient';
 import {
   canvasVierge,
   canvasParaphe,
@@ -787,8 +787,8 @@ vi.mock('@/lib/supabaseAdmin', () => ({
   },
 }));
 
-vi.mock('@/lib/otp', async () => {
-  const reel = await vi.importActual<typeof import('@/lib/otp')>('@/lib/otp');
+vi.mock('@/lib/codeVerificationClient', async () => {
+  const reel = await vi.importActual<typeof import('@/lib/codeVerificationClient')>('@/lib/codeVerificationClient');
   return {
     ...reel,
     selectionnerFournisseurSms: () => ({
@@ -1054,7 +1054,7 @@ describe('J) le controle est bien branche, et il est autonome', () => {
 
   it('J2 le decodeur n utilise que node:zlib, aucune nouvelle dependance', () => {
     const source = readFileSync(
-      join(process.cwd(), 'app/api/espace-client/[code_acces]/_encre-signature.ts'),
+      join(process.cwd(), 'lib/signature/encreSignature.ts'),
       'utf8'
     );
     expect(sansCommentaires(source)).toMatch(/from 'node:zlib'/);
@@ -1067,7 +1067,7 @@ describe('J) le controle est bien branche, et il est autonome', () => {
 
   it('J3 le decodeur declare le seuil qu il applique', () => {
     const source = readFileSync(
-      join(process.cwd(), 'app/api/espace-client/[code_acces]/_encre-signature.ts'),
+      join(process.cwd(), 'lib/signature/encreSignature.ts'),
       'utf8'
     );
     expect(source).toMatch(/export const SEUIL_ENCRE_SERVEUR = 50;/);

@@ -42,21 +42,30 @@ export default function AccueilProfessionnel({
   titre?: string;
 }) {
   return (
-    <div className="space-y-7 sm:space-y-9">
+    <div className="space-y-6 sm:space-y-8">
       <section
         aria-labelledby="accueil-titre"
-        className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#242424] via-[#1E1E1E] to-[#191919] p-4 shadow-lg sm:p-6"
+        className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#242424] via-[#1E1E1E] to-[#191919] p-4 shadow-lg sm:p-6 lg:p-6 lg:flex lg:items-center lg:justify-between lg:gap-6"
       >
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#E79A68]">
-            BNA Dashboard · Pilotage BTP
-          </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#E79A68]">
+              BNA Dashboard · Pilotage BTP
+            </p>
+          </div>
           <h1 id="accueil-titre" className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
             {titre}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400 sm:text-base">
             Retrouvez vos métiers, vos chantiers et les outils de gestion de votre activité.
           </p>
+        </div>
+        <div className="hidden lg:flex items-center gap-3 shrink-0 pt-2 lg:pt-0">
+          <div className="px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-right">
+            <p className="text-2xs font-semibold text-gray-400 uppercase tracking-wider">Session active</p>
+            <p className="text-xs font-bold text-white">Espace Terrain & Bureau</p>
+          </div>
         </div>
       </section>
 
@@ -71,11 +80,11 @@ export default function AccueilProfessionnel({
           <span className="text-xs text-gray-500">Accès au suivi commun des chantiers</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 sm:gap-4 lg:gap-4">
           {METIERS.map(({ nom, description, icone: Icone, href, action }) => {
             const contenu = (
-              <Surface className={`flex h-full min-h-44 flex-col p-4 sm:min-h-48 sm:p-5 ${
-                href ? 'transition-colors group-hover:border-[#B85B2B]/50 group-hover:bg-[#252525]' : ''
+              <Surface className={`flex h-full min-h-44 flex-col p-4 sm:min-h-48 sm:p-5 lg:p-6 transition-all duration-300 ${
+                href ? 'group-hover:border-[#B85B2B]/60 group-hover:bg-[#252525] group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-[#B85B2B]/5' : 'opacity-85'
               }`}>
                 <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#E79A68]">
                   <Icone aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
@@ -116,12 +125,12 @@ export default function AccueilProfessionnel({
             Accès rapides
           </h2>
         </div>
-        <nav aria-label="Fonctionnalités communes" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <nav aria-label="Fonctionnalités communes" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 lg:gap-2.5">
           {ACCES_TRANSVERSES.map(({ href, libelle }) => (
             <Link
               key={href}
               href={href}
-              className="inline-flex min-h-12 items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:border-[#B85B2B]/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
+              className="inline-flex min-h-12 items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-white/[0.07] hover:border-[#B85B2B]/50 hover:text-white hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
             >
               <span>{libelle}</span>
               <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" />

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreTenant } from "@/lib/tenant";
-import { calculerCalepinage, type SensPose } from "@/lib/calepinageCalcul";
+import { calculerCalepinage, type SensPose } from "@/lib/calepinage/calepinageCalcul";
 import { genererModules } from "@/lib/calepinage/modules";
 import { genererPercagesPourModules } from "@/lib/calepinage/percages";
 import type {

@@ -9,7 +9,7 @@ import {
   servirPayloadMetreComplet,
   ChantierIntrouvableError,
   MetierIncompatibleError,
-} from "@/lib/servir-metre-complet";
+} from "@/lib/servirMetreComplet";
 
 const SupabaseMock = vi.hoisted(() => ({
   chantierFetch: vi.fn(),

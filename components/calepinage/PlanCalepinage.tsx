@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ResultatPose } from "@/lib/poseCalcul";
-import { ResultatCalepinage } from "@/lib/calepinageCalcul";
+import { ResultatPose } from "@/lib/bardage/poseCalcul";
+import { ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
 
 const MARGE_SVG = 40;
 const LARGEUR_MAX_SVG = 700;

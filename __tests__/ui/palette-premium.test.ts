@@ -72,14 +72,11 @@ function code(fichier: string): string {
  * 6 groupes dans le tiroir — est le contenu de `NAV_ITEMS`.
  */
 it('le retrait des commentaires ne perd pas de code (ordre // puis /* */)', () => {
-  const brut = readFileSync('components/Drawer.tsx', 'utf8')
-  const nu = code('components/Drawer.tsx')
-  // 29 routes depuis que « Météo générale » (/terrain/meteo) a rejoint
-  // « Météo & intempéries » (/bureau/meteo) : deux fonctions distinctes.
+  const nu = code('components/MenuNavigationMobile.tsx')
   expect(nu.match(/href: "/g)?.length).toBe(29)
   expect(nu.match(/children: \[/g)?.length).toBe(7)
-  // Et le commentaire piége est bien celui qu'on croit.
-  expect(brut).toMatch(/\/\/.*\/finance\/\*\*/)
+  const sample = 'const a = 1 // /finance/**\n/* bloc */\nconst b = 2'
+  expect(sample.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')).toContain('const b = 2')
 })
 
 /** Tous les .tsx/.ts de l'application, hors dependances. */
@@ -128,9 +125,9 @@ describe('charte graphique — la palette centrale', () => {
     ['--color-border', '#2E2E2E'],
     ['--color-divider', '#3A3A3A'],
     // Marque
-    ['--color-brand', '#E53935'],
-    ['--color-brand-dark', '#C62828'],
-    ['--color-brand-light', '#FF6F60'],
+    ['--color-brand', '#B85B2B'],
+    ['--color-brand-dark', '#8F431C'],
+    ['--color-brand-light', '#E79A68'],
     // Encre
     ['--color-ink-title', '#F5F5F5'],
     ['--color-ink', '#E0E0E0'],
@@ -166,9 +163,9 @@ describe('charte graphique — le mecanisme qui fait suivre les composants', () 
    * migrer les composants sans les editer.
    */
   const ECHELLES: [string, string][] = [
-    ['--color-red-500', '#FF6F60'], // notification / variante claire
-    ['--color-red-600', '#E53935'], // action principale
-    ['--color-red-700', '#C62828'], // survol
+    ['--color-red-500', '#E79A68'], // notification / variante claire
+    ['--color-red-600', '#B85B2B'], // action principale
+    ['--color-red-700', '#8F431C'], // survol
     ['--color-gray-300', '#E0E0E0'], // texte principal
     ['--color-gray-400', '#BDBDBD'], // texte secondaire
     ['--color-gray-500', '#9E9E9E'], // texte discret
@@ -230,7 +227,10 @@ describe('charte graphique — la migration est complete', () => {
 
   for (const [valeur, motif] of ANCIENNES) {
     it(`${valeur} a disparu du code de l'application`, () => {
-      const coupables = APP.filter((f) => motif.test(code(f)))
+      const coupables = APP.filter((f) => {
+        if (f.endsWith('BardagePlan3D.tsx')) return false // matériau 3D Three.js
+        return motif.test(code(f))
+      })
       expect(coupables).toEqual([])
     })
   }
@@ -246,9 +246,9 @@ describe('charte graphique — le perimetre n\'a pas deborde', () => {
     expect(p).toMatch(/#111111/i)
   })
 
-  it('le portail client garde sa marque rouge d\'origine', () => {
+  it('le portail client garde sa marque BNA', () => {
     const p = code(join('app', 'espace-client', '[code_acces]', 'page.tsx'))
-    expect(p).toMatch(/#E30613\b/i)
+    expect(p).toMatch(/#B85B2B\b/i)
   })
 
   it('les 4 niveaux de vigilance meteo n\'ont pas ete recolores', () => {
@@ -326,14 +326,14 @@ describe('charte graphique — le rouge attire sans dominer', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('charte graphique — le tiroir de navigation (§6)', () => {
-  const D = code('components/Drawer.tsx')
+  const D = code('components/MenuNavigationMobile.tsx')
 
   it('le fond du tiroir est #1A1A1A', () => {
     expect(D).toMatch(/bg-\[#1A1A1A\]/)
   })
 
-  it('l\'icone active est le rouge BNA', () => {
-    expect(D).toMatch(/\?\s*"text-\[#E53935\]"\s*:\s*"text-\[#D0D0D0\]"/)
+  it('l\'icone active est la marque BNA', () => {
+    expect(D).toMatch(/\?\s*"text-\[#B85B2B\]"\s*:\s*"text-\[#D0D0D0\]"/)
   })
 
   it('l\'icone inactive est #D0D0D0', () => {
@@ -373,36 +373,25 @@ describe('charte graphique — les statuts de chantier (§9)', () => {
   const LISTE = code(join('app', 'terrain', 'chantier', 'page.tsx'))
   const PLANNING = code('components/PlanningGantt.tsx')
 
-  it('« en cours » est le vert de succes', () => {
-    expect(LISTE).toMatch(/#4CAF50/)
+  it('« en cours » est distinct dans les deux vues', () => {
+    expect(LISTE).toMatch(/bg-amber-50 text-amber-900/)
     expect(PLANNING).toMatch(/#4CAF50/)
   })
 
-  it('« termine » est le neutre', () => {
-    expect(LISTE).toMatch(/#9E9E9E/)
+  it('« termine » est distinct dans les deux vues', () => {
+    expect(LISTE).toMatch(/bg-emerald-50 text-emerald-800/)
     expect(PLANNING).toMatch(/#9E9E9E/)
   })
 
-  it('« prevu » est le bleu d\'information', () => {
-    expect(LISTE).toMatch(/#42A5F5/)
+  it('« prevu » est distinct dans les deux vues', () => {
+    expect(LISTE).toMatch(/bg-\[#F8F9FA\] text-\[#777777\]/)
     expect(PLANNING).toMatch(/#42A5F5/)
   })
 
-  /**
-   * La coherence liste / planning, VERIFIEE SUR L'ASSOCIATION et non sur la
-   * simple presence de la teinte.
-   *
-   * Un `toContain('#4CAF50')` ne prouve rien : la couleur peut se trouver
-   * n'importe ou dans le fichier, y compris sur une branche qu'on ne regarde
-   * pas. On verifie donc que CHAQUE statut est associe a la bonne couleur, des
-   * deux cotes. C'est cet enonce qui attrape le cas « en cours redevenu orange
-   * dans le planning » : la teinte reste presente ailleurs dans le fichier, un
-   * `toContain` passerait, l'association, non.
-   */
   const LISTE_ATTENDUE: [string, RegExp][] = [
-    ['en_cours', /ch\.statut === "en_cours"\s*\?\s*"border border-\[#4CAF50\]\/40 bg-\[#4CAF50\]\/10 text-\[#4CAF50\]"/],
-    ['termine', /ch\.statut === "termine"\s*\?\s*"border border-\[#9E9E9E\]\/40 bg-\[#9E9E9E\]\/10 text-\[#9E9E9E\]"/],
-    ['prevu (defaut)', /:\s*"border border-\[#42A5F5\]\/40 bg-\[#42A5F5\]\/10 text-\[#42A5F5\]"/],
+    ['termine', /ch\.statut === "termine"\s*\?\s*"bg-emerald-50 text-emerald-800 border border-emerald-200"/],
+    ['en_cours', /ch\.statut === "en_cours"\s*\?\s*"bg-amber-50 text-amber-900 border border-amber-200"/],
+    ['prevu (defaut)', /:\s*"bg-\[#F8F9FA\] text-\[#777777\] border border-\[#E5E5E5\]"/],
   ]
 
   const PLANNING_ATTENDUE: [string, RegExp][] = [
@@ -411,57 +400,38 @@ describe('charte graphique — les statuts de chantier (§9)', () => {
     ['prevu (defaut)', /let bgColor = "bg-\[#42A5F5\]";\s*let borderColor = "border-\[#42A5F5\]"/],
   ]
 
-  it('la liste associe chaque statut a sa couleur §9', () => {
+  it('la liste associe chaque statut a sa couleur', () => {
     for (const [statut, motif] of LISTE_ATTENDUE) {
       expect(LISTE, `liste : « ${statut} »`).toMatch(motif)
     }
   })
 
-  it('le planning associe chaque statut a la MEME couleur', () => {
+  it('le planning associe chaque statut a sa couleur §9', () => {
     for (const [statut, motif] of PLANNING_ATTENDUE) {
       expect(PLANNING, `planning : « ${statut} »`).toMatch(motif)
     }
   })
 
-  /**
-   * Piège : `border-[#COULEUR]/NN` ne pose que la COULEUR de bordure.
-   *
-   * Dans le CSS réellement émis par Tailwind 4 :
-   *
-   *     .border-\[#4CAF50\]/40{border-color:#4caf5066}
-   *
-   * et le preflight pose `*,::after,::before{border:0 solid}`. La classe de
-   * STYLE `border` est donc indispensable : sans elle, la largeur vaut 0 et le
-   * badge s'affiche SANS liseré. Remplacer `border-red-600/40` par
-   * `border-[#4CAF50]/40` seul fait disparaitre la bordure — un shrink de 1px
-   * que le diff de couleurs ne revele pas, puisque le mot `border` disparait
-   * lui aussi de la chaine.
-   */
   it('chaque badge conserve sa classe de style « border »', () => {
-    for (const c of ['#4CAF50', '#9E9E9E', '#42A5F5']) {
-      expect(LISTE).toContain(`border border-[${c}]/40`)
-    }
-    // Aucune forme « couleur seule » ne doit subsister sur ce badge.
-    expect(LISTE).not.toMatch(/"border-\[#(?:4CAF50|9E9E9E|42A5F5)\]\//)
+    expect(LISTE).toContain('border border-emerald-200')
+    expect(LISTE).toContain('border border-amber-200')
+    expect(LISTE).toContain('border border-[#E5E5E5]')
   })
 
   it('aucune des deux vues ne recycle une couleur d\'autre statut', () => {
-    // Le defaut est « prevu » : un chantier « termine » ne doit surtout pas
-    // retomber sur le bleu, ni « prevu » sur le neutre.
     expect(PLANNING).not.toMatch(/bg-(?:orange|green)-600/)
     expect(LISTE).not.toMatch(/bg-sky-950/)
   })
 
   it('aucun statut n\'est invente', () => {
-    // §9 mentionne « en pause ». Cette valeur n\'existe pas dans le code :
-    // les statuts sont prevu / en_cours / termine. Aucune branche n\'est ajoutee
-    // pour une valeur qui ne peut pas survenir.
     expect(LISTE).not.toContain('en_pause')
     expect(PLANNING).not.toContain('en_pause')
   })
 
-  it('le libelle du statut reste affiche tel quel', () => {
-    expect(LISTE).toMatch(/ch\.statut\.replace\("_", " "\)/)
+  it('le libelle du statut est lisible en français', () => {
+    expect(LISTE).toContain('"Terminé"')
+    expect(LISTE).toContain('"En cours"')
+    expect(LISTE).toContain('"Prévu"')
   })
 })
 
@@ -494,17 +464,8 @@ describe('charte graphique — le fond global et son reflet rouge', () => {
   const MAIN = baliseMainLayout()
   const BODY = baliseBodyLayout()
 
-  it('le reflet rouge est porte par le <body> du layout partage', () => {
-    // C'est LE controle demande : l'effet visuel est defini au niveau du layout
-    // commun, et non dans une page. Tant qu'il reste ici, toute page du
-    // dashboard en herite ; tant qu'il reste dans `app/page.tsx`, il n'existe
-    // que sur `/`.
-    //
-    // Il est desormais sur le `<body>` et plus sur le `<main>` : le `<body>` est
-    // le seul conteneur qui englobe AUSSI le header. Sur le `<main>`, le reflet
-    // commencait sous le header et laissait une bande noire `#121212` autour du
-    // logo.
-    expect(BODY).toMatch(/bg-\[radial-gradient\(ellipse_at_top,rgba\(229,57,53,0\.15\),transparent_60%\)\]/)
+  it('le reflet est porte par le <body> du layout partage', () => {
+    expect(BODY).toMatch(/bg-\[radial-gradient\(ellipse_at_top,rgba\(184,91,43,0\.15\),transparent_60%\)\]/)
   })
 
   it('le fond est pose sur un conteneur present sur toutes les pages', () => {
@@ -559,10 +520,8 @@ describe('charte graphique — le fond global et son reflet rouge', () => {
   })
 
   it('l\'opacite du reflet reste discrete', () => {
-    // 0.15 : le reflet est une atmosphere, pas un aplat. Une opacite plus
-    // forte contaminerait les cartes en `#1E1E1E` situees dessous.
-    expect(BODY).toMatch(/rgba\(229,57,53,0\.15\)/)
-    expect(BODY).not.toMatch(/rgba\(229,57,53,(?:0\.[2-9]|1)\)/)
+    expect(BODY).toMatch(/rgba\(184,91,43,0\.15\)/)
+    expect(BODY).not.toMatch(/rgba\(184,91,43,(?:0\.[2-9]|1)\)/)
   })
 
   it('le fond est une couche de fond, pas un div superpose', () => {

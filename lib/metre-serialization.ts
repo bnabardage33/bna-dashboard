@@ -12,10 +12,10 @@
 //   * Aucune quantité inventée : on ne sérialise que ce que les moteurs produisent.
 //   * Comparaison d'entrées canonique (ordre des propriétés JSON non significatif).
 
-import type { Zone, ConfigTechnique } from "@/components/ZoneCard";
-import type { ResultatPose } from "@/lib/poseCalcul";
-import type { ResultatCalepinage } from "@/lib/calepinageCalcul";
-import type { calculerZone } from "@/components/ZoneCard";
+import type { Zone, ConfigTechnique } from "@/components/calepinage/CarteZoneBardage";
+import type { ResultatPose } from "@/lib/bardage/poseCalcul";
+import type { ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
+import type { calculerZone } from "@/components/calepinage/CarteZoneBardage";
 
 /**
  * Version du moteur de calcul / de la structure sérialisée.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculerCalepinage } from "@/lib/calepinageCalcul";
+import { calculerCalepinage } from "@/lib/calepinage/calepinageCalcul";
 import { genererModules, numeroGroupe } from "@/lib/calepinage/modules";
 
 describe("genererModules", () => {

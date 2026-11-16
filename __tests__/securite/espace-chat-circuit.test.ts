@@ -53,7 +53,7 @@ vi.mock('@/lib/auth', () => ({
 
 // L'anonymisation PII (anonymizeText) interroge l'API Supabase au runtime :
 // neutralisée ici (identité) pour ne pas dépendre du réseau dans le test.
-vi.mock('@/lib/anonymizeText', () => ({
+vi.mock('@/lib/anonymisationTexte', () => ({
   anonymizeText: async (text: string) => ({ anonymizedText: text, mapping: {} }),
   deanonymizeText: (text: string) => text,
 }))

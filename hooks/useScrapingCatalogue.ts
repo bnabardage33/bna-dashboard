@@ -8,7 +8,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { CatalogueType, ProductDraftPatch } from "./types";
+import type { CatalogueType, ProductDraftPatch } from "@/components/catalogue/types";
 import { selectionnerPrixMappable, type PrixScrapeCandidat } from "@/lib/scrapePrix";
 
 /** Réponse de `/api/scrape` (route inchangée). */

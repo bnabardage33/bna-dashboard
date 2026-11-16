@@ -1,9 +1,9 @@
 // __tests__/metre-serialization.test.ts
 import { describe, it, expect } from "vitest";
-import type { Zone, ConfigTechnique } from "@/components/ZoneCard";
-import { calculerZone } from "@/components/ZoneCard";
-import { calculerPose } from "@/lib/poseCalcul";
-import { calculerCalepinage } from "@/lib/calepinageCalcul";
+import type { Zone, ConfigTechnique } from "@/components/calepinage/CarteZoneBardage";
+import { calculerZone } from "@/components/calepinage/CarteZoneBardage";
+import { calculerPose } from "@/lib/bardage/poseCalcul";
+import { calculerCalepinage } from "@/lib/calepinage/calepinageCalcul";
 import {
   VERSION_MOTEUR,
   extraireEntrees,

@@ -23,9 +23,14 @@ import type { LucideIcon } from "lucide-react";
  * niveau sans `href` est un simple en-tête de groupe : elle ne doit jamais
  * rendre la navigation ambiguë (c'était le reproche fait aux anciens onglets).
  */
-type SousEntree = { href: string; label: string };
+import {
+  estLienActif,
+  groupeEstActif as groupeEstActifShared,
+} from "@/lib/navigation";
 
-type EntreeNav = {
+export type SousEntree = { href: string; label: string };
+
+export type EntreeNav = {
   /** Absent pour un groupe : l'entrée ne navigue pas, elle déplie. */
   href?: string;
   label: string;
@@ -33,7 +38,7 @@ type EntreeNav = {
   children?: SousEntree[];
 };
 
-const NAV_ITEMS: EntreeNav[] = [
+export const NAV_ITEMS: EntreeNav[] = [
   { href: "/terrain/accueil", label: "Accueil Chantier", icon: HardHat },
   { href: "/terrain/meteo", label: "Accueil Météo", icon: CloudSun },
   {
@@ -58,8 +63,6 @@ const NAV_ITEMS: EntreeNav[] = [
     icon: HardHat,
     children: [
       { href: "/terrain/chantier", label: "Liste des chantiers" },
-      // La météo générale a une entrée dédiée en tête de navigation ; ce
-      // groupe conserve les fonctions de veille et de rapports d'intempéries.
       { href: "/bureau/meteo", label: "Météo & intempéries" },
       { href: "/bureau/rapports-intemperies", label: "Rapports intempéries" },
       { href: "/bureau/fin-chantier", label: "Fin de chantier / PV" },
@@ -70,10 +73,6 @@ const NAV_ITEMS: EntreeNav[] = [
     label: "Finance & Pilotage",
     icon: CircleDollarSign,
     children: [
-      // Les six premières sont sous /finance/** et restent couvertes par
-      // FinancePinGate. Les deux dernières en sont HORS, volontairement :
-      // /bureau/dashboard-patron et /bureau/documents-compta ne sont pas
-      // déplacés et ne doivent surtout pas hériter du garde PIN.
       { href: "/finance", label: "Tableau financier" },
       { href: "/finance/saisie/depense", label: "Dépenses" },
       { href: "/finance/saisie/pointage", label: "Pointage" },
@@ -88,11 +87,6 @@ const NAV_ITEMS: EntreeNav[] = [
     label: "Fournisseurs",
     icon: Truck,
     children: [
-      // Les trois entrées du cahier des charges correspondent aux trois
-      // onglets internes de la MÊME page (useState local, non sérialisable).
-      // `?tab=` est lu par la page pour que chaque entrée soit un deep-link
-      // réel — trois liens vers une page sans distinction seraient de la
-      // navigation factice, exactement ce que la refonte supprime.
       { href: "/bureau/fournisseurs", label: "Fournisseurs & commandes" },
       { href: "/bureau/fournisseurs?tab=commandes", label: "Suivi des commandes" },
       { href: "/bureau/fournisseurs?tab=fournisseurs", label: "Contacts fournisseurs" },
@@ -172,26 +166,9 @@ export default function Drawer() {
    * (`/bureau/fournisseurs`) doit devenir inerte dès que l'URL porte un
    * `?tab=`, sinon elle reste allumée en même temps que sa spécialisation.
    */
-  const estActif = (href: string) => {
-    const cible = cheminDe(href);
-    // Comparaison bornée au séparateur : `/bureau/catalogue-terrasse` ne doit
-    // PAS allumer `/bureau/catalogue`. Les pages détail restent couvertes
-    // (`/bureau/clients/123` commence bien par `/bureau/clients/`).
-    if (
-      !(cible === "/"
-        ? pathname === "/"
-        : pathname === cible || pathname?.startsWith(`${cible}/`))
-    )
-      return false;
-
-    const requeteHref = href.includes("?") ? href.slice(href.indexOf("?")) : "";
-    if (!requeteHref) return ongletUrl === null;
-    return ongletUrl === new URLSearchParams(requeteHref).get("tab");
-  };
-
-  // Un groupe est « courant » si l'une de ses entrées correspond au chemin.
+  const estActif = (href: string) => estLienActif(href, pathname, ongletUrl);
   const groupeEstActif = (entree: EntreeNav) =>
-    entree.children?.some((e) => estActif(e.href)) ?? estActif(entree.href ?? "");
+    groupeEstActifShared(entree, pathname, ongletUrl);
 
   /**
    * Bascule un groupe : le nouvel état est l'inverse de l'état AFFICHÉ.
@@ -225,7 +202,7 @@ export default function Drawer() {
           à `bg-white/10` pour un remplissage plus léger. */}
       <button
         onClick={() => setOpen(true)}
-        className="relative z-[200] min-h-11 min-w-11 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all"
+        className="relative z-[200] min-h-11 min-w-11 w-10 h-10 flex lg:hidden items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all"
         aria-label="Ouvrir le menu"
         aria-expanded={open}
         aria-controls="bna-drawer"

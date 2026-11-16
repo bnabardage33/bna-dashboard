@@ -107,7 +107,7 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-import SearchNav from "@/components/SearchNav";
+import SearchNav from "@/components/BarreRechercheNavigation";
 
 // --- Harnais ----------------------------------------------------------------
 

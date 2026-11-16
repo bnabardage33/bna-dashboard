@@ -14,7 +14,7 @@
 //     + surface_paquet_m2 sont cohérents ; exception : "sans_isolant" avec
 //     epaisseur_isolant_mm = 0 est valide.
 
-import type { Zone } from "@/components/ZoneCard";
+import type { Zone } from "@/components/calepinage/CarteZoneBardage";
 import { VERSION_MOTEUR, type ResultatMetre } from "@/lib/metre-serialization";
 
 export type StatutCompletude = "complet" | "incomplet" | "non_calculé";

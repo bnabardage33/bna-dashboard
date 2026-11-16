@@ -10,12 +10,13 @@
  * URL, désormais listées dans le Drawer. `/terrain` lui-même redirige vers
  * `/terrain/chantier`.
  *
- * Le conteneur `max-w-5xl` est conservé à l'identique.
+ * Le conteneur adopte une largeur fluide adaptée aux écrans desktop
+ * tout en préservant le padding de gouttière et l'espacement vertical d'origine.
  */
 export default function TerrainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>;
+  return <div className="w-full mx-auto px-4 py-6">{children}</div>;
 }

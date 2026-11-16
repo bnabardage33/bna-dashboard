@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "../../app/api/deplacements/utils";
+import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "@/lib/deplacement/tenantHelpers";
 
 const mockGetUser = vi.fn();
 // B1 — la RPC est désormais appelée par le client PORTÉ PAR LA SESSION

@@ -184,7 +184,7 @@ describe("accord migration ↔ code applicatif", () => {
   });
 
   it("lib/documents.ts appelle les RPC par le nom exact déclaré en base", () => {
-    const lib = lire("lib/documents.ts");
+    const lib = lire("lib/numerotationDocuments.ts");
     // Un nom d'appel divergent de la fonction créée ne donne aucune erreur de
     // compilation : PostgREST répond simplement { error: ... } et le numéro
     // devient undefined. C'est le point à verrouiller.
@@ -246,7 +246,7 @@ describe("accord migration ↔ code applicatif", () => {
     // 20260821_create_pv_receptions.sql : une collision y est rejetée par
     // PostgreSQL, donc le défaut reste visible. C'est ce qui autorise le
     // maintien de la version JS pour cette table uniquement.
-    const lib = lire("lib/documents.ts");
+    const lib = lire("lib/numerotationDocuments.ts");
     expect(lib).toMatch(/table:\s*"pv_receptions"/);
     // Et le module exporte bien les deux chemins RPC : sans cet export, les
     // imports des pages casseraient en build, pas ici.

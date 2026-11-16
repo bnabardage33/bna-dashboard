@@ -13,7 +13,7 @@ import type { ResultatMetre } from "@/lib/metre-serialization";
 import type { ResultatCalculTerrasse, ChantierTerrasseConfig } from "@/lib/terrasse/types";
 import { mapperQuantitesPersistees } from "@/lib/metreVersPostes";
 import { construireLignesDepuisPostes } from "@/lib/iaDevisMetre";
-import type { PayloadMetreComplet } from "@/lib/metre-complet";
+import type { PayloadMetreComplet } from "@/lib/metreComplet";
 import { calculerTerrasse } from "@/lib/terrasse/calculs";
 
 function makeZoneMetre(overrides: {

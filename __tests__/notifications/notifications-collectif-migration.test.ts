@@ -139,7 +139,7 @@ describe("O3-B6/N2-N3 — la route /api/notifications est supprimée", () => {
   });
 
   it("le composant SearchNav lit bien la table en direct, sans passer par une route", () => {
-    const src = readFileSync("./components/SearchNav.tsx", "utf-8");
+    const src = readFileSync("./components/BarreRechercheNavigation.tsx", "utf-8");
     expect(src).toContain('supabase.from("notifications").select("*")');
     expect(src).not.toContain("/api/notifications");
   });

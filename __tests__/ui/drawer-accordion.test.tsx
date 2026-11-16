@@ -65,7 +65,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { signOut: () => Promise.resolve({ error: null }) } },
 }));
 
-import Drawer from "@/components/Drawer";
+import Drawer from "@/components/MenuNavigationMobile";
 
 // --- Harnais ----------------------------------------------------------------
 

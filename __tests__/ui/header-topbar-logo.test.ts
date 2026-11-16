@@ -27,8 +27,8 @@
 //      `mt-6` à `mt-1` (4 px), par paliers : le titre descend de 50 px à 26 px
 //      sous le logo, sans toucher au `<main>` ni au reflet.
 //
-//   5. BOUTONS DISCRETS. Le hamburger (`components/Drawer.tsx`) et la cloche
-//      (`components/SearchNav.tsx`) gardent la MÊME destination et le MÊME
+//   5. BOUTONS DISCRETS. Le hamburger (`components/MenuNavigationMobile.tsx`) et la cloche
+//      (`components/BarreRechercheNavigation.tsx`) gardent la MÊME destination et le MÊME
 //      comportement, mais leur carré visuel est plus petit (40 px et 36 px),
 //      leur icône réduite (17 px et 14 px) et leur fond allégé. Une zone
 //      tactile de 44 px (`min-h-11 min-w-11`) est maintenue autour de chacun.
@@ -71,13 +71,21 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
     expect(classes).not.toMatch(/\bfixed\b/);
   });
 
-  it("le fond gris arrondi a disparu : le header est transparent", () => {
+  it("le fond gris arrondi a disparu : le header mobile est transparent sans bordure globale", () => {
     const header = LAYOUT.match(/<header className="([^"]*)"/)![1];
     expect(header).not.toMatch(/bg-\[#1E1E1E\]/);
     expect(header).not.toMatch(/\brounded-/);
     expect(header).not.toMatch(/\bshadow-/);
-    expect(header).not.toMatch(/\bborder-/);
+    // Pas de bordure inconditionnelle mobile (ex: `border` ou `border-gray-800`). Seule une séparation subtile responsive desktop `lg:border-b` est admise.
+    expect(header).not.toMatch(/(?:^|\s)border-/);
     expect(header).not.toMatch(/\boverflow-hidden\b/);
+  });
+
+  it("la structure responsive intègre la SidebarDesktop et un header desktop compact", () => {
+    expect(LAYOUT).toContain("<SidebarDesktop />");
+    const header = LAYOUT.match(/<header className="([^"]*)"/)![1];
+    expect(header).toContain("lg:h-16");
+    expect(HEADER).toContain("lg:hidden"); // Logo dupliqué masqué sur desktop
   });
 
   it("les trois éléments sont dans le même conteneur, menu → logo → cloche", () => {
@@ -129,7 +137,7 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
     expect(header![1], "le padding vertical du header doit rester `py-1.5`").toContain("py-1.5");
     expect(HEADER).toContain('h-[130px]');
 
-    const search = CODE(lire("components/SearchNav.tsx"));
+    const search = CODE(lire("components/BarreRechercheNavigation.tsx"));
     expect(search, "le volet mobile doit être ancré à 142 px").toContain("top-[142px]");
   });
 
@@ -206,7 +214,7 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
   });
 
   it("le hamburger de Drawer reste discret, avec une cible de 44 px", () => {
-    const drawer = CODE(lire("components/Drawer.tsx"));
+    const drawer = CODE(lire("components/MenuNavigationMobile.tsx"));
     const bouton = drawer.match(/<button\s+onClick=\{\(\) => setOpen\(true\)\}[\s\S]*?>/);
     expect(bouton, "hamburger introuvable").not.toBeNull();
     // Carré visuel réduit, mais zone tactile conservée.
@@ -225,7 +233,7 @@ describe("En-tête global — flexbox sur une seule ligne", () => {
   });
 
   it("la cloche de SearchNav reste discrète, avec une cible de 44 px", () => {
-    const search = CODE(lire("components/SearchNav.tsx"));
+    const search = CODE(lire("components/BarreRechercheNavigation.tsx"));
     const bouton = search.match(/<button\s+onClick=\{\(\) => \{ setNotifOpen\(!notifOpen\)[\s\S]*?>/);
     expect(bouton, "cloche introuvable").not.toBeNull();
     expect(bouton![0]).toContain("w-9 h-9");

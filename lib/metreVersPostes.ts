@@ -10,7 +10,8 @@
 //     entre zones distinctes.
 //   * Ce fichier est une transformation de données, PAS un moteur.
 
-import type { PayloadMetreComplet, EntreeZoneMetreComplet, StatutCompletude } from "@/lib/metre-complet";
+import type { PayloadMetreComplet, EntreeZoneMetreComplet, StatutCompletude } from "@/lib/metreComplet";
+import { fmtEuro } from "@/lib/financeCalculs";
 import {
   CADENCES_DEFAUT,
   calculerTempsPoseBardage,
@@ -209,7 +210,7 @@ function postesMainOeuvrePourZone(
         libelle: phase.libelle,
         quantite: heures,
         unite: "h",
-        contexte: [`Zone ${zone.zone.nom}`, `Taux horaire vente ${cadences.taux_horaire_vente_ht.toFixed(2)} € HT/h`],
+        contexte: [`Zone ${zone.zone.nom}`, `Taux horaire vente ${fmtEuro(cadences.taux_horaire_vente_ht)} HT/h`],
         puHt: cadences.taux_horaire_vente_ht,
         puRevient: cadences.taux_horaire_charge_ht,
         typeCout: "main_oeuvre",

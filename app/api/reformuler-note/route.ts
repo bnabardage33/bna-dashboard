@@ -11,7 +11,7 @@
 // invalide. Aucune lecture du dictionnaire n'est émise dans ce cas.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { anonymizeText, deanonymizeText } from '@/lib/anonymizeText';
+import { anonymizeText, deanonymizeText } from '@/lib/anonymisationTexte';
 import { verifierSession } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 

@@ -10,7 +10,7 @@ import {
   estimerTokensMessages,
   resumeVide,
 } from '@/lib/espace-chat-utils';
-import { fetchWithTimeout, ErreurTimeout } from '@/lib/fetchWithTimeout';
+import { fetchWithTimeout, ErreurTimeout } from '@/lib/requeteTimeout';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';

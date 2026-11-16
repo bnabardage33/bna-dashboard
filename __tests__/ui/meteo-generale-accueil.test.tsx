@@ -192,8 +192,8 @@ describe("Météo générale (accueil) — recherche de ville", () => {
     // Pictogramme (loupe) au lieu du libellé « OK ».
     expect(loupe!.querySelector("svg")).toBeTruthy();
     expect(loupe!.textContent?.trim()).toBe("");
-    // Habillage : loupe blanche sur fond rouge BNA, cible tactile de 44 px.
-    expect(loupe!.className).toContain("bg-[#E53935]");
+    // Habillage : loupe blanche sur fond terracotta BNA, cible tactile de 44 px.
+    expect(loupe!.className).toContain("bg-[#B85B2B]");
     expect(loupe!.className).toContain("text-white");
     expect(loupe!.className).toContain("h-11");
     expect(loupe!.className).toContain("w-11");

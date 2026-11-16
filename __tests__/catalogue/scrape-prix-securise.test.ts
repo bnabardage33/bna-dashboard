@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as cheerio from "cheerio";
 import { extrairePrixCandidats, type PrixScrapeCandidat } from "@/lib/scrapePrix";
-import { mapScraped } from "@/components/catalogue/useScraping";
+import { mapScraped } from "@/hooks/useScrapingCatalogue";
 
 const c = (p: Partial<PrixScrapeCandidat>): PrixScrapeCandidat => ({
   montant: 10, devise: "EUR", baseFiscale: "inconnue", uniteVente: "inconnue",

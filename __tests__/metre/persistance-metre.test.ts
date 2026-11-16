@@ -6,10 +6,10 @@
 // store en mémoire, avec les VRAIS moteurs (calculerZone / calculerPose /
 // calculerCalepinage). Aucun Supabase ici : on vérifie la DÉCISION d'écriture.
 import { describe, it, expect } from "vitest";
-import type { Zone, ConfigTechnique } from "@/components/ZoneCard";
-import { calculerZone } from "@/components/ZoneCard";
-import { calculerPose } from "@/lib/poseCalcul";
-import { calculerCalepinage } from "@/lib/calepinageCalcul";
+import type { Zone, ConfigTechnique } from "@/components/calepinage/CarteZoneBardage";
+import { calculerZone } from "@/components/calepinage/CarteZoneBardage";
+import { calculerPose } from "@/lib/bardage/poseCalcul";
+import { calculerCalepinage } from "@/lib/calepinage/calepinageCalcul";
 import type { ResultatMetre } from "@/lib/metre-serialization";
 import {
   extraireEntrees,

@@ -5,7 +5,7 @@ import {
   ChantiersCalepinageView,
   PointageEquipeView,
   TableauDeBordRentabiliteView,
-} from "@/components/TempsHeuresViews";
+} from "@/components/bardage/hub/BardageTempsHeuresVues";
 import { Clock, TrendingUp, Users } from "lucide-react";
 
 export interface BardageHeuresModuleProps {

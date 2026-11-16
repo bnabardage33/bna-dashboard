@@ -17,7 +17,7 @@ import {
   servirPayloadMetreComplet,
   ChantierIntrouvableError,
   MetierIncompatibleError,
-} from "@/lib/servir-metre-complet";
+} from "@/lib/servirMetreComplet";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

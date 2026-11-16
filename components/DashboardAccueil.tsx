@@ -436,14 +436,17 @@ export default function DashboardAccueil({
           ) : (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {chantiersAPreparer.map((c) => (
-                <Surface as="li" key={c.id} className="p-3.5 transition-colors hover:border-[#B85B2B]/40">
+                <Surface as="li" key={c.id} className="p-3.5 transition-all duration-200 hover:border-[#B85B2B]/50 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20">
                   <Link href={`/terrain/chantier/${c.id}`} className="group block">
-                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-[#B85B2B]">
-                      {c.nom || 'Chantier sans nom'}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-2 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-[#B85B2B]">
+                        {c.nom || 'Chantier sans nom'}
+                      </p>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500 transition-transform group-hover:translate-x-1 group-hover:text-[#B85B2B]" />
+                    </div>
                     {c.adresse && (
                       <p className="mt-1 flex items-center gap-1 text-2xs text-gray-400">
-                        <MapPin className="h-3 w-3 shrink-0" />
+                        <MapPin className="h-3 w-3 shrink-0 text-gray-500" />
                         <span className="truncate">{c.adresse}</span>
                       </p>
                     )}
@@ -495,7 +498,7 @@ export default function DashboardAccueil({
                 <Link
                   key={n.id}
                   href="/terrain/notes"
-                  className="group flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E] p-3 transition-colors hover:border-[#B85B2B]/50"
+                  className="group flex flex-col rounded-xl border border-white/10 bg-[#1E1E1E] p-3 transition-all duration-200 hover:border-[#B85B2B]/50 hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-4xs font-bold uppercase tracking-wider text-gray-400">
@@ -572,7 +575,7 @@ export default function DashboardAccueil({
                     // padding vient de la classe, avec la MÊME valeur que les
                     // cartes de notes (`p-3`).
                     return (
-                      <Surface as="li" key={n.id} className="p-3">
+                      <Surface as="li" key={n.id} className="p-3 transition-all duration-200 hover:border-[#B85B2B]/40 hover:bg-white/[0.02]">
                         {n.lien ? (
                           <Link href={n.lien} className="group block">
                             {contenu}

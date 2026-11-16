@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifierSession } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "./utils";
+import { getEntrepriseCouranteId, verifierChantier, lireTarifCommercial } from "@/lib/deplacement/tenantHelpers";
 import { validerFraisDeplacement } from "@/lib/deplacement/validation";
 import { calculerMontantDeplacement, calculerTaxesDeplacement } from "@/lib/deplacement/calcul";
 

@@ -1,10 +1,10 @@
 // components/FicheDebitPDF.tsx
 "use client";
 
-import { Zone, calculerZone } from "@/components/ZoneCard";
-import { ResultatPose, LABELS_FAMILLE } from "@/lib/poseCalcul";
-import { ResultatCalepinage } from "@/lib/calepinageCalcul";
-import PlanCalepinage from "@/components/PlanCalepinage";
+import { Zone, calculerZone } from "@/components/calepinage/CarteZoneBardage";
+import { ResultatPose, LABELS_FAMILLE } from "@/lib/bardage/poseCalcul";
+import { ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
+import PlanCalepinage from "@/components/calepinage/PlanCalepinage";
 import Image from "next/image";
 
 type Entreprise = {

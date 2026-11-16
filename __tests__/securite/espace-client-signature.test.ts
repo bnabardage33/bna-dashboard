@@ -198,8 +198,8 @@ vi.mock("@/lib/supabaseAdmin", () => ({
   },
 }));
 
-vi.mock("@/lib/otp", async () => {
-  const reel = await vi.importActual<typeof import("@/lib/otp")>("@/lib/otp");
+vi.mock("@/lib/codeVerificationClient", async () => {
+  const reel = await vi.importActual<typeof import("@/lib/codeVerificationClient")>("@/lib/codeVerificationClient");
   return {
     ...reel,
     selectionnerFournisseurSms: () => ({
@@ -893,7 +893,7 @@ describe("F) rollback et echec technique", () => {
 // ────────────────────────────────────────────────────────────────────────────
 
 const CHEMINS = {
-  garde: join(process.cwd(), "app/api/espace-client/[code_acces]/_garde-signature.ts"),
+  garde: join(process.cwd(), "lib/signature/gardeSignature.ts"),
   sendOtp: join(process.cwd(), "app/api/espace-client/[code_acces]/send-otp/route.ts"),
   verifyOtp: join(process.cwd(), "app/api/espace-client/[code_acces]/verify-otp/route.ts"),
   migration: join(process.cwd(), "supabase/migrations/20261003_devis_signature_provenance.sql"),
@@ -948,7 +948,7 @@ describe("I) gardes structurels auto-verifies", () => {
     // les prédicats sont dans le garde, et les deux routes l'utilisent.
     expect(compterPredicats(CODE.garde)).toBeGreaterThanOrEqual(2);
     for (const nom of ["sendOtp", "verifyOtp"] as NomFichier[]) {
-      expect(CODE[nom], nom).toMatch(/from ["']\.\.\/_garde-signature["']/);
+      expect(CODE[nom], nom).toMatch(/from ["']@\/lib\/signature\/gardeSignature["']/);
       expect(CODE[nom], nom).toMatch(/autoriserSignature\(/);
     }
     // Et le garde teste bien les DEUX prédicats : chantier ET tenant.

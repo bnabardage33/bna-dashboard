@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifierSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getEntrepriseCouranteId } from "../../utils";
+import { getEntrepriseCouranteId } from "@/lib/deplacement/tenantHelpers";
 
 export async function POST(
   req: NextRequest,

@@ -32,7 +32,7 @@ import {
   VigilanceDepartement,
   couleurPourPhenomene,
   couleurLaPlusForte,
-} from "./meteoVigilance";
+} from "./vigilanceMeteoFrance";
 
 // -----------------------------------------------------------------------------
 // TYPES

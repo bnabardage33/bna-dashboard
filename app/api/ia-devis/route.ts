@@ -13,7 +13,7 @@ import {
   quantiteExpliciteDansLaDemande,
   construireLigneLegacy,
   type CatalogueOuvrage,
-} from "@/lib/iaDevisLegacy";
+} from "@/lib/iaDevisTexteRepli";
 import {
   meilleureCorrespondance,
   scoreConceptVsItem,
@@ -21,7 +21,7 @@ import {
   type Correspondance,
   type ItemCatalogue,
 } from "@/lib/catalogueMatching";
-import { servirPayloadMetreComplet, ChantierIntrouvableError } from "@/lib/servir-metre-complet";
+import { servirPayloadMetreComplet, ChantierIntrouvableError } from "@/lib/servirMetreComplet";
 import { mapperQuantitesPersistees } from "@/lib/metreVersPostes";
 import { chargerCadencesTempsPose } from "@/lib/tempsPoseCalcul";
 import {
@@ -29,7 +29,7 @@ import {
   construireLignesAChiffrerManquantes,
   cheminMetreDisponible,
 } from "@/lib/iaDevisMetre";
-import { estDelaiDepasse } from "@/lib/fetchWithTimeout";
+import { estDelaiDepasse } from "@/lib/requeteTimeout";
 import { resoudrePrixOuvrage } from "@/lib/catalogue/resoudrePrix";
 
 const googleProvider = createGoogleGenerativeAI({

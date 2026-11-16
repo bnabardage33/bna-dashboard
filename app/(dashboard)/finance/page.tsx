@@ -5,7 +5,7 @@ import ChantierRentabilite from "./components/ChantierRentabilite";
 import RentabiliteMainOeuvreWidget from "./components/RentabiliteMainOeuvreWidget";
 import TvaWidget from "./components/TvaWidget";
 import TresorerieWidget from "./components/TresorerieWidget";
-import UrsaafWidget from "./components/UrsaafWidget";
+import UrssafWidget from "./components/UrssafWidget";
 import Link from "next/link";
 import { Clock, Receipt, TrendingUp, FileText, History, Download, Users } from "lucide-react";
 import CaEvolutionChart from "./components/charts/CaEvolutionChart";
@@ -133,7 +133,7 @@ export default function FinanceDashboard() {
           <div className="flex flex-col gap-6">
             <TvaWidget mois={selectedMois} />
             <TresorerieWidget />
-            <UrsaafWidget mois={selectedMois} />
+            <UrssafWidget mois={selectedMois} />
           </div>
         </section>
 

@@ -51,7 +51,7 @@ import {
   fournisseurConsoleMock,
   selectionnerFournisseurSms,
   fournisseurNul,
-} from "@/lib/otp";
+} from "@/lib/codeVerificationClient";
 
 /** Capture tout ce qu'une fonction écrit sur la console. */
 function capturerConsole(): { lignes: string[]; texte: () => string } {

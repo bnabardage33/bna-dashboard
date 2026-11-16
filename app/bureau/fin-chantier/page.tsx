@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
-import { prochainNumero } from "@/lib/documents";
+import { prochainNumero } from "@/lib/numerotationDocuments";
 import SignaturePad from "@/components/SignaturePad";
 import PVReceptionPDF, {
   PVReceptionData,

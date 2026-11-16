@@ -6,8 +6,8 @@ import type { ModuleAffichable } from "@/hooks/calepinage/useCanvasRenderer";
 import { use3DGestures } from "@/hooks/calepinage/use3DGestures";
 import { couleurGroupe } from "@/lib/calepinage/palette";
 import { libelleMateriau, libelleTraitement } from "@/lib/calepinage/bordereau";
-import { calculerCalepinage } from "@/lib/calepinageCalcul";
-import { calculerPose } from "@/lib/poseCalcul";
+import { calculerCalepinage } from "@/lib/calepinage/calepinageCalcul";
+import { calculerPose } from "@/lib/bardage/poseCalcul";
 import { BardagePlan3D, type Facade3DData } from "@/components/calepinage/BardagePlan3D";
 import { Layers, Box } from "lucide-react";
 import {

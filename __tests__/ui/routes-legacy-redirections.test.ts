@@ -185,7 +185,7 @@ describe('Restauration · /terrain/meteo est une page réelle, pas une redirecti
   })
 
   it('les deux entrées d’accueil coexistent avec la veille météo distincte', () => {
-    const drawer = lire('components/Drawer.tsx')
+    const drawer = lire('components/MenuNavigationMobile.tsx')
     expect(drawer, 'Drawer : Accueil Météo manquant').toContain(
       '{ href: "/terrain/meteo", label: "Accueil Météo", icon: CloudSun }',
     )

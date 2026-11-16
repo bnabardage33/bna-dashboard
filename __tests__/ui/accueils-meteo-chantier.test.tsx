@@ -81,7 +81,7 @@ describe('Accueils Météo et Chantier', () => {
   });
 
   it('préserve les destinations métier météo distinctes et les routes historiques', () => {
-    const drawer = lire('components/Drawer.tsx');
+    const drawer = lire('components/MenuNavigationMobile.tsx');
     const meteo = lire('app/terrain/meteo/page.tsx');
     const veille = lire('app/bureau/meteo/page.tsx');
 

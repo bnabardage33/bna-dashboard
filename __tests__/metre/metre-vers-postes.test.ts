@@ -14,9 +14,9 @@ import { readFileSync } from "node:fs";
 import type {
   PayloadMetreComplet,
   EntreeZoneMetreComplet,
-} from "@/lib/metre-complet";
-import type { ResultatPose } from "@/lib/poseCalcul";
-import type { ResultatCalepinage } from "@/lib/calepinageCalcul";
+} from "@/lib/metreComplet";
+import type { ResultatPose } from "@/lib/bardage/poseCalcul";
+import type { ResultatCalepinage } from "@/lib/calepinage/calepinageCalcul";
 import { mapperQuantitesPersistees } from "@/lib/metreVersPostes";
 
 /* ==================================================================
