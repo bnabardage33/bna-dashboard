@@ -5,6 +5,7 @@ import {
   METIERS_REGISTRY,
   PHASES_MAIN_OEUVRE_BARDAGE,
   PHASES_MAIN_OEUVRE_TERRASSE,
+  PHASES_MAIN_OEUVRE_CLOTURE,
   estMetierCode,
   estFiltreMetier,
   estScopeStockMetier,
@@ -22,15 +23,16 @@ import {
 } from "@/lib/chantierDefaults";
 
 describe("Registre central des métiers — lib/metiers/registry.ts", () => {
-  it("déclare exactement les deux métiers validés BARDAGE et TERRASSE avec BARDAGE par défaut", () => {
-    expect(METIERS_CODES).toEqual(["BARDAGE", "TERRASSE"]);
+  it("déclare exactement les trois métiers validés BARDAGE, TERRASSE et CLOTURE avec BARDAGE par défaut", () => {
+    expect(METIERS_CODES).toEqual(["BARDAGE", "TERRASSE", "CLOTURE"]);
     expect(METIER_DEFAUT).toBe("BARDAGE");
-    expect(listerMetiers().map((m) => m.code)).toEqual(["BARDAGE", "TERRASSE"]);
+    expect(listerMetiers().map((m) => m.code)).toEqual(["BARDAGE", "TERRASSE", "CLOTURE"]);
   });
 
   it("valide strictement les codes métiers, filtres consolidés et scopes de stock", () => {
     expect(estMetierCode("BARDAGE")).toBe(true);
     expect(estMetierCode("TERRASSE")).toBe(true);
+    expect(estMetierCode("CLOTURE")).toBe(true);
     expect(estMetierCode("bardage")).toBe(false);
     expect(estMetierCode("TOUS")).toBe(false);
     expect(estMetierCode("COMMUN")).toBe(false);
@@ -87,7 +89,9 @@ describe("Registre central des métiers — lib/metiers/registry.ts", () => {
 
       // Catalogue associé
       expect(cfg.catalogue.routeBureau).toMatch(/^\/bureau\/catalogue/);
-      expect(cfg.catalogue.typesFormulaires.length).toBeGreaterThan(0);
+      if (code !== "CLOTURE") {
+        expect(cfg.catalogue.typesFormulaires.length).toBeGreaterThan(0);
+      }
       expect(cfg.catalogue.tablesSupabase.length).toBeGreaterThan(0);
       expect(cfg.catalogue.naturesCoutSupportees).toEqual(["matiere", "main_oeuvre"]);
 
@@ -124,14 +128,26 @@ describe("Registre central des métiers — lib/metiers/registry.ts", () => {
       "general",
     ]);
     expect(PHASES_MAIN_OEUVRE_TERRASSE).toHaveLength(5);
+
+    expect(getPhasesMainOeuvre("CLOTURE").map((p) => p.key)).toEqual([
+      "implantation_terrassement",
+      "pose_poteaux",
+      "remplissage_lames_panneaux",
+      "portillons_finitions",
+      "general",
+    ]);
+    expect(PHASES_MAIN_OEUVRE_CLOTURE).toHaveLength(5);
   });
 
-  it("isole les onglets techniques et les checklists initiales entre BARDAGE et TERRASSE", () => {
+  it("isole les onglets techniques et les checklists initiales entre BARDAGE, TERRASSE et CLOTURE", () => {
     expect(METIERS_REGISTRY.BARDAGE.fonctionnalites.ongletsTechniquesChantier).toEqual([
       "metres",
     ]);
     expect(METIERS_REGISTRY.TERRASSE.fonctionnalites.ongletsTechniquesChantier).toEqual([
       "terrasse",
+    ]);
+    expect(METIERS_REGISTRY.CLOTURE.fonctionnalites.ongletsTechniquesChantier).toEqual([
+      "cloture",
     ]);
 
     expect(creerChecklistChantierInitiale("BARDAGE")).toEqual({
@@ -145,6 +161,12 @@ describe("Registre central des métiers — lib/metiers/registry.ts", () => {
       structure_lambourdes: false,
       platelage: false,
       finition: false,
+    });
+    expect(creerChecklistChantierInitiale("CLOTURE")).toEqual({
+      implantation: false,
+      poteaux_scellement: false,
+      lames_panneaux: false,
+      portillon_finitions: false,
     });
   });
 

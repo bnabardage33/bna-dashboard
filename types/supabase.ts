@@ -413,6 +413,231 @@ export type Database = {
           },
         ]
       }
+      catalogue_cloture: {
+        Row: {
+          actif: boolean
+          categorie: string
+          coloris: string | null
+          created_at: string
+          designation: string
+          entreprise_id: string
+          epaisseur_mm: number | null
+          hauteur_m: number | null
+          id: string
+          longueur_m: number | null
+          materiau: string
+          prix_achat_ht: number
+          prix_vente_ht: number
+          reference: string | null
+          unite: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie: string
+          coloris?: string | null
+          created_at?: string
+          designation: string
+          entreprise_id?: string
+          epaisseur_mm?: number | null
+          hauteur_m?: number | null
+          id?: string
+          longueur_m?: number | null
+          materiau?: string
+          prix_achat_ht?: number
+          prix_vente_ht?: number
+          reference?: string | null
+          unite?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string
+          coloris?: string | null
+          created_at?: string
+          designation?: string
+          entreprise_id?: string
+          epaisseur_mm?: number | null
+          hauteur_m?: number | null
+          id?: string
+          longueur_m?: number | null
+          materiau?: string
+          prix_achat_ht?: number
+          prix_vente_ht?: number
+          reference?: string | null
+          unite?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogue_cloture_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chantier_cloture_troncons: {
+        Row: {
+          chantier_id: string
+          cloture_id: string
+          code_segment: string
+          created_at: string
+          denivele_m: number
+          entreprise_id: string
+          hauteur_utile_m: number | null
+          id: string
+          largeur_portillon_m: number | null
+          longueur_m: number
+          nb_redans: number
+          notes: string | null
+          ordre: number
+          position_portillon_m: number | null
+          presence_portillon: boolean
+          type_arrivee: string
+          type_depart: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id: string
+          cloture_id: string
+          code_segment?: string
+          created_at?: string
+          denivele_m?: number
+          entreprise_id?: string
+          hauteur_utile_m?: number | null
+          id?: string
+          largeur_portillon_m?: number | null
+          longueur_m: number
+          nb_redans?: number
+          notes?: string | null
+          ordre?: number
+          position_portillon_m?: number | null
+          presence_portillon?: boolean
+          type_arrivee?: string
+          type_depart?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string
+          cloture_id?: string
+          code_segment?: string
+          created_at?: string
+          denivele_m?: number
+          entreprise_id?: string
+          hauteur_utile_m?: number | null
+          id?: string
+          largeur_portillon_m?: number | null
+          longueur_m?: number
+          nb_redans?: number
+          notes?: string | null
+          ordre?: number
+          position_portillon_m?: number | null
+          presence_portillon?: boolean
+          type_arrivee?: string
+          type_depart?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_cloture_troncons_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_cloture_troncons_cloture_id_fkey"
+            columns: ["cloture_id"]
+            isOneToOne: false
+            referencedRelation: "chantier_clotures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_cloture_troncons_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chantier_clotures: {
+        Row: {
+          chantier_id: string
+          created_at: string
+          entreprise_id: string
+          extremites: string
+          forme: string
+          gestion_pente: string
+          hauteur_lame_m: number
+          hauteur_soubassement_m: number | null
+          hauteur_utile_m: number
+          id: string
+          longueur_lame_brute_m: number
+          materiau: string
+          nom: string
+          presence_soubassement: boolean
+          resultats_techniques: Json | null
+          type_pose_sol: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id: string
+          created_at?: string
+          entreprise_id?: string
+          extremites?: string
+          forme?: string
+          gestion_pente?: string
+          hauteur_lame_m?: number
+          hauteur_soubassement_m?: number | null
+          hauteur_utile_m?: number
+          id?: string
+          longueur_lame_brute_m?: number
+          materiau?: string
+          nom?: string
+          presence_soubassement?: boolean
+          resultats_techniques?: Json | null
+          type_pose_sol?: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string
+          created_at?: string
+          entreprise_id?: string
+          extremites?: string
+          forme?: string
+          gestion_pente?: string
+          hauteur_lame_m?: number
+          hauteur_soubassement_m?: number | null
+          hauteur_utile_m?: number
+          id?: string
+          longueur_lame_brute_m?: number
+          materiau?: string
+          nom?: string
+          presence_soubassement?: boolean
+          resultats_techniques?: Json | null
+          type_pose_sol?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chantier_clotures_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: true
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chantier_clotures_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chantier_terrasses: {
         Row: {
           id: string

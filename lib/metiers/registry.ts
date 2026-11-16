@@ -22,7 +22,7 @@ import {
 } from "@/lib/chantierDefaults";
 
 /** Liste canonique et ordonnée des codes métiers actifs. */
-export const METIERS_CODES = ["BARDAGE", "TERRASSE"] as const;
+export const METIERS_CODES = ["BARDAGE", "TERRASSE", "CLOTURE"] as const;
 
 /** Identifiant strict d'un métier de l'entreprise. */
 export type MetierCode = (typeof METIERS_CODES)[number];
@@ -52,8 +52,19 @@ export type PhaseMainOeuvreTerrasse =
   | "finitions_accessoires"
   | "general";
 
+/** Clés des phases de main-d'œuvre pour le métier Clôture. */
+export type PhaseMainOeuvreCloture =
+  | "implantation_terrassement"
+  | "pose_poteaux"
+  | "remplissage_lames_panneaux"
+  | "portillons_finitions"
+  | "general";
+
 /** Union des clés de phases de main-d'œuvre tous métiers confondus. */
-export type PhaseMainOeuvreKey = PhaseMainOeuvreBardage | PhaseMainOeuvreTerrasse;
+export type PhaseMainOeuvreKey =
+  | PhaseMainOeuvreBardage
+  | PhaseMainOeuvreTerrasse
+  | PhaseMainOeuvreCloture;
 
 /** Définition d'une phase analytique de main-d'œuvre. */
 export interface PhaseMainOeuvreConfig<K extends string = PhaseMainOeuvreKey> {
@@ -89,7 +100,8 @@ export type TableCatalogueSupabase =
   | "catalogue_ouvrages_prix"
   | "catalogue_temps"
   | "catalogue_terrasse_lames"
-  | "catalogue_terrasse_accessoires";
+  | "catalogue_terrasse_accessoires"
+  | "catalogue_cloture";
 
 /** Configuration du catalogue associé à un métier. */
 export interface CatalogueMetierConfig {
@@ -100,7 +112,7 @@ export interface CatalogueMetierConfig {
 }
 
 /** Onglets techniques spécifiques pouvant être activés sur une fiche chantier. */
-export type OngletTechniqueChantier = "metres" | "terrasse";
+export type OngletTechniqueChantier = "metres" | "terrasse" | "cloture";
 
 /** Configuration opérationnelle des chantiers et fonctionnalités d'un métier. */
 export interface FonctionnalitesMetierConfig {
@@ -221,6 +233,42 @@ export const PHASES_MAIN_OEUVRE_TERRASSE: readonly PhaseMainOeuvreConfig<PhaseMa
   },
 ] as const;
 
+/**
+ * Phases de main-d'œuvre Clôture — implantation, scellement, remplissage et portillons.
+ */
+export const PHASES_MAIN_OEUVRE_CLOTURE: readonly PhaseMainOeuvreConfig<PhaseMainOeuvreCloture>[] = [
+  {
+    key: "implantation_terrassement",
+    label: "Implantation & Scellements",
+    nomAffichage: "⛏️ Implantation & Béton",
+    motsClesDetection: ["implantation", "tranchée", "beton", "béton", "scellement", "fouille", "muret"],
+  },
+  {
+    key: "pose_poteaux",
+    label: "Pose des poteaux & Platines",
+    nomAffichage: "🧱 Poteaux & Platines",
+    motsClesDetection: ["poteau", "platine", "angle", "demi-poteau", "mural"],
+  },
+  {
+    key: "remplissage_lames_panneaux",
+    label: "Pose Lames, Panneaux & Soubassement",
+    nomAffichage: "🪵 Lames & Panneaux",
+    motsClesDetection: ["lame", "panneau", "soubassement", "clôture", "cloture", "treillis", "brise-vue"],
+  },
+  {
+    key: "portillons_finitions",
+    label: "Portillons, Chapeaux & Finitions",
+    nomAffichage: "🚪 Portillons & Finitions",
+    motsClesDetection: ["portillon", "portail", "chapeau", "lisse", "serrure", "gache", "finition"],
+  },
+  {
+    key: "general",
+    label: "Général & Manutention",
+    nomAffichage: "📁 Général",
+    motsClesDetection: [],
+  },
+] as const;
+
 /** Registre central immuable indexé par `MetierCode`. */
 export const METIERS_REGISTRY: { readonly [K in MetierCode]: MetierConfig<K> } = {
   BARDAGE: {
@@ -324,6 +372,50 @@ export const METIERS_REGISTRY: { readonly [K in MetierCode]: MetierConfig<K> } =
       routeBureau: "/bureau/catalogue-terrasse",
       typesFormulaires: ["TERRASSE_LAME", "TERRASSE_ACCESSOIRE"],
       tablesSupabase: ["catalogue_terrasse_lames", "catalogue_terrasse_accessoires"],
+      naturesCoutSupportees: ["matiere", "main_oeuvre"],
+    },
+    reglesTransverses: REGLES_TRANSVERSES_COMMUNES,
+  },
+
+  CLOTURE: {
+    code: "CLOTURE",
+    slug: "cloture",
+    libelle: "Clôtures, Brise-vue & Portillons",
+    libelleCourt: "Clôture",
+    libelleDocument: "Métier : Clôture & Aménagements",
+    description:
+      "Conception, calepinage multi-côtés (1 à 4 côtés), scellement ou pose sur muret, gestion des redans/pentes, plaques de soubassement et portillons.",
+    normeReference: "DTU 26.2 / Eurocode 1 (Vent) / Normes Fabricants",
+    identiteVisuelle: {
+      icone: "Fence",
+      emoji: "🧱",
+      accentHex: "#B85B2B",
+      badgeClasses: "border-[#B85B2B]/30 bg-[#B85B2B]/10 text-[#B85B2B]",
+    },
+    phasesMainOeuvre: PHASES_MAIN_OEUVRE_CLOTURE,
+    outils: [
+      {
+        id: "calepinage-cloture",
+        libelle: "Calepinage & Chiffrage Clôture",
+        description: "Calcul des poteaux (intermédiaires, angles, muraux), lames, soubassements, redans et portillons.",
+        route: "/terrain/chantier",
+      },
+    ],
+    fonctionnalites: {
+      routeListeChantiers: "/terrain/chantier",
+      ongletsTechniquesChantier: ["cloture"],
+      clesChecklistChantier: ["implantation", "poteaux_scellement", "lames_panneaux", "portillon_finitions"],
+      libelleCreationChantier: "Nouveau Chantier de Clôture",
+      valeursDefautChantier: {
+        materiau_structurel: MATERIAU_STRUCTUREL_DEFAUT,
+        moyen_acces: MOYEN_ACCES_DEFAUT,
+        zone_vent: ZONE_VENT_DEFAUT,
+      },
+    },
+    catalogue: {
+      routeBureau: "/bureau/catalogue-cloture",
+      typesFormulaires: [],
+      tablesSupabase: ["catalogue_cloture"],
       naturesCoutSupportees: ["matiere", "main_oeuvre"],
     },
     reglesTransverses: REGLES_TRANSVERSES_COMMUNES,
