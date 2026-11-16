@@ -257,6 +257,14 @@ export async function POST(req: NextRequest) {
 
     const calculs = calculerDevis(lignes);
 
+    const autoliquidationTva = Boolean(body.autoliquidation_tva);
+    const sirenClient = texte(body.siren_client) || null;
+    const tvaPct = autoliquidationTva
+      ? 0
+      : typeof body.tva_pct === "number" && Number.isFinite(body.tva_pct)
+        ? body.tva_pct
+        : 10;
+
     const insertDevis = {
       numero,
       client_id: clientId,
@@ -277,10 +285,9 @@ export async function POST(req: NextRequest) {
         typeof body.acompte_pct === "number" && Number.isFinite(body.acompte_pct)
           ? body.acompte_pct
           : null,
-      tva_pct:
-        typeof body.tva_pct === "number" && Number.isFinite(body.tva_pct)
-          ? body.tva_pct
-          : 10,
+      tva_pct: tvaPct,
+      autoliquidation_tva: autoliquidationTva,
+      siren_client: sirenClient,
       statut: "brouillon",
       lignes,
       total_ht: calculs.total_ht,

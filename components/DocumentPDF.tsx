@@ -5,10 +5,19 @@ import { Scissors } from "lucide-react";
 import { Entreprise } from "@/types/entreprise";
 import Image from "next/image";
 import { fmtEuro } from "@/lib/financeCalculs";
+import { calculerRetenueFacture } from "@/lib/retenueCalculs";
 
 export type { Entreprise };
 
-type Ligne = { designation: string; description?: string; qte: number; unite: string; pu_ht: number };
+type Ligne = {
+  designation: string;
+  description?: string;
+  qte: number;
+  unite: string;
+  pu_ht: number;
+  tva_pct?: number | null;
+  a_chiffrer?: boolean;
+};
 
 export type Client = {
   nom: string;
@@ -18,6 +27,7 @@ export type Client = {
   ville: string | null;
   tel: string | null;
   email: string | null;
+  siren_client?: string | null;
 };
 
 export type DocumentData = {
@@ -34,7 +44,7 @@ export type DocumentData = {
   tva_pct: number;
   acompte_pct?: number | null;
   delai_jours?: number | null;
-  type_facture?: "acompte" | "situation" | "solde" | "totale";
+  type_facture?: "acompte" | "situation" | "solde" | "totale" | "avoir";
   profil_revenu?: string | null;
   surface_m2?: number | null;
   signature_client?: string | null;
@@ -43,6 +53,10 @@ export type DocumentData = {
   montant_retenue_ht?: number | null;
   montant_retenue_ttc?: number | null;
   net_a_payer_ttc?: number | null;
+  autoliquidation_tva?: boolean | null;
+  siren_client?: string | null;
+  total_regle_ttc?: number | null;
+  reste_a_encaisser_ttc?: number | null;
 };
 
 // LOT 2C — la fonction `euros()` locale est supprimee au profit de fmtEuro().
@@ -62,12 +76,32 @@ export default function DocumentPDF({
   entreprise: Entreprise;
   client: Client;
 }) {
-  const totalHT = doc.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
-  const tva = totalHT * (doc.tva_pct / 100);
-  const totalTTC = totalHT + tva;
+  const calculsFiscaux = calculerRetenueFacture({
+    lignes: doc.lignes,
+    retenue_garantie_pct: doc.kind === "facture" ? (doc.retenue_garantie_pct ?? 0) : 0,
+    tva_defaut_pct: doc.tva_pct,
+    autoliquidation_tva: Boolean(doc.autoliquidation_tva),
+    autoriser_negatif: doc.kind === "facture" && doc.type_facture === "avoir",
+  });
+  const totalHT = calculsFiscaux.total_ht;
+  const totalTTC = calculsFiscaux.total_ttc;
+  const montantRetenueTtc =
+    doc.montant_retenue_ttc !== undefined && doc.montant_retenue_ttc !== null
+      ? doc.montant_retenue_ttc
+      : calculsFiscaux.montant_retenue_ttc;
+  const netAPayerTtc =
+    doc.net_a_payer_ttc !== undefined && doc.net_a_payer_ttc !== null
+      ? doc.net_a_payer_ttc
+      : calculsFiscaux.net_a_payer_ttc;
   const acompte = doc.acompte_pct ? totalTTC * (doc.acompte_pct / 100) : null;
 
-  const titre = doc.kind === "devis" ? "DEVIS" : "FACTURE";
+  const titre =
+    doc.kind === "devis"
+      ? "DEVIS"
+      : doc.type_facture === "avoir"
+        ? "AVOIR"
+        : "FACTURE";
+  const sirenClientAffiche = doc.siren_client || client.siren_client || null;
   const logoUrl = entreprise.logo_url || "/logo-bna.png";
 
   const nomAssurance = entreprise.assurance_nom || entreprise.assurance || "AXA Courtage / SMABTP";
@@ -163,6 +197,11 @@ export default function DocumentPDF({
               )}
               {client.tel && <p>Tél : {client.tel}</p>}
               {client.email && <p>Email : {client.email}</p>}
+              {sirenClientAffiche && (
+                <p className="font-mono text-[11px] font-semibold text-slate-800 pt-0.5">
+                  SIREN : {sirenClientAffiche}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -226,12 +265,28 @@ export default function DocumentPDF({
               <span>Total HT</span>
               <span className="font-semibold">{fmtEuro(totalHT)}</span>
             </div>
-            <div className="flex justify-between text-slate-700">
-              <span>TVA ({doc.tva_pct} %)</span>
-              <span className="font-semibold">{fmtEuro(tva)}</span>
-            </div>
+            {calculsFiscaux.tranches.length > 0 ? (
+              calculsFiscaux.tranches.map((tranche) => (
+                <div key={tranche.taux_tva} className="flex justify-between text-slate-700">
+                  <span>
+                    {tranche.taux_tva === 0
+                      ? "TVA 0 % (Autoliquidation / Exonéré)"
+                      : `TVA (${tranche.taux_tva} %)`}
+                    {calculsFiscaux.tranches.length > 1
+                      ? ` sur ${fmtEuro(tranche.base_ht)}`
+                      : ""}
+                  </span>
+                  <span className="font-semibold">{fmtEuro(tranche.montant_tva)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="flex justify-between text-slate-700">
+                <span>TVA ({doc.tva_pct} %)</span>
+                <span className="font-semibold">{fmtEuro(0)}</span>
+              </div>
+            )}
             {/* Affichage différencié selon présence de Retenue de Garantie */}
-            {doc.kind === "facture" && (doc.montant_retenue_ttc ?? 0) > 0 ? (
+            {doc.kind === "facture" && montantRetenueTtc > 0 ? (
               <>
                 <div className="flex justify-between rounded-lg bg-slate-100 px-2.5 py-1.5 text-slate-700 font-medium text-[11px]">
                   <span>TOTAL TTC</span>
@@ -239,12 +294,12 @@ export default function DocumentPDF({
                 </div>
                 <div className="flex justify-between text-amber-700 font-semibold px-2.5 text-[11px]">
                   <span>Retenue de garantie ({doc.retenue_garantie_pct ?? 5} %)</span>
-                  <span className="font-mono">-{fmtEuro(doc.montant_retenue_ttc ?? 0)}</span>
+                  <span className="font-mono">-{fmtEuro(montantRetenueTtc)}</span>
                 </div>
                 <div className="flex justify-between rounded-xl bg-slate-800 px-3.5 py-2.5 font-black text-sm text-slate-100 shadow-md">
                   <span className="text-slate-100">NET À PAYER TTC</span>
                   <span className="text-amber-400 font-mono font-black text-base">
-                    {fmtEuro(doc.net_a_payer_ttc ?? (totalTTC - (doc.montant_retenue_ttc ?? 0)))}
+                    {fmtEuro(netAPayerTtc)}
                   </span>
                 </div>
               </>
@@ -266,8 +321,33 @@ export default function DocumentPDF({
                 <span className="font-semibold text-slate-900">{new Date(doc.echeance).toLocaleDateString("fr-FR")}</span>
               </div>
             )}
+            {doc.kind === "facture" &&
+              doc.type_facture !== "avoir" &&
+              (doc.total_regle_ttc ?? 0) > 0 && (
+                <>
+                  <div className="flex justify-between text-emerald-700 text-[11px] pt-1 font-semibold">
+                    <span>Déjà réglé</span>
+                    <span className="font-mono">-{fmtEuro(doc.total_regle_ttc ?? 0)}</span>
+                  </div>
+                  <div className="flex justify-between rounded-lg bg-slate-100 px-2.5 py-1.5 text-slate-900 font-bold text-xs">
+                    <span>Reste à encaisser TTC</span>
+                    <span className="font-mono">
+                      {fmtEuro(
+                        doc.reste_a_encaisser_ttc ??
+                          Math.max(0, netAPayerTtc - (doc.total_regle_ttc ?? 0))
+                      )}
+                    </span>
+                  </div>
+                </>
+              )}
           </div>
         </div>
+
+        {doc.autoliquidation_tva && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-950">
+            Autoliquidation de la TVA par le preneur — Article 283-2 nonies du Code Général des Impôts
+          </div>
+        )}
 
         {/* Coordonnées bancaires pour les factures uniquement */}
         {doc.kind === "facture" && (

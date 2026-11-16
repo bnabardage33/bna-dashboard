@@ -4,7 +4,13 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import type { ResultatCalculTerrasse } from "@/lib/terrasse/types";
 import { fmtEuro } from "@/lib/financeCalculs";
-import { ShoppingCart, PackageCheck, Layers, Ruler } from "lucide-react";
+import { ShoppingCart, PackageCheck, Layers, Ruler, FileText } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { chargerCadencesTempsPose } from "@/lib/tempsPoseCalcul";
+import {
+  ajouterMainOeuvreTerrasse,
+  convertirChiffrageTerrasseEnLignesDevis,
+} from "@/lib/terrasse/calculs";
 
 interface TerrasseQuantitatifTableProps {
   resultat: ResultatCalculTerrasse;
@@ -13,6 +19,7 @@ interface TerrasseQuantitatifTableProps {
 }
 
 const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
+const CLE_PREFILL_DEVIS_TERRASSE = "bna_prefill_devis_terrasse";
 
 export default function TerrasseQuantitatifTable({
   resultat,
@@ -20,6 +27,36 @@ export default function TerrasseQuantitatifTable({
   chantierNom,
 }: TerrasseQuantitatifTableProps) {
   const router = useRouter();
+
+  const handleGenererDevisClient = async () => {
+    try {
+      const cadences = await chargerCadencesTempsPose(supabase);
+      const resultatAvecMo = ajouterMainOeuvreTerrasse(resultat, cadences);
+      const lignesDevis = convertirChiffrageTerrasseEnLignesDevis(resultatAvecMo);
+      const objet = `Terrasse ${resultat.terrasseMobile?.active ? "& Terrasse Mobile " : ""}— ${resultat.surfaceNetteM2} m²`;
+
+      localStorage.setItem(
+        CLE_PREFILL_DEVIS_TERRASSE,
+        JSON.stringify({
+          chantierId: chantierId || "",
+          chantierNom: chantierNom || "",
+          objet,
+          typeTravaux: resultat.terrasseMobile?.active
+            ? "Terrasse & Terrasse Mobile"
+            : "Terrasse & Platelage",
+          surfaceM2: resultat.surfaceNetteM2,
+          lignes: lignesDevis,
+        })
+      );
+
+      const url = chantierId
+        ? `/bureau/devis-factures?chantier_id=${encodeURIComponent(chantierId)}&source=terrasse`
+        : "/bureau/devis-factures?source=terrasse";
+      router.push(url);
+    } catch (e) {
+      console.error("Erreur pré-remplissage devis terrasse :", e);
+    }
+  };
 
   const handleCreerCommande = () => {
     // Préparer les lignes pour la commande fournisseur (exclusion formelle des prestations de main-d'œuvre)
@@ -241,13 +278,24 @@ export default function TerrasseQuantitatifTable({
             </p>
           </div>
 
-          <button
-            onClick={handleCreerCommande}
-            className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-3.5 py-2 text-xs font-bold text-white transition shadow-xs"
-          >
-            <ShoppingCart size={14} />
-            Créer le Bon de Commande Fournisseur
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleGenererDevisClient}
+              className="flex items-center gap-1.5 rounded-xl border border-[#23272B] bg-[#23272B] hover:bg-[#343A40] px-3.5 py-2 text-xs font-bold text-white transition shadow-xs"
+            >
+              <FileText size={14} />
+              Générer un devis client
+            </button>
+            <button
+              type="button"
+              onClick={handleCreerCommande}
+              className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-3.5 py-2 text-xs font-bold text-white transition shadow-xs"
+            >
+              <ShoppingCart size={14} />
+              Créer le Bon de Commande Fournisseur
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">

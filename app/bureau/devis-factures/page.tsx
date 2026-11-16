@@ -26,7 +26,20 @@ import {
   chantierIdDepuisRecherche,
   planPreselectionDevis,
 } from "@/lib/devisPreselection";
-import { calculerDevis, CoutType } from "@/lib/devisCalcul";
+import {
+  calculerDevis,
+  construireLignesDeductionFacturesAnterieures,
+  CoutType,
+} from "@/lib/devisCalcul";
+import {
+  calculerTerrasse,
+  convertirChiffrageTerrasseEnLignesDevis,
+} from "@/lib/terrasse/calculs";
+import { chargerCadencesTempsPose } from "@/lib/tempsPoseCalcul";
+import type {
+  ChantierTerrasseConfig,
+  ChantierTerrasseReservation,
+} from "@/lib/terrasse/types";
 import {
   MATERIAU_STRUCTUREL_DEFAUT,
   MOYEN_ACCES_DEFAUT,
@@ -61,6 +74,7 @@ type Client = {
   ville: string | null;
   tel: string | null;
   email: string | null;
+  siren_client?: string | null;
 };
 
 type Ligne = {
@@ -90,6 +104,8 @@ type Devis = {
   statut: string;
   lignes: Ligne[];
   tva_pct: number;
+  autoliquidation_tva?: boolean;
+  siren_client?: string | null;
   delai_jours: number | null;
   acompte_pct: number | null;
   retenue_garantie_pct?: number | null;
@@ -183,6 +199,8 @@ function DevisContenu() {
   const [acompte, setAcompte] = useState(30);
   const [retenueGarantie, setRetenueGarantie] = useState(0);
   const [tva, setTva] = useState(10);
+  const [autoliquidationTva, setAutoliquidationTva] = useState(false);
+  const [sirenClient, setSirenClient] = useState("");
   const [lignes, setLignes] = useState<Ligne[]>([{ ...LIGNE_VIDE }]);
   const [profilRevenu, setProfilRevenu] = useState<ProfilRevenu>("aucun");
   const [promptIA, setPromptIA] = useState("");
@@ -282,6 +300,76 @@ function DevisContenu() {
       annule = true;
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      const brut = localStorage.getItem("bna_prefill_devis_terrasse");
+      if (!brut) return;
+      const data = JSON.parse(brut) as {
+        objet?: string;
+        typeTravaux?: string;
+        surfaceM2?: number;
+        lignes?: Ligne[];
+      };
+      if (Array.isArray(data.lignes) && data.lignes.length > 0) {
+        setLignes(data.lignes);
+        if (data.objet) setObjet(data.objet);
+        if (data.typeTravaux) setTypeTravaux(data.typeTravaux);
+        if (typeof data.surfaceM2 === "number" && data.surfaceM2 > 0) {
+          setSurfacePonctuelle(String(data.surfaceM2));
+        }
+        setModalOuvert(true);
+      }
+      localStorage.removeItem("bna_prefill_devis_terrasse");
+    } catch (e) {
+      console.error("Erreur lecture prefill devis terrasse :", e);
+    }
+  }, []);
+
+  async function importerChiffrageTerrasse(idChantier: string) {
+    if (!idChantier) return;
+    const { data: terrasseRow, error } = await supabase
+      .from("chantier_terrasses")
+      .select("*")
+      .eq("chantier_id", idChantier)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !terrasseRow) {
+      afficherToast("Aucune configuration terrasse trouvée pour ce chantier.");
+      return;
+    }
+
+    const { data: reservationsData } = await supabase
+      .from("chantier_terrasse_reservations")
+      .select("*")
+      .eq("terrasse_id", terrasseRow.id);
+
+    const cadences = await chargerCadencesTempsPose(supabase);
+    const resultat = calculerTerrasse(
+      terrasseRow as unknown as ChantierTerrasseConfig,
+      (reservationsData ?? []) as unknown as ChantierTerrasseReservation[],
+      null,
+      { inclureMainOeuvre: true, cadences },
+    );
+    const lignesTerrasse = convertirChiffrageTerrasseEnLignesDevis(resultat);
+    if (lignesTerrasse.length > 0) {
+      setLignes(lignesTerrasse as Ligne[]);
+      if (!objet) {
+        setObjet(
+          `Terrasse ${resultat.terrasseMobile?.active ? "& Terrasse Mobile " : ""}— ${resultat.surfaceNetteM2} m²`,
+        );
+      }
+      if (!typeTravaux) {
+        setTypeTravaux(
+          resultat.terrasseMobile?.active
+            ? "Terrasse & Terrasse Mobile"
+            : "Terrasse & Platelage",
+        );
+      }
+      afficherToast(`✓ Chiffrage terrasse importé (${lignesTerrasse.length} lignes dont main-d'œuvre)`);
+    }
+  }
 
 
 
@@ -524,7 +612,9 @@ function DevisContenu() {
         delai_jours: delai,
         acompte_pct: acompte,
         retenue_garantie_pct: retenueGarantie,
-        tva_pct: tva,
+        tva_pct: autoliquidationTva ? 0 : tva,
+        autoliquidation_tva: autoliquidationTva,
+        siren_client: sirenClient.trim() || null,
         surface_m2: Number.isFinite(ponctuelle) && ponctuelle > 0 ? ponctuelle : null,
         lignes: lignesNettoyees,
       }),
@@ -543,6 +633,8 @@ function DevisContenu() {
     setObjet("");
     setAdresseChantier("");
     setTypeTravaux("");
+    setAutoliquidationTva(false);
+    setSirenClient("");
     setLignes([{ ...LIGNE_VIDE }]);
     setSurfacePonctuelle("");
     setRetenueGarantie(0);
@@ -592,29 +684,20 @@ function DevisContenu() {
       // On copie les lignes chiffrées uniquement (jamais les « À CHIFFRER »).
       lignesFacture = d.lignes.filter((l) => !l.a_chiffrer);
 
-      // Récupérer les factures d'acompte existantes pour déduction fiscale
-      const { data: acomptesExistants } = await supabase
+      // Récupérer les factures d'acompte ET de situation non annulées pour déduction complète (ventilation par TVA)
+      const { data: facturesAnterieures } = await supabase
         .from("factures")
-        .select("numero, lignes")
+        .select("numero, type_facture, statut, tva_pct, lignes")
         .eq("devis_id", d.id)
-        .eq("type_facture", "acompte");
-        
-      if (acomptesExistants && acomptesExistants.length > 0) {
-        for (const ac of acomptesExistants) {
-          const lignesAc = (ac.lignes as unknown as Ligne[]) || [];
-          const mntAcompteHT = lignesAc.reduce((sum: number, l: Ligne) => sum + ((l.qte || 0) * (l.pu_ht || 0)), 0);
-          lignesFacture.push({
-            designation: `Déduction de la facture d'acompte n°${ac.numero}`,
-            description: "",
-            qte: -1,
-            unite: "forfait",
-            pu_ht: mntAcompteHT,
-            catalogue_id: null,
-            pu_revient: null,
-            type_cout: null,
-            a_chiffrer: false,
-          });
-        }
+        .in("type_facture", ["acompte", "situation"])
+        .neq("statut", "annulee");
+
+      if (facturesAnterieures && facturesAnterieures.length > 0) {
+        const deductions = construireLignesDeductionFacturesAnterieures(
+          facturesAnterieures,
+          d.tva_pct,
+        );
+        lignesFacture.push(...(deductions as Ligne[]));
       }
     } else if (billType === "acompte") {
       // Ligne unique d'acompte
@@ -1312,25 +1395,36 @@ function DevisContenu() {
               </select>
 
               {chantiersClient.length > 0 && (
-                <select
-                  value={chantierId}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    setChantierId(id);
-                    // Auto-remplir l'adresse si elle est vide
-                    const ch = chantiersClient.find(c => c.id === id);
-                    if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
-                  }}
-                  className="w-full min-h-[42px] rounded-xl border border-red-700 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
-                  aria-label="Chantier"
-                >
-                  <option value="">-- Lier à un chantier (optionnel) --</option>
-                  {chantiersClient.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nom} {c.code_acces ? `· Code: ${c.code_acces}` : ""}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    value={chantierId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setChantierId(id);
+                      // Auto-remplir l'adresse si elle est vide
+                      const ch = chantiersClient.find(c => c.id === id);
+                      if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
+                    }}
+                    className="flex-1 w-full min-h-[42px] rounded-xl border border-red-700 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                    aria-label="Chantier"
+                  >
+                    <option value="">-- Lier à un chantier (optionnel) --</option>
+                    {chantiersClient.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nom} {c.code_acces ? `· Code: ${c.code_acces}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {chantierId && (
+                    <button
+                      type="button"
+                      onClick={() => importerChiffrageTerrasse(chantierId)}
+                      className="shrink-0 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                    >
+                      Importer chiffrage Terrasse
+                    </button>
+                  )}
+                </div>
               )}
 
               {(chantierId || chantiersClient.length > 0) && (
@@ -1429,9 +1523,10 @@ function DevisContenu() {
                   <input id="chp-tva"
                     type="number"
                     step="0.1"
-                    value={tva}
+                    disabled={autoliquidationTva}
+                    value={autoliquidationTva ? 0 : tva}
                     onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                    className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none disabled:opacity-50 sm:py-2 sm:text-sm sm:min-h-0"
                   />
                 </div>
                 <div>
@@ -1447,6 +1542,32 @@ function DevisContenu() {
                     <option value="violet" className="text-gray-900">Violet (Interm.)</option>
                     <option value="rose" className="text-gray-900">Rose (Aisé)</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-200">
+                  <input
+                    type="checkbox"
+                    checked={autoliquidationTva}
+                    onChange={(e) => {
+                      const coche = e.target.checked;
+                      setAutoliquidationTva(coche);
+                      if (coche) setTva(0);
+                      else if (tva === 0) setTva(10);
+                    }}
+                    className="rounded border-slate-600 text-amber-500 focus:ring-amber-500"
+                  />
+                  <span>Sous-traitance — Autoliquidation de TVA</span>
+                </label>
+                <div>
+                  <input
+                    value={sirenClient}
+                    onChange={(e) => setSirenClient(e.target.value)}
+                    placeholder="SIREN client (B2B, optionnel — 9 chiffres)"
+                    maxLength={20}
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none"
+                  />
                 </div>
               </div>
 
@@ -1728,6 +1849,8 @@ function DevisContenu() {
                     pu_ht: typeof l.pu_ht === "number" && l.pu_ht > 0 ? l.pu_ht : 0,
                   })),
                 tva_pct: apercu.tva_pct,
+                autoliquidation_tva: apercu.autoliquidation_tva,
+                siren_client: apercu.siren_client,
                 acompte_pct: apercu.acompte_pct,
                 delai_jours: apercu.delai_jours,
               }}

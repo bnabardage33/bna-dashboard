@@ -9,11 +9,17 @@ import DocumentPDF from "@/components/DocumentPDF";
 import SignaturePad from "@/components/SignaturePad";
 import LettreRelancePDF, { RelanceData } from "@/components/LettreRelancePDF";
 import { AlertCircle, PenTool } from "lucide-react";
-import { prochainNumeroFacture } from "@/lib/numerotationDocuments";
+import {
+  prochainNumeroFacture,
+  prochainNumeroAvoir,
+} from "@/lib/numerotationDocuments";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
-import { calculerRetenueFacture } from "@/lib/retenueCalculs";
+import {
+  calculerRetenueFacture,
+  calculerSoldeRestantDu,
+} from "@/lib/retenueCalculs";
 
 type CatalogueOuvrage = {
   id: string;
@@ -33,6 +39,7 @@ type Client = {
   ville: string | null;
   tel: string | null;
   email: string | null;
+  siren_client?: string | null;
 };
 
 type Ligne = { designation: string; description?: string; qte: number; unite: string; pu_ht: number };
@@ -47,9 +54,20 @@ type Devis = {
   type_travaux: string | null;
   lignes: Ligne[];
   tva_pct: number;
+  autoliquidation_tva?: boolean;
+  siren_client?: string | null;
   statut: string;
   devis_parent_id?: string | null;
   is_avenant?: boolean;
+};
+
+type ReglementFacture = {
+  id: string;
+  facture_id: string;
+  montant_ttc: number;
+  date_reglement: string;
+  mode_paiement: string;
+  reference: string | null;
 };
 
 type Facture = {
@@ -58,15 +76,18 @@ type Facture = {
   client_id: string;
   chantier_id?: string | null;
   devis_id: string | null;
+  facture_origine_id?: string | null;
   objet: string | null;
   adresse_chantier: string | null;
   type_travaux: string | null;
   date_emission: string;
   echeance: string | null;
   statut: string;
-  type_facture: "acompte" | "situation" | "solde" | "totale";
+  type_facture: "acompte" | "situation" | "solde" | "totale" | "avoir";
   lignes: Ligne[];
   tva_pct: number;
+  autoliquidation_tva?: boolean;
+  siren_client?: string | null;
   retenue_garantie_pct?: number | null;
   montant_retenue_ht?: number | null;
   montant_retenue_ttc?: number | null;
@@ -118,18 +139,28 @@ export default function FacturesPage() {
   const [appliquerRetenue, setAppliquerRetenue] = useState(false);
   const [tauxRetenue, setTauxRetenue] = useState(5.0);
   const [chantierIdManuel, setChantierIdManuel] = useState<string | null>(null);
+  const [autoliquidationTva, setAutoliquidationTva] = useState(false);
+  const [sirenClient, setSirenClient] = useState("");
+  const [reglementsParFacture, setReglementsParFacture] = useState<Record<string, ReglementFacture[]>>({});
+  const [factureReglement, setFactureReglement] = useState<Facture | null>(null);
+  const [montantReglement, setMontantReglement] = useState("");
+  const [dateReglement, setDateReglement] = useState(() => new Date().toISOString().split("T")[0]);
+  const [modePaiement, setModePaiement] = useState("virement");
+  const [referenceReglement, setReferenceReglement] = useState("");
+  const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
 
   const calculFacture = useMemo(() => {
     return calculerRetenueFacture({
       lignes,
       retenue_garantie_pct: appliquerRetenue ? tauxRetenue : 0,
       tva_defaut_pct: tva,
+      autoliquidation_tva: autoliquidationTva,
     });
-  }, [lignes, appliquerRetenue, tauxRetenue, tva]);
+  }, [lignes, appliquerRetenue, tauxRetenue, tva, autoliquidationTva]);
 
   async function fetchTout() {
     setLoading(true);
-    const [facturesRes, clientsRes, devisRes, settingsRes, catRes] = await Promise.all([
+    const [facturesRes, clientsRes, devisRes, settingsRes, catRes, reglementsRes] = await Promise.all([
       supabase
         .from("factures")
         .select("*, clients(*)")
@@ -138,6 +169,10 @@ export default function FacturesPage() {
       supabase.from("devis").select("*").eq("statut", "accepte"),
       supabase.from("entreprise_settings").select("*").eq("id", 1).single(),
       supabase.from("catalogue_ouvrages").select("*").order("designation"),
+      supabase
+        .from("reglements_factures")
+        .select("*")
+        .order("date_reglement", { ascending: true }),
     ]);
     if (facturesRes.error) console.error(facturesRes.error);
     else setFactures(facturesRes.data as unknown as Facture[]);
@@ -145,6 +180,14 @@ export default function FacturesPage() {
     if (catRes && catRes.data) setCatalogue(catRes.data as CatalogueOuvrage[]);
     if (devisRes.data) setDevisAcceptes(devisRes.data as unknown as Devis[]);
     if (settingsRes.data) setEntreprise(settingsRes.data as Entreprise);
+    if (reglementsRes && !reglementsRes.error && reglementsRes.data) {
+      const grouped: Record<string, ReglementFacture[]> = {};
+      for (const r of reglementsRes.data as ReglementFacture[]) {
+        if (!grouped[r.facture_id]) grouped[r.facture_id] = [];
+        grouped[r.facture_id].push(r);
+      }
+      setReglementsParFacture(grouped);
+    }
     setLoading(false);
   }
 
@@ -182,7 +225,9 @@ export default function FacturesPage() {
     setObjet(d.objet ?? "");
     setAdresseChantier(d.adresse_chantier ?? "");
     setTypeTravaux(d.type_travaux ?? "");
-    setTva(d.tva_pct);
+    setAutoliquidationTva(Boolean(d.autoliquidation_tva));
+    setTva(d.autoliquidation_tva ? 0 : d.tva_pct);
+    setSirenClient(d.siren_client ?? "");
     
     const lignesCumulees = [...d.lignes, ...avenants.flatMap(a => a.lignes)];
     setLignes(lignesCumulees.length ? lignesCumulees : [{ ...LIGNE_VIDE }]);
@@ -308,7 +353,9 @@ export default function FacturesPage() {
         type_facture: typeFacture,
         statut: "brouillon",
         echeance: echeance || null,
-        tva_defaut_pct: tva,
+        tva_defaut_pct: autoliquidationTva ? 0 : tva,
+        autoliquidation_tva: autoliquidationTva,
+        siren_client: sirenClient.trim() || null,
         retenue_garantie_pct: appliquerRetenue ? tauxRetenue : 0,
         lignes,
       }),
@@ -331,6 +378,8 @@ export default function FacturesPage() {
     setAppliquerRetenue(false);
     setTauxRetenue(5.0);
     setChantierIdManuel(null);
+    setAutoliquidationTva(false);
+    setSirenClient("");
     setLignes([{ ...LIGNE_VIDE }]);
     fetchTout();
   }
@@ -358,6 +407,105 @@ export default function FacturesPage() {
       return;
     }
     fetchTout();
+  }
+
+  async function emettreAvoir(f: Facture) {
+    if (
+      !confirm(
+        `Émettre un avoir comptable d'annulation pour la facture ${f.numero} ?\nLa facture initiale passera automatiquement au statut « Annulée ».`
+      )
+    ) {
+      return;
+    }
+
+    let numeroAvoir: string;
+    try {
+      numeroAvoir = await prochainNumeroAvoir();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur de numérotation AVO";
+      alert("Impossible de générer le numéro d'avoir : " + msg);
+      return;
+    }
+
+    const lignesAvoir = f.lignes.map((l) => ({
+      ...l,
+      pu_ht: -Math.abs(l.pu_ht),
+    }));
+
+    const res = await fetch("/api/factures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        numero: numeroAvoir,
+        devis_id: f.devis_id,
+        facture_origine_id: f.id,
+        client_id: f.client_id,
+        chantier_id: f.chantier_id ?? null,
+        objet: `Avoir sur facture ${f.numero}${f.objet ? ` — ${f.objet}` : ""}`,
+        adresse_chantier: f.adresse_chantier,
+        type_travaux: f.type_travaux,
+        type_facture: "avoir",
+        statut: "emise",
+        tva_defaut_pct: f.autoliquidation_tva ? 0 : f.tva_pct,
+        autoliquidation_tva: Boolean(f.autoliquidation_tva),
+        siren_client: f.siren_client || null,
+        retenue_garantie_pct: f.retenue_garantie_pct || 0,
+        lignes: lignesAvoir,
+      }),
+    });
+
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.ok) {
+      alert("Erreur lors de l'émission de l'avoir : " + (json?.error || "Erreur serveur"));
+      return;
+    }
+    fetchTout();
+  }
+
+  function ouvrirModalReglement(f: Facture) {
+    const reglements = reglementsParFacture[f.id] || [];
+    const ht = f.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
+    const ttc = ht * (1 + f.tva_pct / 100);
+    const aRetenue = (f.retenue_garantie_pct ?? 0) > 0;
+    const netAPayer = f.net_a_payer_ttc ?? (aRetenue ? ttc - (f.montant_retenue_ttc ?? 0) : ttc);
+    const solde = calculerSoldeRestantDu(netAPayer, reglements);
+    setFactureReglement(f);
+    setMontantReglement(solde.reste_a_encaisser_ttc > 0 ? String(solde.reste_a_encaisser_ttc) : "");
+    setDateReglement(new Date().toISOString().split("T")[0]);
+    setModePaiement("virement");
+    setReferenceReglement("");
+  }
+
+  async function enregistrerReglement(e: React.FormEvent) {
+    e.preventDefault();
+    if (!factureReglement) return;
+    const montant = parseFloat(montantReglement.replace(",", "."));
+    if (!Number.isFinite(montant) || montant <= 0) {
+      alert("Veuillez saisir un montant strictement positif.");
+      return;
+    }
+    setEnregistrementEnCours(true);
+    try {
+      const res = await fetch(`/api/factures/${factureReglement.id}/reglements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          montant_ttc: montant,
+          date_reglement: dateReglement,
+          mode_paiement: modePaiement,
+          reference: referenceReglement.trim() || null,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        alert("Erreur : " + (json?.error || "Impossible d'enregistrer le règlement."));
+        return;
+      }
+      setFactureReglement(null);
+      await fetchTout();
+    } finally {
+      setEnregistrementEnCours(false);
+    }
   }
 
   function imprimer() {
@@ -419,6 +567,8 @@ export default function FacturesPage() {
             const aRetenue = (f.montant_retenue_ttc ?? 0) > 0;
             const netAPayer = f.net_a_payer_ttc ?? (aRetenue ? ttc - (f.montant_retenue_ttc ?? 0) : ttc);
             const nomClient = f.clients?.societe || f.clients?.nom || "Client direct";
+            const reglementsFacture = reglementsParFacture[f.id] || [];
+            const soldeFacture = calculerSoldeRestantDu(netAPayer, reglementsFacture);
 
             return (
               <div
@@ -448,10 +598,13 @@ export default function FacturesPage() {
 
                     <select
                       value={f.statut}
+                      disabled={f.statut === "annulee"}
                       onChange={(e) => changerStatut(f, e.target.value)}
-                      className={`rounded-xl border px-2.5 py-1 text-xs font-bold uppercase tracking-wider focus:outline-none ${
+                      className={`rounded-xl border px-2.5 py-1 text-xs font-bold uppercase tracking-wider focus:outline-none disabled:opacity-60 ${
                         f.statut === "payee"
                           ? "border-white/10 bg-white/5 text-gray-400"
+                          : f.statut === "annulee"
+                          ? "border-rose-500/30 bg-rose-950/20 text-rose-300"
                           : f.statut === "envoyee"
                           ? "border-white/10 bg-white/5 text-gray-400"
                           : "border-slate-600 bg-transparent text-gray-300"
@@ -461,7 +614,9 @@ export default function FacturesPage() {
                       <option value="brouillon" className="bg-transparent text-white">Brouillon</option>
                       <option value="en_attente" className="bg-transparent text-white">En attente</option>
                       <option value="envoyee" className="bg-transparent text-white">Envoyée</option>
+                      <option value="emise" className="bg-transparent text-white">Émise</option>
                       <option value="payee" className="bg-transparent text-white">Payée</option>
+                      <option value="annulee" className="bg-transparent text-white">Annulée</option>
                     </select>
                   </div>
 
@@ -487,9 +642,19 @@ export default function FacturesPage() {
                       </p>
                     </div>
                   </div>
+                  {f.type_facture !== "avoir" && f.statut !== "annulee" && soldeFacture.total_regle_ttc > 0 && (
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px]">
+                      <span className="text-emerald-300 font-semibold">
+                        Déjà réglé : <span className="font-mono">{fmtEuro(soldeFacture.total_regle_ttc)}</span>
+                      </span>
+                      <span className="text-amber-200 font-bold">
+                        Reste à encaisser : <span className="font-mono">{fmtEuro(soldeFacture.reste_a_encaisser_ttc)}</span>
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-3.5 flex items-center justify-between border-t border-white/10 pt-3">
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3">
                   <button
                     onClick={() => setApercu(f)}
                     className="rounded-xl border border-slate-600 bg-transparent px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E] flex items-center gap-1"
@@ -497,14 +662,36 @@ export default function FacturesPage() {
                     👁️ Aperçu Facture
                   </button>
 
-                  <button
-                    onClick={() => supprimerFacture(f)}
-                    className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
-                    aria-label="Supprimer la facture"
-                    title="Supprimer la facture"
-                  >
-                    🗑️
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {f.statut !== "annulee" && f.statut !== "payee" && f.type_facture !== "avoir" && (
+                      <button
+                        onClick={() => ouvrirModalReglement(f)}
+                        className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                        title="Enregistrer un règlement partiel ou total"
+                      >
+                        💶 Règlement
+                      </button>
+                    )}
+                    {f.statut !== "brouillon" && f.statut !== "annulee" && f.type_facture !== "avoir" && (
+                      <button
+                        onClick={() => emettreAvoir(f)}
+                        className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                        title="Émettre un avoir d'annulation (conformité comptable)"
+                      >
+                        ↩️ Émettre un avoir
+                      </button>
+                    )}
+                    {f.statut === "brouillon" && (
+                      <button
+                        onClick={() => supprimerFacture(f)}
+                        className="text-xs text-gray-500 hover:text-red-400 p-1.5 transition-colors"
+                        aria-label="Supprimer la facture"
+                        title="Supprimer la facture"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -640,9 +827,36 @@ export default function FacturesPage() {
                   <input id="chp-tva"
                     type="number"
                     step="0.1"
-                    value={tva}
+                    disabled={autoliquidationTva}
+                    value={autoliquidationTva ? 0 : tva}
                     onChange={(e) => setTva(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-200">
+                  <input
+                    type="checkbox"
+                    checked={autoliquidationTva}
+                    onChange={(e) => {
+                      const coche = e.target.checked;
+                      setAutoliquidationTva(coche);
+                      if (coche) setTva(0);
+                      else if (tva === 0) setTva(10);
+                    }}
+                    className="rounded border-slate-600 text-amber-500 focus:ring-amber-500"
+                  />
+                  <span>Sous-traitance — Autoliquidation de TVA</span>
+                </label>
+                <div>
+                  <input
+                    value={sirenClient}
+                    onChange={(e) => setSirenClient(e.target.value)}
+                    placeholder="SIREN client (B2B, optionnel — 9 chiffres)"
+                    maxLength={20}
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -808,6 +1022,136 @@ export default function FacturesPage() {
         </div>
       )}
 
+      {factureReglement && (
+        <div
+          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
+          onClick={() => setFactureReglement(null)}
+        >
+          <form
+            onSubmit={enregistrerReglement}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#1E1E1E] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-white/10 p-4">
+              <div>
+                <h2 className="text-base font-bold text-white">
+                  Règlements — {factureReglement.numero}
+                </h2>
+                <p className="text-xs text-gray-400">
+                  Enregistrer un encaissement partiel ou solder la facture
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFactureReglement(null)}
+                className="rounded-lg p-1.5 text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-4">
+              {(reglementsParFacture[factureReglement.id] || []).length > 0 && (
+                <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-3xs font-semibold uppercase text-gray-400">
+                    Règlements déjà enregistrés
+                  </p>
+                  {(reglementsParFacture[factureReglement.id] || []).map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between text-xs text-gray-200 border-b border-white/5 pb-1 last:border-0 last:pb-0"
+                    >
+                      <span>
+                        {new Date(r.date_reglement).toLocaleDateString("fr-FR")} · {r.mode_paiement}
+                        {r.reference ? ` (${r.reference})` : ""}
+                      </span>
+                      <span className="font-mono font-bold text-emerald-300">
+                        {fmtEuro(r.montant_ttc)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-3xs font-semibold uppercase text-gray-400">
+                    Montant TTC (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={montantReglement}
+                    onChange={(e) => setMontantReglement(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-3xs font-semibold uppercase text-gray-400">
+                    Date de règlement
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={dateReglement}
+                    onChange={(e) => setDateReglement(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-3xs font-semibold uppercase text-gray-400">
+                    Mode de paiement
+                  </label>
+                  <select
+                    value={modePaiement}
+                    onChange={(e) => setModePaiement(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-[#1E1E1E] px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                  >
+                    <option value="virement">Virement bancaire</option>
+                    <option value="cheque">Chèque</option>
+                    <option value="cb">Carte bancaire</option>
+                    <option value="especes">Espèces</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-3xs font-semibold uppercase text-gray-400">
+                    Référence (optionnel)
+                  </label>
+                  <input
+                    value={referenceReglement}
+                    onChange={(e) => setReferenceReglement(e.target.value)}
+                    placeholder="Ex: VIR-2026-04"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-white/10 p-4">
+              <button
+                type="button"
+                onClick={() => setFactureReglement(null)}
+                className="rounded-xl border border-slate-600 px-4 py-2 text-xs font-semibold text-gray-300"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={enregistrementEnCours}
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+              >
+                {enregistrementEnCours ? "Enregistrement..." : "Enregistrer le règlement"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {apercu && entreprise && (
         <div
           className="fixed inset-0 z-[210] pt-48 overflow-y-auto bg-black/70 p-4"
@@ -847,10 +1191,20 @@ export default function FacturesPage() {
                 lignes: apercu.lignes,
                 tva_pct: apercu.tva_pct,
                 type_facture: apercu.type_facture,
+                autoliquidation_tva: apercu.autoliquidation_tva,
+                siren_client: apercu.siren_client,
                 retenue_garantie_pct: apercu.retenue_garantie_pct,
                 montant_retenue_ht: apercu.montant_retenue_ht,
                 montant_retenue_ttc: apercu.montant_retenue_ttc,
                 net_a_payer_ttc: apercu.net_a_payer_ttc,
+                total_regle_ttc: calculerSoldeRestantDu(
+                  apercu.net_a_payer_ttc ?? 0,
+                  reglementsParFacture[apercu.id] || []
+                ).total_regle_ttc,
+                reste_a_encaisser_ttc: calculerSoldeRestantDu(
+                  apercu.net_a_payer_ttc ?? 0,
+                  reglementsParFacture[apercu.id] || []
+                ).reste_a_encaisser_ttc,
               }}
               entreprise={entreprise}
               client={

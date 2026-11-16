@@ -18,7 +18,7 @@
 | Remote | `origin/main` aligné sur HEAD ; une seule branche locale et distante (`main`) |
 | Arbre de travail | propre ; aucun stash |
 | Stack | Next.js `16.3.5` · React `19.2.8` · TypeScript `5.9.3` · Tailwind `4` · Vitest `4.1.11` · Node `24.x` |
-| Taille | 42 pages · **48** routes API · 62 migrations SQL locales · 137 fichiers sous `__tests__` · 1 fonction Edge |
+| Taille | 42 pages · **49** routes API · 62 migrations SQL locales · 137 fichiers sous `__tests__` · 1 fonction Edge |
 | Supabase | projet `onhygmsxfdjkcjjnhabo` ; inventaire/advisors consultés en lecture seule |
 | Vercel | dernier déploiement Production `READY` |
 
@@ -423,6 +423,7 @@ le trajet (cf. Module Déplacements).
 | `/api/chantiers/[id]/retenue-garantie/liberer` | Libération totale ou partielle de la retenue via RPC sécurisée |
 | `/api/factures` | Liste et création sécurisée de factures (situations, acomptes, solde) |
 | `/api/factures/[id]` | Détail, mise à jour et suppression d'une facture |
+| `/api/factures/[id]/reglements` | Liste et enregistrement des règlements partiels d'une facture |
 | `/api/factures/calculer` | Calcul financier d'une facture (lignes, TVA, acomptes déduits, retenue) |
 | `/api/search` | Recherche globale |
 | `/api/scrape` | Scraping produits fournisseurs (Cheerio) |

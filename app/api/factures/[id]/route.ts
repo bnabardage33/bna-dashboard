@@ -120,7 +120,7 @@ export async function PATCH(
     const updatePayload: TablesUpdate<"factures"> = {};
 
     if ("statut" in body && typeof body.statut === "string") {
-      const statutValide = ["brouillon", "emise", "payee", "annulee"];
+      const statutValide = ["brouillon", "en_attente", "envoyee", "emise", "payee", "annulee"];
       if (!statutValide.includes(body.statut)) {
         return NextResponse.json(
           { ok: false, error: `Statut invalide : ${body.statut}` },

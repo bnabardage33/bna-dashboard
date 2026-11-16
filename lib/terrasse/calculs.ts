@@ -18,6 +18,7 @@ import {
   calculerTempsPoseTerrasse,
   type CadencesTempsPose,
 } from "@/lib/tempsPoseCalcul";
+import type { LigneDevis } from "@/lib/devisCalcul";
 
 export interface OptionsCalculTerrasse {
   inclureMainOeuvre?: boolean;
@@ -669,7 +670,7 @@ export function calculerTerrasse(
   return resultatBase;
 }
 
-function ajouterMainOeuvreTerrasse(
+export function ajouterMainOeuvreTerrasse(
   resultat: ResultatCalculTerrasse,
   cadencesPartiel?: Partial<CadencesTempsPose>,
 ): ResultatCalculTerrasse {
@@ -733,4 +734,30 @@ function ajouterMainOeuvreTerrasse(
       totalHt,
     },
   };
+}
+
+/**
+ * Convertit un chiffrage Terrasse (fournitures, terrasse mobile, motorisation MOT-01..05
+ * et main-d'œuvre MO-TER-01..04) en lignes de devis exploitables par le module Devis.
+ */
+export function convertirChiffrageTerrasseEnLignesDevis(
+  resultat: ResultatCalculTerrasse,
+): LigneDevis[] {
+  return (resultat.chiffrage?.lignes || []).map((l) => {
+    const isMo =
+      l.categorie === "Main-d'œuvre" ||
+      l.code.toUpperCase().startsWith("MO-") ||
+      l.unite.toLowerCase() === "h";
+    return {
+      catalogue_id: null,
+      designation: l.designation,
+      description: `[${l.code}] ${l.categorie}`,
+      qte: l.quantite,
+      unite: l.unite,
+      pu_ht: l.prixUnitaireHt,
+      pu_revient: null,
+      type_cout: isMo ? "main_oeuvre" : "matiere",
+      a_chiffrer: false,
+    };
+  });
 }

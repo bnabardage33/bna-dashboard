@@ -1184,6 +1184,7 @@ export type Database = {
           entreprise_id: string
           id: string
           nom: string
+          siren_client: string | null
           siret: string | null
           societe: string | null
           tel: string | null
@@ -1200,6 +1201,7 @@ export type Database = {
           entreprise_id: string
           id?: string
           nom: string
+          siren_client?: string | null
           siret?: string | null
           societe?: string | null
           tel?: string | null
@@ -1216,6 +1218,7 @@ export type Database = {
           entreprise_id?: string
           id?: string
           nom?: string
+          siren_client?: string | null
           siret?: string | null
           societe?: string | null
           tel?: string | null
@@ -1378,6 +1381,7 @@ export type Database = {
         Row: {
           acompte_pct: number | null
           adresse_chantier: string | null
+          autoliquidation_tva: boolean
           chantier_id: string | null
           client_id: string | null
           cout_main_oeuvre_ht: number
@@ -1402,6 +1406,7 @@ export type Database = {
           signature_image: string | null
           signature_ip: string | null
           signature_phone: string | null
+          siren_client: string | null
           statut: string
           surface_m2: number | null
           telephone_source: string | null
@@ -1413,6 +1418,7 @@ export type Database = {
         Insert: {
           acompte_pct?: number | null
           adresse_chantier?: string | null
+          autoliquidation_tva?: boolean
           chantier_id?: string | null
           client_id?: string | null
           cout_main_oeuvre_ht?: number
@@ -1437,6 +1443,7 @@ export type Database = {
           signature_image?: string | null
           signature_ip?: string | null
           signature_phone?: string | null
+          siren_client?: string | null
           statut?: string
           surface_m2?: number | null
           telephone_source?: string | null
@@ -1448,6 +1455,7 @@ export type Database = {
         Update: {
           acompte_pct?: number | null
           adresse_chantier?: string | null
+          autoliquidation_tva?: boolean
           chantier_id?: string | null
           client_id?: string | null
           cout_main_oeuvre_ht?: number
@@ -1472,6 +1480,7 @@ export type Database = {
           signature_image?: string | null
           signature_ip?: string | null
           signature_phone?: string | null
+          siren_client?: string | null
           statut?: string
           surface_m2?: number | null
           telephone_source?: string | null
@@ -2205,6 +2214,7 @@ export type Database = {
       factures: {
         Row: {
           adresse_chantier: string | null
+          autoliquidation_tva: boolean
           chantier_id: string | null
           client_id: string | null
           created_at: string | null
@@ -2212,6 +2222,7 @@ export type Database = {
           devis_id: string | null
           echeance: string | null
           entreprise_id: string
+          facture_origine_id: string | null
           id: string
           lignes: Json
           montant_retenue_ht: number
@@ -2220,6 +2231,7 @@ export type Database = {
           numero: string
           objet: string | null
           retenue_garantie_pct: number
+          siren_client: string | null
           statut: string
           tva_pct: number
           type_facture: string
@@ -2227,6 +2239,7 @@ export type Database = {
         }
         Insert: {
           adresse_chantier?: string | null
+          autoliquidation_tva?: boolean
           chantier_id?: string | null
           client_id?: string | null
           created_at?: string | null
@@ -2234,6 +2247,7 @@ export type Database = {
           devis_id?: string | null
           echeance?: string | null
           entreprise_id: string
+          facture_origine_id?: string | null
           id?: string
           lignes?: Json
           montant_retenue_ht?: number
@@ -2242,6 +2256,7 @@ export type Database = {
           numero: string
           objet?: string | null
           retenue_garantie_pct?: number
+          siren_client?: string | null
           statut?: string
           tva_pct?: number
           type_facture?: string
@@ -2249,6 +2264,7 @@ export type Database = {
         }
         Update: {
           adresse_chantier?: string | null
+          autoliquidation_tva?: boolean
           chantier_id?: string | null
           client_id?: string | null
           created_at?: string | null
@@ -2256,6 +2272,7 @@ export type Database = {
           devis_id?: string | null
           echeance?: string | null
           entreprise_id?: string
+          facture_origine_id?: string | null
           id?: string
           lignes?: Json
           montant_retenue_ht?: number
@@ -2264,6 +2281,7 @@ export type Database = {
           numero?: string
           objet?: string | null
           retenue_garantie_pct?: number
+          siren_client?: string | null
           statut?: string
           tva_pct?: number
           type_facture?: string
@@ -2296,6 +2314,61 @@ export type Database = {
             columns: ["entreprise_id"]
             isOneToOne: false
             referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_facture_origine_id_fkey"
+            columns: ["facture_origine_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reglements_factures: {
+        Row: {
+          created_at: string
+          date_reglement: string
+          entreprise_id: string
+          facture_id: string
+          id: string
+          mode_paiement: string
+          montant_ttc: number
+          reference: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_reglement?: string
+          entreprise_id: string
+          facture_id: string
+          id?: string
+          mode_paiement?: string
+          montant_ttc: number
+          reference?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_reglement?: string
+          entreprise_id?: string
+          facture_id?: string
+          id?: string
+          mode_paiement?: string
+          montant_ttc?: number
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reglements_factures_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reglements_factures_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
             referencedColumns: ["id"]
           },
         ]
@@ -3724,6 +3797,13 @@ export type Database = {
         | { Args: never; Returns: string }
         | { Args: { p_entreprise_id: string }; Returns: string }
       generer_prochain_numero_dev_ctx: {
+        Args: { p_entreprise_id: string }
+        Returns: string
+      }
+      generer_prochain_numero_avo:
+        | { Args: never; Returns: string }
+        | { Args: { p_entreprise_id: string }; Returns: string }
+      generer_prochain_numero_avo_ctx: {
         Args: { p_entreprise_id: string }
         Returns: string
       }

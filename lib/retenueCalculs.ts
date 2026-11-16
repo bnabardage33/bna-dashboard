@@ -59,6 +59,8 @@ export interface OptionsCalculRetenue {
   lignes: LigneFacturation[];
   retenue_garantie_pct?: number | null;
   tva_defaut_pct?: number | null;
+  autoliquidation_tva?: boolean | null;
+  autoriser_negatif?: boolean | null;
 }
 
 /**
@@ -113,7 +115,13 @@ export function validerTauxRetenue(taux: unknown): number {
 export function calculerRetenueFacture(
   options: OptionsCalculRetenue
 ): ResultatCalculRetenue {
-  const { lignes, retenue_garantie_pct, tva_defaut_pct } = options;
+  const {
+    lignes,
+    retenue_garantie_pct,
+    tva_defaut_pct,
+    autoliquidation_tva,
+    autoriser_negatif,
+  } = options;
 
   // 1) Validation stricte du taux de retenue (0 % <= pct <= 5 %)
   const tauxRetenue = validerTauxRetenue(retenue_garantie_pct);
@@ -136,9 +144,10 @@ export function calculerRetenueFacture(
       // Ignorer les lignes sans quantité ou sans prix numérique valide
       if (!Number.isFinite(qte) || !Number.isFinite(puHt)) continue;
 
-      // Détermination du taux de TVA de la ligne
-      const tauxLigne =
-        ligne.tva_pct !== undefined && ligne.tva_pct !== null
+      // Détermination du taux de TVA de la ligne (0 % forcé en autoliquidation sous-traitance)
+      const tauxLigne = autoliquidation_tva
+        ? 0
+        : ligne.tva_pct !== undefined && ligne.tva_pct !== null
           ? normaliserTauxTva(ligne.tva_pct)
           : tvaDefaut;
 
@@ -207,8 +216,10 @@ export function calculerRetenueFacture(
   );
   const netAPayerTtc = arrondirCentimes(totalTtc - montantRetenueTtc);
 
-  // Invariant de sécurité : aucun net négatif
-  const netSecurise = Math.max(0, netAPayerTtc);
+  // Invariant de sécurité : aucun net négatif sauf pour les avoirs comptables
+  const netSecurise = autoriser_negatif
+    ? netAPayerTtc
+    : Math.max(0, netAPayerTtc);
 
   return {
     total_ht: totalHt,
@@ -244,4 +255,35 @@ export function calculerSituationAvancement(
     retenue_garantie_pct: retenuePct,
     tva_defaut_pct: tvaDefautPct,
   });
+}
+
+export interface ReglementPartielInput {
+  montant_ttc: number;
+}
+
+export interface ResumeSoldeFacture {
+  net_a_payer_ttc: number;
+  total_regle_ttc: number;
+  reste_a_encaisser_ttc: number;
+  est_soldee: boolean;
+}
+
+/**
+ * Calcule le total déjà réglé et le solde restant à encaisser sur une facture.
+ */
+export function calculerSoldeRestantDu(
+  netAPayerTtc: number,
+  reglements: ReglementPartielInput[] = []
+): ResumeSoldeFacture {
+  const net = arrondirCentimes(Number(netAPayerTtc) || 0);
+  const totalRegle = arrondirCentimes(
+    (reglements || []).reduce((sum, r) => sum + (Number(r.montant_ttc) || 0), 0)
+  );
+  const reste = arrondirCentimes(Math.max(0, net - totalRegle));
+  return {
+    net_a_payer_ttc: net,
+    total_regle_ttc: totalRegle,
+    reste_a_encaisser_ttc: reste,
+    est_soldee: net > 0 ? reste <= 0.005 : true,
+  };
 }

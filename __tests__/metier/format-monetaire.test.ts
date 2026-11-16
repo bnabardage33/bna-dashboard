@@ -341,7 +341,7 @@ describe('LOT 2C — plus aucun formatage monétaire artisanal', () => {
     // coût de revient résolus par `resoudrePrixOuvrage`), toujours sans
     // nouvel importateur. Le décompte passe donc de 173 à 175 ; le contrat de
     // fond reste « aucune conversion artisanale hors exceptions documentées ».
-    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(184)
+    expect(appels, 'nb total d’appels réels à fmtEuro()').toBe(191)
     expect(importateurs.length, 'nb de fichiers qui importent fmtEuro').toBe(38)
   })
 

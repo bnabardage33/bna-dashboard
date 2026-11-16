@@ -76,3 +76,13 @@ export async function prochainNumeroFacture(): Promise<string> {
   if (!data) throw new ErreurNumerotation("FAC", "la RPC n'a renvoye aucun numero");
   return data;
 }
+
+/**
+ * Retourne le prochain numéro d'avoir (`AVO-YYYY-###`) via la RPC atomique.
+ */
+export async function prochainNumeroAvoir(): Promise<string> {
+  const { data, error } = await supabase.rpc("generer_prochain_numero_avo");
+  if (error) throw new ErreurNumerotation("AVO", error.message);
+  if (!data) throw new ErreurNumerotation("AVO", "la RPC n'a renvoye aucun numero");
+  return data;
+}

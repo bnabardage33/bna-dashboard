@@ -21,6 +21,7 @@ export type LigneDevis = {
   pu_ht: number | null;
   pu_revient?: number | null;
   type_cout?: CoutType | null;
+  tva_pct?: number | null;
   a_chiffrer?: boolean;
   // Traçabilité par zone (source : metre-complet) — champ JSON additif, facultatif.
   // Chaque ligne issue d'une zone conserve l'identifiant zone.id ; les lignes
@@ -127,4 +128,75 @@ export function creerLigneAChiffrer(designation: string, description?: string): 
     type_cout: null,
     a_chiffrer: true,
   };
+}
+
+export interface FactureAnterieurePourSolde {
+  numero: string;
+  type_facture: string | null;
+  statut?: string | null;
+  tva_pct?: number | null;
+  lignes: unknown;
+}
+
+/**
+ * Construit les lignes de déduction pour une facture de solde/totale à partir
+ * des factures d'acompte ET de situation non annulées déjà émises sur le devis,
+ * en conservant la ventilation par taux de TVA d'origine.
+ */
+export function construireLignesDeductionFacturesAnterieures(
+  factures: FactureAnterieurePourSolde[],
+  tvaDefautDevis: number = 10,
+): LigneDevis[] {
+  const deductions: LigneDevis[] = [];
+  const tvaFallback = Number.isFinite(Number(tvaDefautDevis)) ? Number(tvaDefautDevis) : 10;
+
+  for (const f of factures || []) {
+    if (f.statut === "annulee") continue;
+    if (f.type_facture !== "acompte" && f.type_facture !== "situation") continue;
+
+    const lignesFacture = Array.isArray(f.lignes) ? (f.lignes as Array<Partial<LigneDevis>>) : [];
+    const tvaFacture =
+      typeof f.tva_pct === "number" && Number.isFinite(f.tva_pct)
+        ? f.tva_pct
+        : tvaFallback;
+
+    const parTva = new Map<number, number>();
+    for (const l of lignesFacture) {
+      if (l?.a_chiffrer) continue;
+      const qte = Number(l?.qte);
+      const pu = Number(l?.pu_ht);
+      if (!Number.isFinite(qte) || !Number.isFinite(pu)) continue;
+      const tauxLigne =
+        typeof l?.tva_pct === "number" && Number.isFinite(l.tva_pct)
+          ? l.tva_pct
+          : tvaFacture;
+      parTva.set(tauxLigne, (parTva.get(tauxLigne) ?? 0) + qte * pu);
+    }
+
+    const tauxTries = Array.from(parTva.keys()).sort((a, b) => a - b);
+    const plusieursTranches = tauxTries.length > 1;
+    const prefixe =
+      f.type_facture === "situation"
+        ? `Déduction de la situation n°${f.numero}`
+        : `Déduction de la facture d'acompte n°${f.numero}`;
+
+    for (const taux of tauxTries) {
+      const baseHt = arrondir(parTva.get(taux) ?? 0);
+      if (baseHt <= 0) continue;
+      deductions.push({
+        catalogue_id: null,
+        designation: plusieursTranches ? `${prefixe} (TVA ${taux} %)` : prefixe,
+        description: "",
+        qte: -1,
+        unite: "forfait",
+        pu_ht: baseHt,
+        pu_revient: null,
+        type_cout: null,
+        tva_pct: taux,
+        a_chiffrer: false,
+      });
+    }
+  }
+
+  return deductions;
 }

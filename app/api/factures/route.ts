@@ -108,6 +108,15 @@ export async function POST(req: NextRequest) {
       typeof body.echeance === "string" ? body.echeance.trim() : null;
     const dateEmission =
       typeof body.date_emission === "string" ? body.date_emission.trim() : null;
+    const factureOrigineId =
+      typeof body.facture_origine_id === "string" && body.facture_origine_id.trim()
+        ? body.facture_origine_id.trim()
+        : null;
+    const autoliquidationTva = Boolean(body.autoliquidation_tva);
+    const sirenClient =
+      typeof body.siren_client === "string" && body.siren_client.trim()
+        ? body.siren_client.trim()
+        : null;
 
     if (!numero) {
       return NextResponse.json(
@@ -200,10 +209,28 @@ export async function POST(req: NextRequest) {
         lignes: lignesBrutes as LigneFacturation[],
         retenue_garantie_pct: tauxRetenue,
         tva_defaut_pct: body.tva_defaut_pct,
+        autoliquidation_tva: autoliquidationTva,
+        autoriser_negatif: typeFacture === "avoir",
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erreur de calcul de la facture.";
       return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+    }
+
+    if (factureOrigineId) {
+      const { data: factureOrigine } = await supabaseAdmin
+        .from("factures")
+        .select("id")
+        .eq("id", factureOrigineId)
+        .eq("entreprise_id", tenant.entrepriseId)
+        .maybeSingle();
+
+      if (!factureOrigine) {
+        return NextResponse.json(
+          { ok: false, error: "Facture d'origine introuvable pour votre entreprise." },
+          { status: 404 }
+        );
+      }
     }
 
     // 2) Unicité du numéro de facture au sein du tenant
@@ -222,7 +249,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 3) Préparation du payload d'insertion
-    const tvaPrincipale = calcul.tranches[0]?.taux_tva ?? (Number(body.tva_defaut_pct) || 20);
+    const tvaPrincipale = autoliquidationTva
+      ? 0
+      : calcul.tranches[0]?.taux_tva ?? (Number(body.tva_defaut_pct) || 20);
 
     const payload: TablesInsert<"factures"> = {
       numero,
@@ -230,6 +259,7 @@ export async function POST(req: NextRequest) {
       client_id: clientId,
       chantier_id: chantierId,
       devis_id: devisId,
+      facture_origine_id: factureOrigineId,
       objet,
       adresse_chantier: adresseChantier,
       type_travaux: typeTravaux,
@@ -238,6 +268,8 @@ export async function POST(req: NextRequest) {
       echeance,
       date_emission: dateEmission ?? new Date().toISOString().split("T")[0],
       tva_pct: tvaPrincipale,
+      autoliquidation_tva: autoliquidationTva,
+      siren_client: sirenClient,
       lignes: lignesBrutes as unknown as Json,
       retenue_garantie_pct: calcul.retenue_garantie_pct,
       montant_retenue_ht: calcul.montant_retenue_ht,
@@ -258,6 +290,15 @@ export async function POST(req: NextRequest) {
         { ok: false, error: "Échec de l'enregistrement de la facture en base." },
         { status: 500 }
       );
+    }
+
+    // Conformité comptable : l'émission d'un avoir passe la facture d'origine en 'annulee'
+    if (typeFacture === "avoir" && factureOrigineId) {
+      await supabaseAdmin
+        .from("factures")
+        .update({ statut: "annulee" })
+        .eq("id", factureOrigineId)
+        .eq("entreprise_id", tenant.entrepriseId);
     }
 
     return NextResponse.json(
