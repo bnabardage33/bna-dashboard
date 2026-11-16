@@ -22,7 +22,7 @@ import {
   Check,
   BarChartHorizontal,
 } from "lucide-react";
-import PlanningGantt from "@/components/PlanningGantt";
+import PlanningChantiers from "@/components/PlanningChantiers";
 import ConfirmationSuppressionModal from "@/components/terrasse/ConfirmationSuppressionModal";
 import CorbeilleBardageModal from "@/components/bardage/CorbeilleBardageModal";
 import ModifierChantierBardageModal from "@/components/bardage/ModifierChantierBardageModal";
@@ -414,21 +414,20 @@ export default function ChantiersPage() {
             )}
           </section>
         ) : viewMode === "gantt" ? (
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-            <PlanningGantt
-              chantiers={chantiersFiltres.map((c) => ({
-                id: c.id,
-                nom: c.nom,
-                client_nom: c.clients?.nom || null,
-                client_societe: c.clients?.societe || null,
-                adresse_chantier: c.adresse_chantier,
-                date_debut: c.date_debut,
-                date_fin: c.date_fin,
-                statut: c.statut,
-              }))}
-              onUpdateDates={handleUpdateDates}
-            />
-          </div>
+          <PlanningChantiers
+            chantiers={chantiersFiltres.map((c) => ({
+              id: c.id,
+              nom: c.nom,
+              client_nom: c.clients?.nom || null,
+              client_societe: c.clients?.societe || null,
+              adresse_chantier: c.adresse_chantier,
+              date_debut: c.date_debut,
+              date_fin: c.date_fin,
+              statut: c.statut,
+              metier: "bardage",
+            }))}
+            onUpdateDates={handleUpdateDates}
+          />
         ) : (
           <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {chantiersFiltres.map((ch) => {

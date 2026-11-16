@@ -1308,6 +1308,7 @@ export type Database = {
           horaires: string | null
           id: string
           materiau_structurel: string
+          metier: string
           moyen_acces: string
           nom: string | null
           notes_terrain: string | null
@@ -1339,6 +1340,7 @@ export type Database = {
           horaires?: string | null
           id?: string
           materiau_structurel?: string
+          metier?: string
           moyen_acces?: string
           nom?: string | null
           notes_terrain?: string | null
@@ -1370,6 +1372,7 @@ export type Database = {
           horaires?: string | null
           id?: string
           materiau_structurel?: string
+          metier?: string
           moyen_acces?: string
           nom?: string | null
           notes_terrain?: string | null

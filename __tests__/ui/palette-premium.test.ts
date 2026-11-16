@@ -73,7 +73,7 @@ function code(fichier: string): string {
  */
 it('le retrait des commentaires ne perd pas de code (ordre // puis /* */)', () => {
   const nu = code('components/MenuNavigationMobile.tsx')
-  expect(nu.match(/href: "/g)?.length).toBe(29)
+  expect(nu.match(/href: "/g)?.length).toBe(32)
   expect(nu.match(/children: \[/g)?.length).toBe(7)
   const sample = 'const a = 1 // /finance/**\n/* bloc */\nconst b = 2'
   expect(sample.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')).toContain('const b = 2')
@@ -356,7 +356,7 @@ describe('charte graphique — le tiroir de navigation (§6)', () => {
     // verrouille le compte pour détecter une route perdue par accident —
     // il doit donc suivre les ajouts délibérés, pas rester figé sur un état
     // antérieur.
-    expect(D.match(/href: "/g)?.length).toBe(29)
+    expect(D.match(/href: "/g)?.length).toBe(32)
     expect(D.match(/children: \[/g)?.length).toBe(7)
   })
 
@@ -371,21 +371,19 @@ describe('charte graphique — le tiroir de navigation (§6)', () => {
 
 describe('charte graphique — les statuts de chantier (§9)', () => {
   const LISTE = code(join('app', 'terrain', 'chantier', 'page.tsx'))
-  const PLANNING = code('components/PlanningGantt.tsx')
+  const PLANNING = code('components/PlanningChantiers.tsx')
 
-  it('« en cours » est distinct dans les deux vues', () => {
+  it('« en cours » est distinct dans la liste', () => {
     expect(LISTE).toMatch(/bg-amber-50 text-amber-900/)
-    expect(PLANNING).toMatch(/#4CAF50/)
+    expect(PLANNING).toMatch(/border border-\[#E5E5E5\] bg-white/)
   })
 
-  it('« termine » est distinct dans les deux vues', () => {
+  it('« termine » est distinct dans la liste', () => {
     expect(LISTE).toMatch(/bg-emerald-50 text-emerald-800/)
-    expect(PLANNING).toMatch(/#9E9E9E/)
   })
 
-  it('« prevu » est distinct dans les deux vues', () => {
+  it('« prevu » est distinct dans la liste', () => {
     expect(LISTE).toMatch(/bg-\[#F8F9FA\] text-\[#777777\]/)
-    expect(PLANNING).toMatch(/#42A5F5/)
   })
 
   const LISTE_ATTENDUE: [string, RegExp][] = [
@@ -394,22 +392,16 @@ describe('charte graphique — les statuts de chantier (§9)', () => {
     ['prevu (defaut)', /:\s*"bg-\[#F8F9FA\] text-\[#777777\] border border-\[#E5E5E5\]"/],
   ]
 
-  const PLANNING_ATTENDUE: [string, RegExp][] = [
-    ['en_cours', /if \(ch\.statut === "en_cours"\) \{\s*bgColor = "bg-\[#4CAF50\]";\s*borderColor = "border-\[#4CAF50\]"/],
-    ['termine', /else if \(ch\.statut === "termine"\) \{\s*bgColor = "bg-\[#9E9E9E\]";\s*borderColor = "border-\[#9E9E9E\]"/],
-    ['prevu (defaut)', /let bgColor = "bg-\[#42A5F5\]";\s*let borderColor = "border-\[#42A5F5\]"/],
-  ]
-
   it('la liste associe chaque statut a sa couleur', () => {
     for (const [statut, motif] of LISTE_ATTENDUE) {
       expect(LISTE, `liste : « ${statut} »`).toMatch(motif)
     }
   })
 
-  it('le planning associe chaque statut a sa couleur §9', () => {
-    for (const [statut, motif] of PLANNING_ATTENDUE) {
-      expect(PLANNING, `planning : « ${statut} »`).toMatch(motif)
-    }
+  it('le planning unifié distingue les 3 métiers Bardage, Terrasse et Clôture', () => {
+    expect(PLANNING).toContain('bg-slate-700')
+    expect(PLANNING).toContain('bg-amber-600')
+    expect(PLANNING).toContain('bg-[#B85B2B]')
   })
 
   it('chaque badge conserve sa classe de style « border »', () => {

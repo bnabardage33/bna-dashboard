@@ -20,8 +20,11 @@ import {
   Pencil,
   Copy,
   Check,
+  List,
+  BarChartHorizontal,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import PlanningChantiers from "@/components/PlanningChantiers";
 import NouveauChantierTerrasseModal from "@/components/terrasse/NouveauChantierTerrasseModal";
 import ModifierChantierTerrasseModal from "@/components/terrasse/ModifierChantierTerrasseModal";
 import CorbeilleTerrasseModal from "@/components/terrasse/CorbeilleTerrasseModal";
@@ -73,6 +76,7 @@ export default function ChantiersTerrassePage() {
   const [modalOuvert, setModalOuvert] = useState(false);
   const [recherche, setRecherche] = useState("");
   const [filtreStatut, setFiltreStatut] = useState<string>("tous");
+  const [viewMode, setViewMode] = useState<"liste" | "gantt">("liste");
 
   // Gestion de la Corbeille
   const [corbeilleOuverte, setCorbeilleOuverte] = useState(false);
@@ -243,8 +247,36 @@ export default function ChantiersTerrassePage() {
               <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#999999]" />
             </div>
 
-            {/* Filtres de statut */}
-            <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+            {/* Bascule Liste / Planning + Filtres de statut */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("liste")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                    viewMode === "liste"
+                      ? "bg-white text-[#23272B] shadow-sm"
+                      : "text-[#777777] hover:text-[#23272B]"
+                  }`}
+                >
+                  <List className="h-3.5 w-3.5" />
+                  <span>Liste</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("gantt")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                    viewMode === "gantt"
+                      ? "bg-white text-[#23272B] shadow-sm"
+                      : "text-[#777777] hover:text-[#23272B]"
+                  }`}
+                >
+                  <BarChartHorizontal className="h-3.5 w-3.5" />
+                  <span>Planning</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
               {[
                 { id: "tous", label: "Tous" },
                 { id: "prevu", label: "Prévus" },
@@ -264,6 +296,7 @@ export default function ChantiersTerrassePage() {
                   {f.label}
                 </button>
               ))}
+              </div>
             </div>
           </div>
         </section>
@@ -304,6 +337,27 @@ export default function ChantiersTerrassePage() {
               </button>
             )}
           </section>
+        ) : viewMode === "gantt" ? (
+          <PlanningChantiers
+            chantiers={chantiersFiltres.map((c) => ({
+              id: c.id,
+              nom: c.nom,
+              client_nom: c.clients?.nom || null,
+              client_societe: c.clients?.societe || null,
+              adresse_chantier: c.adresse_chantier,
+              date_debut: c.date_debut,
+              date_fin: c.date_fin,
+              statut: c.statut,
+              metier: "terrasse",
+            }))}
+            onUpdateDates={async (id, newDebut, newFin) => {
+              await supabase
+                .from("chantiers")
+                .update({ date_debut: newDebut, date_fin: newFin })
+                .eq("id", id);
+              chargerChantiers();
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {chantiersFiltres.map((c) => {

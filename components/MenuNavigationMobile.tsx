@@ -56,6 +56,7 @@ export const NAV_ITEMS: EntreeNav[] = [
     children: [
       { href: "/bureau/catalogue", label: "Catalogue Bardage" },
       { href: "/bureau/catalogue-terrasse", label: "Catalogue Terrasse" },
+      { href: "/bureau/catalogue-cloture", label: "Catalogue Clôture" },
     ],
   },
   {
@@ -63,6 +64,8 @@ export const NAV_ITEMS: EntreeNav[] = [
     icon: HardHat,
     children: [
       { href: "/terrain/chantier", label: "Liste des chantiers" },
+      { href: "/terrain/terrasse", label: "Chantiers Terrasse" },
+      { href: "/terrain/cloture", label: "Chantiers Clôture" },
       { href: "/bureau/meteo", label: "Météo & intempéries" },
       { href: "/bureau/rapports-intemperies", label: "Rapports intempéries" },
       { href: "/bureau/fin-chantier", label: "Fin de chantier / PV" },

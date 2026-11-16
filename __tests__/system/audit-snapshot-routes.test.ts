@@ -324,8 +324,8 @@ describe("audit — snapshot des routes API", () => {
     // légitime fait passer S1 au vert dès que le document est mis à jour — ce qui
     // est le comportement voulu. Cette assertion, elle, oblige à toucher aussi
     // le test : le compteur documenté devient une décision, pas une conséquence.
-    expect(compteurAnnonce(audit())).toBe(49);
-    expect(ARBRE.length).toBe(49);
+    expect(compteurAnnonce(audit())).toBe(51);
+    expect(ARBRE.length).toBe(51);
   });
 
   it("S4 les trois routes retirées sont documentées comme telles, et absentes du disque", () => {
@@ -351,7 +351,7 @@ describe("audit — snapshot des routes API", () => {
     const situations: Array<{ nom: string; mutant: string; codeAttendu: string }> = [
       {
         nom: "compteur remis à 43",
-        mutant: reference.replace("**49** routes API", "**43** routes API"),
+        mutant: reference.replace("**51** routes API", "**43** routes API"),
         codeAttendu: "compteur-faux",
       },
       {

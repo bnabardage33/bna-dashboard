@@ -19,10 +19,10 @@ const METIERS = [
   },
   {
     nom: 'Clôture',
-    description: 'Cet espace métier reste à développer.',
+    description: 'Hub dédié, calepinage 1 à 4 côtés 2D/3D, redans, soubassement et portillons.',
     icone: Fence,
-    href: null,
-    action: null,
+    href: '/terrain/cloture',
+    action: 'Chantiers clôture · hub dédié',
   },
 ] as const;
 

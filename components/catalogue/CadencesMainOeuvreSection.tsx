@@ -46,8 +46,15 @@ const CHAMPS_TERRASSE: ChampCadence[] = [
   { cle: "terrasse_mobile_motorisation_h", label: "Supplément motorisation (solaire/filaire)", unite: "h", step: "0.5" },
 ];
 
+const CHAMPS_CLOTURE: ChampCadence[] = [
+  { cle: "cloture_implantation_scellement_h_poteau", label: "Implantation & scellement béton", unite: "h/poteau", step: "0.05" },
+  { cle: "cloture_pose_poteau_soubassement_h_u", label: "Pose poteau & plaque soubassement", unite: "h/u", step: "0.05" },
+  { cle: "cloture_pose_lame_panneau_h_ml", label: "Pose lames / panneaux", unite: "h/ml", step: "0.05" },
+  { cle: "cloture_portillon_finitions_h_u", label: "Pose portillon & finitions", unite: "h/u", step: "0.25" },
+];
+
 export interface CadencesMainOeuvreSectionProps {
-  metier: "bardage" | "terrasse";
+  metier: "bardage" | "terrasse" | "cloture";
 }
 
 export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvreSectionProps) {
@@ -57,7 +64,12 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
   const [sauvegarde, setSauvegarde] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; texte: string } | null>(null);
 
-  const champsMetier = metier === "bardage" ? CHAMPS_BARDAGE : CHAMPS_TERRASSE;
+  const champsMetier =
+    metier === "bardage"
+      ? CHAMPS_BARDAGE
+      : metier === "terrasse"
+        ? CHAMPS_TERRASSE
+        : CHAMPS_CLOTURE;
 
   useEffect(() => {
     let actif = true;

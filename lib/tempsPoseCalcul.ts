@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ResultatMetre } from "@/lib/metre-serialization";
 import { calculerHabillageOuverturesEtProfils1D } from "@/lib/bardage/pro/profils-finitions";
 import type { ResultatCalculTerrasse } from "@/lib/terrasse/types";
+import type { FenceResult } from "@/lib/cloture/calepinageCloture";
 
 // ── Cadences & Taux horaires paramétrables (table `catalogue_temps`) ──────────
 
@@ -30,6 +31,12 @@ export interface CadencesTempsPose {
   terrasse_mobile_rails_chassis_h: number;
   terrasse_mobile_motorisation_h: number;
 
+  // Clôture
+  cloture_implantation_scellement_h_poteau: number;
+  cloture_pose_poteau_soubassement_h_u: number;
+  cloture_pose_lame_panneau_h_ml: number;
+  cloture_portillon_finitions_h_u: number;
+
   // Taux horaires entreprise (€ HT / h)
   taux_horaire_vente_ht: number;
   taux_horaire_charge_ht: number;
@@ -52,6 +59,11 @@ export const CADENCES_DEFAUT: CadencesTempsPose = {
   terrasse_garde_corps_h_ml: 0.50,
   terrasse_mobile_rails_chassis_h: 8.00,
   terrasse_mobile_motorisation_h: 4.00,
+
+  cloture_implantation_scellement_h_poteau: 0.45,
+  cloture_pose_poteau_soubassement_h_u: 0.35,
+  cloture_pose_lame_panneau_h_ml: 0.50,
+  cloture_portillon_finitions_h_u: 3.50,
 
   taux_horaire_vente_ht: 45.00,
   taux_horaire_charge_ht: 28.50,
@@ -413,6 +425,86 @@ export function calculerTempsPoseTerrasse(
       gardeCorpsMl: arrondirHeures(gardeCorpsMl),
       terrasseMobileActive,
       motorisationActive,
+    },
+  };
+}
+
+// ── Clôture : Temps de pose par phase ─────────────────────────────────────────
+
+export type PhaseClotureTemps =
+  | "implantation_scellement"
+  | "pose_poteaux_soubassement"
+  | "pose_panneaux_lames"
+  | "portillons_finitions";
+
+export interface OptionsCalculTempsCloture {
+  cadences?: Partial<CadencesTempsPose>;
+  coefPerteRendement?: number;
+}
+
+export interface ResultatTempsPoseCloture {
+  parPhase: Record<PhaseClotureTemps, number>;
+  totalHeures: number;
+  tempsPlanification: number;
+  details: {
+    lineaireTotalM: number;
+    totalPoteaux: number;
+    nbPlaquesSoubassement: number;
+    nbPortillons: number;
+    nbRedans: number;
+  };
+}
+
+/**
+ * Calcule les heures prévues de pose Clôture ventilées sur les 4 phases
+ * (`implantation_scellement`, `pose_poteaux_soubassement`, `pose_panneaux_lames`, `portillons_finitions`).
+ */
+export function calculerTempsPoseCloture(
+  resultat: FenceResult,
+  options: OptionsCalculTempsCloture = {},
+): ResultatTempsPoseCloture {
+  const cadences: CadencesTempsPose = { ...CADENCES_DEFAUT, ...options.cadences };
+  const totalPoteaux = Math.max(0, resultat.totalPoteauxComplets || 0) + Math.max(0, resultat.nbDemiPoteauxMuraux || 0);
+  const nbPlaques = Math.max(0, resultat.nbPlaquesSoubassement || 0);
+  const lineaireUtile = Math.max(0, resultat.lineaireClotureHorsPortillonsM || 0);
+  const nbPortillons = Math.max(0, resultat.nbPortillonsTotal || 0);
+  const nbRedans = Math.max(0, resultat.nbRedansTotal || 0);
+
+  const coefSol = resultat.config.typePoseSol === "DIRECT_SOL" ? 1 : 0.6;
+  const hImplantation = totalPoteaux * cadences.cloture_implantation_scellement_h_poteau * coefSol;
+  const hPoteauxSoubassement =
+    (totalPoteaux + nbPlaques) * cadences.cloture_pose_poteau_soubassement_h_u + nbRedans * 0.25;
+  const hLamesPanneaux = lineaireUtile * cadences.cloture_pose_lame_panneau_h_ml;
+  const hPortillonsFinitions =
+    nbPortillons * cadences.cloture_portillon_finitions_h_u + totalPoteaux * 0.08;
+
+  const parPhase: Record<PhaseClotureTemps, number> = {
+    implantation_scellement: arrondirHeures(hImplantation),
+    pose_poteaux_soubassement: arrondirHeures(hPoteauxSoubassement),
+    pose_panneaux_lames: arrondirHeures(hLamesPanneaux),
+    portillons_finitions: arrondirHeures(hPortillonsFinitions),
+  };
+
+  const totalHeures = arrondirHeures(
+    parPhase.implantation_scellement +
+      parPhase.pose_poteaux_soubassement +
+      parPhase.pose_panneaux_lames +
+      parPhase.portillons_finitions,
+  );
+  const tempsPlanification = arrondirHeures(
+    calculerTempsPlanification(totalHeures, options.coefPerteRendement ?? 1.8),
+  );
+
+  return {
+    parPhase,
+    totalHeures,
+    tempsPlanification,
+    details: {
+      lineaireTotalM: arrondirHeures(resultat.lineaireTotalM),
+      totalPoteaux,
+      nbPlaquesSoubassement: nbPlaques,
+      nbPortillons,
+      nbRedans,
     },
   };
 }

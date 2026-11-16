@@ -78,7 +78,7 @@ vi.mock("@/lib/supabase", () => ({
 // lu par le VRAI `resoudreContexteEntreprise`.
 let session: { user: { app_metadata: Record<string, unknown> } };
 
-vi.mock("@/components/PlanningGantt", () => ({ default: () => null }));
+vi.mock("@/components/PlanningChantiers", () => ({ default: () => null }));
 
 let conteneur: HTMLDivElement;
 let root: Root;

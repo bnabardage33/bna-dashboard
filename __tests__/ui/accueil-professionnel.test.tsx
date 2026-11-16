@@ -45,7 +45,7 @@ describe('AccueilProfessionnel', () => {
     expect(rendu.textContent).toContain('Bardage');
     expect(rendu.textContent).toContain('Terrasse');
     expect(rendu.textContent).toContain('Clôture');
-    expect(rendu.querySelectorAll('article')).toHaveLength(1);
+    expect(rendu.querySelectorAll('article')).toHaveLength(0);
   });
 
   it('permet de nommer explicitement l’accueil chantier', async () => {
@@ -63,18 +63,17 @@ describe('AccueilProfessionnel', () => {
     expect(lienBardage?.textContent).toMatch(/chantiers existants.*hub commun/i);
   });
 
-  it('Terrasse mène au hub dédié et Clôture reste informative sans lien métier fictif', async () => {
+  it('Terrasse et Clôture mènent chacun vers leur hub dédié', async () => {
     const rendu = await rendreAccueil();
     const lienTerrasse = rendu.querySelector<HTMLAnchorElement>('a[href="/terrain/terrasse"]');
-    const cartes = [...rendu.querySelectorAll('article')];
-    const cloture = cartes.find((carte) => carte.textContent?.includes('Clôture'));
+    const lienCloture = rendu.querySelector<HTMLAnchorElement>('a[href="/terrain/cloture"]');
 
     expect(lienTerrasse).not.toBeNull();
     expect(lienTerrasse?.getAttribute('aria-label')).toMatch(/Terrasse.*chantiers existants.*hub commun/i);
     expect(lienTerrasse?.textContent).toMatch(/Chantiers terrasse · hub dédié/i);
-    expect(cloture?.textContent).toMatch(/espace métier reste à développer/i);
-    expect(cloture?.getAttribute('aria-label')).toMatch(/Clôture.*reste à développer/i);
-    expect(cloture?.querySelector('a, button')).toBeNull();
+
+    expect(lienCloture).not.toBeNull();
+    expect(lienCloture?.textContent).toMatch(/Chantiers clôture · hub dédié/i);
   });
 
   it('conserve les six raccourcis communs avec leurs destinations', async () => {
