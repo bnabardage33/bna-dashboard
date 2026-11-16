@@ -1,27 +1,48 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert, TablesUpdate } from "@/types/supabase";
 import { Entreprise } from "@/types/entreprise";
 import BonCommandePDF from "@/components/BonCommandePDF";
 import { fmtEuro } from "@/lib/financeCalculs";
-import SignaturePad from "@/components/SignaturePad";
-import { PenTool, AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  Download,
+  Mail,
+  Package,
+  Phone,
+  Plus,
+  Printer,
+  Trash2,
+  TrendingUp,
+  Truck,
+  X,
+} from "lucide-react";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
-import { Surface } from '@/components/ui/Surface';
-import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import EnvoyerCommandeModal from "@/components/email/EnvoyerCommandeModal";
+import {
+  SPECIALITES_FOURNISSEUR,
+  badgeMetierConfig,
+  calculerAnalyseMarges,
+  correspondMetierSpecialite,
+  extraireFournituresDepuisCloture,
+  extraireFournituresDepuisTerrasse,
+  extraireFournituresDepuisZonesBardage,
+  normaliserMetier,
+  type ChantierAnalyseInput,
+  type DevisAnalyseInput,
+  type LigneImportQuantitatif,
+  type MetierChantier,
+  type ZoneBardageBrute,
+} from "@/lib/fournisseursCommandes";
 
 type StatutRelation = "principal" | "regulier" | "remplacant";
 
-// O3-B6/N9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
-// recopié dans une colonne `uuid`. Sans cette garde, un claim corrompu produirait
-// une erreur PostgreSQL opaque ; avec elle, l'échec est explicite et sans écriture.
-//
-// Le retour est un PRÉDICAT DE TYPE (`value is string`) : c'est ce qui permet à
-// TypeScript de rétrécir `string | null` en `string` après l'appel, et donc
-// d'exiger `entreprise_id: string` dans l'objet inséré SANS assertion `as`.
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -41,7 +62,12 @@ type Fournisseur = {
   statut_relation: StatutRelation;
 };
 
-type Chantier = { id: string; nom: string | null; clients: { nom: string } | null };
+type Chantier = {
+  id: string;
+  nom: string | null;
+  metier: string | null;
+  clients: { nom: string } | null;
+};
 
 type Commande = {
   id: string;
@@ -52,15 +78,25 @@ type Commande = {
   unite: string | null;
   montant_ht: number | null;
   statut: string;
+  notes: string | null;
   date_livraison_prevue: string | null;
   date_livraison_reelle: string | null;
   date_commande: string | null;
   created_at: string;
-  fournisseurs: { nom: string; contact: string | null; telephone: string | null; email: string | null; conditions_paiement: string | null } | null;
-  chantiers: { nom: string | null; adresse_chantier: string | null; clients: { nom: string } | null } | null;
+  fournisseurs: {
+    nom: string;
+    contact: string | null;
+    telephone: string | null;
+    email: string | null;
+    conditions_paiement: string | null;
+  } | null;
+  chantiers: {
+    nom: string | null;
+    metier: string | null;
+    adresse_chantier: string | null;
+    clients: { nom: string } | null;
+  } | null;
 };
-
-type LigneMultiple = { designation: string; quantite: number; unite: string };
 
 const CLE_PREFILL_COMMANDE = "bna_prefill_commande";
 
@@ -72,20 +108,50 @@ function joursRetard(dateLivraisonPrevue: string): number {
   return Math.floor((now.getTime() - prevue.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-const SPECIALITES = ["Bois", "Métal / Bac acier", "Composite", "Quincaillerie / Visserie", "Isolation", "Autre"];
-
 const STATUTS = [
-  { value: "a_commander", label: "À commander", emoji: "⚪", couleur: "border-slate-600 text-gray-300" },
-  { value: "commandee", label: "Commandée", emoji: "🔴", couleur: "border-red-500/40 text-red-400" },
-  { value: "partiellement_livree", label: "Partiellement livrée", emoji: "🟠", couleur: "border-white/10 text-gray-400" },
-  { value: "livree", label: "Livrée", emoji: "🟢", couleur: "border-white/10 text-gray-400" },
-  { value: "annulee", label: "Annulée", emoji: "🔴", couleur: "border-red-500/40 text-red-400" },
+  {
+    value: "a_commander",
+    label: "À commander",
+    couleur: "border-[#E5E5E5] bg-[#F8F9FA] text-[#555555]",
+  },
+  {
+    value: "commandee",
+    label: "Commandée",
+    couleur: "border-blue-200 bg-blue-50 text-blue-700",
+  },
+  {
+    value: "partiellement_livree",
+    label: "Partiellement livrée",
+    couleur: "border-amber-200 bg-amber-50 text-amber-800",
+  },
+  {
+    value: "livree",
+    label: "Livrée",
+    couleur: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  },
+  {
+    value: "annulee",
+    label: "Annulée",
+    couleur: "border-red-200 bg-red-50 text-red-700",
+  },
 ];
 
 const RELATIONS: { value: StatutRelation; label: string; couleurActif: string }[] = [
-  { value: "principal", label: "⭐ Principal", couleurActif: "border-red-500 bg-red-900/200/10 text-red-400" },
-  { value: "regulier", label: "Régulier", couleurActif: "border-gray-500 bg-gray-500/10 text-gray-300" },
-  { value: "remplacant", label: "Remplaçant", couleurActif: "border-slate-500 bg-transparent0/10 text-gray-300" },
+  {
+    value: "principal",
+    label: "Principal",
+    couleurActif: "border-[#B85B2B] bg-[#B85B2B]/10 text-[#B85B2B]",
+  },
+  {
+    value: "regulier",
+    label: "Régulier",
+    couleurActif: "border-slate-300 bg-slate-100 text-slate-700",
+  },
+  {
+    value: "remplacant",
+    label: "Remplaçant",
+    couleurActif: "border-stone-300 bg-stone-100 text-stone-700",
+  },
 ];
 
 function estMemeMois(dateStr: string | null, ref: Date) {
@@ -94,20 +160,35 @@ function estMemeMois(dateStr: string | null, ref: Date) {
   return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
 }
 
-export default function FournisseursPage() {
+function FournisseursContenu() {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<"fournisseurs" | "commandes" | "analyse">("fournisseurs");
+  const [filtreMetier, setFiltreMetier] = useState<"tous" | MetierChantier>("tous");
 
-  // Commande à mettre en évidence, déduite de `?retard=<id>`.
   const [commandeMiseEnAvant, setCommandeMiseEnAvant] = useState<string | null>(null);
-
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
-  const [chantiers, setChantiers] = useState<Chantier[]>([]);
   const [commandes, setCommandes] = useState<Commande[]>([]);
+  const [chantiers, setChantiers] = useState<Chantier[]>([]);
+  const [devisList, setDevisList] = useState<DevisAnalyseInput[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtreCommandes, setFiltreCommandes] = useState<"toutes" | "en_retard">("toutes");
 
   const [modalFournisseur, setModalFournisseur] = useState(false);
+  const [modalCommande, setModalCommande] = useState(false);
+  const [apercuCommande, setApercuCommande] = useState<Commande | null>(null);
+  const [commandePourEmail, setCommandePourEmail] = useState<Commande | null>(null);
+  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
+
+  // Workflow de réception
+  const [commandeReception, setCommandeReception] = useState<Commande | null>(null);
+  const [rStatut, setRStatut] = useState<"livree" | "partiellement_livree">("livree");
+  const [rDateReelle, setRDateReelle] = useState("");
+  const [rNoteBl, setRNoteBl] = useState("");
+  const [savingReception, setSavingReception] = useState(false);
+
+  // Formulaire fournisseur
   const [fNom, setFNom] = useState("");
-  const [fSpecialite, setFSpecialite] = useState(SPECIALITES[0]);
+  const [fSpecialite, setFSpecialite] = useState<string>(SPECIALITES_FOURNISSEUR[0]);
   const [fContact, setFContact] = useState("");
   const [fTel, setFTel] = useState("");
   const [fEmail, setFEmail] = useState("");
@@ -115,7 +196,7 @@ export default function FournisseursPage() {
   const [fNotes, setFNotes] = useState("");
   const [fStatutRelation, setFStatutRelation] = useState<StatutRelation>("regulier");
 
-  const [modalCommande, setModalCommande] = useState(false);
+  // Formulaire commande
   const [cFournisseurId, setCFournisseurId] = useState("");
   const [cChantierId, setCChantierId] = useState("");
   const [cDesignation, setCDesignation] = useState("");
@@ -123,203 +204,155 @@ export default function FournisseursPage() {
   const [cUnite, setCUnite] = useState("m²");
   const [cMontant, setCMontant] = useState("");
   const [cDateLivraison, setCDateLivraison] = useState("");
+  const [lignesMultiples, setLignesMultiples] = useState<LigneImportQuantitatif[] | null>(null);
+  const [prefillInfo, setPrefillInfo] = useState<{
+    chantierNom: string;
+    zoneNom: string;
+  } | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
-  const [apercuCommande, setApercuCommande] = useState<Commande | null>(null);
-  const [commandePourEmail, setCommandePourEmail] = useState<Commande | null>(null);
-  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
-
-  // Mode "plusieurs lignes" — utilisé quand la commande arrive pré-remplie depuis un métré
-  const [lignesMultiples, setLignesMultiples] = useState<LigneMultiple[] | null>(null);
-  const [prefillInfo, setPrefillInfo] = useState<{ chantierNom: string; zoneNom: string } | null>(null);
-  const [maintenant, setMaintenant] = useState<Date | null>(null);
-  const [filtreCommandes, setFiltreCommandes] = useState<"toutes" | "en_retard">("toutes");
-
-  // ── Deep-lien (PHASE 2) ────────────────────────────────────────────────────
-  //
-  // Deux choses doivent fonctionner ici, et aucune ne fonctionnait avant :
-  //
-  // 1. `?tab=` — le Drawer expose « Suivi des commandes » et « Contacts
-  //    fournisseurs » comme entrées distinctes de la catégorie Fournisseurs.
-  //    Sans lecture de l'URL, les deux ouvraient le même onglet par défaut :
-  //    c'était de la navigation factice, l'un des reproches faits aux anciens
-  //    onglets.
-  // 2. `?retard=<id>` — c'est le chemin écrit dans `notifications.lien` par
-  //    l'alerte « Livraison en retard » (ligne ~220). Ce chemin existe en base
-  //    DEPUIS LA MISE EN SERVICE mais n'était jamais lu : cliquer sur la
-  //    notification atterrissait sur l'onglet Fournisseurs, sans jamais
-  //    montrer la commande en retard. Le paramètre est donc promu ici en
-  //    onglet + mise en avant.
-  //
-  // `useSearchParams()` est volontairement évité : il impose une frontière
-  // `<Suspense>` à la compilation, et une page client n'en a pas besoin pour
-  // lire sa propre URL une fois au montage.
+  // Synchronisation réactive avec les paramètres URL (?tab= & ?retard=)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    const tabUrl = params.get("tab");
+    const tabUrl = searchParams.get("tab");
     if (tabUrl === "fournisseurs" || tabUrl === "commandes" || tabUrl === "analyse") {
       setTab(tabUrl);
     }
 
-    const retardId = params.get("retard");
+    const retardId = searchParams.get("retard");
     if (retardId) {
-      // On force l'onglet Commandes et on laisse le filtre sur « Toutes » :
-      // la notification désigne UNE commande, la masquer derrière un filtre
-      // de retard la ferait disparaître si son statut avait changé depuis
-      // l'émission de l'alerte.
       setTab("commandes");
       setCommandeMiseEnAvant(retardId);
+    } else {
+      setCommandeMiseEnAvant(null);
     }
-  }, []);
+  }, [searchParams]);
 
-  async function fetchTout() {
-    setLoading(true);
-    const [fRes, chRes, coRes, settingsRes] = await Promise.all([
-      supabase.from("fournisseurs").select("*").order("nom"),
-      supabase.from("chantiers").select("id, nom, clients(nom)").order("created_at", { ascending: false }),
-      supabase
-        .from("commandes")
-        .select("*, fournisseurs(nom, contact, telephone, email, conditions_paiement), chantiers(nom, adresse_chantier, clients(nom))")
-        .order("created_at", { ascending: false }),
-      supabase.from("entreprise_settings").select("*").eq("id", 1).single(),
-    ]);
-    if (fRes.data) setFournisseurs(fRes.data as Fournisseur[]);
-    if (chRes.data) setChantiers(chRes.data as unknown as Chantier[]);
-    if (coRes.data) setCommandes(coRes.data as unknown as Commande[]);
-    if (settingsRes.data) setEntreprise(settingsRes.data);
-    setLoading(false);
-  }
-
-  async function detecterRetards() {
+  async function detecterRetards(commandesChargees: Commande[]) {
     const today = new Date().toISOString().slice(0, 10);
-    const lundi = new Date();
-    lundi.setDate(lundi.getDate() - ((lundi.getDay() + 6) % 7));
-    lundi.setHours(0, 0, 0, 0);
-    const debutSemaine = lundi.toISOString().slice(0, 10);
-
-    const retardataires = commandes.filter(
+    const enRetard = commandesChargees.filter(
       (c) =>
         c.statut !== "livree" &&
         c.statut !== "annulee" &&
         c.date_livraison_prevue &&
         c.date_livraison_prevue < today
     );
+    if (enRetard.length === 0) return;
 
-    if (retardataires.length === 0) return;
-
-    // O3-B6/N9 — REGRESSION CORRIGÉE.
-    //
-    // `notifications.entreprise_id` est NOT NULL depuis la migration d'isolation
-    // du 2026-09-22 (part1 §4). Ce producteur, écrit le 2026-09-10, n'a jamais été
-    // mis à jour : l'insert échouait (23502, ou à défaut le `with check` de la
-    // policy `notifications_ent_insert`) et l'alerte « Livraison en retard » ne
-    // partait plus — en silence, car l'erreur n'était ni déstructurée ni loguée.
-    //
-    // On réutilise le résolveur EXISTANT `lib/contexteEntreprise.ts` (déjà utilisé
-    // par `app/bureau/factures` et `app/bureau/devis-factures`), qui lit le claim
-    // `app_metadata.entreprise_id` de la session : c'est la MÊME source que
-    // `entreprise_courante()` côté PostgREST, donc la valeur posée ici est
-    // exactement celle que la RLS attend. Aucune constante de tenant en dur.
-    // Pas de `chantier_id` ici (une notification de retard fournisseur n'est pas
-    // rattachée à un chantier) : on prend donc la seconde branche du résolveur.
-    const { entreprise_id } = await resoudreContexteEntreprise(null);
-
-    // Fail-closed : sans contexte entreprise, AUCUNE écriture. Une notification
-    // sans tenant serait refusée par la RLS de toute façon ; autant ne rien
-    // tenter et le signaler explicitement.
-    if (!estUuid(entreprise_id)) {
-      console.error(
-        "Fournisseurs : alerte de retard NON émise — contexte entreprise introuvable dans la session."
-      );
-      return;
-    }
-
-    const { data: existantes, error: erreurLecture } = await supabase
+    const { data: existantes } = await supabase
       .from("notifications")
       .select("lien")
-      .eq("type", "commande_retard")
-      // Double filtrage (RLS + `.eq()` explicite) : même modèle que /api/search.
-      .eq("entreprise_id", entreprise_id)
-      .gte("created_at", `${debutSemaine}T00:00:00`);
+      .ilike("lien", "/bureau/fournisseurs?retard=%");
 
-    if (erreurLecture) {
-      console.error("Fournisseurs : lecture des notifications de retard impossible.", erreurLecture);
-      return;
-    }
+    const dejaNotifies = new Set((existantes ?? []).map((n) => n.lien));
+    const nouvelles: Array<{
+      titre: string;
+      message: string;
+      type: string;
+      lien: string;
+      entreprise_id?: string;
+    }> = [];
 
-    const dejaNotifiees = new Set((existantes ?? []).map((n) => n.lien));
-
-    const aInserer = retardataires.filter((c) => !dejaNotifiees.has(`/bureau/fournisseurs?retard=${c.id}`));
-
-    if (aInserer.length === 0) return;
-
-    const rows: TablesInsert<"notifications">[] = aInserer.map((c) => {
+    for (const c of enRetard) {
+      const lien = `/bureau/fournisseurs?retard=${c.id}`;
+      if (dejaNotifies.has(lien)) continue;
       const jours = joursRetard(c.date_livraison_prevue!);
-      const fournisseurNom = c.fournisseurs?.nom ?? "—";
-      return {
-        type: "commande_retard",
-        titre: "Livraison en retard",
-        message: `Commande « ${c.designation} » fournisseur ${fournisseurNom} en retard de J+${jours}`,
-        lien: `/bureau/fournisseurs?retard=${c.id}`,
-        lu: false,
-        entreprise_id,
-        // `destinataire_id` laissé à null : modèle COLLECTIF (O3-B6/N1), la
-        // notification appartient au tenant, pas à un profil.
-      };
-    });
-
-    // Pas d'assertion `as` : le type `Insert` exige `entreprise_id`, donc une
-    // future régression de scopage devient une ERREUR DE COMPILATION.
-    const { error: erreurInsert } = await supabase.from("notifications").insert(rows);
-
-    if (erreurInsert) {
-      console.error("Fournisseurs : alerte de retard NON émise.", erreurInsert);
+      const { entreprise_id } = await resoudreContexteEntreprise(c.chantier_id);
+      if (!c.chantier_id && !estUuid(entreprise_id)) continue;
+      nouvelles.push({
+        titre: `Retard livraison : ${c.designation}`,
+        message: `Fournisseur ${c.fournisseurs?.nom ?? "—"} — prévu le ${new Date(
+          c.date_livraison_prevue!
+        ).toLocaleDateString("fr-FR")} (${jours}j de retard)`,
+        type: "retard_livraison",
+        lien,
+        ...(entreprise_id ? { entreprise_id } : {}),
+      });
     }
+
+    if (nouvelles.length > 0) {
+      await supabase.from("notifications").insert(nouvelles as TablesInsert<"notifications">[]);
+    }
+  }
+
+  async function fetchTout() {
+    setLoading(true);
+    const [
+      { data: f },
+      { data: c },
+      { data: ch },
+      { data: dv },
+      { data: ent },
+    ] = await Promise.all([
+      supabase.from("fournisseurs").select("*").order("nom"),
+      supabase
+        .from("commandes")
+        .select(
+          "*, fournisseurs(nom, contact, telephone, email, conditions_paiement), chantiers(nom, metier, adresse_chantier, clients(nom))"
+        )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("chantiers")
+        .select("id, nom, metier, clients(nom)")
+        .order("nom"),
+      supabase
+        .from("devis")
+        .select("id, chantier_id, statut, total_ht, cout_matiere_ht, cout_main_oeuvre_ht"),
+      supabase.from("entreprise_settings").select("*").limit(1).maybeSingle(),
+    ]);
+
+    const commandesList = (c as unknown as Commande[]) ?? [];
+    setFournisseurs((f as Fournisseur[]) ?? []);
+    setCommandes(commandesList);
+    setChantiers((ch as unknown as Chantier[]) ?? []);
+    setDevisList((dv as unknown as DevisAnalyseInput[]) ?? []);
+    if (ent) setEntreprise(ent as unknown as Entreprise);
+    setLoading(false);
+    detecterRetards(commandesList);
   }
 
   useEffect(() => {
     fetchTout();
-    setMaintenant(new Date());
   }, []);
 
+  // Scroll doux vers la commande mise en avant
   useEffect(() => {
-    if (commandes.length === 0) return;
-    detecterRetards();
-  }, [commandes]);
+    if (!commandeMiseEnAvant || loading) return;
+    const el = document.getElementById("commande-notification");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [commandeMiseEnAvant, loading, commandes]);
 
-  // Récupère une éventuelle commande pré-remplie transmise depuis un métré (Chantier → Zone)
+  // Pré-remplissage depuis un chiffrage (Bardage, Terrasse, Clôture)
   useEffect(() => {
-    if (typeof window === "undefined" || !window.localStorage) return;
+    const brut = localStorage.getItem(CLE_PREFILL_COMMANDE);
+    if (!brut) return;
+    localStorage.removeItem(CLE_PREFILL_COMMANDE);
     try {
-      const raw = window.localStorage.getItem(CLE_PREFILL_COMMANDE);
-      if (!raw) return;
-      const payload = JSON.parse(raw) as {
-        chantierId: string;
-        chantierNom: string;
-        zoneNom: string;
-        lignes: LigneMultiple[];
+      const data = JSON.parse(brut) as {
+        chantierId?: string;
+        chantier_id?: string;
+        chantierNom?: string;
+        zoneNom?: string;
+        lignes?: LigneImportQuantitatif[];
       };
-      setCChantierId(payload.chantierId || "");
-      setLignesMultiples(payload.lignes || []);
-      setPrefillInfo({ chantierNom: payload.chantierNom, zoneNom: payload.zoneNom });
-      setTab("commandes");
-      setModalCommande(true);
-      window.localStorage.removeItem(CLE_PREFILL_COMMANDE);
+      if (data.lignes && data.lignes.length > 0) {
+        setTab("commandes");
+        setLignesMultiples(data.lignes);
+        setPrefillInfo({
+          chantierNom: data.chantierNom || "Chantier BNA",
+          zoneNom: data.zoneNom || "Quantitatif chantier",
+        });
+        const cid = data.chantierId || data.chantier_id || "";
+        if (cid) setCChantierId(cid);
+        setModalCommande(true);
+      }
     } catch {
-      // payload invalide ou localStorage inaccessible, on ignore
+      // Ignore un localStorage corrompu
     }
   }, []);
 
   const kpis = useMemo(() => {
-    if (!maintenant) {
-      return {
-        commandesEnCours: 0,
-        livraisonsAttendues: 0,
-        achatsEngages: 0,
-        achatsRecus: 0,
-      };
-    }
-
+    const maintenant = new Date();
     const commandesEnCours = commandes.filter(
       (c) => c.statut !== "livree" && c.statut !== "annulee"
     ).length;
@@ -342,31 +375,35 @@ export default function FournisseursPage() {
     };
   }, [fournisseurs, commandes]);
 
-  const commandesFiltrees = useMemo(() => {
-    const base =
-      filtreCommandes === "toutes"
-        ? commandes
-        : (() => {
-            const today = new Date().toISOString().slice(0, 10);
-            return commandes.filter(
-              (c) =>
-                c.statut !== "livree" &&
-                c.statut !== "annulee" &&
-                c.date_livraison_prevue &&
-                c.date_livraison_prevue < today
-            );
-          })();
+  const fournisseursFiltres = useMemo(() => {
+    return fournisseurs.filter((f) => correspondMetierSpecialite(f.specialite, filtreMetier));
+  }, [fournisseurs, filtreMetier]);
 
-    // La commande visée par `?retard=` passe en tête SANS être retirée de la
-    // liste : la liste reste l'inventaire complet, la notification est juste
-    // amenée sous les yeux de l'utilisateur.
+  const commandesFiltrees = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    let base = commandes;
+
+    if (filtreMetier !== "tous") {
+      base = base.filter((c) => normaliserMetier(c.chantiers?.metier) === filtreMetier);
+    }
+
+    if (filtreCommandes === "en_retard") {
+      base = base.filter(
+        (c) =>
+          c.statut !== "livree" &&
+          c.statut !== "annulee" &&
+          c.date_livraison_prevue &&
+          c.date_livraison_prevue < today
+      );
+    }
+
     if (!commandeMiseEnAvant) return base;
     return [...base].sort((a, b) => {
       if (a.id === commandeMiseEnAvant) return -1;
       if (b.id === commandeMiseEnAvant) return 1;
       return 0;
     });
-  }, [commandes, filtreCommandes, commandeMiseEnAvant]);
+  }, [commandes, filtreCommandes, filtreMetier, commandeMiseEnAvant]);
 
   const nbRetards = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -379,17 +416,26 @@ export default function FournisseursPage() {
     ).length;
   }, [commandes]);
 
+  const analyseMarges = useMemo(() => {
+    const chantiersAnalyse: ChantierAnalyseInput[] = chantiers.map((ch) => ({
+      id: ch.id,
+      nom: ch.nom,
+      metier: ch.metier,
+      clients: ch.clients,
+    }));
+    return calculerAnalyseMarges(chantiersAnalyse, devisList, commandes);
+  }, [chantiers, devisList, commandes]);
+
+  const lignesAnalyseFiltrees = useMemo(() => {
+    if (filtreMetier === "tous") return analyseMarges.lignes;
+    return analyseMarges.lignes.filter((l) => l.metier === filtreMetier);
+  }, [analyseMarges.lignes, filtreMetier]);
+
   async function creerFournisseur(e: React.FormEvent) {
     e.preventDefault();
     if (!fNom) return;
 
-    // O3-B9 : `fournisseurs` est une table RACINE (`entreprise_id` NOT NULL sans
-    // défaut depuis le 2026-09-22, aucun trigger possible car pas de
-    // `chantier_id`). Même source de vérité que le chemin N9 plus haut dans ce
-    // fichier (claim `app_metadata.entreprise_id` = `entreprise_courante()`).
     const { entreprise_id } = await resoudreContexteEntreprise(null);
-
-    // Fail-closed : sans contexte entreprise, AUCUNE écriture.
     if (!estUuid(entreprise_id)) {
       alert(
         "Impossible de créer le fournisseur : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
@@ -397,9 +443,6 @@ export default function FournisseursPage() {
       return;
     }
 
-    // Pas d'assertion `as` : `entreprise_id` est rétréci en `string`, donc le type
-    // `Insert` est réellement satisfait et une régression de scopage
-    // redeviendrait une ERREUR DE COMPILATION.
     const { error } = await supabase.from("fournisseurs").insert({
       nom: fNom,
       specialite: fSpecialite,
@@ -436,6 +479,7 @@ export default function FournisseursPage() {
     setModalCommande(false);
     setLignesMultiples(null);
     setPrefillInfo(null);
+    setImportMessage(null);
     setCFournisseurId("");
     setCChantierId("");
     setCDesignation("");
@@ -444,32 +488,79 @@ export default function FournisseursPage() {
     setCDateLivraison("");
   }
 
-  function updateLigneMultiple(index: number, patch: Partial<LigneMultiple>) {
-    setLignesMultiples((ls) => (ls ? ls.map((l, i) => (i === index ? { ...l, ...patch } : l)) : ls));
+  function updateLigneMultiple(index: number, patch: Partial<LigneImportQuantitatif>) {
+    setLignesMultiples((ls) =>
+      ls ? ls.map((l, i) => (i === index ? { ...l, ...patch } : l)) : ls
+    );
   }
 
   function supprimerLigneMultiple(index: number) {
     setLignesMultiples((ls) => (ls ? ls.filter((_, i) => i !== index) : ls));
   }
 
+  async function importerQuantitatifsChantier() {
+    if (!cChantierId) {
+      setImportMessage("Sélectionnez d'abord un chantier ci-dessus.");
+      return;
+    }
+    const ch = chantiers.find((item) => item.id === cChantierId);
+    if (!ch) return;
+
+    setImportLoading(true);
+    setImportMessage(null);
+    try {
+      const metier = normaliserMetier(ch.metier);
+      let lignesImportees: LigneImportQuantitatif[] = [];
+
+      if (metier === "terrasse") {
+        const { data } = await supabase
+          .from("chantier_terrasses")
+          .select("resultats_techniques")
+          .eq("chantier_id", ch.id)
+          .maybeSingle();
+        lignesImportees = extraireFournituresDepuisTerrasse(data);
+      } else if (metier === "cloture") {
+        const { data } = await supabase
+          .from("chantier_clotures")
+          .select("resultats_techniques")
+          .eq("chantier_id", ch.id)
+          .maybeSingle();
+        lignesImportees = extraireFournituresDepuisCloture(data);
+      } else {
+        const { data } = await supabase
+          .from("chantier_zones")
+          .select("id, nom, materiau, largeur, hauteur_mur, resultats_techniques")
+          .eq("chantier_id", ch.id);
+        lignesImportees = extraireFournituresDepuisZonesBardage(
+          (data as unknown as ZoneBardageBrute[]) ?? []
+        );
+      }
+
+      if (lignesImportees.length === 0) {
+        setImportMessage(
+          `Aucun quantitatif enregistré pour ce chantier (${badgeMetierConfig(metier).label}). Enregistrez d'abord le calepinage dans le Hub.`
+        );
+        return;
+      }
+
+      setLignesMultiples(lignesImportees);
+      setPrefillInfo({
+        chantierNom: ch.nom || ch.clients?.nom || "Chantier BNA",
+        zoneNom: `Quantitatifs Q_appro (${badgeMetierConfig(metier).label})`,
+      });
+      setImportMessage(`${lignesImportees.length} ligne(s) de fournitures importée(s).`);
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
   async function creerCommande(e: React.FormEvent) {
     e.preventDefault();
 
-    // O3-B9 — `commandes` est une table ENFANT : le trigger
-    // `tg_set_entreprise_par_chantier()` en dérive `entreprise_id`… MAIS il est
-    // un NO-OP silencieux quand `chantier_id IS NULL`. Or ce formulaire propose
-    // explicitement « -- Chantier (optionnel) -- » : le mode sans chantier est une
-    // règle métier existante, on ne la rend PAS obligatoire.
-    //
-    // Le résolveur EXISTANT couvre exactement ce cas :
-    //   chantier présent → `{entreprise_id: null}`, le trigger pose la valeur ;
-    //   chantier absent   → `{entreprise_id: <claim>}`, on la pose nous-mêmes.
-    const { chantier_id: chantierCtx, entreprise_id } =
-      await resoudreContexteEntreprise(cChantierId || null);
+    const { chantier_id: chantierCtx, entreprise_id } = await resoudreContexteEntreprise(
+      cChantierId || null
+    );
 
-    // Fail-closed sur la SEULE combinaison réellement bloquante : pas de parent
-    // ET pas de claim. Si le chantier est présent, le trigger garantit le
-    // remplissage ; sinon le claim doit être valide.
     if (!chantierCtx && !estUuid(entreprise_id)) {
       alert(
         "Impossible de créer la commande : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
@@ -485,15 +576,17 @@ export default function FournisseursPage() {
         designation: l.designation,
         quantite: l.quantite || null,
         unite: l.unite,
-        montant_ht: null,
+        montant_ht:
+          typeof l.pu_ht === "number" && l.quantite
+            ? Math.round(l.pu_ht * l.quantite * 100) / 100
+            : null,
         date_livraison_prevue: cDateLivraison || null,
         statut: "a_commander",
         ...(entreprise_id ? { entreprise_id } : {}),
       }));
-      // Assertion justifiée, et PROUVÉE SÛRE par la garde ci-dessus : le type
-      // généré déclare `entreprise_id` requis, or on ne l'omet QUE dans la
-      // branche où `chantierCtx` est non-null — donc où le trigger le pose.
-      const { error } = await supabase.from("commandes").insert(inserts as TablesInsert<"commandes">[]);
+      const { error } = await supabase
+        .from("commandes")
+        .insert(inserts as TablesInsert<"commandes">[]);
       if (error) {
         alert("Erreur : " + error.message);
         return;
@@ -530,6 +623,38 @@ export default function FournisseursPage() {
     if (!error) fetchTout();
   }
 
+  function ouvrirModalReception(c: Commande) {
+    setCommandeReception(c);
+    setRStatut(c.statut === "partiellement_livree" ? "partiellement_livree" : "livree");
+    setRDateReelle(c.date_livraison_reelle || new Date().toISOString().slice(0, 10));
+    setRNoteBl(c.notes || "");
+  }
+
+  async function validerReception(e: React.FormEvent) {
+    e.preventDefault();
+    if (!commandeReception) return;
+    setSavingReception(true);
+    try {
+      const { error } = await supabase
+        .from("commandes")
+        .update({
+          statut: rStatut,
+          date_livraison_reelle: rDateReelle || new Date().toISOString().slice(0, 10),
+          notes: rNoteBl.trim() || null,
+        })
+        .eq("id", commandeReception.id);
+
+      if (error) {
+        alert("Erreur lors de la réception : " + error.message);
+        return;
+      }
+      setCommandeReception(null);
+      fetchTout();
+    } finally {
+      setSavingReception(false);
+    }
+  }
+
   async function definirDateCommande(c: Commande, dateCommande: string) {
     const { error } = await supabase
       .from("commandes")
@@ -545,296 +670,610 @@ export default function FournisseursPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-white">Fournisseurs & Achats</h1>
-        <p className="text-sm text-gray-400">Répertoire fournisseurs et suivi des commandes</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Surface className="p-3">
-          <p className="text-xs text-gray-400">🏢 Fournisseurs actifs</p>
-          <p className="mt-1 text-xl font-semibold text-white">{kpis.fournisseursActifs}</p>
-        </Surface>
-        <Surface className="p-3">
-          <p className="text-xs text-gray-400">📦 Commandes en cours</p>
-          <p className="mt-1 text-xl font-semibold text-white">{kpis.commandesEnCours}</p>
-        </Surface>
-        <Surface className="p-3">
-          <p className="text-xs text-gray-400">🚚 Livraisons attendues</p>
-          <p className="mt-1 text-xl font-semibold text-white">{kpis.livraisonsAttendues}</p>
-        </Surface>
-        <Surface className="p-3">
-          <p className="text-xs text-gray-400">💰 Achats du mois</p>
-          <p className="mt-1 text-sm text-white">
-            Engagé : <span className="font-semibold">{kpis.achatsEngages.toFixed(0)} €</span>
-          </p>
-          <p className="text-sm text-gray-400">
-            Reçu : <span className="font-semibold text-gray-400">{kpis.achatsRecus.toFixed(0)} €</span>
-          </p>
-        </Surface>
-      </div>
-
-      <div className="flex flex-wrap gap-2.5">
-        <button
-          onClick={() => setModalFournisseur(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
-        >
-          <span>+</span> Nouveau Fournisseur
-        </button>
-        <button
-          onClick={() => setModalCommande(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-200 hover:bg-[#1E1E1E]"
-        >
-          <span>📦</span> Nouvelle Commande
-        </button>
-      </div>
-
-      <div className="flex gap-2 mb-4">
-        {(["fournisseurs", "commandes", "analyse"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`text-sm whitespace-nowrap transition-all ${
-              tab === t
-                ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
-            }`}
-          >
-            {t === "fournisseurs" ? "🏢 Fournisseurs" : t === "commandes" ? "📦 Commandes Matériaux" : "📊 Analyse des Marges"}
-          </button>
-        ))}
-      </div>
-
-      {tab === "fournisseurs" && (
-        <div className="space-y-4">
-          {loading ? (
-            <p className="text-sm text-gray-400">Chargement…</p>
-          ) : fournisseurs.length === 0 ? (
-            <p className="text-sm text-gray-500">Aucun fournisseur pour l&apos;instant.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {fournisseurs.map((f) => {
-                const relation = RELATIONS.find((r) => r.value === f.statut_relation) ?? RELATIONS[1];
-                return (
-                  <Surface key={f.id} className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-white">{f.nom}</p>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          {f.specialite && (
-                            <span className="inline-block rounded-full border border-slate-600 px-2 py-0.5 text-xs text-gray-400">
-                              {f.specialite}
-                            </span>
-                          )}
-                          <span
-                            className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${relation.couleurActif}`}
-                          >
-                            {relation.label}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => supprimerFournisseur(f)}
-                        className="text-xs text-gray-500 hover:text-red-400"
-                        aria-label="Supprimer le fournisseur"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                    {f.contact && <p className="mt-2 text-sm text-gray-400">{f.contact}</p>}
-                    <div className="mt-2 flex flex-wrap gap-3 text-sm">
-                      {f.telephone && (
-                        <a href={`tel:${f.telephone}`} className="font-medium text-red-400 hover:text-red-300">
-                          📞 {f.telephone}
-                        </a>
-                      )}
-                      {f.email && (
-                        <a href={`mailto:${f.email}`} className="font-medium text-gray-300 hover:text-gray-400">
-                          ✉️ {f.email}
-                        </a>
-                      )}
-                    </div>
-                    {f.conditions_paiement && (
-                      <p className="mt-2 text-xs text-gray-500">Paiement : {f.conditions_paiement}</p>
-                    )}
-                    {f.notes && <p className="mt-1 text-xs text-gray-500">{f.notes}</p>}
-                  </Surface>
-                );
-              })}
+    <div className="min-h-screen bg-[#F3F3F1] pb-24 text-[#23272B]">
+      <div className="mx-auto max-w-6xl space-y-5 px-4 pt-4 sm:px-6">
+        {/* En-tête blanc BNA Pilotage BTP */}
+        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#B85B2B]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+                <Truck className="h-3.5 w-3.5" />
+                BNA Pilotage BTP · Fournisseurs & Achats
+              </div>
+              <h1 className="mt-2 text-xl font-bold text-[#23272B] sm:text-2xl">
+                Fournisseurs, Commandes & Marges Matériaux
+              </h1>
+              <p className="mt-0.5 text-sm text-[#666666]">
+                Répertoire fournisseurs, approvisionnement Bardage / Terrasse / Clôture et suivi des marges.
+              </p>
             </div>
-          )}
-        </div>
-      )}
-
-      {tab === "commandes" && (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            {(["toutes", "en_retard"] as const).map((f) => (
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                key={f}
-                onClick={() => setFiltreCommandes(f)}
-                className={`text-xs whitespace-nowrap transition-all ${
-                  filtreCommandes === f
-                    ? f === "en_retard"
-                      ? "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                      : "bg-red-600 text-white font-medium rounded-full px-4 py-2 shadow-md"
-                    : "bg-[#1E1E1E]/80 text-gray-400 hover:text-white rounded-full px-4 py-2 border border-white/5 transition-all"
+                type="button"
+                onClick={() => setModalFournisseur(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2.5 text-xs font-bold text-[#23272B] transition-colors hover:bg-white"
+              >
+                <Plus className="h-4 w-4 text-[#B85B2B]" />
+                Nouveau fournisseur
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalCommande(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#9E4B20]"
+              >
+                <Plus className="h-4 w-4" />
+                Nouvelle commande
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#777777]">Fournisseurs actifs</p>
+            <p className="mt-1 text-2xl font-bold text-[#23272B]">{kpis.fournisseursActifs}</p>
+          </div>
+          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#777777]">Commandes en cours</p>
+            <p className="mt-1 text-2xl font-bold text-[#23272B]">{kpis.commandesEnCours}</p>
+            <p className="mt-0.5 text-[11px] text-[#777777]">
+              {kpis.livraisonsAttendues} livraison(s) attendue(s)
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#777777]">Achats engagés (mois)</p>
+            <p className="mt-1 text-2xl font-bold text-[#B85B2B]">
+              {fmtEuro(kpis.achatsEngages)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#777777]">Achats reçus (mois)</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-700">
+              {fmtEuro(kpis.achatsRecus)}
+            </p>
+          </div>
+        </div>
+
+        {/* Barre d'onglets + Filtre métier */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-xs">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "fournisseurs", label: "Répertoire fournisseurs" },
+                { id: "commandes", label: "Suivi des commandes" },
+                { id: "analyse", label: "Analyse des marges" },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
+                  tab === t.id
+                    ? "bg-[#B85B2B] text-white shadow-xs"
+                    : "border border-[#E5E5E5] bg-[#F8F9FA] text-[#555555] hover:bg-white hover:text-[#23272B]"
                 }`}
               >
-                {f === "toutes" ? "Toutes" : `⚠️ En retard (${nbRetards})`}
+                {t.label}
               </button>
             ))}
           </div>
-          {loading ? (
-            <p className="text-sm text-gray-400">Chargement…</p>
-          ) : commandesFiltrees.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              {filtreCommandes === "en_retard" ? "Aucune commande en retard." : "Aucune commande pour l&apos;instant."}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {commandesFiltrees.map((c) => {
-                const statutInfo = STATUTS.find((s) => s.value === c.statut) ?? STATUTS[0];
-                const today = new Date().toISOString().slice(0, 10);
-                const enRetard =
-                  c.statut !== "livree" &&
-                  c.statut !== "annulee" &&
-                  c.date_livraison_prevue &&
-                  c.date_livraison_prevue < today;
-                const retardJours = enRetard ? joursRetard(c.date_livraison_prevue!) : 0;
-                const miseEnAvant = c.id === commandeMiseEnAvant;
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                { id: "tous", label: "Tous métiers" },
+                { id: "bardage", label: "Bardage" },
+                { id: "terrasse", label: "Terrasse" },
+                { id: "cloture", label: "Clôture" },
+              ] as const
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setFiltreMetier(m.id)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                  filtreMetier === m.id
+                    ? "bg-[#23272B] text-white"
+                    : "border border-[#E5E5E5] bg-white text-[#666666] hover:bg-[#F8F9FA]"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ONGLET 1 : FOURNISSEURS */}
+        {tab === "fournisseurs" && (
+          <div className="space-y-4">
+            {loading ? (
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+                Chargement des fournisseurs...
+              </div>
+            ) : fournisseursFiltres.length === 0 ? (
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+                Aucun fournisseur trouvé pour ce filtre.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {fournisseursFiltres.map((f) => {
+                  const relation =
+                    RELATIONS.find((r) => r.value === f.statut_relation) ?? RELATIONS[1];
+                  return (
+                    <div
+                      key={f.id}
+                      className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs transition-shadow hover:shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-[#B85B2B]" />
+                            <p className="font-bold text-[#23272B]">{f.nom}</p>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {f.specialite && (
+                              <span className="inline-block rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-0.5 text-xs font-medium text-[#555555]">
+                                {f.specialite}
+                              </span>
+                            )}
+                            <span
+                              className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${relation.couleurActif}`}
+                            >
+                              {relation.label}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => supprimerFournisseur(f)}
+                          className="rounded-lg p-1.5 text-[#999999] transition-colors hover:bg-red-50 hover:text-red-600"
+                          aria-label="Supprimer le fournisseur"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {f.contact && (
+                        <p className="mt-2.5 text-sm font-medium text-[#555555]">
+                          Contact : {f.contact}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-3 text-sm">
+                        {f.telephone && (
+                          <a
+                            href={`tel:${f.telephone}`}
+                            className="inline-flex items-center gap-1 font-semibold text-[#B85B2B] hover:underline"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                            {f.telephone}
+                          </a>
+                        )}
+                        {f.email && (
+                          <a
+                            href={`mailto:${f.email}`}
+                            className="inline-flex items-center gap-1 font-medium text-[#555555] hover:text-[#23272B] hover:underline"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            {f.email}
+                          </a>
+                        )}
+                      </div>
+                      {f.conditions_paiement && (
+                        <p className="mt-2 text-xs text-[#777777]">
+                          Paiement : {f.conditions_paiement}
+                        </p>
+                      )}
+                      {f.notes && <p className="mt-1 text-xs text-[#777777]">{f.notes}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ONGLET 2 : COMMANDES */}
+        {tab === "commandes" && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {(["toutes", "en_retard"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFiltreCommandes(f)}
+                  className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
+                    filtreCommandes === f
+                      ? "bg-[#B85B2B] text-white shadow-xs"
+                      : "border border-[#E5E5E5] bg-white text-[#555555] hover:bg-[#F8F9FA]"
+                  }`}
+                >
+                  {f === "toutes" ? "Toutes les commandes" : `En retard (${nbRetards})`}
+                </button>
+              ))}
+            </div>
+
+            {loading ? (
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+                Chargement des commandes...
+              </div>
+            ) : commandesFiltrees.length === 0 ? (
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+                {filtreCommandes === "en_retard"
+                  ? "Aucune commande en retard."
+                  : "Aucune commande pour l'instant."}
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {commandesFiltrees.map((c) => {
+                  const statutInfo =
+                    STATUTS.find((s) => s.value === c.statut) ?? STATUTS[0];
+                  const today = new Date().toISOString().slice(0, 10);
+                  const enRetard =
+                    c.statut !== "livree" &&
+                    c.statut !== "annulee" &&
+                    c.date_livraison_prevue &&
+                    c.date_livraison_prevue < today;
+                  const retardJours = enRetard
+                    ? joursRetard(c.date_livraison_prevue!)
+                    : 0;
+                  const miseEnAvant = c.id === commandeMiseEnAvant;
+                  const metierBadge = c.chantiers
+                    ? badgeMetierConfig(c.chantiers.metier)
+                    : null;
+
+                  return (
+                    <div
+                      key={c.id}
+                      id={miseEnAvant ? "commande-notification" : undefined}
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-xs ${
+                        miseEnAvant
+                          ? "border-[#B85B2B] ring-2 ring-[#B85B2B]/25"
+                          : enRetard
+                            ? "border-red-300 bg-red-50/30"
+                            : "border-[#E5E5E5]"
+                      }`}
+                    >
+                      <div className="min-w-[240px] flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-bold text-[#23272B]">{c.designation}</p>
+                          {metierBadge && (
+                            <span
+                              className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-bold ${metierBadge.badgeClass}`}
+                            >
+                              {metierBadge.label}
+                            </span>
+                          )}
+                          {miseEnAvant && (
+                            <span className="rounded-full bg-[#B85B2B]/15 px-2 py-0.5 text-[11px] font-bold text-[#B85B2B]">
+                              Ouvert depuis une notification
+                            </span>
+                          )}
+                          {enRetard && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                              <AlertTriangle className="h-3 w-3" />
+                              EN RETARD J+{retardJours}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-1 text-xs text-[#666666]">
+                          <span className="font-semibold text-[#23272B]">
+                            {c.fournisseurs?.nom ?? "Fournisseur non défini"}
+                          </span>{" "}
+                          · {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
+                          {c.quantite ? ` · ${c.quantite} ${c.unite ?? ""}` : ""}
+                          {c.montant_ht ? ` · ${fmtEuro(c.montant_ht)} HT` : ""}
+                        </p>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#666666]">
+                          <label className="flex items-center gap-1.5">
+                            <span>Commandé le :</span>
+                            <input
+                              type="date"
+                              value={c.date_commande ?? ""}
+                              onChange={(e) => definirDateCommande(c, e.target.value)}
+                              className="rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] px-2 py-0.5 text-xs text-[#23272B]"
+                              aria-label="Date de commande"
+                            />
+                          </label>
+                          {c.date_livraison_prevue && (
+                            <span>
+                              Prévu :{" "}
+                              {new Date(c.date_livraison_prevue).toLocaleDateString("fr-FR")}
+                            </span>
+                          )}
+                          {c.date_livraison_reelle && (
+                            <span className="font-semibold text-emerald-700">
+                              Livré le :{" "}
+                              {new Date(c.date_livraison_reelle).toLocaleDateString("fr-FR")}
+                            </span>
+                          )}
+                        </div>
+                        {c.notes && (
+                          <p className="mt-1 text-xs italic text-[#777777]">
+                            Note / BL : {c.notes}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {c.statut !== "livree" && c.statut !== "annulee" && (
+                          <button
+                            type="button"
+                            onClick={() => ouvrirModalReception(c)}
+                            className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Réceptionner
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setApercuCommande(c)}
+                          className="inline-flex items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:bg-white"
+                          title="Voir et imprimer le bon de commande officiel"
+                        >
+                          <Printer className="h-3.5 w-3.5 text-[#555555]" />
+                          Bon PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCommandePourEmail(c)}
+                          className="inline-flex items-center gap-1 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3 py-1.5 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15"
+                          title="Envoyer le bon de commande par email au fournisseur"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          Envoyer
+                        </button>
+                        <select
+                          value={c.statut}
+                          onChange={(e) => changerStatutCommande(c, e.target.value)}
+                          className={`rounded-xl border px-2.5 py-1.5 text-xs font-semibold ${statutInfo.couleur}`}
+                          aria-label="Statut de la commande"
+                        >
+                          {STATUTS.map((s) => (
+                            <option key={s.value} value={s.value}>
+                              {s.label}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => supprimerCommande(c)}
+                          className="rounded-lg p-1.5 text-[#999999] hover:bg-red-50 hover:text-red-600"
+                          aria-label="Supprimer la commande"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ONGLET 3 : ANALYSE DES MARGES */}
+        {tab === "analyse" && (
+          <div className="space-y-4">
+            {/* KPIs globaux marges matériaux */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#777777]">
+                  Ventes matériaux devisées HT
+                </p>
+                <p className="mt-1 text-xl font-bold text-[#23272B]">
+                  {fmtEuro(analyseMarges.totalVentesMateriauxHt)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#777777]">Achats engagés HT</p>
+                <p className="mt-1 text-xl font-bold text-[#B85B2B]">
+                  {fmtEuro(analyseMarges.totalAchatsEngagesHt)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#777777]">Achats livrés HT</p>
+                <p className="mt-1 text-xl font-bold text-emerald-700">
+                  {fmtEuro(analyseMarges.totalAchatsLivresHt)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#777777]">
+                  Marge brute matériaux
+                </p>
+                <p
+                  className={`mt-1 text-xl font-bold ${
+                    analyseMarges.margeBruteHt >= 0 ? "text-emerald-700" : "text-red-600"
+                  }`}
+                >
+                  {fmtEuro(analyseMarges.margeBruteHt)}
+                </p>
+                <p className="mt-0.5 text-[11px] font-semibold text-[#666666]">
+                  Taux : {analyseMarges.margeBrutePct.toFixed(1)} %
+                </p>
+              </div>
+            </div>
+
+            {/* Synthèse par corps d'état */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(["bardage", "terrasse", "cloture"] as const).map((m) => {
+                const badge = badgeMetierConfig(m);
+                const stats = analyseMarges.parMetier[m];
                 return (
                   <div
-                    key={c.id}
-                    id={miseEnAvant ? "commande-notification" : undefined}
-                    className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-[#1E1E1E] p-4 ${
-                      miseEnAvant
-                        ? "border-[#B85B2B] ring-1 ring-[#B85B2B]/40"
-                        : enRetard
-                          ? "border-red-500/40"
-                          : "border-white/10"
-                    }`}
+                    key={m}
+                    className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs"
                   >
-                    <div>
-                      <p className="font-medium text-white">
-                        {c.designation}
-                        {miseEnAvant && (
-                          <span className="ml-2 rounded-full bg-[#B85B2B]/20 px-2 py-0.5 text-2xs font-bold text-red-200">
-                            Ouvert depuis une notification
-                          </span>
-                        )}
-                        {enRetard && (
-                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-2xs font-bold text-white">
-                            <AlertTriangle className="h-3 w-3" />
-                            EN RETARD J+{retardJours}
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {c.fournisseurs?.nom ?? "—"} ·{" "}
-                        {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
-                        {c.quantite ? ` · ${c.quantite} ${c.unite}` : ""}
-                        {c.montant_ht ? ` · ${fmtEuro(c.montant_ht)} HT` : ""}
-                      </p>
-                      <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
-                        Commande passée le :
-                        <input
-                          type="date"
-                          value={c.date_commande ?? ""}
-                          onChange={(e) => definirDateCommande(c, e.target.value)}
-                          className="rounded border border-slate-600 bg-transparent px-1.5 py-0.5 text-xs text-gray-300"
-                          aria-label="Date de commande"
-                        />
-                      </p>
-                      {c.date_livraison_prevue && (
-                        <p className="text-xs text-gray-500">
-                          Livraison prévue : {new Date(c.date_livraison_prevue).toLocaleDateString("fr-FR")}
-                        </p>
-                      )}
-                      {c.date_livraison_reelle && (
-                        <p className="text-xs text-gray-400">
-                          Livré le : {new Date(c.date_livraison_reelle).toLocaleDateString("fr-FR")}
-                        </p>
-                      )}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-bold ${badge.badgeClass}`}
+                      >
+                        {badge.label}
+                      </span>
+                      <span className="text-xs text-[#777777]">
+                        {stats.nbChantiers} chantier(s)
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setApercuCommande(c)}
-                        className="rounded-lg border border-slate-600 bg-transparent px-2.5 py-1 text-xs text-gray-300 hover:bg-[#1E1E1E] hover:text-gray-400"
-                        title="Voir et imprimer le bon de commande officiel"
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-[#777777]">Devisé matériaux</p>
+                        <p className="font-bold text-[#23272B]">
+                          {fmtEuro(stats.ventesMateriauxHt)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[#777777]">Achats engagés</p>
+                        <p className="font-bold text-[#B85B2B]">
+                          {fmtEuro(stats.achatsEngagesHt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 border-t border-[#E5E5E5] pt-2 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-[#555555]">Marge brute</span>
+                      <span
+                        className={`font-bold ${
+                          stats.margeBruteHt >= 0 ? "text-emerald-700" : "text-red-600"
+                        }`}
                       >
-                        📄 Bon de commande
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCommandePourEmail(c)}
-                        className="rounded-lg border border-red-500/40 bg-red-950/20 px-2.5 py-1 text-xs font-semibold text-red-300 hover:bg-red-900/40 hover:border-red-500/60 transition-colors flex items-center gap-1"
-                        title="Envoyer le bon de commande par email au fournisseur"
-                      >
-                        <span>📧</span> Envoyer
-                      </button>
-                      <select
-                        value={c.statut}
-                        onChange={(e) => changerStatutCommande(c, e.target.value)}
-                        className={`rounded-lg border bg-transparent px-2 py-1 text-xs ${statutInfo.couleur}`}
-                        aria-label="Statut de la commande"
-                      >
-                        {STATUTS.map((s) => (
-                          <option key={s.value} value={s.value}>
-                            {s.emoji} {s.label}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => supprimerCommande(c)}
-                        className="text-xs text-gray-500 hover:text-red-400"
-                        aria-label="Supprimer la commande"
-                      >
-                        🗑️
-                      </button>
+                        {fmtEuro(stats.margeBruteHt)} ({stats.margeBrutePct.toFixed(1)} %)
+                      </span>
                     </div>
                   </div>
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
 
+            {/* Tableau comparatif détaillé par chantier */}
+            <div className="overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#E5E5E5] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-[#B85B2B]" />
+                  <h2 className="text-sm font-bold text-[#23272B]">
+                    Comparatif Devis Matériaux vs Achats Fournisseurs par chantier
+                  </h2>
+                </div>
+                <span className="text-xs text-[#777777]">
+                  {lignesAnalyseFiltrees.length} chantier(s)
+                </span>
+              </div>
+
+              {lignesAnalyseFiltrees.length === 0 ? (
+                <p className="p-6 text-center text-sm text-[#777777]">
+                  Aucune donnée devis ou commande disponible pour ce filtre.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#F8F9FA] text-[11px] font-bold uppercase tracking-wider text-[#666666]">
+                      <tr>
+                        <th className="px-4 py-3">Chantier</th>
+                        <th className="px-4 py-3">Métier</th>
+                        <th className="px-4 py-3 text-right">Cmdes</th>
+                        <th className="px-4 py-3 text-right">Ventes mat. HT</th>
+                        <th className="px-4 py-3 text-right">Achats engagés HT</th>
+                        <th className="px-4 py-3 text-right">Achats livrés HT</th>
+                        <th className="px-4 py-3 text-right">Marge brute HT</th>
+                        <th className="px-4 py-3 text-right">Marge %</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E5E5E5]">
+                      {lignesAnalyseFiltrees.map((l) => {
+                        const badge = badgeMetierConfig(l.metier);
+                        return (
+                          <tr key={l.chantierId} className="hover:bg-[#F8F9FA]/70">
+                            <td className="px-4 py-3">
+                              <p className="font-bold text-[#23272B]">{l.chantierNom}</p>
+                              {l.clientNom && (
+                                <p className="text-[11px] text-[#777777]">{l.clientNom}</p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-bold ${badge.badgeClass}`}
+                              >
+                                {badge.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right font-semibold text-[#555555]">
+                              {l.nbCommandes}
+                            </td>
+                            <td className="px-4 py-3 text-right font-semibold text-[#23272B]">
+                              {fmtEuro(l.ventesMateriauxHt)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-semibold text-[#B85B2B]">
+                              {fmtEuro(l.achatsEngagesHt)}
+                            </td>
+                            <td className="px-4 py-3 text-right text-emerald-700">
+                              {fmtEuro(l.achatsLivresHt)}
+                            </td>
+                            <td
+                              className={`px-4 py-3 text-right font-bold ${
+                                l.margeBruteHt >= 0 ? "text-emerald-700" : "text-red-600"
+                              }`}
+                            >
+                              {fmtEuro(l.margeBruteHt)}
+                            </td>
+                            <td
+                              className={`px-4 py-3 text-right font-bold ${
+                                l.margeBrutePct >= 0 ? "text-emerald-700" : "text-red-600"
+                              }`}
+                            >
+                              {l.margeBrutePct.toFixed(1)} %
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* MODAL NOUVEAU FOURNISSEUR */}
       {modalFournisseur && (
         <div
-          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
           onClick={() => setModalFournisseur(false)}
         >
           <form
             onSubmit={creerFournisseur}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1E1E1E] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
-              <h2 className="text-base font-bold text-white">Nouveau Fournisseur</h2>
-              <button type="button" onClick={() => setModalFournisseur(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white" aria-label="Fermer">
-                ✕
+            <div className="flex shrink-0 items-center justify-between border-b border-[#E5E5E5] p-4">
+              <h2 className="text-base font-bold text-[#23272B]">Nouveau fournisseur</h2>
+              <button
+                type="button"
+                onClick={() => setModalFournisseur(false)}
+                className="rounded-lg p-1.5 text-[#777777] hover:bg-[#F3F3F1] hover:text-[#23272B]"
+                aria-label="Fermer"
+              >
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
+            <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
               <input
                 value={fNom}
                 onChange={(e) => setFNom(e.target.value)}
                 placeholder="Nom de l'entreprise"
                 required
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
               />
               <select
                 value={fSpecialite}
                 onChange={(e) => setFSpecialite(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
                 aria-label="Spécialité"
               >
-                {SPECIALITES.map((s) => (
+                {SPECIALITES_FOURNISSEUR.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -842,8 +1281,17 @@ export default function FournisseursPage() {
               </select>
 
               <div>
-                <label id="grp-statut-du-fournisseur" className="mb-1 block text-3xs font-semibold uppercase text-gray-400">Statut du fournisseur</label>
-                <div role="group" aria-labelledby="grp-statut-du-fournisseur" className="grid grid-cols-3 gap-2">
+                <label
+                  id="grp-statut-du-fournisseur"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#777777]"
+                >
+                  Statut du fournisseur
+                </label>
+                <div
+                  role="group"
+                  aria-labelledby="grp-statut-du-fournisseur"
+                  className="grid grid-cols-3 gap-2"
+                >
                   {RELATIONS.map((r) => (
                     <button
                       key={r.value}
@@ -852,7 +1300,7 @@ export default function FournisseursPage() {
                       className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
                         fStatutRelation === r.value
                           ? r.couleurActif
-                          : "border-white/10 bg-transparent text-gray-400 hover:bg-[#1E1E1E]"
+                          : "border-[#E5E5E5] bg-[#F8F9FA] text-[#666666] hover:bg-white"
                       }`}
                     >
                       {r.label}
@@ -865,80 +1313,120 @@ export default function FournisseursPage() {
                 value={fContact}
                 onChange={(e) => setFContact(e.target.value)}
                 placeholder="Nom du contact"
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={fTel}
                   onChange={(e) => setFTel(e.target.value)}
                   placeholder="Téléphone"
-                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                  className="rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
                 />
                 <input
                   value={fEmail}
                   onChange={(e) => setFEmail(e.target.value)}
                   placeholder="Email"
-                  className="rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                  className="rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
                 />
               </div>
               <input
                 value={fConditions}
                 onChange={(e) => setFConditions(e.target.value)}
                 placeholder="Conditions de paiement (ex. 30j fin de mois)"
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
               />
               <textarea
                 value={fNotes}
                 onChange={(e) => setFNotes(e.target.value)}
                 placeholder="Notes et commentaires"
                 rows={2}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
               />
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl">
+            <div className="mt-auto flex shrink-0 justify-end gap-3 rounded-b-2xl border-t border-[#E5E5E5] bg-[#F8F9FA] p-4">
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
-                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
+                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs font-semibold text-[#555555] hover:bg-[#F3F3F1]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 shadow-md"
+                className="rounded-xl bg-[#B85B2B] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20]"
               >
-                Enregistrer le Fournisseur
+                Enregistrer le fournisseur
               </button>
             </div>
           </form>
         </div>
       )}
 
+      {/* MODAL NOUVELLE COMMANDE */}
       {modalCommande && (
         <div
-          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-24 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
           onClick={fermerModalCommande}
         >
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#1E1E1E] w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl border border-white/10 shadow-2xl animate-in fade-in"
+            className="flex max-h-[88vh] w-full max-w-xl flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-white/10 p-4 shrink-0">
-              <h2 className="text-base font-bold text-white">
-                {lignesMultiples ? "Commande depuis un métré" : "Nouvelle commande"}
+            <div className="flex shrink-0 items-center justify-between border-b border-[#E5E5E5] p-4">
+              <h2 className="text-base font-bold text-[#23272B]">
+                {lignesMultiples ? "Commande depuis quantitatifs" : "Nouvelle commande"}
               </h2>
-              <button type="button" onClick={fermerModalCommande} className="rounded-lg p-1.5 text-gray-400 hover:bg-[#1E1E1E] hover:text-white" aria-label="Fermer">
-                ✕
+              <button
+                type="button"
+                onClick={fermerModalCommande}
+                className="rounded-lg p-1.5 text-[#777777] hover:bg-[#F3F3F1] hover:text-[#23272B]"
+                aria-label="Fermer"
+              >
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4">
+            <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
+              {/* Sélection chantier + Import quantitatifs Q_appro */}
+              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 space-y-2">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#666666]">
+                  Chantier & Import quantitatifs (Bardage / Terrasse / Clôture)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    value={cChantierId}
+                    onChange={(e) => setCChantierId(e.target.value)}
+                    className="flex-1 min-w-[200px] rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                    aria-label="Chantier"
+                  >
+                    <option value="">-- Chantier (optionnel) --</option>
+                    {chantiers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        [{badgeMetierConfig(c.metier).label}] {c.nom || c.clients?.nom}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={importerQuantitatifsChantier}
+                    disabled={importLoading || !cChantierId}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3 py-2 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 disabled:opacity-50"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {importLoading ? "Import..." : "Importer quantitatifs d'un chantier"}
+                  </button>
+                </div>
+                {importMessage && (
+                  <p className="text-xs font-medium text-[#B85B2B]">{importMessage}</p>
+                )}
+              </div>
+
               {prefillInfo && (
-                <p className="rounded-xl border border-red-600/30 bg-sky-950/40 px-3.5 py-2 text-xs font-semibold text-gray-400">
+                <div className="rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 px-3.5 py-2 text-xs font-semibold text-[#B85B2B]">
                   {prefillInfo.chantierNom} — {prefillInfo.zoneNom}
-                </p>
+                </div>
               )}
 
               {lignesMultiples ? (
@@ -947,35 +1435,41 @@ export default function FournisseursPage() {
                     <div key={i} className="flex items-center gap-2">
                       <input
                         value={l.designation}
-                        onChange={(e) => updateLigneMultiple(i, { designation: e.target.value })}
-                        className="flex-1 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                        onChange={(e) =>
+                          updateLigneMultiple(i, { designation: e.target.value })
+                        }
+                        className="flex-1 rounded-xl border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#23272B]"
                         aria-label="Désignation"
                       />
                       <input
                         type="number"
                         value={l.quantite}
-                        onChange={(e) => updateLigneMultiple(i, { quantite: parseFloat(e.target.value) || 0 })}
-                        className="w-20 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                        onChange={(e) =>
+                          updateLigneMultiple(i, {
+                            quantite: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-20 rounded-xl border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#23272B]"
                         aria-label="Quantité"
                       />
                       <input
                         value={l.unite}
                         onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
-                        className="w-16 rounded-xl border border-slate-600 bg-transparent px-2.5 py-1.5 text-xs text-white"
+                        className="w-16 rounded-xl border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#23272B]"
                         aria-label="Unité"
                       />
                       <button
                         type="button"
                         onClick={() => supprimerLigneMultiple(i)}
-                        className="text-xs text-gray-500 hover:text-red-400 font-bold"
+                        className="rounded-lg p-1 text-[#999999] hover:text-red-600"
                         aria-label="Supprimer la ligne"
                       >
-                        ✕
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
-                  <p className="text-3xs text-gray-400">
-                    Complète le fournisseur ci-dessous. Les prix sont à ajouter ensuite sur chaque commande.
+                  <p className="text-[11px] text-[#777777]">
+                    Sélectionnez le fournisseur ci-dessous. Les lignes sans PU seront créées à chiffrer.
                   </p>
                 </div>
               ) : (
@@ -984,34 +1478,20 @@ export default function FournisseursPage() {
                   onChange={(e) => setCDesignation(e.target.value)}
                   placeholder="Désignation (ex. Bardage Douglas claire-voie)"
                   required
-                  className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-600 focus:outline-none"
+                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
                 />
               )}
 
               <select
                 value={cFournisseurId}
                 onChange={(e) => setCFournisseurId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
+                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
                 aria-label="Fournisseur"
               >
                 <option value="">-- Fournisseur (optionnel) --</option>
                 {fournisseurs.map((f) => (
                   <option key={f.id} value={f.id}>
-                    {f.nom}
-                  </option>
-                ))}
-              </select>
-              
-              <select
-                value={cChantierId}
-                onChange={(e) => setCChantierId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-transparent px-3.5 py-2.5 text-xs text-white focus:border-red-600 focus:outline-none"
-                aria-label="Chantier"
-              >
-                <option value="">-- Chantier (optionnel) --</option>
-                {chantiers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nom || c.clients?.nom}
+                    {f.nom} {f.specialite ? `(${f.specialite})` : ""}
                   </option>
                 ))}
               </select>
@@ -1023,48 +1503,168 @@ export default function FournisseursPage() {
                     value={cQuantite}
                     onChange={(e) => setCQuantite(e.target.value)}
                     placeholder="Quantité"
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    className="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
                   />
                   <input
                     value={cUnite}
                     onChange={(e) => setCUnite(e.target.value)}
                     placeholder="Unité"
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    className="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
                   />
                   <input
                     type="number"
                     value={cMontant}
                     onChange={(e) => setCMontant(e.target.value)}
-                    placeholder="Montant HT"
-                    className="rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                    placeholder="Montant HT (€)"
+                    className="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
                   />
                 </div>
               )}
 
               <div>
-                <label htmlFor="chp-date-livraison-prevue" className="text-3xs font-semibold uppercase text-gray-400">Date livraison prévue</label>
-                <input id="chp-date-livraison-prevue"
+                <label
+                  htmlFor="chp-date-livraison-prevue"
+                  className="text-[11px] font-bold uppercase tracking-wider text-[#777777]"
+                >
+                  Date de livraison prévue
+                </label>
+                <input
+                  id="chp-date-livraison-prevue"
                   type="date"
                   value={cDateLivraison}
                   onChange={(e) => setCDateLivraison(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white focus:border-red-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl">
+            <div className="mt-auto flex shrink-0 justify-end gap-3 rounded-b-2xl border-t border-[#E5E5E5] bg-[#F8F9FA] p-4">
               <button
                 type="button"
                 onClick={fermerModalCommande}
-                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
+                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs font-semibold text-[#555555] hover:bg-[#F3F3F1]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 shadow-md"
+                className="rounded-xl bg-[#B85B2B] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20]"
               >
-                Enregistrer la Commande
+                Enregistrer la commande
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL RÉCEPTION DE LIVRAISON */}
+      {commandeReception && (
+        <div
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
+          onClick={() => setCommandeReception(null)}
+        >
+          <form
+            onSubmit={validerReception}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-[#E5E5E5] p-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-[#B85B2B]" />
+                <h2 className="text-base font-bold text-[#23272B]">
+                  Réceptionner la livraison
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCommandeReception(null)}
+                className="rounded-lg p-1.5 text-[#777777] hover:bg-[#F3F3F1]"
+                aria-label="Fermer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 p-4">
+              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-xs">
+                <p className="font-bold text-[#23272B]">{commandeReception.designation}</p>
+                <p className="mt-0.5 text-[#666666]">
+                  {commandeReception.fournisseurs?.nom ?? "Fournisseur"} ·{" "}
+                  {commandeReception.quantite ?? "—"} {commandeReception.unite ?? ""}
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+                  Type de réception
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRStatut("livree")}
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+                      rStatut === "livree"
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : "border-[#E5E5E5] bg-white text-[#555555]"
+                    }`}
+                  >
+                    Livraison totale
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRStatut("partiellement_livree")}
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold ${
+                      rStatut === "partiellement_livree"
+                        ? "border-amber-300 bg-amber-50 text-amber-800"
+                        : "border-[#E5E5E5] bg-white text-[#555555]"
+                    }`}
+                  >
+                    Partielle
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+                  Date de livraison réelle
+                </label>
+                <input
+                  type="date"
+                  value={rDateReelle}
+                  onChange={(e) => setRDateReelle(e.target.value)}
+                  required
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+                  N° Bon de livraison (BL) / Réserves éventuelles
+                </label>
+                <textarea
+                  value={rNoteBl}
+                  onChange={(e) => setRNoteBl(e.target.value)}
+                  rows={2}
+                  placeholder="Ex. BL-2026-441 — Conforme, complet"
+                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 rounded-b-2xl border-t border-[#E5E5E5] bg-[#F8F9FA] p-4">
+              <button
+                type="button"
+                onClick={() => setCommandeReception(null)}
+                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555]"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={savingReception}
+                className="rounded-xl bg-[#B85B2B] px-5 py-2 text-xs font-bold text-white hover:bg-[#9E4B20] disabled:opacity-60"
+              >
+                {savingReception ? "Validation..." : "Valider la réception"}
               </button>
             </div>
           </form>
@@ -1074,7 +1674,7 @@ export default function FournisseursPage() {
       {/* MODAL APERÇU ET IMPRESSION BON DE COMMANDE PDF */}
       {apercuCommande && (
         <div
-          className="fixed inset-0 z-[210] pt-48 overflow-y-auto bg-black/70 p-4"
+          className="fixed inset-0 z-[210] overflow-y-auto bg-black/60 p-4 pt-12"
           onClick={() => setApercuCommande(null)}
         >
           <div className="mx-auto max-w-3xl" onClick={(e) => e.stopPropagation()}>
@@ -1082,21 +1682,23 @@ export default function FournisseursPage() {
               <button
                 type="button"
                 onClick={() => setCommandePourEmail(apercuCommande)}
-                className="flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-2 text-xs font-bold text-red-300 hover:bg-red-900/50 transition-all"
+                className="flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/40 bg-white px-4 py-2 text-xs font-bold text-[#B85B2B] hover:bg-[#F8F9FA]"
               >
-                <span>📧</span> Envoyer par email
+                <Mail className="h-3.5 w-3.5" />
+                Envoyer par email
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/10 hover:bg-red-700 transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#9E4B20]"
               >
-                <span>🖨️</span> Imprimer / Exporter PDF
+                <Printer className="h-3.5 w-3.5" />
+                Imprimer / Exporter PDF
               </button>
               <button
                 type="button"
                 onClick={() => setApercuCommande(null)}
-                className="rounded-xl border border-slate-600 bg-[#1E1E1E] px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-[#1E1E1E]"
+                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:bg-[#F8F9FA]"
               >
                 Fermer
               </button>
@@ -1116,7 +1718,8 @@ export default function FournisseursPage() {
                 contact: apercuCommande.fournisseurs?.contact ?? null,
                 telephone: apercuCommande.fournisseurs?.telephone ?? null,
                 email: apercuCommande.fournisseurs?.email ?? null,
-                conditions_paiement: apercuCommande.fournisseurs?.conditions_paiement ?? null,
+                conditions_paiement:
+                  apercuCommande.fournisseurs?.conditions_paiement ?? null,
               }}
               chantier={{
                 nom: apercuCommande.chantiers?.nom ?? "Chantier BNA",
@@ -1158,11 +1761,27 @@ export default function FournisseursPage() {
 
       {/* FAB (+) */}
       <FloatingActionButton
-        onClick={() => (tab === "fournisseurs" ? setModalFournisseur(true) : setModalCommande(true))}
+        onClick={() =>
+          tab === "fournisseurs" ? setModalFournisseur(true) : setModalCommande(true)
+        }
         aria-label="Ajouter fournisseur ou commande"
       >
         <span className="text-2xl font-bold leading-none">+</span>
       </FloatingActionButton>
     </div>
+  );
+}
+
+export default function FournisseursPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F3F3F1] p-6 text-sm text-[#777777]">
+          Chargement du module Fournisseurs & Achats...
+        </div>
+      }
+    >
+      <FournisseursContenu />
+    </Suspense>
   );
 }

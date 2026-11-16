@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   ChevronLeft,
@@ -22,6 +22,17 @@ import {
   groupeEstActif,
 } from "@/lib/navigation";
 
+function SearchParamsSync({ onTabChange }: { onTabChange: (tab: string | null) => void }) {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+
+  useEffect(() => {
+    onTabChange(tab);
+  }, [tab, onTabChange]);
+
+  return null;
+}
+
 export default function SidebarDesktop() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -37,11 +48,13 @@ export default function SidebarDesktop() {
       if (saved !== null) {
         setIsCollapsed(saved === "true");
       }
-      setOngletUrl(new URLSearchParams(window.location.search).get("tab"));
     } catch {
       // Ignorer les restrictions de stockage local
     }
   }, []);
+
+  const collapsedEffectif = mounted ? isCollapsed : false;
+  const ongletEffectif = mounted ? ongletUrl : null;
 
   const appliquerCollapsed = (valeur: boolean) => {
     setIsCollapsed(valeur);
@@ -78,11 +91,14 @@ export default function SidebarDesktop() {
       role="navigation"
       aria-label="Navigation principale ordinateur"
       className={`hidden lg:flex flex-col shrink-0 border-r border-white/[0.08] bg-[#1A1A1A] text-gray-300 select-none print:hidden transition-[width] duration-300 ease-in-out relative z-30 min-h-screen ${
-        isCollapsed ? "w-[72px]" : "w-[260px]"
+        collapsedEffectif ? "w-[72px]" : "w-[260px]"
       }`}
     >
+      <Suspense fallback={null}>
+        <SearchParamsSync onTabChange={setOngletUrl} />
+      </Suspense>
       {/* ── EN-TÊTE SIDEBAR : LOGO & BOUTON RÉDUCTION ───────────────────── */}
-      {isCollapsed ? (
+      {collapsedEffectif ? (
         <div className="py-2.5 px-2 flex flex-col items-center gap-2 border-b border-white/[0.06]">
           <Link
             href="/terrain/accueil"
@@ -148,14 +164,14 @@ export default function SidebarDesktop() {
 
           // 1. Entrée directe sans enfants (ex: Accueil Chantier, Accueil Météo)
           if (!aDesEnfants && item.href) {
-            const actif = estLienActif(item.href, pathname, ongletUrl);
+            const actif = estLienActif(item.href, pathname, ongletEffectif);
 
             return (
               <div key={item.href} className="relative group">
                 <Link
                   href={item.href}
                   className={`flex items-center gap-3 rounded-xl transition-all font-medium text-[13px] relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] ${
-                    isCollapsed ? "h-11 w-11 mx-auto justify-center" : "px-3 py-2.5"
+                    collapsedEffectif ? "h-11 w-11 mx-auto justify-center" : "px-3 py-2.5"
                   } ${
                     actif
                       ? "bg-[#B85B2B]/20 border border-[#B85B2B]/40 text-white font-semibold shadow-xs"
@@ -170,11 +186,11 @@ export default function SidebarDesktop() {
                     }`}
                     aria-hidden="true"
                   />
-                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  {!collapsedEffectif && <span className="truncate">{item.label}</span>}
                 </Link>
 
                 {/* Tooltip flottant au hover et au focus quand rétracté */}
-                {isCollapsed && (
+                {collapsedEffectif && (
                   <div
                     role="tooltip"
                     className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-[#222222] border border-white/10 text-white text-xs rounded-lg shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 whitespace-nowrap"
@@ -187,8 +203,8 @@ export default function SidebarDesktop() {
           }
 
           // 2. Groupe avec accordéon d'enfants
-          const estGroupeActif = groupeEstActif(item, pathname, ongletUrl);
-          const choix = choixGroupes.get(item.label);
+          const estGroupeActif = groupeEstActif(item, pathname, ongletEffectif);
+          const choix = mounted ? choixGroupes.get(item.label) : undefined;
           // Ouvert par défaut si le groupe contient la page active, sauf si fermé explicitement
           const estOuvert = choix !== undefined ? choix : estGroupeActif;
 
@@ -198,7 +214,7 @@ export default function SidebarDesktop() {
               <button
                 type="button"
                 onClick={() => {
-                  if (isCollapsed) {
+                  if (collapsedEffectif) {
                     // Si rétracté, cliquer déplie la sidebar pour voir le groupe
                     appliquerCollapsed(false);
                     basculerGroupe(item.label, false);
@@ -206,10 +222,10 @@ export default function SidebarDesktop() {
                     basculerGroupe(item.label, estOuvert);
                   }
                 }}
-                aria-expanded={!isCollapsed && estOuvert}
+                aria-expanded={!collapsedEffectif && estOuvert}
                 aria-haspopup="true"
                 className={`w-full flex items-center rounded-xl transition-all font-medium text-[13px] relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] ${
-                  isCollapsed
+                  collapsedEffectif
                     ? "h-11 w-11 mx-auto justify-center"
                     : "px-3 py-2.5 justify-between"
                 } ${
@@ -217,7 +233,7 @@ export default function SidebarDesktop() {
                     ? "text-white bg-white/[0.04]"
                     : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
                 }`}
-                title={isCollapsed ? item.label : undefined}
+                title={collapsedEffectif ? item.label : undefined}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Icone
@@ -227,11 +243,11 @@ export default function SidebarDesktop() {
                     }`}
                     aria-hidden="true"
                   />
-                  {!isCollapsed && (
+                  {!collapsedEffectif && (
                     <span className="truncate text-left">{item.label}</span>
                   )}
                 </div>
-                {!isCollapsed && (
+                {!collapsedEffectif && (
                   <ChevronDown
                     size={14}
                     className={`shrink-0 text-gray-500 transition-transform duration-200 ${
@@ -243,10 +259,10 @@ export default function SidebarDesktop() {
               </button>
 
               {/* SOUS-MENU DÉPLIÉ (Quand sidebar non rétractée) */}
-              {!isCollapsed && estOuvert && item.children && (
+              {!collapsedEffectif && estOuvert && item.children && (
                 <ul className="mt-1 ml-4 pl-3 border-l border-white/[0.08] space-y-0.5">
                   {item.children.map((enfant) => {
-                    const actif = estLienActif(enfant.href, pathname, ongletUrl);
+                    const actif = estLienActif(enfant.href, pathname, ongletEffectif);
                     return (
                       <li key={enfant.href}>
                         <Link
@@ -267,7 +283,7 @@ export default function SidebarDesktop() {
               )}
 
               {/* FLYOUT POPOVER AU HOVER / FOCUS (Quand sidebar rétractée) */}
-              {isCollapsed && item.children && (
+              {collapsedEffectif && item.children && (
                 <div
                   role="menu"
                   aria-label={item.label}
@@ -278,7 +294,7 @@ export default function SidebarDesktop() {
                   </div>
                   <ul className="space-y-0.5">
                     {item.children.map((enfant) => {
-                      const actif = estLienActif(enfant.href, pathname, ongletUrl);
+                      const actif = estLienActif(enfant.href, pathname, ongletEffectif);
                       return (
                         <li key={enfant.href}>
                           <Link
@@ -311,18 +327,18 @@ export default function SidebarDesktop() {
           <Link
             href="/parametres"
             className={`flex items-center gap-3 rounded-xl transition-all font-medium text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] ${
-              isCollapsed ? "h-10 w-10 mx-auto justify-center" : "px-3 py-2"
+              collapsedEffectif ? "h-10 w-10 mx-auto justify-center" : "px-3 py-2"
             } ${
-              estLienActif("/parametres", pathname, ongletUrl)
+              estLienActif("/parametres", pathname, ongletEffectif)
                 ? "bg-[#B85B2B]/20 text-white font-semibold border border-[#B85B2B]/40"
                 : "text-gray-400 hover:text-white hover:bg-white/[0.06]"
             }`}
-            title={isCollapsed ? "Paramètres" : undefined}
+            title={collapsedEffectif ? "Paramètres" : undefined}
           >
             <Settings size={18} className="shrink-0 text-gray-400 group-hover:text-white" />
-            {!isCollapsed && <span className="truncate">Paramètres</span>}
+            {!collapsedEffectif && <span className="truncate">Paramètres</span>}
           </Link>
-          {isCollapsed && (
+          {collapsedEffectif && (
             <div
               role="tooltip"
               className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-[#222222] border border-white/10 text-white text-xs rounded-lg shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 whitespace-nowrap"
@@ -338,14 +354,14 @@ export default function SidebarDesktop() {
             type="button"
             onClick={handleLogout}
             className={`w-full flex items-center gap-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all font-medium text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
-              isCollapsed ? "h-10 w-10 mx-auto justify-center" : "px-3 py-2"
+              collapsedEffectif ? "h-10 w-10 mx-auto justify-center" : "px-3 py-2"
             }`}
-            title={isCollapsed ? "Déconnexion" : undefined}
+            title={collapsedEffectif ? "Déconnexion" : undefined}
           >
             <LogOut size={18} className="shrink-0" />
-            {!isCollapsed && <span className="truncate">Déconnexion</span>}
+            {!collapsedEffectif && <span className="truncate">Déconnexion</span>}
           </button>
-          {isCollapsed && (
+          {collapsedEffectif && (
             <div
               role="tooltip"
               className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-[#222222] border border-white/10 text-red-400 text-xs rounded-lg shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50 whitespace-nowrap"
@@ -356,7 +372,7 @@ export default function SidebarDesktop() {
         </div>
 
         {/* Copyright discret */}
-        {!isCollapsed && (
+        {!collapsedEffectif && (
           <p className="text-white/20 text-2xs text-center pt-2">
             © 2026 BNA Bardage
           </p>

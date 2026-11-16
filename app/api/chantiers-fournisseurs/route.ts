@@ -34,12 +34,12 @@ export async function GET() {
     const [chantiersRes, fournisseursRes] = await Promise.all([
       supabase
         .from('chantiers')
-        .select('id, client_id, entreprise_id, nom')
+        .select('id, client_id, entreprise_id, nom, metier')
         .eq('entreprise_id', entreprise_id)
         .order('nom'),
       supabase
         .from('fournisseurs')
-        .select('id, entreprise_id, nom')
+        .select('id, entreprise_id, nom, specialite')
         .eq('entreprise_id', entreprise_id)
         .order('nom'),
     ]);
@@ -90,6 +90,7 @@ export async function GET() {
       chantiers: chantierRows.map((chantier) => ({
         id: chantier.id,
         nom: chantier.nom,
+        metier: chantier.metier,
         clients: chantier.client_id
           ? clientsParId.get(chantier.client_id) ?? null
           : null,
@@ -97,6 +98,7 @@ export async function GET() {
       fournisseurs: fournisseurRows.map((fournisseur) => ({
         id: fournisseur.id,
         nom: fournisseur.nom,
+        specialite: fournisseur.specialite,
       })),
     });
   } catch (err) {

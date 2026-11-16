@@ -90,9 +90,9 @@ export const NAV_ITEMS: EntreeNav[] = [
     label: "Fournisseurs",
     icon: Truck,
     children: [
-      { href: "/bureau/fournisseurs", label: "Fournisseurs & commandes" },
+      { href: "/bureau/fournisseurs?tab=fournisseurs", label: "Répertoire fournisseurs" },
       { href: "/bureau/fournisseurs?tab=commandes", label: "Suivi des commandes" },
-      { href: "/bureau/fournisseurs?tab=fournisseurs", label: "Contacts fournisseurs" },
+      { href: "/bureau/fournisseurs?tab=analyse", label: "Analyse des marges" },
     ],
   },
   {

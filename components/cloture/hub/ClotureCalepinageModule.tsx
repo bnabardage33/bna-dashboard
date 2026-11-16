@@ -2,10 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Check,
   Download,
+  Package,
   Save,
   Sliders,
   Clock,
@@ -71,6 +73,7 @@ export default function ClotureCalepinageModule({
   const [inclureMainOeuvre, setInclureMainOeuvre] = useState(true);
 
   const [selectedSide, setSelectedSide] = useState<SegmentId>("A");
+  const router = useRouter();
   const [ongletVisu, setOngletVisu] = useState<"2d" | "3d">("2d");
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -180,6 +183,30 @@ export default function ClotureCalepinageModule({
   const activeSegment =
     result.segmentsActifs.find((s) => s.id === selectedSide) ?? result.segmentsActifs[0];
 
+  function creerCommandeFournisseur() {
+    const lignes = chiffrage.lignesFournitures.map((l) => ({
+      designation: l.designation,
+      quantite: l.qte,
+      unite: l.unite,
+      pu_ht: l.pu_revient ?? l.pu_ht,
+    }));
+    const zoneNom = `Fournitures Clôture ${materiau} — ${result.lineaireTotalM.toFixed(1)} ml`;
+    try {
+      localStorage.setItem(
+        "bna_prefill_commande",
+        JSON.stringify({
+          chantierId,
+          chantierNom: "",
+          zoneNom,
+          lignes,
+        })
+      );
+      router.push("/bureau/fournisseurs?tab=commandes");
+    } catch (e) {
+      console.error("Erreur pré-remplissage commande clôture :", e);
+    }
+  }
+
   async function sauvegarderConfiguration() {
     setSaving(true);
     setSaveMessage(null);
@@ -248,6 +275,15 @@ export default function ClotureCalepinageModule({
           >
             <Download className="h-3.5 w-3.5 text-[#B85B2B]" /> Export Excel / CSV
           </a>
+
+          <button
+            type="button"
+            onClick={creerCommandeFournisseur}
+            disabled={chiffrage.lignesFournitures.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 hover:bg-[#B85B2B]/15 px-3.5 py-2 text-xs font-bold text-[#B85B2B] disabled:opacity-50"
+          >
+            <Package className="h-3.5 w-3.5" /> Commander matériaux
+          </button>
 
           <button
             type="button"
