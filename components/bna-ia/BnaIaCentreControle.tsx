@@ -65,46 +65,165 @@ const QUICK_PROMPTS = [
   },
 ];
 
-function renderInlineBold(text: string): React.ReactNode {
-  const parts = text.split(/\*\*(.+?)\*\*/g);
-  return parts.map((part, idx) =>
-    idx % 2 === 1 ? (
-      <strong key={idx} className="font-bold">
-        {part}
-      </strong>
-    ) : (
-      <span key={idx}>{part}</span>
-    )
-  );
+function renderInlineMarkdown(text: string): React.ReactNode {
+  const tokenRegex = /(\*\*\*[^*]+?\*\*\*|\*\*[^*]+?\*\*|\*[^*\n]+?\*|`[^`\n]+?`)/g;
+  const parts = text.split(tokenRegex);
+  return parts.map((part, idx) => {
+    if (!part) return null;
+    if (part.startsWith("***") && part.endsWith("***") && part.length > 6) {
+      return (
+        <strong key={idx} className="font-bold italic">
+          {part.slice(3, -3)}
+        </strong>
+      );
+    }
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={idx} className="font-bold">
+          {renderInlineMarkdown(part.slice(2, -2))}
+        </strong>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return (
+        <em key={idx} className="italic">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code
+          key={idx}
+          className="rounded bg-black/5 px-1 py-0.5 font-mono text-[0.9em]"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={idx}>{part.replace(/\*/g, "")}</span>;
+  });
+}
+
+function isMarkdownTableSeparator(line: string): boolean {
+  return /^\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?$/.test(line);
+}
+
+function parseMarkdownTableCells(line: string): string[] | null {
+  const trimmed = line.trim();
+  const pipeCount = (trimmed.match(/\|/g) ?? []).length;
+  if (pipeCount < 2 && !(trimmed.startsWith("|") && trimmed.endsWith("|"))) {
+    return null;
+  }
+  const cells = trimmed
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((c) => c.trim())
+    .filter((c) => c.length > 0);
+  return cells.length > 0 ? cells : null;
 }
 
 function renderBnaMessageContent(content: string, isUser: boolean): React.ReactNode {
-  const lines = content.split("\n");
-  return (
-    <div className="space-y-1 leading-relaxed">
-      {lines.map((line, i) => {
-        const trimmed = line.trim();
-        if (!trimmed) {
-          return <div key={i} className="h-1.5" />;
-        }
-        const headingMatch =
-          trimmed.match(/^#{1,3}\s+(.+)$/) || trimmed.match(/^===\s*(.+?)\s*===$/);
-        if (headingMatch) {
-          return (
-            <p
-              key={i}
-              className={`font-bold ${
-                isUser ? "text-white" : "text-[#23272B]"
-              } ${i > 0 ? "pt-1.5" : ""}`}
-            >
-              {renderInlineBold(headingMatch[1])}
-            </p>
-          );
-        }
-        return <p key={i}>{renderInlineBold(line)}</p>;
-      })}
-    </div>
-  );
+  const lines = content.replace(/<br\s*\/?>/gi, "\n").split("\n");
+  const nodes: React.ReactNode[] = [];
+  let tableHeaders: string[] | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+
+    if (!trimmed) {
+      tableHeaders = null;
+      nodes.push(<div key={`sp-${i}`} className="h-1.5" />);
+      continue;
+    }
+
+    if (isMarkdownTableSeparator(trimmed)) {
+      continue;
+    }
+
+    if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      tableHeaders = null;
+      nodes.push(
+        <hr
+          key={`hr-${i}`}
+          className={`my-1.5 ${isUser ? "border-white/25" : "border-[#E5E5E5]"}`}
+        />
+      );
+      continue;
+    }
+
+    const tableCells = parseMarkdownTableCells(trimmed);
+    if (tableCells) {
+      const nextTrimmed = lines[i + 1]?.trim() ?? "";
+      if (isMarkdownTableSeparator(nextTrimmed)) {
+        tableHeaders = tableCells;
+        continue;
+      }
+
+      const formattedRow =
+        tableHeaders && tableHeaders.length === tableCells.length
+          ? tableCells
+              .map((cell, idx) => `**${tableHeaders![idx]}** : ${cell}`)
+              .join(" · ")
+          : tableCells.length >= 2
+            ? `**${tableCells[0]}** — ${tableCells.slice(1).join(" · ")}`
+            : tableCells[0];
+
+      nodes.push(
+        <div key={`tbl-${i}`} className="flex items-start gap-2 pl-1">
+          <span
+            className={`mt-0.5 font-bold ${
+              isUser ? "text-white/90" : "text-[#B85B2B]"
+            }`}
+          >
+            •
+          </span>
+          <span>{renderInlineMarkdown(formattedRow)}</span>
+        </div>
+      );
+      continue;
+    }
+
+    tableHeaders = null;
+
+    const headingMatch =
+      trimmed.match(/^#{1,6}\s+(.+)$/) || trimmed.match(/^===\s*(.+?)\s*===$/);
+    if (headingMatch) {
+      nodes.push(
+        <p
+          key={`h-${i}`}
+          className={`font-bold ${
+            isUser ? "text-white" : "text-[#23272B]"
+          } ${i > 0 ? "pt-1.5" : ""}`}
+        >
+          {renderInlineMarkdown(headingMatch[1])}
+        </p>
+      );
+      continue;
+    }
+
+    const bulletMatch = trimmed.match(/^(?:•|-|\*)\s+(.+)$/);
+    if (bulletMatch) {
+      nodes.push(
+        <div key={`li-${i}`} className="flex items-start gap-2 pl-1">
+          <span
+            className={`mt-0.5 font-bold ${
+              isUser ? "text-white/90" : "text-[#B85B2B]"
+            }`}
+          >
+            •
+          </span>
+          <span>{renderInlineMarkdown(bulletMatch[1])}</span>
+        </div>
+      );
+      continue;
+    }
+
+    nodes.push(<p key={`p-${i}`}>{renderInlineMarkdown(trimmed)}</p>);
+  }
+
+  return <div className="space-y-1 leading-relaxed">{nodes}</div>;
 }
 
 export default function BnaIaCentreControle() {

@@ -1138,7 +1138,8 @@ Tickets SAV ouverts : ${savOuverts.length} | PV avec réserves : ${pvReserves.le
 
 RÈGLES MÉTIERS & NORMES :
 - Appuie tes conseils techniques sur NF DTU 51.4 (Terrasse), NF P90-308 (Terrasse Mobile piscine), NF DTU 41.2 (Bardage bois), NF DTU 45.4 (Bardage HPL), CSTB 3194 et les règles pro Clôtures.
-- Sois concis, structuré et directement actionnable sur chantier ou au bureau.${
+- Sois concis, structuré et directement actionnable sur chantier ou au bureau.
+- N'utilise JAMAIS de tableaux Markdown avec des barres verticales (| ... |) ni de balises HTML (<br>), car l'affichage est consulté sur téléphone de chantier. Structure tes réponses exclusivement avec des titres courts en gras (**Titre**), des listes à puces aérées (• ...) et des chiffres clés mis en valeur.${
     normalisation?.contexteDictionnairePrompt
       ? `\n\n${normalisation.contexteDictionnairePrompt}`
       : ""
