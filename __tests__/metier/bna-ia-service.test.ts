@@ -260,4 +260,32 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
       )
     ).toBe(true);
   });
+
+  it("cumule façades + pignons + 2 jeux d'ouvertures (Red Cedar claire-voie Arcachon ~54.11 m²) et forme en L Terrasse + alerte plots 35cm", () => {
+    const promptBardage =
+      "bardage bois Red Cedar claire-voie Arcachon 1 façade 9m x 3m 2 fenêtres 1.20m x 1.10m 1 pignon 7m faîtage 5.50m égouts 3m";
+    const preBardage = detecterEtCalculerPreChiffrage(promptBardage);
+    expect(preBardage).not.toBeNull();
+    expect(preBardage?.metier).toBe("bardage");
+    expect(preBardage?.detailsBardage?.surfaceBruteM2).toBe(56.75);
+    expect(preBardage?.detailsBardage?.surfaceOuverturesM2).toBe(2.64);
+    expect(preBardage?.detailsBardage?.surfaceNetteM2).toBe(54.11);
+    expect(preBardage?.detailsBardage?.nbOuvertures).toBe(2);
+    expect(preBardage?.detailsBardage?.nbPignons).toBe(1);
+    expect(preBardage?.detailsBardage?.bavetteLongueurM).toBe(1.26);
+    expect(preBardage?.detailsBardage?.tableauLongueurM).toBe(1.1);
+    expect(preBardage?.detailsBardage?.linteauLongueurM).toBe(1.24);
+    expect(preBardage?.syntheseTexte).toContain("UV 5000h noir");
+    expect(preBardage?.syntheseTexte).toContain("Inox A4");
+
+    const promptTerrasse =
+      "terrasse bois Ipé 27mm plots polymères 35cm forme en L 6m x 4m + retour 3m x 2.5m terrasse mobile filaire 5m x 3m";
+    const preTerrasse = detecterEtCalculerPreChiffrage(promptTerrasse);
+    expect(preTerrasse).not.toBeNull();
+    expect(preTerrasse?.metier).toBe("terrasse");
+    expect(preTerrasse?.surfaceOuLineaire).toBe(31.5);
+    expect(preTerrasse?.syntheseTexte).toContain("NON CONFORME NF DTU 51.4");
+    expect(preTerrasse?.syntheseTexte).toContain("300 mm");
+    expect(preTerrasse?.syntheseTexte).toContain("Ø 6 mm");
+  });
 });

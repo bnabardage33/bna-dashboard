@@ -148,6 +148,8 @@ export interface ParametresTerrasseNormatifs {
   estPublic: boolean;
   estBordDeMerOuPiscine: boolean;
   estBoisExotiqueDense: boolean;
+  epaisseurLameMm: number | null;
+  visserieDiametreMm: 5 | 6;
   hauteurPlotsMm: number | null;
   alertePlotsDepassement: string | null;
   entraxeLambourdesMm: number;
@@ -178,11 +180,24 @@ export function detecterFabricantComposite(
 }
 
 function extraireHauteurPlotsMm(texte: string): number | null {
-  const mMm = texte.match(/plots?\s*(?:de|à|a|=|hauteur)?\s*(\d+(?:[.,]\d+)?)\s*mm\b/i);
+  const mMm = texte.match(
+    /plots?\s*(?:polym[èe]res?|r[ée]glables?)?\s*(?:de|à|a|=|hauteur)?\s*(\d+(?:[.,]\d+)?)\s*mm\b/i
+  );
   if (mMm) return Number(mMm[1].replace(",", "."));
-  const mCm = texte.match(/plots?\s*(?:de|à|a|=|hauteur)?\s*(\d+(?:[.,]\d+)?)\s*cm\b/i);
+  const mCm = texte.match(
+    /plots?\s*(?:polym[èe]res?|r[ée]glables?)?\s*(?:de|à|a|=|hauteur)?\s*(\d+(?:[.,]\d+)?)\s*cm\b/i
+  );
   if (mCm) return Number(mCm[1].replace(",", ".")) * 10;
   return null;
+}
+
+function extraireEpaisseurLameMm(texte: string): number | null {
+  const sansPlots = texte.replace(
+    /plots?\s*(?:polym[èe]res?|r[ée]glables?)?\s*(?:de|à|a|=|hauteur)?\s*\d+(?:[.,]\d+)?\s*(?:mm|cm)\b/gi,
+    " "
+  );
+  const m = sansPlots.match(/\b(1[89]|2[0-9]|3[0-5])\s*mm\b/i);
+  return m ? Number(m[1]) : null;
 }
 
 export function calculerParametresTerrasseNormatifs(
@@ -227,9 +242,14 @@ export function calculerParametresTerrasseNormatifs(
       ));
 
   const hauteurPlotsMm = extraireHauteurPlotsMm(texte);
+  const epaisseurLameMm = extraireEpaisseurLameMm(texte);
+  const visserieDiametreMm: 5 | 6 =
+    estBoisExotiqueDense || (epaisseurLameMm !== null && epaisseurLameMm >= 24)
+      ? 6
+      : 5;
   const alertePlotsDepassement =
     hauteurPlotsMm !== null && hauteurPlotsMm > DTU_51_4_FRONTIERES.hauteurMaxPlotsPolymeresMm
-      ? `⚠️ ALERTE NORMATIVE (NF DTU 51.4) : hauteur de plots ${hauteurPlotsMm} mm > 300 mm max autorisés pour les plots polymères. Bascule obligatoire vers une structure porteuse NF DTU 31.1 (plots béton / longrines / poteaux).`
+      ? `⚠️ NON CONFORME NF DTU 51.4 : Hauteur des plots polymères limitée à 300 mm max sous lame (prévoir structure porteuse ou plots béton) (détecté : ${hauteurPlotsMm} mm).`
       : null;
 
   let entraxeLambourdesMm = 400;
@@ -295,6 +315,8 @@ export function calculerParametresTerrasseNormatifs(
     estPublic,
     estBordDeMerOuPiscine,
     estBoisExotiqueDense,
+    epaisseurLameMm,
+    visserieDiametreMm,
     hauteurPlotsMm,
     alertePlotsDepassement,
     entraxeLambourdesMm,

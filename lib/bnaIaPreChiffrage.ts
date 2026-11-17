@@ -58,6 +58,8 @@ export interface PreChiffrageBnaResult {
     bavetteLongueurM: number;
     tableauLongueurM: number;
     linteauLongueurM: number;
+    nbOuvertures: number;
+    nbPignons: number;
   };
   detailsTerrasse?: {
     entraxeLambourdesMm: number;
@@ -119,37 +121,112 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
     " "
   );
 
-  const nbFacades =
-    /double\s*fa[çc]ade|2\s*fa[çc]ades|deux\s*fa[çc]ades/i.test(message) ? 2 : 1;
+  // 0a. Extraction de TOUS les pignons (largeur + faîtage + égout)
+  interface SegmentBardage {
+    type: "facade" | "pignon";
+    largeurM: number;
+    hauteurMurM: number;
+    hauteurFaiteM: number | null;
+    surfaceBruteM2: number;
+  }
+  const segments: SegmentBardage[] = [];
+  let sansPignons = sansOuvertures;
 
-  let largeurM = 0;
-  let hauteurM = 0;
+  const regexPignon =
+    /(?:(\d+)\s*)?pignons?\s*(?:de\s*)?(\d+(?:[.,]\d+)?)\s*m?\b[^.;\n]*?(?:fa[îi]tage\s*(?:de\s*|à\s*)?(\d+(?:[.,]\d+)?)\s*m?\b[^.;\n]*?[ée]gouts?\s*(?:de\s*|à\s*)?(\d+(?:[.,]\d+)?)\s*m?\b|[ée]gouts?\s*(?:de\s*|à\s*)?(\d+(?:[.,]\d+)?)\s*m?\b[^.;\n]*?fa[îi]tage\s*(?:de\s*|à\s*)?(\d+(?:[.,]\d+)?)\s*m?\b)/gi;
 
-  const matchDims = sansOuvertures.match(
-    /(\d+(?:[.,]\d+)?)\s*(?:m\s*)?(?:[x×*]|sur)\s*(\d+(?:[.,]\d+)?)/i
+  sansPignons = sansPignons.replace(
+    regexPignon,
+    (_full, nbRaw, largRaw, fait1, egout1, egout2, fait2) => {
+      const nb = Math.max(1, Number(nbRaw || 1));
+      const larg = parseNombreFr(largRaw);
+      const hFait = parseNombreFr(fait1 || fait2);
+      const hEgout = parseNombreFr(egout1 || egout2);
+      if (larg > 0 && hFait > 0 && hEgout > 0) {
+        const surfTrap = arrondir((larg * (hEgout + hFait)) / 2);
+        for (let i = 0; i < nb; i++) {
+          segments.push({
+            type: "pignon",
+            largeurM: larg,
+            hauteurMurM: hEgout,
+            hauteurFaiteM: hFait,
+            surfaceBruteM2: surfTrap,
+          });
+        }
+      }
+      return " ";
+    }
   );
-  if (matchDims) {
-    largeurM = parseNombreFr(matchDims[1]);
-    hauteurM = parseNombreFr(matchDims[2]);
-  } else {
-    const matchM2 = sansOuvertures.match(/(\d+(?:[.,]\d+)?)\s*m[²2]/i);
+
+  // 0b. Extraction de TOUTES les façades rectangulaires L × H
+  const regexFacade =
+    /(?:(double|deux|\d+)\s*fa[çc]ades?\s*(?:de\s*)?)?(\d+(?:[.,]\d+)?)\s*(?:m\s*)?(?:[x×*]|sur)\s*(\d+(?:[.,]\d+)?)\s*m?\b/gi;
+  let mFac: RegExpExecArray | null;
+  const facadesTrouvees: Array<{ nb: number; largeurM: number; hauteurM: number }> = [];
+  while ((mFac = regexFacade.exec(sansPignons)) !== null) {
+    const multRaw = mFac[1]?.toLowerCase();
+    const nb =
+      multRaw === "double" || multRaw === "deux"
+        ? 2
+        : multRaw
+          ? Math.max(1, Number(multRaw))
+          : 1;
+    const w = parseNombreFr(mFac[2]);
+    const h = parseNombreFr(mFac[3]);
+    if (w > 0 && h > 0) {
+      facadesTrouvees.push({ nb, largeurM: w, hauteurM: h });
+    }
+  }
+
+  if (
+    facadesTrouvees.length === 1 &&
+    facadesTrouvees[0].nb === 1 &&
+    /double\s*fa[çc]ade|2\s*fa[çc]ades|deux\s*fa[çc]ades/i.test(sansPignons)
+  ) {
+    facadesTrouvees[0].nb = 2;
+  }
+
+  for (const f of facadesTrouvees) {
+    for (let i = 0; i < f.nb; i++) {
+      segments.push({
+        type: "facade",
+        largeurM: f.largeurM,
+        hauteurMurM: f.hauteurM,
+        hauteurFaiteM: null,
+        surfaceBruteM2: arrondir(f.largeurM * f.hauteurM),
+      });
+    }
+  }
+
+  // Fallback surface globale en m² si aucune dimension L×H ni pignon
+  if (segments.length === 0) {
+    const matchM2 = sansPignons.match(/(\d+(?:[.,]\d+)?)\s*m[²2]/i);
     if (matchM2) {
       const surf = parseNombreFr(matchM2[1]);
       if (surf > 0) {
-        hauteurM = 3.0;
-        largeurM = arrondir(surf / hauteurM);
+        segments.push({
+          type: "facade",
+          largeurM: arrondir(surf / 3.0),
+          hauteurMurM: 3.0,
+          hauteurFaiteM: null,
+          surfaceBruteM2: arrondir(surf),
+        });
       }
     }
   }
 
-  if (largeurM <= 0 || hauteurM <= 0) return null;
+  if (segments.length === 0) return null;
 
   const ouvertures = extraireDimensionsOuverture(message);
-  const surfaceBruteM2 = arrondir(nbFacades * largeurM * hauteurM);
+  const surfaceBruteM2 = arrondir(
+    segments.reduce((s, seg) => s + seg.surfaceBruteM2, 0)
+  );
   const surfaceOuverturesM2 = arrondir(
     ouvertures.reduce((s, o) => s + o.largeurM * o.hauteurM, 0)
   );
   const surfaceNetteM2 = arrondir(Math.max(0, surfaceBruteM2 - surfaceOuverturesM2));
+  const nbPignons = segments.filter((s) => s.type === "pignon").length;
+  const nbFacadesRect = segments.filter((s) => s.type === "facade").length;
 
   const estHpl = /hpl|trespa|polyrey|fundermax|compact/i.test(lower);
   const estComposite = /composite/i.test(lower);
@@ -160,7 +237,7 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
       ? "composite"
       : "bois_naturel";
 
-  const iteActif = /ite|isolant|isolation|laine/i.test(lower);
+  const iteActif = /\bite\b|isolant|isolation|laine/i.test(lower);
   const nbCouchesIte =
     iteActif && /ite\s*2|2\s*couches|deux\s*couches|double\s*couche/i.test(lower)
       ? 2
@@ -168,77 +245,107 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
         ? 1
         : 0;
 
-  // 1. Calcul ossature & isolant via le moteur réel BNA (poseCalcul.ts)
-  const poseParFacade = calculerPose(famille, largeurM, hauteurM, true, 1, 135, {
-    epaisseurIsolantMm: iteActif ? 140 : 0,
-    typeIsolant: "laine_roche",
-    surfacePaquetM2: 4.8,
-    moduleLargeurMm: estHpl ? 1300 : undefined,
-    moduleHauteurMm: estHpl ? 3050 : undefined,
+  // 1. Calcul ossature & isolant via le moteur réel BNA (poseCalcul.ts) sur chaque zone
+  let nbSegmentsChevrons = 0;
+  let nbEquerresTotal = 0;
+  let nbChevillesMurales = 0;
+  let lineaireEpdm = 0;
+  let nbVisParement = 0;
+  let nbEquerresPorteuses = 0;
+  let nbEquerresGuides = 0;
+
+  const zonesMetre: ResultatMetre[] = segments.map((seg, idx) => {
+    const hCalcul =
+      seg.type === "pignon" && seg.hauteurFaiteM
+        ? arrondir((seg.hauteurMurM + seg.hauteurFaiteM) / 2)
+        : seg.hauteurMurM;
+    const poseZone = calculerPose(famille, seg.largeurM, hCalcul, true, 1, 135, {
+      epaisseurIsolantMm: iteActif ? 140 : 0,
+      typeIsolant: "laine_roche",
+      surfacePaquetM2: 4.8,
+      moduleLargeurMm: estHpl ? 1300 : undefined,
+      moduleHauteurMm: estHpl ? 3050 : undefined,
+    });
+
+    nbSegmentsChevrons += poseZone.nbSegmentsChevrons;
+    nbEquerresTotal += poseZone.nbFixationsTotal;
+    nbChevillesMurales += poseZone.nbChevillesMurales;
+    lineaireEpdm += poseZone.lineaireBandeEPDMM;
+    nbVisParement += poseZone.nbVisParement;
+    nbEquerresPorteuses += poseZone.nbEquerresPorteuses;
+    nbEquerresGuides += poseZone.nbEquerresGuides;
+
+    const ouvZone = idx === 0 ? ouvertures : [];
+    const surfOuvZone = ouvZone.reduce((s, o) => s + o.largeurM * o.hauteurM, 0);
+    const surfNetteZone = Math.max(0, seg.surfaceBruteM2 - surfOuvZone);
+
+    return {
+      version_moteur: "1.0.0",
+      calcule_le: new Date().toISOString(),
+      entrees: {
+        type: seg.type,
+        largeur: seg.largeurM,
+        hauteur_mur: seg.hauteurMurM,
+        hauteur_faite: seg.hauteurFaiteM,
+        materiau: estHpl ? "plaques" : "lames",
+        famille_pose: famille,
+        angle: true,
+        largeur_lame_mm: estHpl ? null : 135,
+        plaque_longueur_mm: estHpl ? 3050 : null,
+        plaque_largeur_mm: estHpl ? 1300 : null,
+        module_largeur_mm: estHpl ? 1300 : null,
+        module_hauteur_mm: estHpl ? 3050 : null,
+        sens_pose: "horizontal",
+        type_isolant: iteActif ? "laine_roche" : "sans_isolant",
+        epaisseur_isolant_mm: iteActif ? 140 : 0,
+        surface_paquet_m2: 4.8,
+        zone_vent_rive: true,
+        coef_perte_rendement: 1.1,
+        autoriser_rotation: true,
+        ouvertures: ouvZone.map((o) => ({
+          id: o.id,
+          type: o.type,
+          largeur: o.largeurM,
+          hauteur: o.hauteurM,
+        })),
+      },
+      resultat_zone: {
+        bruteFacade: seg.type === "facade" ? seg.surfaceBruteM2 : 0,
+        brutePignon: seg.type === "pignon" ? seg.surfaceBruteM2 : 0,
+        pente: 0,
+        totalOuvertures: surfOuvZone,
+        surfaceNette: surfNetteZone,
+        surfaceACommander: arrondir(surfNetteZone * 1.1),
+        nombreOuvertures: ouvZone.length,
+        totalCoupesML: 0,
+        lamesACommander: 0,
+        surfaceTheoriqueLames: 0,
+        lamesNeuvesSimul: 0,
+        morceauxReutilises: 0,
+        longueurChutesGenerees: 0,
+        longueurChutesReutilisees: 0,
+        chutesPerdues: 0,
+        marge: 1.1,
+      },
+      resultat_pose: poseZone,
+      resultat_calepinage: null,
+    };
   });
+  lineaireEpdm = arrondir(lineaireEpdm);
+
+  const largeurTotale = segments.reduce((s, seg) => s + seg.largeurM, 0);
+  const hauteurRef = segments[0].hauteurMurM;
 
   // 2. Calcul habillage ouvertures & profilés 1D (barres 3,00 m)
   const profils = calculerHabillageOuverturesEtProfils1D({
-    largeurM: largeurM * nbFacades,
-    hauteurMurM: hauteurM,
-    nbAnglesSortants: 2 * nbFacades,
+    largeurM: largeurTotale,
+    hauteurMurM: hauteurRef,
+    nbAnglesSortants: 2 * segments.length,
     ouvertures,
   });
 
-  // 3. Calcul temps de pose réel (tempsPoseCalcul.ts)
-  const zoneMetre: ResultatMetre = {
-    version_moteur: "1.0.0",
-    calcule_le: new Date().toISOString(),
-    entrees: {
-      type: "facade",
-      largeur: largeurM * nbFacades,
-      hauteur_mur: hauteurM,
-      hauteur_faite: null,
-      materiau: estHpl ? "plaques" : "lames",
-      famille_pose: famille,
-      angle: true,
-      largeur_lame_mm: estHpl ? null : 135,
-      plaque_longueur_mm: estHpl ? 3050 : null,
-      plaque_largeur_mm: estHpl ? 1300 : null,
-      module_largeur_mm: estHpl ? 1300 : null,
-      module_hauteur_mm: estHpl ? 3050 : null,
-      sens_pose: "horizontal",
-      type_isolant: iteActif ? "laine_roche" : "sans_isolant",
-      epaisseur_isolant_mm: iteActif ? 140 : 0,
-      surface_paquet_m2: 4.8,
-      zone_vent_rive: true,
-      coef_perte_rendement: 1.1,
-      autoriser_rotation: true,
-      ouvertures: ouvertures.map((o) => ({
-        id: o.id,
-        type: o.type,
-        largeur: o.largeurM,
-        hauteur: o.hauteurM,
-      })),
-    },
-    resultat_zone: {
-      bruteFacade: surfaceBruteM2,
-      brutePignon: 0,
-      pente: 0,
-      totalOuvertures: surfaceOuverturesM2,
-      surfaceNette: surfaceNetteM2,
-      surfaceACommander: arrondir(surfaceNetteM2 * 1.1),
-      nombreOuvertures: ouvertures.length,
-      totalCoupesML: 0,
-      lamesACommander: 0,
-      surfaceTheoriqueLames: 0,
-      lamesNeuvesSimul: 0,
-      morceauxReutilises: 0,
-      longueurChutesGenerees: 0,
-      longueurChutesReutilisees: 0,
-      chutesPerdues: 0,
-      marge: 1.1,
-    },
-    resultat_pose: poseParFacade,
-    resultat_calepinage: null,
-  };
-
-  const tempsPose = calculerTempsPoseBardage(zoneMetre, {
+  // 3. Calcul temps de pose réel (tempsPoseCalcul.ts — inclut majoration +25% sur pignons)
+  const tempsPose = calculerTempsPoseBardage(zonesMetre, {
     claireVoie: estClaireVoie,
   });
 
@@ -259,12 +366,6 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
     surfaceIsolantACommanderM2 > 0
       ? Math.ceil(surfaceIsolantACommanderM2 / 4.8)
       : 0;
-
-  const nbSegmentsChevrons = poseParFacade.nbSegmentsChevrons * nbFacades;
-  const nbEquerresTotal = poseParFacade.nbFixationsTotal * nbFacades;
-  const nbChevillesMurales = poseParFacade.nbChevillesMurales * nbFacades;
-  const lineaireEpdm = arrondir(poseParFacade.lineaireBandeEPDMM * nbFacades);
-  const nbVisParement = poseParFacade.nbVisParement * nbFacades;
 
   const puParementM2 = estHpl ? 89 : estComposite ? 74 : 52;
   const lignesDevis: LigneDevisIaPreRemplie[] = [
@@ -309,7 +410,7 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
     },
     {
       catalogue_id: null,
-      designation: `Équerres Isolco (${poseParFacade.nbEquerresPorteuses * nbFacades} porteuses + ${poseParFacade.nbEquerresGuides * nbFacades} guides) + ${nbChevillesMurales} chevilles façade + ${nbVisParement} vis parement`,
+      designation: `Équerres Isolco (${nbEquerresPorteuses} porteuses + ${nbEquerresGuides} guides) + ${nbChevillesMurales} chevilles façade + ${nbVisParement} vis parement`,
       description: estHpl
         ? "Point fixe Ø5,1 mm + points coulissants Ø8 mm (CSTB 3194)"
         : "Fixations inox A2/A4 conformes DTU 41.2",
@@ -367,7 +468,7 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
 
   const premOuv = profils.detailsParOuverture[0];
   const detailProfilsTxt = premOuv
-    ? `- Habillage ouverture (${premOuv.ouvertureNom}) : bavette ${premOuv.bavetteAppui ? `${premOuv.bavetteAppui.longueurM.toFixed(2)} m (+60 mm)` : "aucune"}, 2 tableaux de ${premOuv.tableauxLateraux.longueurUnitaireM.toFixed(2)} m, linteau ${premOuv.linteauGoutteEau.longueurM.toFixed(2)} m (+40 mm) · Total profilés : ${profils.totaux.totalBarres3MACommander} barre(s) de 3,00 m.\n`
+    ? `- Habillage ouvertures (${ouvertures.length} ouverture(s)) : ${ouvertures.length}× [bavette ${premOuv.bavetteAppui ? `${premOuv.bavetteAppui.longueurM.toFixed(2)} m (+60 mm)` : "aucune"}, 2 tableaux de ${premOuv.tableauxLateraux.longueurUnitaireM.toFixed(2)} m, linteau ${premOuv.linteauGoutteEau.longueurM.toFixed(2)} m (+40 mm)] · Total profilés : ${profils.totaux.totalBarres3MACommander} barre(s) de 3,00 m.\n`
     : `- Profilés d'angle/finitions : ${profils.totaux.totalBarres3MACommander} barre(s) de 3,00 m.\n`;
 
   const paramsBardageNorm = calculerParametresBardageNormatifs(message);
@@ -375,17 +476,28 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
     ? "- Normes HPL (NF DTU 45.4 / CSTB 3799_V2) : Point Fixe Ø 5,0 mm au centre + Points Coulissants Ø 8,0 mm, joints ouverts 8–10 mm, EPDM 70 mm (courant) / 100 mm (jonction), anti-micro-rives < 250 mm.\n"
     : estComposite
       ? "- Normes Composite WPC (DTA fabricants) : entraxe 400–600 mm, jeu en bout 5–8 mm, double liteau aux aboutages, 1 vis de Point Fixe obligatoire au centre de chaque lame.\n"
-      : `- Normes Bois Massif (NF DTU 41.2) : garde au sol >= 150 mm (sol dur) / >= 200 mm (terre), grille anti-rongeurs >= 50 cm²/ml, visserie Inox ${paramsBardageNorm.visserieInox}${paramsBardageNorm.estLittoralOuTannique ? " OBLIGATOIRE (littoral <= 3 km / bois tannique)" : ""}.\n`;
+      : `- Normes Bois Massif (NF DTU 41.2) : garde au sol >= 150 mm (sol dur) / >= 200 mm (terre), grille anti-rongeurs >= 50 cm²/ml, visserie Inox ${paramsBardageNorm.visserieInox}${paramsBardageNorm.estLittoralOuTannique ? " OBLIGATOIRE (littoral <= 3 km / bois tannique)" : ""}.\n` +
+        (estClaireVoie
+          ? "- Exigence Claire-voie : Pare-pluie spécial joints ouverts résistant aux UV 5000h noir + bande EPDM sur tous les tasseaux.\n"
+          : "");
+
+  const resumeSegments = segments
+    .map((s) =>
+      s.type === "pignon"
+        ? `Pignon ${s.largeurM}×(${s.hauteurMurM}/${s.hauteurFaiteM} m)`
+        : `Façade ${s.largeurM}×${s.hauteurMurM} m`
+    )
+    .join(" + ");
 
   const syntheseTexte =
     `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (BARDAGE ${estHpl ? "HPL CSTB 3194 / NF DTU 45.4" : "DTU 41.2"})\n` +
-    `- Surface brute : ${surfaceBruteM2} m² (${nbFacades} façade(s) ${largeurM}×${hauteurM} m) | Déduction ouvertures : ${surfaceOuverturesM2} m² | Surface nette : ${surfaceNetteM2} m²\n` +
+    `- Surface brute : ${surfaceBruteM2} m² (${nbFacadesRect} façade(s)${nbPignons > 0 ? `, ${nbPignons} pignon(s) avec +25 % temps de pose` : ""} : ${resumeSegments}) | Déduction ouvertures : ${surfaceOuverturesM2} m² | Surface nette : ${surfaceNetteM2} m²\n` +
     `- Parement Q_appro (+10 %) : ${surfaceParementApproM2} m²` +
     (estHpl ? ` (${nbPlaquesHplMeres} plaques mères HPL 3,05 × 1,30 m = 3,965 m²/u)\n` : `\n`) +
     (nbCouchesIte > 0
       ? `- Isolant ITE ${nbCouchesIte} couche(s) : ${surfaceIsolantACommanderM2} m² (${nbPaquetsIsolant} paquets de 4,8 m²)\n`
       : "") +
-    `- Ossature : ${nbSegmentsChevrons} chevrons 60×40 (3,00 m), ${nbEquerresTotal} équerres Isolco (${poseParFacade.nbEquerresPorteuses * nbFacades} porteuses + ${poseParFacade.nbEquerresGuides * nbFacades} guides), ${nbChevillesMurales} chevilles façade, bande EPDM ${lineaireEpdm} ml, lame d'air ventilée ≥ 20 mm, ${nbVisParement} vis parement\n` +
+    `- Ossature : ${nbSegmentsChevrons} chevrons 60×40 (3,00 m), ${nbEquerresTotal} équerres Isolco (${nbEquerresPorteuses} porteuses + ${nbEquerresGuides} guides), ${nbChevillesMurales} chevilles façade, bande EPDM ${lineaireEpdm} ml, lame d'air ventilée ≥ 20 mm, ${nbVisParement} vis parement\n` +
     normeBardageSynthese +
     detailProfilsTxt +
     `- Main-d'œuvre calculée : ${heuresPoseTotal} h (dont ossature ${tempsPose.parPhase.ossature} h, isolation ${arrondir(tempsPose.parPhase.isolation + heuresIte2)} h, parement ${tempsPose.parPhase.bardage} h, finitions ${tempsPose.parPhase.finitions} h)\n` +
@@ -417,6 +529,8 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
       bavetteLongueurM: premOuv?.bavetteAppui?.longueurM ?? 0,
       tableauLongueurM: premOuv?.tableauxLateraux.longueurUnitaireM ?? 0,
       linteauLongueurM: premOuv?.linteauGoutteEau.longueurM ?? 0,
+      nbOuvertures: ouvertures.length,
+      nbPignons,
     },
   };
 }
@@ -425,13 +539,48 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
   const lower = message.toLowerCase();
   let longueurM = 0;
   let largeurM = 0;
+  let dimensionsLabel = "";
 
-  const matchDims = message.match(
-    /(\d+(?:[.,]\d+)?)\s*(?:m\s*)?(?:[x×*]|sur)\s*(\d+(?:[.,]\d+)?)/i
-  );
-  if (matchDims) {
-    longueurM = Math.max(parseNombreFr(matchDims[1]), parseNombreFr(matchDims[2]));
-    largeurM = Math.min(parseNombreFr(matchDims[1]), parseNombreFr(matchDims[2]));
+  // Extraire d'abord un éventuel plateau mobile ("terrasse mobile filaire 5m x 3m")
+  const regexMobileDims =
+    /(?:terrasse\s+mobile|plateau\s+mobile|coulissante)[^.;\n]*?(\d+(?:[.,]\d+)?)\s*(?:m\s*)?(?:[x×*]|sur)\s*(\d+(?:[.,]\d+)?)\s*m?\b/i;
+  let mobileRect: { longueur: number; largeur: number } | null = null;
+  const sansMobile = message.replace(regexMobileDims, (_full, d1, d2) => {
+    const a = parseNombreFr(d1);
+    const b = parseNombreFr(d2);
+    if (a > 0 && b > 0) {
+      mobileRect = { longueur: Math.max(a, b), largeur: Math.min(a, b) };
+    }
+    return " ";
+  });
+
+  // Cumul de TOUS les rectangles de la terrasse (forme en L / en U : "6m x 4m + retour 3m x 2.5m")
+  const regexRect =
+    /(\d+(?:[.,]\d+)?)\s*(?:m\s*)?(?:[x×*]|sur)\s*(\d+(?:[.,]\d+)?)\s*m?\b/gi;
+  const rectangles: Array<{ longueur: number; largeur: number }> = [];
+  let mRect: RegExpExecArray | null;
+  while ((mRect = regexRect.exec(sansMobile)) !== null) {
+    const a = parseNombreFr(mRect[1]);
+    const b = parseNombreFr(mRect[2]);
+    if (a > 0 && b > 0) {
+      rectangles.push({ longueur: Math.max(a, b), largeur: Math.min(a, b) });
+    }
+  }
+
+  if (rectangles.length > 0) {
+    const surfaceTotale = arrondir(
+      rectangles.reduce((s, r) => s + r.longueur * r.largeur, 0)
+    );
+    largeurM = rectangles[0].largeur;
+    longueurM = surfaceTotale / largeurM;
+    dimensionsLabel = rectangles
+      .map((r) => `${r.longueur} × ${r.largeur} m`)
+      .join(" + ");
+  } else if (mobileRect) {
+    const mr = mobileRect as { longueur: number; largeur: number };
+    longueurM = mr.longueur;
+    largeurM = mr.largeur;
+    dimensionsLabel = `${longueurM} × ${largeurM} m`;
   } else {
     const matchM2 = message.match(/(\d+(?:[.,]\d+)?)\s*m[²2]/i);
     if (matchM2) {
@@ -439,6 +588,7 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
       if (surf > 0) {
         largeurM = 4.0;
         longueurM = arrondir(surf / largeurM);
+        dimensionsLabel = `${longueurM} × ${largeurM} m`;
       }
     }
   }
@@ -474,7 +624,7 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
     systeme_terrasse: estComposite ? "composite_clip" : "bois_vis",
     type_pose: paramsNorm.estDiagonale ? "diagonale" : "parallele",
     largeur_lame_mm: 145,
-    epaisseur_lame_mm: 21,
+    epaisseur_lame_mm: paramsNorm.epaisseurLameMm ?? 21,
     longueur_lame_m: 4.0,
     espacement_lames_mm: 5,
     type_fixation: estComposite ? "clips_invisibles" : "vis_inox",
@@ -515,7 +665,11 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
           hauteur_chassis_alu_mm: 100,
           jeu_fonctionnel_peripherique_mm: 20,
           motorise: estMotorise,
-          type_motorisation: estMotorise ? "solaire" : "aucune",
+          type_motorisation: /filaire/i.test(lower)
+            ? "filaire"
+            : estMotorise
+              ? "solaire"
+              : "aucune",
         }
       : undefined,
   };
@@ -551,17 +705,21 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
     ? `COMPOSITE ${paramsNorm.fabricant.nom.toUpperCase()} (Hors NF DTU 51.4)`
     : `${estMobile ? "MOBILE NF P90-308 & " : ""}NF DTU 51.4`;
 
+  const fixationsLabel = estComposite
+    ? "Clips fabricant"
+    : `Visserie Inox Ø ${paramsNorm.visserieDiametreMm} mm (${paramsNorm.visserieInox === "A4" ? "Inox A4 obligatoire" : "Inox A2"} — Tableau 9 NF DTU 51.4 2018)`;
+
   const syntheseTexte =
     `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (TERRASSE ${normeLabel})\n` +
-    `- Dimensions : ${longueurM} × ${largeurM} m (${res.surfaceNetteM2} m² nets) | Entraxe lambourdes : ${paramsNorm.entraxeLambourdesMm} mm${paramsNorm.estDiagonale ? " (diagonale)" : ""}\n` +
+    `- Dimensions : ${dimensionsLabel} (${res.surfaceNetteM2} m² nets) | Entraxe lambourdes : ${paramsNorm.entraxeLambourdesMm} mm${paramsNorm.estDiagonale ? " (diagonale)" : ""}\n` +
     `- Lames à commander : ${res.lames.nbLamesStandard} u (${res.lames.surfaceACommanderM2} m²) | Lambourdes : ${res.lambourdes.nbBarres} u (${res.lambourdes.lineaireMl} ml)\n` +
-    `- Plots : ${res.plots.nbPlotsTotal} u | Fixations (${paramsNorm.visserieInox === "A4" ? "Inox A4 obligatoire" : paramsNorm.visserieInox === "A2" ? "Inox A2" : "Clips fabricant"}) : ${res.fixations.nbVisOuClipsTotal} u\n` +
+    `- Plots : ${res.plots.nbPlotsTotal} u | Fixations (${fixationsLabel}) : ${res.fixations.nbVisOuClipsTotal} u\n` +
     (paramsNorm.fabricant
       ? `- Règles ${paramsNorm.fabricant.nom} : ${paramsNorm.fabricant.reglesSpecifiques[0]} Jeux : aboutage ${paramsNorm.fabricant.jeuAboutageMm}, mur ${paramsNorm.fabricant.jeuMurMm}.\n`
       : "") +
     (paramsNorm.alertePlotsDepassement ? `${paramsNorm.alertePlotsDepassement}\n` : "") +
     (estMobile
-      ? `- Kit Terrasse Mobile NF P90-308 : châssis porteur alu + rails inox + galets${estMotorise ? " + motorisation 24V" : ""}\n`
+      ? `- Kit Terrasse Mobile NF P90-308${mobileRect ? ` (${(mobileRect as { longueur: number; largeur: number }).longueur} × ${(mobileRect as { longueur: number; largeur: number }).largeur} m)` : ""} : châssis porteur alu + rails inox 316L + galets${estMotorise ? (/filaire/i.test(lower) ? " + motorisation filaire" : " + motorisation 24V") : ""}\n`
       : "") +
     `- Main-d'œuvre calculée : ${heuresPoseTotal} h\n` +
     `- Estimation indicative HT : Matériaux ${fmtEuro(totalMateriauxHt)} + Main-d'œuvre ${fmtEuro(totalMainOeuvreHt)} = **${fmtEuro(totalHt)} HT**`;
