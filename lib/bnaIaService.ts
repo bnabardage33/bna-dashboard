@@ -30,6 +30,7 @@ export type BnaIaActionType =
   | "update_avancement"
   | "shift_planning"
   | "create_note"
+  | "create_sav_from_photo"
   | "create_devis"
   | "open_calepineur_3d"
   | "open_hub"
@@ -45,6 +46,15 @@ export interface CalepineurPrefillPayload {
   resume: string;
   surfaceOuLineaire?: number;
   raisons: string[];
+}
+
+export interface SavDiagnosticPrefillPayload {
+  titre: string;
+  description: string;
+  metier: MetierBna;
+  priorite: string;
+  chantierId?: string;
+  chantierNom?: string;
 }
 
 export interface BnaIaAction {
@@ -63,6 +73,7 @@ export interface BnaIaAction {
     noteContenu?: string;
     devisPrefill?: DevisPrefillPayload;
     calepineurPrefill?: CalepineurPrefillPayload;
+    savPrefill?: SavDiagnosticPrefillPayload;
     href?: string;
   };
 }
@@ -72,6 +83,7 @@ export interface BnaIaMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: string;
+  imageBase64?: string;
   actions?: BnaIaAction[];
   tags?: string[];
   source?: "bna_expert_engine" | "cloud_llm";
@@ -750,6 +762,70 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
   }
 
   return actions;
+}
+
+export function genererActionsDiagnosticPhoto(
+  diagnosticTexte: string,
+  messageUtilisateur: string,
+  ctx: BnaIaContext
+): BnaIaAction[] {
+  const combined = `${messageUtilisateur}\n${diagnosticTexte}`.toLowerCase();
+  let metier: MetierBna = "bardage";
+  if (/terrasse|plot|lambourde|cumaru|ip[ée]|p90-308|51\.4/i.test(combined)) {
+    metier = "terrasse";
+  } else if (/cl[ôo]ture|poteau|grillage|panneau\s+rigide|portillon|portail/i.test(combined)) {
+    metier = "cloture";
+  } else if (/bardage|hpl|claire-voie|pare-pluie|ite|41\.2|45\.4|3194/i.test(combined)) {
+    metier = "bardage";
+  }
+
+  const chantier = findMentionedChantier(messageUtilisateur, ctx.chantiers);
+  const estNonConforme =
+    /non[- ]conform|d[ée]sordre|anomalie|risque|infiltration|arrachement|d[ée]faut/i.test(
+      diagnosticTexte
+    );
+  const titreBase = chantier
+    ? `Diagnostic photo ${chantier.nom}`
+    : `Diagnostic photo terrain (${metier.toUpperCase()})`;
+
+  const ts = Date.now();
+  return [
+    {
+      id: `act-sav-photo-${ts}`,
+      type: "create_sav_from_photo",
+      title: "Ouvrir un ticket SAV avec ce diagnostic",
+      description:
+        "Pré-remplit la création du ticket SAV (/bureau/sav/nouveau) avec le constat technique.",
+      payload: {
+        metier,
+        chantierId: chantier?.id,
+        chantierNom: chantier?.nom,
+        href: "/bureau/sav/nouveau",
+        savPrefill: {
+          titre: titreBase,
+          description: diagnosticTexte,
+          metier,
+          priorite: estNonConforme ? "urgente" : "standard",
+          chantierId: chantier?.id,
+          chantierNom: chantier?.nom,
+        },
+      },
+    },
+    {
+      id: `act-note-photo-${ts + 1}`,
+      type: "create_note",
+      title: "Enregistrer en note chantier",
+      description:
+        "Enregistre ce constat photo directement dans vos notes patron (notes_patron).",
+      payload: {
+        metier,
+        chantierId: chantier?.id,
+        chantierNom: chantier?.nom,
+        noteTitre: titreBase,
+        noteContenu: diagnosticTexte,
+      },
+    },
+  ];
 }
 
 export function formaterDateFrEuropeParis(date: Date = new Date()): {

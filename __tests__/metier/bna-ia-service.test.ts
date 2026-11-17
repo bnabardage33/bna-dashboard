@@ -15,6 +15,7 @@ import {
   formaterDateFrEuropeParis,
   formaterVigilanceMeteoFrance,
   generateLocalAssistantResponse,
+  genererActionsDiagnosticPhoto,
   parseNaturalDate,
   urlHubPourChantier,
   type BnaIaContext,
@@ -660,5 +661,32 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     expect(extraireDestinationLibre("météo pour demain à Madrid")).toBe("Madrid");
     expect(extraireDestinationLibre("Explique les points clés pour chiffrer une Terrasse Mobile")).toBeNull();
     expect(extraireDestinationLibre("Quels sont mes réserves PV à lever ?")).toBeNull();
+  });
+
+  it("génère les 2 actions post-diagnostic photo (Ticket SAV pré-rempli + Note chantier)", () => {
+    const diagnostic =
+      "1) Constat visuel : lames Cumaru posées sur plots sans jeu de dilatation suffisant. 2) Non-conformité NF DTU 51.4 (risque de tuilage). 3) Reprendre les lames en rive.";
+    const actions = genererActionsDiagnosticPhoto(
+      diagnostic,
+      "Vérifie cette photo de Terrasse Martin",
+      MOCK_CONTEXT
+    );
+
+    expect(actions).toHaveLength(2);
+
+    const savAction = actions.find((a) => a.type === "create_sav_from_photo");
+    expect(savAction).toBeDefined();
+    expect(savAction?.title).toBe("Ouvrir un ticket SAV avec ce diagnostic");
+    expect(savAction?.payload.href).toBe("/bureau/sav/nouveau");
+    expect(savAction?.payload.savPrefill?.metier).toBe("terrasse");
+    expect(savAction?.payload.savPrefill?.priorite).toBe("urgente");
+    expect(savAction?.payload.savPrefill?.chantierId).toBe("ch-terrasse-1");
+    expect(savAction?.payload.savPrefill?.description).toBe(diagnostic);
+
+    const noteAction = actions.find((a) => a.type === "create_note");
+    expect(noteAction).toBeDefined();
+    expect(noteAction?.title).toBe("Enregistrer en note chantier");
+    expect(noteAction?.payload.noteTitre).toContain("Terrasse Martin");
+    expect(noteAction?.payload.noteContenu).toBe(diagnostic);
   });
 });

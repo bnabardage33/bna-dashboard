@@ -12,6 +12,7 @@ import {
   extraireDestinationLibre,
   extraireVilleMeteoLibre,
   formaterDateFrEuropeParis,
+  genererActionsDiagnosticPhoto,
   normaliserMetierBna,
   type BnaIaChantierCtx,
   type BnaIaContext,
@@ -36,6 +37,163 @@ const DEFAULT_GROQ_MODELS = [
   "qwen/qwen3.8-27b",
   "openai/gpt-oss-20b",
 ];
+const DEFAULT_GROQ_VISION_MODELS = [
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "meta-llama/llama-4-maverick-17b-128e-instruct",
+];
+
+function parseImageDataUrl(raw: unknown): {
+  dataUrl: string;
+  mimeType: string;
+  base64Data: string;
+} | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  const match = trimmed.match(
+    /^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/i
+  );
+  if (!match) return null;
+  const mimeType = match[1].toLowerCase() === "image/jpg" ? "image/jpeg" : match[1].toLowerCase();
+  const base64Data = match[2].replace(/\s+/g, "");
+  if (!base64Data) return null;
+  return {
+    dataUrl: `data:${mimeType};base64,${base64Data}`,
+    mimeType,
+    base64Data,
+  };
+}
+
+function buildVisionSystemPrompt(baseSystemPrompt: string): string {
+  return `${baseSystemPrompt}
+
+DIAGNOSTIC PHOTO CHANTIER (MODE VISION CONDUCTEUR DE TRAVAUX BNA) :
+Tu analyses une photo prise sur chantier (Bardage bois NF DTU 41.2, Bardage HPL NF DTU 45.4 / CSTB 3194, Terrasse NF DTU 51.4, Terrasse Mobile NF P90-308, Clôture).
+Structure IMPÉRATIVEMENT ta réponse en 3 rubriques courtes et lisibles sur téléphone :
+**1) Constat visuel précis**
+• Décris le support, le matériau, les fixations visibles, les jeux/ventilations ou tout désordre observable.
+**2) Conformité ou non-conformité DTU / CSTB**
+• Indique clairement si la mise en œuvre observée est conforme, à surveiller ou non conforme au regard des normes BNA applicables.
+**3) Préconisation corrective ou étape suivante**
+• Donne l'action concrète immédiate pour l'équipe terrain ou le suivi SAV.`;
+}
+
+async function callGeminiVisionLlm(
+  systemPrompt: string,
+  userMessage: string,
+  mimeType: string,
+  base64Data: string,
+  apiKey: string,
+  history: BnaIaHistoryTurn[] = []
+): Promise<LlmCallResult> {
+  const model = process.env.GEMINI_VISION_MODEL?.trim() || process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+      model
+    )}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+    const contents = [
+      ...history.map((h) => ({
+        role: h.role === "assistant" ? "model" : "user",
+        parts: [{ text: h.content }],
+      })),
+      {
+        role: "user",
+        parts: [
+          { text: userMessage },
+          { inlineData: { mimeType, data: base64Data } },
+        ],
+      },
+    ];
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const snippet = await readHttpErrorSnippet(res);
+      return { ok: false, error: `Gemini Vision (${model}) HTTP ${res.status}: ${snippet}` };
+    }
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts;
+    if (Array.isArray(parts)) {
+      const text = parts.map((p: { text?: string }) => p.text || "").join("").trim();
+      if (text) return { ok: true, text, modelUsed: model };
+    }
+    return { ok: false, error: `Gemini Vision (${model}) réponse vide` };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `Gemini Vision (${model}) exception: ${msg}` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callGroqVisionLlm(
+  systemPrompt: string,
+  userMessage: string,
+  imageDataUrl: string,
+  apiKey: string,
+  history: BnaIaHistoryTurn[] = []
+): Promise<LlmCallResult> {
+  const modelsToTry = [
+    ...(process.env.GROQ_VISION_MODEL ? [process.env.GROQ_VISION_MODEL.trim()] : []),
+    ...DEFAULT_GROQ_VISION_MODELS,
+  ].filter((m, idx, arr) => Boolean(m) && arr.indexOf(m) === idx);
+
+  const modelErrors: string[] = [];
+
+  for (const model of modelsToTry) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...history.map((h) => ({ role: h.role, content: h.content })),
+            {
+              role: "user",
+              content: [
+                { type: "text", text: userMessage },
+                { type: "image_url", image_url: { url: imageDataUrl } },
+              ],
+            },
+          ],
+          max_completion_tokens: 4096,
+          temperature: 0.2,
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const snippet = await readHttpErrorSnippet(res);
+        modelErrors.push(`${model} HTTP ${res.status}: ${snippet}`);
+        continue;
+      }
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content?.trim();
+      if (text) return { ok: true, text, modelUsed: model };
+      modelErrors.push(`${model} réponse vide`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      modelErrors.push(`${model} exception: ${msg}`);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return { ok: false, error: `Groq Vision (${modelErrors.join("; ")})` };
+}
 
 type LlmCallResult =
   | { ok: true; text: string; modelUsed?: string }
@@ -792,7 +950,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => null);
-    const message = typeof body?.message === "string" ? body.message.trim() : "";
+    const parsedImage = parseImageDataUrl(body?.imageBase64);
+    const rawMessage = typeof body?.message === "string" ? body.message.trim() : "";
+    const message =
+      rawMessage ||
+      (parsedImage
+        ? "Analyse cette photo de chantier et donne ton diagnostic technique DTU."
+        : "");
     if (!message) {
       return NextResponse.json(
         { error: "Message manquant." },
@@ -929,6 +1093,80 @@ export async function POST(req: NextRequest) {
       ? `${baseSystemPrompt}\n\nRÉSUMÉ DES ÉCHANGES PRÉCÉDENTS (${olderHistory.length} messages condensés) :\n${resumeHistoriqueAncien}`
       : baseSystemPrompt;
 
+    // Analyse Vision multimodale si une photo chantier est jointe :
+    // Priorité Gemini Vision -> Repli Groq Vision
+    if (parsedImage) {
+      if (!geminiKey && !groqKey) {
+        return NextResponse.json(
+          {
+            error:
+              "Aucune clé Cloud Vision configurée (GOOGLE_GENERATIVE_AI_API_KEY / GEMINI_API_KEY ou GROQ_API_KEY).",
+          },
+          { status: 503 }
+        );
+      }
+
+      const visionPrompt = buildVisionSystemPrompt(systemPrompt);
+      const visionErrors: string[] = [];
+      let visionText: string | null = null;
+      let visionProvider = "";
+
+      if (geminiKey) {
+        const geminiVis = await callGeminiVisionLlm(
+          visionPrompt,
+          messageNormalise,
+          parsedImage.mimeType,
+          parsedImage.base64Data,
+          geminiKey,
+          history
+        );
+        if (geminiVis.ok) {
+          visionText = geminiVis.text;
+          visionProvider = `Gemini Vision (${geminiVis.modelUsed || "gemini-2.5-flash"})`;
+        } else {
+          visionErrors.push(geminiVis.error);
+        }
+      }
+
+      if (!visionText && groqKey) {
+        const groqVis = await callGroqVisionLlm(
+          visionPrompt,
+          messageNormalise,
+          parsedImage.dataUrl,
+          groqKey,
+          history
+        );
+        if (groqVis.ok) {
+          visionText = groqVis.text;
+          visionProvider = `Groq Vision (${groqVis.modelUsed || "llama-4-scout"})`;
+        } else {
+          visionErrors.push(groqVis.error);
+        }
+      }
+
+      if (visionText) {
+        const photoActions = genererActionsDiagnosticPhoto(
+          visionText,
+          messageNormalise,
+          context
+        );
+        return NextResponse.json({
+          content: visionText,
+          actions: [...photoActions, ...actions],
+          tags: [visionProvider, "Diagnostic Photo BNA", "BNA-IA Cloud"],
+          source: "cloud_llm",
+          preChiffrageTexte: null,
+        });
+      }
+
+      const visionErrorMsg = `Échec de l'analyse photo Vision : ${visionErrors.join(" | ")}`;
+      console.error("Erreur Vision POST /api/bna-ia :", visionErrorMsg);
+      return NextResponse.json(
+        { error: visionErrorMsg, details: visionErrors },
+        { status: 502 }
+      );
+    }
+
     const llmErrors: string[] = [];
     let llmText: string | null = null;
     let providerName = "";
@@ -1021,6 +1259,50 @@ export async function POST(req: NextRequest) {
     console.error("Erreur POST /api/bna-ia :", err);
     return NextResponse.json(
       { error: "Erreur lors du traitement de la requête BNA-IA." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  const tenant = await resoudreTenant();
+  if (!tenant.ok) return tenant.reponse;
+
+  try {
+    const body = await req.json().catch(() => null);
+    const titre =
+      typeof body?.titre === "string" && body.titre.trim()
+        ? body.titre.trim()
+        : "Note BNA-IA";
+    const contenu =
+      typeof body?.contenu === "string" ? body.contenu.trim() : "";
+
+    if (!contenu) {
+      return NextResponse.json(
+        { error: "Contenu de note manquant." },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.from("notes_patron").insert({
+      entreprise_id: tenant.entrepriseId,
+      titre,
+      contenu,
+    });
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || "Erreur lors de l'enregistrement de la note." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Erreur PUT /api/bna-ia :", err);
+    return NextResponse.json(
+      { error: "Impossible d'enregistrer la note chantier." },
       { status: 500 }
     );
   }

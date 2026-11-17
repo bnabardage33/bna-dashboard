@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   Bot,
   CalendarDays,
+  Camera,
   CheckCircle2,
   Loader2,
   Mic,
@@ -20,6 +21,7 @@ import {
   Trash2,
   User,
   Volume2,
+  X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
@@ -241,6 +243,41 @@ function nettoyerTextePourLectureVocale(text: string): string {
     .trim();
 }
 
+function compresserImageChantier(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const MAX_WIDTH = 1280;
+        const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+        const targetW = Math.max(1, Math.round(img.width * scale));
+        const targetH = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas 2D indisponible."));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        resolve(dataUrl);
+      } catch (err) {
+        reject(err);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Impossible de lire l'image sélectionnée."));
+    };
+    img.src = objectUrl;
+  });
+}
+
 export default function BnaIaCentreControle() {
   const router = useRouter();
   const [context, setContext] = useState<BnaIaContext | null>(null);
@@ -252,6 +289,8 @@ export default function BnaIaCentreControle() {
   const [isSending, setIsSending] = useState(false);
   const [executingId, setExecutingId] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
 
   // Dictée Whisper via /api/transcrire-note
   const [isRecording, setIsRecording] = useState(false);
@@ -260,6 +299,7 @@ export default function BnaIaCentreControle() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const chargerContexte = useCallback(async () => {
@@ -314,7 +354,12 @@ export default function BnaIaCentreControle() {
   useEffect(() => {
     if (messages.length > 0) {
       try {
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-30)));
+        // Exclure les images base64 du localStorage pour éviter de saturer le quota navigateur
+        const sansImages = messages.slice(-30).map((m) => ({
+          ...m,
+          imageBase64: undefined,
+        }));
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(sansImages));
       } catch {
         // Ignorer quota
       }
@@ -356,8 +401,34 @@ export default function BnaIaCentreControle() {
     window.speechSynthesis.speak(utterance);
   };
 
+  const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setMicError(null);
+    setIsCompressingImage(true);
+    try {
+      const compressed = await compresserImageChantier(file);
+      setPendingImage(compressed);
+    } catch (err) {
+      setMicError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de compresser la photo sélectionnée."
+      );
+    } finally {
+      setIsCompressingImage(false);
+    }
+  };
+
   const envoyerMessage = async (texteForce?: string) => {
-    const contenu = (texteForce ?? input).trim();
+    const texteSaisi = (texteForce ?? input).trim();
+    const imageToSend = texteForce ? null : pendingImage;
+    const contenu =
+      texteSaisi ||
+      (imageToSend
+        ? "Analyse cette photo de chantier et donne ton diagnostic technique DTU."
+        : "");
     if (!contenu || isSending) return;
 
     const userMsg: BnaIaMessage = {
@@ -365,9 +436,13 @@ export default function BnaIaCentreControle() {
       role: "user",
       content: contenu,
       timestamp: new Date().toISOString(),
+      ...(imageToSend ? { imageBase64: imageToSend } : {}),
     };
     setMessages((prev) => [...prev, userMsg]);
-    if (!texteForce) setInput("");
+    if (!texteForce) {
+      setInput("");
+      setPendingImage(null);
+    }
     setIsSending(true);
 
     try {
@@ -390,6 +465,7 @@ export default function BnaIaCentreControle() {
           context,
           history: historyPayload,
           dernierPreChiffrage,
+          ...(imageToSend ? { imageBase64: imageToSend } : {}),
         }),
       });
 
@@ -648,17 +724,31 @@ export default function BnaIaCentreControle() {
           .eq("id", action.payload.chantierId);
         if (error) throw error;
         await chargerContexte();
-      } else if (action.type === "create_note") {
-        const { entreprise_id } = await resoudreContexteEntreprise(null);
-        if (!entreprise_id) {
-          throw new Error("Contexte entreprise introuvable.");
+      } else if (action.type === "create_sav_from_photo") {
+        if (action.payload.savPrefill) {
+          localStorage.setItem(
+            "bna_prefill_sav_diagnostic",
+            JSON.stringify(action.payload.savPrefill)
+          );
         }
-        const { error } = await supabase.from("notes_patron").insert({
-          entreprise_id,
-          titre: action.payload.noteTitre || "Note BNA-IA",
-          contenu: action.payload.noteContenu || action.description,
+        router.push(action.payload.href || "/bureau/sav/nouveau");
+        return;
+      } else if (action.type === "create_note") {
+        const resNote = await fetch("/api/bna-ia", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            titre: action.payload.noteTitre || "Note BNA-IA",
+            contenu: action.payload.noteContenu || action.description,
+            chantier_id: action.payload.chantierId ?? null,
+          }),
         });
-        if (error) throw error;
+        if (!resNote.ok) {
+          const errJson = await resNote.json().catch(() => null);
+          throw new Error(
+            errJson?.error || "Impossible d'enregistrer la note chantier."
+          );
+        }
       }
 
       setMessages((prev) =>
@@ -949,6 +1039,17 @@ export default function BnaIaCentreControle() {
                     </div>
                   )}
 
+                  {m.imageBase64 && (
+                    <div className="mb-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.imageBase64}
+                        alt="Photo chantier jointe"
+                        className="max-h-52 w-auto rounded-xl border border-white/25 object-cover"
+                      />
+                    </div>
+                  )}
+
                   {renderBnaMessageContent(m.content, m.role === "user")}
 
                   {m.actions && m.actions.length > 0 && (
@@ -1022,7 +1123,59 @@ export default function BnaIaCentreControle() {
             {micError && (
               <p className="mb-2 text-xs font-medium text-red-600">{micError}</p>
             )}
+            {pendingImage && (
+              <div className="mb-2.5 flex items-center justify-between gap-2 rounded-xl border border-[#B85B2B]/30 bg-white p-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={pendingImage}
+                    alt="Aperçu photo chantier"
+                    className="h-14 w-14 shrink-0 rounded-lg border border-[#E5E5E5] object-cover"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#23272B]">
+                      Photo chantier prête pour diagnostic
+                    </p>
+                    <p className="text-[11px] text-[#666666]">
+                      Compressée (max 1280 px) · Analyse Vision DTU
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPendingImage(null)}
+                  title="Retirer la photo"
+                  aria-label="Retirer la photo"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#E5E5E5] text-[#666666] hover:bg-red-50 hover:text-red-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoSelected}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isCompressingImage || isSending}
+                title="Photo chantier (diagnostic DTU / SAV)"
+                aria-label="Photo chantier"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E5E5E5] bg-white text-[#B85B2B] transition-colors hover:border-[#B85B2B]/50 disabled:opacity-50"
+              >
+                {isCompressingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={toggleDictaphone}
@@ -1058,7 +1211,7 @@ export default function BnaIaCentreControle() {
 
               <button
                 type="submit"
-                disabled={!input.trim() || isSending}
+                disabled={(!input.trim() && !pendingImage) || isSending}
                 className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
