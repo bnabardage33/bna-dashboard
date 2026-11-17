@@ -1189,14 +1189,14 @@ export function generateLocalAssistantResponse(
     Boolean(options?.history && options.history.length > 0)
   );
 
-  if (
-    !estConseilOuSuivi &&
-    (/\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions?\s*(?:m[ée]t[ée]o|de\s*pose|sont\s*bonnes)|d[ée]placement/i.test(
+  const estIntentionMeteoOuDeplacement =
+    /\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions?\s*(?:m[ée]t[ée]o|de\s*pose|sont\s*bonnes)|repousser|d[ée]caler|d[ée]placement|\btrajet\b|\bkm\b|combien\s+co[ûu]te/i.test(
       lower
     ) ||
-      Boolean(ctx.meteoVilleLibre) ||
-      Boolean(ctx.deplacementVilleLibre))
-  ) {
+    Boolean(ctx.meteoVilleLibre) ||
+    Boolean(ctx.deplacementVilleLibre);
+
+  if (estIntentionMeteoOuDeplacement) {
     const maintenant = formaterDateFrEuropeParis(
       ctx.currentDateIso ? new Date(`${ctx.currentDateIso}T12:00:00Z`) : new Date()
     );
@@ -1208,6 +1208,24 @@ export function generateLocalAssistantResponse(
     );
 
     const blocs: string[] = [];
+
+    if (estConseilOuSuivi && (ctx.meteoVilleLibre || ctx.deplacementVilleLibre)) {
+      const prev = ctx.meteoVilleLibre?.previsions?.[0];
+      const aAlerteCritique = Boolean(prev && prev.alertesDtu.length > 0);
+      const metierMentionne = /bardage/i.test(lower)
+        ? "Bardage (NF DTU 41.2 / 45.4)"
+        : /terrasse/i.test(lower)
+          ? "Terrasse (NF DTU 51.4)"
+          : /cl[ôo]ture/i.test(lower)
+            ? "Clôture"
+            : "chantier";
+      blocs.push(
+        aAlerteCritique
+          ? `⚠️ **Recommandation Conducteur de Travaux (${metierMentionne}) : Repousser** l'intervention (conditions météo incompatibles DTU). Alternative : décaler de 24h ou basculer l'équipe sur un chantier abrité en Gironde.`
+          : `✅ **Recommandation Conducteur de Travaux (${metierMentionne}) : Maintenir** l'intervention (conditions compatibles DTU).`
+      );
+    }
+
     if (ctx.deplacementVilleLibre) {
       blocs.push(formaterResumeDeplacement(ctx.deplacementVilleLibre));
     }

@@ -639,5 +639,15 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     expect(fallback.content).not.toContain("Reprise de votre conversation");
     expect(fallback.content).not.toContain("Dernier élément analysé");
     expect(fallback.content).toContain("Repousser");
+
+    // Priorité absolue à Météo / Déplacement même si « bardage » est mentionné
+    const promptComplet =
+      "j'ai un chantier à Madrid à faire demain en bardage, est-ce que les conditions sont bonnes ou vaut mieux repousser et combien coûte le déplacement ?";
+    const repComplet = generateLocalAssistantResponse(promptComplet, ctxMadrid);
+    expect(repComplet.content).toContain("Madrid");
+    expect(repComplet.content).toContain("1477.6 km A/R");
+    expect(repComplet.content).toContain("Repousser");
+    expect(repComplet.content).toContain("Bardage");
+    expect(repComplet.tags).toContain("Météo");
   });
 });
