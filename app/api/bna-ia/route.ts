@@ -5,13 +5,18 @@ import {
   buildSystemPromptContext,
   calculerAlertesProactives,
   detecterChantierComplexe,
+  evaluerAlertesDtuMeteoJour,
+  formaterDateFrEuropeParis,
   generateLocalAssistantResponse,
   normaliserMetierBna,
+  type BnaIaChantierCtx,
   type BnaIaContext,
   type BnaIaHistoryTurn,
+  type BnaIaPrevisionJourCtx,
 } from "@/lib/bnaIaService";
 import { detecterEtCalculerPreChiffrage } from "@/lib/bnaIaPreChiffrage";
 import { normaliserRequeteMetier } from "@/lib/bnaDictionnaireMetier";
+import { libelleConditionsWmo } from "@/lib/meteoOpenMeteo";
 
 export const dynamic = "force-dynamic";
 
@@ -135,9 +140,122 @@ function isComplexOrConversationalQuery(
   return false;
 }
 
+const CACHE_METEO_30MIN_MS = 30 * 60 * 1000;
+const METEO_TIMEOUT_MS = 2500;
+const meteoChantierCache = new Map<
+  string,
+  { expiresAt: number; data: { previsions: BnaIaPrevisionJourCtx[]; resumeAlerte: string | null } }
+>();
+
+async function fetchJsonWithTimeout(url: string, timeoutMs: number): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function chargerMeteoChantier3Jours(
+  adresse: string
+): Promise<{ previsions: BnaIaPrevisionJourCtx[]; resumeAlerte: string | null }> {
+  const cle = adresse.trim().toLowerCase();
+  const now = Date.now();
+  const cached = meteoChantierCache.get(cle);
+  if (cached && cached.expiresAt > now) {
+    return cached.data;
+  }
+
+  try {
+    // 1. Géocodage gratuit Open-Meteo (ville / code postal)
+    const cleanQuery = adresse
+      .replace(/^\d+\s+(?:rue|avenue|boulevard|allée|impasse|chemin)[^,]*/i, "")
+      .trim() || adresse.trim();
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+      cleanQuery
+    )}&count=1&language=fr&format=json`;
+    const geoJson = (await fetchJsonWithTimeout(geoUrl, METEO_TIMEOUT_MS)) as {
+      results?: Array<{ latitude?: number; longitude?: number }>;
+    } | null;
+
+    const first = geoJson?.results?.[0];
+    if (typeof first?.latitude !== "number" || typeof first?.longitude !== "number") {
+      return { previsions: [], resumeAlerte: null };
+    }
+
+    // 2. Prévisions gratuites Open-Meteo 3 jours (zéro quota Visual Crossing)
+    const forecastUrl =
+      `https://api.open-meteo.com/v1/forecast?latitude=${first.latitude}&longitude=${first.longitude}` +
+      `&daily=temperature_2m_min,temperature_2m_max,precipitation_sum,wind_gusts_10m_max,weather_code` +
+      `&timezone=Europe%2FParis&forecast_days=3`;
+    const forecastJson = (await fetchJsonWithTimeout(
+      forecastUrl,
+      METEO_TIMEOUT_MS
+    )) as {
+      daily?: {
+        time?: string[];
+        temperature_2m_min?: number[];
+        temperature_2m_max?: number[];
+        precipitation_sum?: number[];
+        wind_gusts_10m_max?: number[];
+        weather_code?: number[];
+      };
+    } | null;
+
+    const daily = forecastJson?.daily;
+    if (!daily || !Array.isArray(daily.time) || daily.time.length === 0) {
+      return { previsions: [], resumeAlerte: null };
+    }
+
+    const previsions: BnaIaPrevisionJourCtx[] = daily.time.slice(0, 3).map((date, idx) => {
+      const tempMinC = Math.round(Number(daily.temperature_2m_min?.[idx] ?? 0));
+      const tempMaxC = Math.round(Number(daily.temperature_2m_max?.[idx] ?? 0));
+      const rafalesKmh = Math.round(Number(daily.wind_gusts_10m_max?.[idx] ?? 0));
+      const pluieMm = Math.round(Number(daily.precipitation_sum?.[idx] ?? 0) * 10) / 10;
+      const conditions = libelleConditionsWmo(daily.weather_code?.[idx]);
+      return {
+        date,
+        tempMinC,
+        tempMaxC,
+        rafalesKmh,
+        pluieMm,
+        conditions,
+        alertesDtu: evaluerAlertesDtuMeteoJour({
+          tempMinC,
+          tempMaxC,
+          rafalesKmh,
+          pluieMm,
+          conditions,
+        }),
+      };
+    });
+
+    const toutesAlertes = Array.from(
+      new Set(previsions.flatMap((p) => p.alertesDtu))
+    );
+    const result = {
+      previsions,
+      resumeAlerte: toutesAlertes.length > 0 ? toutesAlertes.join(" ") : null,
+    };
+    meteoChantierCache.set(cle, {
+      expiresAt: now + CACHE_METEO_30MIN_MS,
+      data: result,
+    });
+    return result;
+  } catch {
+    return { previsions: [], resumeAlerte: null };
+  }
+}
+
 async function chargerContexteEntreprise(entrepriseId: string): Promise<BnaIaContext> {
   const supabase = await createClient();
-  const currentDateIso = new Date().toISOString().slice(0, 10);
+  const maintenant = formaterDateFrEuropeParis();
+  const currentDateIso = maintenant.dateIso;
 
   const [
     { data: chantiersRaw },
@@ -195,30 +313,60 @@ async function chargerContexteEntreprise(entrepriseId: string): Promise<BnaIaCon
     );
   }
 
+  const chantiersBase: BnaIaChantierCtx[] = (chantiersRaw ?? []).map((c) => {
+    const cl = (c.checklist && typeof c.checklist === "object" ? c.checklist : {}) as Record<string, unknown>;
+    const avancementPct =
+      typeof cl.avancement_manuel === "number"
+        ? cl.avancement_manuel
+        : c.statut === "termine"
+          ? 100
+          : c.statut === "en_cours"
+            ? 50
+            : 0;
+    return {
+      id: c.id,
+      nom: c.nom || "Chantier BNA",
+      ville: c.adresse_chantier,
+      metier: normaliserMetierBna(c.metier),
+      statut: c.statut || "prevu",
+      avancement: avancementPct,
+      date_debut: c.date_debut,
+      date_fin: c.date_fin,
+    };
+  });
+
+  // Enrichissement météo 3 jours en parallèle pour les chantiers actifs (en_cours / prevu)
+  const actifsAEnrichir = chantiersBase
+    .filter(
+      (c) =>
+        (c.statut === "en_cours" || c.statut === "prevu") &&
+        Boolean(c.ville && c.ville.trim().length > 0)
+    )
+    .slice(0, 6);
+
+  if (actifsAEnrichir.length > 0) {
+    const resultatsMeteo = await Promise.all(
+      actifsAEnrichir.map(async (c) => ({
+        id: c.id,
+        meteo: await chargerMeteoChantier3Jours(c.ville!.trim()),
+      }))
+    );
+    const mapMeteo = new Map(resultatsMeteo.map((r) => [r.id, r.meteo]));
+    for (const ch of chantiersBase) {
+      const m = mapMeteo.get(ch.id);
+      if (m && m.previsions.length > 0) {
+        ch.previsionsMeteo3J = m.previsions;
+        if (m.resumeAlerte) ch.alerte_meteo = m.resumeAlerte;
+      }
+    }
+  }
+
   return {
     userName: "Dirigeant BNA",
     currentDateIso,
-    chantiers: (chantiersRaw ?? []).map((c) => {
-      const cl = (c.checklist && typeof c.checklist === "object" ? c.checklist : {}) as Record<string, unknown>;
-      const avancementPct =
-        typeof cl.avancement_manuel === "number"
-          ? cl.avancement_manuel
-          : c.statut === "termine"
-            ? 100
-            : c.statut === "en_cours"
-              ? 50
-              : 0;
-      return {
-        id: c.id,
-        nom: c.nom || "Chantier BNA",
-        ville: c.adresse_chantier,
-        metier: normaliserMetierBna(c.metier),
-        statut: c.statut || "prevu",
-        avancement: avancementPct,
-        date_debut: c.date_debut,
-        date_fin: c.date_fin,
-      };
-    }),
+    currentDateFr: maintenant.dateFr,
+    currentTimeParis: maintenant.heureParis,
+    chantiers: chantiersBase,
     commandes: (commandesRaw ?? []).map((cmd) => {
       const f = cmd.fournisseurs as unknown as { nom?: string } | null;
       const ch = cmd.chantiers as unknown as { nom?: string } | null;
@@ -308,10 +456,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const context: BnaIaContext =
+    const maintenant = formaterDateFrEuropeParis();
+    const rawContext: BnaIaContext =
       body?.context && Array.isArray(body.context.chantiers)
         ? (body.context as BnaIaContext)
         : await chargerContexteEntreprise(tenant.entrepriseId);
+
+    const context: BnaIaContext = {
+      ...rawContext,
+      currentDateIso: maintenant.dateIso,
+      currentDateFr: maintenant.dateFr,
+      currentTimeParis: maintenant.heureParis,
+    };
 
     const history: BnaIaHistoryTurn[] = Array.isArray(body?.history)
       ? (body.history as Array<{ role?: unknown; content?: unknown }>)

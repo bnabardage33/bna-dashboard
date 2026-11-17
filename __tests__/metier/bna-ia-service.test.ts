@@ -6,7 +6,9 @@ import {
   calculerSyntheseFinanciereBna,
   detectBnaIaActions,
   detecterChantierComplexe,
+  evaluerAlertesDtuMeteoJour,
   findMentionedChantier,
+  formaterDateFrEuropeParis,
   generateLocalAssistantResponse,
   parseNaturalDate,
   urlHubPourChantier,
@@ -404,5 +406,55 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     expect(suivi.content).not.toContain("Je suis prêt à vous aider sur vos");
     expect(suivi.content).toContain("Lot 1");
     expect(suivi.tags).toContain("Suivi Conversationnel");
+  });
+
+  it("formate la date Europe/Paris et croise les prévisions météo 3 jours avec les alertes DTU (0 ms)", () => {
+    const dt = formaterDateFrEuropeParis(new Date("2026-11-17T15:30:00Z"));
+    expect(dt.dateIso).toBe("2026-11-17");
+    expect(dt.dateFr).toContain("Mardi 17 novembre 2026");
+
+    const alertes = evaluerAlertesDtuMeteoJour({
+      tempMinC: 3,
+      tempMaxC: 9,
+      rafalesKmh: 58,
+      pluieMm: 12,
+      conditions: "Pluie forte",
+    });
+    expect(alertes.some((a) => a.includes("Océwood / Neowood"))).toBe(true);
+    expect(alertes.some((a) => a.includes("50 km/h"))).toBe(true);
+    expect(alertes.some((a) => a.includes("Pluie >= 5 mm"))).toBe(true);
+
+    const ctxMeteo: BnaIaContext = {
+      ...MOCK_CONTEXT,
+      currentDateFr: dt.dateFr,
+      currentTimeParis: dt.heureParis,
+      chantiers: [
+        {
+          ...MOCK_CONTEXT.chantiers[0],
+          previsionsMeteo3J: [
+            {
+              date: "2026-11-17",
+              tempMinC: 3,
+              tempMaxC: 10,
+              rafalesKmh: 55,
+              pluieMm: 8.5,
+              conditions: "Averses",
+              alertesDtu: alertes,
+            },
+          ],
+        },
+      ],
+    };
+
+    const sys = buildSystemPromptContext(ctxMeteo);
+    expect(sys).toContain("Mardi 17 novembre 2026");
+    expect(sys).toContain("rafales 55 km/h");
+
+    const repMeteo = generateLocalAssistantResponse("Météo & Pose DTU", ctxMeteo);
+    expect(repMeteo.content).toContain("Mardi 17 novembre 2026");
+    expect(repMeteo.content).toContain("3°C / 10°C");
+    expect(repMeteo.content).toContain("55 km/h");
+    expect(repMeteo.content).toContain("Océwood / Neowood");
+    expect(repMeteo.tags).toContain("Pose DTU");
   });
 });

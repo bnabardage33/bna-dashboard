@@ -70,6 +70,16 @@ export interface BnaIaMessage {
   source?: "bna_expert_engine" | "cloud_llm";
 }
 
+export interface BnaIaPrevisionJourCtx {
+  date: string;
+  tempMinC: number;
+  tempMaxC: number;
+  rafalesKmh: number;
+  pluieMm: number;
+  conditions: string;
+  alertesDtu: string[];
+}
+
 export interface BnaIaChantierCtx {
   id: string;
   nom: string;
@@ -80,6 +90,7 @@ export interface BnaIaChantierCtx {
   date_debut?: string | null;
   date_fin?: string | null;
   alerte_meteo?: string | null;
+  previsionsMeteo3J?: BnaIaPrevisionJourCtx[];
 }
 
 export interface BnaIaCommandeCtx {
@@ -133,6 +144,8 @@ export interface BnaIaSavCtx {
 export interface BnaIaContext {
   userName: string;
   currentDateIso: string;
+  currentDateFr?: string;
+  currentTimeParis?: string;
   chantiers: BnaIaChantierCtx[];
   commandes: BnaIaCommandeCtx[];
   devis: BnaIaDevisCtx[];
@@ -683,6 +696,65 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
   return actions;
 }
 
+export function formaterDateFrEuropeParis(date: Date = new Date()): {
+  dateIso: string;
+  dateFr: string;
+  heureParis: string;
+} {
+  const dateIso = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+
+  const dateFrRaw = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+  const dateFr = dateFrRaw.charAt(0).toUpperCase() + dateFrRaw.slice(1);
+
+  const heureParis = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+
+  return { dateIso, dateFr, heureParis };
+}
+
+export function evaluerAlertesDtuMeteoJour(jour: {
+  tempMinC: number;
+  tempMaxC: number;
+  rafalesKmh: number;
+  pluieMm: number;
+  conditions?: string;
+}): string[] {
+  const alertes: string[] = [];
+  if (jour.tempMinC < 5) {
+    alertes.push(
+      "Température < 5 °C : pose composite interdite/déconseillée (Océwood / Neowood) et vigilance scellement béton poteaux clôture."
+    );
+  }
+  if (jour.rafalesKmh >= 50) {
+    alertes.push(
+      "Rafales >= 50 km/h : alerte manutention panneaux HPL grand format et échafaudages."
+    );
+  }
+  if (
+    jour.pluieMm >= 5 ||
+    /pluie\s*forte|averse|orage/i.test(jour.conditions || "")
+  ) {
+    alertes.push(
+      "Pluie >= 5 mm : alerte traitement des coupes bois et collage/étanchéité."
+    );
+  }
+  return alertes;
+}
+
 export interface BnaIaHistoryTurn {
   role: "user" | "assistant";
   content: string;
@@ -695,14 +767,30 @@ export function buildSystemPromptContext(
   escalade?: EscaladeCalepineur3D | null,
   dernierPreChiffrage?: string | null
 ): string {
+  const maintenant = formaterDateFrEuropeParis(
+    ctx.currentDateIso ? new Date(`${ctx.currentDateIso}T12:00:00Z`) : new Date()
+  );
+  const dateFr = ctx.currentDateFr || maintenant.dateFr;
+  const heureParis = ctx.currentTimeParis || "";
+
   const chantiersTxt =
     ctx.chantiers.length === 0
       ? "Aucun chantier actif."
       : ctx.chantiers
-          .map(
-            (c) =>
-              `- [${c.metier.toUpperCase()}] ${c.nom} (${c.ville || "Gironde"}) · Statut: ${c.statut} · Avancement: ${c.avancement}% · Dates: ${c.date_debut || "?"} -> ${c.date_fin || "?"}${c.alerte_meteo ? ` · Météo: ${c.alerte_meteo}` : ""}`
-          )
+          .map((c) => {
+            const previsionsTxt =
+              c.previsionsMeteo3J && c.previsionsMeteo3J.length > 0
+                ? `\n  Météo 3J : ${c.previsionsMeteo3J
+                    .map(
+                      (j) =>
+                        `${j.date}: ${j.tempMinC}°/${j.tempMaxC}°C, rafales ${j.rafalesKmh} km/h, pluie ${j.pluieMm} mm (${j.conditions})${
+                          j.alertesDtu.length > 0 ? ` [⚠️ ${j.alertesDtu.join(" | ")}]` : ""
+                        }`
+                    )
+                    .join(" ; ")}`
+                : "";
+            return `- [${c.metier.toUpperCase()}] ${c.nom} (${c.ville || "Gironde"}) · Statut: ${c.statut} · Avancement: ${c.avancement}% · Dates: ${c.date_debut || "?"} -> ${c.date_fin || "?"}${c.alerte_meteo ? ` · Météo: ${c.alerte_meteo}` : ""}${previsionsTxt}`;
+          })
           .join("\n");
 
   const commandesTxt =
@@ -735,7 +823,7 @@ export function buildSystemPromptContext(
       : null;
 
   return `Tu es BNA-IA, le copilote IA central de l'entreprise BNA (Bardage, Terrasse & Terrasse Mobile, Clôture).
-Tu réponds directement à ${ctx.userName}. Date du jour : ${ctx.currentDateIso}.
+Tu réponds directement à ${ctx.userName}. Date du jour (Europe/Paris) : ${dateFr}${heureParis ? ` à ${heureParis}` : ""} (${ctx.currentDateIso}).
 
 CHANTIERS (${ctx.chantiers.length}) :
 ${chantiersTxt}
@@ -851,6 +939,52 @@ export function generateLocalAssistantResponse(
       content: `### Suivi sur votre dernier pré-chiffrage\n${options.dernierPreChiffrage}`,
       actions,
       tags: ["Suivi Conversationnel"],
+    };
+  }
+
+  if (
+    /\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions de pose/i.test(lower)
+  ) {
+    const maintenant = formaterDateFrEuropeParis(
+      ctx.currentDateIso ? new Date(`${ctx.currentDateIso}T12:00:00Z`) : new Date()
+    );
+    const dateFr = ctx.currentDateFr || maintenant.dateFr;
+    const actifs = ctx.chantiers.filter(
+      (c) =>
+        (c.previsionsMeteo3J && c.previsionsMeteo3J.length > 0) ||
+        Boolean(c.alerte_meteo)
+    );
+
+    if (actifs.length === 0) {
+      return {
+        content:
+          `### 🌤️ Météo & Pose DTU — ${dateFr}\n` +
+          `Aucune alerte météo active ni prévision disponible sur vos chantiers (vérifiez que l'adresse des chantiers actifs est renseignée).`,
+        actions,
+        tags: ["Météo", "Pose DTU"],
+      };
+    }
+
+    const lignes = actifs.map((c) => {
+      if (c.previsionsMeteo3J && c.previsionsMeteo3J.length > 0) {
+        const joursTxt = c.previsionsMeteo3J
+          .map((j) => {
+            const alertesTxt =
+              j.alertesDtu.length > 0
+                ? `\n    • ⚠️ ${j.alertesDtu.join(" / ")}`
+                : " · ✅ Conditions compatibles DTU";
+            return `  - ${j.date} : ${j.tempMinC}°C / ${j.tempMaxC}°C · Rafales ${j.rafalesKmh} km/h · Pluie ${j.pluieMm} mm (${j.conditions})${alertesTxt}`;
+          })
+          .join("\n");
+        return `**${c.nom}** (${c.metier.toUpperCase()} — ${c.ville || "Gironde"}) :\n${joursTxt}`;
+      }
+      return `- **${c.nom}** (${c.metier}) : ${c.alerte_meteo}`;
+    });
+
+    return {
+      content: `### 🌤️ Météo & Vigilance Pose DTU — ${dateFr}\n${lignes.join("\n\n")}`,
+      actions,
+      tags: ["Météo", "Pose DTU", "Sécurité"],
     };
   }
 
@@ -988,20 +1122,6 @@ export function generateLocalAssistantResponse(
           .join("\n") || "  • Aucun retard de livraison signalé."),
       actions,
       tags: ["Fournisseurs", "Commandes"],
-    };
-  }
-
-  // 7. Météo
-  if (lower.includes("météo") || lower.includes("meteo") || lower.includes("pluie") || lower.includes("vent")) {
-    const touches = ctx.chantiers.filter((c) => Boolean(c.alerte_meteo));
-    return {
-      content:
-        `### 🌤️ Vigilance Météo Chantiers\n` +
-        (touches.length === 0
-          ? "Aucune alerte météo active remontée sur vos chantiers."
-          : touches.map((c) => `- **${c.nom}** (${c.metier}) : ${c.alerte_meteo}`).join("\n")),
-      actions,
-      tags: ["Météo", "Sécurité"],
     };
   }
 
