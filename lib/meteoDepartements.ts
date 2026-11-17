@@ -187,3 +187,38 @@ export function adresseVersDepartement(adresse: string | null | undefined): stri
 
   return null;
 }
+
+const REGIONS_ET_DEPARTEMENTS: Array<{ pattern: RegExp; depts: string[] }> = [
+  { pattern: /\bnord\s+pas\s+de\s+calais\b/, depts: ["59", "62"] },
+  { pattern: /\bpas\s+de\s+calais\b/, depts: ["62"] },
+  { pattern: /\bnord\b/, depts: ["59"] },
+  { pattern: /\bgironde\b/, depts: ["33"] },
+  { pattern: /\blandes\b/, depts: ["40"] },
+  { pattern: /\bpyrenees\s+atlantiques\b|\bpays\s+basque\b/, depts: ["64"] },
+  { pattern: /\bcharente\s+maritime\b/, depts: ["17"] },
+  { pattern: /\bdordogne\b/, depts: ["24"] },
+  { pattern: /\blot\s+et\s+garonne\b/, depts: ["47"] },
+  { pattern: /\brhone\b/, depts: ["69"] },
+  { pattern: /\bbouches\s+du\s+rhone\b/, depts: ["13"] },
+  { pattern: /\bloire\s+atlantique\b/, depts: ["44"] },
+  { pattern: /\bille\s+et\s+vilaine\b/, depts: ["35"] },
+  { pattern: /\bhaute\s+garonne\b/, depts: ["31"] },
+  { pattern: /\bherault\b/, depts: ["34"] },
+  { pattern: /\balpes\s+maritimes\b/, depts: ["06"] },
+];
+
+/**
+ * Résout un ou plusieurs départements de France métropolitaine depuis un nom de ville,
+ * code postal, département (« Pas-de-Calais », « Gironde ») ou région (« Nord-Pas-de-Calais »).
+ */
+export function adresseVersDepartements(adresse: string | null | undefined): string[] {
+  if (!adresse || typeof adresse !== "string") return [];
+  const norm = normaliser(adresse);
+  for (const entry of REGIONS_ET_DEPARTEMENTS) {
+    if (entry.pattern.test(norm)) {
+      return entry.depts;
+    }
+  }
+  const single = adresseVersDepartement(adresse);
+  return single ? [single] : [];
+}

@@ -18,11 +18,15 @@ import {
   type BnaIaDeplacementCtx,
   type BnaIaHistoryTurn,
   type BnaIaPrevisionJourCtx,
+  type BnaIaVigilanceMfCtx,
 } from "@/lib/bnaIaService";
 import { detecterEtCalculerPreChiffrage } from "@/lib/bnaIaPreChiffrage";
 import { normaliserRequeteMetier } from "@/lib/bnaDictionnaireMetier";
 import { libelleConditionsWmo } from "@/lib/meteoOpenMeteo";
 import { lireTarifCommercial } from "@/lib/deplacement/tenantHelpers";
+import { adresseVersDepartements } from "@/lib/meteoDepartements";
+import { obtenirTokenMeteoFrance } from "@/lib/meteoFranceToken";
+import { extraireDepartement } from "@/lib/vigilanceMeteoFrance";
 
 export const dynamic = "force-dynamic";
 
@@ -164,6 +168,63 @@ async function fetchJsonWithTimeout(url: string, timeoutMs: number): Promise<unk
     return null;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+const CACHE_VIGILANCE_10MIN_MS = 10 * 60 * 1000;
+let vigilanceCarteCache: { expiresAt: number; data: unknown } | null = null;
+
+async function chargerVigilanceMeteoFrance(
+  departements: string[]
+): Promise<BnaIaVigilanceMfCtx[]> {
+  if (departements.length === 0) return [];
+  try {
+    const now = Date.now();
+    let carteJson: unknown =
+      vigilanceCarteCache && vigilanceCarteCache.expiresAt > now
+        ? vigilanceCarteCache.data
+        : null;
+
+    if (!carteJson) {
+      const token = await obtenirTokenMeteoFrance();
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), METEO_TIMEOUT_MS);
+      try {
+        const res = await fetch(
+          "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+            cache: "no-store",
+          }
+        );
+        if (!res.ok) return [];
+        carteJson = await res.json();
+        vigilanceCarteCache = {
+          expiresAt: now + CACHE_VIGILANCE_10MIN_MS,
+          data: carteJson,
+        };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    const resultats: BnaIaVigilanceMfCtx[] = [];
+    for (const dept of departements.slice(0, 3)) {
+      const ext = extraireDepartement(carteJson, dept);
+      if (ext) {
+        resultats.push({
+          departement: ext.departement,
+          couleur: ext.couleurMax,
+          phenomenesActifs: ext.phenomenes
+            .filter((p) => p.couleur !== "vert")
+            .map((p) => ({ nom: p.nom, couleur: p.couleur })),
+        });
+      }
+    }
+    return resultats;
+  } catch {
+    return [];
   }
 }
 
@@ -605,19 +666,29 @@ export async function POST(req: NextRequest) {
           c.previsionsMeteo3J.length > 0 &&
           c.ville?.toLowerCase().includes(destinationLibre.toLowerCase())
       );
+      const deptsFrance = villeMeteo
+        ? adresseVersDepartements(destinationLibre)
+        : [];
       const tarifKm = await lireTarifCommercial(tenant.entrepriseId).catch(() => 1.0);
 
-      const [meteoLibre, depLibre] = await Promise.all([
+      const [meteoLibre, depLibre, vigLibre] = await Promise.all([
         villeMeteo && !dejaDansChantier
           ? chargerMeteoChantier3Jours(destinationLibre)
           : Promise.resolve(null),
         chargerDeplacementDepuisGenerac(destinationLibre, tarifKm, nbJoursEstime),
+        deptsFrance.length > 0
+          ? chargerVigilanceMeteoFrance(deptsFrance)
+          : Promise.resolve([]),
       ]);
 
-      if (meteoLibre && meteoLibre.previsions.length > 0) {
+      if (
+        (meteoLibre && meteoLibre.previsions.length > 0) ||
+        vigLibre.length > 0
+      ) {
         context.meteoVilleLibre = {
           ville: destinationLibre,
-          previsions: meteoLibre.previsions,
+          previsions: meteoLibre?.previsions ?? [],
+          vigilanceMf: vigLibre.length > 0 ? vigLibre : undefined,
         };
       }
       if (depLibre) {

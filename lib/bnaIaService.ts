@@ -17,6 +17,10 @@ import {
   genererReponseNormativeBardageLocale,
 } from "@/lib/bnaReferentielBardage";
 import { calculerMontantDeplacement } from "@/lib/deplacement/calcul";
+import {
+  EMOJI_VIGILANCE,
+  type CouleurVigilance,
+} from "@/lib/vigilanceMeteoFrance";
 
 export const DEPOT_BNA_DEFAUT = "Générac (33920)";
 
@@ -157,6 +161,12 @@ export interface BnaIaDeplacementCtx {
   coutTotalDeplacementHt: number;
 }
 
+export interface BnaIaVigilanceMfCtx {
+  departement: string;
+  couleur: CouleurVigilance;
+  phenomenesActifs: Array<{ nom: string; couleur: CouleurVigilance }>;
+}
+
 export interface BnaIaContext {
   userName: string;
   currentDateIso: string;
@@ -166,6 +176,7 @@ export interface BnaIaContext {
   meteoVilleLibre?: {
     ville: string;
     previsions: BnaIaPrevisionJourCtx[];
+    vigilanceMf?: BnaIaVigilanceMfCtx[];
   } | null;
   deplacementVilleLibre?: BnaIaDeplacementCtx | null;
   commandes: BnaIaCommandeCtx[];
@@ -848,6 +859,25 @@ export function formaterResumeDeplacement(d: BnaIaDeplacementCtx): string {
   );
 }
 
+export function formaterVigilanceMeteoFrance(
+  vigilances: BnaIaVigilanceMfCtx[]
+): string {
+  if (!vigilances || vigilances.length === 0) return "";
+  return vigilances
+    .map((v) => {
+      const emoji = EMOJI_VIGILANCE[v.couleur];
+      const niveau = v.couleur.toUpperCase();
+      if (v.couleur === "vert" || v.phenomenesActifs.length === 0) {
+        return `${emoji} Vigilance Météo-France Dépt. ${v.departement} : **${niveau}** (aucun phénomène actif)`;
+      }
+      const details = v.phenomenesActifs
+        .map((p) => `${EMOJI_VIGILANCE[p.couleur]} ${p.nom} (${p.couleur.toUpperCase()})`)
+        .join(", ");
+      return `${emoji} **ALERTE VIGILANCE MÉTÉO-FRANCE Dépt. ${v.departement} (${niveau})** : ${details}`;
+    })
+    .join("\n");
+}
+
 export function extraireDestinationLibre(message: string): string | null {
   // 1. Code postal + ville explicite (ex: "33120 Arcachon")
   const matchCp = message.match(/\b(\d{5}\s+[A-Za-zÀ-ÖØ-öø-ÿ'’\-]{2,})\b/);
@@ -896,7 +926,7 @@ export function extraireDestinationLibre(message: string): string | null {
   ]);
 
   const regexLieu =
-    /(?:\b(?:chantier\s+(?:de|d['’]|à|a)|d[ée]placement\s+(?:à|a|vers|sur)|[àa]|sur|vers|secteur(?:\s+de)?)\s+)([A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{1,}(?:\s+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{2,}){0,2})/gi;
+    /(?:\b(?:chantier\s+(?:de|d['’]|à|a|en|dans\s+le)|d[ée]placement\s+(?:à|a|vers|sur|en|dans\s+le)|dans\s+le|[àa]|au|en|sur|vers|secteur(?:\s+de)?)\s+)([A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{1,}(?:\s+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{2,}){0,2})/gi;
 
   let m: RegExpExecArray | null;
   while ((m = regexLieu.exec(message)) !== null) {
@@ -994,6 +1024,11 @@ export function buildSystemPromptContext(
         )
       : null;
 
+  const vigilanceLibreTxt =
+    ctx.meteoVilleLibre?.vigilanceMf && ctx.meteoVilleLibre.vigilanceMf.length > 0
+      ? `\n${formaterVigilanceMeteoFrance(ctx.meteoVilleLibre.vigilanceMf)}`
+      : "";
+
   const meteoLibreTxt =
     ctx.meteoVilleLibre && ctx.meteoVilleLibre.previsions.length > 0
       ? `\n\nMÉTÉO EN DIRECT (${ctx.meteoVilleLibre.ville} — Open-Meteo 3 jours) :\n` +
@@ -1004,8 +1039,11 @@ export function buildSystemPromptContext(
                 j.alertesDtu.length > 0 ? ` [⚠️ ${j.alertesDtu.join(" | ")}]` : ""
               }`
           )
-          .join("\n")
-      : "";
+          .join("\n") +
+        vigilanceLibreTxt
+      : vigilanceLibreTxt
+        ? `\n\nVIGILANCE MÉTÉO-FRANCE (${ctx.meteoVilleLibre?.ville || "France"}) :${vigilanceLibreTxt}`
+        : "";
 
   const deplacementTxt = ctx.deplacementVilleLibre
     ? `\n\nLOGISTIQUE & FRAIS DE DÉPLACEMENT (${ctx.deplacementVilleLibre.depart} -> ${ctx.deplacementVilleLibre.destination}) :\n` +
@@ -1167,7 +1205,16 @@ export function generateLocalAssistantResponse(
           return `  - ${j.date} : ${j.tempMinC}°C / ${j.tempMaxC}°C · Rafales ${j.rafalesKmh} km/h · Pluie ${j.pluieMm} mm (${j.conditions})${alertesTxt}`;
         })
         .join("\n");
-      blocs.push(`**Prévisions Open-Meteo — ${ctx.meteoVilleLibre.ville}** :\n${joursLibreTxt}`);
+      const vigTxt =
+        ctx.meteoVilleLibre.vigilanceMf && ctx.meteoVilleLibre.vigilanceMf.length > 0
+          ? `\n${formaterVigilanceMeteoFrance(ctx.meteoVilleLibre.vigilanceMf)}`
+          : "";
+      blocs.push(`**Prévisions Open-Meteo — ${ctx.meteoVilleLibre.ville}** :\n${joursLibreTxt}${vigTxt}`);
+    } else if (
+      ctx.meteoVilleLibre?.vigilanceMf &&
+      ctx.meteoVilleLibre.vigilanceMf.length > 0
+    ) {
+      blocs.push(formaterVigilanceMeteoFrance(ctx.meteoVilleLibre.vigilanceMf));
     }
 
     for (const c of actifs) {

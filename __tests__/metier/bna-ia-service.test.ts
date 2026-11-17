@@ -12,15 +12,14 @@ import {
   extraireVilleMeteoLibre,
   findMentionedChantier,
   formaterDateFrEuropeParis,
+  formaterVigilanceMeteoFrance,
   generateLocalAssistantResponse,
   parseNaturalDate,
   urlHubPourChantier,
   type BnaIaContext,
 } from "@/lib/bnaIaService";
-import {
-  detecterEtCalculerPreChiffrage,
-  segmenterRequeteParLots,
-} from "@/lib/bnaIaPreChiffrage";
+import { detecterEtCalculerPreChiffrage, segmenterRequeteParLots } from "@/lib/bnaIaPreChiffrage";
+import { adresseVersDepartements } from "@/lib/meteoDepartements";
 import { normaliserRequeteMetier } from "@/lib/bnaDictionnaireMetier";
 
 const MOCK_CONTEXT: BnaIaContext = {
@@ -535,5 +534,61 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
         l.designation.includes("Frais de déplacement (Générac (33920) -> Arcachon)")
       )
     ).toBe(true);
+  });
+
+  it("couple la Vigilance officielle Météo-France (Jaune/Orange/Rouge) sur les destinations de France métropolitaine", () => {
+    expect(adresseVersDepartements("Nord-Pas-de-Calais")).toEqual(["59", "62"]);
+    expect(adresseVersDepartements("Pas-de-Calais")).toEqual(["62"]);
+    expect(adresseVersDepartements("Nord")).toEqual(["59"]);
+    expect(adresseVersDepartements("Gironde")).toEqual(["33"]);
+    expect(adresseVersDepartements("Madrid")).toEqual([]);
+
+    const promptNpdC = "météo chantier dans le Nord-Pas-de-Calais demain";
+    expect(extraireVilleMeteoLibre(promptNpdC)).toBe("Nord-Pas-de-Calais");
+
+    const vigTexte = formaterVigilanceMeteoFrance([
+      {
+        departement: "62",
+        couleur: "orange",
+        phenomenesActifs: [
+          { nom: "Vent violent", couleur: "orange" },
+          { nom: "Pluie-Inondation", couleur: "jaune" },
+        ],
+      },
+    ]);
+    expect(vigTexte).toContain("ALERTE VIGILANCE MÉTÉO-FRANCE Dépt. 62 (ORANGE)");
+    expect(vigTexte).toContain("Vent violent (ORANGE)");
+
+    const ctxVig: BnaIaContext = {
+      ...MOCK_CONTEXT,
+      meteoVilleLibre: {
+        ville: "Nord-Pas-de-Calais",
+        previsions: [
+          {
+            date: "2026-11-18",
+            tempMinC: 6,
+            tempMaxC: 11,
+            rafalesKmh: 72,
+            pluieMm: 14,
+            conditions: "Pluie modérée",
+            alertesDtu: ["Rafales >= 50 km/h : alerte manutention panneaux HPL grand format et échafaudages."],
+          },
+        ],
+        vigilanceMf: [
+          {
+            departement: "62",
+            couleur: "orange",
+            phenomenesActifs: [{ nom: "Vent violent", couleur: "orange" }],
+          },
+        ],
+      },
+    };
+
+    const sys = buildSystemPromptContext(ctxVig);
+    expect(sys).toContain("ALERTE VIGILANCE MÉTÉO-FRANCE Dépt. 62 (ORANGE)");
+
+    const rep = generateLocalAssistantResponse(promptNpdC, ctxVig);
+    expect(rep.content).toContain("Nord-Pas-de-Calais");
+    expect(rep.content).toContain("Vent violent (ORANGE)");
   });
 });
