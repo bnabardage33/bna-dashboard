@@ -42,9 +42,10 @@ describe("Phase 2 — Accueil & Cockpit Principal Responsive", () => {
   });
 
   describe("Section métiers sans grille socle commun", () => {
-    it("la section métiers inclut l'emplacement réservé BNA-IA sans grille socle commun", () => {
+    it("la section métiers inclut la carte active BNA-IA sans grille socle commun", () => {
       expect(ACCUEIL_PRO).toContain("BNA-IA · Centre de contrôle IA");
-      expect(ACCUEIL_PRO).toContain("border-dashed border-[#B85B2B]/40");
+      expect(ACCUEIL_PRO).toContain("/terrain/bna-ia");
+      expect(ACCUEIL_PRO).toContain("Copilote IA Connecté");
       expect(ACCUEIL_PRO).not.toContain("ACCES_TRANSVERSES");
     });
 

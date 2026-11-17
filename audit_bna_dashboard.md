@@ -18,7 +18,7 @@
 | Remote | `origin/main` aligné sur HEAD ; une seule branche locale et distante (`main`) |
 | Arbre de travail | propre ; aucun stash |
 | Stack | Next.js `16.3.5` · React `19.2.8` · TypeScript `5.9.3` · Tailwind `4` · Vitest `4.1.11` · Node `24.x` |
-| Taille | 42 pages · **51** routes API · 62 migrations SQL locales · 137 fichiers sous `__tests__` · 1 fonction Edge |
+| Taille | 43 pages · **52** routes API · 62 migrations SQL locales · 137 fichiers sous `__tests__` · 1 fonction Edge |
 | Supabase | projet `onhygmsxfdjkcjjnhabo` ; inventaire/advisors consultés en lecture seule |
 | Vercel | dernier déploiement Production `READY` |
 
@@ -412,6 +412,7 @@ le trajet (cf. Module Déplacements).
 | `/api/deplacements/evaluer` | Évaluation d'un trajet |
 | `/api/transcrire-note` | Audio → texte (Groq Whisper) |
 | `/api/reformuler-note` | Reformulation IA |
+| `/api/bna-ia` | Centre de contrôle IA multi-métiers (contexte multi-tenant, alertes proactives, moteur local + Cloud LLM) |
 | `/api/ia-avancement` | Dictée vocale de l'avancement |
 | `/api/ia-devis` | Génération de lignes de devis (Gemini) |
 | `/api/ia-securite` | Consignes PPSPS |

@@ -95,33 +95,33 @@ export default function AccueilProfessionnel({
             </Link>
           ))}
 
-          {/* Carte 4 : Emplacement réservé BNA-IA */}
-          <div className="flex h-full min-h-40 flex-col rounded-2xl border border-dashed border-[#B85B2B]/40 bg-white p-5 shadow-xs">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]">
-                <Sparkles aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+          {/* Carte 4 : BNA-IA Centre de contrôle IA */}
+          <Link
+            href="/terrain/bna-ia"
+            aria-label="BNA-IA — Centre de contrôle IA"
+            className="group block min-w-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
+          >
+            <div className="flex h-full min-h-40 flex-col rounded-2xl border border-[#B85B2B]/35 bg-white p-5 shadow-xs transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-[#B85B2B] group-hover:shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]">
+                  <Sparkles aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                  Copilote IA Connecté
+                </span>
+              </div>
+              <span className="text-base font-bold text-[#23272B]">
+                BNA-IA · Centre de contrôle IA
               </span>
-              <span className="rounded-full border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#B85B2B]">
-                Bientôt disponible · Migration Bna-App
+              <span className="mt-1 text-xs leading-5 text-[#666666]">
+                Pilotage intelligent, assistants métiers, alertes proactives et dictée Whisper.
+              </span>
+              <span className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#B85B2B] px-3 py-2 text-xs font-bold text-white shadow-xs transition-colors group-hover:bg-[#9E4B20] mt-4">
+                Ouvrir BNA-IA
+                <ArrowRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </span>
             </div>
-            <span className="text-base font-bold text-[#23272B]">
-              BNA-IA · Centre de contrôle IA
-            </span>
-            <span className="mt-1 text-xs leading-5 text-[#666666]">
-              Pilotage intelligent, assistants métiers et automatisation BNA-IA (emplacement réservé)
-            </span>
-            <div className="mt-auto pt-4">
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-bold text-[#999999]"
-              >
-                Module en préparation
-              </button>
-            </div>
-          </div>
+          </Link>
         </div>
       </section>
     </div>

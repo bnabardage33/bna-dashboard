@@ -73,7 +73,7 @@ function code(fichier: string): string {
  */
 it('le retrait des commentaires ne perd pas de code (ordre // puis /* */)', () => {
   const nu = code('components/MenuNavigationMobile.tsx')
-  expect(nu.match(/href: "/g)?.length).toBe(32)
+  expect(nu.match(/href: "/g)?.length).toBe(33)
   expect(nu.match(/children: \[/g)?.length).toBe(7)
   const sample = 'const a = 1 // /finance/**\n/* bloc */\nconst b = 2'
   expect(sample.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')).toContain('const b = 2')
@@ -355,7 +355,7 @@ describe('charte graphique — le tiroir de navigation (§6)', () => {
     // verrouille le compte pour détecter une route perdue par accident —
     // il doit donc suivre les ajouts délibérés, pas rester figé sur un état
     // antérieur.
-    expect(D.match(/href: "/g)?.length).toBe(32)
+    expect(D.match(/href: "/g)?.length).toBe(33)
     expect(D.match(/children: \[/g)?.length).toBe(7)
   })
 
