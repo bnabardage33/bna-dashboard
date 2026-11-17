@@ -302,66 +302,66 @@ export default function CatalogueCloturePage() {
 
       {modalOuvert && (
         <div
-          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-28 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[210] pt-48 flex items-center justify-center p-4 pb-28 bg-black/80 backdrop-blur-sm"
           onClick={() => setModalOuvert(false)}
         >
           <form
             onSubmit={creerArticle}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-2xl bg-white border border-[#E5E5E5] shadow-2xl overflow-hidden"
+            className="w-full max-w-lg rounded-2xl bg-[#0B0F19] border border-slate-700 shadow-2xl overflow-hidden text-white"
           >
-            <div className="flex items-center justify-between border-b border-[#E5E5E5] p-4">
-              <h2 className="text-base font-bold text-[#23272B]">
+            <div className="flex items-center justify-between border-b border-slate-700 bg-[#111827] p-4">
+              <h2 className="text-base font-bold text-white">
                 Nouvel article Catalogue Clôture
               </h2>
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1 text-[#888888] hover:text-[#23272B]"
+                className="rounded-lg p-1 text-slate-400 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="p-4 space-y-3 text-xs">
+            <div className="p-4 space-y-3 text-xs bg-[#0B0F19]">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-[#555555]">Catégorie</label>
+                  <label className="font-semibold text-slate-300">Catégorie</label>
                   <select
                     value={formCat}
                     onChange={(e) => setFormCat(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   >
                     {CATEGORIES.filter((c) => c.id !== "tous").map((c) => (
-                      <option key={c.id} value={c.id}>
+                      <option key={c.id} value={c.id} className="bg-[#151C2C] text-white">
                         {c.label}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="font-semibold text-[#555555]">Matériau</label>
+                  <label className="font-semibold text-slate-300">Matériau</label>
                   <select
                     value={formMat}
                     onChange={(e) => setFormMat(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   >
-                    <option value="COMPOSITE">Composite</option>
-                    <option value="BOIS">Bois</option>
-                    <option value="ALU">Aluminium</option>
-                    <option value="BETON">Béton</option>
-                    <option value="ACIER">Acier</option>
+                    <option value="COMPOSITE" className="bg-[#151C2C] text-white">Composite</option>
+                    <option value="BOIS" className="bg-[#151C2C] text-white">Bois</option>
+                    <option value="ALU" className="bg-[#151C2C] text-white">Aluminium</option>
+                    <option value="BETON" className="bg-[#151C2C] text-white">Béton</option>
+                    <option value="ACIER" className="bg-[#151C2C] text-white">Acier</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label htmlFor="cloture-gamme-qualite" className="font-semibold text-[#555555]">
+                <label htmlFor="cloture-gamme-qualite" className="font-semibold text-slate-300">
                   Gamme matériau (Qualité)
                 </label>
                 <select
                   id="cloture-gamme-qualite"
                   value={formGamme}
                   onChange={(e) => setFormGamme(normaliserGammeMateriau(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                 >
                   {GAMMES_MATERIAU_ORDRE.map((g) => {
                     const cfg = GAMME_MATERIAU_CONFIG[g];
@@ -370,7 +370,7 @@ export default function CatalogueCloturePage() {
                         ? cfg.labelClient
                         : `${cfg.labelClient} / ${cfg.labelInterne}`;
                     return (
-                      <option key={g} value={g} className="bg-[#0B0F19] text-white">
+                      <option key={g} value={g} className="bg-[#151C2C] text-white">
                         {label}
                       </option>
                     );
@@ -379,82 +379,82 @@ export default function CatalogueCloturePage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="font-semibold text-[#555555]">Désignation</label>
+                  <label className="font-semibold text-slate-300">Désignation</label>
                   <input
                     required
                     value={formDesignation}
                     onChange={(e) => setFormDesignation(e.target.value)}
                     placeholder="Ex: Lame composite anthracite 1.80m"
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white placeholder:text-slate-500 focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-[#555555]">Référence</label>
+                  <label className="font-semibold text-slate-300">Référence</label>
                   <input
                     value={formRef}
                     onChange={(e) => setFormRef(e.target.value)}
                     placeholder="CLO-LAM-01"
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white placeholder:text-slate-500 focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="font-semibold text-[#555555]">Longueur (m)</label>
+                  <label className="font-semibold text-slate-300">Longueur (m)</label>
                   <input
                     value={formLongueur}
                     onChange={(e) => setFormLongueur(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-[#555555]">Hauteur (m)</label>
+                  <label className="font-semibold text-slate-300">Hauteur (m)</label>
                   <input
                     value={formHauteur}
                     onChange={(e) => setFormHauteur(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-[#555555]">Unité</label>
+                  <label className="font-semibold text-slate-300">Unité</label>
                   <input
                     value={formUnite}
                     onChange={(e) => setFormUnite(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-[#555555]">Prix achat € HT</label>
+                  <label className="font-semibold text-slate-300">Prix achat € HT</label>
                   <input
                     value={formPrixAchat}
                     onChange={(e) => setFormPrixAchat(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-[#555555]">Prix vente € HT</label>
+                  <label className="font-semibold text-slate-300">Prix vente € HT</label>
                   <input
                     value={formPrixVente}
                     onChange={(e) => setFormPrixVente(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 border-t border-[#E5E5E5] p-4">
+            <div className="flex justify-end gap-2 border-t border-slate-700/80 bg-[#111827] p-4">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-[#E5E5E5] px-4 py-2 text-xs font-semibold text-[#555555]"
+                className="rounded-xl border border-slate-700 bg-[#151C2C] px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#E30613] hover:bg-red-700 px-4 py-2 text-xs font-bold text-white transition-colors"
               >
                 <Check className="h-4 w-4" />
                 {saving ? "Enregistrement..." : "Ajouter"}

@@ -59,8 +59,9 @@ export interface ProductFormModalProps {
 type Onglet = "general" | "dimensions" | "tarifs";
 
 const labelCls = "block text-xs font-semibold text-gray-400 mb-1";
-const inputCls = "w-full rounded border border-slate-600 bg-transparent p-2 text-sm text-white";
-const blocCls = "rounded-lg border border-slate-600 p-3 space-y-3";
+const inputCls =
+  "w-full rounded border border-slate-700 bg-[#151C2C] p-2 text-sm text-slate-100 focus:border-[#E30613] focus:outline-none";
+const blocCls = "rounded-lg border border-slate-700 bg-[#111827] p-3 space-y-3";
 
 /** Fusion d'un patch scrapé dans l'état courant (conserve les champs vides). */
 function appliquerPatch(prev: ProductDraft, patch: ProductDraftPatch): ProductDraft {
@@ -234,9 +235,9 @@ export default function ProductFormModal({
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-2 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-transparent shadow-2xl flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-[#0B0F19] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-[#111827] shrink-0">
           <h2 className="text-xl font-bold text-white">{titre}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Fermer">
             <X className="h-5 w-5" />
@@ -244,7 +245,7 @@ export default function ProductFormModal({
         </div>
 
         {/* Onglets */}
-        <div className="flex px-4 pt-2 border-b border-gray-700/50 space-x-4 bg-[#1E1E1E]">
+        <div className="flex px-4 pt-2 border-b border-slate-700 space-x-4 bg-[#111827]">
           {ongletBtn("general", "Général")}
           {afficheDimensions &&
             ongletBtn("dimensions", values.kind === "BARDAGE" ? "Dimensions & Décor" : "Dimensions")}
@@ -255,7 +256,7 @@ export default function ProductFormModal({
           <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-3">
             {/* ── Bloc Auto-remplir (tous types) ───────────────────────── */}
             {activeTab === "general" && !estMainOeuvre && (
-              <div className="bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-lg">
+              <div className="bg-[#111827] border border-cyan-500/40 p-4 rounded-lg">
                 {importCandidates && (
                   <details className="mb-3 text-sm text-amber-200">
                     <summary>Données candidates reçues — à vérifier</summary>
@@ -291,7 +292,7 @@ export default function ProductFormModal({
                     placeholder="Collez l'URL d'un produit (Leroy Merlin, Point.P...)"
                     value={importUrl}
                     onChange={(e) => setImportUrl(e.target.value)}
-                    className="flex-1 rounded border border-cyan-500/50 bg-transparent p-2 text-sm text-white focus:border-cyan-400"
+                    className="flex-1 rounded border border-cyan-500/50 bg-[#151C2C] p-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -443,7 +444,7 @@ export default function ProductFormModal({
             )}
 
             {activeTab === "general" && (
-              <div className="rounded-lg border border-slate-700 bg-[#0B0F19] p-3 space-y-1.5">
+              <div className="rounded-lg border border-slate-700 bg-[#111827] p-3 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="chp-gamme-qualite" className="text-xs font-bold uppercase tracking-wider text-slate-300">
                     Gamme matériau (Qualité &amp; Positionnement)
@@ -458,7 +459,7 @@ export default function ProductFormModal({
                   onChange={(e) =>
                     patch({ gamme_qualite: normaliserGammeMateriau(e.target.value) })
                   }
-                  className="w-full rounded-lg border border-slate-700 bg-[#0B0F19] p-2 text-sm font-medium text-white focus:border-[#E30613] focus:outline-none"
+                  className="w-full rounded-lg border border-slate-700 bg-[#151C2C] p-2 text-sm font-medium text-slate-100 focus:border-[#E30613] focus:outline-none"
                 >
                   {GAMMES_MATERIAU_ORDRE.map((g) => {
                     const cfg = GAMME_MATERIAU_CONFIG[g];
@@ -467,7 +468,7 @@ export default function ProductFormModal({
                         ? cfg.labelClient
                         : `${cfg.labelClient} / ${cfg.labelInterne}`;
                     return (
-                      <option key={g} value={g} className="bg-[#0B0F19] text-white">
+                      <option key={g} value={g} className="bg-[#151C2C] text-slate-100">
                         {label}
                       </option>
                     );
@@ -645,7 +646,7 @@ export default function ProductFormModal({
                   </div>
                   <div className="space-y-3">
                     {values.dimensions_disponibles.map((dim, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-[#1E1E1E]/50 p-3 rounded-lg border border-white/10">
+                      <div key={idx} className="flex items-center gap-3 bg-[#151C2C] p-3 rounded-lg border border-slate-700/80">
                         <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
                           {(["longueur_mm", "largeur_mm", "epaisseur_mm"] as const).map((champ) => (
                             <div key={champ}>
@@ -663,7 +664,7 @@ export default function ProductFormModal({
                                   dims[idx] = { ...dims[idx], [champ]: valeur };
                                   patch({ dimensions_disponibles: dims });
                                 }}
-                                className="w-full rounded border border-slate-600 bg-transparent px-2 py-1.5 text-sm text-white"
+                                className="w-full rounded border border-slate-700 bg-[#151C2C] px-2 py-1.5 text-sm text-slate-100 focus:border-[#E30613] focus:outline-none"
                               />
                             </div>
                           ))}
@@ -892,7 +893,7 @@ export default function ProductFormModal({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-700 flex justify-end gap-3 mt-auto shrink-0 bg-[#1E1E1E] rounded-b-xl">
+          <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-[#111827] rounded-b-xl">
             <button
               type="button"
               onClick={onClose}
