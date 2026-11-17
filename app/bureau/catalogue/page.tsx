@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Save,
+  Trash2,
   X,
   Info,
 } from "lucide-react";
@@ -492,6 +493,36 @@ export default function CataloguePage() {
     }
   };
 
+  const handleDeleteOuvrage = async (ouvrage: Ouvrage) => {
+    if (
+      !window.confirm(
+        `Supprimer définitivement « ${ouvrage.designation} » du catalogue ?`
+      )
+    ) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("catalogue_ouvrages")
+      .delete()
+      .eq("id", ouvrage.id);
+
+    if (error) {
+      console.error("Erreur suppression catalogue_ouvrages :", error);
+      if (error.code === "23503") {
+        alert(
+          `Impossible de supprimer « ${ouvrage.designation} » : cet article est déjà utilisé dans un devis ou un chantier.`
+        );
+      } else {
+        alert(`Impossible de supprimer cet article : ${error.message}`);
+      }
+      return;
+    }
+
+    setOuvrages((prev) => prev.filter((item) => item.id !== ouvrage.id));
+    await fetchCatalogue();
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -877,7 +908,7 @@ export default function CataloguePage() {
                       )}
 
                       <span
-                        className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
                           normaliserGammeMateriau(o.gamme_qualite)
                         )}`}
                         title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(o.gamme_qualite)].labelInterne}
@@ -913,6 +944,18 @@ export default function CataloguePage() {
                         aria-label={`Personnaliser les tarifs de ${o.designation}`}
                       >
                         <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteOuvrage(o);
+                        }}
+                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                        title="Supprimer cet article"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                       {o.aUneSurcharge && (
                         <button

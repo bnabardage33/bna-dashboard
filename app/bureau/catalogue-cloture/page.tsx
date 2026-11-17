@@ -134,10 +134,22 @@ export default function CatalogueCloturePage() {
     }
   }
 
-  async function supprimerArticle(id: string) {
-    if (!confirm("Supprimer cet article du catalogue Clôture ?")) return;
+  async function supprimerArticle(id: string, designation: string) {
+    if (!window.confirm(`Supprimer « ${designation} » du catalogue Clôture ?`)) return;
     const { error } = await supabase.from("catalogue_cloture").delete().eq("id", id);
-    if (!error) await chargerArticles();
+    if (error) {
+      console.error("Erreur suppression catalogue_cloture :", error);
+      if (error.code === "23503") {
+        alert(
+          `Impossible de supprimer « ${designation} » : cet article est déjà référencé dans un chantier ou un devis.`
+        );
+      } else {
+        alert(`Impossible de supprimer cet article : ${error.message}`);
+      }
+      return;
+    }
+    setArticles((prev) => prev.filter((item) => item.id !== id));
+    await chargerArticles();
   }
 
   return (
@@ -259,7 +271,7 @@ export default function CatalogueCloturePage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-bold text-[#23272B]">{a.designation}</p>
                           <span
-                            className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
                               normaliserGammeMateriau(a.gamme_qualite)
                             )}`}
                             title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelInterne}
@@ -284,9 +296,13 @@ export default function CatalogueCloturePage() {
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
-                          onClick={() => supprimerArticle(a.id)}
-                          className="rounded-lg p-1.5 text-[#999999] hover:text-red-600"
-                          title="Supprimer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            supprimerArticle(a.id, a.designation);
+                          }}
+                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                          title="Supprimer cet article"
+                          aria-label="Supprimer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

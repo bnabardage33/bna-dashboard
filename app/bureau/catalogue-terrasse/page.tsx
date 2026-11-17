@@ -423,7 +423,7 @@ export default function CatalogueTerrassePage() {
       return;
     }
 
-    let erreur: { message: string } | null = null;
+    let erreur: { message: string; code?: string } | null = null;
 
     if (type === "TERRASSE_LAME") {
       const { error } = await supabase
@@ -443,7 +443,13 @@ export default function CatalogueTerrassePage() {
 
     if (erreur) {
       console.error("Erreur Supabase :", erreur);
-      alert(`Erreur Supabase : ${erreur.message}`);
+      if (erreur.code === "23503") {
+        alert(
+          `Impossible de supprimer « ${libelle} » : cet article est déjà référencé dans un chantier ou un devis.`
+        );
+      } else {
+        alert(`Erreur Supabase : ${erreur.message}`);
+      }
       return;
     }
     refetch();
@@ -502,7 +508,7 @@ export default function CatalogueTerrassePage() {
               {prestation ? "Main-d'œuvre" : libelleCategorieAccessoire(a.categorie)}
             </span>
             <span
-              className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+              className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
                 normaliserGammeMateriau(a.gamme_qualite)
               )}`}
               title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelInterne}
@@ -510,7 +516,7 @@ export default function CatalogueTerrassePage() {
               {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelClient}
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => ouvrirEdition("TERRASSE_ACCESSOIRE", a)}
               className="rounded-lg p-1 text-[#888888] hover:bg-[#F3F3F1] hover:text-[#23272B]"
@@ -519,9 +525,14 @@ export default function CatalogueTerrassePage() {
               <Edit2 className="h-4 w-4" />
             </button>
             <button
-              onClick={() => supprimer("TERRASSE_ACCESSOIRE", a.id, etiquette)}
-              className="rounded-lg p-1 text-[#888888] hover:bg-red-50 hover:text-red-600"
-              aria-label={`Supprimer ${etiquette}`}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                supprimer("TERRASSE_ACCESSOIRE", a.id, etiquette);
+              }}
+              className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+              title="Supprimer cet article"
+              aria-label="Supprimer"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -747,7 +758,7 @@ export default function CatalogueTerrassePage() {
                                 </span>
                               )}
                               <span
-                                className={`inline-block rounded-full border px-2.5 py-1 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                                className={`inline-block rounded-full px-2.5 py-1 text-[10px] ${getGammeBadgeClasses(
                                   normaliserGammeMateriau(l.gamme_qualite)
                                 )}`}
                                 title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(l.gamme_qualite)].labelInterne}
@@ -755,7 +766,7 @@ export default function CatalogueTerrassePage() {
                                 {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(l.gamme_qualite)].labelClient}
                               </span>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() => ouvrirEdition("TERRASSE_LAME", l)}
                                 className="rounded-lg p-1 text-[#888888] hover:bg-[#F3F3F1] hover:text-[#23272B]"
@@ -764,9 +775,14 @@ export default function CatalogueTerrassePage() {
                                 <Edit2 className="h-4 w-4" />
                               </button>
                               <button
-                                onClick={() => supprimer("TERRASSE_LAME", l.id, etiquetteLame(l))}
-                                className="rounded-lg p-1 text-[#888888] hover:bg-red-50 hover:text-red-600"
-                                aria-label={`Supprimer ${etiquetteLame(l)}`}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  supprimer("TERRASSE_LAME", l.id, etiquetteLame(l));
+                                }}
+                                className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                                title="Supprimer cet article"
+                                aria-label="Supprimer"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>

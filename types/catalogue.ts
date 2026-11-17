@@ -79,18 +79,18 @@ export function getGammeLabelClient(gamme: unknown): string {
 }
 
 /**
- * Classes Tailwind pour badge discret Dark Premium BNA selon la gamme.
+ * Classes Tailwind à fort contraste pour badge de gamme sur fond clair.
  */
 export function getGammeBadgeClasses(gamme: GammeMateriau): string {
   switch (gamme) {
     case "eco":
-      return "border-slate-500/40 bg-slate-500/15 text-slate-300";
+      return "bg-slate-200 text-slate-800 border border-slate-300 font-semibold";
     case "standard":
-      return "border-sky-500/40 bg-sky-500/15 text-sky-300";
+      return "bg-blue-100 text-blue-900 border border-blue-300 font-semibold";
     case "premium":
-      return "border-amber-500/40 bg-amber-500/15 text-amber-300";
+      return "bg-amber-100 text-amber-950 border border-amber-300 font-semibold";
     case "prestige":
-      return "border-[#E30613]/50 bg-[#E30613]/15 text-rose-200";
+      return "bg-red-100 text-red-900 border border-red-300 font-semibold";
   }
 }
 
