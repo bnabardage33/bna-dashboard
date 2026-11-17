@@ -256,3 +256,36 @@ export interface CatalogueOuvrage extends MateriauItem {
   fournisseur?: string | null;
   type_cout: "matiere" | "main_oeuvre";
 }
+
+const RAL_HEX_MAP: Record<string, string> = {
+  "1015": "#E6D690",
+  "3004": "#6B1D24",
+  "3005": "#5E2129",
+  "3009": "#642424",
+  "5008": "#2B3A42",
+  "6005": "#2F4538",
+  "7015": "#434750",
+  "7016": "#293133",
+  "7022": "#4C4A44",
+  "7035": "#CBD0CC",
+  "7039": "#6C6960",
+  "7040": "#9DA1AA",
+  "8014": "#382C1E",
+  "8019": "#403A3A",
+  "9005": "#0A0A0A",
+  "9006": "#A5A5A5",
+  "9007": "#8F8F8F",
+  "9010": "#FFFFFF",
+  "9016": "#F6F6F6",
+};
+
+/**
+ * Retourne la couleur hexadécimale associée à un code RAL standard (ex: "RAL 7016" -> "#293133"),
+ * ou `null` si le code n'est pas reconnu.
+ */
+export function getRalHexColor(codeRal: string | null | undefined): string | null {
+  if (!codeRal) return null;
+  const match = codeRal.match(/\b(\d{4})\b/);
+  if (!match) return null;
+  return RAL_HEX_MAP[match[1]] ?? null;
+}

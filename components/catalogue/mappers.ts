@@ -16,7 +16,7 @@ import type {
   TerrasseLameValues,
   TypeMaterialTerrasse,
 } from "./types";
-import { ENUMS_CAT_ACCESSOIRE } from "./types";
+import { ENUMS_CAT_ACCESSOIRE, normaliserUniteVente } from "./types";
 
 type RowBardage = Database["public"]["Tables"]["catalogue_ouvrages"]["Row"];
 type RowLame = Database["public"]["Tables"]["catalogue_terrasse_lames"]["Row"];
@@ -120,7 +120,7 @@ function bardageVersInsert(v: BardageValues): TablesInsert<"catalogue_ouvrages">
     categorie: v.categorie.trim() || "Parements & Bardages",
     famille_label: v.famille_label.trim() || v.categorie.trim() || "Parements & Bardages",
     type_cout: v.type_cout,
-    unite: v.unite.trim() || "m²",
+    unite: normaliserUniteVente(v.unite, "m²"),
     pu_ht,
     prix_ttc,
     // `pu_revient` est `number` (non nullable) côté Insert : `undefined` l'omet.
@@ -216,7 +216,7 @@ export function fromBardageRow(row: RowBardage): BardageValues {
     finition: row.finition ?? "",
     dimensions_disponibles: parserDimensionsBardage(row),
     fournisseur: row.fournisseur ?? "",
-    unite: row.unite ?? "m²",
+    unite: normaliserUniteVente(row.unite, "m²"),
     pu_ht: nombreVersTexte(row.pu_ht),
     pu_revient: row.pu_revient == null ? "" : nombreVersTexte(row.pu_revient),
     prix_ttc: row.prix_ttc == null ? "" : nombreVersTexte(row.prix_ttc),

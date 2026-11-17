@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import {
   Plus,
   Edit2,
+  Euro,
   Search,
   ArrowLeft,
   Upload,
@@ -31,6 +32,7 @@ import {
   GAMMES_MATERIAU_ORDRE,
   getGammeBadgeClasses,
   getGammeLibellesContextuels,
+  getRalHexColor,
   normaliserGammeMateriau,
   type GammeMateriau,
 } from "@/types/catalogue";
@@ -636,8 +638,11 @@ export default function CataloguePage() {
     const matchesSearch =
       o.designation.toLowerCase().includes(lowerSearch) ||
       (o.description && o.description.toLowerCase().includes(lowerSearch)) ||
+      (o.fabricant && o.fabricant.toLowerCase().includes(lowerSearch)) ||
       (o.couleur && o.couleur.toLowerCase().includes(lowerSearch)) ||
-      (o.code_decor && o.code_decor.toLowerCase().includes(lowerSearch));
+      (o.code_decor && o.code_decor.toLowerCase().includes(lowerSearch)) ||
+      (o.code_ral && o.code_ral.toLowerCase().includes(lowerSearch)) ||
+      (o.finition && o.finition.toLowerCase().includes(lowerSearch));
     return matchesCat && matchesFab && matchesType && matchesGamme && matchesSearch;
   });
 
@@ -951,12 +956,28 @@ export default function CataloguePage() {
 
                     <div className="flex items-center gap-1 shrink-0">
                       <button
-                        onClick={() => ouvrirModalPrix(o)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenModal(o);
+                        }}
                         className="text-[#888888] hover:text-[#23272B] p-1 rounded-lg hover:bg-[#F3F3F1] transition-colors"
-                        title="Personnaliser les tarifs de cet ouvrage pour votre entreprise"
-                        aria-label={`Personnaliser les tarifs de ${o.designation}`}
+                        title="Modifier la fiche produit complète"
+                        aria-label={`Modifier la fiche de ${o.designation}`}
                       >
                         <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          ouvrirModalPrix(o);
+                        }}
+                        className="text-[#888888] hover:text-[#B85B2B] p-1 rounded-lg hover:bg-[#B85B2B]/10 transition-colors"
+                        title="Tarif entreprise (surcharge rapide)"
+                        aria-label={`Personnaliser les tarifs de ${o.designation}`}
+                      >
+                        <Euro className="h-4 w-4" />
                       </button>
                       <button
                         type="button"
@@ -1031,6 +1052,44 @@ export default function CataloguePage() {
                       <p className="text-[11px] text-[#666666] font-mono mb-2">{text}</p>
                     ) : (
                       <div className="mb-2"></div>
+                    );
+                  })()}
+
+                  {(o.couleur || o.code_decor || o.code_ral || o.finition) && (() => {
+                    const ralHex = getRalHexColor(o.code_ral);
+                    const decorLabel = o.couleur || o.code_decor;
+                    const parts: React.ReactNode[] = [];
+                    if (decorLabel) {
+                      parts.push(<span key="decor">Décor : {decorLabel}</span>);
+                    }
+                    if (o.code_ral) {
+                      parts.push(
+                        <span key="ral" className="font-mono font-semibold text-[#23272B]">
+                          {/^ral/i.test(o.code_ral.trim()) ? o.code_ral.trim() : `RAL ${o.code_ral.trim()}`}
+                        </span>
+                      );
+                    }
+                    if (o.finition) {
+                      parts.push(<span key="fin">Finition : {o.finition}</span>);
+                    }
+                    return (
+                      <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-[#444444]">
+                        <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md border border-[#E5E5E5] bg-[#F8F9FA] px-2 py-0.5">
+                          {ralHex && (
+                            <span
+                              className="inline-block h-2.5 w-2.5 rounded-full border border-black/25 shrink-0"
+                              style={{ backgroundColor: ralHex }}
+                              aria-hidden="true"
+                            />
+                          )}
+                          {parts.map((part, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1.5">
+                              {idx > 0 && <span className="text-[#AAAAAA]">•</span>}
+                              {part}
+                            </span>
+                          ))}
+                        </span>
+                      </div>
                     );
                   })()}
 

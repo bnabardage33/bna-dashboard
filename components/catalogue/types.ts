@@ -131,7 +131,20 @@ export const ENUMS_CAT_ACCESSOIRE: CatAccessoireTerrasse[] = [
   "PROFILE_PVC",
   "TERRASSE_MOBILE",
 ];
-export const UNITES_VENTE = ["m²", "ml", "unité", "U", "heure", "forfait"] as const;
+export const UNITES_VENTE = ["m²", "ml", "U", "heure", "forfait"] as const;
+
+export function normaliserUniteVente(
+  unite: string | null | undefined,
+  defaut = "m²"
+): string {
+  const trimmed = (unite ?? "").trim();
+  if (!trimmed) return defaut;
+  const lower = trimmed.toLowerCase();
+  if (lower === "unité" || lower === "unite" || lower === "u") {
+    return "U";
+  }
+  return trimmed;
+}
 
 export const LIBELLES_TYPE_MATERIAL: Record<TypeMaterialTerrasse, string> = {
   BOIS_NATUREL: "Bois naturel",

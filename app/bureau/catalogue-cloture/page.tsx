@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Fence, Plus, Search, Trash2, Check, X } from "lucide-react";
+import { Edit2, Fence, Plus, Search, Trash2, Check, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
+import { normaliserUniteVente, UNITES_VENTE } from "@/components/catalogue/types";
 import {
   calculerIndicateurMargeTarif,
   calculerPrixVenteDepuisRevient,
@@ -14,6 +15,7 @@ import {
   GAMMES_MATERIAU_ORDRE,
   getGammeBadgeClasses,
   getGammeLibellesContextuels,
+  getRalHexColor,
   normaliserGammeMateriau,
   parseNombreDecimal,
   type GammeMateriau,
@@ -54,19 +56,38 @@ export default function CatalogueCloturePage() {
   const [recherche, setRecherche] = useState("");
   const [modalOuvert, setModalOuvert] = useState(false);
 
-  // Formulaire nouvel article
+  // Formulaire ajout / édition article
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formCat, setFormCat] = useState("lame");
   const [formMat, setFormMat] = useState("COMPOSITE");
   const [formGamme, setFormGamme] = useState<GammeMateriau>("standard");
   const [formRef, setFormRef] = useState("");
   const [formDesignation, setFormDesignation] = useState("");
+  const [formColoris, setFormColoris] = useState("");
   const [formLongueur, setFormLongueur] = useState("1.80");
   const [formHauteur, setFormHauteur] = useState("0.15");
-  const [formUnite, setFormUnite] = useState("u");
+  const [formUnite, setFormUnite] = useState("U");
   const [formPrixAchat, setFormPrixAchat] = useState("12");
   const [formPrixVente, setFormPrixVente] = useState("15.60");
   const [prixVenteModifieManuellement, setPrixVenteModifieManuellement] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const ouvrirEditionCloture = (a: ArticleCatalogueCloture) => {
+    setEditingId(a.id);
+    setFormCat(a.categorie);
+    setFormMat(a.materiau);
+    setFormGamme(normaliserGammeMateriau(a.gamme_qualite));
+    setFormRef(a.reference ?? "");
+    setFormDesignation(a.designation);
+    setFormColoris(a.coloris ?? "");
+    setFormLongueur(a.longueur_m != null ? String(a.longueur_m) : "");
+    setFormHauteur(a.hauteur_m != null ? String(a.hauteur_m) : "");
+    setFormUnite(normaliserUniteVente(a.unite, "U"));
+    setFormPrixAchat(String(a.prix_achat_ht ?? 0));
+    setFormPrixVente(String(a.prix_vente_ht ?? 0));
+    setPrixVenteModifieManuellement((a.prix_vente_ht ?? 0) > 0);
+    setModalOuvert(true);
+  };
 
   const modifierClotureGamme = (nouvelleGamme: GammeMateriau) => {
     setFormGamme(nouvelleGamme);
@@ -137,6 +158,7 @@ export default function CatalogueCloturePage() {
       return (
         a.designation.toLowerCase().includes(q) ||
         (a.reference ?? "").toLowerCase().includes(q) ||
+        (a.coloris ?? "").toLowerCase().includes(q) ||
         a.materiau.toLowerCase().includes(q)
       );
     });
@@ -152,26 +174,38 @@ export default function CatalogueCloturePage() {
         alert("Contexte entreprise introuvable.");
         return;
       }
-      const { error } = await supabase.from("catalogue_cloture").insert({
-        entreprise_id: ctx.entreprise_id,
+      const payload = {
         categorie: formCat,
         materiau: formMat,
         gamme_qualite: formGamme,
         reference: formRef.trim() || null,
         designation: formDesignation.trim(),
+        coloris: formColoris.trim() || null,
         longueur_m: parseFloat(formLongueur.replace(",", ".")) || null,
         hauteur_m: parseFloat(formHauteur.replace(",", ".")) || null,
-        unite: formUnite.trim() || "u",
+        unite: normaliserUniteVente(formUnite, "U"),
         prix_achat_ht: parseFloat(formPrixAchat.replace(",", ".")) || 0,
         prix_vente_ht: parseFloat(formPrixVente.replace(",", ".")) || 0,
-      });
+      };
+      const { error } = editingId
+        ? await supabase
+            .from("catalogue_cloture")
+            .update(payload)
+            .eq("id", editingId)
+            .eq("entreprise_id", ctx.entreprise_id)
+        : await supabase.from("catalogue_cloture").insert({
+            entreprise_id: ctx.entreprise_id,
+            ...payload,
+          });
       if (error) {
         alert("Erreur : " + error.message);
         return;
       }
       setModalOuvert(false);
+      setEditingId(null);
       setFormDesignation("");
       setFormRef("");
+      setFormColoris("");
       await chargerArticles();
     } finally {
       setSaving(false);
@@ -216,7 +250,14 @@ export default function CatalogueCloturePage() {
             </div>
             <button
               type="button"
-              onClick={() => setModalOuvert(true)}
+              onClick={() => {
+                setEditingId(null);
+                setFormDesignation("");
+                setFormRef("");
+                setFormColoris("");
+                setPrixVenteModifieManuellement(false);
+                setModalOuvert(true);
+              }}
               className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all"
             >
               <Plus className="h-4 w-4" />
@@ -334,9 +375,26 @@ export default function CatalogueCloturePage() {
                             );
                           })()}
                         </div>
-                        {a.reference && (
-                          <p className="text-[11px] text-[#888888] font-mono">Réf: {a.reference}</p>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          {a.reference && (
+                            <p className="text-[11px] text-[#888888] font-mono">Réf: {a.reference}</p>
+                          )}
+                          {a.coloris && (() => {
+                            const ralHex = getRalHexColor(a.coloris);
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded border border-[#E5E5E5] bg-[#F8F9FA] px-1.5 py-0.5 text-[10px] font-medium text-[#444444]">
+                                {ralHex && (
+                                  <span
+                                    className="inline-block h-2 w-2 rounded-full border border-black/25 shrink-0"
+                                    style={{ backgroundColor: ralHex }}
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                Décor : {a.coloris}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right text-[#666666] font-mono">
                         {a.longueur_m ? `${a.longueur_m}m` : "—"}
@@ -346,21 +404,35 @@ export default function CatalogueCloturePage() {
                         {fmtEuro(a.prix_achat_ht)}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-[#23272B]">
-                        {fmtEuro(a.prix_vente_ht)} / {a.unite}
+                        {fmtEuro(a.prix_vente_ht)} / {normaliserUniteVente(a.unite, "U")}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            supprimerArticle(a.id, a.designation);
-                          }}
-                          className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
-                          title="Supprimer cet article"
-                          aria-label="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              ouvrirEditionCloture(a);
+                            }}
+                            className="text-slate-400 hover:text-[#23272B] hover:bg-[#F3F3F1] p-1.5 rounded-lg transition-colors"
+                            title="Modifier la fiche article"
+                            aria-label={`Modifier ${a.designation}`}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              supprimerArticle(a.id, a.designation);
+                            }}
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                            title="Supprimer cet article"
+                            aria-label="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -383,7 +455,7 @@ export default function CatalogueCloturePage() {
           >
             <div className="flex items-center justify-between border-b border-slate-700 bg-[#111827] p-4">
               <h2 className="text-base font-bold text-white">
-                Nouvel article Catalogue Clôture
+                {editingId ? "Modifier l'article Clôture" : "Nouvel article Catalogue Clôture"}
               </h2>
               <button
                 type="button"
@@ -480,6 +552,15 @@ export default function CatalogueCloturePage() {
                   />
                 </div>
               </div>
+              <div>
+                <label className="font-semibold text-slate-300">Couleur / Décor / Code RAL</label>
+                <input
+                  value={formColoris}
+                  onChange={(e) => setFormColoris(e.target.value)}
+                  placeholder="Ex: Gris Anthracite RAL 7016"
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white placeholder:text-slate-500 focus:border-[#E30613] focus:outline-none"
+                />
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="font-semibold text-slate-300">Longueur (m)</label>
@@ -499,11 +580,17 @@ export default function CatalogueCloturePage() {
                 </div>
                 <div>
                   <label className="font-semibold text-slate-300">Unité</label>
-                  <input
-                    value={formUnite}
+                  <select
+                    value={normaliserUniteVente(formUnite, "U")}
                     onChange={(e) => setFormUnite(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
-                  />
+                  >
+                    {UNITES_VENTE.map((u) => (
+                      <option key={u} value={u} className="bg-[#151C2C] text-white">
+                        {u}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -569,7 +656,7 @@ export default function CatalogueCloturePage() {
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#E30613] hover:bg-red-700 px-4 py-2 text-xs font-bold text-white transition-colors"
               >
                 <Check className="h-4 w-4" />
-                {saving ? "Enregistrement..." : "Ajouter"}
+                {saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Ajouter"}
               </button>
             </div>
           </form>
