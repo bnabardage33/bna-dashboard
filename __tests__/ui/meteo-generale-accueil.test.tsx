@@ -354,16 +354,12 @@ describe("Météo générale — invariants de structure", () => {
   const BLOC = code(lire("components/MeteoGeneraleAccueil.tsx"));
   const PAGE = code(lire("app/terrain/meteo/page.tsx"));
 
-  it("l'accueil monte le bloc météo générale ET les cartes chantier", () => {
-    // Le bloc restauré n'a pas remplacé l'impact opérationnel : les deux
-    // coexistent (contrainte de la restauration).
-    expect(ACCUEIL).toContain("MeteoGeneraleAccueil");
+  it("l'accueil monte les cartes d'impact météo chantier sans le widget doublon Météo générale", () => {
+    expect(ACCUEIL).not.toContain("MeteoGeneraleAccueil");
     expect(ACCUEIL).toContain("blocMeteo");
   });
 
   it("les deux écrans passent par `fetchMeteo` — jamais par une source directe", () => {
-    // `fetchMeteo` est la passerelle unique : c'est elle qui propage les
-    // erreurs de la route et qui garantit le repli de source.
     for (const [nom, source] of [
       ["le bloc accueil", BLOC],
       ["la page /terrain/meteo", PAGE],

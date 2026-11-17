@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifierSession } from "@/lib/auth";
 import {
   fetchDonneesOpenMeteo,
-  type DonneesMeteo,
   type RawHeure,
   type RawJour,
 } from "@/lib/meteoOpenMeteo";
 import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
-import { dateParis, dateParisDans, heureParis, heureParisEnMinutes } from "@/lib/dateParis";
+import { heureParis, heureParisEnMinutes } from "@/lib/dateParis";
 import {
   heureDe,
   natureHeure,
@@ -116,91 +115,14 @@ const toJours = (raw: RawJour[]): Jour[] =>
         : undefined,
   }));
 
-/**
- * SOURCE PRIMAIRE — VisualCrossing.
- *
- * Ce n'est pas une source de secours : c'est celle que le projet a toujours
- * utilisée, et celle qui répond en production. `VISUALCROSSING_API_KEY` est
- * configurée dans les variables d'environnement Vercel et n'est pas versionnée.
- *
- * Renvoie `null` — au lieu de lever ou de répondre en erreur — dans tous les
- * cas d'indisponibilité : clé absente, clé refusée, service en panne. Le repli
- * Open-Meteo doit pouvoir démarrer dans chacun de ces cas, et `null` est le seul
- * moyen de l'exprimer sans court-circuiter la source de secours.
- *
- * Conséquence pratique du `null` : EN LOCAL, `.env.local` porte le placeholder
- * `ta_cle_ici` de `.env.example`, VisualCrossing répond 401, et ce `null` est le
- * chemin NORMAL de développement — pas une panne. Sur Vercel, la clé réelle
- * répond et ce chemin n'est pas emprunté. Voir `lib/meteoOpenMeteo.ts`.
- */
-async function essayerVisualCrossing(
-  coordonnees: { lat: number; lon: number },
-  key: string | undefined,
-): Promise<DonneesMeteo | null> {
-  if (!key) {
-    // Cas attendu en local, où la clé payante n'est volontairement pas versionnée.
-    console.warn(
-      "api/meteo : VISUALCROSSING_API_KEY absente (attendu hors Vercel), repli Open-Meteo.",
-    );
-    return null;
-  }
-
-  // Fenêtre demandée en dates FRANÇAISES, jamais en UTC : voir lib/dateParis.ts.
-  // Avec `toISOString().slice(0, 10)`, à 00 h 30 heure de Paris (UTC+1) la date
-  // UTC est encore la VEILLE : la fenêtre commençait la veille et la journée du
-  // jour n'était pas demandée du tout entre minuit et 1 h.
-  const aujourdHui = dateParis();
-  const dans4Jours = dateParisDans(4);
-
-  // VisualCrossing reçoit des COORDONNÉES validées, plus jamais l'adresse : il
-  // ne peut donc pas choisir une autre commune que celle validée ici. Format
-  // `lat,lon` documenté par l'API pour le segment `location`.
-  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${coordonnees.lat},${coordonnees.lon}/${aujourdHui}/${dans4Jours}?unitGroup=metric&key=${key}&contentType=json&include=days,hours,current&elements=datetime,tempmax,tempmin,temp,windspeed,windgust,precip,icon,conditions&lang=fr`;
-
-  try {
-    const res = await fetch(url, { next: { revalidate: 1800 } });
-    if (!res.ok) {
-      // 401/403 = clé refusée. Sur Vercel, cela signifierait qu'une clé payante a
-      // été révoquée ou a expiré — VRAI problème de production, à voir dans les
-      // logs. En local, c'est le placeholder `ta_cle_ici` de `.env.local` qui
-      // est refusé : comportement attendu, sans rapport avec la production.
-      //
-      // On journalise dans les deux cas, avec le statut, pour que la distinction
-      // se fasse d'un coup d'œil au log et non en supposant.
-      console.warn(
-        "api/meteo : VisualCrossing a répondu %s (clé refusée ou service indisponible) — repli Open-Meteo.",
-        res.status,
-      );
-      return null;
-    }
-    const data = (await res.json()) as DonneesMeteo;
-    return data.days && data.days.length > 0 ? data : null;
-  } catch (e) {
-    console.warn("api/meteo : VisualCrossing injoignable, repli Open-Meteo.", e);
-    return null;
-  }
-}
-
 export async function GET(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   const { searchParams } = new URL(req.url);
   const location = (searchParams.get("location") ?? "").trim() || "Bordeaux, FR";
 
-  // DEUX SOURCES, UN SEUL POINT GÉOGRAPHIQUE.
-  //
-  // On résout l'adresse AVANT d'appeler qui que ce soit : le code postal prime,
-  // et les coordonnées validées servent aux deux fournisseurs. VisualCrossing ne
-  // reçoit donc plus l'adresse en texte (il la géocodait lui-même et pouvait
-  // retenir une commune incompatible) : il reçoit `lat,lon`, comme Open-Meteo.
-  //
-  // VisualCrossing reste la source PRIORITAIRE de la production ; Open-Meteo est
-  // le repli gratuit quand la clé payante n'est pas disponible (en local) ou
-  // quand le service ne répond pas. Les deux partagent la même localisation.
   const localisation = await resoudreLocalisationMeteo(location);
   if (!localisation.ok) {
-    // Pas de commune validée ⇒ pas de météo. On refuse plutôt que d'afficher la
-    // météo d'un lieu choisi par défaut.
     return NextResponse.json(
       { error: localisation.erreur, localisation: false },
       { status: 422 },
@@ -208,15 +130,9 @@ export async function GET(req: NextRequest) {
   }
   const { lat, lon } = localisation.data;
 
-  const vc = await essayerVisualCrossing(
-    { lat, lon },
-    process.env.VISUALCROSSING_API_KEY,
-  );
-  const data = vc ?? (await fetchDonneesOpenMeteo(location, { lat, lon }));
-  // `icon` n'a pas le même sens selon la source : un NOM d'icône chez
-  // VisualCrossing, un CODE WMO chez Open-Meteo. On le dit explicitement pour
-  // que l'affichage puisse choisir son pictogramme au lieu de deviner.
-  const source: SourceMeteo = vc ? "visualcrossing" : "open-meteo";
+  // Source unique gratuite : Open-Meteo (modèle AROME / best_match, sans clé API).
+  const data = await fetchDonneesOpenMeteo(location, { lat, lon });
+  const source: SourceMeteo = "open-meteo";
 
   const today = data?.days[0];
 

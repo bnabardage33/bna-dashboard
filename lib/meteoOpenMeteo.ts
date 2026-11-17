@@ -381,13 +381,13 @@ export async function fetchDonneesOpenMeteo(
       "temperature_2m_min",
       "weather_code",
       "precipitation_sum",
+      "precipitation_probability_max",
       "wind_speed_10m_max",
       "wind_gusts_10m_max",
     ].join(","),
     timezone: "Europe/Paris",
-    // 4 jours : la même profondeur que la fenêtre J→J+3 de la veille
-    // intempéries, et que les `prochainsJours` de l'ancien appel VisualCrossing.
-    forecast_days: "4",
+    // 7 jours complets via Open-Meteo (AROME / ARPEGE / best_match).
+    forecast_days: "7",
   });
 
   let data: ReponseOpenMeteo;

@@ -16,6 +16,9 @@ import {
   calculerParametresBardageNormatifs,
   genererReponseNormativeBardageLocale,
 } from "@/lib/bnaReferentielBardage";
+import { calculerMontantDeplacement } from "@/lib/deplacement/calcul";
+
+export const DEPOT_BNA_DEFAUT = "Générac (33920)";
 
 export type MetierBna = "bardage" | "terrasse" | "cloture";
 
@@ -141,12 +144,30 @@ export interface BnaIaSavCtx {
   priorite: string;
 }
 
+export interface BnaIaDeplacementCtx {
+  depart: string;
+  destination: string;
+  distanceAllerKm: number;
+  distanceRetourKm: number;
+  distanceTotaleArKm: number;
+  dureeTrajetAllerMin: number;
+  tarifKmHt: number;
+  nbJoursChantier: number;
+  coutUnitaireArHt: number;
+  coutTotalDeplacementHt: number;
+}
+
 export interface BnaIaContext {
   userName: string;
   currentDateIso: string;
   currentDateFr?: string;
   currentTimeParis?: string;
   chantiers: BnaIaChantierCtx[];
+  meteoVilleLibre?: {
+    ville: string;
+    previsions: BnaIaPrevisionJourCtx[];
+  } | null;
+  deplacementVilleLibre?: BnaIaDeplacementCtx | null;
   commandes: BnaIaCommandeCtx[];
   devis: BnaIaDevisCtx[];
   factures: BnaIaFactureCtx[];
@@ -496,6 +517,30 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
   // 0. Pré-chiffrage déterministe -> bouton 1-clic « Créer le devis pré-rempli » ou « Créer le devis global multi-lots »
   const preChiffrage = detecterEtCalculerPreChiffrage(texte);
   if (preChiffrage) {
+    const dep = ctx.deplacementVilleLibre;
+    const devisAvecDep: DevisPrefillPayload = dep
+      ? {
+          ...preChiffrage.devisPrefill,
+          lignes: [
+            ...preChiffrage.devisPrefill.lignes,
+            {
+              catalogue_id: null,
+              designation: `Frais de déplacement (${dep.depart} -> ${dep.destination})`,
+              description: `${dep.distanceAllerKm} km aller (${dep.distanceTotaleArKm} km A/R) · ${dep.nbJoursChantier} jour(s) à ${fmtEuro(dep.tarifKmHt)}/km`,
+              qte: dep.nbJoursChantier,
+              unite: "A/R",
+              pu_ht: dep.coutUnitaireArHt,
+              pu_revient: Math.round(dep.coutUnitaireArHt * 0.65 * 100) / 100,
+              type_cout: "matiere",
+              a_chiffrer: false,
+            },
+          ],
+        }
+      : preChiffrage.devisPrefill;
+    const totalHtAvecDep = dep
+      ? Math.round((preChiffrage.totalHt + dep.coutTotalDeplacementHt) * 100) / 100
+      : preChiffrage.totalHt;
+
     actions.push({
       id: preChiffrage.estMultiLots
         ? "act-create-devis-multi-lots"
@@ -504,10 +549,10 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
       title: preChiffrage.estMultiLots
         ? "Créer le devis global multi-lots"
         : "Créer le devis pré-rempli",
-      description: `${preChiffrage.titre} · ${fmtEuro(preChiffrage.totalHt)} HT (${preChiffrage.heuresPoseTotal} h)`,
+      description: `${preChiffrage.titre} · ${fmtEuro(totalHtAvecDep)} HT (${preChiffrage.heuresPoseTotal} h${dep ? ` + déplacement ${dep.destination}` : ""})`,
       payload: {
         metier: preChiffrage.metier,
-        devisPrefill: preChiffrage.devisPrefill,
+        devisPrefill: devisAvecDep,
       },
     });
   }
@@ -755,6 +800,133 @@ export function evaluerAlertesDtuMeteoJour(jour: {
   return alertes;
 }
 
+export function calculerChiffrageDeplacementBna(params: {
+  depart?: string;
+  destination: string;
+  distanceAllerKm: number;
+  dureeTrajetAllerMin: number;
+  tarifKmHt?: number;
+  nbJoursChantier?: number;
+}): BnaIaDeplacementCtx {
+  const depart = params.depart || DEPOT_BNA_DEFAUT;
+  const distanceAllerKm = Math.max(0, Math.round(params.distanceAllerKm * 10) / 10);
+  const distanceRetourKm = distanceAllerKm;
+  const distanceTotaleArKm = Math.round((distanceAllerKm + distanceRetourKm) * 10) / 10;
+  const dureeTrajetAllerMin = Math.max(1, Math.round(params.dureeTrajetAllerMin));
+  const tarifKmHt = params.tarifKmHt && params.tarifKmHt > 0 ? params.tarifKmHt : 1.0;
+  const nbJoursChantier = Math.max(1, Math.round(params.nbJoursChantier ?? 1));
+  const coutUnitaireArHt = calculerMontantDeplacement(
+    distanceAllerKm,
+    distanceRetourKm,
+    tarifKmHt
+  );
+  const coutTotalDeplacementHt =
+    Math.round(coutUnitaireArHt * nbJoursChantier * 100) / 100;
+
+  return {
+    depart,
+    destination: params.destination,
+    distanceAllerKm,
+    distanceRetourKm,
+    distanceTotaleArKm,
+    dureeTrajetAllerMin,
+    tarifKmHt,
+    nbJoursChantier,
+    coutUnitaireArHt,
+    coutTotalDeplacementHt,
+  };
+}
+
+export function formaterResumeDeplacement(d: BnaIaDeplacementCtx): string {
+  const h = Math.floor(d.dureeTrajetAllerMin / 60);
+  const min = d.dureeTrajetAllerMin % 60;
+  const dureeStr = h > 0 ? `${h}h${String(min).padStart(2, "0")}` : `${min} min`;
+  return (
+    `🚐 **Logistique & Déplacement (${d.depart} -> ${d.destination})** : ` +
+    `${d.distanceAllerKm} km aller (${d.distanceTotaleArKm} km A/R) · ~${dureeStr} par trajet · ` +
+    `${d.nbJoursChantier} jour(s) × ${fmtEuro(d.coutUnitaireArHt)} = **${fmtEuro(d.coutTotalDeplacementHt)} HT**`
+  );
+}
+
+export function extraireDestinationLibre(message: string): string | null {
+  // 1. Code postal + ville explicite (ex: "33120 Arcachon")
+  const matchCp = message.match(/\b(\d{5}\s+[A-Za-zÀ-ÖØ-öø-ÿ'’\-]{2,})\b/);
+  if (matchCp) return matchCp[1].trim();
+
+  // 2. Localité après "chantier à/de", "déplacement à/vers", "à", "sur", "vers", "secteur"
+  const STOP_WORDS = new Set([
+    "demain",
+    "aujourd",
+    "aujourd'hui",
+    "apres-demain",
+    "après-demain",
+    "l'abri",
+    "cause",
+    "midi",
+    "matin",
+    "soir",
+    "la",
+    "le",
+    "les",
+    "un",
+    "une",
+    "mon",
+    "ma",
+    "mes",
+    "vos",
+    "nos",
+    "ce",
+    "cette",
+    "ces",
+    "bardage",
+    "terrasse",
+    "cloture",
+    "clôture",
+    "pose",
+    "l'eau",
+    "temps",
+    "combien",
+    "quel",
+    "quelle",
+    "300",
+    "45",
+    "50",
+    "80",
+    "100",
+  ]);
+
+  const regexLieu =
+    /(?:\b(?:chantier\s+(?:de|d['’]|à|a)|d[ée]placement\s+(?:à|a|vers|sur)|[àa]|sur|vers|secteur(?:\s+de)?)\s+)([A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{1,}(?:\s+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{2,}){0,2})/gi;
+
+  let m: RegExpExecArray | null;
+  while ((m = regexLieu.exec(message)) !== null) {
+    const brut = m[1]
+      .replace(
+        /\s+(?:demain|aujourd['’]?hui|apr[èe]s-demain|(?:en\s+)?bardage|(?:en\s+)?terrasse|(?:en\s+)?cl[ôo]ture|pour|est-ce|si|et|ou|avec).*$/i,
+        ""
+      )
+      .trim();
+    const firstWord = brut
+      .split(/\s+/)[0]
+      ?.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    if (brut.length >= 2 && firstWord && !STOP_WORDS.has(firstWord)) {
+      return brut;
+    }
+  }
+  return null;
+}
+
+export function extraireVilleMeteoLibre(message: string): string | null {
+  const estQuestionMeteo =
+    /\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions?\s*(?:m[ée]t[ée]o|de\s*pose|sont\s*bonnes)|repousser|d[ée]caler|\btemp[ée]rature\b|\bgel\b|\borages?\b/i.test(
+      message
+    );
+  if (!estQuestionMeteo) return null;
+  return extraireDestinationLibre(message);
+}
+
 export interface BnaIaHistoryTurn {
   role: "user" | "assistant";
   content: string;
@@ -822,11 +994,30 @@ export function buildSystemPromptContext(
         )
       : null;
 
+  const meteoLibreTxt =
+    ctx.meteoVilleLibre && ctx.meteoVilleLibre.previsions.length > 0
+      ? `\n\nMÉTÉO EN DIRECT (${ctx.meteoVilleLibre.ville} — Open-Meteo 3 jours) :\n` +
+        ctx.meteoVilleLibre.previsions
+          .map(
+            (j) =>
+              `- ${j.date}: ${j.tempMinC}°/${j.tempMaxC}°C, rafales ${j.rafalesKmh} km/h, pluie ${j.pluieMm} mm (${j.conditions})${
+                j.alertesDtu.length > 0 ? ` [⚠️ ${j.alertesDtu.join(" | ")}]` : ""
+              }`
+          )
+          .join("\n")
+      : "";
+
+  const deplacementTxt = ctx.deplacementVilleLibre
+    ? `\n\nLOGISTIQUE & FRAIS DE DÉPLACEMENT (${ctx.deplacementVilleLibre.depart} -> ${ctx.deplacementVilleLibre.destination}) :\n` +
+      `- Distance : ${ctx.deplacementVilleLibre.distanceAllerKm} km aller (${ctx.deplacementVilleLibre.distanceTotaleArKm} km A/R) · Durée aller : ${ctx.deplacementVilleLibre.dureeTrajetAllerMin} min\n` +
+      `- Chiffrage : ${ctx.deplacementVilleLibre.nbJoursChantier} jour(s) × ${fmtEuro(ctx.deplacementVilleLibre.coutUnitaireArHt)}/A/R = ${fmtEuro(ctx.deplacementVilleLibre.coutTotalDeplacementHt)} HT`
+    : "";
+
   return `Tu es BNA-IA, le copilote IA central de l'entreprise BNA (Bardage, Terrasse & Terrasse Mobile, Clôture).
 Tu réponds directement à ${ctx.userName}. Date du jour (Europe/Paris) : ${dateFr}${heureParis ? ` à ${heureParis}` : ""} (${ctx.currentDateIso}).
 
 CHANTIERS (${ctx.chantiers.length}) :
-${chantiersTxt}
+${chantiersTxt}${meteoLibreTxt}${deplacementTxt}
 
 COMMANDES FOURNISSEURS (${ctx.commandes.length}) :
 ${commandesTxt}
@@ -879,14 +1070,17 @@ export function generateLocalAssistantResponse(
   const fin = calculerSyntheseFinanciereBna(ctx.devis, ctx.factures, ctx.currentDateIso);
   const alertes = calculerAlertesProactives(ctx);
 
-  // 0. Pré-chiffrage déterministe BNA (Bardage / Terrasse / Clôture) + escalade complexe éventuelle
+  // 0. Pré-chiffrage déterministe BNA (Bardage / Terrasse / Clôture) + escalade complexe éventuelle + déplacement éventuel
   const preChiffrage = detecterEtCalculerPreChiffrage(texte);
   const escalade = detecterChantierComplexe(texte, preChiffrage);
   if (preChiffrage) {
+    const depTxt = ctx.deplacementVilleLibre
+      ? `\n\n${formaterResumeDeplacement(ctx.deplacementVilleLibre)}`
+      : "";
     return {
       content: escalade
-        ? `${preChiffrage.syntheseTexte}\n\n${escalade.avertissement}`
-        : preChiffrage.syntheseTexte,
+        ? `${preChiffrage.syntheseTexte}${depTxt}\n\n${escalade.avertissement}`
+        : `${preChiffrage.syntheseTexte}${depTxt}`,
       actions,
       tags: [
         "Pré-chiffrage Certifié",
@@ -943,7 +1137,11 @@ export function generateLocalAssistantResponse(
   }
 
   if (
-    /\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions de pose/i.test(lower)
+    /\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions?\s*(?:m[ée]t[ée]o|de\s*pose|sont\s*bonnes)|d[ée]placement/i.test(
+      lower
+    ) ||
+    Boolean(ctx.meteoVilleLibre) ||
+    Boolean(ctx.deplacementVilleLibre)
   ) {
     const maintenant = formaterDateFrEuropeParis(
       ctx.currentDateIso ? new Date(`${ctx.currentDateIso}T12:00:00Z`) : new Date()
@@ -955,17 +1153,24 @@ export function generateLocalAssistantResponse(
         Boolean(c.alerte_meteo)
     );
 
-    if (actifs.length === 0) {
-      return {
-        content:
-          `### 🌤️ Météo & Pose DTU — ${dateFr}\n` +
-          `Aucune alerte météo active ni prévision disponible sur vos chantiers (vérifiez que l'adresse des chantiers actifs est renseignée).`,
-        actions,
-        tags: ["Météo", "Pose DTU"],
-      };
+    const blocs: string[] = [];
+    if (ctx.deplacementVilleLibre) {
+      blocs.push(formaterResumeDeplacement(ctx.deplacementVilleLibre));
+    }
+    if (ctx.meteoVilleLibre && ctx.meteoVilleLibre.previsions.length > 0) {
+      const joursLibreTxt = ctx.meteoVilleLibre.previsions
+        .map((j) => {
+          const alertesTxt =
+            j.alertesDtu.length > 0
+              ? `\n    • ⚠️ ${j.alertesDtu.join(" / ")}`
+              : " · ✅ Conditions compatibles DTU";
+          return `  - ${j.date} : ${j.tempMinC}°C / ${j.tempMaxC}°C · Rafales ${j.rafalesKmh} km/h · Pluie ${j.pluieMm} mm (${j.conditions})${alertesTxt}`;
+        })
+        .join("\n");
+      blocs.push(`**Prévisions Open-Meteo — ${ctx.meteoVilleLibre.ville}** :\n${joursLibreTxt}`);
     }
 
-    const lignes = actifs.map((c) => {
+    for (const c of actifs) {
       if (c.previsionsMeteo3J && c.previsionsMeteo3J.length > 0) {
         const joursTxt = c.previsionsMeteo3J
           .map((j) => {
@@ -976,13 +1181,24 @@ export function generateLocalAssistantResponse(
             return `  - ${j.date} : ${j.tempMinC}°C / ${j.tempMaxC}°C · Rafales ${j.rafalesKmh} km/h · Pluie ${j.pluieMm} mm (${j.conditions})${alertesTxt}`;
           })
           .join("\n");
-        return `**${c.nom}** (${c.metier.toUpperCase()} — ${c.ville || "Gironde"}) :\n${joursTxt}`;
+        blocs.push(`**${c.nom}** (${c.metier.toUpperCase()} — ${c.ville || "Gironde"}) :\n${joursTxt}`);
+      } else {
+        blocs.push(`- **${c.nom}** (${c.metier}) : ${c.alerte_meteo}`);
       }
-      return `- **${c.nom}** (${c.metier}) : ${c.alerte_meteo}`;
-    });
+    }
+
+    if (blocs.length === 0) {
+      return {
+        content:
+          `### 🌤️ Météo & Pose DTU — ${dateFr}\n` +
+          `Aucune alerte météo active ni prévision disponible sur vos chantiers (vérifiez que l'adresse des chantiers actifs est renseignée).`,
+        actions,
+        tags: ["Météo", "Pose DTU"],
+      };
+    }
 
     return {
-      content: `### 🌤️ Météo & Vigilance Pose DTU — ${dateFr}\n${lignes.join("\n\n")}`,
+      content: `### 🌤️ Météo & Vigilance Pose DTU — ${dateFr}\n${blocs.join("\n\n")}`,
       actions,
       tags: ["Météo", "Pose DTU", "Sécurité"],
     };

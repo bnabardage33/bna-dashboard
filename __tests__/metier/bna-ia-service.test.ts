@@ -3,10 +3,13 @@ import { describe, it, expect } from "vitest";
 import {
   buildSystemPromptContext,
   calculerAlertesProactives,
+  calculerChiffrageDeplacementBna,
   calculerSyntheseFinanciereBna,
   detectBnaIaActions,
   detecterChantierComplexe,
   evaluerAlertesDtuMeteoJour,
+  extraireDestinationLibre,
+  extraireVilleMeteoLibre,
   findMentionedChantier,
   formaterDateFrEuropeParis,
   generateLocalAssistantResponse,
@@ -456,5 +459,81 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     expect(repMeteo.content).toContain("55 km/h");
     expect(repMeteo.content).toContain("Océwood / Neowood");
     expect(repMeteo.tags).toContain("Pose DTU");
+  });
+
+  it("extrait une ville libre (ex: Madrid) pour la météo en direct hors base et répond à 0 ms", () => {
+    const promptMadrid =
+      "j'ai un chantier à Madrid demain en bardage, est-ce que les conditions sont bonnes ?";
+    expect(extraireVilleMeteoLibre(promptMadrid)).toBe("Madrid");
+    expect(
+      extraireVilleMeteoLibre("Vérifie la vigilance météo sur mes chantiers actifs.")
+    ).toBeNull();
+
+    const ctxMadrid: BnaIaContext = {
+      ...MOCK_CONTEXT,
+      chantiers: [],
+      meteoVilleLibre: {
+        ville: "Madrid",
+        previsions: [
+          {
+            date: "2026-11-18",
+            tempMinC: 7,
+            tempMaxC: 16,
+            rafalesKmh: 22,
+            pluieMm: 0,
+            conditions: "Ciel dégagé",
+            alertesDtu: [],
+          },
+        ],
+      },
+    };
+
+    const sys = buildSystemPromptContext(ctxMadrid);
+    expect(sys).toContain("MÉTÉO EN DIRECT (Madrid — Open-Meteo 3 jours)");
+    expect(sys).toContain("16°C");
+
+    const rep = generateLocalAssistantResponse(promptMadrid, ctxMadrid);
+    expect(rep.content).toContain("Madrid");
+    expect(rep.content).toContain("7°C / 16°C");
+    expect(rep.content).toContain("Conditions compatibles DTU");
+  });
+
+  it("calcule les frais de déplacement depuis Générac (33920) et les injecte dans la réponse + devis pré-rempli", () => {
+    expect(extraireDestinationLibre("chantier à Arcachon bardage 5x8")).toBe("Arcachon");
+    expect(extraireDestinationLibre("déplacement à Biarritz demain")).toBe("Biarritz");
+
+    const dep = calculerChiffrageDeplacementBna({
+      destination: "Arcachon",
+      distanceAllerKm: 92,
+      dureeTrajetAllerMin: 75,
+      tarifKmHt: 1.0,
+      nbJoursChantier: 2,
+    });
+    expect(dep.depart).toBe("Générac (33920)");
+    expect(dep.distanceTotaleArKm).toBe(184);
+    expect(dep.coutUnitaireArHt).toBe(184);
+    expect(dep.coutTotalDeplacementHt).toBe(368);
+
+    const ctxDep: BnaIaContext = {
+      ...MOCK_CONTEXT,
+      deplacementVilleLibre: dep,
+    };
+    const promptChantier = "bardage HPL 5x8 chantier à Arcachon";
+    const sys = buildSystemPromptContext(ctxDep);
+    expect(sys).toContain("Générac (33920)");
+    expect(sys).toContain("184 km A/R");
+
+    const rep = generateLocalAssistantResponse(promptChantier, ctxDep);
+    expect(rep.content).toContain("Générac (33920) -> Arcachon");
+    expect(rep.content).toContain("184 km A/R");
+    expect(rep.content).toContain("1h15");
+
+    const actionDevis = rep.actions.find((a) => a.type === "create_devis");
+    expect(actionDevis).toBeDefined();
+    expect(
+      actionDevis?.payload.devisPrefill?.lignes.some((l) =>
+        l.designation.includes("Frais de déplacement (Générac (33920) -> Arcachon)")
+      )
+    ).toBe(true);
   });
 });

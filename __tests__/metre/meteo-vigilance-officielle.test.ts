@@ -146,12 +146,31 @@ function installerFetch() {
         text: async () => JSON.stringify(vigilanceReponse.body),
       };
     }
-    if (url.includes("visualcrossing.com")) {
+    if (url.includes("api.open-meteo.com")) {
+      const omChaud = {
+        current: { temperature_2m: 40, weather_code: 0, time: "2026-07-15T14:00" },
+        hourly: {
+          time: Array.from({ length: 24 }, (_, i) => `2026-07-15T${String(i).padStart(2, "0")}:00`),
+          temperature_2m: Array(24).fill(40),
+          precipitation: Array(24).fill(0),
+          wind_speed_10m: Array(24).fill(10),
+          wind_gusts_10m: Array(24).fill(15),
+        },
+        daily: {
+          time: ["2026-07-15"],
+          temperature_2m_max: [40],
+          temperature_2m_min: [22],
+          weather_code: [0],
+          precipitation_sum: [0],
+          wind_speed_10m_max: [10],
+          wind_gusts_10m_max: [15],
+        },
+      };
       return {
         ok: true,
         status: 200,
-        json: async () => VC_CHAUD,
-        text: async () => JSON.stringify(VC_CHAUD),
+        json: async () => omChaud,
+        text: async () => JSON.stringify(omChaud),
       };
     }
     return { ok: false, status: 404, json: async () => ({}), text: async () => "" };
@@ -171,7 +190,6 @@ async function genererUnRapport() {
 }
 
 beforeEach(() => {
-  process.env.VISUALCROSSING_API_KEY = "cle-de-test";
   h.etat.insertRapport = null;
   vigilanceReponse = { status: 200, body: VIGILANCE_VERTE };
   installerFetch();

@@ -2,7 +2,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { resoudreTenant } from "@/lib/tenant";
-import { fetchWithTimeout } from "@/lib/requeteTimeout";
+import { fetchDonneesOpenMeteo } from "@/lib/meteoOpenMeteo";
 
 async function getSupabase() {
   const { cookies } = await import("next/headers");
@@ -40,24 +40,17 @@ export async function validerPointageAvecMeteo(chantierId: string, userId: strin
     if (chantierErr) throw chantierErr;
     const adresse = chantier?.adresse_chantier || 'Paris, France';
 
-    const apiKey = process.env.VISUALCROSSING_API_KEY;
     let precip = 0;
     let apiSuccess = false;
 
-    if (apiKey) {
-      try {
-        const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodeURIComponent(adresse)}/${dateSaisie}?unitGroup=metric&key=${apiKey}&contentType=json`;
-        const res = await fetchWithTimeout(url, {}, 10_000);
-        if (res.ok) {
-          const meteoData = await res.json();
-          precip = meteoData?.days?.[0]?.precip || 0;
-          apiSuccess = true;
-        } else {
-          console.warn("Erreur appel Visual Crossing, utilisation du fallback.");
-        }
-      } catch (err) {
-        console.warn("Erreur réseau Visual Crossing, utilisation du fallback.");
+    try {
+      const meteoData = await fetchDonneesOpenMeteo(adresse);
+      if (meteoData?.days?.[0]) {
+        precip = Number(meteoData.days[0].precip ?? 0);
+        apiSuccess = true;
       }
+    } catch {
+      console.warn("Erreur réseau Open-Meteo, utilisation du fallback.");
     }
 
     let coef_meteo = 1.0;

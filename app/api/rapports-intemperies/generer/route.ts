@@ -20,6 +20,7 @@ import type { Database, TablesInsert } from "@/types/supabase";
 import { verifierSession } from "@/lib/auth";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
+import { fetchDonneesOpenMeteo } from "@/lib/meteoOpenMeteo";
 import {
   evaluerJourChantier,
   Materiau,
@@ -99,9 +100,6 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const VISUAL_CROSSING_URL =
-  "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline";
 
 function estUuid(value: string) {
   return UUID_RE.test(value);
@@ -255,56 +253,22 @@ function normaliserZoneVent(value: unknown): number {
 // Météo Visual Crossing
 // -----------------------------------------------------------------------------
 
-async function fetchMeteoVisualCrossing(
-  coordonnees: { lat: number; lon: number },
-  apiKey: string
+async function fetchMeteoOpenMeteoRapport(
+  adresse: string,
+  coordonnees: { lat: number; lon: number }
 ): Promise<MeteoJour> {
-  // Visual Crossing reçoit `lat,lon` : ce sont les coordonnées validées par le
-  // code postal, les mêmes que celles d'Open-Meteo ailleurs. Il ne géocode donc
-  // plus l'adresse lui-même et ne peut pas retenir une autre commune.
-  const url =
-    `${VISUAL_CROSSING_URL}/${coordonnees.lat},${coordonnees.lon}/today` +
-    `?unitGroup=metric` +
-    `&key=${encodeURIComponent(apiKey)}` +
-    `&contentType=json` +
-    `&include=days,hours` +
-    `&elements=datetime,temp,windspeed,windgust,precip`;
-
-  const response = await fetch(url, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    const texte = await response.text().catch(() => "");
-
-    throw new Error(
-      `Visual Crossing (${response.status})${
-        texte ? ` : ${texte.slice(0, 200)}` : ""
-      }`
-    );
-  }
-
-  const data = await response.json();
+  const data = await fetchDonneesOpenMeteo(adresse, coordonnees);
   const today = data?.days?.[0];
 
   if (!today) {
-    throw new Error("Aucune donnée météo disponible pour aujourd'hui");
+    throw new Error("Aucune donnée météo Open-Meteo disponible pour aujourd'hui");
   }
 
-  const heures: HeureRapport[] = (today.hours ?? []).map(
-    (h: {
-      datetime?: string | number;
-      temp?: string | number;
-      windspeed?: string | number;
-      windgust?: string | number;
-      precip?: string | number;
-    }) => ({
+  const heures: HeureRapport[] = (today.hours ?? []).map((h) => ({
     heure: String(h.datetime ?? "").slice(0, 5),
     temp: Math.round(Number(h.temp ?? 0)),
     vent: Math.round(Number(h.windspeed ?? 0)),
-    rafales: Math.round(
-      Number(h.windgust ?? h.windspeed ?? 0)
-    ),
+    rafales: Math.round(Number(h.windgust ?? h.windspeed ?? 0)),
     pluie: Number(h.precip ?? 0),
   }));
 
@@ -472,17 +436,6 @@ export async function POST(request: NextRequest) {
     }
 
     const force = body.force === true;
-    const visualCrossingKey = process.env.VISUALCROSSING_API_KEY;
-
-    if (!visualCrossingKey) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "VISUALCROSSING_API_KEY non configurée dans .env.local",
-        },
-        { status: 500 }
-      );
-    }
 
     const resultats: ResultatGeneration[] = [];
     let totalChantiers = 0;
@@ -569,10 +522,10 @@ export async function POST(request: NextRequest) {
           const acces = normaliserAcces(chantier.moyen_acces);
           const zoneVent = normaliserZoneVent(chantier.zone_vent);
 
-          const meteo = await fetchMeteoVisualCrossing(
-            { lat: localisation.data.lat, lon: localisation.data.lon },
-            visualCrossingKey
-          );
+          const meteo = await fetchMeteoOpenMeteoRapport(adresse, {
+            lat: localisation.data.lat,
+            lon: localisation.data.lon,
+          });
           const vigilance = await fetchVigilanceInterne(request, departement);
 
           const referenceMinutes = heureParisEnMinutes();

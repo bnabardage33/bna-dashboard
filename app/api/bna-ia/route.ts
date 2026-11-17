@@ -4,19 +4,25 @@ import { resoudreTenant } from "@/lib/tenant";
 import {
   buildSystemPromptContext,
   calculerAlertesProactives,
+  calculerChiffrageDeplacementBna,
+  DEPOT_BNA_DEFAUT,
   detecterChantierComplexe,
   evaluerAlertesDtuMeteoJour,
+  extraireDestinationLibre,
+  extraireVilleMeteoLibre,
   formaterDateFrEuropeParis,
   generateLocalAssistantResponse,
   normaliserMetierBna,
   type BnaIaChantierCtx,
   type BnaIaContext,
+  type BnaIaDeplacementCtx,
   type BnaIaHistoryTurn,
   type BnaIaPrevisionJourCtx,
 } from "@/lib/bnaIaService";
 import { detecterEtCalculerPreChiffrage } from "@/lib/bnaIaPreChiffrage";
 import { normaliserRequeteMetier } from "@/lib/bnaDictionnaireMetier";
 import { libelleConditionsWmo } from "@/lib/meteoOpenMeteo";
+import { lireTarifCommercial } from "@/lib/deplacement/tenantHelpers";
 
 export const dynamic = "force-dynamic";
 
@@ -158,6 +164,91 @@ async function fetchJsonWithTimeout(url: string, timeoutMs: number): Promise<unk
     return null;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+const DEPOT_GENERAC_COORDS = { lat: 45.1797, lon: -0.5469 };
+
+function distanceHaversineKm(
+  a: { lat: number; lon: number },
+  b: { lat: number; lon: number }
+): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLon = ((b.lon - a.lon) * Math.PI) / 180;
+  const sinLat = Math.sin(dLat / 2);
+  const sinLon = Math.sin(dLon / 2);
+  const c =
+    2 *
+    Math.asin(
+      Math.sqrt(
+        sinLat * sinLat +
+          Math.cos((a.lat * Math.PI) / 180) *
+            Math.cos((b.lat * Math.PI) / 180) *
+            sinLon * sinLon
+      )
+    );
+  return R * c;
+}
+
+async function chargerDeplacementDepuisGenerac(
+  destination: string,
+  tarifKmHt: number,
+  nbJoursChantier: number
+): Promise<BnaIaDeplacementCtx | null> {
+  try {
+    const cleanQuery =
+      destination
+        .replace(/^\d+\s+(?:rue|avenue|boulevard|allée|impasse|chemin)[^,]*/i, "")
+        .trim() || destination.trim();
+    const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+      cleanQuery
+    )}&count=1&language=fr&format=json`;
+    const geoJson = (await fetchJsonWithTimeout(geoUrl, METEO_TIMEOUT_MS)) as {
+      results?: Array<{ latitude?: number; longitude?: number; name?: string }>;
+    } | null;
+
+    const first = geoJson?.results?.[0];
+    if (typeof first?.latitude !== "number" || typeof first?.longitude !== "number") {
+      return null;
+    }
+
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${DEPOT_GENERAC_COORDS.lon},${DEPOT_GENERAC_COORDS.lat};${first.longitude},${first.latitude}?overview=false`;
+    const osrmJson = (await fetchJsonWithTimeout(osrmUrl, METEO_TIMEOUT_MS)) as {
+      code?: string;
+      routes?: Array<{ distance?: number; duration?: number }>;
+    } | null;
+
+    let distanceAllerKm: number;
+    let dureeTrajetAllerMin: number;
+    const route = osrmJson?.code === "Ok" ? osrmJson.routes?.[0] : undefined;
+
+    if (typeof route?.distance === "number" && route.distance > 0) {
+      distanceAllerKm = route.distance / 1000;
+      dureeTrajetAllerMin =
+        typeof route.duration === "number" && route.duration > 0
+          ? route.duration / 60
+          : (distanceAllerKm / 75) * 60;
+    } else {
+      // Repli routier estimatif (×1.25 sur vol d'oiseau) si OSRM indisponible
+      distanceAllerKm =
+        distanceHaversineKm(DEPOT_GENERAC_COORDS, {
+          lat: first.latitude,
+          lon: first.longitude,
+        }) * 1.25;
+      dureeTrajetAllerMin = (distanceAllerKm / 75) * 60;
+    }
+
+    return calculerChiffrageDeplacementBna({
+      depart: DEPOT_BNA_DEFAUT,
+      destination: first.name || destination,
+      distanceAllerKm,
+      dureeTrajetAllerMin,
+      tarifKmHt,
+      nbJoursChantier,
+    });
+  } catch {
+    return null;
   }
 }
 
@@ -493,6 +584,47 @@ export async function POST(req: NextRequest) {
     const normalisation = normaliserRequeteMetier(message);
     const messageNormalise = normalisation.texteNormalise;
     const preChiffrage = detecterEtCalculerPreChiffrage(messageNormalise);
+    const nbJoursEstime = preChiffrage
+      ? Math.max(1, Math.ceil(preChiffrage.heuresPoseTotal / 7))
+      : 1;
+
+    // Météo en direct + Déplacement depuis Générac (33920) en parallèle sur toute destination libre
+    const villeMeteo = extraireVilleMeteoLibre(messageNormalise);
+    const destinationLibre =
+      villeMeteo ||
+      (/d[ée]placement|trajet|km|chantier\s+(?:à|a|de|sur|vers)|frais/i.test(
+        messageNormalise
+      )
+        ? extraireDestinationLibre(messageNormalise)
+        : null);
+
+    if (destinationLibre) {
+      const dejaDansChantier = context.chantiers.some(
+        (c) =>
+          c.previsionsMeteo3J &&
+          c.previsionsMeteo3J.length > 0 &&
+          c.ville?.toLowerCase().includes(destinationLibre.toLowerCase())
+      );
+      const tarifKm = await lireTarifCommercial(tenant.entrepriseId).catch(() => 1.0);
+
+      const [meteoLibre, depLibre] = await Promise.all([
+        villeMeteo && !dejaDansChantier
+          ? chargerMeteoChantier3Jours(destinationLibre)
+          : Promise.resolve(null),
+        chargerDeplacementDepuisGenerac(destinationLibre, tarifKm, nbJoursEstime),
+      ]);
+
+      if (meteoLibre && meteoLibre.previsions.length > 0) {
+        context.meteoVilleLibre = {
+          ville: destinationLibre,
+          previsions: meteoLibre.previsions,
+        };
+      }
+      if (depLibre) {
+        context.deplacementVilleLibre = depLibre;
+      }
+    }
+
     const escalade = detecterChantierComplexe(messageNormalise, preChiffrage);
     const localResponse = generateLocalAssistantResponse(messageNormalise, context, {
       history,

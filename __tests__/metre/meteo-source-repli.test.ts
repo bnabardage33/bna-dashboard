@@ -205,71 +205,42 @@ async function getAvecRepli(surchargeOpenMeteo?: { status?: number; body: unknow
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// A. La route doit survivre à l'échec de VisualCrossing
+// A. La route utilise exclusivement Open-Meteo (sans VisualCrossing ni clé API)
 // ════════════════════════════════════════════════════════════════════════════
 
-describe("api/meteo — le repli Open-Meteo est utilisé quand VisualCrossing échoue", () => {
-  it("VisualCrossing 401 → la route répond 200 avec une vraie prévision", async () => {
+describe("api/meteo — Open-Meteo source unique sans clé API", () => {
+  it("répond 200 avec une vraie prévision Open-Meteo sans jamais appeler VisualCrossing", async () => {
     const { res, json } = await getAvecRepli();
 
     expect(res.status).toBe(200);
-    // Le point central du correctif : hors Vercel, VisualCrossing échoue, et la
-    // route rendait 502 — donc 502 sur toute la météo de l'accueil en local.
     expect(json.error).toBeUndefined();
     expect(json.source).toBe("open-meteo");
     expect(json.tempActuelle).toBe(21); // 20.5 arrondi par la route
+    expect(appels.some((a) => a.url.includes("visualcrossing.com"))).toBe(false);
   });
 
-  it("Open-Meteo est réellement interrogé (le repli n'est pas un court-circuit)", async () => {
+  it("Open-Meteo est réellement interrogé", async () => {
     await getAvecRepli();
     expect(appels.some((a) => a.url.includes("api.open-meteo.com"))).toBe(true);
   });
 
-  it("valide d'abord le lieu, puis tente VisualCrossing avant Open-Meteo", async () => {
+  it("valide d'abord le lieu puis appelle Open-Meteo", async () => {
     await getAvecRepli();
     const iNom = appels.findIndex((a) => a.url.includes("nominatim"));
-    const iVc = appels.findIndex((a) => a.url.includes("visualcrossing.com"));
     const iOm = appels.findIndex((a) => a.url.includes("api.open-meteo.com"));
     expect(iNom).toBeGreaterThanOrEqual(0);
-    expect(iVc).toBeGreaterThan(iNom);
-    expect(iOm).toBeGreaterThan(iVc);
+    expect(iOm).toBeGreaterThan(iNom);
   });
 
-  it("les deux fournisseurs reçoivent les MÊMES coordonnées validées, jamais l'adresse", async () => {
+  it("Open-Meteo reçoit les coordonnées validées par le code postal", async () => {
     await getAvecRepli();
-    const vc = appels.find((a) => a.url.includes("visualcrossing.com"))?.url ?? "";
     const om = appels.find((a) => a.url.includes("api.open-meteo.com"))?.url ?? "";
 
-    // Coordonnées issues du code postal (fixture Nominatim : 44.84, -0.58).
-    expect(vc).toContain("44.84,-0.58");
     expect(om).toContain("latitude=44.84");
     expect(om).toContain("longitude=-0.58");
-
-    // VisualCrossing ne reçoit plus l'adresse : il ne peut donc plus retenir
-    // une autre commune de sa propre initiative.
-    expect(decodeURIComponent(vc)).not.toContain("Bellevue");
-    expect(decodeURIComponent(vc)).not.toContain("Saint-Savin");
   });
 
-  it("VisualCrossing qui RÉPOND est conservé, et le repli n'est pas appelé", async () => {
-    reponses = [
-      { match: /visualcrossing\.com/, body: VC_OK },
-      { match: /nominatim\.openstreetmap\.org/, body: NOMINATIM },
-      { match: /api\.open-meteo\.com/, body: OPEN_METEO },
-    ];
-    const { GET } = await import("@/app/api/meteo/route");
-    const res = await GET(
-      new Request("http://localhost/api/meteo?location=" + encodeURIComponent(ADRESSE)) as never,
-    );
-    const json = (await res.json()) as Record<string, unknown>;
-
-    expect(res.status).toBe(200);
-    expect(json.source).toBe("visualcrossing");
-    // Sans cela, on payerait un appel gratuit inutile à chaque chantier.
-    expect(appels.some((a) => a.url.includes("api.open-meteo.com"))).toBe(false);
-  });
-
-  it("clé VisualCrossing ABSENTE → repli, sans erreur 500", async () => {
+  it("fonctionne sans aucune clé API configurée (0 erreur 500)", async () => {
     const cle = process.env.VISUALCROSSING_API_KEY;
     delete process.env.VISUALCROSSING_API_KEY;
     try {

@@ -114,7 +114,6 @@ function installerFetch() {
 beforeEach(() => {
   appels = [];
   reponses = [];
-  process.env.VISUALCROSSING_API_KEY = "cle-de-test";
   installerFetch();
 });
 
@@ -123,14 +122,35 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("/api/meteo — fenêtre VisualCrossing en date parisienne", () => {
-  it("à 00:30 heure de Paris, la fenêtre commence AUJOURD'HUI, pas la veille UTC", async () => {
+describe("/api/meteo — fenêtre Open-Meteo en fuseau Europe/Paris", () => {
+  it("interroge Open-Meteo en timezone=Europe/Paris sur 7 jours sans jamais appeler VisualCrossing", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T23:30:00Z"));
 
     reponses = [
       { match: /nominatim\.openstreetmap\.org/, body: NOMINATIM },
-      { match: /visualcrossing\.com/, body: VC_OK },
+      {
+        match: /api\.open-meteo\.com/,
+        body: {
+          current: { temperature_2m: 12, weather_code: 1, time: "2026-01-02T00:30" },
+          hourly: {
+            time: Array.from({ length: 24 }, (_, h) => `2026-01-02T${String(h).padStart(2, "0")}:00`),
+            temperature_2m: Array(24).fill(12),
+            precipitation: Array(24).fill(0),
+            wind_speed_10m: Array(24).fill(10),
+            wind_gusts_10m: Array(24).fill(15),
+          },
+          daily: {
+            time: ["2026-01-02"],
+            temperature_2m_max: [14],
+            temperature_2m_min: [6],
+            weather_code: [1],
+            precipitation_sum: [0],
+            wind_speed_10m_max: [10],
+            wind_gusts_10m_max: [15],
+          },
+        },
+      },
     ];
 
     const { GET } = await import("@/app/api/meteo/route");
@@ -141,10 +161,9 @@ describe("/api/meteo — fenêtre VisualCrossing en date parisienne", () => {
     );
     expect(res.status).toBe(200);
 
-    const vc = appels.find((u) => u.includes("visualcrossing.com")) ?? "";
-    // 2 janvier → 6 janvier en calendrier parisien.
-    expect(vc).toContain("/2026-01-02/2026-01-06");
-    // La veille UTC ne doit jamais servir de borne de départ.
-    expect(vc).not.toContain("/2026-01-01/");
+    const om = appels.find((u) => u.includes("api.open-meteo.com")) ?? "";
+    expect(om).toContain("timezone=Europe%2FParis");
+    expect(om).toContain("forecast_days=7");
+    expect(appels.some((u) => u.includes("visualcrossing.com"))).toBe(false);
   });
 });
