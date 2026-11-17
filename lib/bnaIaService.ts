@@ -883,7 +883,7 @@ export function extraireDestinationLibre(message: string): string | null {
   const matchCp = message.match(/\b(\d{5}\s+[A-Za-zÀ-ÖØ-öø-ÿ'’\-]{2,})\b/);
   if (matchCp) return matchCp[1].trim();
 
-  // 2. Localité après "chantier à/de", "déplacement à/vers", "à", "sur", "vers", "secteur"
+  // 2. Localité après "chantier à/de/sur/vers/pour", "déplacement à/vers/sur/pour", "à", "sur", "vers", "pour", "secteur"
   const STOP_WORDS = new Set([
     "demain",
     "aujourd",
@@ -895,6 +895,17 @@ export function extraireDestinationLibre(message: string): string | null {
     "midi",
     "matin",
     "soir",
+    "semaine",
+    "mois",
+    "jour",
+    "jours",
+    "lundi",
+    "mardi",
+    "mercredi",
+    "jeudi",
+    "vendredi",
+    "samedi",
+    "dimanche",
     "la",
     "le",
     "les",
@@ -913,11 +924,58 @@ export function extraireDestinationLibre(message: string): string | null {
     "cloture",
     "clôture",
     "pose",
+    "poser",
+    "faire",
+    "chiffrer",
+    "lever",
+    "verifier",
+    "vérifier",
+    "calculer",
+    "savoir",
+    "voir",
+    "aller",
+    "partir",
+    "decaler",
+    "décaler",
+    "repousser",
+    "maintenir",
+    "optimiser",
+    "gerer",
+    "gérer",
+    "planning",
+    "chantier",
+    "chantiers",
+    "devis",
+    "facture",
+    "factures",
+    "commande",
+    "commandes",
+    "client",
+    "clients",
     "l'eau",
     "temps",
+    "meteo",
+    "météo",
+    "pluie",
+    "vent",
     "combien",
+    "comment",
+    "pourquoi",
+    "quand",
     "quel",
     "quelle",
+    "quels",
+    "quelles",
+    "quoi",
+    "vous",
+    "nous",
+    "moi",
+    "toi",
+    "eux",
+    "tout",
+    "tous",
+    "toutes",
+    "rien",
     "300",
     "45",
     "50",
@@ -926,13 +984,13 @@ export function extraireDestinationLibre(message: string): string | null {
   ]);
 
   const regexLieu =
-    /(?:\b(?:chantier\s+(?:de|d['’]|à|a|en|dans\s+le)|d[ée]placement\s+(?:à|a|vers|sur|en|dans\s+le)|dans\s+le|[àa]|au|en|sur|vers|secteur(?:\s+de)?)\s+)([A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{1,}(?:\s+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{2,}){0,2})/gi;
+    /(?:(?:^|[\s,;'’"(])(?:chantier\s+(?:de|d['’]|à|a|en|sur|vers|pour|dans\s+le)|d[ée]placement\s+(?:à|a|vers|sur|pour|en|dans\s+le)|dans\s+le|[àa]|au|en|sur|vers|pour|secteur(?:\s+de)?)\s+)([A-ZÀ-ÖØ-Ýa-zà-öø-ÿ][A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{1,}(?:\s+[A-ZÀ-ÖØ-Ýa-zà-öø-ÿ'’\-]{2,}){0,2})/gi;
 
   let m: RegExpExecArray | null;
   while ((m = regexLieu.exec(message)) !== null) {
     const brut = m[1]
       .replace(
-        /\s+(?:demain|aujourd['’]?hui|apr[èe]s-demain|(?:en\s+)?bardage|(?:en\s+)?terrasse|(?:en\s+)?cl[ôo]ture|pour|est-ce|si|et|ou|avec).*$/i,
+        /\s+(?:demain|aujourd['’]?hui|apr[èe]s-demain|jusqu['’]?(?:à|a)|ce|cette|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|(?:en\s+)?bardage|(?:en\s+)?terrasse|(?:en\s+)?cl[ôo]ture|pour|est-ce|si|et|ou|avec).*$/i,
         ""
       )
       .trim();
@@ -944,6 +1002,8 @@ export function extraireDestinationLibre(message: string): string | null {
     if (brut.length >= 2 && firstWord && !STOP_WORDS.has(firstWord)) {
       return brut;
     }
+    // Si le premier mot est un mot-outil (ex: "pour demain à Madrid"), reprendre juste après la préposition
+    regexLieu.lastIndex = m.index + 1;
   }
   return null;
 }

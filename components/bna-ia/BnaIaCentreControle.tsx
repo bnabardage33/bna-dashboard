@@ -22,7 +22,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import {
-  generateLocalAssistantResponse,
   type BnaIaAction,
   type BnaIaAlerteProactive,
   type BnaIaContext,
@@ -203,10 +202,17 @@ export default function BnaIaCentreControle() {
     setIsSending(true);
 
     try {
-      const historyPayload = messages.slice(-10).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const historyPayload = messages
+        .filter(
+          (m) =>
+            m.id !== "welcome-bna-ia" &&
+            !m.tags?.includes("Erreur Cloud LLM") &&
+            m.content.trim().length > 0
+        )
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
       const res = await fetch("/api/bna-ia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -218,8 +224,9 @@ export default function BnaIaCentreControle() {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.content) {
         const preTexte =
           typeof data.preChiffrageTexte === "string" && data.preChiffrageTexte.trim()
             ? data.preChiffrageTexte.trim()
@@ -246,54 +253,34 @@ export default function BnaIaCentreControle() {
             source: data.source,
           },
         ]);
-      } else if (context) {
-        const local = generateLocalAssistantResponse(contenu, context, {
-          history: historyPayload,
-          dernierPreChiffrage,
-        });
-        if (local.tags.includes("Pré-chiffrage Certifié")) {
-          setDernierPreChiffrage(local.content);
-          try {
-            localStorage.setItem("bna_ia_dernier_prechiffrage_v1", local.content);
-          } catch {
-            // Ignorer quota
-          }
-        }
+      } else {
+        const errMessage =
+          typeof data?.error === "string" && data.error.trim()
+            ? data.error.trim()
+            : `Erreur HTTP ${res.status} lors de l'appel au Cloud LLM (/api/bna-ia).`;
         setMessages((prev) => [
           ...prev,
           {
-            id: `ast-${Date.now()}`,
+            id: `err-${Date.now()}`,
             role: "assistant",
-            content: local.content,
+            content: `⚠️ **Erreur technique BNA-IA Cloud**\n${errMessage}`,
             timestamp: new Date().toISOString(),
-            actions: local.actions,
-            tags: local.tags,
-            source: "bna_expert_engine",
+            tags: ["Erreur Cloud LLM"],
           },
         ]);
       }
-    } catch {
-      if (context) {
-        const local = generateLocalAssistantResponse(contenu, context, {
-          history: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          dernierPreChiffrage,
-        });
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `ast-${Date.now()}`,
-            role: "assistant",
-            content: local.content,
-            timestamp: new Date().toISOString(),
-            actions: local.actions,
-            tags: local.tags,
-            source: "bna_expert_engine",
-          },
-        ]);
-      }
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : String(err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "assistant",
+          content: `⚠️ **Erreur réseau BNA-IA Cloud**\n${errMessage}`,
+          timestamp: new Date().toISOString(),
+          tags: ["Erreur Cloud LLM"],
+        },
+      ]);
     } finally {
       setIsSending(false);
     }

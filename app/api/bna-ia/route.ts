@@ -12,7 +12,6 @@ import {
   extraireDestinationLibre,
   extraireVilleMeteoLibre,
   formaterDateFrEuropeParis,
-  generateLocalAssistantResponse,
   normaliserMetierBna,
   type BnaIaChantierCtx,
   type BnaIaContext,
@@ -38,18 +37,58 @@ const DEFAULT_GROQ_MODELS = [
   "openai/gpt-oss-20b",
 ];
 
+type LlmCallResult =
+  | { ok: true; text: string; modelUsed?: string }
+  | { ok: false; error: string };
+
+/**
+ * Garantit un historique compatible avec Mistral, Gemini et Groq :
+ * - Supprime les messages assistant initiaux (ex: message d'accueil UI) avant le premier tour user
+ * - Fusionne les tours consécutifs de même rôle pour respecter l'alternance stricte user/assistant
+ */
+function sanitizeHistoryForLlm(history: BnaIaHistoryTurn[]): BnaIaHistoryTurn[] {
+  const cleaned: BnaIaHistoryTurn[] = [];
+  for (const turn of history) {
+    if (cleaned.length === 0 && turn.role !== "user") {
+      continue;
+    }
+    const prev = cleaned[cleaned.length - 1];
+    if (prev && prev.role === turn.role) {
+      prev.content = `${prev.content}\n\n${turn.content}`;
+    } else {
+      cleaned.push({ role: turn.role, content: turn.content });
+    }
+  }
+  // Le message utilisateur courant sera ajouté ensuite : éviter deux tours "user" consécutifs
+  while (cleaned.length > 0 && cleaned[cleaned.length - 1].role === "user") {
+    cleaned.pop();
+  }
+  return cleaned;
+}
+
+async function readHttpErrorSnippet(res: Response): Promise<string> {
+  try {
+    const raw = await res.text();
+    const compact = raw.replace(/\s+/g, " ").trim();
+    return compact.length > 220 ? `${compact.slice(0, 220)}...` : compact;
+  } catch {
+    return res.statusText || "Erreur HTTP";
+  }
+}
+
 async function callGeminiLlm(
   systemPrompt: string,
   userMessage: string,
   apiKey: string,
   history: BnaIaHistoryTurn[] = []
-): Promise<string | null> {
+): Promise<LlmCallResult> {
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
-      apiKey.trim()
-    )}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+      model
+    )}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
     const contents = [
       ...history.map((h) => ({
         role: h.role === "assistant" ? "model" : "user",
@@ -67,15 +106,24 @@ async function callGeminiLlm(
       }),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const snippet = await readHttpErrorSnippet(res);
+      return { ok: false, error: `Gemini (${model}) HTTP ${res.status}: ${snippet}` };
+    }
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts;
     if (Array.isArray(parts)) {
-      return parts.map((p: { text?: string }) => p.text || "").join("").trim() || null;
+      const text = parts.map((p: { text?: string }) => p.text || "").join("").trim();
+      if (text) return { ok: true, text, modelUsed: model };
     }
-    return null;
-  } catch {
-    return null;
+    const finishReason = data?.candidates?.[0]?.finishReason;
+    return {
+      ok: false,
+      error: `Gemini (${model}) réponse vide${finishReason ? ` (${finishReason})` : ""}`,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `Gemini (${model}) exception: ${msg}` };
   } finally {
     clearTimeout(timer);
   }
@@ -86,11 +134,13 @@ async function callGroqLlm(
   userMessage: string,
   apiKey: string,
   history: BnaIaHistoryTurn[] = []
-): Promise<{ text: string; modelUsed: string } | null> {
+): Promise<LlmCallResult> {
   const modelsToTry = [
-    ...(process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : []),
+    ...(process.env.GROQ_MODEL ? [process.env.GROQ_MODEL.trim()] : []),
     ...DEFAULT_GROQ_MODELS,
-  ].filter((m, idx, arr) => arr.indexOf(m) === idx);
+  ].filter((m, idx, arr) => Boolean(m) && arr.indexOf(m) === idx);
+
+  const modelErrors: string[] = [];
 
   for (const model of modelsToTry) {
     const controller = new AbortController();
@@ -114,17 +164,23 @@ async function callGroqLlm(
         }),
         signal: controller.signal,
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        const snippet = await readHttpErrorSnippet(res);
+        modelErrors.push(`${model} HTTP ${res.status}: ${snippet}`);
+        continue;
+      }
       const data = await res.json();
       const text = data?.choices?.[0]?.message?.content?.trim();
-      if (text) return { text, modelUsed: model };
-    } catch {
-      // Essayer modèle suivant
+      if (text) return { ok: true, text, modelUsed: model };
+      modelErrors.push(`${model} réponse vide`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      modelErrors.push(`${model} exception: ${msg}`);
     } finally {
       clearTimeout(timer);
     }
   }
-  return null;
+  return { ok: false, error: `Groq (${modelErrors.join("; ")})` };
 }
 
 async function callMistralLlm(
@@ -132,7 +188,8 @@ async function callMistralLlm(
   userMessage: string,
   apiKey: string,
   history: BnaIaHistoryTurn[] = []
-): Promise<string | null> {
+): Promise<LlmCallResult> {
+  const model = process.env.MISTRAL_MODEL?.trim() || "mistral-small-latest";
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
   try {
@@ -143,7 +200,7 @@ async function callMistralLlm(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.MISTRAL_MODEL || "mistral-small-latest",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           ...history.map((h) => ({ role: h.role, content: h.content })),
@@ -154,11 +211,17 @@ async function callMistralLlm(
       }),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const snippet = await readHttpErrorSnippet(res);
+      return { ok: false, error: `Mistral (${model}) HTTP ${res.status}: ${snippet}` };
+    }
     const data = await res.json();
-    return data?.choices?.[0]?.message?.content?.trim() || null;
-  } catch {
-    return null;
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (text) return { ok: true, text, modelUsed: model };
+    return { ok: false, error: `Mistral (${model}) réponse vide` };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `Mistral (${model}) exception: ${msg}` };
   } finally {
     clearTimeout(timer);
   }
@@ -635,7 +698,7 @@ export async function POST(req: NextRequest) {
       currentTimeParis: maintenant.heureParis,
     };
 
-    const history: BnaIaHistoryTurn[] = Array.isArray(body?.history)
+    const rawHistory: BnaIaHistoryTurn[] = Array.isArray(body?.history)
       ? (body.history as Array<{ role?: unknown; content?: unknown }>)
           .filter(
             (h) =>
@@ -643,12 +706,13 @@ export async function POST(req: NextRequest) {
               typeof h?.content === "string" &&
               h.content.trim().length > 0
           )
-          .slice(-10)
+          .slice(-50)
           .map((h) => ({
             role: h.role as "user" | "assistant",
             content: (h.content as string).trim(),
           }))
       : [];
+    const history = sanitizeHistoryForLlm(rawHistory);
 
     const dernierPreChiffrage =
       typeof body?.dernierPreChiffrage === "string" &&
@@ -663,25 +727,23 @@ export async function POST(req: NextRequest) {
       ? Math.max(1, Math.ceil(preChiffrage.heuresPoseTotal / 7))
       : 1;
 
-    // Météo en direct + Déplacement depuis Générac (33920) en parallèle sur toute destination libre
-    // (ou reprise depuis le dernier message utilisateur de l'historique pour les questions de suivi)
-    const dernierUserHistorique = [...history]
-      .reverse()
-      .find((h) => h.role === "user")?.content;
-    const textePourLieu = extraireDestinationLibre(messageNormalise)
-      ? messageNormalise
-      : dernierUserHistorique || messageNormalise;
-
-    const villeMeteo =
+    // Météo Open-Meteo (5 jours) + Déplacement depuis Générac (33920) en parallèle sur toute ville libre
+    // (« à / sur / vers / pour + Ville »), y compris reprise depuis l'historique pour les questions de suivi
+    const villeDansMessage =
       extraireVilleMeteoLibre(messageNormalise) ||
-      (history.length > 0 ? extraireVilleMeteoLibre(textePourLieu) : null);
-    const destinationLibre =
-      villeMeteo ||
-      (/d[ée]placement|trajet|km|chantier\s+(?:à|a|de|sur|vers)|frais/i.test(
-        textePourLieu
-      )
-        ? extraireDestinationLibre(textePourLieu)
-        : null);
+      extraireDestinationLibre(messageNormalise);
+    const villeDansHistorique = !villeDansMessage
+      ? [...history]
+          .reverse()
+          .filter((h) => h.role === "user")
+          .map(
+            (h) =>
+              extraireVilleMeteoLibre(h.content) ||
+              extraireDestinationLibre(h.content)
+          )
+          .find((v): v is string => Boolean(v)) ?? null
+      : null;
+    const destinationLibre = villeDansMessage || villeDansHistorique;
 
     if (destinationLibre) {
       const dejaDansChantier = context.chantiers.some(
@@ -690,13 +752,11 @@ export async function POST(req: NextRequest) {
           c.previsionsMeteo3J.length > 0 &&
           c.ville?.toLowerCase().includes(destinationLibre.toLowerCase())
       );
-      const deptsFrance = villeMeteo
-        ? adresseVersDepartements(destinationLibre)
-        : [];
+      const deptsFrance = adresseVersDepartements(destinationLibre);
       const tarifKm = await lireTarifCommercial(tenant.entrepriseId).catch(() => 1.0);
 
       const [meteoLibre, depLibre, vigLibre] = await Promise.all([
-        villeMeteo && !dejaDansChantier
+        !dejaDansChantier
           ? chargerMeteoChantier3Jours(destinationLibre)
           : Promise.resolve(null),
         chargerDeplacementDepuisGenerac(destinationLibre, tarifKm, nbJoursEstime),
@@ -723,84 +783,104 @@ export async function POST(req: NextRequest) {
     const escalade = detecterChantierComplexe(messageNormalise, preChiffrage);
     const actions = detectBnaIaActions(messageNormalise, context);
 
-    const mistralKey = process.env.MISTRAL_API_KEY;
-    const groqKey = process.env.GROQ_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY?.trim() || "";
     const geminiKey =
-      process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    const hasAnyLlmKey = Boolean(mistralKey || geminiKey || groqKey);
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() ||
+      process.env.GEMINI_API_KEY?.trim() ||
+      "";
+    const mistralKey = process.env.MISTRAL_API_KEY?.trim() || "";
 
-    // Moteur Local en mode « Calculateur silencieux uniquement » :
-    // Toutes les conversations passent par le Cloud LLM dès qu'une clé est configurée.
-    if (hasAnyLlmKey) {
-      const systemPrompt = buildSystemPromptContext(
-        context,
-        preChiffrage,
-        normalisation,
-        escalade,
-        dernierPreChiffrage
+    if (!groqKey && !geminiKey && !mistralKey) {
+      return NextResponse.json(
+        {
+          error:
+            "Aucune clé Cloud LLM configurée sur le serveur (GROQ_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY / GEMINI_API_KEY, MISTRAL_API_KEY).",
+        },
+        { status: 503 }
       );
-      let llmText: string | null = null;
-      let providerName = "";
+    }
 
-      if (mistralKey) {
-        llmText = await callMistralLlm(
-          systemPrompt,
-          messageNormalise,
-          mistralKey,
-          history
-        );
-        if (llmText) providerName = "Mistral";
-      }
-      if (!llmText && groqKey) {
-        const groqResult = await callGroqLlm(
-          systemPrompt,
-          messageNormalise,
-          groqKey,
-          history
-        );
-        if (groqResult) {
-          llmText = groqResult.text;
-          providerName = `Groq (${groqResult.modelUsed})`;
-        }
-      }
-      if (!llmText && geminiKey) {
-        llmText = await callGeminiLlm(
-          systemPrompt,
-          messageNormalise,
-          geminiKey,
-          history
-        );
-        if (llmText) providerName = "Gemini 2.5 Flash";
-      }
+    const systemPrompt = buildSystemPromptContext(
+      context,
+      preChiffrage,
+      normalisation,
+      escalade,
+      dernierPreChiffrage
+    );
 
-      if (llmText) {
-        return NextResponse.json({
-          content: llmText,
-          actions,
-          tags: [
-            providerName,
-            "BNA-IA Cloud",
-            ...(preChiffrage ? ["Pré-chiffrage Certifié"] : []),
-          ],
-          source: "cloud_llm",
-          preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
-        });
+    const llmErrors: string[] = [];
+    let llmText: string | null = null;
+    let providerName = "";
+
+    // Chaîne Cloud LLM : Groq (#1) -> Gemini (#2) -> Mistral (#3)
+    if (groqKey) {
+      const groqRes = await callGroqLlm(
+        systemPrompt,
+        messageNormalise,
+        groqKey,
+        history
+      );
+      if (groqRes.ok) {
+        llmText = groqRes.text;
+        providerName = `Groq (${groqRes.modelUsed || "openai/gpt-oss-120b"})`;
+      } else {
+        llmErrors.push(groqRes.error);
       }
     }
 
-    // Ultime filet de secours hors-ligne si aucune clé Cloud LLM ou si tous les appels échouent
-    const localResponse = generateLocalAssistantResponse(messageNormalise, context, {
-      history,
-      dernierPreChiffrage,
-    });
+    if (!llmText && geminiKey) {
+      const geminiRes = await callGeminiLlm(
+        systemPrompt,
+        messageNormalise,
+        geminiKey,
+        history
+      );
+      if (geminiRes.ok) {
+        llmText = geminiRes.text;
+        providerName = `Gemini (${geminiRes.modelUsed || "gemini-2.5-flash"})`;
+      } else {
+        llmErrors.push(geminiRes.error);
+      }
+    }
 
-    return NextResponse.json({
-      content: localResponse.content,
-      actions: localResponse.actions,
-      tags: ["Moteur Local BNA", ...localResponse.tags],
-      source: "bna_expert_engine",
-      preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
-    });
+    if (!llmText && mistralKey) {
+      const mistralRes = await callMistralLlm(
+        systemPrompt,
+        messageNormalise,
+        mistralKey,
+        history
+      );
+      if (mistralRes.ok) {
+        llmText = mistralRes.text;
+        providerName = `Mistral (${mistralRes.modelUsed || "mistral-small-latest"})`;
+      } else {
+        llmErrors.push(mistralRes.error);
+      }
+    }
+
+    if (llmText) {
+      return NextResponse.json({
+        content: llmText,
+        actions,
+        tags: [
+          providerName,
+          "BNA-IA Cloud",
+          ...(preChiffrage ? ["Pré-chiffrage Certifié"] : []),
+        ],
+        source: "cloud_llm",
+        preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
+      });
+    }
+
+    const technicalError = `Tous les fournisseurs Cloud LLM ont échoué : ${llmErrors.join(" | ")}`;
+    console.error("Erreur Cloud LLM POST /api/bna-ia :", technicalError);
+    return NextResponse.json(
+      {
+        error: technicalError,
+        details: llmErrors,
+      },
+      { status: 502 }
+    );
   } catch (err) {
     console.error("Erreur POST /api/bna-ia :", err);
     return NextResponse.json(

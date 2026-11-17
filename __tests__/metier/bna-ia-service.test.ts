@@ -650,4 +650,14 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     expect(repComplet.content).toContain("Bardage");
     expect(repComplet.tags).toContain("Météo");
   });
+
+  it("extrait correctement les villes libres après à / sur / vers / pour sans avaler demain, pour ou les verbes d'action", () => {
+    expect(extraireDestinationLibre("chantier à Madrid demain")).toBe("Madrid");
+    expect(extraireDestinationLibre("chantier sur Madrid pour vendredi")).toBe("Madrid");
+    expect(extraireDestinationLibre("déplacement vers Madrid")).toBe("Madrid");
+    expect(extraireDestinationLibre("météo pour Madrid jusqu'à vendredi")).toBe("Madrid");
+    expect(extraireDestinationLibre("météo pour demain à Madrid")).toBe("Madrid");
+    expect(extraireDestinationLibre("Explique les points clés pour chiffrer une Terrasse Mobile")).toBeNull();
+    expect(extraireDestinationLibre("Quels sont mes réserves PV à lever ?")).toBeNull();
+  });
 });
