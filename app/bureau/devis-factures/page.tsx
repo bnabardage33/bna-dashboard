@@ -23,8 +23,9 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import {
+  estContexteOssature,
   GAMME_MATERIAU_CONFIG,
-  getGammeLabelClient,
+  getGammeLibellesContextuels,
   normaliserGammeMateriau,
   type GammeMateriau,
 } from "@/types/catalogue";
@@ -415,13 +416,20 @@ function DevisContenu() {
           gamme_qualite: gammeQualite,
           pu_revient: ouv.pu_revient ?? null,
           designation: ouv.designation,
-          description: [
-            ouv.designation_devis || ouv.description,
-            ouv.code_ral ? `- Finition : ${ouv.code_ral}` : null,
-            `- Gamme : ${getGammeLabelClient(gammeQualite)}`,
-          ]
-            .filter(Boolean)
-            .join(" \n"),
+          description: (() => {
+            const ctxGamme = estContexteOssature({
+              famille: ouv.famille_label,
+              designation: ouv.designation,
+            });
+            const libGamme = getGammeLibellesContextuels(gammeQualite, ctxGamme);
+            return [
+              ouv.designation_devis || ouv.description,
+              ouv.code_ral ? `- Finition : ${ouv.code_ral}` : null,
+              `- ${libGamme.prefixDevis} : ${libGamme.labelClient}`,
+            ]
+              .filter(Boolean)
+              .join(" \n");
+          })(),
           qte: (() => {
             let surf = parseFloat(surfacePonctuelle.replace(",", "."));
             if (isNaN(surf) || surf <= 0) {

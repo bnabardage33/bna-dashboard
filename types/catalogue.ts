@@ -70,12 +70,103 @@ export function normaliserGammeMateriau(valeur: unknown): GammeMateriau {
   return "standard";
 }
 
+export type ContexteGammeMateriau = "standard" | "ossature";
+
+export interface GammeLibellesContextuels {
+  labelInterne: string;
+  labelClient: string;
+  description: string;
+  prefixDevis: "Gamme" | "Classe";
+}
+
+export const GAMME_OSSATURE_CONFIG: Record<
+  GammeMateriau,
+  Omit<GammeLibellesContextuels, "prefixDevis">
+> = {
+  eco: {
+    labelInterne: "Classe 2 (Sapin brut / abrité)",
+    labelClient: "Classe 2",
+    description: "Ossature secondaire sous abri / derrière pare-pluie étanche (EN 335)",
+  },
+  standard: {
+    labelInterne: "Classe 3 (Pin autoclave / Douglas)",
+    labelClient: "Classe 3",
+    description: "Standard DTU 45.4 / 41.2 pour ossature de bardage ventilé",
+  },
+  premium: {
+    labelInterne: "Classe 4 (Autoclave CTB-B+ / Mélèze)",
+    labelClient: "Classe 4",
+    description: "Recommandé pour lambourdes de terrasse, pieds de poteaux et zones humides",
+  },
+  prestige: {
+    labelInterne: "Classe 5 / Bois exotique (Ipé, Cumaru, Alu)",
+    labelClient: "Classe 5 / Exotique",
+    description: "Imputrescible haute stabilité pour structures exposées et terrasses haut de gamme",
+  },
+};
+
+/**
+ * Retourne les libellés adaptés au contexte métier :
+ * - `'standard'` : Essentiel / Classique / Premium / Signature
+ * - `'ossature'` : Classe 2 / Classe 3 / Classe 4 / Classe 5 / Exotique (EN 335)
+ */
+export function getGammeLibellesContextuels(
+  gamme: GammeMateriau,
+  contexte: ContexteGammeMateriau = "standard"
+): GammeLibellesContextuels {
+  const g = normaliserGammeMateriau(gamme);
+  if (contexte === "ossature") {
+    return {
+      ...GAMME_OSSATURE_CONFIG[g],
+      prefixDevis: "Classe",
+    };
+  }
+  const cfg = GAMME_MATERIAU_CONFIG[g];
+  return {
+    labelInterne: cfg.labelInterne,
+    labelClient: cfg.labelClient,
+    description: cfg.description,
+    prefixDevis: "Gamme",
+  };
+}
+
+/**
+ * Détecte automatiquement si un article appartient à l'ossature / structure bois
+ * (Ossature & Fixations Bardage, lambourdes Terrasse, poteaux/ossature bois Clôture).
+ */
+export function estContexteOssature(params: {
+  categorie?: string | null;
+  famille?: string | null;
+  designation?: string | null;
+  materiau?: string | null;
+}): ContexteGammeMateriau {
+  const cat = (params.categorie ?? "").toLowerCase();
+  const fam = (params.famille ?? "").toLowerCase();
+  const desig = (params.designation ?? "").toLowerCase();
+  const mat = (params.materiau ?? "").toLowerCase();
+
+  if (
+    fam.includes("ossature") ||
+    cat.includes("ossature") ||
+    cat === "lambourde" ||
+    (cat === "poteau" && (mat === "" || mat.includes("bois"))) ||
+    /\b(ossature|lambourde|chevron|tasseau|liteau|solive|poteau\s+bois)\b/.test(desig)
+  ) {
+    return "ossature";
+  }
+
+  return "standard";
+}
+
 /**
  * Retourne exclusivement le libellé valorisant destiné au client (devis PDF, portail client, récapitulatifs).
  * N'affiche jamais « Bas de gamme ».
  */
-export function getGammeLabelClient(gamme: unknown): string {
-  return GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(gamme)].labelClient;
+export function getGammeLabelClient(
+  gamme: unknown,
+  contexte: ContexteGammeMateriau = "standard"
+): string {
+  return getGammeLibellesContextuels(normaliserGammeMateriau(gamme), contexte).labelClient;
 }
 
 /**
@@ -92,6 +183,60 @@ export function getGammeBadgeClasses(gamme: GammeMateriau): string {
     case "prestige":
       return "bg-red-100 text-red-900 border border-red-300 font-semibold";
   }
+}
+
+/**
+ * Parse un champ décimal saisi au clavier (accepte virgule ou point).
+ */
+export function parseNombreDecimal(valeur: string | number | null | undefined): number {
+  if (typeof valeur === "number") return Number.isFinite(valeur) ? valeur : 0;
+  if (typeof valeur !== "string") return 0;
+  const n = parseFloat(valeur.trim().replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Calcule le Prix Unitaire HT conseillé à partir du coût de revient HT
+ * et du coefficient de marge cible de la gamme.
+ */
+export function calculerPrixVenteDepuisRevient(
+  puRevient: number,
+  gamme: unknown
+): number {
+  if (!Number.isFinite(puRevient) || puRevient <= 0) return 0;
+  const cfg = GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(gamme)];
+  return Number((puRevient * cfg.margeCibleDefaut).toFixed(2));
+}
+
+export interface IndicateurMargeTarif {
+  gamme: GammeMateriau;
+  labelClient: string;
+  coef: number;
+  margeEuro: number;
+  margePct: number;
+}
+
+/**
+ * Calcule les indicateurs de marge HT affichés dans l'onglet Tarifs.
+ */
+export function calculerIndicateurMargeTarif(
+  puVente: number,
+  puRevient: number,
+  gamme: unknown,
+  contexte: ContexteGammeMateriau = "standard"
+): IndicateurMargeTarif {
+  const gammeNorm = normaliserGammeMateriau(gamme);
+  const cfg = GAMME_MATERIAU_CONFIG[gammeNorm];
+  const lib = getGammeLibellesContextuels(gammeNorm, contexte);
+  const margeEuro = Number((puVente - puRevient).toFixed(2));
+  const margePct = puVente > 0 ? (margeEuro / puVente) * 100 : 0;
+  return {
+    gamme: gammeNorm,
+    labelClient: lib.labelClient,
+    coef: cfg.margeCibleDefaut,
+    margeEuro,
+    margePct,
+  };
 }
 
 export interface MateriauItem {

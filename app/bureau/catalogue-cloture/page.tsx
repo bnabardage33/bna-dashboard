@@ -7,10 +7,15 @@ import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import {
+  calculerIndicateurMargeTarif,
+  calculerPrixVenteDepuisRevient,
+  estContexteOssature,
   GAMME_MATERIAU_CONFIG,
   GAMMES_MATERIAU_ORDRE,
   getGammeBadgeClasses,
+  getGammeLibellesContextuels,
   normaliserGammeMateriau,
+  parseNombreDecimal,
   type GammeMateriau,
 } from "@/types/catalogue";
 
@@ -59,8 +64,47 @@ export default function CatalogueCloturePage() {
   const [formHauteur, setFormHauteur] = useState("0.15");
   const [formUnite, setFormUnite] = useState("u");
   const [formPrixAchat, setFormPrixAchat] = useState("12");
-  const [formPrixVente, setFormPrixVente] = useState("18.90");
+  const [formPrixVente, setFormPrixVente] = useState("15.60");
+  const [prixVenteModifieManuellement, setPrixVenteModifieManuellement] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const modifierClotureGamme = (nouvelleGamme: GammeMateriau) => {
+    setFormGamme(nouvelleGamme);
+    const revient = parseNombreDecimal(formPrixAchat);
+    if (revient > 0) {
+      setFormPrixVente(
+        calculerPrixVenteDepuisRevient(revient, nouvelleGamme).toFixed(2)
+      );
+      setPrixVenteModifieManuellement(false);
+    }
+  };
+
+  const modifierCloturePrixAchat = (valeur: string) => {
+    setFormPrixAchat(valeur);
+    const revient = parseNombreDecimal(valeur);
+    const venteActuelle = parseNombreDecimal(formPrixVente);
+    if (!prixVenteModifieManuellement || venteActuelle <= 0) {
+      if (revient > 0) {
+        setFormPrixVente(
+          calculerPrixVenteDepuisRevient(revient, formGamme).toFixed(2)
+        );
+      } else if (!prixVenteModifieManuellement) {
+        setFormPrixVente("");
+      }
+    }
+  };
+
+  const modifierCloturePrixVente = (valeur: string) => {
+    setFormPrixVente(valeur);
+    setPrixVenteModifieManuellement(parseNombreDecimal(valeur) > 0);
+  };
+
+  const appliquerCoefCloture = () => {
+    const revient = parseNombreDecimal(formPrixAchat);
+    if (revient <= 0) return;
+    setFormPrixVente(calculerPrixVenteDepuisRevient(revient, formGamme).toFixed(2));
+    setPrixVenteModifieManuellement(false);
+  };
 
   const chargerArticles = useCallback(async () => {
     setLoading(true);
@@ -270,14 +314,25 @@ export default function CatalogueCloturePage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-bold text-[#23272B]">{a.designation}</p>
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
-                              normaliserGammeMateriau(a.gamme_qualite)
-                            )}`}
-                            title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelInterne}
-                          >
-                            {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelClient}
-                          </span>
+                          {(() => {
+                            const gammeNorm = normaliserGammeMateriau(a.gamme_qualite);
+                            const ctxGamme = estContexteOssature({
+                              categorie: a.categorie,
+                              materiau: a.materiau,
+                              designation: a.designation,
+                            });
+                            const lib = getGammeLibellesContextuels(gammeNorm, ctxGamme);
+                            return (
+                              <span
+                                className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
+                                  gammeNorm
+                                )}`}
+                                title={lib.labelInterne}
+                              >
+                                {lib.labelClient}
+                              </span>
+                            );
+                          })()}
                         </div>
                         {a.reference && (
                           <p className="text-[11px] text-[#888888] font-mono">Réf: {a.reference}</p>
@@ -369,30 +424,41 @@ export default function CatalogueCloturePage() {
                   </select>
                 </div>
               </div>
-              <div>
-                <label htmlFor="cloture-gamme-qualite" className="font-semibold text-slate-300">
-                  Gamme matériau (Qualité)
-                </label>
-                <select
-                  id="cloture-gamme-qualite"
-                  value={formGamme}
-                  onChange={(e) => setFormGamme(normaliserGammeMateriau(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
-                >
-                  {GAMMES_MATERIAU_ORDRE.map((g) => {
-                    const cfg = GAMME_MATERIAU_CONFIG[g];
-                    const label =
-                      cfg.labelClient === cfg.labelInterne
-                        ? cfg.labelClient
-                        : `${cfg.labelClient} / ${cfg.labelInterne}`;
-                    return (
-                      <option key={g} value={g} className="bg-[#151C2C] text-white">
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
+              {(() => {
+                const ctxForm = estContexteOssature({
+                  categorie: formCat,
+                  materiau: formMat,
+                  designation: formDesignation,
+                });
+                return (
+                  <div>
+                    <label htmlFor="cloture-gamme-qualite" className="font-semibold text-slate-300">
+                      {ctxForm === "ossature"
+                        ? "Classe d'emploi bois (EN 335)"
+                        : "Gamme matériau (Qualité)"}
+                    </label>
+                    <select
+                      id="cloture-gamme-qualite"
+                      value={formGamme}
+                      onChange={(e) => modifierClotureGamme(normaliserGammeMateriau(e.target.value))}
+                      className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    >
+                      {GAMMES_MATERIAU_ORDRE.map((g) => {
+                        const lib = getGammeLibellesContextuels(g, ctxForm);
+                        const label =
+                          ctxForm === "ossature" || lib.labelClient === lib.labelInterne
+                            ? lib.labelInterne
+                            : `${lib.labelClient} / ${lib.labelInterne}`;
+                        return (
+                          <option key={g} value={g} className="bg-[#151C2C] text-white">
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                );
+              })()}
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <label className="font-semibold text-slate-300">Désignation</label>
@@ -442,22 +508,52 @@ export default function CatalogueCloturePage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-slate-300">Prix achat € HT</label>
+                  <label className="font-semibold text-slate-300">Coût de revient / Achat € HT</label>
                   <input
                     value={formPrixAchat}
-                    onChange={(e) => setFormPrixAchat(e.target.value)}
+                    onChange={(e) => modifierCloturePrixAchat(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-300">Prix vente € HT</label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="font-semibold text-slate-300">Prix vente € HT</label>
+                    {parseNombreDecimal(formPrixAchat) > 0 && (
+                      <button
+                        type="button"
+                        onClick={appliquerCoefCloture}
+                        className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                      >
+                        Appliquer coef ×{GAMME_MATERIAU_CONFIG[formGamme].margeCibleDefaut.toFixed(2)}
+                      </button>
+                    )}
+                  </div>
                   <input
                     value={formPrixVente}
-                    onChange={(e) => setFormPrixVente(e.target.value)}
+                    onChange={(e) => modifierCloturePrixVente(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   />
                 </div>
               </div>
+              {(() => {
+                const vente = parseNombreDecimal(formPrixVente);
+                const revient = parseNombreDecimal(formPrixAchat);
+                const ind = calculerIndicateurMargeTarif(vente, revient, formGamme);
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-[11px]">
+                    <span className="text-slate-300">
+                      Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
+                    </span>
+                    {vente > 0 && revient > 0 ? (
+                      <span className={`font-bold ${ind.margeEuro >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">Saisissez un coût d&apos;achat HT</span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-700/80 bg-[#111827] p-4">
               <button

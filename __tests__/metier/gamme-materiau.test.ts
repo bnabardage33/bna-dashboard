@@ -1,9 +1,14 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
 import {
+  calculerIndicateurMargeTarif,
+  calculerPrixVenteDepuisRevient,
+  estContexteOssature,
   GAMME_MATERIAU_CONFIG,
   getGammeLabelClient,
+  getGammeLibellesContextuels,
   normaliserGammeMateriau,
+  parseNombreDecimal,
 } from "@/types/catalogue";
 import { calculerBardagePro } from "@/lib/bardage/pro/quantitatifs-contrat";
 import { calculerTerrasseProGeometrie } from "@/lib/terrasse/pro/quantitatifs-contrat";
@@ -130,5 +135,40 @@ describe("Gamme Matériau (4 niveaux : eco, standard, premium, prestige)", () =>
     expect(cloPres.gamme_qualite).toBe("prestige");
     expect(cloPres.margeCibleDefaut).toBe(1.40);
     expect(cloPres.tempsPose.totalHeures).toBeGreaterThan(cloStd.tempsPose.totalHeures);
+  });
+
+  it("calcule automatiquement le prix unitaire HT et la marge depuis le coût de revient et la gamme", () => {
+    expect(parseNombreDecimal("120,40")).toBe(120.4);
+    expect(parseNombreDecimal("")).toBe(0);
+
+    expect(calculerPrixVenteDepuisRevient(100, "eco")).toBe(125);
+    expect(calculerPrixVenteDepuisRevient(100, "standard")).toBe(130);
+    expect(calculerPrixVenteDepuisRevient(120.4, "premium")).toBe(162.54);
+    expect(calculerPrixVenteDepuisRevient(100, "prestige")).toBe(140);
+    expect(calculerPrixVenteDepuisRevient(0, "premium")).toBe(0);
+
+    const ind = calculerIndicateurMargeTarif(162.54, 120.4, "premium");
+    expect(ind.labelClient).toBe("Premium");
+    expect(ind.coef).toBe(1.35);
+    expect(ind.margeEuro).toBe(42.14);
+    expect(ind.margePct).toBeCloseTo(25.9259, 2);
+  });
+
+  it("adapte les libellés de gamme en Classe 2 / 3 / 4 / 5 (EN 335) pour le contexte ossature", () => {
+    expect(estContexteOssature({ famille: "Ossature & Fixations" })).toBe("ossature");
+    expect(estContexteOssature({ categorie: "lambourde" })).toBe("ossature");
+    expect(estContexteOssature({ categorie: "poteau", materiau: "BOIS" })).toBe("ossature");
+    expect(estContexteOssature({ famille: "Bardage Bois" })).toBe("standard");
+
+    const c2 = getGammeLibellesContextuels("eco", "ossature");
+    const c3 = getGammeLibellesContextuels("standard", "ossature");
+    const c4 = getGammeLibellesContextuels("premium", "ossature");
+    const c5 = getGammeLibellesContextuels("prestige", "ossature");
+
+    expect(c2.labelClient).toBe("Classe 2");
+    expect(c3.labelClient).toBe("Classe 3");
+    expect(c4.labelClient).toBe("Classe 4");
+    expect(c4.prefixDevis).toBe("Classe");
+    expect(c5.labelClient).toBe("Classe 5 / Exotique");
   });
 });

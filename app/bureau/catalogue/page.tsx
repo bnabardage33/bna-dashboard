@@ -26,9 +26,11 @@ import ProductFormModal, {
 } from "@/components/catalogue/ProductFormModal";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import {
+  estContexteOssature,
   GAMME_MATERIAU_CONFIG,
   GAMMES_MATERIAU_ORDRE,
   getGammeBadgeClasses,
+  getGammeLibellesContextuels,
   normaliserGammeMateriau,
   type GammeMateriau,
 } from "@/types/catalogue";
@@ -907,14 +909,25 @@ export default function CataloguePage() {
                         </span>
                       )}
 
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
-                          normaliserGammeMateriau(o.gamme_qualite)
-                        )}`}
-                        title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(o.gamme_qualite)].labelInterne}
-                      >
-                        {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(o.gamme_qualite)].labelClient}
-                      </span>
+                      {(() => {
+                        const gammeNorm = normaliserGammeMateriau(o.gamme_qualite);
+                        const ctxGamme = estContexteOssature({
+                          categorie: o.categorie,
+                          famille: o.famille_label,
+                          designation: o.designation,
+                        });
+                        const lib = getGammeLibellesContextuels(gammeNorm, ctxGamme);
+                        return (
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
+                              gammeNorm
+                            )}`}
+                            title={lib.labelInterne}
+                          >
+                            {lib.labelClient}
+                          </span>
+                        );
+                      })()}
 
                       {/* Statut Coût Revient */}
                       {resolu.statut_cout === "a_completer" ? (

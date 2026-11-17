@@ -16,9 +16,11 @@ import ProductFormModal, {
 } from "@/components/catalogue/ProductFormModal";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import {
+  estContexteOssature,
   GAMME_MATERIAU_CONFIG,
   GAMMES_MATERIAU_ORDRE,
   getGammeBadgeClasses,
+  getGammeLibellesContextuels,
   normaliserGammeMateriau,
   type GammeMateriau,
 } from "@/types/catalogue";
@@ -507,14 +509,24 @@ export default function CatalogueTerrassePage() {
             >
               {prestation ? "Main-d'œuvre" : libelleCategorieAccessoire(a.categorie)}
             </span>
-            <span
-              className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
-                normaliserGammeMateriau(a.gamme_qualite)
-              )}`}
-              title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelInterne}
-            >
-              {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelClient}
-            </span>
+            {(() => {
+              const gammeNorm = normaliserGammeMateriau(a.gamme_qualite);
+              const ctxGamme = estContexteOssature({
+                categorie: a.categorie,
+                designation: etiquette,
+              });
+              const lib = getGammeLibellesContextuels(gammeNorm, ctxGamme);
+              return (
+                <span
+                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] ${getGammeBadgeClasses(
+                    gammeNorm
+                  )}`}
+                  title={lib.labelInterne}
+                >
+                  {lib.labelClient}
+                </span>
+              );
+            })()}
           </div>
           <div className="flex items-center gap-1">
             <button

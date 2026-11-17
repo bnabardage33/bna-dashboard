@@ -26,9 +26,15 @@ import {
 } from "./types";
 import { useScraping } from "@/hooks/useScrapingCatalogue";
 import {
+  calculerIndicateurMargeTarif,
+  calculerPrixVenteDepuisRevient,
+  estContexteOssature,
   GAMME_MATERIAU_CONFIG,
   GAMMES_MATERIAU_ORDRE,
+  getGammeLibellesContextuels,
   normaliserGammeMateriau,
+  parseNombreDecimal,
+  type GammeMateriau,
 } from "@/types/catalogue";
 
 export interface ProductImportCandidates {
@@ -149,11 +155,34 @@ export default function ProductFormModal({
   );
   const [activeTab, setActiveTab] = useState<Onglet>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [puHtModifieManuellement, setPuHtModifieManuellement] = useState<boolean>(() => {
+    if (
+      initial &&
+      (initial.kind === "BARDAGE" || initial.kind === "TERRASSE_ACCESSOIRE")
+    ) {
+      return parseNombreDecimal(initial.pu_ht) > 0;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (open) {
-      setValues(valeurInitiale(type, initial, typeCoutDefaut, initialCategorie, initialTypeCout));
+      const initVal = valeurInitiale(
+        type,
+        initial,
+        typeCoutDefaut,
+        initialCategorie,
+        initialTypeCout
+      );
+      setValues(initVal);
       setActiveTab("general");
+      setPuHtModifieManuellement(
+        Boolean(
+          initial &&
+            (initVal.kind === "BARDAGE" || initVal.kind === "TERRASSE_ACCESSOIRE") &&
+            parseNombreDecimal(initVal.pu_ht) > 0
+        )
+      );
     }
   }, [open, initial, type, typeCoutDefaut, initialCategorie, initialTypeCout]);
 
@@ -170,20 +199,96 @@ export default function ProductFormModal({
   const patch = (p: Record<string, unknown>) =>
     setValues((prev) => ({ ...prev, ...p } as ProductDraft));
 
-  // Synchronisation HT ↔ TTC (Bardage) : identique au modal historique.
+  // Synchronisation HT ↔ TTC (Bardage) + calcul automatique depuis Coût de revient HT.
   const modifierPuHt = (valeur: string) => {
-    const n = parseFloat(valeur.replace(",", ".")) || 0;
-    patch({
-      pu_ht: valeur,
-      prix_ttc: valeur.trim() === "" ? "" : (n * 1.2).toFixed(2).replace(".", ","),
-    });
+    const n = parseNombreDecimal(valeur);
+    setPuHtModifieManuellement(n > 0);
+    if (values.kind === "BARDAGE") {
+      patch({
+        pu_ht: valeur,
+        prix_ttc: valeur.trim() === "" ? "" : (n * 1.2).toFixed(2).replace(".", ","),
+      });
+      return;
+    }
+    patch({ pu_ht: valeur });
   };
   const modifierPrixTtc = (valeur: string) => {
-    const n = parseFloat(valeur.replace(",", ".")) || 0;
+    const n = parseNombreDecimal(valeur);
+    setPuHtModifieManuellement(n > 0);
     patch({
       prix_ttc: valeur,
       pu_ht: valeur.trim() === "" ? "" : (n / 1.2).toFixed(2).replace(".", ","),
     });
+  };
+  const modifierPuRevient = (valeur: string) => {
+    const revient = parseNombreDecimal(valeur);
+    const puHtActuel =
+      values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE"
+        ? parseNombreDecimal(values.pu_ht)
+        : 0;
+    const doitAutoCalculer =
+      (values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE") &&
+      (!puHtModifieManuellement || puHtActuel <= 0);
+
+    if (!doitAutoCalculer) {
+      patch({ pu_revient: valeur });
+      return;
+    }
+
+    if (revient > 0) {
+      const vente = calculerPrixVenteDepuisRevient(revient, values.gamme_qualite);
+      const venteStr = vente.toFixed(2);
+      if (values.kind === "BARDAGE") {
+        patch({
+          pu_revient: valeur,
+          pu_ht: venteStr,
+          prix_ttc: (vente * 1.2).toFixed(2).replace(".", ","),
+        });
+      } else {
+        patch({ pu_revient: valeur, pu_ht: venteStr });
+      }
+      return;
+    }
+
+    if (values.kind === "BARDAGE") {
+      patch({ pu_revient: valeur, pu_ht: "", prix_ttc: "" });
+    } else {
+      patch({ pu_revient: valeur, pu_ht: "" });
+    }
+  };
+  const appliquerCoefGammeSurPuHt = (gammeCible?: GammeMateriau) => {
+    if (values.kind !== "BARDAGE" && values.kind !== "TERRASSE_ACCESSOIRE") return;
+    const revient = parseNombreDecimal(values.pu_revient);
+    if (revient <= 0) return;
+    const vente = calculerPrixVenteDepuisRevient(
+      revient,
+      gammeCible ?? values.gamme_qualite
+    );
+    const venteStr = vente.toFixed(2);
+    setPuHtModifieManuellement(false);
+    if (values.kind === "BARDAGE") {
+      patch({
+        ...(gammeCible ? { gamme_qualite: gammeCible } : {}),
+        pu_ht: venteStr,
+        prix_ttc: (vente * 1.2).toFixed(2).replace(".", ","),
+      });
+    } else {
+      patch({
+        ...(gammeCible ? { gamme_qualite: gammeCible } : {}),
+        pu_ht: venteStr,
+      });
+    }
+  };
+  const modifierGammeQualite = (nouvelleGamme: GammeMateriau) => {
+    if (
+      (values.kind === "BARDAGE" ||
+        (values.kind === "TERRASSE_ACCESSOIRE" && values.type_cout === "main_oeuvre")) &&
+      parseNombreDecimal(values.pu_revient) > 0
+    ) {
+      appliquerCoefGammeSurPuHt(nouvelleGamme);
+      return;
+    }
+    patch({ gamme_qualite: nouvelleGamme });
   };
 
   // Prestation = main-d'œuvre, quel que soit le catalogue ; côté Terrasse elle
@@ -194,6 +299,15 @@ export default function ProductFormModal({
   const estPrestationAccessoire =
     values.kind === "TERRASSE_ACCESSOIRE" && values.type_cout === "main_oeuvre";
   const afficheDimensions = values.kind !== "TERRASSE_ACCESSOIRE" && !estMainOeuvre;
+  const contexteGamme = estContexteOssature({
+    categorie:
+      values.kind === "TERRASSE_ACCESSOIRE" || values.kind === "BARDAGE"
+        ? values.categorie
+        : undefined,
+    famille: values.kind === "BARDAGE" ? values.famille_label : undefined,
+    designation: values.designation,
+    materiau: values.kind === "TERRASSE_LAME" ? values.type_material : undefined,
+  });
 
   const titre = (() => {
     if (values.kind === "TERRASSE_LAME") return initial ? "Modifier la lame" : "Nouvelle lame";
@@ -447,7 +561,9 @@ export default function ProductFormModal({
               <div className="rounded-lg border border-slate-700 bg-[#111827] p-3 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="chp-gamme-qualite" className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                    Gamme matériau (Qualité &amp; Positionnement)
+                    {contexteGamme === "ossature"
+                      ? "Classe d'emploi bois (EN 335)"
+                      : "Gamme matériau (Qualité & Positionnement)"}
                   </label>
                   <span className="text-[11px] font-semibold text-slate-400">
                     Pose ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].coefTempsPose.toFixed(2)} · Marge cible ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].margeCibleDefaut.toFixed(2)}
@@ -457,16 +573,16 @@ export default function ProductFormModal({
                   id="chp-gamme-qualite"
                   value={normaliserGammeMateriau(values.gamme_qualite)}
                   onChange={(e) =>
-                    patch({ gamme_qualite: normaliserGammeMateriau(e.target.value) })
+                    modifierGammeQualite(normaliserGammeMateriau(e.target.value))
                   }
                   className="w-full rounded-lg border border-slate-700 bg-[#151C2C] p-2 text-sm font-medium text-slate-100 focus:border-[#E30613] focus:outline-none"
                 >
                   {GAMMES_MATERIAU_ORDRE.map((g) => {
-                    const cfg = GAMME_MATERIAU_CONFIG[g];
+                    const lib = getGammeLibellesContextuels(g, contexteGamme);
                     const label =
-                      cfg.labelClient === cfg.labelInterne
-                        ? cfg.labelClient
-                        : `${cfg.labelClient} / ${cfg.labelInterne}`;
+                      contexteGamme === "ossature" || lib.labelClient === lib.labelInterne
+                        ? lib.labelInterne
+                        : `${lib.labelClient} / ${lib.labelInterne}`;
                     return (
                       <option key={g} value={g} className="bg-[#151C2C] text-slate-100">
                         {label}
@@ -475,7 +591,7 @@ export default function ProductFormModal({
                   })}
                 </select>
                 <p className="text-[11px] text-slate-400">
-                  {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].description}
+                  {getGammeLibellesContextuels(normaliserGammeMateriau(values.gamme_qualite), contexteGamme).description}
                 </p>
               </div>
             )}
@@ -757,14 +873,27 @@ export default function ProductFormModal({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="chp-pu-ht" className={labelCls}>Prix Unitaire HT (€)</label>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <label htmlFor="chp-pu-ht" className="text-xs font-semibold text-gray-400">
+                        Prix Unitaire HT (€)
+                      </label>
+                      {parseNombreDecimal(values.pu_revient) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => appliquerCoefGammeSurPuHt()}
+                          className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                        >
+                          Appliquer coef ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].margeCibleDefaut.toFixed(2)}
+                        </button>
+                      )}
+                    </div>
                     <input id="chp-pu-ht" type="text" inputMode="decimal" value={values.pu_ht}
                       onChange={(e) => modifierPuHt(e.target.value)} className={inputCls} />
                   </div>
                   <div>
                     <label htmlFor="chp-pu-revient" className={labelCls}>Coût de revient HT (€)</label>
                     <input id="chp-pu-revient" type="text" inputMode="decimal" value={values.pu_revient}
-                      onChange={(e) => patch({ pu_revient: e.target.value })} className={inputCls} />
+                      onChange={(e) => modifierPuRevient(e.target.value)} className={inputCls} />
                   </div>
                 </div>
                 <div>
@@ -774,22 +903,26 @@ export default function ProductFormModal({
                   <input id="chp-prix-ttc" type="text" inputMode="decimal" value={values.prix_ttc}
                     onChange={(e) => modifierPrixTtc(e.target.value)} className={inputCls} />
                 </div>
-                {estMainOeuvre && (() => {
-                  const vente = parseFloat(values.pu_ht.replace(",", ".")) || 0;
-                  const revient = parseFloat(values.pu_revient.replace(",", ".")) || 0;
-                  if (vente > 0 && revient > 0) {
-                    const marge = vente - revient;
-                    const margePct = (marge / vente) * 100;
-                    return (
-                      <div className="mt-3 flex items-center justify-between rounded bg-violet-900/30 px-3 py-2 border border-violet-500/20">
-                        <span className="text-xs font-medium text-violet-300">Marge brute estimée</span>
-                        <span className={`text-sm font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                          {fmtEuro(marge)} <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
+                {(() => {
+                  const vente = parseNombreDecimal(values.pu_ht);
+                  const revient = parseNombreDecimal(values.pu_revient);
+                  const ind = calculerIndicateurMargeTarif(vente, revient, values.gamme_qualite, contexteGamme);
+                  return (
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                      <span className="font-medium text-slate-300">
+                        Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
+                      </span>
+                      {vente > 0 && revient > 0 ? (
+                        <span className={`font-bold ${ind.margeEuro >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                          Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
                         </span>
-                      </div>
-                    );
-                  }
-                  return null;
+                      ) : (
+                        <span className="text-slate-400">
+                          Saisissez un coût de revient HT pour calculer le prix conseillé
+                        </span>
+                      )}
+                    </div>
+                  );
                 })()}
               </div>
             )}
@@ -850,9 +983,22 @@ export default function ProductFormModal({
                   </div>
                   {estPrestationAccessoire ? (
                     <div>
-                      <label htmlFor="chp-pu-ht-acc" className={labelCls}>Prix unitaire HT (€)</label>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <label htmlFor="chp-pu-ht-acc" className="text-xs font-semibold text-gray-400">
+                          Prix unitaire HT (€)
+                        </label>
+                        {parseNombreDecimal(values.pu_revient) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => appliquerCoefGammeSurPuHt()}
+                            className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                          >
+                            Appliquer coef ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].margeCibleDefaut.toFixed(2)}
+                          </button>
+                        )}
+                      </div>
                       <input id="chp-pu-ht-acc" type="text" inputMode="decimal" value={values.pu_ht}
-                        onChange={(e) => patch({ pu_ht: e.target.value })} className={inputCls} />
+                        onChange={(e) => modifierPuHt(e.target.value)} className={inputCls} />
                     </div>
                   ) : (
                     <div>
@@ -867,24 +1013,28 @@ export default function ProductFormModal({
                     <div>
                       <label htmlFor="chp-pu-revient-acc" className={labelCls}>Coût de revient HT (€)</label>
                       <input id="chp-pu-revient-acc" type="text" inputMode="decimal" value={values.pu_revient}
-                        onChange={(e) => patch({ pu_revient: e.target.value })} className={inputCls} />
+                        onChange={(e) => modifierPuRevient(e.target.value)} className={inputCls} />
                     </div>
                     {(() => {
-                      const vente = parseFloat(values.pu_ht.replace(",", ".")) || 0;
-                      const revient = parseFloat(values.pu_revient.replace(",", ".")) || 0;
-                      if (vente > 0 && revient > 0) {
-                        const marge = vente - revient;
-                        const margePct = (marge / vente) * 100;
-                        return (
-                          <div className="mt-3 flex items-center justify-between rounded bg-violet-900/30 px-3 py-2 border border-violet-500/20">
-                            <span className="text-xs font-medium text-violet-300">Marge brute estimée</span>
-                            <span className={`text-sm font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                              {fmtEuro(marge)} <span className="text-xs opacity-70">({margePct.toFixed(1)}%)</span>
+                      const vente = parseNombreDecimal(values.pu_ht);
+                      const revient = parseNombreDecimal(values.pu_revient);
+                      const ind = calculerIndicateurMargeTarif(vente, revient, values.gamme_qualite, contexteGamme);
+                      return (
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                          <span className="font-medium text-slate-300">
+                            Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
+                          </span>
+                          {vente > 0 && revient > 0 ? (
+                            <span className={`font-bold ${ind.margeEuro >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
                             </span>
-                          </div>
-                        );
-                      }
-                      return null;
+                          ) : (
+                            <span className="text-slate-400">
+                              Saisissez un coût de revient HT pour calculer le prix conseillé
+                            </span>
+                          )}
+                        </div>
+                      );
                     })()}
                   </>
                 )}
