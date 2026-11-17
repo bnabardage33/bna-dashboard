@@ -21,8 +21,11 @@ export default async function AccueilChantierPage() {
     await chargerDonneesAccueil(supabase);
 
   return (
-    <div className="relative w-full overflow-hidden">
-      <div id="accueil-container" className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-6 sm:gap-8 px-4 pb-8">
+    <div className="min-h-screen bg-[#F3F3F1] text-[#23272B]">
+      <div
+        id="accueil-container"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6"
+      >
         <AccueilProfessionnel titre="Accueil Chantier" />
         <DashboardAccueil
           notesInitiales={notes}

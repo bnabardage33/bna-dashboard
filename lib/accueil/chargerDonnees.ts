@@ -8,6 +8,7 @@ export type ChantierAPreparer = {
   id: string;
   nom: string | null;
   adresse: string | null;
+  metier?: string | null;
 };
 
 export type NotificationAccueil = {
@@ -40,7 +41,7 @@ async function chargerChantiersAPreparer(
   try {
     const { data, error } = await supabase
       .from('chantiers')
-      .select('id, nom, adresse_chantier')
+      .select('id, nom, adresse_chantier, metier')
       .eq('statut', 'prevu')
       .order('created_at', { ascending: false })
       .limit(5);
@@ -49,6 +50,7 @@ async function chargerChantiersAPreparer(
       id: c.id,
       nom: c.nom,
       adresse: c.adresse_chantier,
+      metier: c.metier,
     }));
   } catch {
     return [];

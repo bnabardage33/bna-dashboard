@@ -12,7 +12,7 @@ const PAGE_CHANTIER = CODE(lire("app/terrain/accueil/page.tsx"));
 describe("Phase 2 — Accueil & Cockpit Principal Responsive", () => {
   describe("Structure et conteneur principal", () => {
     it("la page Accueil Chantier utilise un conteneur borné et centré", () => {
-      expect(PAGE_CHANTIER).toContain("max-w-7xl");
+      expect(PAGE_CHANTIER).toContain("max-w-6xl");
       expect(PAGE_CHANTIER).toContain("mx-auto");
       expect(PAGE_CHANTIER).toContain("px-4");
       expect(PAGE_CHANTIER).toContain("<AccueilProfessionnel");
@@ -27,39 +27,41 @@ describe("Phase 2 — Accueil & Cockpit Principal Responsive", () => {
     });
   });
 
-  describe("Grille des Métiers (Bardage, Terrasse, Clôture)", () => {
-    it("la grille des métiers s'adapte sur 1 colonne mobile et 3 colonnes desktop", () => {
+  describe("Grille des Métiers & BNA-IA (Bardage, Terrasse, Clôture, BNA-IA)", () => {
+    it("la grille des métiers s'adapte en 1 col mobile, 2x2 tablette et 4 cols desktop", () => {
       expect(ACCUEIL_PRO).toContain("grid-cols-1");
-      expect(ACCUEIL_PRO).toContain("md:grid-cols-3");
+      expect(ACCUEIL_PRO).toContain("sm:grid-cols-2");
+      expect(ACCUEIL_PRO).toContain("lg:grid-cols-4");
     });
 
     it("les cartes métiers disposent d'effets visuels et de hauteur minimale adaptée", () => {
-      expect(ACCUEIL_PRO).toContain("min-h-44");
-      expect(ACCUEIL_PRO).toContain("group-hover:-translate-y-1");
-      expect(ACCUEIL_PRO).toContain("group-hover:border-[#B85B2B]/60");
+      expect(ACCUEIL_PRO).toContain("min-h-40");
+      expect(ACCUEIL_PRO).toContain("group-hover:-translate-y-0.5");
+      expect(ACCUEIL_PRO).toContain("group-hover:border-[#B85B2B]/50");
     });
   });
 
-  describe("Accès rapides du socle commun", () => {
-    it("la grille s'adapte en 2 cols (mobile), 3 cols (tablette) et 6 cols (desktop)", () => {
-      expect(ACCUEIL_PRO).toContain("grid-cols-2");
-      expect(ACCUEIL_PRO).toContain("sm:grid-cols-3");
-      expect(ACCUEIL_PRO).toContain("lg:grid-cols-6");
+  describe("Section métiers sans grille socle commun", () => {
+    it("la section métiers inclut l'emplacement réservé BNA-IA sans grille socle commun", () => {
+      expect(ACCUEIL_PRO).toContain("BNA-IA · Centre de contrôle IA");
+      expect(ACCUEIL_PRO).toContain("border-dashed border-[#B85B2B]/40");
+      expect(ACCUEIL_PRO).not.toContain("ACCES_TRANSVERSES");
     });
 
-    it("tous les accès rapides ont des cibles tactiles confortables (min-h-12)", () => {
-      expect(ACCUEIL_PRO).toContain("min-h-12");
-      expect(ACCUEIL_PRO).toContain("hover:-translate-y-0.5");
+    it("les cartes métiers utilisent la charte claire BNA", () => {
+      expect(ACCUEIL_PRO).toContain("border-[#E5E5E5]");
+      expect(ACCUEIL_PRO).toContain("bg-white");
+      expect(ACCUEIL_PRO).toContain("group-hover:-translate-y-0.5");
     });
   });
 
-  describe("Cockpit DashboardAccueil et 5 blocs fonctionnels", () => {
-    it("les 5 blocs fonctionnels ordonnés sont préservés", () => {
-      expect(DASHBOARD).toContain("Votre activité");
-      expect(DASHBOARD).toContain("Météo générale");
-      expect(DASHBOARD).toContain("Impact météo sur les chantiers");
+  describe("Cockpit DashboardAccueil et structure épurée", () => {
+    it("les blocs fonctionnels ordonnés sont préservés", () => {
+      expect(DASHBOARD).toContain("Actions rapides du jour");
+      expect(DASHBOARD).toContain("Impact météo sur les chantiers actifs");
       expect(DASHBOARD).toContain("Chantiers à préparer");
-      expect(DASHBOARD).toContain("Notes & alertes");
+      expect(DASHBOARD).toContain("Alertes");
+      expect(DASHBOARD).toContain("Dernières notes vocales");
     });
 
     it("l'assistant vocal BoutonMicroNote et sa bulle de statut restent actifs", () => {
@@ -68,23 +70,18 @@ describe("Phase 2 — Accueil & Cockpit Principal Responsive", () => {
       expect(DASHBOARD).toContain('role="status"');
     });
 
-    it("la grille principale 12 colonnes optimise la météo et l'impact sur desktop", () => {
-      expect(DASHBOARD).toContain(
-        "grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-12"
-      );
-      expect(DASHBOARD).toContain('className="xl:col-span-5"');
-      expect(DASHBOARD).toContain('className="xl:col-span-7"');
+    it("le cockpit quotidien s'organise en 2 colonnes sur desktop", () => {
+      expect(DASHBOARD).toContain("grid grid-cols-1 items-start gap-5 lg:grid-cols-2");
     });
 
     it("les cartes de chantiers à préparer disposent d'indicateurs interactifs", () => {
-      expect(DASHBOARD).toContain("hover:-translate-y-0.5");
       expect(DASHBOARD).toContain("hover:border-[#B85B2B]/50");
       expect(DASHBOARD).toContain("group-hover:text-[#B85B2B]");
     });
 
     it("les cartes de notes récentes disposent d'un feedback au survol", () => {
-      expect(DASHBOARD).toContain("hover:-translate-y-0.5");
-      expect(DASHBOARD).toContain("hover:border-[#B85B2B]/50");
+      expect(DASHBOARD).toContain("hover:border-[#B85B2B]/40");
+      expect(DASHBOARD).toContain("hover:bg-white");
     });
   });
 
@@ -101,22 +98,14 @@ describe("Phase 2 — Accueil & Cockpit Principal Responsive", () => {
     PALIERS.forEach(({ w, type }) => {
       it(`le layout est conforme au palier ${w}px (${type})`, () => {
         if (w < 768) {
-          // Mobile : 1 col pour métiers, 2 cols pour accès rapides, 1 col pour dashboard
           expect(ACCUEIL_PRO).toContain("grid-cols-1");
-          expect(ACCUEIL_PRO).toContain("grid-cols-2");
           expect(DASHBOARD).toContain("grid-cols-1");
         } else if (w < 1024) {
-          // Tablette : 3 cols pour métiers, 3 cols pour accès rapides, 2 cols pour dashboard
-          expect(ACCUEIL_PRO).toContain("md:grid-cols-3");
-          expect(ACCUEIL_PRO).toContain("sm:grid-cols-3");
-          expect(DASHBOARD).toContain("md:grid-cols-2");
+          expect(ACCUEIL_PRO).toContain("sm:grid-cols-2");
+          expect(DASHBOARD).toContain("grid-cols-1");
         } else {
-          // Desktop (>= 1024px) : 3 cols pour métiers, 6 cols pour accès rapides, grille 12 cols
-          expect(ACCUEIL_PRO).toContain("md:grid-cols-3");
-          expect(ACCUEIL_PRO).toContain("lg:grid-cols-6");
-          expect(DASHBOARD).toContain("xl:grid-cols-12");
-          expect(DASHBOARD).toContain("xl:col-span-5");
-          expect(DASHBOARD).toContain("xl:col-span-7");
+          expect(ACCUEIL_PRO).toContain("lg:grid-cols-4");
+          expect(DASHBOARD).toContain("lg:grid-cols-2");
         }
       });
     });

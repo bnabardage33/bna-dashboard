@@ -76,19 +76,10 @@ describe('AccueilProfessionnel', () => {
     expect(lienCloture?.textContent).toMatch(/Chantiers clôture · hub dédié/i);
   });
 
-  it('conserve les six raccourcis communs avec leurs destinations', async () => {
+  it('supprime la grille redondante des six raccourcis communs', async () => {
     const rendu = await rendreAccueil();
     const navSocle = rendu.querySelector<HTMLElement>('nav[aria-label="Fonctionnalités communes"]');
-    const liens = [...(navSocle?.querySelectorAll<HTMLAnchorElement>('a') ?? [])];
-
-    expect(liens.map((lien) => [lien.textContent?.trim(), lien.getAttribute('href')])).toEqual([
-      ['Chantiers', '/terrain/chantier'],
-      ['Clients', '/bureau/clients'],
-      ['Devis', '/bureau/devis-factures'],
-      ['Catalogue Bardage', '/bureau/catalogue'],
-      ['Catalogue Terrasse', '/bureau/catalogue-terrasse'],
-      ['Finance', '/finance'],
-    ]);
+    expect(navSocle).toBeNull();
   });
 
   it('ne répète pas le logo déjà affiché par le layout global', async () => {
@@ -108,6 +99,5 @@ describe('AccueilProfessionnel', () => {
     expect(rendu.querySelector('nav[aria-label="Métiers"]')).toBeNull();
     expect(lienBardage?.getAttribute('aria-label')).toBe('Bardage — chantiers existants, hub commun');
     expect(lienBardage?.className).toContain('focus-visible:ring-2');
-    expect(rendu.querySelector('nav[aria-label="Fonctionnalités communes"]')).not.toBeNull();
   });
 });

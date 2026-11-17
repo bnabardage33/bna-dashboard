@@ -83,60 +83,33 @@ describe("Accueil — l'ordre des blocs est celui validé", () => {
     expect(indexCockpit).toBeGreaterThan(indexAccueil);
   });
 
-  it("cinq blocs, numérotés 1 à 5, sans trou ni doublon", () => {
-    // Le bloc 1 est l'en-tête compact (dictée vocale + accès rapides). La météo
-    // générale a été remontée en bloc 2, l'impact météo en bloc 3, les
-    // chantiers en bloc 4, et le bloc 5 réunit les notes et les alertes.
-    expect(BLOCS.map((b) => b.numero)).toEqual(["1", "2", "3", "4", "5"]);
+  it("blocs structurés dans DashboardAccueil (1, 3, 4) sans doublon Météo générale", () => {
+    expect(BLOCS.map((b) => b.numero)).toEqual(["1", "3", "4"]);
+    expect(DASHBOARD_CODE).not.toContain("MeteoGeneraleAccueil");
   });
 
-  it("1. En-tête compact : dictée vocale et accès rapides", () => {
-    // Le fonctionnement de l'IA n'est pas touché : on vérifie que le handler et
-    // le composant de micro sont toujours câblés, pas leur implémentation.
-    expect(BLOCS[0].titre).toMatch(/En-tête compact/i);
+  it("1. Actions rapides terrain : dictée vocale, planning et météo", () => {
+    expect(BLOCS[0].titre).toMatch(/Actions rapides terrain/i);
     expect(BLOCS[0].corps).toContain("BoutonMicroNote");
     expect(BLOCS[0].corps).toContain("handleTexteReformule");
-    // Les TROIS accès rapides, et eux seuls : tous mènent à un écran existant.
-    expect(BLOCS[0].corps).toContain("/bureau/meteo");
-    expect(BLOCS[0].corps).toContain("/boite-a-outils");
-    expect(BLOCS[0].corps).toContain("/terrain/notes");
-    // Les anciens raccourcis redondants (Chantiers, Météo) ont disparu de
-    // l'en-tête. Ils ne réapparaissent pas non plus sous forme de tuiles.
-    expect(BLOCS[0].corps).not.toContain("/terrain/chantier");
-    expect(BLOCS[0].corps).not.toContain("/terrain/meteo");
-    // Et la grande carte « Assistant vocal (IA) » n'existe plus dans le code.
+    expect(BLOCS[0].corps).toContain('"/terrain"');
+    expect(BLOCS[0].corps).toContain('"/terrain/meteo"');
     expect(DASHBOARD_CODE).not.toContain("Assistant vocal");
   });
 
-  it("2. Météo générale (première section informative)", () => {
-    expect(BLOCS[1].titre).toMatch(/Météo générale/i);
-    // Le composant restauré est monté ici, et son lien « Prévisions
-    // complètes » mène à la page historique /terrain/meteo.
-    expect(BLOCS[1].corps).toContain("MeteoGeneraleAccueil");
+  it("3. Impact météo sur les chantiers actifs (compact, sans doublon)", () => {
+    expect(BLOCS[1].titre).toMatch(/Impact météo/i);
+    expect(BLOCS[1].corps).toContain("blocMeteo");
     expect(BLOCS[1].corps).toContain('"/terrain/meteo"');
   });
 
-  it("3. Impact météo sur les chantiers", () => {
-    expect(BLOCS[2].titre).toMatch(/Impact météo/i);
-    // Le bloc est un nœud rendu par `app/page.tsx` : c'est ce qui sort la
-    // logique météo des chantiers du périmètre de ce composant.
-    expect(BLOCS[2].corps).toContain("blocMeteo");
-    // La veille des intempéries reste sur /bureau/meteo.
-    expect(BLOCS[2].corps).toContain('"/bureau/meteo"');
-  });
-
-  it("4. Chantiers à préparer", () => {
-    expect(BLOCS[3].titre).toMatch(/Chantiers à préparer/i);
-    expect(BLOCS[3].corps).toContain("chantiersAPreparer");
-    expect(BLOCS[3].corps).toContain('"/terrain/chantier"');
-  });
-
-  it("5. Dernières notes et alertes", () => {
-    expect(BLOCS[4].titre).toMatch(/notes et alertes/i);
-    // Les deux listes vivent dans la même section : ni l'une ni l'autre n'a
-    // été supprimée par la fusion.
-    expect(BLOCS[4].corps).toContain("dernieresNotes");
-    expect(BLOCS[4].corps).toContain("notifications");
+  it("4. Cockpit Quotidien en 2 colonnes : chantiers à préparer, alertes et notes", () => {
+    expect(BLOCS[2].titre).toMatch(/Cockpit Quotidien/i);
+    expect(BLOCS[2].corps).toContain("chantiersAPreparer");
+    expect(BLOCS[2].corps).toContain("urlHubChantier");
+    expect(BLOCS[2].corps).toContain("dernieresNotes");
+    expect(BLOCS[2].corps).toContain("notifications");
+    expect(BLOCS[2].corps).toContain('"/terrain/notes"');
   });
 });
 

@@ -73,11 +73,11 @@ describe('Accueils Météo et Chantier', () => {
     expect(pageCode).toContain('notesInitiales={notes}');
     expect(pageCode).toContain('chantiersAPreparer={chantiersAPreparer}');
     expect(pageCode).toContain('notifications={notifications}');
-    expect((dashboardCode.match(/<MeteoGeneraleAccueil\s*\/>/g) ?? [])).toHaveLength(1);
+    expect(dashboardCode).not.toContain('<MeteoGeneraleAccueil');
     expect(dashboardCode).toContain('Impact météo sur les chantiers');
     expect(dashboardCode).toContain('Chantiers à préparer');
     expect(dashboardCode).toContain('notifications');
-    expect(dashboardCode).toContain('Notes & alertes');
+    expect(dashboardCode).toContain('Dernières notes vocales');
   });
 
   it('préserve les destinations métier météo distinctes et les routes historiques', () => {
@@ -106,7 +106,7 @@ describe('Accueils Météo et Chantier', () => {
     expect(meteo).toContain('href="/bureau/meteo"');
     expect(meteo).toContain('function MeteoPage');
     expect(veille).toContain('Veille Météo Intempéries');
-    expect(lire('app/terrain/page.tsx')).toContain('redirect("/terrain/chantier")');
+    expect(lire('app/terrain/page.tsx')).toContain('PlanningChantiers');
     expect(lire('app/bureau/page.tsx')).toContain('redirect("/")');
   });
 });

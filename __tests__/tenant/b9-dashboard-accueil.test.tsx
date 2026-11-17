@@ -289,6 +289,6 @@ describe("O3-B9 — DashboardAccueil : le fonctionnement de l'IA est intact", ()
   it("succès : l'état transitoire disparaît aussi", async () => {
     await reformuler();
     expect(conteneur.textContent).not.toMatch(/Enregistrement de la note/);
-    expect(conteneur.textContent).toMatch(/Notes & alertes/);
+    expect(conteneur.textContent).toMatch(/Dernières notes vocales/);
   });
 });

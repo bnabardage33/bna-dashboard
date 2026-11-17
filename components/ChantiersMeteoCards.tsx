@@ -95,15 +95,15 @@ type ChantierMeteo = {
 };
 
 const COULEURS: Record<Niveau, string> = {
-  vert: "border-emerald-500/40 bg-emerald-500/10",
-  jaune: "border-amber-500/40 bg-amber-500/10",
-  orange: "border-orange-500/40 bg-orange-500/10",
-  rouge: "border-red-500/40 bg-red-500/10",
+  vert: "border-emerald-200 bg-white",
+  jaune: "border-amber-200 bg-white",
+  orange: "border-orange-200 bg-white",
+  rouge: "border-red-200 bg-white",
   // « Non déterminé » n'est PAS une couleur de risque : c'est un état de
   // connaissance. Il est volontairement neutre, pour ne pas se lire comme un
   // vert (« tout va bien ») ni comme un rouge (« pose interdite »).
-  indeterminate: "border-white/15 bg-white/[0.04]",
-  inconnu: "border-white/10 bg-[#1E1E1E]",
+  indeterminate: "border-[#E5E5E5] bg-white",
+  inconnu: "border-[#E5E5E5] bg-white",
 };
 
 const EMOJIS: Record<Niveau, string> = {
@@ -130,12 +130,12 @@ const LIBELLES_NIVEAU: Record<Niveau, string> = {
  * seule couleur de fond.
  */
 const PASTILLES_NIVEAU: Record<Niveau, string> = {
-  vert: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
-  jaune: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  orange: "border-orange-500/40 bg-orange-500/10 text-orange-300",
-  rouge: "border-red-500/40 bg-red-500/10 text-red-300",
-  indeterminate: "border-white/15 bg-white/[0.04] text-gray-300",
-  inconnu: "border-white/15 bg-white/[0.04] text-gray-400",
+  vert: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  jaune: "border-amber-200 bg-amber-50 text-amber-800",
+  orange: "border-orange-200 bg-orange-50 text-orange-800",
+  rouge: "border-red-200 bg-red-50 text-red-700",
+  indeterminate: "border-[#E5E5E5] bg-[#F8F9FA] text-zinc-600",
+  inconnu: "border-[#E5E5E5] bg-[#F8F9FA] text-zinc-600",
 };
 
 /**
@@ -198,12 +198,12 @@ function Mesure({
   titre?: string;
 }) {
   return (
-    <div className="rounded-lg bg-[#1E1E1E] px-2 py-1.5" title={titre}>
-      <p className="flex items-center gap-1 text-4xs font-bold uppercase tracking-wider text-gray-500">
-        <span aria-hidden className="shrink-0">{icone}</span>
+    <div className="rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1.5" title={titre}>
+      <p className="flex items-center gap-1 text-4xs font-bold uppercase tracking-wider text-zinc-500">
+        <span aria-hidden className="shrink-0 text-[#B85B2B]">{icone}</span>
         <span className="truncate">{label}</span>
       </p>
-      <p className="mt-0.5 truncate text-xs font-semibold text-gray-200">{valeur ?? "—"}</p>
+      <p className="mt-0.5 truncate text-xs font-semibold text-zinc-900">{valeur ?? "—"}</p>
     </div>
   );
 }
@@ -361,7 +361,7 @@ export default function ChantiersMeteoCards() {
   if (loading) {
     return (
       <SurfaceVide>
-        <p className="text-sm text-gray-400">Chargement de la météo des chantiers…</p>
+        <p className="text-sm text-zinc-600">Chargement de la météo des chantiers…</p>
       </SurfaceVide>
     );
   }
@@ -369,7 +369,7 @@ export default function ChantiersMeteoCards() {
   if (chantiers.length === 0) {
     return (
       <SurfaceVide>
-        <p className="text-sm text-gray-500">Aucun chantier actif pour l&apos;instant.</p>
+        <p className="text-sm text-zinc-600">Aucun chantier actif pour l&apos;instant.</p>
       </SurfaceVide>
     );
   }
@@ -389,16 +389,16 @@ export default function ChantiersMeteoCards() {
           <Link
             key={ch.id}
             href={`/terrain/chantier/${ch.id}`}
-            className={`rounded-xl border p-3 transition-colors hover:border-white/25 sm:p-4 ${COULEURS[ch.niveau]}`}
+            className={`rounded-xl border p-3 shadow-xs transition-colors hover:border-[#B85B2B]/50 sm:p-4 ${COULEURS[ch.niveau]}`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="line-clamp-2 font-semibold leading-snug text-white">
+                <p className="line-clamp-2 font-bold leading-snug text-zinc-900">
                   {ch.nom || "Chantier"}
                 </p>
                 {ch.adresse && (
-                  <p className="mt-0.5 flex items-center gap-1 text-2xs text-gray-400">
-                    <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                  <p className="mt-0.5 flex items-center gap-1 text-2xs text-zinc-600">
+                    <MapPin className="h-3 w-3 shrink-0 text-zinc-400" aria-hidden />
                     <span className="truncate">{ch.adresse}</span>
                   </p>
                 )}
@@ -413,22 +413,19 @@ export default function ChantiersMeteoCards() {
               <span className={`rounded-full border px-2 py-0.5 text-2xs font-bold ${PASTILLES_NIVEAU[ch.niveau]}`}>
                 {EMOJIS[ch.niveau]} {LIBELLES_NIVEAU[ch.niveau]}
               </span>
-              <span className="rounded bg-[#1E1E1E] px-1.5 py-0.5 text-4xs font-semibold text-gray-400">
+              <span className="rounded border border-[#E5E5E5] bg-[#F8F9FA] px-1.5 py-0.5 text-4xs font-semibold text-zinc-600">
                 Zone {ch.zoneVent}
               </span>
             </div>
-            <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-gray-400">
+            <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-zinc-600">
               {ch.impact ?? ch.motif}
             </p>
 
-            {/* ── Avertissements matériaux ──────────────────────────────
-                DISTINCTS du niveau de pose : ils ne le modifient jamais. Ils
-                sont donc affichés à part, en liste, et formulés comme des
-                vérifications à faire sur le terrain. */}
+            {/* ── Avertissements matériaux ────────────────────────────── */}
             {ch.avertissements.length > 0 && (
               <ul className="mt-1.5 space-y-0.5">
                 {ch.avertissements.map((a) => (
-                  <li key={a} className="text-2xs leading-snug text-amber-300/80">
+                  <li key={a} className="text-2xs leading-snug text-amber-800">
                     ⚠️ {a}
                   </li>
                 ))}
@@ -437,13 +434,13 @@ export default function ChantiersMeteoCards() {
 
             {/* ── La météo, quand elle existe ──────────────────────────── */}
             {m ? (
-              <div className="mt-2.5 border-t border-white/10 pt-2.5">
+              <div className="mt-2.5 border-t border-[#E5E5E5] pt-2.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xl" aria-hidden>
                     {pictogramme(m)}
                   </span>
-                  <span className="text-xl font-black text-white">{m.tempActuelle}°C</span>
-                  <span className="truncate text-2xs text-gray-300">{m.conditions}</span>
+                  <span className="text-xl font-black text-zinc-900">{m.tempActuelle}°C</span>
+                  <span className="truncate text-2xs text-zinc-600">{m.conditions}</span>
                 </div>
 
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -491,7 +488,7 @@ export default function ChantiersMeteoCards() {
                 </div>
               </div>
             ) : (
-              <p className="mt-2.5 rounded-lg border border-dashed border-white/10 px-2 py-1.5 text-2xs text-gray-500">
+              <p className="mt-2.5 rounded-lg border border-dashed border-[#E5E5E5] bg-[#F8F9FA] px-2 py-1.5 text-2xs text-zinc-600">
                 Aucune donnée météo disponible — conditions et impact non déterminés.
               </p>
             )}
@@ -505,7 +502,7 @@ export default function ChantiersMeteoCards() {
 /** Conteneur d'un état transitoire ou vide — pas une carte de chantier. */
 function SurfaceVide({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/10 bg-[#1E1E1E]/40 p-6 text-center">
+    <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] p-6 text-center">
       {children}
     </div>
   );

@@ -105,44 +105,31 @@ describe("Accueil — le contenu est borne et centre", () => {
 });
 
 describe("Accueil — les grilles sont celles de la refonte", () => {
-  /** Les trois rangees de cartes, avec la grille de reference de chacune. */
+  /** Les rangees de cartes, avec la grille de reference de chacune. */
   const RANGEES = [
-    {
-      nom: "dernieres notes",
-      source: DASHBOARD,
-      grille: 'className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"',
-    },
     {
       nom: "cartes meteo",
       source: METEO,
       grille: '<div className="grid gap-3 sm:grid-cols-2">',
     },
     {
-      nom: "chantiers a preparer",
+      nom: "cockpit quotidien",
       source: DASHBOARD,
-      grille: '<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">',
+      grille: 'className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2"',
     },
   ];
 
-  it("trois rangees, chacune avec sa grille de reference", () => {
+  it("les rangees utilisent leurs grilles de reference", () => {
     for (const { nom, source, grille } of RANGEES) {
       expect(source, `${nom} : grille absente`).toContain(grille);
     }
   });
 
   it("aucune rangee de cartes n'est centree automatiquement", () => {
-    // LE garde-fou central. `justify-center` sur une rangee de cartes fait
-    // sortir une carte isolee de sa colonne pour la poser au centre de
-    // l'ecran : ce n'est pas le rendu d'origine. On l'interdit explicitement.
     for (const { nom, source } of RANGEES) {
-      // Le motif exact qui a ete rejete.
       expect(source, `${nom} : rangee centree automatiquement`).not.toContain(
         "flex flex-wrap justify-center",
       );
-      // Et plus generalement : aucun conteneur `flex-wrap` n'est centre.
-      // Attention, `justify-center` N'EST PAS interdit dans le fichier : la
-      // boite d'enregistrement vocal en porte un, comme a HEAD. Ce qui est
-      // interdit, c'est une rangée de CARTES centree.
       const flexibles = [...source.matchAll(/className="([^"]*flex-wrap[^"]*)"/g)].map(
         (m) => m[1],
       );
@@ -154,116 +141,52 @@ describe("Accueil — les grilles sont celles de la refonte", () => {
     }
   });
 
-  it("aucune rangee de cartes n'est centree, seul l'en-tete a le droit de l'etre", () => {
-    // La grande boite d'enregistrement vocal et les trois tuiles de raccourcis
-    // qui portaient `justify-center` ont ete supprimees. Il ne reste qu'UN
-    // centrage : la rangee des trois acces rapides de l'en-tete, qui sont des
-    // liens de navigation alignes a l'axe de leur colonne — jamais des cartes.
-    const centres = [...DASHBOARD.matchAll(/className="([^"]*justify-center[^"]*)"/g)].map(
-      (m) => m[1],
-    );
-    expect(centres.length).toBeGreaterThan(0);
-    for (const classes of centres) {
-      expect(classes, `centrage hors acces rapides : "${classes}"`).toMatch(/\bmin-h-10\b/);
-    }
-  });
-
   it("aucune carte ne porte de largeur propre", () => {
-    // Une carte a largeur propre sort de la grille : c'est le meme glissement.
-    // La largeur d'une carte est celle de sa colonne, rien d'autre.
     const cartes = [
       ...DASHBOARD.matchAll(/<Link\s+href="\/terrain\/notes"\s+className="([^"]*)"/g),
-      // `key={n.id` : la carte d'alerte est rendue avec `n`, pas `c`. Avec
-      // `c`, cette branche ne matchait AUCUNE occurrence et la garde « aucune
-      // carte a largeur propre » ne verifiait donc pas les alertes.
-      ...DASHBOARD.matchAll(/<Surface as="li" key=\{n\.id\}(?: className="([^"]*)")?>/g),
     ].map((m) => m[1] ?? "");
-    expect(cartes.length).toBeGreaterThanOrEqual(2);
+    expect(cartes.length).toBeGreaterThanOrEqual(1);
     for (const classes of cartes) {
       expect(classes, `carte a largeur propre : "${classes}"`).not.toMatch(
         /\bw-full\b|w-\[calc|max-w-/,
       );
     }
-    // Et la carte meteo, dont la classe est un template.
     const carteMeteo = METEO.match(/<Link\s+key=\{ch\.id\}[\s\S]*?className=\{`([^`]*)`\}/);
     expect(carteMeteo).not.toBeNull();
     expect(carteMeteo![1]).not.toMatch(/\bw-full\b|w-\[calc|max-w-/);
   });
 
-  it("l'etat vide des notes reprend la portee de la grille", () => {
-    // La portee de l'etat vide suit la grille : 2 colonnes a `sm`, 3 a `xl`.
-    expect(DASHBOARD).toContain('sm:col-span-2 xl:col-span-3');
-  });
-
   it("la carte meteo garde son habillage et son impact chantier", () => {
-    // Le correctif porte sur la presentation, pas sur le calcul d'impact.
     expect(METEO).toMatch(/className=\{`rounded-xl border p-3/);
-    // Depuis la refonte, la carte n'applique plus l'alerte sur la JOURNEE
-    // entiere : elle applique `evaluerPoseChantier`, qui restreint les mêmes
-    // seuils aux HORAIRES DE POSE du chantier (le cumul journalier de pluie ne
-    // déclenche plus « pose interdite » à lui seul). Voir lib/meteoAlerte.ts.
     expect(METEO).toContain("evaluerPoseChantier");
     expect(METEO).toContain("COULEURS[ch.niveau]");
   });
 });
 
 describe("Accueil — hierarchie visuelle et comportement mobile", () => {
-  it("la page s'ouvre sur un en-tete compact avec `h1` et sous-titre", () => {
-    // L'accueil professionnel porte le H1 ; le cockpit conserve son H2.
-    // La marque est déjà affichée par le layout global.
+  it("la page s'ouvre sur un en-tete blanc avec `h1` et sous-titre", () => {
     expect(ACCUEIL_PROFESSIONNEL).toMatch(/<h1[^>]*>[\s\S]*?\{titre\}[\s\S]*?<\/h1>/);
-    expect(DASHBOARD).toMatch(/<h2[^>]*>[\s\S]*?Votre activité[\s\S]*?<\/h2>/);
+    expect(DASHBOARD).toMatch(/<h2[^>]*>[\s\S]*?Actions rapides du jour[\s\S]*?<\/h2>/);
     expect(DASHBOARD).toMatch(/<header className="[^"]*"/);
     expect(ACCUEIL_PROFESSIONNEL).not.toContain("BNA Bardage");
   });
 
-  it("les quatre en-tetes de section gardent l'alignement d'origine", () => {
-    // `justify-between` : le libelle a gauche, le lien a droite, sur le meme
-    // axe. Quatre sections porteuses d'un lien : meteo, impact, chantiers,
-    // notes & alertes. L'en-tete compact ouvre la page avec son propre motif,
-    // hors de ce compte.
-    const enTetes = [
-      ...DASHBOARD.matchAll(/className="(mb-3 flex flex-wrap items-center justify-between[^"]*)"/g),
-    ].map((m) => m[1]);
-    expect(enTetes).toHaveLength(4);
-    for (const classes of enTetes) {
-      expect(classes).toMatch(/gap-x-3/);
-    }
-  });
-
-  it("les trois acces rapides de l'en-tete tiennent sur une seule rangee", () => {
-    // Trois acces, pas un de plus : Intempéries, Boite a outils, Notes.
-    // Tous pointent vers un ecran qui existe (aucune fonction promise en vain).
-    const acces = DASHBOARD.slice(
-      DASHBOARD.indexOf('aria-label="Accès rapides"'),
-      DASHBOARD.indexOf("</nav>", DASHBOARD.indexOf('aria-label="Accès rapides"')),
+  it("les acces rapides de l'en-tete pointent vers /terrain et /terrain/meteo", () => {
+    const header = DASHBOARD.slice(
+      DASHBOARD.indexOf("<header"),
+      DASHBOARD.indexOf("</header>"),
     );
-    expect((acces.match(/<Link/g) ?? []).length).toBe(3);
-    for (const route of ["/bureau/meteo", "/boite-a-outils", "/terrain/notes"]) {
-      expect(acces, `acces manquant : ${route}`).toContain(route);
-    }
-    // Sur UNE seule rangee des le mobile : grille a trois colonnes egales,
-    // aucun `flex-wrap` (qui aurait rejete un acces sur une seconde ligne).
-    expect(acces).toContain("grid grid-cols-3");
-    expect(acces).not.toContain("flex-wrap");
-    // Le libelle « Veille » (trop long pour trois colonnes) a ete retire :
-    // l'acces garde sa destination et son pictogramme.
-    expect(acces).toContain("Intempéries");
-    expect(acces).not.toContain("Veille intempéries");
-    // Les anciens raccourcis redondants de la carte vocale ont disparu.
-    expect(acces).not.toContain("/terrain/chantier");
-    expect(acces).not.toContain("/terrain/meteo");
+    expect(header).toContain('href="/terrain"');
+    expect(header).toContain('href="/terrain/meteo"');
+    expect(header).toContain("min-h-10");
   });
 
   it("les liens et pictogrammes d'en-tete ne se font pas ecraser", () => {
-    // `shrink-0` sur ce qui doit rester lisible quand l'espace manque.
     expect(DASHBOARD).toMatch(/className="flex shrink-0 items-center/);
     expect(DASHBOARD).toMatch(/h-5 w-5 shrink-0/);
   });
 
   it("aucune carte n'est forcee en une largeur fixe en pixels", () => {
-    // Une largeur en px casse le responsive : elle ne s'adapterait ni au mobile
-    // ni au cockpit centre.
     for (const { nom, source } of [
       { nom: "accueil", source: DASHBOARD },
       { nom: "meteo", source: METEO },
@@ -272,22 +195,8 @@ describe("Accueil — hierarchie visuelle et comportement mobile", () => {
     }
   });
 
-  it("la grille principale couvre mobile, tablette et desktop", () => {
-    // 1 colonne sur mobile, 2 a partir de `md` (768 px), 12 colonnes a partir
-    // de `xl` (1280 px) : la page se raccourcit au lieu de s'allonger.
-    expect(DASHBOARD).toContain(
-      'grid grid-cols-1 items-start gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-12',
-    );
-    // Meteo 5/12 + impact 7/12 a partir de `xl` ; chantiers et notes en pleine
-    // largeur (leurs cartes internes passent a trois colonnes).
-    expect(DASHBOARD).toContain('className="xl:col-span-5"');
-    expect(DASHBOARD).toContain('className="xl:col-span-7"');
-    expect(DASHBOARD).toContain('className="md:col-span-2 xl:col-span-12"');
-    // La meteo est le PREMIER bloc du DOM : on lit l'essentiel avant tout.
-    expect(DASHBOARD.indexOf("Météo générale")).toBeLessThan(
-      DASHBOARD.indexOf("Impact météo sur les chantiers"),
-    );
-    expect(DASHBOARD.indexOf("Impact météo sur les chantiers")).toBeLessThan(
+  it("l'impact meteo precede le cockpit quotidien dans le DOM", () => {
+    expect(DASHBOARD.indexOf("Impact météo sur les chantiers actifs")).toBeLessThan(
       DASHBOARD.indexOf("Chantiers à préparer"),
     );
   });
@@ -312,24 +221,12 @@ describe("Accueil — hierarchie visuelle et comportement mobile", () => {
   });
 
   it("les acces et le bouton vocal offrent une cible tactile suffisante", () => {
-    // `min-h-10` = 2.5rem = 40 px pour les acces rapides : legerement plus bas
-    // que les 44 px historiques, mais toujours largement au-dessus du minimum
-    // utilisable au doigt sur chantier.
-    // On verifie les trois acces rapides de l'en-tete…
-    const acces = DASHBOARD.slice(
-      DASHBOARD.indexOf('aria-label="Accès rapides"'),
-      DASHBOARD.indexOf("</nav>", DASHBOARD.indexOf('aria-label="Accès rapides"')),
+    const header = DASHBOARD.slice(
+      DASHBOARD.indexOf("<header"),
+      DASHBOARD.indexOf("</header>"),
     );
-    expect((acces.match(/min-h-10/g) ?? []).length).toBeGreaterThanOrEqual(3);
-    // Aucun acces ne retombe sous ce seuil : tout `min-h-*` de la rangee vaut 10.
-    const hauteurs = acces.match(/min-h-[0-9.]+/g) ?? [];
-    expect(hauteurs.length).toBeGreaterThanOrEqual(3);
-    for (const hauteur of hauteurs) {
-      expect(hauteur).toBe("min-h-10");
-    }
+    expect((header.match(/min-h-10/g) ?? []).length).toBeGreaterThanOrEqual(2);
 
-    // …et le bouton « Dicter une note », dont la cible de 44 px reste definie
-    // dans le composant vocal lui-meme.
     const bouton = lire("components/BoutonMicroNote.tsx");
     expect(bouton).toContain("min-h-11");
     expect(bouton).toContain("Dicter une note");
@@ -379,15 +276,10 @@ describe("Accueil — confort interne des cartes Notes et Alertes", () => {
 
   const carteNotes =
     DASHBOARD.match(/key=\{n\.id\}\s+href="\/terrain\/notes"\s+className="([^"]*)"/);
-  // `className` facultatif : si quelqu'un retire la classe, la carte doit
-  // rester identifiee SANS padding, pour que l'echec soit nucle sur le
-  // padding et non sur la forme du JSX.
   const carteAlertes =
-    DASHBOARD.match(/<Surface as="li" key=\{n\.id\}(?: className="([^"]*)")?>/);
+    DASHBOARD.match(/<li\s+key=\{n\.id\}\s+className="([^"]*)"/);
 
   it("les deux cartes existent bien dans la source", () => {
-    // Sans ce controle, les assertions suivantes passeraient par absence
-    // d'objet si le JSX changeait de forme.
     expect(carteNotes, "carte de note introuvable").not.toBeNull();
     expect(carteAlertes, "carte d'alerte introuvable").not.toBeNull();
   });
@@ -397,7 +289,6 @@ describe("Accueil — confort interne des cartes Notes et Alertes", () => {
   });
 
   it("le padding couvre les DEUX axes, pas seulement l'horizontal", () => {
-    // Un `px-4` seul laisserait le titre plaqué en haut de la carte.
     const padding = tokensPadding(carteAlertes![1] ?? "");
     expect(padding.length).toBeGreaterThan(0);
     for (const token of padding) {
@@ -405,8 +296,10 @@ describe("Accueil — confort interne des cartes Notes et Alertes", () => {
     }
   });
 
-  it("la carte d'alerte ne redéfinit ni arrondi ni largeur propre", () => {
-    expect((carteAlertes![1] ?? "").match(/\brounded-/g) ?? []).toEqual([]);
+  it("la carte d'alerte garde un arrondi cohérent avec la carte de note", () => {
+    expect((carteAlertes![1] ?? "").match(/\brounded-/g) ?? []).toEqual(
+      (carteNotes![1] ?? "").match(/\brounded-/g) ?? [],
+    );
   });
 
   it("la carte d'alerte ne prend toujours pas de largeur propre", () => {

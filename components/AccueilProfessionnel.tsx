@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Building2, Fence, Layers3 } from 'lucide-react';
-import { Surface } from '@/components/ui/Surface';
+import { ArrowRight, Building2, Fence, Layers3, Sparkles } from 'lucide-react';
 
 const METIERS = [
   {
@@ -9,6 +8,7 @@ const METIERS = [
     icone: Building2,
     href: '/terrain/chantier',
     action: 'Chantiers existants · hub commun',
+    accent: 'bg-slate-100 text-slate-700 border-slate-200',
   },
   {
     nom: 'Terrasse',
@@ -16,6 +16,7 @@ const METIERS = [
     icone: Layers3,
     href: '/terrain/terrasse',
     action: 'Chantiers terrasse · hub dédié',
+    accent: 'bg-amber-50 text-amber-700 border-amber-200',
   },
   {
     nom: 'Clôture',
@@ -23,16 +24,8 @@ const METIERS = [
     icone: Fence,
     href: '/terrain/cloture',
     action: 'Chantiers clôture · hub dédié',
+    accent: 'bg-[#B85B2B]/10 text-[#B85B2B] border-[#B85B2B]/25',
   },
-] as const;
-
-const ACCES_TRANSVERSES = [
-  { href: '/terrain/chantier', libelle: 'Chantiers' },
-  { href: '/bureau/clients', libelle: 'Clients' },
-  { href: '/bureau/devis-factures', libelle: 'Devis' },
-  { href: '/bureau/catalogue', libelle: 'Catalogue Bardage' },
-  { href: '/bureau/catalogue-terrasse', libelle: 'Catalogue Terrasse' },
-  { href: '/finance', libelle: 'Finance' },
 ] as const;
 
 /** Accueil commun, sans chargement de données métier ni hypothèses de spécialité. */
@@ -42,101 +35,94 @@ export default function AccueilProfessionnel({
   titre?: string;
 }) {
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-5">
+      {/* En-tête blanc unifié */}
       <section
         aria-labelledby="accueil-titre"
-        className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#242424] via-[#1E1E1E] to-[#191919] p-4 shadow-lg sm:p-6 lg:p-6 lg:flex lg:items-center lg:justify-between lg:gap-6"
+        className="rounded-2xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-xs lg:flex lg:items-center lg:justify-between lg:gap-6"
       >
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#E79A68]">
-              BNA Dashboard · Pilotage BTP
-            </p>
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#B85B2B]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+            BNA Pilotage BTP · Accueil Chantier
           </div>
-          <h1 id="accueil-titre" className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <h1 id="accueil-titre" className="mt-2 text-2xl font-bold tracking-tight text-[#23272B] sm:text-3xl">
             {titre}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400 sm:text-base">
-            Retrouvez vos métiers, vos chantiers et les outils de gestion de votre activité.
+          <p className="mt-1 max-w-2xl text-sm text-[#666666]">
+            Retrouvez vos trois corps d’état, vos chantiers à préparer et vos alertes du jour.
           </p>
         </div>
-        <div className="hidden lg:flex items-center gap-3 shrink-0 pt-2 lg:pt-0">
-          <div className="px-3.5 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-right">
-            <p className="text-2xs font-semibold text-gray-400 uppercase tracking-wider">Session active</p>
-            <p className="text-xs font-bold text-white">Espace Terrain & Bureau</p>
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
+          <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-right">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">Session active</p>
+            <p className="text-xs font-bold text-[#23272B]">Espace Terrain &amp; Bureau</p>
           </div>
         </div>
       </section>
 
+      {/* Bloc 2 : Vos Métiers & Pilotage IA (2x2 mobile/tablette, 4 colonnes grand écran) */}
       <section aria-labelledby="metiers-titre">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2 sm:mb-4">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Vos activités</p>
-            <h2 id="metiers-titre" className="mt-1 text-xl font-bold text-white sm:text-2xl">
-              Choisir un métier
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Vos activités</p>
+            <h2 id="metiers-titre" className="text-lg font-bold text-[#23272B] sm:text-xl">
+              Vos Métiers &amp; Pilotage IA
             </h2>
           </div>
-          <span className="text-xs text-gray-500">Accès au suivi commun des chantiers</span>
+          <span className="text-xs text-[#777777]">Accès direct aux hubs chantiers</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 sm:gap-4 lg:gap-4">
-          {METIERS.map(({ nom, description, icone: Icone, href, action }) => {
-            const contenu = (
-              <Surface className={`flex h-full min-h-44 flex-col p-4 sm:min-h-48 sm:p-5 lg:p-6 transition-all duration-300 ${
-                href ? 'group-hover:border-[#B85B2B]/60 group-hover:bg-[#252525] group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-[#B85B2B]/5' : 'opacity-85'
-              }`}>
-                <span className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#E79A68]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+          {METIERS.map(({ nom, description, icone: Icone, href, action, accent }) => (
+            <Link
+              key={nom}
+              href={href}
+              aria-label={`${nom} — chantiers existants, hub commun`}
+              className="group block min-w-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
+            >
+              <div className="flex h-full min-h-40 flex-col rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-[#B85B2B]/50 group-hover:shadow-sm">
+                <span className={`mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl border ${accent}`}>
                   <Icone aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
                 </span>
-                <span className="text-lg font-bold text-white">{nom}</span>
-                <span className="mt-1 text-sm leading-5 text-gray-400">{description}</span>
-                {action && (
-                  <span className="mt-auto flex items-center gap-2 pt-5 text-sm font-semibold text-gray-300 transition-colors group-hover:text-white">
-                    {action}
-                    <ArrowRight aria-hidden="true" className="h-4 w-4 text-[#E79A68] transition-transform group-hover:translate-x-1" />
-                  </span>
-                )}
-              </Surface>
-            );
-
-            return href ? (
-              <Link
-                key={nom}
-                href={href}
-                aria-label={`${nom} — chantiers existants, hub commun`}
-                className="group block min-w-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212]"
-              >
-                {contenu}
-              </Link>
-            ) : (
-              <article key={nom} aria-label={`${nom} — ${description}`} className="min-w-0">
-                {contenu}
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section aria-labelledby="acces-transverses-titre">
-        <div className="mb-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Socle commun</p>
-          <h2 id="acces-transverses-titre" className="mt-1 text-lg font-bold text-white">
-            Accès rapides
-          </h2>
-        </div>
-        <nav aria-label="Fonctionnalités communes" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 lg:gap-2.5">
-          {ACCES_TRANSVERSES.map(({ href, libelle }) => (
-            <Link
-              key={href}
-              href={href}
-              className="inline-flex min-h-12 items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-sm font-medium text-gray-300 transition-all hover:bg-white/[0.07] hover:border-[#B85B2B]/50 hover:text-white hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
-            >
-              <span>{libelle}</span>
-              <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" />
+                <span className="text-lg font-bold text-[#23272B]">{nom}</span>
+                <span className="mt-1 text-xs leading-5 text-[#666666]">{description}</span>
+                <span className="mt-auto flex items-center gap-1.5 pt-4 text-xs font-bold text-[#B85B2B]">
+                  {action}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </span>
+              </div>
             </Link>
           ))}
-        </nav>
+
+          {/* Carte 4 : Emplacement réservé BNA-IA */}
+          <div className="flex h-full min-h-40 flex-col rounded-2xl border border-dashed border-[#B85B2B]/40 bg-white p-5 shadow-xs">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]">
+                <Sparkles aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+              </span>
+              <span className="rounded-full border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#B85B2B]">
+                Bientôt disponible · Migration Bna-App
+              </span>
+            </div>
+            <span className="text-base font-bold text-[#23272B]">
+              BNA-IA · Centre de contrôle IA
+            </span>
+            <span className="mt-1 text-xs leading-5 text-[#666666]">
+              Pilotage intelligent, assistants métiers et automatisation BNA-IA (emplacement réservé)
+            </span>
+            <div className="mt-auto pt-4">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-bold text-[#999999]"
+              >
+                Module en préparation
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );

@@ -255,10 +255,10 @@ describe('charte graphique — le perimetre n\'a pas deborde', () => {
     // vert / jaune / orange / rouge sont une nomenclature METIER (vigilance
     // Meteo-France). Les teinter de la charte n\'aurait aucun sens.
     const p = code('components/ChantiersMeteoCards.tsx')
-    expect(p).toMatch(/vert:\s*"border-emerald-500/)
-    expect(p).toMatch(/jaune:\s*"border-amber-500/)
-    expect(p).toMatch(/orange:\s*"border-orange-500/)
-    expect(p).toMatch(/rouge:\s*"border-red-500/)
+    expect(p).toMatch(/vert:\s*"border-emerald-200/)
+    expect(p).toMatch(/jaune:\s*"border-amber-200/)
+    expect(p).toMatch(/orange:\s*"border-orange-200/)
+    expect(p).toMatch(/rouge:\s*"border-red-200/)
     expect(p).toMatch(/inconnu:/)
   })
 
