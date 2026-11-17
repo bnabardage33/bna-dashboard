@@ -422,6 +422,53 @@ export type Database = {
           },
         ]
       }
+      bna_ia_conversations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dernier_prechiffrage: string | null
+          entreprise_id: string
+          id: string
+          messages: Json
+          metier: string
+          nb_messages: number
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dernier_prechiffrage?: string | null
+          entreprise_id?: string
+          id?: string
+          messages?: Json
+          metier?: string
+          nb_messages?: number
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dernier_prechiffrage?: string | null
+          entreprise_id?: string
+          id?: string
+          messages?: Json
+          metier?: string
+          nb_messages?: number
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bna_ia_conversations_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogue_cloture: {
         Row: {
           actif: boolean

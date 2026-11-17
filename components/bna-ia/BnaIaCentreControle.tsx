@@ -7,14 +7,20 @@ import {
   AlertTriangle,
   ArrowRight,
   ArrowUpRight,
+  BookmarkPlus,
   Bot,
   CalendarDays,
   Camera,
   CheckCircle2,
+  Eye,
+  History,
   Loader2,
+  MessageSquarePlus,
   Mic,
   MicOff,
   RefreshCw,
+  RotateCcw,
+  Save,
   Send,
   Sparkles,
   Square,
@@ -31,6 +37,16 @@ import {
   type BnaIaContext,
   type BnaIaMessage,
 } from "@/lib/bnaIaService";
+import {
+  estConversationSystemeSeulement,
+  formaterDateConversationFr,
+  genererTitreConversation,
+  getBadgeMetierConversation,
+  listerConversationsSauvegardees,
+  sauvegarderConversationBnaIa,
+  supprimerConversationSauvegardee,
+  type BnaIaSavedConversation,
+} from "@/lib/bnaIaConversations";
 
 const CHAT_STORAGE_KEY = "bna_ia_chat_v1";
 
@@ -292,6 +308,20 @@ export default function BnaIaCentreControle() {
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [isCompressingImage, setIsCompressingImage] = useState(false);
 
+  // Sauvegarde, lecture et restauration des conversations
+  const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
+  const [savedConversations, setSavedConversations] = useState<BnaIaSavedConversation[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(true);
+  const [syncSupabase, setSyncSupabase] = useState(true);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveTitle, setSaveTitle] = useState("");
+  const [isSavingConv, setIsSavingConv] = useState(false);
+  const [viewingConv, setViewingConv] = useState<BnaIaSavedConversation | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const chatSectionRef = useRef<HTMLElement>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Dictée Whisper via /api/transcrire-note
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -316,9 +346,31 @@ export default function BnaIaCentreControle() {
     }
   }, []);
 
+  const chargerHistoriqueSauvegarde = useCallback(async (entId?: string | null) => {
+    setLoadingSaved(true);
+    try {
+      const targetId = entId ?? (await resoudreContexteEntreprise(null)).entreprise_id ?? null;
+      if (targetId) setEntrepriseId(targetId);
+      const res = await listerConversationsSauvegardees(targetId);
+      setSavedConversations(res.conversations);
+      setSyncSupabase(res.syncSupabase);
+    } finally {
+      setLoadingSaved(false);
+    }
+  }, []);
+
+  const afficherToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  }, []);
+
   useEffect(() => {
     chargerContexte();
-  }, [chargerContexte]);
+    chargerHistoriqueSauvegarde();
+  }, [chargerContexte, chargerHistoriqueSauvegarde]);
 
   useEffect(() => {
     try {
@@ -825,17 +877,100 @@ export default function BnaIaCentreControle() {
     }
   };
 
-  const viderHistorique = () => {
+  const nouveauChat = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+    }
     localStorage.removeItem(CHAT_STORAGE_KEY);
+    localStorage.removeItem("bna_ia_dernier_prechiffrage_v1");
+    setDernierPreChiffrage(null);
+    setPendingImage(null);
+    setInput("");
     setMessages([
       {
         id: `reset-${Date.now()}`,
         role: "assistant",
-        content: "Conversation réinitialisée. Que souhaitez-vous piloter ?",
+        content: "Nouvelle session prête. Que souhaitez-vous piloter ?",
         timestamp: new Date().toISOString(),
         tags: ["BNA-IA Connecté"],
       },
     ]);
+  };
+
+  const ouvrirModaleSauvegarde = () => {
+    if (estConversationSystemeSeulement(messages)) {
+      afficherToast("Envoyez au moins un message avant de sauvegarder la conversation.");
+      return;
+    }
+    setSaveTitle(genererTitreConversation(messages));
+    setSaveModalOpen(true);
+  };
+
+  const confirmerSauvegardeConversation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSavingConv) return;
+    setIsSavingConv(true);
+    try {
+      const targetId = entrepriseId ?? (await resoudreContexteEntreprise(null)).entreprise_id ?? null;
+      const res = await sauvegarderConversationBnaIa({
+        entrepriseId: targetId,
+        titre: saveTitle,
+        messages,
+        dernierPreChiffrage,
+      });
+      setSavedConversations((prev) => [
+        res.conversation,
+        ...prev.filter((c) => c.id !== res.conversation.id),
+      ]);
+      setSyncSupabase(res.syncSupabase);
+      setSaveModalOpen(false);
+      afficherToast("Conversation sauvegardée dans l'historique");
+    } finally {
+      setIsSavingConv(false);
+    }
+  };
+
+  const restaurerConversation = (conv: BnaIaSavedConversation) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+    }
+    const msgsRestaures =
+      conv.messages.length > 0
+        ? conv.messages
+        : [
+            {
+              id: `restored-${Date.now()}`,
+              role: "assistant" as const,
+              content: `Conversation « ${conv.titre} » restaurée.`,
+              timestamp: new Date().toISOString(),
+            },
+          ];
+    setMessages(msgsRestaures);
+    setDernierPreChiffrage(conv.dernier_prechiffrage ?? null);
+    try {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(msgsRestaures.slice(-30)));
+      if (conv.dernier_prechiffrage) {
+        localStorage.setItem("bna_ia_dernier_prechiffrage_v1", conv.dernier_prechiffrage);
+      } else {
+        localStorage.removeItem("bna_ia_dernier_prechiffrage_v1");
+      }
+    } catch {
+      // Ignorer quota
+    }
+    setViewingConv(null);
+    chatSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    afficherToast("Conversation restaurée dans le chat");
+  };
+
+  const supprimerConversation = async (id: string) => {
+    const targetId = entrepriseId ?? (await resoudreContexteEntreprise(null)).entreprise_id ?? null;
+    await supprimerConversationSauvegardee({ id, entrepriseId: targetId });
+    setSavedConversations((prev) => prev.filter((c) => c.id !== id));
+    if (viewingConv?.id === id) setViewingConv(null);
+    setConfirmDeleteId(null);
+    afficherToast("Conversation supprimée de l'historique");
   };
 
   return (
@@ -861,18 +996,26 @@ export default function BnaIaCentreControle() {
                 type="button"
                 onClick={chargerContexte}
                 disabled={loadingCtx}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-bold text-[#23272B] hover:bg-white"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-bold text-[#23272B] hover:bg-white transition-colors"
               >
                 <RefreshCw className={`h-3.5 w-3.5 text-[#B85B2B] ${loadingCtx ? "animate-spin" : ""}`} />
                 Actualiser contexte
               </button>
               <button
                 type="button"
-                onClick={viderHistorique}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-bold text-[#666666] hover:bg-white hover:text-red-600"
+                onClick={ouvrirModaleSauvegarde}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3.5 py-2 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 transition-colors"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                Nouvelle session
+                <BookmarkPlus className="h-3.5 w-3.5" />
+                Sauvegarder la conversation
+              </button>
+              <button
+                type="button"
+                onClick={nouveauChat}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] transition-colors"
+              >
+                <MessageSquarePlus className="h-3.5 w-3.5" />
+                Nouveau chat
               </button>
             </div>
           </div>
@@ -971,7 +1114,10 @@ export default function BnaIaCentreControle() {
         </section>
 
         {/* Zone de conversation */}
-        <section className="flex flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xs overflow-hidden">
+        <section
+          ref={chatSectionRef}
+          className="flex flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xs overflow-hidden"
+        >
           <div className="min-h-[380px] max-h-[65vh] space-y-4 overflow-y-auto p-4 sm:p-5">
             {messages.map((m) => (
               <div
@@ -1221,6 +1367,119 @@ export default function BnaIaCentreControle() {
           </form>
         </section>
 
+        {/* Bibliothèque « Historique des conversations » */}
+        <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[#23272B]">
+              <History className="h-4 w-4 text-[#B85B2B]" />
+              Historique des conversations
+            </h2>
+            <div className="flex items-center gap-2">
+              <span
+                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
+                  syncSupabase
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-amber-200 bg-amber-50 text-amber-800"
+                }`}
+              >
+                {syncSupabase ? "Synchronisé cloud" : "Stockage local"}
+              </span>
+              <span className="text-xs font-semibold text-[#777777]">
+                {savedConversations.length} conversation(s)
+              </span>
+            </div>
+          </div>
+
+          {loadingSaved ? (
+            <p className="text-xs text-[#777777]">Chargement de l&apos;historique...</p>
+          ) : savedConversations.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] px-4 py-5 text-center text-xs text-[#777777]">
+              Aucune conversation sauvegardée pour le moment. Utilisez{" "}
+              <span className="font-bold text-[#B85B2B]">Sauvegarder la conversation</span>{" "}
+              dans l&apos;en-tête pour archiver un échange important.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {savedConversations.map((conv) => {
+                const badge = getBadgeMetierConversation(conv.metier);
+                const isConfirmingDelete = confirmDeleteId === conv.id;
+                return (
+                  <div
+                    key={conv.id}
+                    className="flex flex-col gap-3 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3.5 sm:flex-row sm:items-center sm:justify-between hover:border-[#B85B2B]/40 hover:bg-white transition-colors"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${badge.className}`}
+                        >
+                          {badge.label}
+                        </span>
+                        <span className="text-[11px] font-medium text-[#777777]">
+                          {formaterDateConversationFr(conv.updated_at)}
+                        </span>
+                        <span className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#555555]">
+                          {conv.nb_messages} message(s)
+                        </span>
+                      </div>
+                      <p className="truncate text-xs sm:text-sm font-bold text-[#23272B]">
+                        {conv.titre}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setViewingConv(conv)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#23272B] hover:border-[#B85B2B]/40"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-[#555555]" />
+                        Ouvrir
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => restaurerConversation(conv)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#B85B2B] px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-[#9E4B20]"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Restaurer
+                      </button>
+
+                      {isConfirmingDelete ? (
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => supprimerConversation(conv.id)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-red-700"
+                          >
+                            Confirmer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="inline-flex items-center rounded-lg border border-[#E5E5E5] bg-white px-2 py-1.5 text-[11px] font-semibold text-[#666666]"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(conv.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#666666] hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
         {/* Pied rapide vers Planning */}
         <div className="flex justify-end">
           <Link
@@ -1232,6 +1491,180 @@ export default function BnaIaCentreControle() {
           </Link>
         </div>
       </div>
+
+      {/* Modale Sauvegarde de la conversation */}
+      {saveModalOpen && (
+        <div
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setSaveModalOpen(false)}
+        >
+          <form
+            onSubmit={confirmerSauvegardeConversation}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white shadow-2xl overflow-hidden text-[#23272B]"
+          >
+            <div className="flex items-center justify-between border-b border-[#E5E5E5] bg-[#F8F9FA] px-5 py-4">
+              <div className="flex items-center gap-2">
+                <BookmarkPlus className="h-4 w-4 text-[#B85B2B]" />
+                <h3 className="text-sm font-bold text-[#23272B]">
+                  Sauvegarder la conversation
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSaveModalOpen(false)}
+                className="rounded-lg p-1 text-[#777777] hover:text-[#23272B]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-3 bg-white">
+              <div>
+                <label
+                  htmlFor="bna-ia-save-title"
+                  className="block text-xs font-bold text-[#555555] mb-1"
+                >
+                  Titre de la conversation
+                </label>
+                <input
+                  id="bna-ia-save-title"
+                  type="text"
+                  required
+                  value={saveTitle}
+                  onChange={(e) => setSaveTitle(e.target.value)}
+                  placeholder="Ex: Devis bardage claire-voie 45 m²"
+                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs sm:text-sm text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                />
+              </div>
+              <p className="text-[11px] text-[#777777]">
+                Date : {formaterDateConversationFr(new Date().toISOString())} ·{" "}
+                {messages.filter((m) => m.id !== "welcome-bna-ia" && !m.id.startsWith("reset-")).length}{" "}
+                message(s) seront archivés{dernierPreChiffrage ? " (avec pré-chiffrage actif)" : ""}.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-[#E5E5E5] bg-[#F8F9FA] px-5 py-3.5">
+              <button
+                type="button"
+                onClick={() => setSaveModalOpen(false)}
+                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:text-[#23272B]"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={isSavingConv || !saveTitle.trim()}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9E4B20] disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {isSavingConv ? "Enregistrement..." : "Valider"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modale Lecture intégrale d'une conversation sauvegardée */}
+      {viewingConv && (
+        <div
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-5"
+          onClick={() => setViewingConv(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-2xl overflow-hidden text-[#23272B]"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-[#E5E5E5] bg-[#F8F9FA] px-5 py-4 shrink-0">
+              <div className="min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                      getBadgeMetierConversation(viewingConv.metier).className
+                    }`}
+                  >
+                    {getBadgeMetierConversation(viewingConv.metier).label}
+                  </span>
+                  <span className="text-[11px] font-medium text-[#777777]">
+                    {formaterDateConversationFr(viewingConv.updated_at)} · {viewingConv.nb_messages} message(s)
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-[#23272B] leading-snug">
+                  {viewingConv.titre}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingConv(null)}
+                className="rounded-lg p-1 text-[#777777] hover:text-[#23272B]"
+                aria-label="Fermer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 p-4 sm:p-5 bg-white">
+              {viewingConv.messages.map((m, idx) => (
+                <div
+                  key={`${m.id}-${idx}`}
+                  className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {m.role === "assistant" && (
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#B85B2B]/10 text-[#B85B2B] border border-[#B85B2B]/25">
+                      <Bot className="h-3.5 w-3.5" />
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm ${
+                      m.role === "user"
+                        ? "bg-[#B85B2B] text-white"
+                        : "border border-[#E5E5E5] bg-[#F8F9FA] text-[#23272B]"
+                    }`}
+                  >
+                    {m.role === "user" ? (
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    ) : (
+                      <div className="space-y-1">{renderBnaMessageContent(m.content, false)}</div>
+                    )}
+                  </div>
+                  {m.role === "user" && (
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#23272B] text-white">
+                      <User className="h-3.5 w-3.5" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E5E5E5] bg-[#F8F9FA] px-5 py-3.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewingConv(null)}
+                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:text-[#23272B]"
+              >
+                Fermer
+              </button>
+              <button
+                type="button"
+                onClick={() => restaurerConversation(viewingConv)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9E4B20]"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Restaurer dans le chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast de confirmation */}
+      {toastMessage && (
+        <div
+          role="status"
+          className="fixed bottom-20 right-4 z-[220] flex items-center gap-2 rounded-xl border border-[#B85B2B]/30 bg-white px-4 py-2.5 text-xs font-bold text-[#23272B] shadow-xl"
+        >
+          <CheckCircle2 className="h-4 w-4 text-[#B85B2B]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
