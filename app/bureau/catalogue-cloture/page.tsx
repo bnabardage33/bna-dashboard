@@ -8,6 +8,13 @@ import { fmtEuro } from "@/lib/financeCalculs";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import { normaliserUniteVente, UNITES_VENTE } from "@/components/catalogue/types";
 import {
+  CADENCES_DEFAUT,
+  calculerTarifMainOeuvre,
+  fusionnerCadencesDepuisCatalogueTemps,
+  getPresetsCadenceMainOeuvre,
+  type CadencesTempsPose,
+} from "@/lib/tempsPoseCalcul";
+import {
   calculerIndicateurMargeTarif,
   calculerPrixVenteDepuisRevient,
   estContexteOssature,
@@ -70,7 +77,49 @@ export default function CatalogueCloturePage() {
   const [formPrixAchat, setFormPrixAchat] = useState("12");
   const [formPrixVente, setFormPrixVente] = useState("15.60");
   const [prixVenteModifieManuellement, setPrixVenteModifieManuellement] = useState(false);
+  const [formModeMainOeuvre, setFormModeMainOeuvre] = useState(false);
+  const [formTempsUnitaireH, setFormTempsUnitaireH] = useState("");
+  const [presetCadenceId, setPresetCadenceId] = useState("");
+  const [cadencesMo, setCadencesMo] = useState<CadencesTempsPose>({ ...CADENCES_DEFAUT });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!modalOuvert || typeof supabase?.from !== "function") return;
+    let actif = true;
+    supabase
+      .from("catalogue_temps")
+      .select("nom_tache, temps_unitaire_heure, entreprise_id")
+      .then(({ data, error }) => {
+        if (!actif || error || !data) return;
+        const tries = [...data].sort((a, b) => {
+          if (a.entreprise_id && !b.entreprise_id) return 1;
+          if (!a.entreprise_id && b.entreprise_id) return -1;
+          return 0;
+        });
+        setCadencesMo(fusionnerCadencesDepuisCatalogueTemps(tries));
+      });
+    return () => {
+      actif = false;
+    };
+  }, [modalOuvert]);
+
+  const appliquerCalculMainOeuvreCloture = (
+    tempsStr: string,
+    uniteCible: string,
+    gammeCible: GammeMateriau
+  ) => {
+    const res = calculerTarifMainOeuvre({
+      tempsUnitaireH: parseNombreDecimal(tempsStr),
+      unite: uniteCible,
+      gamme: gammeCible,
+      tauxHoraireVente: cadencesMo.taux_horaire_vente_ht,
+      tauxHoraireCharge: cadencesMo.taux_horaire_charge_ht,
+    });
+    if (!res.estHoraire && res.tempsUnitaireH <= 0) return;
+    setFormPrixAchat(res.puRevient.toFixed(2));
+    setFormPrixVente(res.puHt.toFixed(2));
+    setPrixVenteModifieManuellement(false);
+  };
 
   const ouvrirEditionCloture = (a: ArticleCatalogueCloture) => {
     setEditingId(a.id);
@@ -86,11 +135,18 @@ export default function CatalogueCloturePage() {
     setFormPrixAchat(String(a.prix_achat_ht ?? 0));
     setFormPrixVente(String(a.prix_vente_ht ?? 0));
     setPrixVenteModifieManuellement((a.prix_vente_ht ?? 0) > 0);
+    setFormModeMainOeuvre(false);
+    setFormTempsUnitaireH("");
+    setPresetCadenceId("");
     setModalOuvert(true);
   };
 
   const modifierClotureGamme = (nouvelleGamme: GammeMateriau) => {
     setFormGamme(nouvelleGamme);
+    if (formModeMainOeuvre) {
+      appliquerCalculMainOeuvreCloture(formTempsUnitaireH, formUnite, nouvelleGamme);
+      return;
+    }
     const revient = parseNombreDecimal(formPrixAchat);
     if (revient > 0) {
       setFormPrixVente(
@@ -102,6 +158,7 @@ export default function CatalogueCloturePage() {
 
   const modifierCloturePrixAchat = (valeur: string) => {
     setFormPrixAchat(valeur);
+    if (formModeMainOeuvre) return;
     const revient = parseNombreDecimal(valeur);
     const venteActuelle = parseNombreDecimal(formPrixVente);
     if (!prixVenteModifieManuellement || venteActuelle <= 0) {
@@ -582,7 +639,13 @@ export default function CatalogueCloturePage() {
                   <label className="font-semibold text-slate-300">Unité</label>
                   <select
                     value={normaliserUniteVente(formUnite, "U")}
-                    onChange={(e) => setFormUnite(e.target.value)}
+                    onChange={(e) => {
+                      const newUnite = e.target.value;
+                      setFormUnite(newUnite);
+                      if (formModeMainOeuvre) {
+                        appliquerCalculMainOeuvreCloture(formTempsUnitaireH, newUnite, formGamme);
+                      }
+                    }}
                     className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
                   >
                     {UNITES_VENTE.map((u) => (
@@ -592,6 +655,72 @@ export default function CatalogueCloturePage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div className="rounded-xl border border-slate-700 bg-[#111827] p-3 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={formModeMainOeuvre}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setFormModeMainOeuvre(checked);
+                      if (checked) {
+                        appliquerCalculMainOeuvreCloture(formTempsUnitaireH, formUnite, formGamme);
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-slate-600 bg-[#151C2C] accent-[#E30613]"
+                  />
+                  Calculer comme prestation Main-d&apos;œuvre (taux horaires catalogue_temps)
+                </label>
+                {formModeMainOeuvre && (() => {
+                  const presets = getPresetsCadenceMainOeuvre(cadencesMo, "cloture");
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      <div>
+                        <label className="font-semibold text-slate-300">Cadence rapide</label>
+                        <select
+                          value={presetCadenceId}
+                          onChange={(e) => {
+                            const id = e.target.value;
+                            setPresetCadenceId(id);
+                            const preset = presets.find((p) => p.id === id);
+                            if (!preset) return;
+                            const tStr = String(preset.tempsH);
+                            setFormTempsUnitaireH(tStr);
+                            setFormUnite(preset.unite);
+                            appliquerCalculMainOeuvreCloture(tStr, preset.unite, formGamme);
+                          }}
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                        >
+                          <option value="">Choisir une cadence...</option>
+                          {presets.map((p) => (
+                            <option key={p.id} value={p.id} className="bg-[#151C2C] text-white">
+                              {p.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-semibold text-slate-300">
+                          Temps unitaire prévu (h / {normaliserUniteVente(formUnite, "U")})
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="Ex: 0.65"
+                          value={formTempsUnitaireH}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormTempsUnitaireH(val);
+                            setPresetCadenceId("");
+                            appliquerCalculMainOeuvreCloture(val, formUnite, formGamme);
+                          }}
+                          className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -605,7 +734,7 @@ export default function CatalogueCloturePage() {
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="font-semibold text-slate-300">Prix vente € HT</label>
-                    {parseNombreDecimal(formPrixAchat) > 0 && (
+                    {!formModeMainOeuvre && parseNombreDecimal(formPrixAchat) > 0 && (
                       <button
                         type="button"
                         onClick={appliquerCoefCloture}
@@ -625,6 +754,38 @@ export default function CatalogueCloturePage() {
               {(() => {
                 const vente = parseNombreDecimal(formPrixVente);
                 const revient = parseNombreDecimal(formPrixAchat);
+                if (formModeMainOeuvre) {
+                  const calc = calculerTarifMainOeuvre({
+                    tempsUnitaireH: parseNombreDecimal(formTempsUnitaireH),
+                    unite: formUnite,
+                    gamme: formGamme,
+                    tauxHoraireVente: cadencesMo.taux_horaire_vente_ht,
+                    tauxHoraireCharge: cadencesMo.taux_horaire_charge_ht,
+                  });
+                  const marge = Number((vente - revient).toFixed(2));
+                  const margePct = vente > 0 ? (marge / vente) * 100 : 0;
+                  const fmtDec = (n: number) => n.toFixed(2).replace(".", ",");
+                  return (
+                    <div className="rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-[11px] text-slate-300">
+                      {calc.estHoraire || calc.tempsUnitaireH > 0 ? (
+                        <span>
+                          Cadence : <strong className="text-white">{fmtDec(calc.tempsUnitaireH)} h</strong> × coef pose{" "}
+                          <strong className="text-white">{calc.coefTempsPose.toFixed(2)}</strong> ={" "}
+                          <strong className="text-white">{fmtDec(calc.tempsAjusteH)} h</strong> • Revient :{" "}
+                          <strong className="text-white">{fmtEuro(revient || calc.puRevient)} HT</strong> ({fmtDec(calc.tauxHoraireCharge)} €/h) • Vente :{" "}
+                          <strong className="text-white">{fmtEuro(vente || calc.puHt)} HT</strong> ({fmtDec(calc.tauxHoraireVente)} €/h) •{" "}
+                          <span className={`font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            Marge : {marge >= 0 ? "+" : ""}{fmtEuro(marge)} HT ({margePct.toFixed(1)} %)
+                          </span>
+                        </span>
+                      ) : (
+                        <span>
+                          Taux entreprise : Vente {fmtDec(calc.tauxHoraireVente)} €/h · Chargé {fmtDec(calc.tauxHoraireCharge)} €/h · Coef pose ×{calc.coefTempsPose.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
                 const ind = calculerIndicateurMargeTarif(vente, revient, formGamme);
                 return (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-[11px]">

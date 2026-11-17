@@ -25,6 +25,14 @@ import {
   type TypeMaterialTerrasse,
 } from "./types";
 import { useScraping } from "@/hooks/useScrapingCatalogue";
+import { supabase } from "@/lib/supabase";
+import {
+  CADENCES_DEFAUT,
+  calculerTarifMainOeuvre,
+  fusionnerCadencesDepuisCatalogueTemps,
+  getPresetsCadenceMainOeuvre,
+  type CadencesTempsPose,
+} from "@/lib/tempsPoseCalcul";
 import {
   calculerIndicateurMargeTarif,
   calculerPrixVenteDepuisRevient,
@@ -155,6 +163,9 @@ export default function ProductFormModal({
   );
   const [activeTab, setActiveTab] = useState<Onglet>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cadencesMo, setCadencesMo] = useState<CadencesTempsPose>({ ...CADENCES_DEFAUT });
+  const [tempsUnitaireH, setTempsUnitaireH] = useState<string>("");
+  const [presetCadenceId, setPresetCadenceId] = useState<string>("");
   const [puHtModifieManuellement, setPuHtModifieManuellement] = useState<boolean>(() => {
     if (
       initial &&
@@ -176,6 +187,8 @@ export default function ProductFormModal({
       );
       setValues(initVal);
       setActiveTab("general");
+      setTempsUnitaireH("");
+      setPresetCadenceId("");
       setPuHtModifieManuellement(
         Boolean(
           initial &&
@@ -185,6 +198,26 @@ export default function ProductFormModal({
       );
     }
   }, [open, initial, type, typeCoutDefaut, initialCategorie, initialTypeCout]);
+
+  useEffect(() => {
+    if (!open || typeof supabase?.from !== "function") return;
+    let actif = true;
+    supabase
+      .from("catalogue_temps")
+      .select("nom_tache, temps_unitaire_heure, entreprise_id")
+      .then(({ data, error }) => {
+        if (!actif || error || !data) return;
+        const tries = [...data].sort((a, b) => {
+          if (a.entreprise_id && !b.entreprise_id) return 1;
+          if (!a.entreprise_id && b.entreprise_id) return -1;
+          return 0;
+        });
+        setCadencesMo(fusionnerCadencesDepuisCatalogueTemps(tries));
+      });
+    return () => {
+      actif = false;
+    };
+  }, [open]);
 
   const { importUrl, setImportUrl, isScraping, scrape } = useScraping(type, (patch) => {
     setValues((prev) => appliquerPatch(prev, patch));
@@ -198,6 +231,49 @@ export default function ProductFormModal({
 
   const patch = (p: Record<string, unknown>) =>
     setValues((prev) => ({ ...prev, ...p } as ProductDraft));
+
+  // Prestation = main-d'œuvre, quel que soit le catalogue ; côté Terrasse elle
+  // reste stockée dans la table accessoires, distinguée par `type_cout`.
+  const estMainOeuvre =
+    (values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE") &&
+    values.type_cout === "main_oeuvre";
+  const estPrestationAccessoire =
+    values.kind === "TERRASSE_ACCESSOIRE" && values.type_cout === "main_oeuvre";
+
+  const appliquerCalculMainOeuvre = (
+    tempsStr: string,
+    uniteCible: string,
+    gammeCible: GammeMateriau,
+    extraPatch?: Record<string, unknown>
+  ) => {
+    const res = calculerTarifMainOeuvre({
+      tempsUnitaireH: parseNombreDecimal(tempsStr),
+      unite: uniteCible,
+      gamme: gammeCible,
+      tauxHoraireVente: cadencesMo.taux_horaire_vente_ht,
+      tauxHoraireCharge: cadencesMo.taux_horaire_charge_ht,
+    });
+    if (!res.estHoraire && res.tempsUnitaireH <= 0) {
+      if (extraPatch) patch(extraPatch);
+      return;
+    }
+    const puRevientStr = res.puRevient.toFixed(2);
+    const puHtStr = res.puHt.toFixed(2);
+    if (values.kind === "BARDAGE") {
+      patch({
+        ...(extraPatch ?? {}),
+        pu_revient: puRevientStr,
+        pu_ht: puHtStr,
+        prix_ttc: (res.puHt * 1.2).toFixed(2).replace(".", ","),
+      });
+    } else {
+      patch({
+        ...(extraPatch ?? {}),
+        pu_revient: puRevientStr,
+        pu_ht: puHtStr,
+      });
+    }
+  };
 
   // Synchronisation HT ↔ TTC (Bardage) + calcul automatique depuis Coût de revient HT.
   const modifierPuHt = (valeur: string) => {
@@ -221,6 +297,10 @@ export default function ProductFormModal({
     });
   };
   const modifierPuRevient = (valeur: string) => {
+    if (estMainOeuvre) {
+      patch({ pu_revient: valeur });
+      return;
+    }
     const revient = parseNombreDecimal(valeur);
     const puHtActuel =
       values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE"
@@ -258,6 +338,7 @@ export default function ProductFormModal({
   };
   const appliquerCoefGammeSurPuHt = (gammeCible?: GammeMateriau) => {
     if (values.kind !== "BARDAGE" && values.kind !== "TERRASSE_ACCESSOIRE") return;
+    if (estMainOeuvre) return;
     const revient = parseNombreDecimal(values.pu_revient);
     if (revient <= 0) return;
     const vente = calculerPrixVenteDepuisRevient(
@@ -280,9 +361,20 @@ export default function ProductFormModal({
     }
   };
   const modifierGammeQualite = (nouvelleGamme: GammeMateriau) => {
+    if (estMainOeuvre) {
+      const uniteMo =
+        values.kind === "BARDAGE"
+          ? values.unite
+          : values.kind === "TERRASSE_ACCESSOIRE"
+            ? values.unite_mesure
+            : "U";
+      appliquerCalculMainOeuvre(tempsUnitaireH, uniteMo, nouvelleGamme, {
+        gamme_qualite: nouvelleGamme,
+      });
+      return;
+    }
     if (
-      (values.kind === "BARDAGE" ||
-        (values.kind === "TERRASSE_ACCESSOIRE" && values.type_cout === "main_oeuvre")) &&
+      values.kind === "BARDAGE" &&
       parseNombreDecimal(values.pu_revient) > 0
     ) {
       appliquerCoefGammeSurPuHt(nouvelleGamme);
@@ -290,14 +382,6 @@ export default function ProductFormModal({
     }
     patch({ gamme_qualite: nouvelleGamme });
   };
-
-  // Prestation = main-d'œuvre, quel que soit le catalogue ; côté Terrasse elle
-  // reste stockée dans la table accessoires, distinguée par `type_cout`.
-  const estMainOeuvre =
-    (values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE") &&
-    values.type_cout === "main_oeuvre";
-  const estPrestationAccessoire =
-    values.kind === "TERRASSE_ACCESSOIRE" && values.type_cout === "main_oeuvre";
   const afficheDimensions = values.kind !== "TERRASSE_ACCESSOIRE" && !estMainOeuvre;
   const contexteGamme = estContexteOssature({
     categorie:
@@ -866,18 +950,93 @@ export default function ProductFormModal({
                   <div>
                     <label htmlFor="chp-unite" className={labelCls}>Unité de vente</label>
                     <select id="chp-unite" value={values.unite}
-                      onChange={(e) => patch({ unite: e.target.value })} className={inputCls}>
+                      onChange={(e) => {
+                        const newUnite = e.target.value;
+                        if (estMainOeuvre) {
+                          appliquerCalculMainOeuvre(
+                            tempsUnitaireH,
+                            newUnite,
+                            normaliserGammeMateriau(values.gamme_qualite),
+                            { unite: newUnite }
+                          );
+                        } else {
+                          patch({ unite: newUnite });
+                        }
+                      }} className={inputCls}>
                       {UNITES_VENTE.map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
                 </div>
+                {estMainOeuvre && (() => {
+                  const presets = getPresetsCadenceMainOeuvre(cadencesMo, "bardage");
+                  return (
+                    <div className="rounded-lg border border-slate-700 bg-[#0B0F19] p-3 space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="chp-cadence-preset" className={labelCls}>
+                            Cadence rapide (catalogue_temps)
+                          </label>
+                          <select
+                            id="chp-cadence-preset"
+                            value={presetCadenceId}
+                            onChange={(e) => {
+                              const id = e.target.value;
+                              setPresetCadenceId(id);
+                              const preset = presets.find((p) => p.id === id);
+                              if (!preset) return;
+                              const tStr = String(preset.tempsH);
+                              setTempsUnitaireH(tStr);
+                              appliquerCalculMainOeuvre(
+                                tStr,
+                                preset.unite,
+                                normaliserGammeMateriau(values.gamme_qualite),
+                                { unite: preset.unite }
+                              );
+                            }}
+                            className={inputCls}
+                          >
+                            <option value="">Choisir une cadence entreprise...</option>
+                            {presets.map((p) => (
+                              <option key={p.id} value={p.id} className="bg-[#151C2C] text-slate-100">
+                                {p.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="chp-temps-unitaire-h" className={labelCls}>
+                            Temps unitaire prévu (heures / {values.unite || "unité"})
+                          </label>
+                          <input
+                            id="chp-temps-unitaire-h"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="Ex: 0.65"
+                            value={tempsUnitaireH}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setTempsUnitaireH(val);
+                              setPresetCadenceId("");
+                              appliquerCalculMainOeuvre(
+                                val,
+                                values.unite,
+                                normaliserGammeMateriau(values.gamme_qualite)
+                              );
+                            }}
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <label htmlFor="chp-pu-ht" className="text-xs font-semibold text-gray-400">
                         Prix Unitaire HT (€)
                       </label>
-                      {parseNombreDecimal(values.pu_revient) > 0 && (
+                      {!estMainOeuvre && parseNombreDecimal(values.pu_revient) > 0 && (
                         <button
                           type="button"
                           onClick={() => appliquerCoefGammeSurPuHt()}
@@ -906,6 +1065,47 @@ export default function ProductFormModal({
                 {(() => {
                   const vente = parseNombreDecimal(values.pu_ht);
                   const revient = parseNombreDecimal(values.pu_revient);
+                  if (estMainOeuvre) {
+                    const calc = calculerTarifMainOeuvre({
+                      tempsUnitaireH: parseNombreDecimal(tempsUnitaireH),
+                      unite: values.unite,
+                      gamme: values.gamme_qualite,
+                      tauxHoraireVente: cadencesMo.taux_horaire_vente_ht,
+                      tauxHoraireCharge: cadencesMo.taux_horaire_charge_ht,
+                    });
+                    const marge = Number((vente - revient).toFixed(2));
+                    const margePct = vente > 0 ? (marge / vente) * 100 : 0;
+                    const fmtDec = (n: number) => n.toFixed(2).replace(".", ",");
+                    return (
+                      <div className="mt-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs text-slate-300 space-y-1">
+                        {(calc.estHoraire || calc.tempsUnitaireH > 0) ? (
+                          <p className="leading-relaxed">
+                            Cadence : <strong className="text-white">{fmtDec(calc.tempsUnitaireH)} h</strong> × coef pose{" "}
+                            <strong className="text-white">{calc.coefTempsPose.toFixed(2)}</strong> ={" "}
+                            <strong className="text-white">{fmtDec(calc.tempsAjusteH)} h</strong> • Revient :{" "}
+                            <strong className="text-white">{fmtEuro(revient || calc.puRevient)} HT</strong> ({fmtDec(calc.tauxHoraireCharge)} €/h) • Vente :{" "}
+                            <strong className="text-white">{fmtEuro(vente || calc.puHt)} HT</strong> ({fmtDec(calc.tauxHoraireVente)} €/h) •{" "}
+                            <span className={`font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              Marge : {marge >= 0 ? "+" : ""}{fmtEuro(marge)} HT ({margePct.toFixed(1)} %)
+                            </span>
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span>
+                              Taux entreprise : Vente <strong className="text-white">{fmtDec(calc.tauxHoraireVente)} €/h</strong> · Chargé{" "}
+                              <strong className="text-white">{fmtDec(calc.tauxHoraireCharge)} €/h</strong> · Coef pose{" "}
+                              <strong className="text-white">×{calc.coefTempsPose.toFixed(2)}</strong>
+                            </span>
+                            {vente > 0 && revient > 0 && (
+                              <span className={`font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                Marge : {marge >= 0 ? "+" : ""}{fmtEuro(marge)} HT ({margePct.toFixed(1)} %)
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
                   const ind = calculerIndicateurMargeTarif(vente, revient, values.gamme_qualite, contexteGamme);
                   return (
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
@@ -975,28 +1175,92 @@ export default function ProductFormModal({
                     </div>
                   </div>
                 )}
+                {estPrestationAccessoire && (() => {
+                  const presets = getPresetsCadenceMainOeuvre(cadencesMo, "terrasse");
+                  return (
+                    <div className="rounded-lg border border-slate-700 bg-[#0B0F19] p-3 space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="chp-cadence-preset-acc" className={labelCls}>
+                            Cadence rapide (catalogue_temps)
+                          </label>
+                          <select
+                            id="chp-cadence-preset-acc"
+                            value={presetCadenceId}
+                            onChange={(e) => {
+                              const id = e.target.value;
+                              setPresetCadenceId(id);
+                              const preset = presets.find((p) => p.id === id);
+                              if (!preset) return;
+                              const tStr = String(preset.tempsH);
+                              setTempsUnitaireH(tStr);
+                              appliquerCalculMainOeuvre(
+                                tStr,
+                                preset.unite,
+                                normaliserGammeMateriau(values.gamme_qualite),
+                                { unite_mesure: preset.unite }
+                              );
+                            }}
+                            className={inputCls}
+                          >
+                            <option value="">Choisir une cadence entreprise...</option>
+                            {presets.map((p) => (
+                              <option key={p.id} value={p.id} className="bg-[#151C2C] text-slate-100">
+                                {p.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label htmlFor="chp-temps-unitaire-h-acc" className={labelCls}>
+                            Temps unitaire prévu (heures / {values.unite_mesure || "unité"})
+                          </label>
+                          <input
+                            id="chp-temps-unitaire-h-acc"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="Ex: 0.65"
+                            value={tempsUnitaireH}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setTempsUnitaireH(val);
+                              setPresetCadenceId("");
+                              appliquerCalculMainOeuvre(
+                                val,
+                                values.unite_mesure || "U",
+                                normaliserGammeMateriau(values.gamme_qualite)
+                              );
+                            }}
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="chp-unite-mesure-tarif" className={labelCls}>Unité de mesure</label>
                     <input id="chp-unite-mesure-tarif" type="text" value={values.unite_mesure}
-                      onChange={(e) => patch({ unite_mesure: e.target.value })} className={inputCls} />
+                      onChange={(e) => {
+                        const newUnite = e.target.value;
+                        if (estPrestationAccessoire) {
+                          appliquerCalculMainOeuvre(
+                            tempsUnitaireH,
+                            newUnite || "U",
+                            normaliserGammeMateriau(values.gamme_qualite),
+                            { unite_mesure: newUnite }
+                          );
+                        } else {
+                          patch({ unite_mesure: newUnite });
+                        }
+                      }} className={inputCls} />
                   </div>
                   {estPrestationAccessoire ? (
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <label htmlFor="chp-pu-ht-acc" className="text-xs font-semibold text-gray-400">
-                          Prix unitaire HT (€)
-                        </label>
-                        {parseNombreDecimal(values.pu_revient) > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => appliquerCoefGammeSurPuHt()}
-                            className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
-                          >
-                            Appliquer coef ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].margeCibleDefaut.toFixed(2)}
-                          </button>
-                        )}
-                      </div>
+                      <label htmlFor="chp-pu-ht-acc" className={labelCls}>
+                        Prix unitaire HT (€)
+                      </label>
                       <input id="chp-pu-ht-acc" type="text" inputMode="decimal" value={values.pu_ht}
                         onChange={(e) => modifierPuHt(e.target.value)} className={inputCls} />
                     </div>
@@ -1018,20 +1282,42 @@ export default function ProductFormModal({
                     {(() => {
                       const vente = parseNombreDecimal(values.pu_ht);
                       const revient = parseNombreDecimal(values.pu_revient);
-                      const ind = calculerIndicateurMargeTarif(vente, revient, values.gamme_qualite, contexteGamme);
+                      const calc = calculerTarifMainOeuvre({
+                        tempsUnitaireH: parseNombreDecimal(tempsUnitaireH),
+                        unite: values.unite_mesure || "U",
+                        gamme: values.gamme_qualite,
+                        tauxHoraireVente: cadencesMo.taux_horaire_vente_ht,
+                        tauxHoraireCharge: cadencesMo.taux_horaire_charge_ht,
+                      });
+                      const marge = Number((vente - revient).toFixed(2));
+                      const margePct = vente > 0 ? (marge / vente) * 100 : 0;
+                      const fmtDec = (n: number) => n.toFixed(2).replace(".", ",");
                       return (
-                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
-                          <span className="font-medium text-slate-300">
-                            Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
-                          </span>
-                          {vente > 0 && revient > 0 ? (
-                            <span className={`font-bold ${ind.margeEuro >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                              Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
-                            </span>
+                        <div className="mt-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs text-slate-300">
+                          {(calc.estHoraire || calc.tempsUnitaireH > 0) ? (
+                            <p className="leading-relaxed">
+                              Cadence : <strong className="text-white">{fmtDec(calc.tempsUnitaireH)} h</strong> × coef pose{" "}
+                              <strong className="text-white">{calc.coefTempsPose.toFixed(2)}</strong> ={" "}
+                              <strong className="text-white">{fmtDec(calc.tempsAjusteH)} h</strong> • Revient :{" "}
+                              <strong className="text-white">{fmtEuro(revient || calc.puRevient)} HT</strong> ({fmtDec(calc.tauxHoraireCharge)} €/h) • Vente :{" "}
+                              <strong className="text-white">{fmtEuro(vente || calc.puHt)} HT</strong> ({fmtDec(calc.tauxHoraireVente)} €/h) •{" "}
+                              <span className={`font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                Marge : {marge >= 0 ? "+" : ""}{fmtEuro(marge)} HT ({margePct.toFixed(1)} %)
+                              </span>
+                            </p>
                           ) : (
-                            <span className="text-slate-400">
-                              Saisissez un coût de revient HT pour calculer le prix conseillé
-                            </span>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span>
+                                Taux entreprise : Vente <strong className="text-white">{fmtDec(calc.tauxHoraireVente)} €/h</strong> · Chargé{" "}
+                                <strong className="text-white">{fmtDec(calc.tauxHoraireCharge)} €/h</strong> · Coef pose{" "}
+                                <strong className="text-white">×{calc.coefTempsPose.toFixed(2)}</strong>
+                              </span>
+                              {vente > 0 && revient > 0 && (
+                                <span className={`font-bold ${marge >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                  Marge : {marge >= 0 ? "+" : ""}{fmtEuro(marge)} HT ({margePct.toFixed(1)} %)
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       );

@@ -566,3 +566,226 @@ export function calculerTempsPoseCloture(
     },
   };
 }
+
+export interface CalculTarifMainOeuvreResult {
+  tempsUnitaireH: number;
+  coefTempsPose: number;
+  tempsAjusteH: number;
+  tauxHoraireVente: number;
+  tauxHoraireCharge: number;
+  puRevient: number;
+  puHt: number;
+  margeEuro: number;
+  margePct: number;
+  estHoraire: boolean;
+}
+
+/**
+ * Calcule automatiquement le coût de revient HT et le prix de vente HT d'une
+ * prestation de main-d'œuvre à partir du temps unitaire, de la gamme (coefTempsPose)
+ * et des taux horaires de l'entreprise (`catalogue_temps`).
+ */
+export function calculerTarifMainOeuvre(params: {
+  tempsUnitaireH: number;
+  unite: string;
+  gamme: unknown;
+  tauxHoraireVente?: number;
+  tauxHoraireCharge?: number;
+}): CalculTarifMainOeuvreResult {
+  const gammeNorm = normaliserGammeMateriau(params.gamme);
+  const coefTempsPose = GAMME_MATERIAU_CONFIG[gammeNorm].coefTempsPose;
+  const tauxHoraireVente =
+    typeof params.tauxHoraireVente === "number" &&
+    Number.isFinite(params.tauxHoraireVente) &&
+    params.tauxHoraireVente > 0
+      ? params.tauxHoraireVente
+      : CADENCES_DEFAUT.taux_horaire_vente_ht;
+  const tauxHoraireCharge =
+    typeof params.tauxHoraireCharge === "number" &&
+    Number.isFinite(params.tauxHoraireCharge) &&
+    params.tauxHoraireCharge >= 0
+      ? params.tauxHoraireCharge
+      : CADENCES_DEFAUT.taux_horaire_charge_ht;
+
+  const uLower = params.unite.trim().toLowerCase();
+  const estHoraire = uLower === "heure" || uLower === "h" || uLower === "heures";
+  const tempsBase =
+    Number.isFinite(params.tempsUnitaireH) && params.tempsUnitaireH > 0
+      ? params.tempsUnitaireH
+      : 0;
+
+  let tempsAjusteH: number;
+  let puRevient: number;
+  let puHt: number;
+
+  if (estHoraire) {
+    tempsAjusteH = Number((1 * coefTempsPose).toFixed(2));
+    puRevient = Number(tauxHoraireCharge.toFixed(2));
+    puHt = Number((tauxHoraireVente * coefTempsPose).toFixed(2));
+  } else {
+    const brutAjuste = tempsBase * coefTempsPose;
+    tempsAjusteH = Number(brutAjuste.toFixed(2));
+    puRevient = Number((brutAjuste * tauxHoraireCharge).toFixed(2));
+    puHt = Number((brutAjuste * tauxHoraireVente).toFixed(2));
+  }
+
+  const margeEuro = Number((puHt - puRevient).toFixed(2));
+  const margePct = puHt > 0 ? (margeEuro / puHt) * 100 : 0;
+
+  return {
+    tempsUnitaireH: estHoraire ? 1 : tempsBase,
+    coefTempsPose,
+    tempsAjusteH,
+    tauxHoraireVente,
+    tauxHoraireCharge,
+    puRevient,
+    puHt,
+    margeEuro,
+    margePct,
+    estHoraire,
+  };
+}
+
+export interface PresetCadenceMainOeuvre {
+  id: string;
+  label: string;
+  tempsH: number;
+  unite: string;
+}
+
+/**
+ * Retourne les cadences pré-enregistrées de `catalogue_temps` pour pré-remplir
+ * le temps unitaire lors de la création/édition d'une prestation de main-d'œuvre.
+ */
+export function getPresetsCadenceMainOeuvre(
+  cadences: CadencesTempsPose,
+  metier: "bardage" | "terrasse" | "cloture"
+): PresetCadenceMainOeuvre[] {
+  const fmtT = (v: number) => v.toFixed(2).replace(".", ",");
+  if (metier === "bardage") {
+    return [
+      {
+        id: "bardage_ossature",
+        label: `Ossature (${fmtT(cadences.bardage_ossature_h_m2)} h/m²)`,
+        tempsH: cadences.bardage_ossature_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "bardage_clin",
+        label: `Clin bois / composite (${fmtT(cadences.bardage_parement_clin_h_m2)} h/m²)`,
+        tempsH: cadences.bardage_parement_clin_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "bardage_claire_voie",
+        label: `Claire-voie (${fmtT(cadences.bardage_parement_claire_voie_h_m2)} h/m²)`,
+        tempsH: cadences.bardage_parement_claire_voie_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "bardage_hpl",
+        label: `HPL / cassette (${fmtT(cadences.bardage_parement_hpl_h_m2)} h/m²)`,
+        tempsH: cadences.bardage_parement_hpl_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "bardage_corniere",
+        label: `Cornières (${fmtT(cadences.bardage_corniere_h_ml)} h/ml)`,
+        tempsH: cadences.bardage_corniere_h_ml,
+        unite: "ml",
+      },
+      {
+        id: "bardage_ouverture",
+        label: `Habillage ouverture (${fmtT(cadences.bardage_ouverture_h_u)} h/U)`,
+        tempsH: cadences.bardage_ouverture_h_u,
+        unite: "U",
+      },
+      {
+        id: "bardage_ite",
+        label: `Isolation ITE (${fmtT(cadences.bardage_ite_h_m2)} h/m²)`,
+        tempsH: cadences.bardage_ite_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "taux_horaire",
+        label: "Régie horaire (1,00 h/heure)",
+        tempsH: 1,
+        unite: "heure",
+      },
+    ];
+  }
+
+  if (metier === "terrasse") {
+    return [
+      {
+        id: "terrasse_prep",
+        label: `Préparation sol / géotextile (${fmtT(cadences.terrasse_prep_geotextile_h_m2)} h/m²)`,
+        tempsH: cadences.terrasse_prep_geotextile_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "terrasse_structure",
+        label: `Structure plots + lambourdes (${fmtT(cadences.terrasse_structure_h_m2)} h/m²)`,
+        tempsH: cadences.terrasse_structure_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "terrasse_platelage",
+        label: `Platelage lames (${fmtT(cadences.terrasse_platelage_h_m2)} h/m²)`,
+        tempsH: cadences.terrasse_platelage_h_m2,
+        unite: "m²",
+      },
+      {
+        id: "terrasse_garde_corps",
+        label: `Garde-corps périphérique (${fmtT(cadences.terrasse_garde_corps_h_ml)} h/ml)`,
+        tempsH: cadences.terrasse_garde_corps_h_ml,
+        unite: "ml",
+      },
+      {
+        id: "terrasse_escalier",
+        label: `Escalier d'accès (${fmtT(cadences.terrasse_escalier_h_u)} h/U)`,
+        tempsH: cadences.terrasse_escalier_h_u,
+        unite: "U",
+      },
+      {
+        id: "taux_horaire",
+        label: "Régie horaire (1,00 h/heure)",
+        tempsH: 1,
+        unite: "heure",
+      },
+    ];
+  }
+
+  return [
+    {
+      id: "cloture_implantation",
+      label: `Implantation & scellement (${fmtT(cadences.cloture_implantation_scellement_h_poteau)} h/U)`,
+      tempsH: cadences.cloture_implantation_scellement_h_poteau,
+      unite: "U",
+    },
+    {
+      id: "cloture_poteau",
+      label: `Pose poteau & soubassement (${fmtT(cadences.cloture_pose_poteau_soubassement_h_u)} h/U)`,
+      tempsH: cadences.cloture_pose_poteau_soubassement_h_u,
+      unite: "U",
+    },
+    {
+      id: "cloture_lames",
+      label: `Pose lames / panneaux (${fmtT(cadences.cloture_pose_lame_panneau_h_ml)} h/ml)`,
+      tempsH: cadences.cloture_pose_lame_panneau_h_ml,
+      unite: "ml",
+    },
+    {
+      id: "cloture_portillon",
+      label: `Pose portillon & finitions (${fmtT(cadences.cloture_portillon_finitions_h_u)} h/U)`,
+      tempsH: cadences.cloture_portillon_finitions_h_u,
+      unite: "U",
+    },
+    {
+      id: "taux_horaire",
+      label: "Régie horaire (1,00 h/heure)",
+      tempsH: 1,
+      unite: "heure",
+    },
+  ];
+}

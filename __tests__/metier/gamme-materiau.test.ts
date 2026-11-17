@@ -13,6 +13,11 @@ import {
 import { calculerBardagePro } from "@/lib/bardage/pro/quantitatifs-contrat";
 import { calculerTerrasseProGeometrie } from "@/lib/terrasse/pro/quantitatifs-contrat";
 import { calculerChiffrageCloture } from "@/lib/cloture/calculs";
+import {
+  CADENCES_DEFAUT,
+  calculerTarifMainOeuvre,
+  getPresetsCadenceMainOeuvre,
+} from "@/lib/tempsPoseCalcul";
 import type { ChantierTerrasseConfig } from "@/lib/terrasse/types";
 
 const BASE_TERRASSE_CFG: ChantierTerrasseConfig = {
@@ -170,5 +175,48 @@ describe("Gamme Matériau (4 niveaux : eco, standard, premium, prestige)", () =>
     expect(c4.labelClient).toBe("Classe 4");
     expect(c4.prefixDevis).toBe("Classe");
     expect(c5.labelClient).toBe("Classe 5 / Exotique");
+  });
+
+  it("calcule automatiquement le coût de revient et prix de vente Main-d'œuvre selon cadence, taux horaires et coefTempsPose", () => {
+    // Unité 'heure' : pu_revient = taux_horaire_charge, pu_ht = taux_horaire_vente * coefTempsPose
+    const moHeureEco = calculerTarifMainOeuvre({
+      tempsUnitaireH: 1,
+      unite: "heure",
+      gamme: "eco",
+      tauxHoraireVente: 47.5,
+      tauxHoraireCharge: 23.5,
+    });
+    expect(moHeureEco.estHoraire).toBe(true);
+    expect(moHeureEco.puRevient).toBe(23.5);
+    expect(moHeureEco.puHt).toBe(47.5);
+
+    const moHeurePrem = calculerTarifMainOeuvre({
+      tempsUnitaireH: 1,
+      unite: "heure",
+      gamme: "premium",
+      tauxHoraireVente: 47.5,
+      tauxHoraireCharge: 23.5,
+    });
+    expect(moHeurePrem.puRevient).toBe(23.5);
+    expect(moHeurePrem.puHt).toBe(54.62);
+
+    // Unité 'm²' avec 0.65 h/m² et gamme Premium (coefTempsPose = 1.15)
+    const moM2Prem = calculerTarifMainOeuvre({
+      tempsUnitaireH: 0.65,
+      unite: "m²",
+      gamme: "premium",
+      tauxHoraireVente: 47.5,
+      tauxHoraireCharge: 23.5,
+    });
+    expect(moM2Prem.estHoraire).toBe(false);
+    expect(moM2Prem.tempsAjusteH).toBe(0.75);
+    expect(moM2Prem.puRevient).toBe(17.57);
+    expect(moM2Prem.puHt).toBe(35.51);
+    expect(moM2Prem.margeEuro).toBe(17.94);
+
+    const presetsBardage = getPresetsCadenceMainOeuvre(CADENCES_DEFAUT, "bardage");
+    expect(presetsBardage.some((p) => p.unite === "m²" && p.tempsH === CADENCES_DEFAUT.bardage_ossature_h_m2)).toBe(true);
+    expect(getPresetsCadenceMainOeuvre(CADENCES_DEFAUT, "terrasse").length).toBeGreaterThan(3);
+    expect(getPresetsCadenceMainOeuvre(CADENCES_DEFAUT, "cloture").length).toBeGreaterThan(3);
   });
 });
