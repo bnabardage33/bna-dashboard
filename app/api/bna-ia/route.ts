@@ -6,8 +6,8 @@ import {
   calculerAlertesProactives,
   calculerChiffrageDeplacementBna,
   DEPOT_BNA_DEFAUT,
+  detectBnaIaActions,
   detecterChantierComplexe,
-  estQuestionConseilOuSuivi,
   evaluerAlertesDtuMeteoJour,
   extraireDestinationLibre,
   extraireVilleMeteoLibre,
@@ -127,31 +127,41 @@ async function callGroqLlm(
   return null;
 }
 
-function isComplexOrConversationalQuery(
-  message: string,
-  localTags: string[],
-  hasFollowUpContext: boolean,
-  hasNewPreChiffrage: boolean,
-  hasHistory: boolean = hasFollowUpContext
-): boolean {
-  const lower = message.toLowerCase();
-  if (!hasNewPreChiffrage && (hasFollowUpContext || estQuestionConseilOuSuivi(message, hasHistory))) {
-    return true;
+async function callMistralLlm(
+  systemPrompt: string,
+  userMessage: string,
+  apiKey: string,
+  history: BnaIaHistoryTurn[] = []
+): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+  try {
+    const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey.trim()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.MISTRAL_MODEL || "mistral-small-latest",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history.map((h) => ({ role: h.role, content: h.content })),
+          { role: "user", content: userMessage },
+        ],
+        max_tokens: 4096,
+        temperature: 0.3,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content?.trim() || null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
-  if (localTags.includes("Copilote BNA") || localTags.includes("Suivi Conversationnel")) return true;
-  if (
-    lower.includes("ça va") ||
-    lower.includes("merci") ||
-    lower.includes("pourquoi") ||
-    lower.includes("explique") ||
-    lower.includes("rédige") ||
-    lower.includes("redige") ||
-    lower.includes("courrier") ||
-    message.length > 100
-  ) {
-    return true;
-  }
-  return false;
 }
 
 const CACHE_METEO_30MIN_MS = 30 * 60 * 1000;
@@ -344,11 +354,11 @@ async function chargerMeteoChantier3Jours(
       return { previsions: [], resumeAlerte: null };
     }
 
-    // 2. Prévisions gratuites Open-Meteo 3 jours (zéro quota Visual Crossing)
+    // 2. Prévisions gratuites Open-Meteo 5 jours (zéro quota Visual Crossing)
     const forecastUrl =
       `https://api.open-meteo.com/v1/forecast?latitude=${first.latitude}&longitude=${first.longitude}` +
       `&daily=temperature_2m_min,temperature_2m_max,precipitation_sum,wind_gusts_10m_max,weather_code` +
-      `&timezone=Europe%2FParis&forecast_days=3`;
+      `&timezone=Europe%2FParis&forecast_days=5`;
     const forecastJson = (await fetchJsonWithTimeout(
       forecastUrl,
       METEO_TIMEOUT_MS
@@ -368,7 +378,7 @@ async function chargerMeteoChantier3Jours(
       return { previsions: [], resumeAlerte: null };
     }
 
-    const previsions: BnaIaPrevisionJourCtx[] = daily.time.slice(0, 3).map((date, idx) => {
+    const previsions: BnaIaPrevisionJourCtx[] = daily.time.slice(0, 5).map((date, idx) => {
       const tempMinC = Math.round(Number(daily.temperature_2m_min?.[idx] ?? 0));
       const tempMaxC = Math.round(Number(daily.temperature_2m_max?.[idx] ?? 0));
       const rafalesKmh = Math.round(Number(daily.wind_gusts_10m_max?.[idx] ?? 0));
@@ -711,27 +721,17 @@ export async function POST(req: NextRequest) {
     }
 
     const escalade = detecterChantierComplexe(messageNormalise, preChiffrage);
-    const localResponse = generateLocalAssistantResponse(messageNormalise, context, {
-      history,
-      dernierPreChiffrage,
-    });
+    const actions = detectBnaIaActions(messageNormalise, context);
 
+    const mistralKey = process.env.MISTRAL_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey =
       process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    const hasAnyLlmKey = Boolean(groqKey || geminiKey);
-    const hasFollowUpContext = history.length > 0 || Boolean(dernierPreChiffrage);
+    const hasAnyLlmKey = Boolean(mistralKey || geminiKey || groqKey);
 
-    if (
-      hasAnyLlmKey &&
-      isComplexOrConversationalQuery(
-        messageNormalise,
-        localResponse.tags,
-        hasFollowUpContext,
-        Boolean(preChiffrage),
-        history.length > 0
-      )
-    ) {
+    // Moteur Local en mode « Calculateur silencieux uniquement » :
+    // Toutes les conversations passent par le Cloud LLM dès qu'une clé est configurée.
+    if (hasAnyLlmKey) {
       const systemPrompt = buildSystemPromptContext(
         context,
         preChiffrage,
@@ -742,7 +742,16 @@ export async function POST(req: NextRequest) {
       let llmText: string | null = null;
       let providerName = "";
 
-      if (groqKey) {
+      if (mistralKey) {
+        llmText = await callMistralLlm(
+          systemPrompt,
+          messageNormalise,
+          mistralKey,
+          history
+        );
+        if (llmText) providerName = "Mistral";
+      }
+      if (!llmText && groqKey) {
         const groqResult = await callGroqLlm(
           systemPrompt,
           messageNormalise,
@@ -767,13 +776,23 @@ export async function POST(req: NextRequest) {
       if (llmText) {
         return NextResponse.json({
           content: llmText,
-          actions: localResponse.actions,
-          tags: [providerName, "BNA-IA Cloud"],
+          actions,
+          tags: [
+            providerName,
+            "BNA-IA Cloud",
+            ...(preChiffrage ? ["Pré-chiffrage Certifié"] : []),
+          ],
           source: "cloud_llm",
           preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
         });
       }
     }
+
+    // Ultime filet de secours hors-ligne si aucune clé Cloud LLM ou si tous les appels échouent
+    const localResponse = generateLocalAssistantResponse(messageNormalise, context, {
+      history,
+      dernierPreChiffrage,
+    });
 
     return NextResponse.json({
       content: localResponse.content,
