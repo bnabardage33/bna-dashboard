@@ -66,6 +66,175 @@ function sanitizeHistoryForLlm(history: BnaIaHistoryTurn[]): BnaIaHistoryTurn[] 
   return cleaned;
 }
 
+/**
+ * Condense les tours anciens (> 10 derniers messages) pour limiter les tokens/minute (TPM) sur Groq
+ * tout en préservant les villes, dimensions, chiffres clés et décisions prises.
+ */
+function condenserHistoriqueAncien(olderTurns: BnaIaHistoryTurn[]): string | null {
+  if (olderTurns.length === 0) return null;
+
+  const villes = new Set<string>();
+  const chiffresCles = new Set<string>();
+  const points: string[] = [];
+
+  for (const turn of olderTurns) {
+    if (turn.role === "user") {
+      const ville =
+        extraireVilleMeteoLibre(turn.content) ||
+        extraireDestinationLibre(turn.content);
+      if (ville) villes.add(ville);
+    }
+
+    const matchesChiffres = turn.content.match(
+      /\b\d+(?:[.,]\d+)?\s*(?:m²|m2|ml|cm|mm|km|€|k€|h|jours?|x\s*\d+(?:[.,]\d+)?)\b/gi
+    );
+    if (matchesChiffres) {
+      for (const c of matchesChiffres.slice(0, 4)) {
+        chiffresCles.add(c.trim());
+      }
+    }
+
+    const premiereLigne = turn.content
+      .replace(/[#*`•|]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 140);
+    if (premiereLigne) {
+      points.push(`${turn.role === "user" ? "Patron" : "BNA-IA"}: ${premiereLigne}`);
+    }
+  }
+
+  const lignes = [
+    villes.size > 0 ? `Villes évoquées : ${Array.from(villes).join(", ")}` : null,
+    chiffresCles.size > 0
+      ? `Dimensions/chiffres validés : ${Array.from(chiffresCles).slice(0, 12).join(", ")}`
+      : null,
+    points.length > 0 ? `Fil condensé : ${points.slice(-6).join(" | ")}` : null,
+  ].filter(Boolean);
+
+  return lignes.length > 0 ? lignes.join("\n") : null;
+}
+
+type GroqStreamOpenResult =
+  | { ok: true; stream: ReadableStream<Uint8Array>; modelUsed: string }
+  | { ok: false; error: string };
+
+async function openGroqStream(
+  systemPrompt: string,
+  userMessage: string,
+  apiKey: string,
+  history: BnaIaHistoryTurn[] = []
+): Promise<GroqStreamOpenResult> {
+  const modelsToTry = [
+    ...(process.env.GROQ_MODEL ? [process.env.GROQ_MODEL.trim()] : []),
+    ...DEFAULT_GROQ_MODELS,
+  ].filter((m, idx, arr) => Boolean(m) && arr.indexOf(m) === idx);
+
+  const modelErrors: string[] = [];
+
+  for (const model of modelsToTry) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          stream: true,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...history.map((h) => ({ role: h.role, content: h.content })),
+            { role: "user", content: userMessage },
+          ],
+          max_completion_tokens: 4096,
+          temperature: 0.3,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok || !res.body) {
+        const snippet = await readHttpErrorSnippet(res);
+        modelErrors.push(`${model} HTTP ${res.status}: ${snippet}`);
+        continue;
+      }
+      return { ok: true, stream: res.body, modelUsed: model };
+    } catch (err) {
+      clearTimeout(timer);
+      const msg = err instanceof Error ? err.message : String(err);
+      modelErrors.push(`${model} exception: ${msg}`);
+    }
+  }
+  return { ok: false, error: `Groq (${modelErrors.join("; ")})` };
+}
+
+function createBnaSseStreamFromGroq(
+  groqBody: ReadableStream<Uint8Array>,
+  metaPayload: {
+    actions: ReturnType<typeof detectBnaIaActions>;
+    tags: string[];
+    source: "cloud_llm";
+    preChiffrageTexte: string | null;
+  }
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder("utf-8");
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = groqBody.getReader();
+      let buffer = "";
+
+      const emitEvent = (event: string, data: unknown) => {
+        controller.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+        );
+      };
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line || !line.startsWith("data:")) continue;
+            const dataStr = line.slice(5).trim();
+            if (dataStr === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(dataStr) as {
+                choices?: Array<{ delta?: { content?: string } }>;
+              };
+              const delta = parsed?.choices?.[0]?.delta?.content;
+              if (typeof delta === "string" && delta.length > 0) {
+                emitEvent("delta", { text: delta });
+              }
+            } catch {
+              // Ignorer ligne SSE partielle ou commentaire
+            }
+          }
+        }
+
+        emitEvent("meta", metaPayload);
+        emitEvent("done", {});
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        emitEvent("error", { error: `Erreur flux Groq : ${msg}` });
+      } finally {
+        reader.releaseLock();
+        controller.close();
+      }
+    },
+  });
+}
+
 async function readHttpErrorSnippet(res: Response): Promise<string> {
   try {
     const raw = await res.text();
@@ -127,60 +296,6 @@ async function callGeminiLlm(
   } finally {
     clearTimeout(timer);
   }
-}
-
-async function callGroqLlm(
-  systemPrompt: string,
-  userMessage: string,
-  apiKey: string,
-  history: BnaIaHistoryTurn[] = []
-): Promise<LlmCallResult> {
-  const modelsToTry = [
-    ...(process.env.GROQ_MODEL ? [process.env.GROQ_MODEL.trim()] : []),
-    ...DEFAULT_GROQ_MODELS,
-  ].filter((m, idx, arr) => Boolean(m) && arr.indexOf(m) === idx);
-
-  const modelErrors: string[] = [];
-
-  for (const model of modelsToTry) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
-    try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey.trim()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...history.map((h) => ({ role: h.role, content: h.content })),
-            { role: "user", content: userMessage },
-          ],
-          max_completion_tokens: 4096,
-          temperature: 0.3,
-        }),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        const snippet = await readHttpErrorSnippet(res);
-        modelErrors.push(`${model} HTTP ${res.status}: ${snippet}`);
-        continue;
-      }
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content?.trim();
-      if (text) return { ok: true, text, modelUsed: model };
-      modelErrors.push(`${model} réponse vide`);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      modelErrors.push(`${model} exception: ${msg}`);
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  return { ok: false, error: `Groq (${modelErrors.join("; ")})` };
 }
 
 async function callMistralLlm(
@@ -712,7 +827,10 @@ export async function POST(req: NextRequest) {
             content: (h.content as string).trim(),
           }))
       : [];
-    const history = sanitizeHistoryForLlm(rawHistory);
+    const olderHistory =
+      rawHistory.length > 10 ? rawHistory.slice(0, rawHistory.length - 10) : [];
+    const resumeHistoriqueAncien = condenserHistoriqueAncien(olderHistory);
+    const history = sanitizeHistoryForLlm(rawHistory.slice(-10));
 
     const dernierPreChiffrage =
       typeof body?.dernierPreChiffrage === "string" &&
@@ -727,13 +845,13 @@ export async function POST(req: NextRequest) {
       ? Math.max(1, Math.ceil(preChiffrage.heuresPoseTotal / 7))
       : 1;
 
-    // Météo Open-Meteo (5 jours) + Déplacement depuis Générac (33920) en parallèle sur toute ville libre
-    // (« à / sur / vers / pour + Ville »), y compris reprise depuis l'historique pour les questions de suivi
+    // Météo Open-Meteo (15 jours) + Déplacement depuis Générac (33920) en parallèle sur toute ville libre
+    // (« à / sur / vers / pour + Ville »), y compris reprise depuis l'historique complet pour les questions de suivi
     const villeDansMessage =
       extraireVilleMeteoLibre(messageNormalise) ||
       extraireDestinationLibre(messageNormalise);
     const villeDansHistorique = !villeDansMessage
-      ? [...history]
+      ? [...rawHistory]
           .reverse()
           .filter((h) => h.role === "user")
           .map(
@@ -800,32 +918,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = buildSystemPromptContext(
+    const baseSystemPrompt = buildSystemPromptContext(
       context,
       preChiffrage,
       normalisation,
       escalade,
       dernierPreChiffrage
     );
+    const systemPrompt = resumeHistoriqueAncien
+      ? `${baseSystemPrompt}\n\nRÉSUMÉ DES ÉCHANGES PRÉCÉDENTS (${olderHistory.length} messages condensés) :\n${resumeHistoriqueAncien}`
+      : baseSystemPrompt;
 
     const llmErrors: string[] = [];
     let llmText: string | null = null;
     let providerName = "";
 
-    // Chaîne Cloud LLM : Groq (#1) -> Gemini (#2) -> Mistral (#3)
+    // Chaîne Cloud LLM : Groq Streaming SSE (#1) -> Gemini (#2) -> Mistral (#3)
     if (groqKey) {
-      const groqRes = await callGroqLlm(
+      const groqStreamRes = await openGroqStream(
         systemPrompt,
         messageNormalise,
         groqKey,
         history
       );
-      if (groqRes.ok) {
-        llmText = groqRes.text;
-        providerName = `Groq (${groqRes.modelUsed || "openai/gpt-oss-120b"})`;
-      } else {
-        llmErrors.push(groqRes.error);
+      if (groqStreamRes.ok) {
+        const sseStream = createBnaSseStreamFromGroq(groqStreamRes.stream, {
+          actions,
+          tags: [
+            `Groq (${groqStreamRes.modelUsed})`,
+            "BNA-IA Cloud",
+            ...(preChiffrage ? ["Pré-chiffrage Certifié"] : []),
+          ],
+          source: "cloud_llm",
+          preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
+        });
+        return new Response(sseStream, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            Connection: "keep-alive",
+          },
+        });
       }
+      llmErrors.push(groqStreamRes.error);
     }
 
     if (!llmText && geminiKey) {

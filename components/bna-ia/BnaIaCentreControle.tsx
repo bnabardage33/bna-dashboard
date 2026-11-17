@@ -16,8 +16,10 @@ import {
   RefreshCw,
   Send,
   Sparkles,
+  Square,
   Trash2,
   User,
+  Volume2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
@@ -226,6 +228,19 @@ function renderBnaMessageContent(content: string, isUser: boolean): React.ReactN
   return <div className="space-y-1 leading-relaxed">{nodes}</div>;
 }
 
+function nettoyerTextePourLectureVocale(text: string): string {
+  return text
+    .replace(/<br\s*\/?>/gi, ". ")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^===\s*(.+?)\s*===$/gm, "$1.")
+    .replace(/^[•\-*]\s+/gm, "")
+    .replace(/[*`#]/g, "")
+    .replace(/[|·]/g, ", ")
+    .replace(/\n+/g, ". ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export default function BnaIaCentreControle() {
   const router = useRouter();
   const [context, setContext] = useState<BnaIaContext | null>(null);
@@ -236,6 +251,7 @@ export default function BnaIaCentreControle() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [executingId, setExecutingId] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   // Dictée Whisper via /api/transcrire-note
   const [isRecording, setIsRecording] = useState(false);
@@ -306,6 +322,40 @@ export default function BnaIaCentreControle() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const toggleLectureVocale = (messageId: string, content: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+    if (speakingId === messageId) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+    const cleanText = nettoyerTextePourLectureVocale(content);
+    if (!cleanText) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "fr-FR";
+    utterance.rate = 1.02;
+    utterance.onend = () => {
+      setSpeakingId((cur) => (cur === messageId ? null : cur));
+    };
+    utterance.onerror = () => {
+      setSpeakingId((cur) => (cur === messageId ? null : cur));
+    };
+    setSpeakingId(messageId);
+    window.speechSynthesis.speak(utterance);
+  };
+
   const envoyerMessage = async (texteForce?: string) => {
     const contenu = (texteForce ?? input).trim();
     if (!contenu || isSending) return;
@@ -342,6 +392,121 @@ export default function BnaIaCentreControle() {
           dernierPreChiffrage,
         }),
       });
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (res.ok && contentType.includes("text/event-stream") && res.body) {
+        const astId = `ast-${Date.now()}`;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: astId,
+            role: "assistant",
+            content: "",
+            timestamp: new Date().toISOString(),
+            tags: ["Groq Live", "BNA-IA Cloud"],
+            source: "cloud_llm",
+          },
+        ]);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let sseBuffer = "";
+        let streamedContent = "";
+
+        const handleSseBlock = (block: string) => {
+          const lines = block.split("\n");
+          let eventName = "message";
+          const dataLines: string[] = [];
+          for (const line of lines) {
+            if (line.startsWith("event:")) {
+              eventName = line.slice(6).trim();
+            } else if (line.startsWith("data:")) {
+              dataLines.push(line.slice(5).trim());
+            }
+          }
+          if (dataLines.length === 0) return;
+          const rawJson = dataLines.join("\n");
+          let payload: Record<string, unknown> | null = null;
+          try {
+            payload = JSON.parse(rawJson) as Record<string, unknown>;
+          } catch {
+            return;
+          }
+
+          if (eventName === "delta" && typeof payload.text === "string") {
+            streamedContent += payload.text;
+            const currentText = streamedContent;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === astId ? { ...m, content: currentText } : m))
+            );
+          } else if (eventName === "meta") {
+            const tags = Array.isArray(payload.tags)
+              ? (payload.tags as string[])
+              : undefined;
+            const actions = Array.isArray(payload.actions)
+              ? (payload.actions as BnaIaAction[])
+              : undefined;
+            const preTexte =
+              typeof payload.preChiffrageTexte === "string" &&
+              payload.preChiffrageTexte.trim()
+                ? payload.preChiffrageTexte.trim()
+                : tags?.includes("Pré-chiffrage Certifié")
+                  ? streamedContent
+                  : null;
+            if (preTexte) {
+              setDernierPreChiffrage(preTexte);
+              try {
+                localStorage.setItem("bna_ia_dernier_prechiffrage_v1", preTexte);
+              } catch {
+                // Ignorer quota
+              }
+            }
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === astId
+                  ? {
+                      ...m,
+                      actions,
+                      tags,
+                      source: "cloud_llm",
+                    }
+                  : m
+              )
+            );
+          } else if (eventName === "error" && typeof payload.error === "string") {
+            const errTxt = payload.error;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === astId
+                  ? {
+                      ...m,
+                      content: streamedContent
+                        ? `${streamedContent}\n\n⚠️ ${errTxt}`
+                        : `⚠️ **Erreur technique BNA-IA Cloud**\n${errTxt}`,
+                      tags: ["Erreur Cloud LLM"],
+                    }
+                  : m
+              )
+            );
+          }
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          sseBuffer += decoder.decode(value, { stream: true });
+          const blocks = sseBuffer.split("\n\n");
+          sseBuffer = blocks.pop() ?? "";
+          for (const block of blocks) {
+            if (block.trim()) handleSseBlock(block);
+          }
+        }
+        if (sseBuffer.trim()) {
+          handleSseBlock(sseBuffer);
+        }
+        return;
+      }
 
       const data = await res.json().catch(() => null);
 
@@ -736,16 +901,51 @@ export default function BnaIaCentreControle() {
                       : "border border-[#E5E5E5] bg-[#F8F9FA] text-[#23272B]"
                   }`}
                 >
-                  {m.tags && m.tags.length > 0 && m.role === "assistant" && (
-                    <div className="flex flex-wrap gap-1">
-                      {m.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-bold text-[#666666]"
+                  {m.role === "assistant" && (
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="flex flex-wrap gap-1">
+                        {m.tags?.map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-bold text-[#666666]"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                      {m.content.trim().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleLectureVocale(m.id, m.content)}
+                          title={
+                            speakingId === m.id
+                              ? "Arrêter la lecture vocale"
+                              : "Écouter la réponse en mains libres"
+                          }
+                          aria-label={
+                            speakingId === m.id
+                              ? "Arrêter la lecture vocale"
+                              : "Écouter la réponse"
+                          }
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                            speakingId === m.id
+                              ? "border-[#B85B2B] bg-[#B85B2B] text-white"
+                              : "border-[#E5E5E5] bg-white text-[#666666] hover:border-[#B85B2B]/50 hover:text-[#B85B2B]"
+                          }`}
                         >
-                          {t}
-                        </span>
-                      ))}
+                          {speakingId === m.id ? (
+                            <>
+                              <Square className="h-2.5 w-2.5 fill-current" />
+                              Stop
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-3 w-3" />
+                              Écouter
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
 
