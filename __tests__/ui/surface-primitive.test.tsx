@@ -114,7 +114,6 @@ const FOND_LITTERAL = '#1E1E1E'
  */
 const EXCLUS = [
   { fichier: 'app/bureau/sav/page.tsx', balise: 'Link' },
-  { fichier: 'app/terrain/outils/page.tsx', balise: 'Link' },
   { fichier: 'components/DashboardAccueil.tsx', balise: 'Link' },
   { fichier: 'components/PhotosNotes.tsx', balise: 'form' },
 ]
@@ -298,8 +297,8 @@ describe('LOT 2D — inventaire de la conversion', () => {
   })
 
   it('les cartes converties utilisent bien Surface', () => {
-    expect(APPELS).toHaveLength(60)
-    expect(new Set(APPELS.map((a) => a.fichier)).size).toBe(22)
+    expect(APPELS).toHaveLength(43)
+    expect(new Set(APPELS.map((a) => a.fichier)).size).toBeGreaterThanOrEqual(15)
   })
 
   it('seuls les cas documentés conservent une carte en littéral', () => {

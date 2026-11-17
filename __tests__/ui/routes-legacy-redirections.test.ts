@@ -127,10 +127,10 @@ describe('PHASE 2 · les trois écrans vides sont des redirections', () => {
 describe('PHASE 2 · les routes cockpit devenues obsolètes', () => {
   const COCKPITS = [
     { page: 'app/bureau/page.tsx', destination: '/', raison: "l'accueil est le cockpit unique" },
-    { page: 'app/terrain/page.tsx', destination: '/terrain/chantier', raison: 'le cockpit Terrain a disparu' },
     // `app/terrain/meteo/page.tsx` n'est PLUS une redirection : la météo
     // générale y a été restaurée (recherche de ville, matin/après-midi,
     // heure par heure, J+1 à J+4). Voir le bloc suivant.
+    // `app/terrain/page.tsx` héberge désormais le Planning Général Multi-Métiers.
   ]
 
   it('chaque cockpit obsolète redirige vers sa destination', () => {

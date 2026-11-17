@@ -41,7 +41,7 @@ import { createRoot, type Root } from "react-dom/client";
 
 let cheminCourant = "/";
 vi.mock("next/navigation", () => ({
-  usePathname: () => cheminCourant,
+  usePathname: () => cheminCourant.split("?")[0],
 }));
 
 // `next/link` exige le contexte App Router : on le remplace par une ancre.
@@ -76,6 +76,9 @@ function Harnais({ initial }: { initial: string }) {
   const [chemin, setChemin] = useState(initial);
   naviguer = setChemin;
   cheminCourant = chemin;
+  if (typeof window !== "undefined") {
+    window.history.replaceState(null, "", chemin);
+  }
   return <Drawer />;
 }
 
@@ -162,7 +165,7 @@ const GROUPES = [
   { label: "Études / Commercial", enfant: "Clients", chemin: "/bureau/clients" },
   { label: "Chantiers", enfant: "Liste des chantiers", chemin: "/terrain/chantier" },
   { label: "Finance & Pilotage", enfant: "Tableau financier", chemin: "/finance" },
-  { label: "Fournisseurs", enfant: "Fournisseurs & commandes", chemin: "/bureau/fournisseurs" },
+  { label: "Fournisseurs", enfant: "Répertoire fournisseurs", chemin: "/bureau/fournisseurs?tab=fournisseurs" },
   { label: "Boîte à outils", enfant: "Métré IA", chemin: "/terrain/metre-ia" },
   { label: "Espace client", enfant: "Portails clients", chemin: "/bureau/portails-clients" },
 ];

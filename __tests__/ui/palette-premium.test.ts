@@ -270,9 +270,10 @@ describe('charte graphique — le perimetre n\'a pas deborde', () => {
     expect(p).not.toMatch(/#E53935|#C62828|#FF6F60/i)
   })
 
-  it('le module outils porte le bleu d\'information', () => {
+  it('le module outils porte la charte claire BNA (#F3F3F1 / Terracotta #B85B2B)', () => {
     const p = code(join('app', 'terrain', 'outils', 'page.tsx'))
-    expect(p).toMatch(/#42A5F5/i)
+    expect(p).toMatch(/#F3F3F1/i)
+    expect(p).toMatch(/#B85B2B/i)
   })
 
   it('le manifeste PWA affiche le nouveau fond', () => {
@@ -314,12 +315,10 @@ describe('charte graphique — le rouge attire sans dominer', () => {
     expect(rouge).toBeLessThan(neutre * 0.15) // mais il ne domine pas
   })
 
-  it('les bordures restent des gris translucides, pas du rouge', () => {
-    // L'alphabetique blanc existant tombe deja dans le gris discret sur la
-    // nouvelle carte : `border-white/5` -> #292929, `border-white/10` -> #343434.
-    // Aucune reecriture de classe n'est donc necessaire.
+  it('les bordures restent des gris doux (#E5E5E5), pas du rouge', () => {
     const p = code('app/terrain/outils/page.tsx')
-    expect(p).toMatch(/border-white\/10/)
+    expect(p).toMatch(/border-\[#E5E5E5\]/)
+    expect(p).not.toMatch(/border-red-/)
   })
 })
 
