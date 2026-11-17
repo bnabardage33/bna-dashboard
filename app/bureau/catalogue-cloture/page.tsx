@@ -6,11 +6,19 @@ import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
+import {
+  GAMME_MATERIAU_CONFIG,
+  GAMMES_MATERIAU_ORDRE,
+  getGammeBadgeClasses,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
 
 interface ArticleCatalogueCloture {
   id: string;
   categorie: string;
   materiau: string;
+  gamme_qualite?: GammeMateriau;
   reference: string | null;
   designation: string;
   longueur_m: number | null;
@@ -37,12 +45,14 @@ export default function CatalogueCloturePage() {
   const [articles, setArticles] = useState<ArticleCatalogueCloture[]>([]);
   const [loading, setLoading] = useState(true);
   const [categorie, setCategorie] = useState("tous");
+  const [gammeFiltre, setGammeFiltre] = useState<"toutes" | GammeMateriau>("toutes");
   const [recherche, setRecherche] = useState("");
   const [modalOuvert, setModalOuvert] = useState(false);
 
   // Formulaire nouvel article
   const [formCat, setFormCat] = useState("lame");
   const [formMat, setFormMat] = useState("COMPOSITE");
+  const [formGamme, setFormGamme] = useState<GammeMateriau>("standard");
   const [formRef, setFormRef] = useState("");
   const [formDesignation, setFormDesignation] = useState("");
   const [formLongueur, setFormLongueur] = useState("1.80");
@@ -73,6 +83,12 @@ export default function CatalogueCloturePage() {
     const q = recherche.trim().toLowerCase();
     return articles.filter((a) => {
       if (categorie !== "tous" && a.categorie !== categorie) return false;
+      if (
+        gammeFiltre !== "toutes" &&
+        normaliserGammeMateriau(a.gamme_qualite) !== gammeFiltre
+      ) {
+        return false;
+      }
       if (!q) return true;
       return (
         a.designation.toLowerCase().includes(q) ||
@@ -80,7 +96,7 @@ export default function CatalogueCloturePage() {
         a.materiau.toLowerCase().includes(q)
       );
     });
-  }, [articles, categorie, recherche]);
+  }, [articles, categorie, gammeFiltre, recherche]);
 
   async function creerArticle(e: React.FormEvent) {
     e.preventDefault();
@@ -96,6 +112,7 @@ export default function CatalogueCloturePage() {
         entreprise_id: ctx.entreprise_id,
         categorie: formCat,
         materiau: formMat,
+        gamme_qualite: formGamme,
         reference: formRef.trim() || null,
         designation: formDesignation.trim(),
         longueur_m: parseFloat(formLongueur.replace(",", ".")) || null,
@@ -163,7 +180,26 @@ export default function CatalogueCloturePage() {
               <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <select
+                aria-label="Filtrer par gamme matériau"
+                value={gammeFiltre}
+                onChange={(e) =>
+                  setGammeFiltre(
+                    e.target.value === "toutes"
+                      ? "toutes"
+                      : normaliserGammeMateriau(e.target.value)
+                  )
+                }
+                className="rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+              >
+                <option value="toutes">Toutes gammes</option>
+                {GAMMES_MATERIAU_ORDRE.map((g) => (
+                  <option key={g} value={g}>
+                    {GAMME_MATERIAU_CONFIG[g].labelClient}
+                  </option>
+                ))}
+              </select>
               {CATEGORIES.map((c) => (
                 <button
                   key={c.id}
@@ -220,7 +256,17 @@ export default function CatalogueCloturePage() {
                       </td>
                       <td className="px-4 py-3 text-[#555555]">{a.materiau}</td>
                       <td className="px-4 py-3">
-                        <p className="font-bold text-[#23272B]">{a.designation}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-bold text-[#23272B]">{a.designation}</p>
+                          <span
+                            className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                              normaliserGammeMateriau(a.gamme_qualite)
+                            )}`}
+                            title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelInterne}
+                          >
+                            {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelClient}
+                          </span>
+                        </div>
                         {a.reference && (
                           <p className="text-[11px] text-[#888888] font-mono">Réf: {a.reference}</p>
                         )}
@@ -306,6 +352,30 @@ export default function CatalogueCloturePage() {
                     <option value="ACIER">Acier</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label htmlFor="cloture-gamme-qualite" className="font-semibold text-[#555555]">
+                  Gamme matériau (Qualité)
+                </label>
+                <select
+                  id="cloture-gamme-qualite"
+                  value={formGamme}
+                  onChange={(e) => setFormGamme(normaliserGammeMateriau(e.target.value))}
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                >
+                  {GAMMES_MATERIAU_ORDRE.map((g) => {
+                    const cfg = GAMME_MATERIAU_CONFIG[g];
+                    const label =
+                      cfg.labelClient === cfg.labelInterne
+                        ? cfg.labelClient
+                        : `${cfg.labelClient} / ${cfg.labelInterne}`;
+                    return (
+                      <option key={g} value={g} className="bg-[#0B0F19] text-white">
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">

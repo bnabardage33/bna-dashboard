@@ -7,6 +7,7 @@
 
 /** Discriminant du modal : pilote le rendu conditionnel des onglets. */
 export type CatalogueType = "BARDAGE" | "TERRASSE_LAME" | "TERRASSE_ACCESSOIRE";
+import type { GammeMateriau } from "@/types/catalogue";
 
 /** Une variante de dimensions (bardage) — JSONB `dimensions_disponibles`. */
 export interface DimensionItem {
@@ -46,6 +47,7 @@ export interface BardageValues {
   famille_label: string;
   fabricant: string;
   gamme: string;
+  gamme_qualite?: GammeMateriau;
   code_decor: string;
   couleur: string;
   code_ral: string;
@@ -68,6 +70,7 @@ export interface TerrasseLameValues {
   reference_fournisseur: string;
   essence: string;
   type_material: TypeMaterialTerrasse | "";
+  gamme_qualite?: GammeMateriau;
   longueur_mm: number | null;
   largeur_utile_mm: number | null;
   epaisseur_mm: number | null;
@@ -84,6 +87,7 @@ export interface TerrasseAccessoireValues {
   description: string;
   fournisseur: string;
   categorie: CatAccessoireTerrasse | "";
+  gamme_qualite?: GammeMateriau;
   /** JSONB polymorphe : ids de lames et/ou `type_material` (cf. compatAccessoires). */
   materiel_compatibles: string[];
   conditionnement: string;
@@ -157,7 +161,7 @@ export function emptyBardage(): BardageValues {
     kind: "BARDAGE",
     designation: "", description: "", designation_devis: "",
     categorie: "Parements & Bardages", famille_label: "Parements & Bardages",
-    fabricant: "", gamme: "", code_decor: "", couleur: "", code_ral: "", finition: "",
+    fabricant: "", gamme: "", gamme_qualite: "standard", code_decor: "", couleur: "", code_ral: "", finition: "",
     dimensions_disponibles: [], fournisseur: "", unite: "m²",
     pu_ht: "", pu_revient: "", prix_ttc: "", type_cout: "matiere",
   };
@@ -167,7 +171,7 @@ export function emptyTerrasseLame(): TerrasseLameValues {
   return {
     kind: "TERRASSE_LAME",
     designation: "", description: "", fournisseur: "",
-    reference_fournisseur: "", essence: "", type_material: "",
+    reference_fournisseur: "", essence: "", type_material: "", gamme_qualite: "standard",
     longueur_mm: null, largeur_utile_mm: null, epaisseur_mm: null,
     prix_m2_ht: "", prix_unitaire_lame: "", image_url: "", fiche_technique_pdf: "",
   };
@@ -177,7 +181,7 @@ export function emptyTerrasseAccessoire(): TerrasseAccessoireValues {
   return {
     kind: "TERRASSE_ACCESSOIRE",
     designation: "", description: "", fournisseur: "",
-    categorie: "", materiel_compatibles: [], conditionnement: "",
+    categorie: "", gamme_qualite: "standard", materiel_compatibles: [], conditionnement: "",
     prix_conditionnement: "", unite_mesure: "", specifications_dt: null,
     type_cout: "matiere", pu_ht: "", pu_revient: "",
   };

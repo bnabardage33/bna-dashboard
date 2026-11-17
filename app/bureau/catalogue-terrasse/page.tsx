@@ -16,6 +16,13 @@ import ProductFormModal, {
 } from "@/components/catalogue/ProductFormModal";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
 import {
+  GAMME_MATERIAU_CONFIG,
+  GAMMES_MATERIAU_ORDRE,
+  getGammeBadgeClasses,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
+import {
   fromRow,
   toInsertPayload,
   type TerrasseAccessoireInsertPayload,
@@ -143,6 +150,7 @@ export default function CatalogueTerrassePage() {
   const [recherche, setRecherche] = useState("");
   const [filtre, setFiltre] = useState<FiltreOnglet>("tout");
   const [filtreMateriau, setFiltreMateriau] = useState("All");
+  const [filtreGamme, setFiltreGamme] = useState<"toutes" | GammeMateriau>("toutes");
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [modalType, setModalType] = useState<TypeTerrasse>("TERRASSE_LAME");
@@ -249,6 +257,9 @@ export default function CatalogueTerrassePage() {
   const lamesFiltrees = useMemo(() => {
     return lames.filter((l) => {
       if (filtreMateriau !== "All" && l.type_material !== filtreMateriau) return false;
+      if (filtreGamme !== "toutes" && normaliserGammeMateriau(l.gamme_qualite) !== filtreGamme) {
+        return false;
+      }
       if (!rechercheBasse) return true;
       const champs = [
         l.designation,
@@ -262,11 +273,14 @@ export default function CatalogueTerrassePage() {
         .toLowerCase();
       return champs.includes(rechercheBasse);
     });
-  }, [lames, filtreMateriau, rechercheBasse]);
+  }, [lames, filtreMateriau, filtreGamme, rechercheBasse]);
 
   const accessoiresFiltres = useMemo(() => {
-    if (!rechercheBasse) return accessoires;
     return accessoires.filter((a) => {
+      if (filtreGamme !== "toutes" && normaliserGammeMateriau(a.gamme_qualite) !== filtreGamme) {
+        return false;
+      }
+      if (!rechercheBasse) return true;
       const champs = [
         a.designation,
         a.conditionnement,
@@ -279,7 +293,7 @@ export default function CatalogueTerrassePage() {
         .toLowerCase();
       return champs.includes(rechercheBasse);
     });
-  }, [accessoires, rechercheBasse]);
+  }, [accessoires, filtreGamme, rechercheBasse]);
 
   /** Accessoires matériels (hors prestations), répartis par groupe métier. */
   const accessoiresGroupes = useMemo(() => {
@@ -477,15 +491,25 @@ export default function CatalogueTerrassePage() {
         }`}
       >
         <div className="flex justify-between items-start mb-2">
-          <span
-            className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border w-fit ${
-              prestation
-                ? "border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]"
-                : "border-amber-200 bg-amber-50 text-amber-800"
-            }`}
-          >
-            {prestation ? "Main-d'œuvre" : libelleCategorieAccessoire(a.categorie)}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border w-fit ${
+                prestation
+                  ? "border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]"
+                  : "border-amber-200 bg-amber-50 text-amber-800"
+              }`}
+            >
+              {prestation ? "Main-d'œuvre" : libelleCategorieAccessoire(a.categorie)}
+            </span>
+            <span
+              className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                normaliserGammeMateriau(a.gamme_qualite)
+              )}`}
+              title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelInterne}
+            >
+              {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(a.gamme_qualite)].labelClient}
+            </span>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => ouvrirEdition("TERRASSE_ACCESSOIRE", a)}
@@ -622,6 +646,27 @@ export default function CatalogueTerrassePage() {
                 </select>
               )}
 
+              <select
+                id="filtre-gamme-terrasse"
+                aria-label="Filtrer par gamme matériau"
+                value={filtreGamme}
+                onChange={(e) =>
+                  setFiltreGamme(
+                    e.target.value === "toutes"
+                      ? "toutes"
+                      : normaliserGammeMateriau(e.target.value)
+                  )
+                }
+                className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+              >
+                <option value="toutes">Toutes gammes</option>
+                {GAMMES_MATERIAU_ORDRE.map((g) => (
+                  <option key={g} value={g}>
+                    {GAMME_MATERIAU_CONFIG[g].labelClient}
+                  </option>
+                ))}
+              </select>
+
               <div className="relative w-full sm:w-64">
                 <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
                 <input
@@ -639,6 +684,7 @@ export default function CatalogueTerrassePage() {
                   setRecherche("");
                   setFiltre("tout");
                   setFiltreMateriau("All");
+                  setFiltreGamme("toutes");
                 }}
                 className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-semibold text-[#666666] hover:bg-white hover:text-[#23272B]"
               >
@@ -700,6 +746,14 @@ export default function CatalogueTerrassePage() {
                                   {l.essence}
                                 </span>
                               )}
+                              <span
+                                className={`inline-block rounded-full border px-2.5 py-1 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                                  normaliserGammeMateriau(l.gamme_qualite)
+                                )}`}
+                                title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(l.gamme_qualite)].labelInterne}
+                              >
+                                {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(l.gamme_qualite)].labelClient}
+                              </span>
                             </div>
                             <div className="flex gap-2">
                               <button

@@ -10,6 +10,11 @@ import {
   type CadencesTempsPose,
   type ResultatTempsPoseCloture,
 } from "@/lib/tempsPoseCalcul";
+import {
+  GAMME_MATERIAU_CONFIG,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
 
 export interface TarifsCloture {
   prixLameUnitaireHt: number;
@@ -67,6 +72,8 @@ export interface LigneChiffrageCloture {
 
 export interface OptionsChiffrageCloture {
   inclureMainOeuvre?: boolean;
+  gamme_qualite?: GammeMateriau;
+  tempsPoseManuelHeures?: number;
   tarifs?: Partial<TarifsCloture>;
   cadences?: Partial<CadencesTempsPose>;
 }
@@ -74,6 +81,8 @@ export interface OptionsChiffrageCloture {
 export interface ResultatChiffrageCloture {
   calepinage: FenceResult;
   tempsPose: ResultatTempsPoseCloture;
+  gamme_qualite: GammeMateriau;
+  margeCibleDefaut: number;
   lignesFournitures: LigneChiffrageCloture[];
   lignesMainOeuvre: LigneChiffrageCloture[];
   lignesDevis: LigneChiffrageCloture[];
@@ -95,8 +104,16 @@ export function calculerChiffrageCloture(
   options: OptionsChiffrageCloture = {}
 ): ResultatChiffrageCloture {
   const calepinage = calculateFenceLayout(config);
+  const gammeQualite = normaliserGammeMateriau(
+    options.gamme_qualite ??
+      (config as FenceConfig & { gamme_qualite?: unknown }).gamme_qualite
+  );
   const cadences: CadencesTempsPose = { ...CADENCES_DEFAUT, ...options.cadences };
-  const tempsPose = calculerTempsPoseCloture(calepinage, { cadences });
+  const tempsPose = calculerTempsPoseCloture(calepinage, {
+    cadences,
+    gamme_qualite: gammeQualite,
+    tempsPoseManuelHeures: options.tempsPoseManuelHeures,
+  });
   const tarifs: TarifsCloture = {
     ...TARIFS_CLOTURE_DEFAUT[config.materiau],
     ...options.tarifs,
@@ -229,6 +246,8 @@ export function calculerChiffrageCloture(
   return {
     calepinage,
     tempsPose,
+    gamme_qualite: gammeQualite,
+    margeCibleDefaut: GAMME_MATERIAU_CONFIG[gammeQualite].margeCibleDefaut,
     lignesFournitures,
     lignesMainOeuvre,
     lignesDevis: [...lignesFournitures, ...lignesMainOeuvre],

@@ -5,6 +5,7 @@
 // la conversion des types SQL.
 
 import type { Database, Json, TablesInsert } from "@/types/supabase";
+import { normaliserGammeMateriau } from "@/types/catalogue";
 import type {
   BardageValues,
   CatAccessoireTerrasse,
@@ -128,6 +129,7 @@ function bardageVersInsert(v: BardageValues): TablesInsert<"catalogue_ouvrages">
     designation_devis: texteOuNull(v.designation_devis),
     fabricant: texteOuNull(v.fabricant),
     gamme: texteOuNull(v.gamme),
+    gamme_qualite: normaliserGammeMateriau(v.gamme_qualite),
     code_decor: texteOuNull(v.code_decor),
     couleur: texteOuNull(v.couleur),
     code_ral: texteOuNull(v.code_ral),
@@ -149,6 +151,7 @@ function terrasseLameVersInsert(v: TerrasseLameValues): TerrasseLameInsertPayloa
     reference_fournisseur: texteOuNull(v.reference_fournisseur),
     essence: texteOuNull(v.essence),
     type_material: v.type_material === "" ? null : v.type_material,
+    gamme_qualite: normaliserGammeMateriau(v.gamme_qualite),
     longueur_mm: nombreOuNull(v.longueur_mm),
     largeur_utile_mm: nombreOuNull(v.largeur_utile_mm),
     epaisseur_mm: nombreOuNull(v.epaisseur_mm),
@@ -173,6 +176,7 @@ function terrasseAccessoireVersInsert(v: TerrasseAccessoireValues): TerrasseAcce
     description: texteOuNull(v.description),
     fournisseur: texteOuNull(v.fournisseur),
     categorie: v.categorie === "" ? null : v.categorie,
+    gamme_qualite: normaliserGammeMateriau(v.gamme_qualite),
     type_cout: v.type_cout,
     materiel_compatibles: v.materiel_compatibles as unknown as Json,
     conditionnement: texteOuNull(v.conditionnement),
@@ -205,6 +209,7 @@ export function fromBardageRow(row: RowBardage): BardageValues {
     famille_label: row.famille_label ?? "",
     fabricant: row.fabricant ?? "",
     gamme: row.gamme ?? "",
+    gamme_qualite: normaliserGammeMateriau(row.gamme_qualite),
     code_decor: row.code_decor ?? "",
     couleur: row.couleur ?? "",
     code_ral: row.code_ral ?? "",
@@ -228,6 +233,7 @@ export function fromTerrasseLameRow(row: RowLame): TerrasseLameValues {
     reference_fournisseur: row.reference_fournisseur ?? "",
     essence: row.essence ?? "",
     type_material: versTypeMaterial(row.type_material),
+    gamme_qualite: normaliserGammeMateriau(row.gamme_qualite),
     longueur_mm: row.longueur_mm,
     largeur_utile_mm: row.largeur_utile_mm,
     epaisseur_mm: row.epaisseur_mm,
@@ -245,6 +251,7 @@ export function fromTerrasseAccessoireRow(row: RowAccessoire): TerrasseAccessoir
     description: row.description ?? "",
     fournisseur: row.fournisseur ?? "",
     categorie: versCatAccessoire(row.categorie),
+    gamme_qualite: normaliserGammeMateriau(row.gamme_qualite),
     type_cout: row.type_cout === "main_oeuvre" ? "main_oeuvre" : "matiere",
     materiel_compatibles: parserMaterielCompatibles(row.materiel_compatibles),
     conditionnement: row.conditionnement ?? "",

@@ -10,6 +10,7 @@ import type {
   TypeMotorisationTerrasse,
 } from "../types";
 import { getFabricantComposite, getGammeDefaut } from "../composite/fabricants";
+import type { GammeMateriau } from "@/types/catalogue";
 
 export type RuleNature =
   | "NORME_DTU_51_4"
@@ -202,6 +203,10 @@ export interface TerrasseProGeometricResult {
   framework: "NF_DTU_51_4_DEC_2018" | "COMPOSITE_MANUFACTURER";
   solicitationCategory: SolicitationCategory;
   conceptionType: "COURANTE" | "ELABOREE";
+  gamme_qualite: GammeMateriau;
+  coefTempsPoseGamme: number;
+  heuresPoseEstimatives: number;
+  margeCibleDefaut: number;
   isValid: boolean;
   blockingErrors: RuleDiagnosticItem[];
   warnings: RuleDiagnosticItem[];

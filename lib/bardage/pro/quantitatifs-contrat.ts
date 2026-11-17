@@ -15,6 +15,12 @@ import {
   calculerHabillageOuverturesEtProfils1D,
   type HabillageProfilsResult,
 } from "./profils-finitions";
+import {
+  GAMME_MATERIAU_CONFIG,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
+import { CADENCES_DEFAUT } from "@/lib/tempsPoseCalcul";
 
 export interface DistinctQuantitiesBardage {
   /** Quantités nettes géométriques posées (aucun déchet) */
@@ -91,6 +97,10 @@ export interface BardageProGeometricResult {
   facadeId?: string;
   facadeNom?: string;
   preset: PresetBardage;
+  gamme_qualite: GammeMateriau;
+  coefTempsPoseGamme: number;
+  heuresPoseEstimatives: number;
+  margeCibleDefaut: number;
   geometry: {
     surfaceNetteM2: number;
     lineaireRivesMl: number;
@@ -111,6 +121,8 @@ export interface BardageProGeometricResult {
 
 export interface CalculerBardageProOptions {
   gamme?: GammeFabricant;
+  gamme_qualite?: GammeMateriau;
+  tempsPoseManuelHeures?: number;
   formatPlaqueChoisi?: { longueurMm: number; largeurMm: number };
   formatLameChoisi?: { longueurM: number; largeurUtileMm: number };
   hauteurModuleForceeM?: number;
@@ -251,10 +263,32 @@ export function calculerBardagePro(
     avertissements.push(`Taux de chute élevé (${calepinage.tauxChuteReelPct} %). Envisager un autre format de plaque brute.`);
   }
 
+  const gammeQualite = normaliserGammeMateriau(options.gamme_qualite);
+  const gammeCfg = GAMME_MATERIAU_CONFIG[gammeQualite];
+  const aTempsManuel =
+    typeof options.tempsPoseManuelHeures === "number" &&
+    Number.isFinite(options.tempsPoseManuelHeures) &&
+    options.tempsPoseManuelHeures >= 0;
+  const coefTempsPoseGamme = aTempsManuel ? 1 : gammeCfg.coefTempsPose;
+  const cadenceParementBase =
+    preset.typeMateriau === "panneaux_hpl"
+      ? CADENCES_DEFAUT.bardage_parement_hpl_h_m2
+      : CADENCES_DEFAUT.bardage_parement_clin_h_m2;
+  const heuresPoseBrutes =
+    calepinage.surfaceNetteM2 *
+    (CADENCES_DEFAUT.bardage_ossature_h_m2 + cadenceParementBase * coefTempsPoseGamme);
+  const heuresPoseEstimatives = aTempsManuel
+    ? Math.round(options.tempsPoseManuelHeures! * 100) / 100
+    : Math.round(heuresPoseBrutes * 100) / 100;
+
   return {
     facadeId: facade.id,
     facadeNom: facade.nom,
     preset,
+    gamme_qualite: gammeQualite,
+    coefTempsPoseGamme,
+    heuresPoseEstimatives,
+    margeCibleDefaut: gammeCfg.margeCibleDefaut,
     geometry: {
       surfaceNetteM2: calepinage.surfaceNetteM2,
       lineaireRivesMl: calepinage.lineaireRivesMl,

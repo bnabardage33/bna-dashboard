@@ -136,6 +136,7 @@ export type Database = {
           finition: string | null
           fournisseur: string | null
           gamme: string | null
+          gamme_qualite: Database["public"]["Enums"]["gamme_materiau_enum"]
           id: string
           largeur_mm: number | null
           longueur_mm: number | null
@@ -161,6 +162,7 @@ export type Database = {
           finition?: string | null
           fournisseur?: string | null
           gamme?: string | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           id?: string
           largeur_mm?: number | null
           longueur_mm?: number | null
@@ -186,6 +188,7 @@ export type Database = {
           finition?: string | null
           fournisseur?: string | null
           gamme?: string | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           id?: string
           largeur_mm?: number | null
           longueur_mm?: number | null
@@ -289,6 +292,7 @@ export type Database = {
           designation: string | null
           entreprise_id: string
           fournisseur: string | null
+          gamme_qualite: Database["public"]["Enums"]["gamme_materiau_enum"]
           id: string
           materiel_compatibles: Json | null
           prix_conditionnement: number | null
@@ -307,6 +311,7 @@ export type Database = {
           designation?: string | null
           entreprise_id: string
           fournisseur?: string | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           id?: string
           materiel_compatibles?: Json | null
           prix_conditionnement?: number | null
@@ -325,6 +330,7 @@ export type Database = {
           designation?: string | null
           entreprise_id?: string
           fournisseur?: string | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           id?: string
           materiel_compatibles?: Json | null
           prix_conditionnement?: number | null
@@ -355,6 +361,7 @@ export type Database = {
           essence: string | null
           fiche_technique_pdf: string | null
           fournisseur: string | null
+          gamme_qualite: Database["public"]["Enums"]["gamme_materiau_enum"]
           id: string
           image_url: string | null
           largeur_utile_mm: number | null
@@ -374,6 +381,7 @@ export type Database = {
           essence?: string | null
           fiche_technique_pdf?: string | null
           fournisseur?: string | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           id?: string
           image_url?: string | null
           largeur_utile_mm?: number | null
@@ -393,6 +401,7 @@ export type Database = {
           essence?: string | null
           fiche_technique_pdf?: string | null
           fournisseur?: string | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           id?: string
           image_url?: string | null
           largeur_utile_mm?: number | null
@@ -422,6 +431,7 @@ export type Database = {
           designation: string
           entreprise_id: string
           epaisseur_mm: number | null
+          gamme_qualite: Database["public"]["Enums"]["gamme_materiau_enum"]
           hauteur_m: number | null
           id: string
           longueur_m: number | null
@@ -440,6 +450,7 @@ export type Database = {
           designation: string
           entreprise_id?: string
           epaisseur_mm?: number | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           hauteur_m?: number | null
           id?: string
           longueur_m?: number | null
@@ -458,6 +469,7 @@ export type Database = {
           designation?: string
           entreprise_id?: string
           epaisseur_mm?: number | null
+          gamme_qualite?: Database["public"]["Enums"]["gamme_materiau_enum"]
           hauteur_m?: number | null
           id?: string
           longueur_m?: number | null
@@ -4152,6 +4164,7 @@ export type Database = {
     }
     Enums: {
       cat_accessoire_terrasse: "CLIP" | "LAMBOURDE" | "PLOT" | "VIS" | "BANDEROLE" | "SOLIVE" | "GEOTEXTILE" | "GRAVIER" | "CONCASSE" | "DALLE_BETON" | "CACHE" | "PROFILE_PVC" | "TERRASSE_MOBILE"
+      gamme_materiau_enum: "eco" | "standard" | "premium" | "prestige"
       type_material_terrasse: "BOIS_NATUREL" | "COMPOSITE" | "PVC"
     }
     CompositeTypes: {
@@ -4281,6 +4294,7 @@ export const Constants = {
   public: {
     Enums: {
       cat_accessoire_terrasse: ["CLIP", "LAMBOURDE", "PLOT", "VIS", "BANDEROLE", "SOLIVE", "GEOTEXTILE", "GRAVIER", "CONCASSE", "DALLE_BETON", "CACHE", "PROFILE_PVC", "TERRASSE_MOBILE"],
+      gamme_materiau_enum: ["eco", "standard", "premium", "prestige"],
       type_material_terrasse: ["BOIS_NATUREL", "COMPOSITE", "PVC"],
     },
   },

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import type { GammeMateriau } from "@/types/catalogue"
 
 export type CatalogueTerrasseLame = {
   id: string
@@ -11,6 +12,7 @@ export type CatalogueTerrasseLame = {
   reference_fournisseur: string | null
   essence: string | null
   type_material: string | null
+  gamme_qualite?: GammeMateriau | null
   longueur_mm: number | null
   largeur_utile_mm: number | null
   epaisseur_mm: number | null
@@ -29,6 +31,7 @@ export type CatalogueTerrasseAccessoire = {
   description: string | null
   fournisseur: string | null
   categorie: string | null
+  gamme_qualite?: GammeMateriau | null
   materiel_compatibles: unknown
   conditionnement: string | null
   prix_conditionnement: number | null

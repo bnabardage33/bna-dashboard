@@ -23,6 +23,12 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import {
+  GAMME_MATERIAU_CONFIG,
+  getGammeLabelClient,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
+import {
   chantierIdDepuisRecherche,
   planPreselectionDevis,
 } from "@/lib/devisPreselection";
@@ -63,6 +69,8 @@ type CatalogueOuvrage = {
   code_ral?: string;
   unite: string;
   pu_ht: number;
+  pu_revient?: number | null;
+  gamme_qualite?: GammeMateriau | null;
 };
 
 type Client = {
@@ -86,6 +94,7 @@ type Ligne = {
   catalogue_id: string | null;
   pu_revient?: number | null;
   type_cout?: CoutType | null;
+  gamme_qualite?: GammeMateriau;
   a_chiffrer: boolean;
   justification?: string;
   confiance?: number;
@@ -381,6 +390,17 @@ function DevisContenu() {
     if (!ouvrageId) return;
     const ouv = catalogue.find((o) => o.id === ouvrageId);
     if (!ouv) return;
+    const gammeQualite = normaliserGammeMateriau(ouv.gamme_qualite);
+    const puHtSuggere =
+      ouv.pu_ht && ouv.pu_ht > 0
+        ? ouv.pu_ht
+        : ouv.pu_revient && ouv.pu_revient > 0
+          ? Math.round(
+              ouv.pu_revient *
+                GAMME_MATERIAU_CONFIG[gammeQualite].margeCibleDefaut *
+                100
+            ) / 100
+          : ouv.pu_ht;
     setLignes((prev) => {
       return [
         ...prev.filter(
@@ -392,8 +412,16 @@ function DevisContenu() {
         ),
         {
           catalogue_id: ouv.id,
+          gamme_qualite: gammeQualite,
+          pu_revient: ouv.pu_revient ?? null,
           designation: ouv.designation,
-          description: [ouv.designation_devis || ouv.description, ouv.code_ral ? `- Finition : ${ouv.code_ral}` : null].filter(Boolean).join(" \n"),
+          description: [
+            ouv.designation_devis || ouv.description,
+            ouv.code_ral ? `- Finition : ${ouv.code_ral}` : null,
+            `- Gamme : ${getGammeLabelClient(gammeQualite)}`,
+          ]
+            .filter(Boolean)
+            .join(" \n"),
           qte: (() => {
             let surf = parseFloat(surfacePonctuelle.replace(",", "."));
             if (isNaN(surf) || surf <= 0) {
@@ -417,7 +445,7 @@ function DevisContenu() {
             return 1;
           })(),
           unite: ouv.unite,
-          pu_ht: ouv.pu_ht,
+          pu_ht: puHtSuggere,
           a_chiffrer: false,
         },
       ];

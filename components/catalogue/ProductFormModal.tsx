@@ -25,6 +25,11 @@ import {
   type TypeMaterialTerrasse,
 } from "./types";
 import { useScraping } from "@/hooks/useScrapingCatalogue";
+import {
+  GAMME_MATERIAU_CONFIG,
+  GAMMES_MATERIAU_ORDRE,
+  normaliserGammeMateriau,
+} from "@/types/catalogue";
 
 export interface ProductImportCandidates {
   prix?: string;
@@ -435,6 +440,43 @@ export default function ProductFormModal({
                   </select>
                 </div>
               </>
+            )}
+
+            {activeTab === "general" && (
+              <div className="rounded-lg border border-slate-700 bg-[#0B0F19] p-3 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="chp-gamme-qualite" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Gamme matériau (Qualité &amp; Positionnement)
+                  </label>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    Pose ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].coefTempsPose.toFixed(2)} · Marge cible ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].margeCibleDefaut.toFixed(2)}
+                  </span>
+                </div>
+                <select
+                  id="chp-gamme-qualite"
+                  value={normaliserGammeMateriau(values.gamme_qualite)}
+                  onChange={(e) =>
+                    patch({ gamme_qualite: normaliserGammeMateriau(e.target.value) })
+                  }
+                  className="w-full rounded-lg border border-slate-700 bg-[#0B0F19] p-2 text-sm font-medium text-white focus:border-[#E30613] focus:outline-none"
+                >
+                  {GAMMES_MATERIAU_ORDRE.map((g) => {
+                    const cfg = GAMME_MATERIAU_CONFIG[g];
+                    const label =
+                      cfg.labelClient === cfg.labelInterne
+                        ? cfg.labelClient
+                        : `${cfg.labelClient} / ${cfg.labelInterne}`;
+                    return (
+                      <option key={g} value={g} className="bg-[#0B0F19] text-white">
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-[11px] text-slate-400">
+                  {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].description}
+                </p>
+              </div>
             )}
 
             {activeTab === "general" && values.kind === "TERRASSE_ACCESSOIRE" && (

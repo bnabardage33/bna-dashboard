@@ -8,6 +8,11 @@ import type { ResultatMetre } from "@/lib/metre-serialization";
 import { calculerHabillageOuverturesEtProfils1D } from "@/lib/bardage/pro/profils-finitions";
 import type { ResultatCalculTerrasse } from "@/lib/terrasse/types";
 import type { FenceResult } from "@/lib/cloture/calepinageCloture";
+import {
+  GAMME_MATERIAU_CONFIG,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
 
 // ── Cadences & Taux horaires paramétrables (table `catalogue_temps`) ──────────
 
@@ -193,6 +198,8 @@ export interface ResultatTempsPoseBardage {
   parPhase: Record<PhaseBardageTemps, number>;
   totalHeures: number;
   tempsPlanification: number;
+  gamme_qualite: GammeMateriau;
+  coefTempsPoseGamme: number;
   details: {
     surfaceNetteTotaleM2: number;
     surfaceIsolantM2: number;
@@ -209,6 +216,10 @@ export interface OptionsCalculTempsBardage {
   claireVoie?: boolean;
   /** Permet de fournir directement un linéaire de cornières d'angle/départ (sinon calculé via profils-finitions.ts). */
   lineaireCornieresMl?: number;
+  /** Gamme matériau (applique coefTempsPose sauf si tempsPoseManuelHeures est fourni). */
+  gamme_qualite?: GammeMateriau;
+  /** Temps de pose manuel forcé (court-circuite coefTempsPose). */
+  tempsPoseManuelHeures?: number;
 }
 
 function cadenceParementPourZone(
@@ -305,16 +316,27 @@ export function calculerTempsPoseBardage(
       mlCornieresZone * cadences.bardage_corniere_h_ml;
   }
 
+  const gamme = normaliserGammeMateriau(options.gamme_qualite);
+  const aTempsManuel =
+    typeof options.tempsPoseManuelHeures === "number" &&
+    Number.isFinite(options.tempsPoseManuelHeures) &&
+    options.tempsPoseManuelHeures >= 0;
+  const coefTempsPoseGamme = aTempsManuel
+    ? 1
+    : GAMME_MATERIAU_CONFIG[gamme].coefTempsPose;
+
   const parPhase: Record<PhaseBardageTemps, number> = {
     ossature: arrondirHeures(hOssature),
     isolation: arrondirHeures(hIsolation),
-    bardage: arrondirHeures(hBardage),
+    bardage: arrondirHeures(hBardage * coefTempsPoseGamme),
     finitions: arrondirHeures(hFinitions),
   };
 
-  const totalHeures = arrondirHeures(
-    parPhase.ossature + parPhase.isolation + parPhase.bardage + parPhase.finitions,
-  );
+  const totalHeures = aTempsManuel
+    ? arrondirHeures(options.tempsPoseManuelHeures!)
+    : arrondirHeures(
+        parPhase.ossature + parPhase.isolation + parPhase.bardage + parPhase.finitions,
+      );
   const tempsPlanification = arrondirHeures(
     calculerTempsPlanification(totalHeures, options.coefPerteRendement ?? 1.8),
   );
@@ -323,6 +345,8 @@ export function calculerTempsPoseBardage(
     parPhase,
     totalHeures,
     tempsPlanification,
+    gamme_qualite: gamme,
+    coefTempsPoseGamme,
     details: {
       surfaceNetteTotaleM2: arrondirHeures(surfaceNetteTotaleM2),
       surfaceIsolantM2: arrondirHeures(surfaceIsolantM2),
@@ -345,6 +369,8 @@ export interface ResultatTempsPoseTerrasse {
   parPhase: Record<PhaseTerrasseTemps, number>;
   totalHeures: number;
   tempsPlanification: number;
+  gamme_qualite: GammeMateriau;
+  coefTempsPoseGamme: number;
   details: {
     surfaceNetteM2: number;
     presenceEscalier: boolean;
@@ -357,6 +383,8 @@ export interface ResultatTempsPoseTerrasse {
 export interface OptionsCalculTempsTerrasse {
   cadences?: Partial<CadencesTempsPose>;
   coefPerteRendement?: number;
+  gamme_qualite?: GammeMateriau;
+  tempsPoseManuelHeures?: number;
 }
 
 /**
@@ -398,19 +426,30 @@ export function calculerTempsPoseTerrasse(
     }
   }
 
+  const gamme = normaliserGammeMateriau(options.gamme_qualite);
+  const aTempsManuel =
+    typeof options.tempsPoseManuelHeures === "number" &&
+    Number.isFinite(options.tempsPoseManuelHeures) &&
+    options.tempsPoseManuelHeures >= 0;
+  const coefTempsPoseGamme = aTempsManuel
+    ? 1
+    : GAMME_MATERIAU_CONFIG[gamme].coefTempsPose;
+
   const parPhase: Record<PhaseTerrasseTemps, number> = {
     terrassement_support: arrondirHeures(hPrep),
     structure_plots_lambourdes: arrondirHeures(hStructure),
-    pose_platelage: arrondirHeures(hPlatelage),
+    pose_platelage: arrondirHeures(hPlatelage * coefTempsPoseGamme),
     finitions_rives: arrondirHeures(hFinitions),
   };
 
-  const totalHeures = arrondirHeures(
-    parPhase.terrassement_support +
-      parPhase.structure_plots_lambourdes +
-      parPhase.pose_platelage +
-      parPhase.finitions_rives,
-  );
+  const totalHeures = aTempsManuel
+    ? arrondirHeures(options.tempsPoseManuelHeures!)
+    : arrondirHeures(
+        parPhase.terrassement_support +
+          parPhase.structure_plots_lambourdes +
+          parPhase.pose_platelage +
+          parPhase.finitions_rives,
+      );
   const tempsPlanification = arrondirHeures(
     calculerTempsPlanification(totalHeures, options.coefPerteRendement ?? 1.8),
   );
@@ -419,6 +458,8 @@ export function calculerTempsPoseTerrasse(
     parPhase,
     totalHeures,
     tempsPlanification,
+    gamme_qualite: gamme,
+    coefTempsPoseGamme,
     details: {
       surfaceNetteM2: arrondirHeures(surfaceNette),
       presenceEscalier,
@@ -440,12 +481,16 @@ export type PhaseClotureTemps =
 export interface OptionsCalculTempsCloture {
   cadences?: Partial<CadencesTempsPose>;
   coefPerteRendement?: number;
+  gamme_qualite?: GammeMateriau;
+  tempsPoseManuelHeures?: number;
 }
 
 export interface ResultatTempsPoseCloture {
   parPhase: Record<PhaseClotureTemps, number>;
   totalHeures: number;
   tempsPlanification: number;
+  gamme_qualite: GammeMateriau;
+  coefTempsPoseGamme: number;
   details: {
     lineaireTotalM: number;
     totalPoteaux: number;
@@ -478,19 +523,30 @@ export function calculerTempsPoseCloture(
   const hPortillonsFinitions =
     nbPortillons * cadences.cloture_portillon_finitions_h_u + totalPoteaux * 0.08;
 
+  const gamme = normaliserGammeMateriau(options.gamme_qualite);
+  const aTempsManuel =
+    typeof options.tempsPoseManuelHeures === "number" &&
+    Number.isFinite(options.tempsPoseManuelHeures) &&
+    options.tempsPoseManuelHeures >= 0;
+  const coefTempsPoseGamme = aTempsManuel
+    ? 1
+    : GAMME_MATERIAU_CONFIG[gamme].coefTempsPose;
+
   const parPhase: Record<PhaseClotureTemps, number> = {
     implantation_scellement: arrondirHeures(hImplantation),
     pose_poteaux_soubassement: arrondirHeures(hPoteauxSoubassement),
-    pose_panneaux_lames: arrondirHeures(hLamesPanneaux),
+    pose_panneaux_lames: arrondirHeures(hLamesPanneaux * coefTempsPoseGamme),
     portillons_finitions: arrondirHeures(hPortillonsFinitions),
   };
 
-  const totalHeures = arrondirHeures(
-    parPhase.implantation_scellement +
-      parPhase.pose_poteaux_soubassement +
-      parPhase.pose_panneaux_lames +
-      parPhase.portillons_finitions,
-  );
+  const totalHeures = aTempsManuel
+    ? arrondirHeures(options.tempsPoseManuelHeures!)
+    : arrondirHeures(
+        parPhase.implantation_scellement +
+          parPhase.pose_poteaux_soubassement +
+          parPhase.pose_panneaux_lames +
+          parPhase.portillons_finitions,
+      );
   const tempsPlanification = arrondirHeures(
     calculerTempsPlanification(totalHeures, options.coefPerteRendement ?? 1.8),
   );
@@ -499,6 +555,8 @@ export function calculerTempsPoseCloture(
     parPhase,
     totalHeures,
     tempsPlanification,
+    gamme_qualite: gamme,
+    coefTempsPoseGamme,
     details: {
       lineaireTotalM: arrondirHeures(resultat.lineaireTotalM),
       totalPoteaux,

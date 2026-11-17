@@ -24,6 +24,13 @@ import ProductFormModal, {
   type ProductImportCandidates,
 } from "@/components/catalogue/ProductFormModal";
 import CadencesMainOeuvreSection from "@/components/catalogue/CadencesMainOeuvreSection";
+import {
+  GAMME_MATERIAU_CONFIG,
+  GAMMES_MATERIAU_ORDRE,
+  getGammeBadgeClasses,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
 import { fromRow, toInsertPayload } from "@/components/catalogue/mappers";
 import { emptyBardage, type NatureCout, type ProductDraft } from "@/components/catalogue/types";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
@@ -57,6 +64,7 @@ type Ouvrage = {
   // Marque & Décor
   fabricant?: string;
   gamme?: string;
+  gamme_qualite?: GammeMateriau;
   code_decor?: string;
   couleur?: string;
   code_ral?: string;
@@ -175,6 +183,7 @@ export default function CataloguePage() {
   const [activeSubCategory, setActiveSubCategory] = useState<string>("Tous");
   const [activeFabricant, setActiveFabricant] = useState<string>("All");
   const [typeFiltre, setTypeFiltre] = useState<"tous" | "matiere" | "main_oeuvre">("tous");
+  const [gammeFiltre, setGammeFiltre] = useState<"toutes" | GammeMateriau>("toutes");
 
   // Modal Personnalisation de tarif (propre au tenant)
   const [modalPrixOuvrage, setModalPrixOuvrage] = useState<OuvrageAvecResolution | null>(null);
@@ -588,13 +597,15 @@ export default function CataloguePage() {
     const matchesType =
       typeFiltre === "tous" ||
       (o.type_cout === undefined || o.type_cout === null ? "matiere" : o.type_cout) === typeFiltre;
+    const gammeOuvrage = normaliserGammeMateriau(o.gamme_qualite);
+    const matchesGamme = gammeFiltre === "toutes" || gammeOuvrage === gammeFiltre;
     const lowerSearch = searchQuery.toLowerCase();
     const matchesSearch =
       o.designation.toLowerCase().includes(lowerSearch) ||
       (o.description && o.description.toLowerCase().includes(lowerSearch)) ||
       (o.couleur && o.couleur.toLowerCase().includes(lowerSearch)) ||
       (o.code_decor && o.code_decor.toLowerCase().includes(lowerSearch));
-    return matchesCat && matchesFab && matchesType && matchesSearch;
+    return matchesCat && matchesFab && matchesType && matchesGamme && matchesSearch;
   });
 
   return (
@@ -738,6 +749,27 @@ export default function CataloguePage() {
                     ))}
                 </select>
 
+                {/* Filtre Gamme Qualité */}
+                <select
+                  aria-label="Filtrer par gamme matériau"
+                  value={gammeFiltre}
+                  onChange={(e) =>
+                    setGammeFiltre(
+                      e.target.value === "toutes"
+                        ? "toutes"
+                        : normaliserGammeMateriau(e.target.value)
+                    )
+                  }
+                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                >
+                  <option value="toutes">Toutes gammes</option>
+                  {GAMMES_MATERIAU_ORDRE.map((g) => (
+                    <option key={g} value={g}>
+                      {GAMME_MATERIAU_CONFIG[g].labelClient}
+                    </option>
+                  ))}
+                </select>
+
                 {/* Recherche texte */}
                 <div className="relative w-full sm:w-64">
                   <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
@@ -759,6 +791,7 @@ export default function CataloguePage() {
                     setActiveCategory("Toutes");
                     setActiveSubCategory("Tous");
                     setTypeFiltre("tous");
+                    setGammeFiltre("toutes");
                   }}
                   className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-semibold text-[#666666] hover:bg-white hover:text-[#23272B]"
                 >
@@ -842,6 +875,15 @@ export default function CataloguePage() {
                           À chiffrer
                         </span>
                       )}
+
+                      <span
+                        className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold bg-[#0B0F19] ${getGammeBadgeClasses(
+                          normaliserGammeMateriau(o.gamme_qualite)
+                        )}`}
+                        title={GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(o.gamme_qualite)].labelInterne}
+                      >
+                        {GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(o.gamme_qualite)].labelClient}
+                      </span>
 
                       {/* Statut Coût Revient */}
                       {resolu.statut_cout === "a_completer" ? (

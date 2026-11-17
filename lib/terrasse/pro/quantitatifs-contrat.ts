@@ -29,10 +29,18 @@ import {
   resoudreConfigTerrasseMobile,
   calculerSousEnsembleTerrasseMobile,
 } from "./terrasse-mobile";
+import {
+  GAMME_MATERIAU_CONFIG,
+  normaliserGammeMateriau,
+  type GammeMateriau,
+} from "@/types/catalogue";
+import { CADENCES_DEFAUT } from "@/lib/tempsPoseCalcul";
 
 export interface CalculerTerrasseProOptions
   extends GeometrieTerrasseOptions,
     CalepinageOptions {
+  gamme_qualite?: GammeMateriau;
+  tempsPoseManuelHeures?: number;
   vissageParDessousBois?: boolean;
   conditionnementBoiteVis?: number;
   conditionnementBoiteClips?: number;
@@ -257,11 +265,32 @@ export function calculerTerrasseProGeometrie(
       ? "ELABOREE"
       : "COURANTE";
 
+  const gammeQualite = normaliserGammeMateriau(
+    options.gamme_qualite ??
+      (config as ChantierTerrasseConfig & { gamme_qualite?: unknown }).gamme_qualite
+  );
+  const gammeCfg = GAMME_MATERIAU_CONFIG[gammeQualite];
+  const aTempsManuel =
+    typeof options.tempsPoseManuelHeures === "number" &&
+    Number.isFinite(options.tempsPoseManuelHeures) &&
+    options.tempsPoseManuelHeures >= 0;
+  const coefTempsPoseGamme = aTempsManuel ? 1 : gammeCfg.coefTempsPose;
+  const heuresStructure = structure.netAreaM2 * CADENCES_DEFAUT.terrasse_structure_h_m2;
+  const heuresPlatelage =
+    structure.netAreaM2 * CADENCES_DEFAUT.terrasse_platelage_h_m2 * coefTempsPoseGamme;
+  const heuresPoseEstimatives = aTempsManuel
+    ? Math.round(options.tempsPoseManuelHeures! * 100) / 100
+    : Math.round((heuresStructure + heuresPlatelage) * 100) / 100;
+
   return {
     engineVersion: CONSTANTES_TERRASSE_PRO.ENGINE_VERSION,
     framework: isComp ? "COMPOSITE_MANUFACTURER" : "NF_DTU_51_4_DEC_2018",
     solicitationCategory,
     conceptionType,
+    gamme_qualite: gammeQualite,
+    coefTempsPoseGamme,
+    heuresPoseEstimatives,
+    margeCibleDefaut: gammeCfg.margeCibleDefaut,
     isValid: blockingErrors.length === 0,
     blockingErrors,
     warnings,
