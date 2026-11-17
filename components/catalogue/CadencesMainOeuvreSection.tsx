@@ -182,7 +182,10 @@ export default function CadencesMainOeuvreSection({ metier }: CadencesMainOeuvre
             <h2 className="text-sm font-bold text-[#23272B]">
               Cadences &amp; Taux horaire main-d&apos;œuvre
             </h2>
-            <p className="text-xs text-[#666666]">
+            <p className="text-xs text-[#555555]">
+              Alimente automatiquement les heures prévues sur vos chantiers, le planning et la main-d&apos;œuvre dans vos devis.
+            </p>
+            <p className="text-[11px] text-[#777777] mt-0.5">
               Paramétrage des temps unitaires ({metierLibelle}) et taux horaires entreprise (table{" "}
               <code className="font-mono text-[11px] font-semibold text-[#B85B2B]">catalogue_temps</code>)
             </p>
