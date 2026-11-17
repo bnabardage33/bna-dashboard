@@ -288,4 +288,57 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     expect(preTerrasse?.syntheseTexte).toContain("300 mm");
     expect(preTerrasse?.syntheseTexte).toContain("Ø 6 mm");
   });
+
+  it("traite un projet Multi-Lots complet (Maison à étage + garage + 2 terrasses + clôture portail & 2 portillons)", () => {
+    const promptMulti =
+      "maison complète à étage 4 côté avec les fenêtres porte garage attenant avec porte de garage + montage d'une terrasse simple et une terrasse avec piscine et avec clôture avec portail et 2 portillon";
+
+    const pre = detecterEtCalculerPreChiffrage(promptMulti);
+    expect(pre).not.toBeNull();
+    expect(pre?.estMultiLots).toBe(true);
+    expect(pre?.lots?.length).toBe(3);
+    expect(pre?.lots?.map((l) => l.metier)).toEqual([
+      "bardage",
+      "terrasse",
+      "cloture",
+    ]);
+
+    // Lot 1 : Bardage R+1 + garage attenant + porte garage + porte entrée + fenêtres + vigilance échafaudage
+    expect(pre?.detailsBardage?.surfaceBruteM2).toBeGreaterThan(200);
+    expect(pre?.syntheseTexte).toContain("échafaudage R+1");
+    expect(pre?.syntheseTexte).toContain("Garage attenant");
+
+    // Lot 2 : Terrasse simple (24 m²) + Terrasse piscine (32 m²) = 56 m²
+    const lotTerrasse = pre?.lots?.find((l) => l.metier === "terrasse");
+    expect(lotTerrasse?.surfaceOuLineaire).toBe(56);
+    expect(pre?.syntheseTexte).toContain("Terrasse simple");
+    expect(pre?.syntheseTexte).toContain("Terrasse piscine");
+
+    // Lot 3 : Clôture avec portail (déduction 3,50 m + 2 piliers) et 2 portillons
+    expect(pre?.detailsCloture?.presencePortail).toBe(true);
+    expect(pre?.detailsCloture?.nbPortillons).toBe(2);
+    expect(pre?.detailsCloture?.deductionPortailM).toBe(3.5);
+    expect(pre?.syntheseTexte).toContain("2 portillon(s)");
+    expect(pre?.syntheseTexte).toContain("Portail 3,50 m");
+
+    // Consolidation globale + Devis global + Escalade Calepineurs 3D
+    expect(pre?.syntheseTexte).toContain("TOTAL GÉNÉRAL CONSOLIDÉ HT");
+    const rep = generateLocalAssistantResponse(promptMulti, MOCK_CONTEXT);
+    expect(
+      rep.actions.some(
+        (a) =>
+          a.type === "create_devis" &&
+          a.title === "Créer le devis global multi-lots"
+      )
+    ).toBe(true);
+    const calepineurs = rep.actions.filter(
+      (a) => a.type === "open_calepineur_3d"
+    );
+    expect(calepineurs.length).toBe(3);
+    expect(calepineurs.map((a) => a.payload.href)).toEqual([
+      "/terrain/chantier",
+      "/terrain/terrasse",
+      "/terrain/cloture",
+    ]);
+  });
 });

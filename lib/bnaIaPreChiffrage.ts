@@ -48,6 +48,8 @@ export interface PreChiffrageBnaResult {
   totalHt: number;
   syntheseTexte: string;
   devisPrefill: DevisPrefillPayload;
+  estMultiLots?: boolean;
+  lots?: PreChiffrageBnaResult[];
   detailsBardage?: {
     surfaceBruteM2: number;
     surfaceOuverturesM2: number;
@@ -66,6 +68,12 @@ export interface PreChiffrageBnaResult {
     fabricant: string | null;
     visserieInox: "A4" | "A2" | "clips";
     alertePlotsDepassement: string | null;
+  };
+  detailsCloture?: {
+    lineaireTotalM: number;
+    nbPortillons: number;
+    presencePortail: boolean;
+    deductionPortailM: number;
   };
 }
 
@@ -114,7 +122,10 @@ function extraireDimensionsOuverture(
   return ouvertures;
 }
 
-function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | null {
+function calculerPreChiffrageBardage(
+  message: string,
+  options?: { autoriserHypotheseMaison?: boolean }
+): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
   const sansOuvertures = message.replace(
     /(?:\b\d+\s+)?(fen[êe]tre|baie|porte(?:-fen[êe]tre)?|ouverture)s?\s*(?:de\s*)?\d+(?:[.,]\d+)?\s*(?:m\s*)?[x×*]\s*\d+(?:[.,]\d+)?/gi,
@@ -198,6 +209,10 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
     }
   }
 
+  let estHypotheseMaison = false;
+  const estEtageR1 = /[ée]tage|r\+1/i.test(lower);
+  const aGarage = /garage/i.test(lower);
+
   // Fallback surface globale en m² si aucune dimension L×H ni pignon
   if (segments.length === 0) {
     const matchM2 = sansPignons.match(/(\d+(?:[.,]\d+)?)\s*m[²2]/i);
@@ -212,12 +227,73 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
           surfaceBruteM2: arrondir(surf),
         });
       }
+    } else if (
+      (options?.autoriserHypotheseMaison ||
+        /maison|[ée]tage|r\+1|4\s*c[ôo]t[ée]s?|garage/i.test(lower)) &&
+      /maison|[ée]tage|r\+1|4\s*c[ôo]t[ée]s?|garage/i.test(lower)
+    ) {
+      // Hypothèses de référence réalistes pour Maison R+1 / 4 côtés + garage attenant (à affiner dans le Calepineur 3D)
+      estHypotheseMaison = true;
+      const hMaison = estEtageR1 ? 5.5 : 3.0;
+      segments.push(
+        { type: "facade", largeurM: 10, hauteurMurM: hMaison, hauteurFaiteM: null, surfaceBruteM2: arrondir(10 * hMaison) },
+        { type: "facade", largeurM: 10, hauteurMurM: hMaison, hauteurFaiteM: null, surfaceBruteM2: arrondir(10 * hMaison) },
+        { type: "facade", largeurM: 8, hauteurMurM: hMaison, hauteurFaiteM: null, surfaceBruteM2: arrondir(8 * hMaison) },
+        { type: "facade", largeurM: 8, hauteurMurM: hMaison, hauteurFaiteM: null, surfaceBruteM2: arrondir(8 * hMaison) }
+      );
+      if (aGarage) {
+        // Garage attenant 6m x 3.5m sur 2.80m (3 faces visibles)
+        segments.push(
+          { type: "facade", largeurM: 6, hauteurMurM: 2.8, hauteurFaiteM: null, surfaceBruteM2: arrondir(6 * 2.8) },
+          { type: "facade", largeurM: 3.5, hauteurMurM: 2.8, hauteurFaiteM: null, surfaceBruteM2: arrondir(3.5 * 2.8) },
+          { type: "facade", largeurM: 6, hauteurMurM: 2.8, hauteurFaiteM: null, surfaceBruteM2: arrondir(6 * 2.8) }
+        );
+      }
     }
   }
 
   if (segments.length === 0) return null;
 
   const ouvertures = extraireDimensionsOuverture(message);
+  if (estHypotheseMaison || /porte\s*(?:de\s*)?garage/i.test(lower)) {
+    if (
+      /porte\s*(?:de\s*)?garage/i.test(lower) &&
+      !ouvertures.some((o) => o.nom.toLowerCase().includes("garage"))
+    ) {
+      ouvertures.push({
+        id: `ouv-garage-${ouvertures.length + 1}`,
+        nom: "Porte de garage (réf. 2,40×2,15 m)",
+        type: "porte",
+        largeurM: 2.4,
+        hauteurM: 2.15,
+      });
+    }
+    const sansPorteGarage = lower.replace(/porte\s*(?:de\s*)?garage/gi, " ");
+    if (
+      /\bporte(?:\s*d['’]entr[ée]e)?\b/i.test(sansPorteGarage) &&
+      !ouvertures.some((o) => o.nom.toLowerCase().includes("entrée"))
+    ) {
+      ouvertures.push({
+        id: `ouv-entree-${ouvertures.length + 1}`,
+        nom: "Porte d'entrée (réf. 0,90×2,15 m)",
+        type: "porte",
+        largeurM: 0.9,
+        hauteurM: 2.15,
+      });
+    }
+    if (/fen[êe]tres?/i.test(lower) && !ouvertures.some((o) => o.type === "fenetre")) {
+      const nbFenRef = estEtageR1 ? 6 : 4;
+      for (let i = 1; i <= nbFenRef; i++) {
+        ouvertures.push({
+          id: `ouv-fen-ref-${i}`,
+          nom: `Fenêtre ${i} (réf. 1,20×1,20 m)`,
+          type: "fenetre",
+          largeurM: 1.2,
+          hauteurM: 1.2,
+        });
+      }
+    }
+  }
   const surfaceBruteM2 = arrondir(
     segments.reduce((s, seg) => s + seg.surfaceBruteM2, 0)
   );
@@ -491,6 +567,12 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
 
   const syntheseTexte =
     `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (BARDAGE ${estHpl ? "HPL CSTB 3194 / NF DTU 45.4" : "DTU 41.2"})\n` +
+    (estHypotheseMaison
+      ? `- Hypothèses de référence (à affiner dans le Calepineur 3D) : Maison ${estEtageR1 ? "R+1 (10×8 m, H = 5,50 m)" : "plain-pied (10×8 m, H = 3,00 m)"}${aGarage ? " + Garage attenant (6×3,5 m, H = 2,80 m)" : ""}.\n`
+      : "") +
+    (estEtageR1
+      ? `- ⚠️ Vigilance échafaudage R+1 : hauteur > 3,00 m — prévoir échafaudage de pied conforme NF EN 12811.\n`
+      : "") +
     `- Surface brute : ${surfaceBruteM2} m² (${nbFacadesRect} façade(s)${nbPignons > 0 ? `, ${nbPignons} pignon(s) avec +25 % temps de pose` : ""} : ${resumeSegments}) | Déduction ouvertures : ${surfaceOuverturesM2} m² | Surface nette : ${surfaceNetteM2} m²\n` +
     `- Parement Q_appro (+10 %) : ${surfaceParementApproM2} m²` +
     (estHpl ? ` (${nbPlaquesHplMeres} plaques mères HPL 3,05 × 1,30 m = 3,965 m²/u)\n` : `\n`) +
@@ -535,11 +617,17 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
   };
 }
 
-function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | null {
+function calculerPreChiffrageTerrasse(
+  message: string,
+  options?: { autoriserHypothese?: boolean }
+): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
   let longueurM = 0;
   let largeurM = 0;
   let dimensionsLabel = "";
+  let estHypotheseTerrasse = false;
+  const aTerrasseSimple = /terrasse\s*simple/i.test(lower);
+  const aTerrassePiscine = /terrasse\s*(?:avec\s*)?piscine|terrasse\s*mobile/i.test(lower);
 
   // Extraire d'abord un éventuel plateau mobile ("terrasse mobile filaire 5m x 3m")
   const regexMobileDims =
@@ -567,7 +655,7 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
     }
   }
 
-  if (rectangles.length > 0) {
+  if (rectangles.length > 0 && options?.autoriserHypothese !== true) {
     const surfaceTotale = arrondir(
       rectangles.reduce((s, r) => s + r.longueur * r.largeur, 0)
     );
@@ -589,6 +677,22 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
         largeurM = 4.0;
         longueurM = arrondir(surf / largeurM);
         dimensionsLabel = `${longueurM} × ${largeurM} m`;
+      }
+    } else if (options?.autoriserHypothese) {
+      estHypotheseTerrasse = true;
+      if (aTerrasseSimple && aTerrassePiscine) {
+        // Cumul distinct Terrasse simple (6×4 = 24 m²) + Terrasse piscine (8×4 = 32 m²) = 56 m²
+        largeurM = 4.0;
+        longueurM = 14.0;
+        dimensionsLabel = "Terrasse simple 6 × 4 m (24 m²) + Terrasse piscine 8 × 4 m (32 m²)";
+      } else if (aTerrassePiscine) {
+        largeurM = 4.0;
+        longueurM = 8.0;
+        dimensionsLabel = "Terrasse piscine 8 × 4 m (réf. 32 m²)";
+      } else {
+        largeurM = 4.0;
+        longueurM = 6.0;
+        dimensionsLabel = "Terrasse simple 6 × 4 m (réf. 24 m²)";
       }
     }
   }
@@ -711,6 +815,9 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
 
   const syntheseTexte =
     `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (TERRASSE ${normeLabel})\n` +
+    (estHypotheseTerrasse
+      ? `- Hypothèses de référence (à affiner dans le Calepineur 3D) : ${dimensionsLabel}.\n`
+      : "") +
     `- Dimensions : ${dimensionsLabel} (${res.surfaceNetteM2} m² nets) | Entraxe lambourdes : ${paramsNorm.entraxeLambourdesMm} mm${paramsNorm.estDiagonale ? " (diagonale)" : ""}\n` +
     `- Lames à commander : ${res.lames.nbLamesStandard} u (${res.lames.surfaceACommanderM2} m²) | Lambourdes : ${res.lambourdes.nbBarres} u (${res.lambourdes.lineaireMl} ml)\n` +
     `- Plots : ${res.plots.nbPlotsTotal} u | Fixations (${fixationsLabel}) : ${res.fixations.nbVisOuClipsTotal} u\n` +
@@ -749,20 +856,45 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
   };
 }
 
-function calculerPreChiffrageCloture(message: string): PreChiffrageBnaResult | null {
+function calculerPreChiffrageCloture(
+  message: string,
+  options?: { autoriserHypothese?: boolean }
+): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
   const matchMl = message.match(/(\d+(?:[.,]\d+)?)\s*(?:ml|m\b|m[èe]tres?)/i);
-  if (!matchMl) return null;
-  const lineaireM = parseNombreFr(matchMl[1]);
-  if (lineaireM <= 0) return null;
+
+  let estHypotheseCloture = false;
+  let lineaireBrutM = matchMl ? parseNombreFr(matchMl[1]) : 0;
+  if (lineaireBrutM <= 0) {
+    if (options?.autoriserHypothese) {
+      estHypotheseCloture = true;
+      lineaireBrutM = 40;
+    } else {
+      return null;
+    }
+  }
 
   const materiau: FenceMaterial = /alu/i.test(lower)
     ? "ALU"
     : /bois/i.test(lower)
       ? "BOIS"
       : "COMPOSITE";
-  const presencePortillon = /portillon/i.test(lower);
+
+  const matchNbPortillons = lower.match(/(\d+)\s*portillons?/i);
+  const nbPortillons = matchNbPortillons
+    ? Math.max(1, Number(matchNbPortillons[1]))
+    : /portillon/i.test(lower)
+      ? 1
+      : 0;
+  const presencePortail = /\bportail\b/i.test(lower);
+  const deductionPortailM = presencePortail ? 3.5 : 0;
+  const lineaireM = Math.max(2, arrondir(lineaireBrutM - deductionPortailM));
   const presenceSoubassement = /soubassement/i.test(lower);
+
+  const portillons = Array.from({ length: nbPortillons }, () => ({
+    segment: "A" as const,
+    largeurM: 1.0,
+  }));
 
   const config: FenceConfig = {
     forme: "DROITE",
@@ -776,7 +908,7 @@ function calculerPreChiffrageCloture(message: string): PreChiffrageBnaResult | n
     hauteurSoubassementM: 0.25,
     gestionPente: "PLAT",
     segments: { A: lineaireM, B: 0, C: 0 },
-    portillons: presencePortillon ? [{ segment: "A", largeurM: 1.0 }] : [],
+    portillons,
   };
 
   const res = calculerChiffrageCloture(config, { inclureMainOeuvre: true });
@@ -792,13 +924,47 @@ function calculerPreChiffrageCloture(message: string): PreChiffrageBnaResult | n
     a_chiffrer: false,
   }));
 
+  if (presencePortail) {
+    lignesDevis.push({
+      catalogue_id: null,
+      designation: "Poteaux piliers renforcés pour portail (déduction 3,50 m)",
+      description: "2 poteaux piliers renforcés + scellement béton adapté",
+      qte: 2,
+      unite: "u",
+      pu_ht: 145,
+      pu_revient: 90,
+      type_cout: "matiere",
+      a_chiffrer: false,
+    });
+  }
+
+  const totalMateriauxHt = arrondir(
+    lignesDevis
+      .filter((l) => l.type_cout === "matiere")
+      .reduce((s, l) => s + l.qte * l.pu_ht, 0)
+  );
+  const totalMainOeuvreHt = arrondir(
+    lignesDevis
+      .filter((l) => l.type_cout === "main_oeuvre")
+      .reduce((s, l) => s + l.qte * l.pu_ht, 0)
+  );
+  const totalHt = arrondir(totalMateriauxHt + totalMainOeuvreHt);
+
   const syntheseTexte =
     `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (CLÔTURE ${materiau})\n` +
+    (estHypotheseCloture
+      ? `- Hypothèse de référence (à affiner dans le Calepineur 3D) : Linéaire périphérique 40,0 ml brut${presencePortail ? " − 3,50 m (portail)" : ""} = ${lineaireM} ml.\n`
+      : "") +
     `- Linéaire : ${res.calepinage.lineaireTotalM} ml · ${res.calepinage.nbTraveesTotal} travée(s) · Hauteur ${config.hauteurUtile} m\n` +
     `- Lames : ${res.calepinage.nbTotalLames} u | Poteaux : ${res.calepinage.totalPoteauxComplets} u | Sacs béton 35 kg : ${res.calepinage.nbSacsBeton35kg} u` +
-    (presencePortillon ? " | Portillon 1,00 m inclus" : "") +
+    (nbPortillons > 0
+      ? ` | ${nbPortillons} portillon(s) (${nbPortillons} × 1,00 m + ${nbPortillons * 2} poteaux renforcés)`
+      : "") +
+    (presencePortail
+      ? " | Portail 3,50 m déduit (+ 2 poteaux piliers renforcés)"
+      : "") +
     `\n- Main-d'œuvre calculée : ${res.tempsPose.totalHeures} h\n` +
-    `- Estimation indicative HT : Matériaux ${fmtEuro(res.totalFournituresHT)} + Main-d'œuvre ${fmtEuro(res.totalMainOeuvreHT)} = **${fmtEuro(res.totalHT)} HT**`;
+    `- Estimation indicative HT : Matériaux ${fmtEuro(totalMateriauxHt)} + Main-d'œuvre ${fmtEuro(totalMainOeuvreHt)} = **${fmtEuro(totalHt)} HT**`;
 
   return {
     metier: "cloture",
@@ -806,12 +972,18 @@ function calculerPreChiffrageCloture(message: string): PreChiffrageBnaResult | n
     surfaceOuLineaire: res.calepinage.lineaireTotalM,
     unitePrincipale: "ml",
     heuresPoseTotal: res.tempsPose.totalHeures,
-    totalMateriauxHt: res.totalFournituresHT,
-    totalMainOeuvreHt: res.totalMainOeuvreHT,
-    totalHt: res.totalHT,
+    totalMateriauxHt,
+    totalMainOeuvreHt,
+    totalHt,
     syntheseTexte,
+    detailsCloture: {
+      lineaireTotalM: res.calepinage.lineaireTotalM,
+      nbPortillons,
+      presencePortail,
+      deductionPortailM,
+    },
     devisPrefill: {
-      objet: `Clôture ${materiau} (${res.calepinage.lineaireTotalM} ml${presencePortillon ? " + portillon" : ""})`,
+      objet: `Clôture ${materiau} (${res.calepinage.lineaireTotalM} ml${presencePortail ? " + portail" : ""}${nbPortillons > 0 ? ` + ${nbPortillons} portillon(s)` : ""})`,
       typeTravaux: "Clôture & Aménagement Extérieur",
       surfaceM2: res.calepinage.lineaireTotalM,
       lignes: lignesDevis,
@@ -823,24 +995,104 @@ export function detecterEtCalculerPreChiffrage(
   message: string
 ): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
-  const aUnChiffre = /\d/.test(message);
-  if (!aUnChiffre) return null;
 
-  if (
+  const hasBardage =
+    /bardage|\bhpl\b|trespa|fundermax|equitone|cedral|\bweo\b|newtechwood|\bite\b|fa[çc]ade|claire[-\s]?voie|maison.*(?:[ée]tage|compl[èe]te|4\s*c[ôo]t[ée]s?)|garage\s+attenant/i.test(
+      lower
+    );
+  const hasTerrasse =
     /terrasse|platelage|piscine|silvadec|fiberdeck|neowood|oc[ée]wood/i.test(
       lower
-    )
-  ) {
+    );
+  const hasCloture = /cl[ôo]ture|palissade|portillon|\bportail\b/i.test(lower);
+
+  const nbLotsDetectes = [hasBardage, hasTerrasse, hasCloture].filter(Boolean).length;
+
+  // Orchestration Multi-Lots simultanés (Bardage + Terrasse + Clôture)
+  if (nbLotsDetectes >= 2) {
+    const lots: PreChiffrageBnaResult[] = [];
+    if (hasBardage) {
+      const b = calculerPreChiffrageBardage(message, { autoriserHypotheseMaison: true });
+      if (b) lots.push(b);
+    }
+    if (hasTerrasse) {
+      const t = calculerPreChiffrageTerrasse(message, { autoriserHypothese: true });
+      if (t) lots.push(t);
+    }
+    if (hasCloture) {
+      const c = calculerPreChiffrageCloture(message, { autoriserHypothese: true });
+      if (c) lots.push(c);
+    }
+
+    if (lots.length >= 2) {
+      const heuresPoseTotal = arrondir(
+        lots.reduce((s, l) => s + l.heuresPoseTotal, 0)
+      );
+      const totalMateriauxHt = arrondir(
+        lots.reduce((s, l) => s + l.totalMateriauxHt, 0)
+      );
+      const totalMainOeuvreHt = arrondir(
+        lots.reduce((s, l) => s + l.totalMainOeuvreHt, 0)
+      );
+      const totalHt = arrondir(totalMateriauxHt + totalMainOeuvreHt);
+
+      const corpsSynthese = lots
+        .map((lot, idx) => {
+          const sansTitre = lot.syntheseTexte.replace(/^### .*\n/, "");
+          return `### Lot ${idx + 1} — ${lot.titre}\n${sansTitre}`;
+        })
+        .join("\n\n");
+
+      const syntheseTexte =
+        `### PRÉ-CHIFFRAGE BNA MULTI-LOTS CONSOLIDÉ (MAISON COMPLÈTE)\n\n` +
+        `${corpsSynthese}\n\n` +
+        `### TOTAL GÉNÉRAL CONSOLIDÉ HT (${lots.length} LOTS)\n` +
+        `- Total Matériaux HT : ${fmtEuro(totalMateriauxHt)}\n` +
+        `- Total Main-d'œuvre HT : ${fmtEuro(totalMainOeuvreHt)} (${heuresPoseTotal} h au total)\n` +
+        `- **TOTAL GÉNÉRAL HT : ${fmtEuro(totalHt)} HT**`;
+
+      const lignesConsolidees: LigneDevisIaPreRemplie[] = lots.flatMap((lot, idx) =>
+        lot.devisPrefill.lignes.map((ligne) => ({
+          ...ligne,
+          designation: `[LOT ${idx + 1} · ${lot.metier.toUpperCase()}] ${ligne.designation}`,
+        }))
+      );
+
+      return {
+        metier: lots[0].metier,
+        titre: `Projet Multi-Lots (${lots.map((l) => l.metier.toUpperCase()).join(" + ")})`,
+        surfaceOuLineaire: lots[0].surfaceOuLineaire,
+        unitePrincipale: lots[0].unitePrincipale,
+        heuresPoseTotal,
+        totalMateriauxHt,
+        totalMainOeuvreHt,
+        totalHt,
+        syntheseTexte,
+        estMultiLots: true,
+        lots,
+        detailsBardage: lots.find((l) => l.metier === "bardage")?.detailsBardage,
+        detailsTerrasse: lots.find((l) => l.metier === "terrasse")?.detailsTerrasse,
+        detailsCloture: lots.find((l) => l.metier === "cloture")?.detailsCloture,
+        devisPrefill: {
+          objet: `Devis Global Multi-Lots — ${lots.map((l) => l.titre).join(" + ")}`,
+          typeTravaux: "Multi-Lots (Bardage / Terrasse / Clôture)",
+          surfaceM2: lots[0].surfaceOuLineaire,
+          lignes: lignesConsolidees,
+        },
+      };
+    }
+  }
+
+  const aUnChiffre = /\d/.test(message);
+  if (!aUnChiffre && !/maison|[ée]tage|r\+1/i.test(lower)) return null;
+
+  if (hasTerrasse) {
     return calculerPreChiffrageTerrasse(message);
   }
-  if (
-    /bardage|\bhpl\b|trespa|fundermax|equitone|cedral|\bweo\b|newtechwood|\bite\b|fa[çc]ade|claire[-\s]?voie/i.test(
-      lower
-    )
-  ) {
-    return calculerPreChiffrageBardage(message);
+  if (hasBardage) {
+    return calculerPreChiffrageBardage(message, { autoriserHypotheseMaison: true });
   }
-  if (/cl[ôo]ture|palissade|portillon/i.test(lower)) {
+  if (hasCloture) {
     return calculerPreChiffrageCloture(message);
   }
   return null;

@@ -425,8 +425,8 @@ export function detecterChantierComplexe(
     raisons.push(`plus de 3 ouvertures (${Math.max(totalOuv, nbMotsOuv)})`);
   }
 
-  if (/\ben\s+l\b|\ben\s+u\b|\b4\s*c[ôo]t[ée]s\b|\bquatre\s*c[ôo]t[ée]s\b/i.test(lower)) {
-    raisons.push("géométrie complexe (en L / en U / 4 côtés)");
+  if (/\ben\s+l\b|\ben\s+u\b|\b4\s*c[ôo]t[ée]s?\b|\bquatre\s*c[ôo]t[ée]s?\b|[ée]tage|r\+1|garage\s+attenant/i.test(lower)) {
+    raisons.push("géométrie complexe (en L / en U / 4 côtés / R+1)");
   }
 
   if (/terrasse\s+mobile|plateau\s+mobile/i.test(lower)) {
@@ -480,13 +480,17 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
   const actions: BnaIaAction[] = [];
   const chantierCible = findMentionedChantier(texte, ctx.chantiers);
 
-  // 0. Pré-chiffrage déterministe -> bouton 1-clic « Créer le devis pré-rempli »
+  // 0. Pré-chiffrage déterministe -> bouton 1-clic « Créer le devis pré-rempli » ou « Créer le devis global multi-lots »
   const preChiffrage = detecterEtCalculerPreChiffrage(texte);
   if (preChiffrage) {
     actions.push({
-      id: `act-create-devis-${preChiffrage.metier}`,
+      id: preChiffrage.estMultiLots
+        ? "act-create-devis-multi-lots"
+        : `act-create-devis-${preChiffrage.metier}`,
       type: "create_devis",
-      title: "Créer le devis pré-rempli",
+      title: preChiffrage.estMultiLots
+        ? "Créer le devis global multi-lots"
+        : "Créer le devis pré-rempli",
       description: `${preChiffrage.titre} · ${fmtEuro(preChiffrage.totalHt)} HT (${preChiffrage.heuresPoseTotal} h)`,
       payload: {
         metier: preChiffrage.metier,
@@ -495,9 +499,41 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
     });
   }
 
-  // 0b. Escalade vers le Calepineur 3D si chantier complexe détecté
+  // 0b. Escalade vers le Calepineur 3D si chantier complexe détecté (par lot si multi-lots)
   const escalade = detecterChantierComplexe(texte, preChiffrage);
-  if (escalade) {
+  if (preChiffrage?.estMultiLots && preChiffrage.lots && preChiffrage.lots.length > 0) {
+    for (const lot of preChiffrage.lots) {
+      const hrefLot =
+        lot.metier === "terrasse"
+          ? "/terrain/terrasse"
+          : lot.metier === "cloture"
+            ? "/terrain/cloture"
+            : "/terrain/chantier";
+      const labelLot =
+        lot.metier === "terrasse"
+          ? "Terrasse"
+          : lot.metier === "cloture"
+            ? "Clôture"
+            : "Bardage";
+      actions.push({
+        id: `act-calepineur-3d-${lot.metier}`,
+        type: "open_calepineur_3d",
+        title: `Créer le chantier ${labelLot} et ouvrir le Calepineur 3D`,
+        description: `${lot.titre} · Débit exact au mm.`,
+        payload: {
+          metier: lot.metier,
+          href: hrefLot,
+          calepineurPrefill: {
+            metier: lot.metier,
+            nomSuggere: lot.titre,
+            resume: texte.trim().slice(0, 220),
+            surfaceOuLineaire: lot.surfaceOuLineaire,
+            raisons: escalade?.raisons ?? ["projet multi-lots"],
+          },
+        },
+      });
+    }
+  } else if (escalade) {
     actions.push({
       id: `act-calepineur-3d-${escalade.metier}`,
       type: "open_calepineur_3d",
