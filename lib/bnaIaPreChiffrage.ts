@@ -378,7 +378,7 @@ function calculerPreChiffrageBardage(message: string): PreChiffrageBnaResult | n
       : `- Normes Bois Massif (NF DTU 41.2) : garde au sol >= 150 mm (sol dur) / >= 200 mm (terre), grille anti-rongeurs >= 50 cm²/ml, visserie Inox ${paramsBardageNorm.visserieInox}${paramsBardageNorm.estLittoralOuTannique ? " OBLIGATOIRE (littoral <= 3 km / bois tannique)" : ""}.\n`;
 
   const syntheseTexte =
-    `=== PRÉ-CHIFFRAGE BNA CERTIFIÉ (BARDAGE ${estHpl ? "HPL CSTB 3194 / NF DTU 45.4" : "DTU 41.2"}) ===\n` +
+    `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (BARDAGE ${estHpl ? "HPL CSTB 3194 / NF DTU 45.4" : "DTU 41.2"})\n` +
     `- Surface brute : ${surfaceBruteM2} m² (${nbFacades} façade(s) ${largeurM}×${hauteurM} m) | Déduction ouvertures : ${surfaceOuverturesM2} m² | Surface nette : ${surfaceNetteM2} m²\n` +
     `- Parement Q_appro (+10 %) : ${surfaceParementApproM2} m²` +
     (estHpl ? ` (${nbPlaquesHplMeres} plaques mères HPL 3,05 × 1,30 m = 3,965 m²/u)\n` : `\n`) +
@@ -552,7 +552,7 @@ function calculerPreChiffrageTerrasse(message: string): PreChiffrageBnaResult | 
     : `${estMobile ? "MOBILE NF P90-308 & " : ""}NF DTU 51.4`;
 
   const syntheseTexte =
-    `=== PRÉ-CHIFFRAGE BNA CERTIFIÉ (TERRASSE ${normeLabel}) ===\n` +
+    `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (TERRASSE ${normeLabel})\n` +
     `- Dimensions : ${longueurM} × ${largeurM} m (${res.surfaceNetteM2} m² nets) | Entraxe lambourdes : ${paramsNorm.entraxeLambourdesMm} mm${paramsNorm.estDiagonale ? " (diagonale)" : ""}\n` +
     `- Lames à commander : ${res.lames.nbLamesStandard} u (${res.lames.surfaceACommanderM2} m²) | Lambourdes : ${res.lambourdes.nbBarres} u (${res.lambourdes.lineaireMl} ml)\n` +
     `- Plots : ${res.plots.nbPlotsTotal} u | Fixations (${paramsNorm.visserieInox === "A4" ? "Inox A4 obligatoire" : paramsNorm.visserieInox === "A2" ? "Inox A2" : "Clips fabricant"}) : ${res.fixations.nbVisOuClipsTotal} u\n` +
@@ -635,7 +635,7 @@ function calculerPreChiffrageCloture(message: string): PreChiffrageBnaResult | n
   }));
 
   const syntheseTexte =
-    `=== PRÉ-CHIFFRAGE BNA CERTIFIÉ (CLÔTURE ${materiau}) ===\n` +
+    `### PRÉ-CHIFFRAGE BNA CERTIFIÉ (CLÔTURE ${materiau})\n` +
     `- Linéaire : ${res.calepinage.lineaireTotalM} ml · ${res.calepinage.nbTraveesTotal} travée(s) · Hauteur ${config.hauteurUtile} m\n` +
     `- Lames : ${res.calepinage.nbTotalLames} u | Poteaux : ${res.calepinage.totalPoteauxComplets} u | Sacs béton 35 kg : ${res.calepinage.nbSacsBeton35kg} u` +
     (presencePortillon ? " | Portillon 1,00 m inclus" : "") +

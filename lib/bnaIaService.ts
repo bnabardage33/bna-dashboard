@@ -450,11 +450,17 @@ export function detecterChantierComplexe(
         ? "/terrain/cloture"
         : "/terrain/chantier";
 
+  const detailMetier =
+    metier === "terrasse"
+      ? "(calepinage 3D, réservations, rails inox et découpes au millimètre)"
+      : metier === "cloture"
+        ? "(calepinage 3D, redans de pente, angles et portillons)"
+        : "(imbrication plaques, pignons, ouvertures)";
+
   return {
     estComplexe: true,
     raisons,
-    avertissement:
-      "⚠️ Chantier complexe détecté : pour un débit exact au millimètre (imbrication plaques, pignons, ouvertures), basculez vers le Calepineur 3D dédié.",
+    avertissement: `⚠️ Chantier complexe détecté : pour un débit exact au millimètre ${detailMetier}, basculez vers le Calepineur 3D dédié.`,
     metier,
     href,
     calepineurPrefill: {

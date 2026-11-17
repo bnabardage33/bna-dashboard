@@ -66,6 +66,48 @@ const QUICK_PROMPTS = [
   },
 ];
 
+function renderInlineBold(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  return parts.map((part, idx) =>
+    idx % 2 === 1 ? (
+      <strong key={idx} className="font-bold">
+        {part}
+      </strong>
+    ) : (
+      <span key={idx}>{part}</span>
+    )
+  );
+}
+
+function renderBnaMessageContent(content: string, isUser: boolean): React.ReactNode {
+  const lines = content.split("\n");
+  return (
+    <div className="space-y-1 leading-relaxed">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={i} className="h-1.5" />;
+        }
+        const headingMatch =
+          trimmed.match(/^#{1,3}\s+(.+)$/) || trimmed.match(/^===\s*(.+?)\s*===$/);
+        if (headingMatch) {
+          return (
+            <p
+              key={i}
+              className={`font-bold ${
+                isUser ? "text-white" : "text-[#23272B]"
+              } ${i > 0 ? "pt-1.5" : ""}`}
+            >
+              {renderInlineBold(headingMatch[1])}
+            </p>
+          );
+        }
+        return <p key={i}>{renderInlineBold(line)}</p>;
+      })}
+    </div>
+  );
+}
+
 export default function BnaIaCentreControle() {
   const router = useRouter();
   const [context, setContext] = useState<BnaIaContext | null>(null);
@@ -522,7 +564,7 @@ export default function BnaIaCentreControle() {
 
         {/* Zone de conversation */}
         <section className="flex flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xs overflow-hidden">
-          <div className="max-h-[460px] space-y-4 overflow-y-auto p-4 sm:p-5">
+          <div className="min-h-[380px] max-h-[65vh] space-y-4 overflow-y-auto p-4 sm:p-5">
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -554,7 +596,7 @@ export default function BnaIaCentreControle() {
                     </div>
                   )}
 
-                  <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                  {renderBnaMessageContent(m.content, m.role === "user")}
 
                   {m.actions && m.actions.length > 0 && (
                     <div className="space-y-1.5 pt-2 border-t border-[#E5E5E5]">
