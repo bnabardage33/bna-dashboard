@@ -7,6 +7,7 @@ import {
   calculerChiffrageDeplacementBna,
   DEPOT_BNA_DEFAUT,
   detecterChantierComplexe,
+  estQuestionConseilOuSuivi,
   evaluerAlertesDtuMeteoJour,
   extraireDestinationLibre,
   extraireVilleMeteoLibre,
@@ -130,10 +131,13 @@ function isComplexOrConversationalQuery(
   message: string,
   localTags: string[],
   hasFollowUpContext: boolean,
-  hasNewPreChiffrage: boolean
+  hasNewPreChiffrage: boolean,
+  hasHistory: boolean = hasFollowUpContext
 ): boolean {
   const lower = message.toLowerCase();
-  if (!hasNewPreChiffrage && hasFollowUpContext) return true;
+  if (!hasNewPreChiffrage && (hasFollowUpContext || estQuestionConseilOuSuivi(message, hasHistory))) {
+    return true;
+  }
   if (localTags.includes("Copilote BNA") || localTags.includes("Suivi Conversationnel")) return true;
   if (
     lower.includes("ça va") ||
@@ -650,13 +654,23 @@ export async function POST(req: NextRequest) {
       : 1;
 
     // Météo en direct + Déplacement depuis Générac (33920) en parallèle sur toute destination libre
-    const villeMeteo = extraireVilleMeteoLibre(messageNormalise);
+    // (ou reprise depuis le dernier message utilisateur de l'historique pour les questions de suivi)
+    const dernierUserHistorique = [...history]
+      .reverse()
+      .find((h) => h.role === "user")?.content;
+    const textePourLieu = extraireDestinationLibre(messageNormalise)
+      ? messageNormalise
+      : dernierUserHistorique || messageNormalise;
+
+    const villeMeteo =
+      extraireVilleMeteoLibre(messageNormalise) ||
+      (history.length > 0 ? extraireVilleMeteoLibre(textePourLieu) : null);
     const destinationLibre =
       villeMeteo ||
       (/d[ée]placement|trajet|km|chantier\s+(?:à|a|de|sur|vers)|frais/i.test(
-        messageNormalise
+        textePourLieu
       )
-        ? extraireDestinationLibre(messageNormalise)
+        ? extraireDestinationLibre(textePourLieu)
         : null);
 
     if (destinationLibre) {
@@ -714,7 +728,8 @@ export async function POST(req: NextRequest) {
         messageNormalise,
         localResponse.tags,
         hasFollowUpContext,
-        Boolean(preChiffrage)
+        Boolean(preChiffrage),
+        history.length > 0
       )
     ) {
       const systemPrompt = buildSystemPromptContext(

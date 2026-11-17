@@ -957,6 +957,16 @@ export function extraireVilleMeteoLibre(message: string): string | null {
   return extraireDestinationLibre(message);
 }
 
+export function estQuestionConseilOuSuivi(
+  message: string,
+  hasHistory: boolean
+): boolean {
+  if (hasHistory) return true;
+  return /que\s+me\s+conseilles|qu['’]?e?s(?:t)?(?:-ce)?\s+que\s+tu\s+(?:me\s+)?conseilles|tu\s+me\s+conseilles|vaut(?:-il)?\s+mieux|maintenir\s+ou\s+repousser|repousser\s+ou\s+maintenir|ton\s+avis|\bpourquoi\b|\bd[ée]taille\b|\bexplique\b|\bcomment\s+faire\b|arbitrage|recommandes?/i.test(
+    message
+  );
+}
+
 export interface BnaIaHistoryTurn {
   role: "user" | "assistant";
   content: string;
@@ -1051,7 +1061,7 @@ export function buildSystemPromptContext(
       `- Chiffrage : ${ctx.deplacementVilleLibre.nbJoursChantier} jour(s) × ${fmtEuro(ctx.deplacementVilleLibre.coutUnitaireArHt)}/A/R = ${fmtEuro(ctx.deplacementVilleLibre.coutTotalDeplacementHt)} HT`
     : "";
 
-  return `Tu es BNA-IA, le copilote IA central de l'entreprise BNA (Bardage, Terrasse & Terrasse Mobile, Clôture).
+  return `Tu es le copilote et conducteur de travaux expérimenté de l'entreprise BNA (spécialiste Bardage, Terrasse & Mobile, Clôture, dépôt à Générac 33920). Quand le patron te demande un conseil ou un arbitrage (ex: maintenir ou repousser un chantier selon la météo et la distance), réponds de façon naturelle, directe et humaine : donne d'abord une recommandation claire et tranchée (Maintenir ou Repousser), justifie-la avec les chiffres précis du contexte (rafales km/h, pluie mm, sécurité DTU, temps de route depuis Générac 33920 et rentabilité), puis propose une alternative concrète (ex: décaler de 24h ou basculer sur un chantier abrité).
 Tu réponds directement à ${ctx.userName}. Date du jour (Europe/Paris) : ${dateFr}${heureParis ? ` à ${heureParis}` : ""} (${ctx.currentDateIso}).
 
 CHANTIERS (${ctx.chantiers.length}) :
@@ -1174,12 +1184,18 @@ export function generateLocalAssistantResponse(
     };
   }
 
+  const estConseilOuSuivi = estQuestionConseilOuSuivi(
+    message,
+    Boolean(options?.history && options.history.length > 0)
+  );
+
   if (
-    /\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions?\s*(?:m[ée]t[ée]o|de\s*pose|sont\s*bonnes)|d[ée]placement/i.test(
+    !estConseilOuSuivi &&
+    (/\bm[ée]t[ée]o\b|\bpluie\b|\bvent\b|conditions?\s*(?:m[ée]t[ée]o|de\s*pose|sont\s*bonnes)|d[ée]placement/i.test(
       lower
     ) ||
-    Boolean(ctx.meteoVilleLibre) ||
-    Boolean(ctx.deplacementVilleLibre)
+      Boolean(ctx.meteoVilleLibre) ||
+      Boolean(ctx.deplacementVilleLibre))
   ) {
     const maintenant = formaterDateFrEuropeParis(
       ctx.currentDateIso ? new Date(`${ctx.currentDateIso}T12:00:00Z`) : new Date()
@@ -1398,18 +1414,41 @@ export function generateLocalAssistantResponse(
   }
 
   // 9. Fallback Copilote BNA (déclenche le relais Cloud LLM côté API si une clé est configurée)
-  if (aContexteSuivi) {
-    const dernierMessageAssistant = [...(options?.history ?? [])]
-      .reverse()
-      .find((m) => m.role === "assistant")?.content;
+  if (aContexteSuivi || estQuestionConseilOuSuivi(message, aContexteSuivi)) {
+    const prev = ctx.meteoVilleLibre?.previsions?.[0];
+    const dep = ctx.deplacementVilleLibre;
+    if (prev || dep) {
+      const aAlerteCritique = Boolean(prev && prev.alertesDtu.length > 0);
+      const reco = aAlerteCritique
+        ? "**Recommandation : Repousser** l'intervention extérieure."
+        : "**Recommandation : Maintenir** l'intervention (conditions compatibles DTU).";
+      const details = [
+        prev
+          ? `Météo ${ctx.meteoVilleLibre?.ville} (${prev.date}) : ${prev.tempMinC}°C/${prev.tempMaxC}°C, rafales ${prev.rafalesKmh} km/h, pluie ${prev.pluieMm} mm${
+              prev.alertesDtu.length > 0 ? ` — ${prev.alertesDtu.join(" ")}` : ""
+            }`
+          : null,
+        dep ? formaterResumeDeplacement(dep) : null,
+      ]
+        .filter(Boolean)
+        .join("\n- ");
+      return {
+        content: `${reco}\n- ${details}\n- **Alternative :** ${
+          aAlerteCritique
+            ? "Décaler de 24h ou basculer l'équipe sur un chantier abrité en Gironde."
+            : "Confirmer le départ depuis Générac (33920) et verrouiller le planning."
+        }`,
+        actions,
+        tags: ["Conseil Conducteur", "Copilote BNA"],
+      };
+    }
+
     return {
       content: options?.dernierPreChiffrage
         ? `### Suivi de votre étude en cours\n${options.dernierPreChiffrage}`
-        : dernierMessageAssistant
-          ? `### Reprise de votre conversation\nDernier élément analysé :\n${dernierMessageAssistant.slice(0, 500)}`
-          : `### Suivi conversationnel\nContexte conservé (${options?.history?.length ?? 0} messages). Précisez le lot ou la question à approfondir.`,
+        : `Posez votre question de suivi ou précisez le chantier concerné pour obtenir un arbitrage immédiat.`,
       actions,
-      tags: ["Suivi Conversationnel"],
+      tags: ["Suivi Conversationnel", "Copilote BNA"],
     };
   }
 

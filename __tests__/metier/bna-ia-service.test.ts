@@ -7,6 +7,7 @@ import {
   calculerSyntheseFinanciereBna,
   detectBnaIaActions,
   detecterChantierComplexe,
+  estQuestionConseilOuSuivi,
   evaluerAlertesDtuMeteoJour,
   extraireDestinationLibre,
   extraireVilleMeteoLibre,
@@ -590,5 +591,53 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     const rep = generateLocalAssistantResponse(promptNpdC, ctxVig);
     expect(rep.content).toContain("Nord-Pas-de-Calais");
     expect(rep.content).toContain("Vent violent (ORANGE)");
+  });
+
+  it("route les questions de conseil et suivi (« qu'es que tu me conseilles ») vers le Cloud LLM avec persona Conducteur de Travaux", () => {
+    expect(estQuestionConseilOuSuivi("qu'es que tu me conseilles", false)).toBe(true);
+    expect(estQuestionConseilOuSuivi("que me conseilles-tu ?", false)).toBe(true);
+    expect(estQuestionConseilOuSuivi("vaut mieux repousser demain ?", false)).toBe(true);
+    expect(estQuestionConseilOuSuivi("et pour les fixations ?", true)).toBe(true);
+
+    const ctxMadrid: BnaIaContext = {
+      ...MOCK_CONTEXT,
+      meteoVilleLibre: {
+        ville: "Madrid",
+        previsions: [
+          {
+            date: "2026-11-18",
+            tempMinC: 7,
+            tempMaxC: 14,
+            rafalesKmh: 59,
+            pluieMm: 6.4,
+            conditions: "Pluie modérée",
+            alertesDtu: [
+              "Rafales >= 50 km/h : alerte manutention panneaux HPL grand format et échafaudages.",
+              "Pluie >= 5 mm : alerte traitement des coupes bois et collage/étanchéité.",
+            ],
+          },
+        ],
+      },
+      deplacementVilleLibre: calculerChiffrageDeplacementBna({
+        destination: "Madrid",
+        distanceAllerKm: 738.8,
+        dureeTrajetAllerMin: 440,
+        tarifKmHt: 1.0,
+        nbJoursChantier: 1,
+      }),
+    };
+
+    const sys = buildSystemPromptContext(ctxMadrid);
+    expect(sys).toContain("conducteur de travaux expérimenté");
+    expect(sys).toContain("Maintenir ou Repousser");
+    expect(sys).toContain("rafales 59 km/h");
+    expect(sys).toContain("1477.6 km A/R");
+
+    const fallback = generateLocalAssistantResponse("qu'es que tu me conseilles", ctxMadrid, {
+      history: [{ role: "user", content: "chantier à Madrid demain en bardage" }],
+    });
+    expect(fallback.content).not.toContain("Reprise de votre conversation");
+    expect(fallback.content).not.toContain("Dernier élément analysé");
+    expect(fallback.content).toContain("Repousser");
   });
 });
