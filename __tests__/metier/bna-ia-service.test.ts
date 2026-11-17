@@ -12,7 +12,10 @@ import {
   urlHubPourChantier,
   type BnaIaContext,
 } from "@/lib/bnaIaService";
-import { detecterEtCalculerPreChiffrage } from "@/lib/bnaIaPreChiffrage";
+import {
+  detecterEtCalculerPreChiffrage,
+  segmenterRequeteParLots,
+} from "@/lib/bnaIaPreChiffrage";
 import { normaliserRequeteMetier } from "@/lib/bnaDictionnaireMetier";
 
 const MOCK_CONTEXT: BnaIaContext = {
@@ -340,5 +343,66 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
       "/terrain/terrasse",
       "/terrain/cloture",
     ]);
+  });
+
+  it("segmente strictement les lots 1) 2) 3), exclut les ouvertures/portes de garage des façades et priorise 48 ml en Clôture", () => {
+    const promptSegmente =
+      "1) Bardage HPL maison 10m x 5m avec porte de garage 2.40m x 2.15m et 2 fenêtres 1.20m x 1.10m\n" +
+      "2) Terrasse composite 6m x 4m\n" +
+      "3) Clôture alu 48 ml hauteur 1.80 m avec portillon";
+
+    const segs = segmenterRequeteParLots(promptSegmente);
+    expect(segs.bardage).not.toContain("6m x 4m");
+    expect(segs.bardage).not.toContain("48 ml");
+    expect(segs.terrasse).toContain("6m x 4m");
+    expect(segs.cloture).toContain("48 ml");
+
+    const pre = detecterEtCalculerPreChiffrage(promptSegmente);
+    expect(pre).not.toBeNull();
+    expect(pre?.estMultiLots).toBe(true);
+    // Bardage brute = 10*5 = 50 m² (ni 6x4=24 ni 2.40x2.15=5.16 ajoutés en façade)
+    expect(pre?.detailsBardage?.surfaceBruteM2).toBe(50);
+    // Ouvertures = 2.40*2.15 (5.16) + 2*(1.20*1.10) (2.64) = 7.80 m² -> nette = 42.2 m²
+    expect(pre?.detailsBardage?.surfaceOuverturesM2).toBe(7.8);
+    expect(pre?.detailsBardage?.surfaceNetteM2).toBe(42.2);
+    expect(pre?.detailsBardage?.nbOuvertures).toBe(3);
+
+    const lotTerrasse = pre?.lots?.find((l) => l.metier === "terrasse");
+    expect(lotTerrasse?.surfaceOuLineaire).toBe(24);
+
+    const lotCloture = pre?.lots?.find((l) => l.metier === "cloture");
+    expect(lotCloture?.surfaceOuLineaire).toBe(48);
+  });
+
+  it("conserve la mémoire persistante sur les questions de suivi (jamais de message d'accueil générique)", () => {
+    const pre = detecterEtCalculerPreChiffrage(
+      "1) Bardage HPL 10m x 5m\n2) Terrasse 6m x 4m"
+    );
+    expect(pre).not.toBeNull();
+
+    const sysPrompt = buildSystemPromptContext(
+      MOCK_CONTEXT,
+      null,
+      null,
+      null,
+      pre?.syntheseTexte
+    );
+    expect(sysPrompt).toContain("DERNIER PRÉ-CHIFFRAGE CALCULÉ DANS CETTE CONVERSATION");
+    expect(sysPrompt).toContain("Lot 1");
+
+    const suivi = generateLocalAssistantResponse(
+      "détaille plus le Lot 1",
+      MOCK_CONTEXT,
+      {
+        history: [
+          { role: "user", content: "1) Bardage HPL 10m x 5m 2) Terrasse 6m x 4m" },
+          { role: "assistant", content: pre?.syntheseTexte || "" },
+        ],
+        dernierPreChiffrage: pre?.syntheseTexte,
+      }
+    );
+    expect(suivi.content).not.toContain("Je suis prêt à vous aider sur vos");
+    expect(suivi.content).toContain("Lot 1");
+    expect(suivi.tags).toContain("Suivi Conversationnel");
   });
 });

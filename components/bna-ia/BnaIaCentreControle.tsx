@@ -114,6 +114,7 @@ export default function BnaIaCentreControle() {
   const [alertes, setAlertes] = useState<BnaIaAlerteProactive[]>([]);
   const [loadingCtx, setLoadingCtx] = useState(true);
   const [messages, setMessages] = useState<BnaIaMessage[]>([]);
+  const [dernierPreChiffrage, setDernierPreChiffrage] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [executingId, setExecutingId] = useState<string | null>(null);
@@ -146,6 +147,12 @@ export default function BnaIaCentreControle() {
   }, [chargerContexte]);
 
   useEffect(() => {
+    try {
+      const savedPre = localStorage.getItem("bna_ia_dernier_prechiffrage_v1");
+      if (savedPre) setDernierPreChiffrage(savedPre);
+    } catch {
+      // Ignorer localStorage invalide
+    }
     try {
       const saved = localStorage.getItem(CHAT_STORAGE_KEY);
       if (saved) {
@@ -196,14 +203,37 @@ export default function BnaIaCentreControle() {
     setIsSending(true);
 
     try {
+      const historyPayload = messages.slice(-10).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
       const res = await fetch("/api/bna-ia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: contenu, context }),
+        body: JSON.stringify({
+          message: contenu,
+          context,
+          history: historyPayload,
+          dernierPreChiffrage,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
+        const preTexte =
+          typeof data.preChiffrageTexte === "string" && data.preChiffrageTexte.trim()
+            ? data.preChiffrageTexte.trim()
+            : Array.isArray(data.tags) && data.tags.includes("Pré-chiffrage Certifié")
+              ? data.content
+              : null;
+        if (preTexte) {
+          setDernierPreChiffrage(preTexte);
+          try {
+            localStorage.setItem("bna_ia_dernier_prechiffrage_v1", preTexte);
+          } catch {
+            // Ignorer quota
+          }
+        }
         setMessages((prev) => [
           ...prev,
           {
@@ -217,7 +247,18 @@ export default function BnaIaCentreControle() {
           },
         ]);
       } else if (context) {
-        const local = generateLocalAssistantResponse(contenu, context);
+        const local = generateLocalAssistantResponse(contenu, context, {
+          history: historyPayload,
+          dernierPreChiffrage,
+        });
+        if (local.tags.includes("Pré-chiffrage Certifié")) {
+          setDernierPreChiffrage(local.content);
+          try {
+            localStorage.setItem("bna_ia_dernier_prechiffrage_v1", local.content);
+          } catch {
+            // Ignorer quota
+          }
+        }
         setMessages((prev) => [
           ...prev,
           {
@@ -233,7 +274,13 @@ export default function BnaIaCentreControle() {
       }
     } catch {
       if (context) {
-        const local = generateLocalAssistantResponse(contenu, context);
+        const local = generateLocalAssistantResponse(contenu, context, {
+          history: messages.slice(-10).map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          dernierPreChiffrage,
+        });
         setMessages((prev) => [
           ...prev,
           {

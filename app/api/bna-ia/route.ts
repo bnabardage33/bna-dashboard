@@ -8,6 +8,7 @@ import {
   generateLocalAssistantResponse,
   normaliserMetierBna,
   type BnaIaContext,
+  type BnaIaHistoryTurn,
 } from "@/lib/bnaIaService";
 import { detecterEtCalculerPreChiffrage } from "@/lib/bnaIaPreChiffrage";
 import { normaliserRequeteMetier } from "@/lib/bnaDictionnaireMetier";
@@ -24,7 +25,8 @@ const DEFAULT_GROQ_MODELS = [
 async function callGeminiLlm(
   systemPrompt: string,
   userMessage: string,
-  apiKey: string
+  apiKey: string,
+  history: BnaIaHistoryTurn[] = []
 ): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
@@ -32,12 +34,19 @@ async function callGeminiLlm(
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
       apiKey.trim()
     )}`;
+    const contents = [
+      ...history.map((h) => ({
+        role: h.role === "assistant" ? "model" : "user",
+        parts: [{ text: h.content }],
+      })),
+      { role: "user", parts: [{ text: userMessage }] },
+    ];
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userMessage }] }],
+        contents,
         generationConfig: { temperature: 0.2, maxOutputTokens: 4096 },
       }),
       signal: controller.signal,
@@ -59,7 +68,8 @@ async function callGeminiLlm(
 async function callGroqLlm(
   systemPrompt: string,
   userMessage: string,
-  apiKey: string
+  apiKey: string,
+  history: BnaIaHistoryTurn[] = []
 ): Promise<{ text: string; modelUsed: string } | null> {
   const modelsToTry = [
     ...(process.env.GROQ_MODEL ? [process.env.GROQ_MODEL] : []),
@@ -80,6 +90,7 @@ async function callGroqLlm(
           model,
           messages: [
             { role: "system", content: systemPrompt },
+            ...history.map((h) => ({ role: h.role, content: h.content })),
             { role: "user", content: userMessage },
           ],
           max_completion_tokens: 4096,
@@ -102,10 +113,13 @@ async function callGroqLlm(
 
 function isComplexOrConversationalQuery(
   message: string,
-  localTags: string[]
+  localTags: string[],
+  hasFollowUpContext: boolean,
+  hasNewPreChiffrage: boolean
 ): boolean {
   const lower = message.toLowerCase();
-  if (localTags.includes("Copilote BNA")) return true;
+  if (!hasNewPreChiffrage && hasFollowUpContext) return true;
+  if (localTags.includes("Copilote BNA") || localTags.includes("Suivi Conversationnel")) return true;
   if (
     lower.includes("ça va") ||
     lower.includes("merci") ||
@@ -299,39 +313,80 @@ export async function POST(req: NextRequest) {
         ? (body.context as BnaIaContext)
         : await chargerContexteEntreprise(tenant.entrepriseId);
 
+    const history: BnaIaHistoryTurn[] = Array.isArray(body?.history)
+      ? (body.history as Array<{ role?: unknown; content?: unknown }>)
+          .filter(
+            (h) =>
+              (h?.role === "user" || h?.role === "assistant") &&
+              typeof h?.content === "string" &&
+              h.content.trim().length > 0
+          )
+          .slice(-10)
+          .map((h) => ({
+            role: h.role as "user" | "assistant",
+            content: (h.content as string).trim(),
+          }))
+      : [];
+
+    const dernierPreChiffrage =
+      typeof body?.dernierPreChiffrage === "string" &&
+      body.dernierPreChiffrage.trim().length > 0
+        ? body.dernierPreChiffrage.trim()
+        : null;
+
     const normalisation = normaliserRequeteMetier(message);
     const messageNormalise = normalisation.texteNormalise;
     const preChiffrage = detecterEtCalculerPreChiffrage(messageNormalise);
     const escalade = detecterChantierComplexe(messageNormalise, preChiffrage);
-    const localResponse = generateLocalAssistantResponse(messageNormalise, context);
+    const localResponse = generateLocalAssistantResponse(messageNormalise, context, {
+      history,
+      dernierPreChiffrage,
+    });
 
     const groqKey = process.env.GROQ_API_KEY;
     const geminiKey =
       process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     const hasAnyLlmKey = Boolean(groqKey || geminiKey);
+    const hasFollowUpContext = history.length > 0 || Boolean(dernierPreChiffrage);
 
     if (
       hasAnyLlmKey &&
-      isComplexOrConversationalQuery(messageNormalise, localResponse.tags)
+      isComplexOrConversationalQuery(
+        messageNormalise,
+        localResponse.tags,
+        hasFollowUpContext,
+        Boolean(preChiffrage)
+      )
     ) {
       const systemPrompt = buildSystemPromptContext(
         context,
         preChiffrage,
         normalisation,
-        escalade
+        escalade,
+        dernierPreChiffrage
       );
       let llmText: string | null = null;
       let providerName = "";
 
       if (groqKey) {
-        const groqResult = await callGroqLlm(systemPrompt, messageNormalise, groqKey);
+        const groqResult = await callGroqLlm(
+          systemPrompt,
+          messageNormalise,
+          groqKey,
+          history
+        );
         if (groqResult) {
           llmText = groqResult.text;
           providerName = `Groq (${groqResult.modelUsed})`;
         }
       }
       if (!llmText && geminiKey) {
-        llmText = await callGeminiLlm(systemPrompt, messageNormalise, geminiKey);
+        llmText = await callGeminiLlm(
+          systemPrompt,
+          messageNormalise,
+          geminiKey,
+          history
+        );
         if (llmText) providerName = "Gemini 2.5 Flash";
       }
 
@@ -341,6 +396,7 @@ export async function POST(req: NextRequest) {
           actions: localResponse.actions,
           tags: [providerName, "BNA-IA Cloud"],
           source: "cloud_llm",
+          preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
         });
       }
     }
@@ -350,6 +406,7 @@ export async function POST(req: NextRequest) {
       actions: localResponse.actions,
       tags: ["Moteur Local BNA", ...localResponse.tags],
       source: "bna_expert_engine",
+      preChiffrageTexte: preChiffrage?.syntheseTexte ?? null,
     });
   } catch (err) {
     console.error("Erreur POST /api/bna-ia :", err);

@@ -683,11 +683,17 @@ export function detectBnaIaActions(message: string, ctx: BnaIaContext): BnaIaAct
   return actions;
 }
 
+export interface BnaIaHistoryTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export function buildSystemPromptContext(
   ctx: BnaIaContext,
   preChiffrage?: PreChiffrageBnaResult | null,
   normalisation?: ResultatNormalisationMetier | null,
-  escalade?: EscaladeCalepineur3D | null
+  escalade?: EscaladeCalepineur3D | null,
+  dernierPreChiffrage?: string | null
 ): string {
   const chantiersTxt =
     ctx.chantiers.length === 0
@@ -760,7 +766,9 @@ RÈGLES MÉTIERS & NORMES :
   }${
     preChiffrage
       ? `\n\nINSTRUCTION STRICTE PRÉ-CHIFFRAGE :\nUtilise EXCLUSIVEMENT les quantités, normes (CSTB 3194 / DTU 41.2 / DTU 51.4) et heures calculées par le moteur BNA ci-dessous. N'invente jamais de dimensions de panneaux ni de quincaillerie générique.\n\n${preChiffrage.syntheseTexte}`
-      : ""
+      : dernierPreChiffrage
+        ? `\n\nDERNIER PRÉ-CHIFFRAGE CALCULÉ DANS CETTE CONVERSATION (CONTEXTE PERSISTANT) :\nAppuie-toi sur ces chiffres exacts pour répondre aux questions de suivi (détail d'un lot, explication des heures ou matériaux) sans inventer de nouvelles valeurs.\n\n${dernierPreChiffrage}`
+        : ""
   }${
     escalade
       ? `\n\nESCALADE CALEPINEUR 3D :\nInclus impérativement cet avertissement en fin de réponse : "${escalade.avertissement}"`
@@ -770,7 +778,11 @@ RÈGLES MÉTIERS & NORMES :
 
 export function generateLocalAssistantResponse(
   message: string,
-  ctx: BnaIaContext
+  ctx: BnaIaContext,
+  options?: {
+    history?: BnaIaHistoryTurn[];
+    dernierPreChiffrage?: string | null;
+  }
 ): { content: string; actions: BnaIaAction[]; tags: string[] } {
   const norm = normaliserRequeteMetier(message);
   const texte = norm.texteNormalise;
@@ -804,6 +816,41 @@ export function generateLocalAssistantResponse(
         `- Utilisez le bouton **« Créer le chantier et ouvrir le Calepineur 3D »** ci-dessous pour démarrer directement le calepinage au millimètre.`,
       actions,
       tags: ["Calepineur 3D", escalade.metier.toUpperCase()],
+    };
+  }
+
+  // 0b-bis. Question de suivi avec mémoire persistante (jamais de message d'accueil générique)
+  const aContexteSuivi = Boolean(
+    options?.dernierPreChiffrage || (options?.history && options.history.length > 0)
+  );
+  const estQuestionSuiviLot =
+    aContexteSuivi &&
+    (/lot\s*[123]|d[ée]taille|explique|calcul|pourquoi|suite|pr[ée]c[ée]dent|plus\s+d['’]info/i.test(
+      lower
+    ) ||
+      Boolean(options?.dernierPreChiffrage));
+
+  if (estQuestionSuiviLot && options?.dernierPreChiffrage) {
+    const matchLot = lower.match(/lot\s*([123])/i);
+    if (matchLot) {
+      const lotNum = matchLot[1];
+      const regexLot = new RegExp(
+        `###\\s*Lot\\s*${lotNum}[\\s\\S]*?(?=###\\s*Lot|###\\s*TOTAL|$)`,
+        "i"
+      );
+      const extraitLot = options.dernierPreChiffrage.match(regexLot)?.[0]?.trim();
+      if (extraitLot) {
+        return {
+          content: `### Suivi détaillé — Lot ${lotNum}\n${extraitLot.replace(/^###\s*Lot\s*\d+\s*—\s*/i, "**")}`,
+          actions,
+          tags: ["Suivi Conversationnel", `Lot ${lotNum}`],
+        };
+      }
+    }
+    return {
+      content: `### Suivi sur votre dernier pré-chiffrage\n${options.dernierPreChiffrage}`,
+      actions,
+      tags: ["Suivi Conversationnel"],
     };
   }
 
@@ -968,6 +1015,21 @@ export function generateLocalAssistantResponse(
   }
 
   // 9. Fallback Copilote BNA (déclenche le relais Cloud LLM côté API si une clé est configurée)
+  if (aContexteSuivi) {
+    const dernierMessageAssistant = [...(options?.history ?? [])]
+      .reverse()
+      .find((m) => m.role === "assistant")?.content;
+    return {
+      content: options?.dernierPreChiffrage
+        ? `### Suivi de votre étude en cours\n${options.dernierPreChiffrage}`
+        : dernierMessageAssistant
+          ? `### Reprise de votre conversation\nDernier élément analysé :\n${dernierMessageAssistant.slice(0, 500)}`
+          : `### Suivi conversationnel\nContexte conservé (${options?.history?.length ?? 0} messages). Précisez le lot ou la question à approfondir.`,
+      actions,
+      tags: ["Suivi Conversationnel"],
+    };
+  }
+
   return {
     content:
       `Je suis prêt à vous aider sur vos ${ctx.chantiers.length} chantier(s) (Bardage, Terrasse, Clôture), votre trésorerie (${fmtEuro(fin.caSigneHt)} signé HT), vos commandes et vos normes DTU. Utilisez un raccourci ou posez votre question.`,

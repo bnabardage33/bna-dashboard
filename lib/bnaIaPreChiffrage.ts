@@ -97,7 +97,7 @@ function extraireDimensionsOuverture(
   }> = [];
 
   const regexOuv =
-    /(?:\b(\d+)\s+)?(fen[êe]tre|baie|porte(?:-fen[êe]tre)?|ouverture)s?\s*(?:de\s*)?(\d+(?:[.,]\d+)?)\s*(?:m\s*)?[x×*]\s*(\d+(?:[.,]\d+)?)/gi;
+    /(?:\b(\d+)\s+)?(fen[êe]tre|baie|porte(?:\s*(?:de\s*)?garage|\s*d['’]entr[ée]e|-fen[êe]tre)?|ouverture)s?\s*(?:de\s*)?(\d+(?:[.,]\d+)?)\s*(?:m\s*)?[x×*]\s*(\d+(?:[.,]\d+)?)/gi;
 
   let m: RegExpExecArray | null;
   let idx = 1;
@@ -108,9 +108,14 @@ function extraireDimensionsOuverture(
     const hauteurM = parseNombreFr(m[4]);
     if (largeurM > 0 && hauteurM > 0) {
       for (let i = 0; i < nb; i++) {
+        const nomOuv = typeRaw.includes("garage")
+          ? `Porte de garage ${idx}`
+          : typeRaw.includes("porte")
+            ? `Porte ${idx}`
+            : `Fenêtre ${idx}`;
         ouvertures.push({
           id: `ouv-${idx}`,
-          nom: `${typeRaw.includes("porte") ? "Porte" : "Fenêtre"} ${idx}`,
+          nom: nomOuv,
           type: typeRaw.includes("porte") ? "porte" : "fenetre",
           largeurM,
           hauteurM,
@@ -128,7 +133,7 @@ function calculerPreChiffrageBardage(
 ): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
   const sansOuvertures = message.replace(
-    /(?:\b\d+\s+)?(fen[êe]tre|baie|porte(?:-fen[êe]tre)?|ouverture)s?\s*(?:de\s*)?\d+(?:[.,]\d+)?\s*(?:m\s*)?[x×*]\s*\d+(?:[.,]\d+)?/gi,
+    /(?:\b\d+\s+)?(fen[êe]tre|baie|porte(?:\s*(?:de\s*)?garage|\s*d['’]entr[ée]e|-fen[êe]tre)?|ouverture)s?\s*(?:de\s*)?\d+(?:[.,]\d+)?\s*(?:m\s*)?[x×*]\s*\d+(?:[.,]\d+)?/gi,
     " "
   );
 
@@ -255,7 +260,7 @@ function calculerPreChiffrageBardage(
   if (segments.length === 0) return null;
 
   const ouvertures = extraireDimensionsOuverture(message);
-  if (estHypotheseMaison || /porte\s*(?:de\s*)?garage/i.test(lower)) {
+  if (estHypotheseMaison) {
     if (
       /porte\s*(?:de\s*)?garage/i.test(lower) &&
       !ouvertures.some((o) => o.nom.toLowerCase().includes("garage"))
@@ -861,7 +866,11 @@ function calculerPreChiffrageCloture(
   options?: { autoriserHypothese?: boolean }
 ): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
-  const matchMl = message.match(/(\d+(?:[.,]\d+)?)\s*(?:ml|m\b|m[èe]tres?)/i);
+  const matchMlStrict = message.match(
+    /(\d+(?:[.,]\d+)?)\s*(?:ml|m[èe]tres?\s*lin[ée]aires?|m\s*de\s*long)\b/i
+  );
+  const matchMl =
+    matchMlStrict ?? message.match(/(\d+(?:[.,]\d+)?)\s*(?:m\b|m[èe]tres?)/i);
 
   let estHypotheseCloture = false;
   let lineaireBrutM = matchMl ? parseNombreFr(matchMl[1]) : 0;
@@ -991,20 +1000,89 @@ function calculerPreChiffrageCloture(
   };
 }
 
+export function segmenterRequeteParLots(message: string): {
+  bardage: string;
+  terrasse: string;
+  cloture: string;
+} {
+  // 1. Découpage sur marqueurs numérotés ("1)", "2)", "3)", "Lot 1", retours à la ligne)
+  let morceaux = message
+    .split(/(?=(?:^|[\s.;])\s*[1-9]\)\s*)|\n+|(?=(?:^|[\s.;])\s*Lot\s*[1-9]\b)/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // 2. Si un seul bloc contient plusieurs transitions explicites, découper sur les transitions majeures
+  if (morceaux.length <= 1) {
+    morceaux = message
+      .split(
+        /(?=\+\s*montage\s+d['’]une\s+terrasse|\bet\s+avec\s+cl[ôo]ture|\b(?:Terrasse|Cl[ôo]ture|Bardage)\b(?=\s+(?:composite|bois|alu|hpl|simple|piscine|mobile|\d)))/i
+      )
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  const bardageParts: string[] = [];
+  const terrasseParts: string[] = [];
+  const clotureParts: string[] = [];
+
+  for (const part of morceaux) {
+    const pLower = part.toLowerCase();
+    const isBardage =
+      /bardage|\bhpl\b|trespa|fundermax|equitone|cedral|\bweo\b|newtechwood|\bite\b|fa[çc]ade|pignon|claire[-\s]?voie|maison|garage/i.test(
+        pLower
+      );
+    const isTerrasse =
+      /terrasse|platelage|piscine|silvadec|fiberdeck|neowood|oc[ée]wood/i.test(
+        pLower
+      );
+    const isCloture = /cl[ôo]ture|palissade|portillon|\bportail\b/i.test(pLower);
+
+    // Priorité au mot-clé d'ouverture du segment pour éviter toute fuite inter-lots
+    if (/^(?:[1-9]\)\s*|lot\s*[1-9]\s*[-:]*\s*)?(?:\+\s*montage\s+d['’]une\s+)?terrasse/i.test(part)) {
+      terrasseParts.push(part);
+    } else if (/^(?:[1-9]\)\s*|lot\s*[1-9]\s*[-:]*\s*)?(?:et\s+avec\s+)?cl[ôo]ture/i.test(part)) {
+      clotureParts.push(part);
+    } else if (/^(?:[1-9]\)\s*|lot\s*[1-9]\s*[-:]*\s*)?(?:bardage|maison)/i.test(part)) {
+      bardageParts.push(part);
+    } else if (isTerrasse && !isBardage && !isCloture) {
+      terrasseParts.push(part);
+    } else if (isCloture && !isBardage && !isTerrasse) {
+      clotureParts.push(part);
+    } else if (isBardage && !isTerrasse && !isCloture) {
+      bardageParts.push(part);
+    } else {
+      if (isBardage) bardageParts.push(part);
+      if (isTerrasse) terrasseParts.push(part);
+      if (isCloture) clotureParts.push(part);
+    }
+  }
+
+  return {
+    bardage: bardageParts.join(" "),
+    terrasse: terrasseParts.join(" "),
+    cloture: clotureParts.join(" "),
+  };
+}
+
 export function detecterEtCalculerPreChiffrage(
   message: string
 ): PreChiffrageBnaResult | null {
   const lower = message.toLowerCase();
+  const segmentsLots = segmenterRequeteParLots(message);
 
   const hasBardage =
+    segmentsLots.bardage.length > 0 ||
     /bardage|\bhpl\b|trespa|fundermax|equitone|cedral|\bweo\b|newtechwood|\bite\b|fa[çc]ade|claire[-\s]?voie|maison.*(?:[ée]tage|compl[èe]te|4\s*c[ôo]t[ée]s?)|garage\s+attenant/i.test(
       lower
     );
   const hasTerrasse =
+    segmentsLots.terrasse.length > 0 ||
     /terrasse|platelage|piscine|silvadec|fiberdeck|neowood|oc[ée]wood/i.test(
       lower
     );
-  const hasCloture = /cl[ôo]ture|palissade|portillon|\bportail\b/i.test(lower);
+  const hasCloture =
+    segmentsLots.cloture.length > 0 ||
+    /cl[ôo]ture|palissade|portillon|\bportail\b/i.test(lower);
 
   const nbLotsDetectes = [hasBardage, hasTerrasse, hasCloture].filter(Boolean).length;
 
@@ -1012,15 +1090,21 @@ export function detecterEtCalculerPreChiffrage(
   if (nbLotsDetectes >= 2) {
     const lots: PreChiffrageBnaResult[] = [];
     if (hasBardage) {
-      const b = calculerPreChiffrageBardage(message, { autoriserHypotheseMaison: true });
+      const b = calculerPreChiffrageBardage(segmentsLots.bardage || message, {
+        autoriserHypotheseMaison: true,
+      });
       if (b) lots.push(b);
     }
     if (hasTerrasse) {
-      const t = calculerPreChiffrageTerrasse(message, { autoriserHypothese: true });
+      const t = calculerPreChiffrageTerrasse(segmentsLots.terrasse || message, {
+        autoriserHypothese: true,
+      });
       if (t) lots.push(t);
     }
     if (hasCloture) {
-      const c = calculerPreChiffrageCloture(message, { autoriserHypothese: true });
+      const c = calculerPreChiffrageCloture(segmentsLots.cloture || message, {
+        autoriserHypothese: true,
+      });
       if (c) lots.push(c);
     }
 
