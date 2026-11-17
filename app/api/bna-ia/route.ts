@@ -417,11 +417,11 @@ async function chargerMeteoChantier3Jours(
       return { previsions: [], resumeAlerte: null };
     }
 
-    // 2. Prévisions gratuites Open-Meteo 5 jours (zéro quota Visual Crossing)
+    // 2. Prévisions gratuites Open-Meteo 15 jours (semaine en cours + semaine prochaine, zéro quota)
     const forecastUrl =
       `https://api.open-meteo.com/v1/forecast?latitude=${first.latitude}&longitude=${first.longitude}` +
       `&daily=temperature_2m_min,temperature_2m_max,precipitation_sum,wind_gusts_10m_max,weather_code` +
-      `&timezone=Europe%2FParis&forecast_days=5`;
+      `&timezone=Europe%2FParis&forecast_days=15`;
     const forecastJson = (await fetchJsonWithTimeout(
       forecastUrl,
       METEO_TIMEOUT_MS
@@ -441,7 +441,7 @@ async function chargerMeteoChantier3Jours(
       return { previsions: [], resumeAlerte: null };
     }
 
-    const previsions: BnaIaPrevisionJourCtx[] = daily.time.slice(0, 5).map((date, idx) => {
+    const previsions: BnaIaPrevisionJourCtx[] = daily.time.slice(0, 15).map((date, idx) => {
       const tempMinC = Math.round(Number(daily.temperature_2m_min?.[idx] ?? 0));
       const tempMaxC = Math.round(Number(daily.temperature_2m_max?.[idx] ?? 0));
       const rafalesKmh = Math.round(Number(daily.wind_gusts_10m_max?.[idx] ?? 0));

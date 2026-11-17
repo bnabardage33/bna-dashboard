@@ -101,7 +101,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
         </code>
       );
     }
-    return <span key={idx}>{part.replace(/\*/g, "")}</span>;
+    return <span key={idx}>{part.replace(/\*/g, "").replace(/\|/g, " · ")}</span>;
   });
 }
 

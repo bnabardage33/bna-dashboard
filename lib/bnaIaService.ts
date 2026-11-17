@@ -1032,6 +1032,24 @@ export interface BnaIaHistoryTurn {
   content: string;
 }
 
+function formaterJourMeteoFr(dateIso: string): string {
+  const m = dateIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return dateIso;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0));
+  if (Number.isNaN(d.getTime())) return dateIso;
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Paris",
+  }).formatToParts(d);
+  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
+  const day = parts.find((p) => p.type === "day")?.value ?? m[3];
+  const month = parts.find((p) => p.type === "month")?.value ?? m[2];
+  const weekdayCap = weekday ? weekday.charAt(0).toUpperCase() + weekday.slice(1) : "";
+  return `${weekdayCap} ${day}/${month}`.trim();
+}
+
 export function buildSystemPromptContext(
   ctx: BnaIaContext,
   preChiffrage?: PreChiffrageBnaResult | null,
@@ -1052,10 +1070,10 @@ export function buildSystemPromptContext(
           .map((c) => {
             const previsionsTxt =
               c.previsionsMeteo3J && c.previsionsMeteo3J.length > 0
-                ? `\n  Météo 3J : ${c.previsionsMeteo3J
+                ? `\n  Météo 15J : ${c.previsionsMeteo3J
                     .map(
                       (j) =>
-                        `${j.date}: ${j.tempMinC}°/${j.tempMaxC}°C, rafales ${j.rafalesKmh} km/h, pluie ${j.pluieMm} mm (${j.conditions})${
+                        `${formaterJourMeteoFr(j.date)} (${j.date}): ${j.tempMinC}°/${j.tempMaxC}°C, rafales ${j.rafalesKmh} km/h, pluie ${j.pluieMm} mm (${j.conditions})${
                           j.alertesDtu.length > 0 ? ` [⚠️ ${j.alertesDtu.join(" | ")}]` : ""
                         }`
                     )
@@ -1101,11 +1119,11 @@ export function buildSystemPromptContext(
 
   const meteoLibreTxt =
     ctx.meteoVilleLibre && ctx.meteoVilleLibre.previsions.length > 0
-      ? `\n\nMÉTÉO EN DIRECT (${ctx.meteoVilleLibre.ville} — Open-Meteo 3 jours) :\n` +
+      ? `\n\nMÉTÉO EN DIRECT (${ctx.meteoVilleLibre.ville} — Open-Meteo 15 jours) :\n` +
         ctx.meteoVilleLibre.previsions
           .map(
             (j) =>
-              `- ${j.date}: ${j.tempMinC}°/${j.tempMaxC}°C, rafales ${j.rafalesKmh} km/h, pluie ${j.pluieMm} mm (${j.conditions})${
+              `- ${formaterJourMeteoFr(j.date)} (${j.date}): ${j.tempMinC}°/${j.tempMaxC}°C, rafales ${j.rafalesKmh} km/h, pluie ${j.pluieMm} mm (${j.conditions})${
                 j.alertesDtu.length > 0 ? ` [⚠️ ${j.alertesDtu.join(" | ")}]` : ""
               }`
           )
@@ -1138,6 +1156,7 @@ Tickets SAV ouverts : ${savOuverts.length} | PV avec réserves : ${pvReserves.le
 
 RÈGLES MÉTIERS & NORMES :
 - Appuie tes conseils techniques sur NF DTU 51.4 (Terrasse), NF P90-308 (Terrasse Mobile piscine), NF DTU 41.2 (Bardage bois), NF DTU 45.4 (Bardage HPL), CSTB 3194 et les règles pro Clôtures.
+- Tu disposes des prévisions météo sur 15 jours (semaine en cours et semaine prochaine). Si les conditions sont défavorables cette semaine, identifie et propose précisément les meilleurs jours disponibles la semaine prochaine pour replanifier le chantier.
 - Sois concis, structuré et directement actionnable sur chantier ou au bureau.
 - N'utilise JAMAIS de tableaux Markdown avec des barres verticales (| ... |) ni de balises HTML (<br>), car l'affichage est consulté sur téléphone de chantier. Structure tes réponses exclusivement avec des titres courts en gras (**Titre**), des listes à puces aérées (• ...) et des chiffres clés mis en valeur.${
     normalisation?.contexteDictionnairePrompt

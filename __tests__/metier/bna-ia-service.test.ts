@@ -489,7 +489,8 @@ describe("BNA-IA — Moteur métier, Alertes Proactives & Actions", () => {
     };
 
     const sys = buildSystemPromptContext(ctxMadrid);
-    expect(sys).toContain("MÉTÉO EN DIRECT (Madrid — Open-Meteo 3 jours)");
+    expect(sys).toContain("MÉTÉO EN DIRECT (Madrid — Open-Meteo 15 jours)");
+    expect(sys).toContain("Mercredi 18/11");
     expect(sys).toContain("16°C");
 
     const rep = generateLocalAssistantResponse(promptMadrid, ctxMadrid);
