@@ -79,6 +79,7 @@ export default function ChantiersPage() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState<string | null>(null);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [recherche, setRecherche] = useState("");
@@ -103,15 +104,23 @@ export default function ChantiersPage() {
   const [creationEnCours, setCreationEnCours] = useState(false);
 
   async function fetchClients() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("clients")
       .select("id, nom, societe")
       .order("nom");
+    if (error) {
+      console.error("[chantier] Erreur chargement clients :", error);
+      setErreurChargement((prev) =>
+        prev ? `${prev} | Clients : ${error.code ?? ""} ${error.message}`.trim() : `Clients : ${error.code ?? ""} ${error.message}`.trim()
+      );
+      return;
+    }
     if (data) setClients(data as Client[]);
   }
 
   async function fetchChantiers() {
     setLoading(true);
+    setErreurChargement(null);
     try {
       // Filtrage strict Bardage : on accepte les chantiers bardage explicites et les historiques NULL,
       // tout en excluant les chantiers en corbeille et ceux disposant d'une fiche terrasse.
@@ -130,7 +139,10 @@ export default function ChantiersPage() {
           .or("metier.eq.bardage,metier.is.null")
           .neq("statut", "corbeille")
           .order("created_at", { ascending: false });
-        if (fallback.data) {
+        if (fallback.error) {
+          console.error("Erreur fallback chantiers bardage:", fallback.error);
+          setErreurChargement(`${fallback.error.code ?? ""} ${fallback.error.message}`.trim());
+        } else if (fallback.data) {
           const filtres = (fallback.data as (Chantier & { metier?: string })[]).filter(
             (c) => c.metier !== "terrasse"
           );
@@ -308,6 +320,13 @@ export default function ChantiersPage() {
               </button>
             </div>
           </div>
+
+          {erreurChargement && (
+            <div className="mt-4 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+              <p className="font-semibold text-red-300">Erreur de chargement</p>
+              <p className="mt-1 font-mono text-xs text-red-100">{erreurChargement}</p>
+            </div>
+          )}
 
           {/* Barre de recherche, bascule vue et filtres de statut */}
           <div className="mt-6 flex flex-col gap-3 pt-5 border-t border-white/10 sm:flex-row sm:items-center sm:justify-between">

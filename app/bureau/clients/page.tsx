@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import { obtenirContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
 import { Surface } from '@/components/ui/Surface';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -74,6 +74,7 @@ type FactureClient = {
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState<string | null>(null);
   const [recherche, setRecherche] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -102,11 +103,17 @@ export default function ClientsPage() {
 
   async function fetchClients() {
     setLoading(true);
+    setErreurChargement(null);
     const { data, error } = await supabase
       .from("clients")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) return;
+    if (error) {
+      console.error("[clients] Erreur chargement clients :", error);
+      setErreurChargement(`${error.code ?? ""} ${error.message}`.trim());
+      setLoading(false);
+      return;
+    }
     setClients(data as Client[]);
     setLoading(false);
   }
@@ -181,11 +188,8 @@ export default function ClientsPage() {
     // explicitement, via le claim `app_metadata.entreprise_id` — la MÊME source
     // que `entreprise_courante()` côté PostgREST, donc exactement la valeur que
     // la policy `clients_ent_insert` attend. Aucune constante de tenant en dur.
-    const { entreprise_id } = await resoudreContexteEntreprise(null);
+    const entreprise_id = await obtenirContexteEntreprise();
 
-    // Fail-closed : sans contexte entreprise, AUCUNE écriture. La RLS
-    // (`with check (entreprise_id = entreprise_courante())`) refuserait de toute
-    // façon ; autant ne rien tenter et le signaler explicitement.
     if (!estUuid(entreprise_id)) {
       alert(
         "Impossible de créer le client : votre session ne contient pas d'entreprise identifiée. Reconnectez-vous et réessayez."
@@ -207,7 +211,8 @@ export default function ClientsPage() {
     });
 
     if (error) {
-      alert("Erreur : " + error.message);
+      console.error("[clients] Erreur création client :", error);
+      alert(`Erreur (${error.code ?? "SQL"}) : ${error.message}`);
       return;
     }
 
@@ -255,6 +260,12 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
+      {erreurChargement && (
+        <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+          <p className="font-semibold text-red-300">Erreur de chargement des clients</p>
+          <p className="mt-1 font-mono text-xs text-red-100">{erreurChargement}</p>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-white">Répertoire Clients</h1>

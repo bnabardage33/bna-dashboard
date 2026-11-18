@@ -2,8 +2,16 @@ import { useState, useCallback, useEffect } from "react";
 import { getSupabase } from "@/lib/supabase";
 import type { ChantierZoneResume } from "@/types/calepinage";
 
-const messageErreur = (e: unknown, repli: string): string =>
-  e instanceof Error ? e.message : repli;
+const messageErreur = (e: unknown, repli: string): string => {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object" && "message" in e) {
+    const errObj = e as { code?: string | null; message?: string | null };
+    const code = errObj.code ? `${errObj.code} ` : "";
+    const msg = errObj.message ?? repli;
+    return `${code}${msg}`.trim();
+  }
+  return repli;
+};
 
 // Colonnes légères : on exclut `ouvertures` et `resultats_techniques` (JSONB
 // potentiellement volumineux) pour garder les listes rapides sur mobile.
@@ -31,9 +39,13 @@ export function useChantierZones(chantierId?: string) {
         .order("created_at", { ascending: false });
       if (chantierId) requete = requete.eq("chantier_id", chantierId);
       const { data, error: err } = await requete;
-      if (err) throw err;
+      if (err) {
+        console.error("[useChantierZones] Erreur Supabase :", err.code, err.message, err.details);
+        throw err;
+      }
       setZones((data ?? []) as ChantierZoneResume[]);
     } catch (e: unknown) {
+      console.error("[useChantierZones] Échec chargement :", e);
       setError(messageErreur(e, "Impossible de charger les zones"));
     } finally {
       setIsLoading(false);

@@ -19,7 +19,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
+import { obtenirContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
 import {
   getStartOfWeekLocal,
@@ -109,6 +109,7 @@ function moyennePeriode(
 
 export default function DashboardAccueilBna() {
   const [loading, setLoading] = useState(true);
+  const [erreurChargement, setErreurChargement] = useState<string | null>(null);
   const [chantiers, setChantiers] = useState<ChantierRow[]>([]);
   const [devis, setDevis] = useState<DevisRow[]>([]);
   const [factures, setFactures] = useState<FactureRow[]>([]);
@@ -120,9 +121,9 @@ export default function DashboardAccueilBna() {
     let actif = true;
     async function charger() {
       setLoading(true);
+      setErreurChargement(null);
       try {
-        const ctx = await resoudreContexteEntreprise(null);
-        const entId = ctx.entreprise_id;
+        const entId = await obtenirContexteEntreprise();
 
         const chantiersQuery = entId
           ? supabase
@@ -160,11 +161,35 @@ export default function DashboardAccueilBna() {
         ]);
 
         if (!actif) return;
-        if (!chRes.error && chRes.data) setChantiers(chRes.data as ChantierRow[]);
-        if (!devRes.error && devRes.data) setDevis(devRes.data as DevisRow[]);
-        if (!facRes.error && facRes.data) setFactures(facRes.data as FactureRow[]);
+        const erreurs: string[] = [];
+        if (chRes.error) {
+          console.error("[DashboardAccueilBna] Erreur chantiers :", chRes.error);
+          erreurs.push(`Chantiers : ${chRes.error.code ?? ""} ${chRes.error.message}`.trim());
+        } else if (chRes.data) {
+          setChantiers(chRes.data as ChantierRow[]);
+        }
+        if (devRes.error) {
+          console.error("[DashboardAccueilBna] Erreur devis :", devRes.error);
+          erreurs.push(`Devis : ${devRes.error.code ?? ""} ${devRes.error.message}`.trim());
+        } else if (devRes.data) {
+          setDevis(devRes.data as DevisRow[]);
+        }
+        if (facRes.error) {
+          console.error("[DashboardAccueilBna] Erreur factures :", facRes.error);
+          erreurs.push(`Factures : ${facRes.error.code ?? ""} ${facRes.error.message}`.trim());
+        } else if (facRes.data) {
+          setFactures(facRes.data as FactureRow[]);
+        }
+        if (erreurs.length > 0) {
+          setErreurChargement(erreurs.join(" | "));
+        }
         setRdvs(rdvRes.data);
         if (meteoRes) setMeteo(meteoRes as MeteoResume);
+      } catch (err) {
+        console.error("[DashboardAccueilBna] Exception chargement :", err);
+        if (actif) {
+          setErreurChargement(err instanceof Error ? err.message : "Erreur de chargement dashboard");
+        }
       } finally {
         if (actif) setLoading(false);
       }
@@ -289,6 +314,12 @@ export default function DashboardAccueilBna() {
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-4 sm:px-6 text-white">
+      {erreurChargement && (
+        <div className="mb-4 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+          <p className="font-semibold text-red-300">Erreur Supabase lors du chargement du tableau de bord</p>
+          <p className="mt-1 font-mono text-xs text-red-100">{erreurChargement}</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
         {/* Colonne Principale */}
         <div className="min-w-0 space-y-4">

@@ -87,8 +87,18 @@ export default function BureauRapportsIntemperiesPage() {
 
     if (rapportsRes.error) {
       console.error("Erreur chargement rapports intempéries:", rapportsRes.error);
+      setMessageFeedback(
+        `❌ Erreur chargement rapports (${rapportsRes.error.code ?? "SQL"}) : ${rapportsRes.error.message}`
+      );
       setLoading(false);
       return;
+    }
+
+    if (chantiersRes.error) {
+      console.error("Erreur chargement chantiers (intempéries):", chantiersRes.error);
+      setMessageFeedback(
+        `❌ Erreur chargement chantiers (${chantiersRes.error.code ?? "SQL"}) : ${chantiersRes.error.message}`
+      );
     }
 
     const chantiersMap = new Map<string, string>();
