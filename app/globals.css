@@ -247,7 +247,7 @@ body:has(#login-page) header {
   display: none !important;
 }
 body:has(#login-page) {
-  background-color: #F3F3F1 !important;
+  background-color: #120F0D !important;
   background-image: none !important;
 }
 body:has(#login-page) #main-content-wrapper {
@@ -255,21 +255,21 @@ body:has(#login-page) #main-content-wrapper {
   padding-bottom: 0 !important;
 }
 
-/* Champs de saisie /login : fond blanc pur sans reflet gris à la saisie ou à l'autofill */
+/* Champs de saisie /login : fond sombre Dark Wood & Copper même lors de l'autofill */
 #login-page input {
-  background-color: #ffffff !important;
-  color: #23272B !important;
+  background-color: #120F0D !important;
+  color: #ffffff !important;
 }
 #login-page input:-webkit-autofill,
 #login-page input:-webkit-autofill:hover,
 #login-page input:-webkit-autofill:focus,
 #login-page input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #23272B !important;
-  caret-color: #23272B !important;
+  -webkit-box-shadow: 0 0 0 1000px #120F0D inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 #login-page input:autofill {
-  box-shadow: 0 0 0 1000px #ffffff inset !important;
-  -webkit-text-fill-color: #23272B !important;
+  box-shadow: 0 0 0 1000px #120F0D inset !important;
+  -webkit-text-fill-color: #ffffff !important;
 }

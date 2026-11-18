@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Building2, ShieldCheck, Scale, FileText, Check, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { Surface } from '@/components/ui/Surface';
+import { PasskeySettingsCard } from '@/components/PasskeySettingsCard';
 
 export type Settings = {
   raison_sociale: string;
@@ -138,7 +139,8 @@ export default function ParametresPage() {
   }
 
   return (
-    <form onSubmit={enregistrer} className="space-y-6">
+    <div className="space-y-6">
+      <form onSubmit={enregistrer} className="space-y-6">
       {/* En-tête Réglages */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -333,7 +335,10 @@ export default function ParametresPage() {
           placeholder="Ex: TVA non applicable, art. 293 B du CGI (ou numéro TVA intracommunautaire), dispensé d'immatriculation au RCS..."
         />
       </Surface>
-    </form>
+      </form>
+
+      <PasskeySettingsCard />
+    </div>
   );
 }
 

@@ -16,8 +16,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 // vérifie elle-même la session (lib/auth.ts → 401) avant toute requête base.
 export const PUBLIC_PATHS = ['/login'] as const
 
-// Préfixes publics uniques du portail client (pages + API du portail).
-export const PUBLIC_PREFIXES = ['/espace-client', '/api/espace-client'] as const
+// Préfixes publics uniques : portail client + authentification biométrique (login passkey).
+export const PUBLIC_PREFIXES = ['/espace-client', '/api/espace-client', '/api/auth/passkey'] as const
 
 function cheminEstPublic(pathname: string): boolean {
   if (pathname === '/') return true

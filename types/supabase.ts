@@ -3955,6 +3955,45 @@ export type Database = {
           },
         ]
       }
+      user_passkeys: {
+        Row: {
+          algorithm: number
+          counter: number
+          created_at: string
+          credential_id: string
+          device_name: string
+          id: string
+          last_used_at: string | null
+          public_key_spki: string
+          transports: string[] | null
+          user_id: string
+        }
+        Insert: {
+          algorithm?: number
+          counter?: number
+          created_at?: string
+          credential_id: string
+          device_name?: string
+          id?: string
+          last_used_at?: string | null
+          public_key_spki: string
+          transports?: string[] | null
+          user_id: string
+        }
+        Update: {
+          algorithm?: number
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          device_name?: string
+          id?: string
+          last_used_at?: string | null
+          public_key_spki?: string
+          transports?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       vigilance_captures: {
         Row: {
           capture_le: string
