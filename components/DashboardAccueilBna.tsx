@@ -113,6 +113,7 @@ export default function DashboardAccueilBna() {
   const [chantiers, setChantiers] = useState<ChantierRow[]>([]);
   const [devis, setDevis] = useState<DevisRow[]>([]);
   const [factures, setFactures] = useState<FactureRow[]>([]);
+  const [clientsCount, setClientsCount] = useState<number>(0);
   const [rdvs, setRdvs] = useState<RendezVousRow[]>([]);
   const [meteo, setMeteo] = useState<MeteoResume | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -149,10 +150,18 @@ export default function DashboardAccueilBna() {
               .eq("entreprise_id", entId)
           : supabase.from("factures").select("id, statut, net_a_payer_ttc");
 
-        const [chRes, devRes, facRes, rdvRes, meteoRes] = await Promise.all([
+        const clientsQuery = entId
+          ? supabase
+              .from("clients")
+              .select("id", { count: "exact", head: true })
+              .eq("entreprise_id", entId)
+          : supabase.from("clients").select("id", { count: "exact", head: true });
+
+        const [chRes, devRes, facRes, clientsRes, rdvRes, meteoRes] = await Promise.all([
           chantiersQuery,
           devisQuery,
           facturesQuery,
+          clientsQuery,
           listerRendezVous(supabase, entId).catch(() => ({
             data: [] as RendezVousRow[],
             migrationRequired: true,
@@ -179,6 +188,12 @@ export default function DashboardAccueilBna() {
           erreurs.push(`Factures : ${facRes.error.code ?? ""} ${facRes.error.message}`.trim());
         } else if (facRes.data) {
           setFactures(facRes.data as FactureRow[]);
+        }
+        if (clientsRes.error) {
+          console.error("[DashboardAccueilBna] Erreur clients :", clientsRes.error);
+          erreurs.push(`Clients : ${clientsRes.error.code ?? ""} ${clientsRes.error.message}`.trim());
+        } else {
+          setClientsCount(clientsRes.count ?? 0);
         }
         if (erreurs.length > 0) {
           setErreurChargement(erreurs.join(" | "));
@@ -489,12 +504,15 @@ export default function DashboardAccueilBna() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 <Link
-                  href="/bureau/portails-clients"
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
+                  href="/bureau/clients"
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
                 >
                   <UserCheck className="h-5 w-5 text-[#D96B27]" />
                   <span className="text-[11px] font-semibold text-gray-200 leading-tight">
-                    Accès client
+                    Espace Client
+                  </span>
+                  <span className="text-[10px] font-medium text-[#D96B27]">
+                    {loading ? "…" : `${clientsCount} client${clientsCount > 1 ? "s" : ""}`}
                   </span>
                 </Link>
 
