@@ -110,7 +110,7 @@ export default function RootLayout({
             {/* Header unifié responsive :
                 - Mobile / Tablette (< 1024px) : 142 px, logo centré dans cadre 130 px, hamburger et cloche
                 - Desktop (≥ 1024px) : 64 px compact (h-16), titre espace de travail, recherche inline et cloche */}
-            <header className="relative z-[9999] flex w-full items-center justify-between gap-3 px-4 py-1.5 lg:h-16 lg:px-6 lg:py-0 lg:border-b lg:border-white/[0.06] lg:bg-[#121212]/50 lg:backdrop-blur-sm">
+            <header className="relative z-40 flex w-full items-center justify-between gap-3 px-4 py-1.5 lg:h-16 lg:px-6 lg:py-0 lg:border-b lg:border-white/[0.06] lg:bg-[#121212]/50 lg:backdrop-blur-sm">
               <Drawer />
               <div className="flex min-w-0 flex-1 items-center justify-center lg:hidden">
                 {/* Cadre de 130 px : borne la HAUTEUR réservée au logo sans

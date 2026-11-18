@@ -206,10 +206,14 @@ export default function Drawer() {
           à `bg-white/10` pour un remplissage plus léger. */}
       <button
         onClick={() => setOpen(true)}
-        className="relative z-[200] min-h-11 min-w-11 w-10 h-10 flex lg:hidden items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all"
+        className={`relative z-30 min-h-11 min-w-11 w-10 h-10 flex lg:hidden items-center justify-center rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all ${
+          open ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
         aria-label="Ouvrir le menu"
         aria-expanded={open}
         aria-controls="bna-drawer"
+        aria-hidden={open}
+        tabIndex={open ? -1 : undefined}
       >
         <Menu size={17} className="text-white" />
       </button>
@@ -217,7 +221,7 @@ export default function Drawer() {
       {/* OVERLAY */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/60 z-[50] lg:hidden"
+          className="fixed inset-0 bg-black/60 z-50 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -227,7 +231,7 @@ export default function Drawer() {
         id="bna-drawer"
         role="navigation"
         aria-label="Navigation principale"
-        className={`fixed top-0 left-0 h-full min-h-0 overflow-hidden w-[76vw] max-w-[300px] border-r border-[#D96B27]/20 bg-gradient-to-b from-[#161311] via-[#1B1511] to-[#231811] flex flex-col lg:hidden shadow-2xl transition-transform duration-300 z-[100] ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full min-h-0 overflow-hidden w-[76vw] max-w-[300px] border-r border-[#D96B27]/20 bg-gradient-to-b from-[#161311] via-[#1B1511] to-[#231811] flex flex-col lg:hidden shadow-2xl transition-transform duration-300 z-50 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Texture bois bardage subtile en pied de sidebar */}
         <div
