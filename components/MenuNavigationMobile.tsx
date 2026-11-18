@@ -227,13 +227,26 @@ export default function Drawer() {
         id="bna-drawer"
         role="navigation"
         aria-label="Navigation principale"
-        className={`fixed top-0 left-0 h-full min-h-0 overflow-hidden w-[76vw] max-w-[300px] border-r border-white/[0.08] bg-[#1A1A1A] flex flex-col lg:hidden shadow-2xl transition-transform duration-300 z-[100] ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full min-h-0 overflow-hidden w-[76vw] max-w-[300px] border-r border-[#D96B27]/20 bg-gradient-to-b from-[#161311] via-[#1B1511] to-[#231811] flex flex-col lg:hidden shadow-2xl transition-transform duration-300 z-[100] ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
+        {/* Texture bois bardage subtile en pied de sidebar */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(180deg, #D96B27 0px, #D96B27 2px, transparent 2px, transparent 10px)",
+          }}
+        />
         {/* DRAWER HEADER */}
-        <div className="shrink-0 flex items-center justify-between gap-2 pl-4 pr-3 pt-4 pb-4 border-b border-white/[0.06]">
+        <div className="relative z-10 shrink-0 flex items-center justify-between gap-2 pl-4 pr-3 pt-4 pb-4 border-b border-white/10">
           <div className="min-w-0">
-            <p className="text-white font-black text-[15px] tracking-tight truncate">BNA Bardage</p>
-            <p className="text-[#BDBDBD] text-3xs mt-0.5 truncate">Dashboard Pro</p>
+            <p className="text-white font-black text-[15px] tracking-tight truncate">
+              BNA <span className="text-[#D96B27]">•</span> Bardage
+            </p>
+            <p className="text-amber-100/60 text-3xs mt-0.5 truncate">
+              Bâtiment Nouvelle Aquitaine
+            </p>
           </div>
           <button
             type="button"
@@ -266,25 +279,25 @@ export default function Drawer() {
                   suppressHydrationWarning
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
                     active
-                      ? "bg-[#B85B2B]/15 border border-[#B85B2B]/30 text-white"
+                      ? "bg-[#D96B27]/20 border border-[#D96B27]/45 text-white"
                       : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   <div
                     suppressHydrationWarning
                     className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      active ? "bg-[#B85B2B]/20" : "bg-white/[0.05]"
+                      active ? "bg-[#D96B27]/25" : "bg-white/[0.05]"
                     }`}
                   >
                     <Icon
                       size={16}
-                      className={active ? "text-[#B85B2B]" : "text-[#D0D0D0]"}
+                      className={active ? "text-[#D96B27]" : "text-[#D0D0D0]"}
                       strokeWidth={active ? 2.5 : 1.8}
                     />
                   </div>
                   <span suppressHydrationWarning className="flex-1">{item.label}</span>
                   {active && (
-                    <div suppressHydrationWarning className="w-1.5 h-1.5 rounded-full bg-[#B85B2B] shrink-0" />
+                    <div suppressHydrationWarning className="w-1.5 h-1.5 rounded-full bg-[#D96B27] shrink-0" />
                   )}
                 </Link>
               );
@@ -372,7 +385,7 @@ export default function Drawer() {
         </nav>
 
         {/* FOOTER */}
-        <div className="shrink-0 mt-auto px-3 pb-6 pt-3 border-t border-white/[0.06] space-y-1 bg-[#1A1A1A]">
+        <div className="relative z-10 shrink-0 mt-auto px-3 pb-6 pt-3 border-t border-white/10 space-y-1 bg-[#16120F]/95">
           <Link
             href="/parametres"
             onClick={() => setOpen(false)}

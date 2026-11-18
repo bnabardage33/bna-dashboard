@@ -151,6 +151,7 @@ export default function SearchNav() {
    */
   const [rechercheMobileOuverte, setRechercheMobileOuverte] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const desktopInputRef = useRef<HTMLInputElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const champMobileRef = useRef<HTMLInputElement>(null);
   /** Enveloppe du volet mobile : permet au clic extérieur de le refermer. */
@@ -200,6 +201,17 @@ export default function SearchNav() {
       if (!dansMobile) setRechercheMobileOuverte(false);
     }
     function handleKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (window.innerWidth >= 1024) {
+          desktopInputRef.current?.focus();
+          setOpen(true);
+        } else {
+          setRechercheMobileOuverte(true);
+          requestAnimationFrame(() => champMobileRef.current?.focus());
+        }
+        return;
+      }
       // Échap referme les trois surfaces, y compris le volet mobile.
       if (e.key === "Escape") {
         setOpen(false);
@@ -287,13 +299,17 @@ export default function SearchNav() {
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
+            ref={desktopInputRef}
             type="text"
-            placeholder="Rechercher..."
+            placeholder="Rechercher (chantier, client, devis...)"
             value={query}
             onChange={(e) => { setOpen(true); chercherTexte(e.target.value); }}
             onFocus={() => { if (query.length >= 2) lancerRecherche(query); }}
-            className="bg-[#1E1E1E] border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-white placeholder-gray-500 w-40 focus:w-56 focus:outline-none focus:border-[#B85B2B]/50 transition-all"
+            className="bg-[#1B1511] border border-white/10 rounded-xl px-4 py-2 pl-9 pr-14 text-sm text-white placeholder-gray-500 w-56 focus:w-72 focus:outline-none focus:border-[#D96B27]/60 transition-all"
           />
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-white/15 bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">
+            Ctrl K
+          </kbd>
         </div>
         {open && (query.length >= 2) && (
           <Surface className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] shadow-2xl overflow-hidden z-50">
@@ -420,6 +436,15 @@ export default function SearchNav() {
           </Surface>
         )}
       </div>
+
+      {/* Badge utilisateur Desktop */}
+      <Link
+        href="/parametres"
+        title="Profil utilisateur BNA"
+        className="hidden lg:flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#D96B27]/40 bg-[#D96B27]/20 text-xs font-bold text-[#F59E0B] hover:bg-[#D96B27]/30 transition-colors"
+      >
+        GB
+      </Link>
     </div>
   );
 }

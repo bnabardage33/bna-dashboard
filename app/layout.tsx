@@ -7,6 +7,8 @@ import SearchNav from "@/components/BarreRechercheNavigation";
 import EnregistrementServiceWorker from "@/components/EnregistrementServiceWorker";
 import InactivityLogout from "@/components/DeconnexionInactivite";
 import SidebarDesktop from "@/components/SidebarDesktop";
+import HeaderContextTitle from "@/components/HeaderContextTitle";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -136,9 +138,7 @@ export default function RootLayout({
                   className="h-7 w-auto object-contain shrink-0 pointer-events-none"
                 />
                 <span className="h-4 w-px bg-white/10 shrink-0" aria-hidden="true" />
-                <span className="text-xs font-semibold tracking-wider text-gray-400 uppercase truncate">
-                  Espace de travail
-                </span>
+                <HeaderContextTitle />
               </div>
 
               <SearchNav />
@@ -146,12 +146,13 @@ export default function RootLayout({
 
             <main
               id="main-content-wrapper"
-              className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12"
+              className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-20 md:pb-12"
             >
               {children}
             </main>
           </div>
         </div>
+        <MobileBottomNav />
       </body>
     </html>
   );

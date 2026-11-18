@@ -90,10 +90,19 @@ export default function SidebarDesktop() {
       id="bna-desktop-sidebar"
       role="navigation"
       aria-label="Navigation principale ordinateur"
-      className={`hidden lg:flex flex-col shrink-0 border-r border-white/[0.08] bg-[#1A1A1A] text-gray-300 select-none print:hidden transition-[width] duration-300 ease-in-out sticky top-0 z-30 h-screen min-h-0 ${
-        collapsedEffectif ? "w-[72px]" : "w-[260px] overflow-hidden"
-      }`}
+      className={`hidden lg:flex flex-col shrink-0 border-r border-[#D96B27]/20 bg-gradient-to-b from-[#161311] via-[#1B1511] to-[#231811] text-gray-300 select-none print:hidden transition-[width] duration-300 ease-in-out sticky top-0 z-30 h-screen min-h-0 ${
+        isCollapsed ? "w-[72px]" : "w-[260px]"
+      } ${isCollapsed ? "" : "overflow-hidden"}`}
     >
+      {/* Texture bois bardage subtile en bas de sidebar */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 opacity-[0.07]"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(180deg, #D96B27 0px, #D96B27 2px, transparent 2px, transparent 10px)",
+        }}
+      />
       <Suspense fallback={null}>
         <SearchParamsSync onTabChange={setOngletUrl} />
       </Suspense>
@@ -174,7 +183,7 @@ export default function SidebarDesktop() {
                     collapsedEffectif ? "h-11 w-11 mx-auto justify-center" : "px-3 py-2.5"
                   } ${
                     actif
-                      ? "bg-[#B85B2B]/20 border border-[#B85B2B]/40 text-white font-semibold shadow-xs"
+                      ? "bg-[#D96B27]/20 border border-[#D96B27]/45 text-white font-semibold shadow-xs"
                       : "text-gray-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                   aria-current={actif ? "page" : undefined}
@@ -182,7 +191,7 @@ export default function SidebarDesktop() {
                   <Icone
                     size={18}
                     className={`shrink-0 transition-colors ${
-                      actif ? "text-[#ff5a5a]" : "text-gray-400 group-hover:text-white"
+                      actif ? "text-[#D96B27]" : "text-gray-400 group-hover:text-white"
                     }`}
                     aria-hidden="true"
                   />
@@ -321,7 +330,7 @@ export default function SidebarDesktop() {
       </nav>
 
       {/* ── PIED DE NAVIGATION : PARAMÈTRES & DÉCONNEXION ───────────────── */}
-      <div className="shrink-0 mt-auto p-2 border-t border-white/[0.06] space-y-1 bg-[#1A1A1A]">
+      <div className="relative z-10 shrink-0 mt-auto p-2 border-t border-white/10 space-y-1 bg-[#16120F]/95">
         {/* Paramètres */}
         <div className="relative group">
           <Link
