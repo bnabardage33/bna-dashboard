@@ -14,5 +14,9 @@ export default async function Home() {
     redirect("/login");
   }
 
-  return <DashboardAccueilBna />;
+  return (
+    <div className="min-h-screen bg-[#120F0D]">
+      <DashboardAccueilBna />
+    </div>
+  );
 }

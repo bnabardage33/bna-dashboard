@@ -110,7 +110,7 @@ export default function SidebarDesktop() {
       {collapsedEffectif ? (
         <div className="shrink-0 py-2.5 px-2 flex flex-col items-center gap-2 border-b border-white/[0.06]">
           <Link
-            href="/terrain/accueil"
+            href="/"
             className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden group hover:border-[#B85B2B]/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
             title="BNA Bardage — Accueil"
           >
@@ -136,7 +136,7 @@ export default function SidebarDesktop() {
       ) : (
         <div className="shrink-0 h-16 flex items-center justify-between gap-2 pl-4 pr-3 border-b border-white/[0.06]">
           <Link
-            href="/terrain/accueil"
+            href="/"
             className="flex items-center min-w-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] rounded-xl p-1"
             title="BNA Bardage — Accueil"
           >

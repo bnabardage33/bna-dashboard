@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Menu, X, CloudSun, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown, BookOpen, Sparkles } from "lucide-react";
+import { Menu, X, Home, CloudSun, FolderOpen, HardHat, Wrench, CircleDollarSign, Users, Settings, LogOut, Truck, ChevronDown, BookOpen, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { LucideIcon } from "lucide-react";
 
@@ -39,6 +39,7 @@ export type EntreeNav = {
 };
 
 export const NAV_ITEMS: EntreeNav[] = [
+  { href: "/", label: "Accueil", icon: Home },
   { href: "/terrain/accueil", label: "Accueil Chantier", icon: HardHat },
   { href: "/terrain/meteo", label: "Accueil Météo", icon: CloudSun },
   { href: "/terrain/bna-ia", label: "BNA-IA · Copilote", icon: Sparkles },
