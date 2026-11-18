@@ -30,8 +30,31 @@ export type Settings = {
   logo_url: string | null;
 };
 
+const DEFAULT_SETTINGS: Settings = {
+  raison_sociale: "",
+  siret: "",
+  telephone: "",
+  email: "",
+  adresse: "",
+  code_postal: "",
+  ville: "",
+  assurance: "",
+  assurance_nom: "AXA Courtage / SMABTP",
+  assurance_numero_police: "DEC-2024-884920",
+  assurance_zone_geo: "France métropolitaine et Corse",
+  mediateur_nom: "CM2C (Centre de la Médiation de la Consommation)",
+  mediateur_contact: "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris",
+  iban: "",
+  bic: "",
+  seuil_ca: 0,
+  taux_cotisations: 0,
+  mentions_legales: "",
+  logo_url: "",
+};
+
 export default function ParametresPage() {
-  const [form, setForm] = useState<Settings | null>(null);
+  const [form, setForm] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settingsId, setSettingsId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "ok" | "erreur">("idle");
@@ -43,45 +66,32 @@ export default function ParametresPage() {
         const { data, error } = await supabase
           .from("entreprise_settings")
           .select("*")
-          .eq("id", 1)
-          .single();
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (error) {
-          alert("Erreur de chargement des paramètres : " + error.message);
+          console.error("Erreur de chargement des paramètres :", error.message);
         }
 
-        const fb = data || {
-          raison_sociale: "",
-          siret: "",
-          telephone: "",
-          email: "",
-          adresse: "",
-          code_postal: "",
-          ville: "",
-          assurance: "",
-          assurance_nom: "",
-          assurance_numero_police: "",
-          assurance_zone_geo: "",
-          mediateur_nom: "",
-          mediateur_contact: "",
-          iban: "",
-          bic: "",
-          seuil_ca: 0,
-          taux_cotisations: 0,
-          mentions_legales: "",
-          logo_url: "",
-        };
+        if (data?.id != null) {
+          setSettingsId(data.id);
+        }
+
+        const fb = data || DEFAULT_SETTINGS;
 
         setForm({
+          ...DEFAULT_SETTINGS,
           ...fb,
-          assurance_nom: fb.assurance_nom || fb.assurance || "AXA Courtage / SMABTP",
-          assurance_numero_police: fb.assurance_numero_police || "DEC-2024-884920",
-          assurance_zone_geo: fb.assurance_zone_geo || "France métropolitaine et Corse",
-          mediateur_nom: fb.mediateur_nom || "CM2C (Centre de la Médiation de la Consommation)",
-          mediateur_contact: fb.mediateur_contact || "https://www.cm2c.net - 14 rue Saint Jean 75017 Paris",
+          assurance_nom: fb.assurance_nom || fb.assurance || DEFAULT_SETTINGS.assurance_nom,
+          assurance_numero_police: fb.assurance_numero_police || DEFAULT_SETTINGS.assurance_numero_police,
+          assurance_zone_geo: fb.assurance_zone_geo || DEFAULT_SETTINGS.assurance_zone_geo,
+          mediateur_nom: fb.mediateur_nom || DEFAULT_SETTINGS.mediateur_nom,
+          mediateur_contact: fb.mediateur_contact || DEFAULT_SETTINGS.mediateur_contact,
         } as Settings);
       } catch (err) {
-        alert("Exception de chargement : " + ((err as Error)?.message || String(err)));
+        console.error("Exception de chargement des paramètres :", err);
+        setForm(DEFAULT_SETTINGS);
       } finally {
         setLoading(false);
       }
@@ -119,10 +129,28 @@ export default function ParametresPage() {
       assurance: form.assurance_nom || form.assurance,
     };
 
-    const { error } = await supabase.from("entreprise_settings").update(payload).eq("id", 1);
+    let saveError = null;
+    if (settingsId !== null) {
+      const { error } = await supabase
+        .from("entreprise_settings")
+        .update(payload)
+        .eq("id", settingsId);
+      saveError = error;
+    } else {
+      const { data: inserted, error } = await supabase
+        .from("entreprise_settings")
+        .insert(payload as never)
+        .select("id")
+        .maybeSingle();
+      saveError = error;
+      if (inserted?.id != null) {
+        setSettingsId(inserted.id);
+      }
+    }
+
     setSaving(false);
-    if (error) {
-      alert("Erreur de sauvegarde : " + error.message);
+    if (saveError) {
+      alert("Erreur de sauvegarde : " + saveError.message);
       setStatus("erreur");
     } else {
       setStatus("ok");
@@ -130,10 +158,13 @@ export default function ParametresPage() {
     setTimeout(() => setStatus("idle"), 3500);
   }
 
-  if (loading || !form) {
+  if (loading) {
     return (
-      <div className="p-12 text-center text-xs text-gray-400">
-        Chargement des paramètres de l&apos;entreprise…
+      <div className="space-y-6">
+        <div className="p-12 text-center text-xs text-gray-400">
+          Chargement des paramètres de l&apos;entreprise…
+        </div>
+        <PasskeySettingsCard />
       </div>
     );
   }
