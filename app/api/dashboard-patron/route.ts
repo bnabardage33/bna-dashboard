@@ -64,20 +64,8 @@ async function lireParametresEntreprise(
     .eq('entreprise_id', entreprise_id)
     .maybeSingle();
 
-  let tresorerieActuelle = params?.tresorerie_actuelle ?? null;
-  let chargesFixes = params?.charges_fixes_mensuelles ?? 0;
-
-  if (tresorerieActuelle === null) {
-    // Fallback sur l'ancien paramètre solde_bancaire si présent.
-    // Scopé par entreprise_id : sinon la valeur d'un autre tenant était lue.
-    const { data: solde } = await supabase
-      .from('parametres_finance')
-      .select('valeur')
-      .eq('entreprise_id', entreprise_id)
-      .eq('cle', 'solde_bancaire')
-      .maybeSingle();
-    tresorerieActuelle = solde?.valeur ?? DEFAUT_TRESORERIE;
-  }
+  const tresorerieActuelle = params?.tresorerie_actuelle ?? DEFAUT_TRESORERIE;
+  const chargesFixes = params?.charges_fixes_mensuelles ?? 0;
 
   return { tresorerieActuelle, chargesFixes };
 }
@@ -139,7 +127,7 @@ export async function GET(req: NextRequest) {
           .eq('entreprise_id', entreprise_id),
         supabase
           .from('chantiers')
-          .select('id, nom, client_nom, prix_vente_ht, statut')
+          .select('id, nom, client_nom, metier, prix_vente_ht, statut')
           .eq('entreprise_id', entreprise_id),
       ]);
 
@@ -317,13 +305,33 @@ export async function GET(req: NextRequest) {
     const chantiersRentabilite = chantiers.map((c) => {
       const budget = c.prix_vente_ht || 0;
       const depensesChantier = depensesParChantier.get(c.id) || 0;
+      const rawMetier = String((c as { metier?: string | null }).metier ?? 'bardage').toLowerCase();
+      const metier = rawMetier.includes('terrasse')
+        ? 'terrasse'
+        : rawMetier.includes('cloture') || rawMetier.includes('clôture')
+        ? 'cloture'
+        : 'bardage';
       return {
         id: c.id,
         nom: c.nom || c.client_nom || 'Chantier',
+        metier,
         statut: c.statut || '',
         budget,
         depenses: depensesChantier,
         marge: budget - depensesChantier,
+      };
+    });
+
+    const syntheseParMetier = (['bardage', 'terrasse', 'cloture'] as const).map((metier) => {
+      const subset = chantiersRentabilite.filter((c) => c.metier === metier);
+      const budgetTotal = subset.reduce((s, c) => s + c.budget, 0);
+      const depensesTotal = subset.reduce((s, c) => s + c.depenses, 0);
+      return {
+        metier,
+        nb_chantiers: subset.length,
+        budget_ht: budgetTotal,
+        depenses_ht: depensesTotal,
+        marge_ht: budgetTotal - depensesTotal,
       };
     });
 
@@ -389,6 +397,7 @@ export async function GET(req: NextRequest) {
       alertes,
       top_chantiers_rentables: topRentables,
       top_chantiers_pertes: topPertes,
+      synthese_par_metier: syntheseParMetier,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

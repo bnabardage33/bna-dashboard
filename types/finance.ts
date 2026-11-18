@@ -1,6 +1,9 @@
+export type MetierFinance = 'bardage' | 'terrasse' | 'cloture';
+
 export interface ChantierFinance {
   id: string;
   nom: string;
+  metier?: string | null;
   prix_vente_ht: number;
   avancement: number;
   statut?: string;
@@ -140,6 +143,7 @@ export interface ChantierRow {
   id: string;
   nom: string;
   client_nom: string;
+  metier?: string | null;
   prix_vente_ht: number;
   statut: string;
 }

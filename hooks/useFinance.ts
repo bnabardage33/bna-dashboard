@@ -60,6 +60,7 @@ export type RentabiliteChantierExt = RentabiliteResult & {
   chantier_id: string;
   nom: string;
   client_nom: string;
+  metier: string;
   prix_vente_ht: number;
   statut: string;
 };
@@ -111,7 +112,7 @@ export function useRentabiliteChantiers() {
           safeFetch<ChantierRow>(
             supabase
               .from("chantiers")
-              .select("id, nom, client_nom, prix_vente_ht, statut"),
+              .select("id, nom, client_nom, metier, prix_vente_ht, statut"),
             handleError
           ),
           safeFetch<DepenseFinance>(
@@ -168,6 +169,7 @@ export function useRentabiliteChantiers() {
         chantier_id: c.id,
         nom: c.nom,
         client_nom: c.client_nom || "",
+        metier: c.metier || "bardage",
         prix_vente_ht: c.prix_vente_ht || 0,
         statut: c.statut || "",
       };
@@ -446,6 +448,84 @@ export function useParametreFinance(cle: string) {
   };
 
   return { valeur, updateValeur, isLoading };
+}
+
+/**
+ * Source unique de vérité pour la trésorerie et les paramètres financiers
+ * d'entreprise (`public.parametres_entreprise`).
+ */
+export function useTresorerieEntreprise() {
+  const [tresorerieActuelle, setTresorerieActuelle] = useState<number>(5000);
+  const [chargesFixesMensuelles, setChargesFixesMensuelles] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const charger = async () => {
+      try {
+        const { entreprise_id } = await resoudreContexteEntreprise(null);
+        let query = supabase
+          .from("parametres_entreprise")
+          .select("tresorerie_actuelle, charges_fixes_mensuelles")
+          .limit(1);
+        if (estUuid(entreprise_id)) {
+          query = query.eq("entreprise_id", entreprise_id);
+        }
+        const { data, error } = await query.maybeSingle();
+        if (!error && data && isMounted) {
+          if (typeof data.tresorerie_actuelle === "number") {
+            setTresorerieActuelle(data.tresorerie_actuelle);
+          }
+          if (typeof data.charges_fixes_mensuelles === "number") {
+            setChargesFixesMensuelles(data.charges_fixes_mensuelles);
+          }
+        }
+      } catch {
+        // Fallback silencieux sur la valeur par défaut
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    void charger();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const updateTresorerie = async (newVal: number): Promise<ResultatEcriture> => {
+    const { entreprise_id } = await resoudreContexteEntreprise(null);
+    const targetEntrepriseId = estUuid(entreprise_id)
+      ? entreprise_id
+      : "11111111-1111-4111-8111-111111111111";
+
+    const { error } = await supabase
+      .from("parametres_entreprise")
+      .upsert(
+        {
+          entreprise_id: targetEntrepriseId,
+          tresorerie_actuelle: newVal,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "entreprise_id" }
+      );
+
+    if (error) {
+      return {
+        ok: false,
+        erreur: "Enregistrement du solde impossible : " + error.message,
+      };
+    }
+
+    setTresorerieActuelle(newVal);
+    return { ok: true };
+  };
+
+  return {
+    tresorerieActuelle,
+    chargesFixesMensuelles,
+    isLoading,
+    updateTresorerie,
+  };
 }
 
 // --- Hook 5 : Trésorerie ---

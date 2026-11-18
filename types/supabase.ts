@@ -3145,6 +3145,8 @@ export type Database = {
           charges_fixes_mensuelles: number | null
           entreprise_id: string
           id: string
+          objectif_marge_pct: number | null
+          taux_horaire_charge_defaut: number | null
           tresorerie_actuelle: number | null
           updated_at: string | null
         }
@@ -3152,6 +3154,8 @@ export type Database = {
           charges_fixes_mensuelles?: number | null
           entreprise_id: string
           id?: string
+          objectif_marge_pct?: number | null
+          taux_horaire_charge_defaut?: number | null
           tresorerie_actuelle?: number | null
           updated_at?: string | null
         }
@@ -3159,6 +3163,8 @@ export type Database = {
           charges_fixes_mensuelles?: number | null
           entreprise_id?: string
           id?: string
+          objectif_marge_pct?: number | null
+          taux_horaire_charge_defaut?: number | null
           tresorerie_actuelle?: number | null
           updated_at?: string | null
         }

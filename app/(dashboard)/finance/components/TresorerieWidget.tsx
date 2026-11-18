@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useTresorerie, useParametreFinance } from "@/hooks/useFinance";
+import { useTresorerie, useTresorerieEntreprise } from "@/hooks/useFinance";
 import { fmtEuro, fmtDate, calculerMontantTTCFacture, calculerMontantTTCCommande } from "@/lib/financeCalculs";
 import { Landmark, AlertTriangle, PenLine } from "lucide-react";
 
 export default function TresorerieWidget() {
   const { factures, achats, masseSalariale, isLoading: tresoLoading } = useTresorerie();
-  const { valeur: soldeBancaire, updateValeur, isLoading: paramLoading } = useParametreFinance("solde_bancaire");
+  const { tresorerieActuelle: soldeBancaire, updateTresorerie: updateValeur, isLoading: paramLoading } = useTresorerieEntreprise();
 
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
