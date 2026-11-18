@@ -21,6 +21,14 @@ import {
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
+import {
+  getStartOfWeekLocal,
+  parseYMD,
+} from "@/lib/services/planningService";
+import {
+  listerRendezVous,
+  type RendezVousRow,
+} from "@/lib/services/rendezVousService";
 import BnaCopilotMiniPanel from "@/components/BnaCopilotMiniPanel";
 
 interface ChantierRow {
@@ -104,6 +112,7 @@ export default function DashboardAccueilBna() {
   const [chantiers, setChantiers] = useState<ChantierRow[]>([]);
   const [devis, setDevis] = useState<DevisRow[]>([]);
   const [factures, setFactures] = useState<FactureRow[]>([]);
+  const [rdvs, setRdvs] = useState<RendezVousRow[]>([]);
   const [meteo, setMeteo] = useState<MeteoResume | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
@@ -139,10 +148,14 @@ export default function DashboardAccueilBna() {
               .eq("entreprise_id", entId)
           : supabase.from("factures").select("id, statut, net_a_payer_ttc");
 
-        const [chRes, devRes, facRes, meteoRes] = await Promise.all([
+        const [chRes, devRes, facRes, rdvRes, meteoRes] = await Promise.all([
           chantiersQuery,
           devisQuery,
           facturesQuery,
+          listerRendezVous(supabase, entId).catch(() => ({
+            data: [] as RendezVousRow[],
+            migrationRequired: true,
+          })),
           fetch("/api/meteo", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
         ]);
 
@@ -150,6 +163,7 @@ export default function DashboardAccueilBna() {
         if (!chRes.error && chRes.data) setChantiers(chRes.data as ChantierRow[]);
         if (!devRes.error && devRes.data) setDevis(devRes.data as DevisRow[]);
         if (!facRes.error && facRes.data) setFactures(facRes.data as FactureRow[]);
+        setRdvs(rdvRes.data);
         if (meteoRes) setMeteo(meteoRes as MeteoResume);
       } finally {
         if (actif) setLoading(false);
@@ -187,21 +201,40 @@ export default function DashboardAccueilBna() {
     return ouvertes.reduce((sum, f) => sum + (Number(f.net_a_payer_ttc) || 0), 0);
   }, [factures]);
 
-  const rdvCetteSemaine = useMemo(() => {
-    const now = new Date();
-    const debut = new Date(now);
-    debut.setDate(now.getDate() - now.getDay() + 1);
-    debut.setHours(0, 0, 0, 0);
-    const fin = new Date(debut);
-    fin.setDate(debut.getDate() + 6);
-    fin.setHours(23, 59, 59, 999);
+  const planningSemaine = useMemo(() => {
+    const debut = getStartOfWeekLocal(new Date());
+    const fin = new Date(
+      debut.getFullYear(),
+      debut.getMonth(),
+      debut.getDate() + 6,
+      23,
+      59,
+      59,
+      999
+    );
+    const debutMs = debut.getTime();
+    const finMs = fin.getTime();
 
-    return chantiersActifs.filter((c) => {
-      if (!c.date_debut) return false;
-      const d = new Date(c.date_debut);
-      return d >= debut && d <= fin;
+    const chantiersSemaine = chantiersActifs.filter((c) => {
+      const dStart = parseYMD(c.date_debut);
+      if (!dStart) return false;
+      const dEnd = c.date_fin ? parseYMD(c.date_fin) ?? dStart : dStart;
+      return dEnd.getTime() >= debutMs && dStart.getTime() <= finMs;
     }).length;
-  }, [chantiersActifs]);
+
+    const rdvsSemaine = rdvs.filter((r) => {
+      if (r.statut === "annule") return false;
+      const d = parseYMD(r.date);
+      if (!d) return false;
+      return d.getTime() >= debutMs && d.getTime() <= finMs;
+    }).length;
+
+    return {
+      total: chantiersSemaine + rdvsSemaine,
+      chantiersSemaine,
+      rdvsSemaine,
+    };
+  }, [chantiersActifs, rdvs]);
 
   const repartitionMetiers = useMemo(() => {
     const base = chantiers.length > 0 ? chantiers : [];
@@ -331,10 +364,12 @@ export default function DashboardAccueilBna() {
                 <CalendarDays className="h-4 w-4 text-[#D96B27]" />
               </div>
               <p className="mt-2 text-2xl font-black text-white">
-                {loading ? "…" : rdvCetteSemaine}
+                {loading ? "…" : planningSemaine.total}
               </p>
               <p className="mt-0.5 text-[11px] text-amber-100/60">
-                Chantiers &amp; interventions
+                {loading
+                  ? "Chantiers & interventions"
+                  : `${planningSemaine.chantiersSemaine} chantier(s) · ${planningSemaine.rdvsSemaine} RDV cette semaine`}
               </p>
             </Link>
           </section>

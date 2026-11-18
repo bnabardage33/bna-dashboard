@@ -3779,6 +3779,72 @@ export type Database = {
           },
         ]
       }
+      rendez_vous: {
+        Row: {
+          chantier_id: string | null
+          client_id: string | null
+          created_at: string
+          date: string
+          entreprise_id: string
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          lieu: string | null
+          nature: string
+          notes: string | null
+          statut: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          chantier_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          date: string
+          entreprise_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          lieu?: string | null
+          nature?: string
+          notes?: string | null
+          statut?: string
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          chantier_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          entreprise_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          lieu?: string | null
+          nature?: string
+          notes?: string | null
+          statut?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rendez_vous_chantier_id_fkey"
+            columns: ["chantier_id"]
+            isOneToOne: false
+            referencedRelation: "chantiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rendez_vous_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       situations: {
         Row: {
           chantier_id: string | null
