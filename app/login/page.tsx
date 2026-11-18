@@ -93,108 +93,154 @@ export default function LoginPage() {
   return (
     <div
       id="login-page"
-      className="fixed inset-0 z-[100000] overflow-y-auto bg-gradient-to-b from-[#161311] via-[#1B1511] to-[#231811] text-white selection:bg-[#D96B27]/30 selection:text-amber-200"
+      className="fixed inset-0 z-[100000] overflow-y-auto bg-[#120F0D] text-white selection:bg-[#D96B27]/30 selection:text-amber-200"
     >
-      <main className="min-h-full w-full flex flex-col items-center justify-start md:justify-center pt-4 sm:pt-6 md:py-10 px-4">
-        {/* 1. Logo BNA centré et proportionné sur fond sombre */}
-        <div className="w-full flex justify-center mb-6 md:mb-8 mt-1 md:mt-0">
-          <div className="relative w-[95%] max-w-[440px] md:max-w-[340px]">
-            <Image
-              src="/logo-bna.png"
-              alt="BNA - Bâtiment Nouvelle Aquitaine"
-              width={1774}
-              height={887}
-              priority
-              className="w-full h-auto object-contain pointer-events-none drop-shadow-md"
-            />
+      <div className="min-h-screen bg-[#120F0D] grid lg:grid-cols-2">
+        {/* Panneau identitaire gauche (bandeau immersif sur mobile/tablette, colonne complète sur lg:) */}
+        <section className="relative flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-[#161311] via-[#1C1510] to-[#261911] px-6 py-10 sm:py-12 lg:px-12 lg:border-r lg:border-white/[0.06]">
+          {/* Motif géométrique architectural évoquant les lames de bardage */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 grid grid-cols-6 opacity-80"
+          >
+            <div className="border-r border-white/[0.04]" />
+            <div className="border-r border-white/[0.04]" />
+            <div className="border-r border-white/[0.04]" />
+            <div className="border-r border-white/[0.04]" />
+            <div className="border-r border-white/[0.04]" />
+            <div />
           </div>
-        </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-40 border-t border-white/[0.04] opacity-70"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 18px)",
+            }}
+          />
 
-        {/* 2. Carte de connexion sombre vitrée (Dark Wood & Copper) */}
-        <div className="w-[calc(100%-36px)] max-w-[440px] md:max-w-[420px] bg-[#1E1916]/90 backdrop-blur-md border border-white/10 rounded-[26px] md:rounded-[32px] shadow-2xl p-6 sm:p-7 md:p-8 transition-all">
-          {/* En-tête de la carte */}
-          <div className="text-center mb-5 md:mb-6">
-            <p className="text-[14px] md:text-[13px] font-bold text-[#D96B27] uppercase tracking-[3px] md:tracking-[3.5px] mb-1">
-              ESPACE PROFESSIONNEL
-            </p>
-            <h1 className="text-[26px] md:text-[28px] font-bold text-white tracking-tight mb-1 leading-tight">
-              Connexion BNA
-            </h1>
-            <p className="text-[15px] md:text-[15px] text-white/60 leading-snug">
-              Connectez-vous à votre espace de travail.
-            </p>
-          </div>
-
-          {/* Formulaire */}
-          <form onSubmit={handleLogin} className="space-y-4 md:space-y-4">
-            {/* Champ Email */}
-            <div>
-              <input
-                type="email"
-                placeholder="Adresse e-mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-                className="w-full h-[64px] md:h-[52px] bg-[#14110F] border border-white/15 rounded-[16px] md:rounded-[14px] px-5 text-[17px] md:text-[15px] text-white placeholder:text-white/40 focus:outline-none focus:border-[#D96B27] focus:ring-2 focus:ring-[#D96B27]/25 transition-all"
+          <div className="relative z-10 flex max-w-md flex-col items-center text-center">
+            {/* Lueur radiale cuivrée derrière le logo */}
+            <div className="relative mb-5 flex items-center justify-center">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute h-44 w-72 rounded-full bg-[#D96B27]/15 blur-3xl"
               />
+              <div className="relative w-[240px] sm:w-[290px] lg:w-[320px]">
+                <Image
+                  src="/logo-bna.png"
+                  alt="BNA - Bâtiment Nouvelle Aquitaine"
+                  width={1774}
+                  height={887}
+                  priority
+                  className="w-full h-auto object-contain pointer-events-none drop-shadow-xl"
+                />
+              </div>
             </div>
 
-            {/* Champ Mot de passe */}
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Mot de passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                className="w-full h-[64px] md:h-[52px] bg-[#14110F] border border-white/15 rounded-[16px] md:rounded-[14px] px-5 pr-14 text-[17px] md:text-[15px] text-white placeholder:text-white/40 focus:outline-none focus:border-[#D96B27] focus:ring-2 focus:ring-[#D96B27]/25 transition-all"
-              />
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+              BNA <span className="text-[#D96B27]">•</span> Bâtiment Nouvelle Aquitaine
+            </h2>
+            <p className="mt-1.5 text-xs sm:text-sm text-amber-100/70">
+              Pilotage Chantiers, Calepinage &amp; Chiffrage
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              {["Bardage Façade", "Terrasse", "Clôture"].map((metier) => (
+                <span
+                  key={metier}
+                  className="rounded-full border border-[#D96B27]/30 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-amber-100/85"
+                >
+                  {metier}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Panneau de connexion droite */}
+        <main className="flex items-center justify-center px-4 py-8 sm:px-8 lg:px-12 bg-[#120F0D]">
+          <div className="relative w-full max-w-[420px] overflow-hidden rounded-2xl border border-white/10 bg-[#1B1613]/95 p-6 sm:p-8 shadow-2xl">
+            {/* Liseré supérieur cuivré subtil */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-[#D96B27] to-transparent"
+            />
+
+            <div className="text-center mb-6">
+              <p className="text-[11px] font-bold text-[#D96B27] uppercase tracking-[3px] mb-1.5">
+                Accès Espace Pro
+              </p>
+              <h1 className="text-2xl font-bold text-white tracking-tight leading-tight">
+                Connexion à votre poste de pilotage
+              </h1>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <input
+                  type="email"
+                  placeholder="Adresse e-mail"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                  className="w-full h-12 bg-[#120F0D] border border-white/15 rounded-xl px-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#D96B27] focus:ring-1 focus:ring-[#D96B27] transition-all"
+                />
+              </div>
+
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mot de passe"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                  className="w-full h-12 bg-[#120F0D] border border-white/15 rounded-xl px-4 pr-12 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#D96B27] focus:ring-1 focus:ring-[#D96B27] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/50 hover:text-white focus:outline-none transition-colors"
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+
+              {error && (
+                <div className="rounded-xl bg-red-950/60 border border-red-500/40 p-3 text-center">
+                  <p className="text-red-200 text-xs font-medium">{error}</p>
+                </div>
+              )}
+
               <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white/60 hover:text-white focus:outline-none transition-colors"
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 bg-gradient-to-r from-[#D96B27] to-[#B85316] hover:from-[#E57732] hover:to-[#C95D1B] text-white text-sm font-semibold rounded-xl shadow-lg shadow-[#D96B27]/20 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/50 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Connexion...</span>
+                  </>
                 ) : (
-                  <Eye className="w-5 h-5" />
+                  'Se connecter'
                 )}
               </button>
-            </div>
+            </form>
 
-            {/* Message d'erreur */}
-            {error && (
-              <div className="rounded-[14px] bg-red-950/60 border border-red-500/40 p-3 text-center">
-                <p className="text-red-200 text-[14px] font-medium">{error}</p>
-              </div>
-            )}
-
-            {/* Bouton Se connecter */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-[62px] md:h-[50px] bg-[#D96B27] hover:bg-[#C25B1B] text-white text-[18px] md:text-[16px] font-bold rounded-[16px] md:rounded-[14px] shadow-lg shadow-[#D96B27]/25 focus:outline-none focus:ring-4 focus:ring-[#D96B27]/30 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Connexion...</span>
-                </>
-              ) : (
-                'Se connecter'
-              )}
-            </button>
-          </form>
-
-          {/* Signature en bas de carte */}
-          <p className="mt-6 md:mt-7 text-center text-[14px] md:text-[13px] font-medium text-amber-200/60">
-            BNA · Bâtiment Nouvelle Aquitaine
-          </p>
-        </div>
-      </main>
+            <p className="mt-6 text-center text-xs font-medium text-white/45">
+              Bâtiment Nouvelle Aquitaine • Nouvelle-Aquitaine
+            </p>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
