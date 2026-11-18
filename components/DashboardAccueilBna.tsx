@@ -7,15 +7,16 @@ import {
   ArrowRight,
   CalendarDays,
   CloudSun,
-  FilePlus2,
+  Fence,
   FileText,
-  Grid3X3,
   HardHat,
-  Plus,
+  Layers,
   Receipt,
   Ruler,
   Sparkles,
+  UserCheck,
   Wind,
+  Wrench,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
@@ -320,12 +321,12 @@ export default function DashboardAccueilBna() {
             </Link>
 
             <Link
-              href="/terrain"
-              className="rounded-2xl border border-white/10 bg-[#1B1511]/90 p-4 hover:border-[#D96B27]/50 transition-colors"
+              href="/planning"
+              className="rounded-2xl border border-white/10 bg-[#1B1511]/90 p-4 hover:border-[#D96B27]/60 transition-colors cursor-pointer"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                  RDV terrain
+                  PLANNING
                 </span>
                 <CalendarDays className="h-4 w-4 text-[#D96B27]" />
               </div>
@@ -333,7 +334,7 @@ export default function DashboardAccueilBna() {
                 {loading ? "…" : rdvCetteSemaine}
               </p>
               <p className="mt-0.5 text-[11px] text-amber-100/60">
-                Planifiés cette semaine
+                Chantiers &amp; interventions
               </p>
             </Link>
           </section>
@@ -420,34 +421,14 @@ export default function DashboardAccueilBna() {
                 <h2 className="text-sm font-bold text-white">Accès rapides</h2>
                 <span className="text-[11px] text-amber-200/70">Actions métier</span>
               </div>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 <Link
-                  href="/terrain/chantier"
+                  href="/bureau/portails-clients"
                   className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
                 >
-                  <Plus className="h-5 w-5 text-[#D96B27]" />
+                  <UserCheck className="h-5 w-5 text-[#D96B27]" />
                   <span className="text-[11px] font-semibold text-gray-200 leading-tight">
-                    Nouveau chantier
-                  </span>
-                </Link>
-
-                <Link
-                  href="/bureau/devis-factures"
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
-                >
-                  <FilePlus2 className="h-5 w-5 text-[#D96B27]" />
-                  <span className="text-[11px] font-semibold text-gray-200 leading-tight">
-                    Nouveau devis
-                  </span>
-                </Link>
-
-                <Link
-                  href="/bureau/factures"
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
-                >
-                  <Receipt className="h-5 w-5 text-[#D96B27]" />
-                  <span className="text-[11px] font-semibold text-gray-200 leading-tight">
-                    Nouvelle facture
+                    Accès client
                   </span>
                 </Link>
 
@@ -455,9 +436,9 @@ export default function DashboardAccueilBna() {
                   href="/calepinage"
                   className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
                 >
-                  <Grid3X3 className="h-5 w-5 text-[#D96B27]" />
+                  <Layers className="h-5 w-5 text-[#D96B27]" />
                   <span className="text-[11px] font-semibold text-gray-200 leading-tight">
-                    Calepinage façade
+                    Chantier bardage
                   </span>
                 </Link>
 
@@ -467,18 +448,38 @@ export default function DashboardAccueilBna() {
                 >
                   <Ruler className="h-5 w-5 text-[#D96B27]" />
                   <span className="text-[11px] font-semibold text-gray-200 leading-tight">
-                    Calcul terrasse
+                    Chantier terrasse
+                  </span>
+                </Link>
+
+                <Link
+                  href="/terrain/cloture"
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
+                >
+                  <Fence className="h-5 w-5 text-[#D96B27]" />
+                  <span className="text-[11px] font-semibold text-gray-200 leading-tight">
+                    Chantier clôture
+                  </span>
+                </Link>
+
+                <Link
+                  href="/bureau/sav"
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/25 p-3 text-center hover:border-[#D96B27]/50 hover:bg-[#D96B27]/15 transition-colors"
+                >
+                  <Wrench className="h-5 w-5 text-[#D96B27]" />
+                  <span className="text-[11px] font-semibold text-gray-200 leading-tight">
+                    SAV
                   </span>
                 </Link>
 
                 <button
                   type="button"
                   onClick={() => setAiModalOpen(true)}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[#D96B27]/40 bg-[#D96B27]/15 p-3 text-center hover:bg-[#D96B27]/25 transition-colors"
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[#D96B27]/60 bg-gradient-to-br from-[#D96B27] to-[#B85316] p-3 text-center shadow-md shadow-[#D96B27]/20 hover:from-[#E57732] hover:to-[#C95D1B] transition-all cursor-pointer"
                 >
-                  <Sparkles className="h-5 w-5 text-[#F59E0B]" />
-                  <span className="text-[11px] font-bold text-amber-200 leading-tight">
-                    BNA AI Assistant
+                  <Sparkles className="h-5 w-5 text-white" />
+                  <span className="text-[11px] font-bold text-white leading-tight">
+                    BNA IA Assistant
                   </span>
                 </button>
               </div>
