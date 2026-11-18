@@ -305,11 +305,8 @@ export default function SearchNav() {
             value={query}
             onChange={(e) => { setOpen(true); chercherTexte(e.target.value); }}
             onFocus={() => { if (query.length >= 2) lancerRecherche(query); }}
-            className="bg-[#1B1511] border border-white/10 rounded-xl px-4 py-2 pl-9 pr-14 text-sm text-white placeholder-gray-500 w-56 focus:w-72 focus:outline-none focus:border-[#D96B27]/60 transition-all"
+            className="bg-[#1B1511] border border-white/10 rounded-xl py-2 pl-9 pr-3 text-sm text-white placeholder-gray-500 w-60 focus:w-72 focus:outline-none focus:border-[#D96B27]/60 transition-all"
           />
-          <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-white/15 bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">
-            Ctrl K
-          </kbd>
         </div>
         {open && (query.length >= 2) && (
           <Surface className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] shadow-2xl overflow-hidden z-50">
