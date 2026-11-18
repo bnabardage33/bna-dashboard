@@ -51,11 +51,12 @@ describe('Accueils Météo et Chantier', () => {
     expect(etat.from).not.toHaveBeenCalled();
   });
 
-  it('redirige une session active avant tout chargement du cockpit', async () => {
+  it('rend directement DashboardAccueilBna pour une session active', async () => {
     etat.user = { id: 'utilisateur-connecte' };
 
-    await expect(Home()).rejects.toThrow('REDIRECT:/terrain/meteo');
-    expect(etat.destinationRedirect).toBe('/terrain/meteo');
+    const resultat = await Home();
+    expect(resultat).toBeTruthy();
+    expect(etat.destinationRedirect).toBeNull();
     expect(etat.from).not.toHaveBeenCalled();
   });
 
@@ -86,7 +87,7 @@ describe('Accueils Météo et Chantier', () => {
     const veille = lire('app/bureau/meteo/page.tsx');
 
     expect(drawer).toContain('href: "/terrain/meteo", label: "Accueil Météo"');
-    expect(drawer).toContain('href: "/terrain/accueil", label: "Accueil Chantier"');
+    expect(drawer).toContain('href: "/", label: "Accueil Chantier"');
     const items = drawer
       .slice(drawer.indexOf('const NAV_ITEMS'), drawer.indexOf('export default function Drawer'))
       .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -94,7 +95,7 @@ describe('Accueils Météo et Chantier', () => {
     expect(items.match(/href: "\/terrain\/meteo"/g) ?? []).toHaveLength(1);
     expect(items).not.toContain('label: "Météo générale"');
     expect(items).not.toContain('href: "/", label: "Accueil"');
-    expect(items.match(/href: "\/terrain\/accueil"/g) ?? []).toHaveLength(1);
+    expect(items.match(/href: "\/"/g) ?? []).toHaveLength(1);
     expect(meteo.match(/fetchMeteo\(ville\)/g) ?? []).toHaveLength(1);
     expect(meteo).toContain('max-w-7xl');
     expect(meteo).toContain('Accueil Météo');

@@ -225,7 +225,7 @@ describe("Drawer — contrat d'accordéon", () => {
   it("expose les deux accueils avec la bonne route, l’état actif et la fermeture après navigation", async () => {
     const accueils = [
       { label: "Accueil Météo", chemin: "/terrain/meteo" },
-      { label: "Accueil Chantier", chemin: "/terrain/accueil" },
+      { label: "Accueil Chantier", chemin: "/" },
     ];
 
     for (const { label, chemin } of accueils) {

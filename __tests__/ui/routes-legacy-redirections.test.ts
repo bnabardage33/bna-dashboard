@@ -190,7 +190,7 @@ describe('Restauration · /terrain/meteo est une page réelle, pas une redirecti
       '{ href: "/terrain/meteo", label: "Accueil Météo", icon: CloudSun }',
     )
     expect(drawer, 'Drawer : Accueil Chantier manquant').toContain(
-      '{ href: "/terrain/accueil", label: "Accueil Chantier", icon: HardHat }',
+      '{ href: "/", label: "Accueil Chantier", icon: HardHat }',
     )
     expect(drawer, 'Drawer : entrée veille intempéries manquante').toContain(
       '{ href: "/bureau/meteo", label: "Météo & intempéries" }',

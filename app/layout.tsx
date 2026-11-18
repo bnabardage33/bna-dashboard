@@ -8,7 +8,6 @@ import EnregistrementServiceWorker from "@/components/EnregistrementServiceWorke
 import InactivityLogout from "@/components/DeconnexionInactivite";
 import SidebarDesktop from "@/components/SidebarDesktop";
 import HeaderContextTitle from "@/components/HeaderContextTitle";
-import MobileBottomNav from "@/components/MobileBottomNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -152,13 +151,12 @@ export default function RootLayout({
 
             <main
               id="main-content-wrapper"
-              className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-20 md:pb-12"
+              className="mt-4 flex-1 relative z-10 w-full overflow-x-hidden pb-12"
             >
               {children}
             </main>
           </div>
         </div>
-        <MobileBottomNav />
       </body>
     </html>
   );
