@@ -45,6 +45,11 @@ export type RapportIntemperiesData = {
   metier?: string | null;
   departement: string | null;
   mesures_prises: string | null;
+  heure_arret_constatee?: string | null;
+  heures_perdues?: number | null;
+  repli_impossible?: boolean;
+  arret_decide_sur_place?: boolean;
+  signature_data_url?: string | null;
   heures?: { heure: string; temp: number; vent: number; rafales: number; pluie: number }[];
 };
 
@@ -267,12 +272,35 @@ export default function RapportIntemperiesPDF({
 
       {/* 5. Conséquences planning */}
       <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200 pb-0.5">
-        4. Conséquences sur le planning
+        4. Conséquences sur le planning &amp; attestation légale
       </p>
       <div className="mt-1 grid grid-cols-2 gap-x-6 gap-y-0.5 text-[12px]">
-        <p><span className="text-slate-400">Heures perdues :</span> ______ h pour ______ poseur(s)</p>
-        <p><span className="text-slate-400">Report de livraison estimé :</span> ______ jour(s)</p>
+        <p>
+          <span className="text-slate-400">Heure d&apos;arrêt constatée :</span>{" "}
+          <strong>{rapport.heure_arret_constatee ? rapport.heure_arret_constatee.slice(0, 5) : "______"}</strong>
+        </p>
+        <p>
+          <span className="text-slate-400">Heures perdues :</span>{" "}
+          <strong>{typeof rapport.heures_perdues === "number" ? `${rapport.heures_perdues} h` : "______ h"}</strong>
+        </p>
+        <p>
+          <span className="text-slate-400">Décision sur site :</span>{" "}
+          {rapport.arret_decide_sur_place
+            ? "Équipe déplacée sur place avant l'arrêt"
+            : "Équipe prévenue / arrêt avant déplacement"}
+        </p>
+        <p>
+          <span className="text-slate-400">Report estimé :</span>{" "}
+          {typeof rapport.heures_perdues === "number" && rapport.heures_perdues > 0
+            ? `${Math.ceil(rapport.heures_perdues / 7)} jour(s) ouvré(s)`
+            : "______ jour(s)"}
+        </p>
       </div>
+      {rapport.repli_impossible && (
+        <p className="mt-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-700">
+          ☑ Attestation : aucun repli en atelier ou tâche à l&apos;abri n&apos;était praticable sur cette journée.
+        </p>
+      )}
 
       {/* Relevé horaire (annexe technique) */}
       {rapport.heures && rapport.heures.length > 0 && (
@@ -318,7 +346,18 @@ export default function RapportIntemperiesPDF({
       <div className="avoid-break mt-2 grid grid-cols-2 gap-6 border-t border-slate-200 pt-2 text-[11px]">
         <div>
           <p className="font-semibold">L&apos;entreprise</p>
-          <div className="mt-2 h-9 rounded-lg border border-dashed border-slate-300" />
+          {rapport.signature_data_url ? (
+            <div className="mt-1 flex h-12 items-center rounded-lg border border-slate-200 bg-slate-50 px-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={rapport.signature_data_url}
+                alt="Signature entreprise"
+                className="max-h-10 w-auto object-contain brightness-0"
+              />
+            </div>
+          ) : (
+            <div className="mt-2 h-9 rounded-lg border border-dashed border-slate-300" />
+          )}
         </div>
         <div>
           <p className="font-semibold">Chef de chantier</p>

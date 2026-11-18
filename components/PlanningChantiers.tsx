@@ -27,6 +27,7 @@ export interface PlanningChantierItem {
   statut: string;
   metier?: MetierPlanning | string | null;
   heures_estimees?: number | null;
+  heures_a_rattraper?: number | null;
 }
 
 export interface PlanningChantiersProps {
@@ -151,6 +152,7 @@ export default function PlanningChantiers({
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [localChantiers, setLocalChantiers] = useState<PlanningChantierItem[]>(chantiers);
   const [intemperies, setIntemperies] = useState<Record<string, boolean>>({});
+  const [heuresRattraperMap, setHeuresRattraperMap] = useState<Record<string, number>>({});
   const [avancements, setAvancements] = useState<Record<string, number>>({});
   const [ficheRapide, setFicheRapide] = useState<PlanningChantierItem | null>(null);
   const [editDebut, setEditDebut] = useState("");
@@ -170,7 +172,7 @@ export default function PlanningChantiers({
   useEffect(() => {
     async function fetchData() {
       if (typeof supabase?.from !== "function") return;
-      const [{ data: intData }, { data: avData }] = await Promise.all([
+      const [{ data: intData }, { data: avData }, { data: chRattrapData }] = await Promise.all([
         supabase
           .from("rapports_intemperies")
           .select("chantier_id, jour_arrete")
@@ -179,7 +181,21 @@ export default function PlanningChantiers({
           .from("avancements_chantier")
           .select("chantier_id, pourcentage, date")
           .order("date", { ascending: false }),
+        supabase
+          .from("chantiers")
+          .select("id, heures_a_rattraper")
+          .gt("heures_a_rattraper", 0),
       ]);
+
+      if (chRattrapData) {
+        const rattrapMap: Record<string, number> = {};
+        for (const row of chRattrapData as { id: string; heures_a_rattraper: number | null }[]) {
+          if (row.id && typeof row.heures_a_rattraper === "number" && row.heures_a_rattraper > 0) {
+            rattrapMap[row.id] = row.heures_a_rattraper;
+          }
+        }
+        setHeuresRattraperMap(rattrapMap);
+      }
 
       if (intData) {
         const map: Record<string, boolean> = {};
@@ -494,11 +510,18 @@ export default function PlanningChantiers({
                         <p className="text-xs font-bold text-[#F5EFEA] truncate">
                           {ch.nom || nomClient}
                         </p>
-                        <span
-                          className={`mt-1 inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase ${style.badge}`}
-                        >
-                          {style.label}
-                        </span>
+                        <div className="mt-1 flex flex-wrap items-center gap-1">
+                          <span
+                            className={`inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase ${style.badge}`}
+                          >
+                            {style.label}
+                          </span>
+                          {(heuresRattraperMap[ch.id] ?? ch.heures_a_rattraper ?? 0) > 0 && (
+                            <span className="inline-block rounded-md border border-[#D96B27]/50 bg-[#D96B27]/15 px-1.5 py-0.5 text-[9px] font-bold text-[#F59E0B]">
+                              +{heuresRattraperMap[ch.id] ?? ch.heures_a_rattraper}h intemp.
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div

@@ -238,12 +238,12 @@ export function evaluerAlerteChantier(
       };
     }
     if (
-      (connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 1.5) ||
+      (connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 1.0) ||
       (connu(meteo.pluieCumul) && meteo.pluieCumul >= 8)
     ) {
       const detail =
-        connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 1.5
-          ? `${meteo.pluieHoraireMax.toFixed(1)} mm/h ≥ 1.5 mm/h`
+        connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 1.0
+          ? `${meteo.pluieHoraireMax.toFixed(1)} mm/h ≥ 1.0 mm/h`
           : `${(meteo.pluieCumul ?? 0).toFixed(1)} mm/jour ≥ 8 mm`;
       return {
         niveau: "rouge",
@@ -266,8 +266,8 @@ export function evaluerAlerteChantier(
 
   // ── Seuils spécifiques Clôture (scellement béton & prise au vent panneaux) ──
   if (metier === "cloture") {
-    const ventCritiqueC = 65;
-    const ventVigilanceC = 40;
+    const ventCritiqueC = 45;
+    const ventVigilanceC = 30;
 
     if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventCritiqueC) {
       return {
@@ -651,13 +651,13 @@ export function evaluerJourChantier(
         risqueTechnique,
         pluieContinue,
 
-        jourArrete: true,
-        aValider: false,
+        jourArrete: false,
+        aValider: true,
         ampleurImpact: "complete",
 
         motif:
           `Vigilance rouge Météo-France confirmée par les mesures du chantier` +
-          `${evolution} — arrêt de chantier`,
+          `${evolution} — en attente de décision du chef d'entreprise`,
       };
     }
 
@@ -708,13 +708,13 @@ export function evaluerJourChantier(
         risqueTechnique,
         pluieContinue,
 
-        jourArrete: true,
-        aValider: false,
+        jourArrete: false,
+        aValider: true,
         ampleurImpact: "complete",
 
         motif:
           "Vigilance jaune Météo-France + pluie continue " +
-          "constatée toute la journée — arrêt de chantier",
+          "constatée toute la journée — en attente de décision du chef d'entreprise",
       };
     }
 
@@ -746,13 +746,13 @@ export function evaluerJourChantier(
       risqueTechnique,
       pluieContinue,
 
-      jourArrete: true,
-      aValider: false,
+      jourArrete: false,
+      aValider: true,
       ampleurImpact: "complete",
 
       motif:
         "Pluie continue constatée toute la journée " +
-        "(hors vigilance officielle)",
+        "(hors vigilance officielle) — en attente de décision du chef d'entreprise",
     };
   }
 
@@ -910,10 +910,10 @@ export function resumeSeuilsMetier(
   acces?: Acces | null
 ): string {
   if (metier === "terrasse") {
-    return "Vent critique ≥ 70 km/h (vigilance 45 km/h) · Gel ≤ 2 °C · Pluie ≥ 1,5 mm/h ou 8 mm/j";
+    return "Vent critique ≥ 70 km/h (vigilance 45 km/h) · Gel ≤ 2 °C · Pluie ≥ 1,0 mm/h ou 8 mm/j";
   }
   if (metier === "cloture") {
-    return "Rafales critiques ≥ 65 km/h (vigilance 40 km/h) · Gel ≤ 2 °C · Pluie ≥ 2,0 mm/h ou 10 mm/j";
+    return "Rafales critiques ≥ 45 km/h (vigilance 30 km/h) · Gel ≤ 2 °C · Pluie ≥ 2,0 mm/h ou 10 mm/j";
   }
   const sm = SEUILS_MATERIAUX[materiau ?? "bois"] ?? SEUILS_MATERIAUX.bois;
   const sa = SEUILS_ACCES[acces ?? "echafaudage"] ?? SEUILS_ACCES.echafaudage;

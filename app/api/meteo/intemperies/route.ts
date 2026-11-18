@@ -582,79 +582,50 @@ export async function POST(request: NextRequest) {
       );
 
       for (const ch of intemp) {
+        const debutJour = `${today}T00:00:00.000Z`;
+        const finJour = `${today}T23:59:59.999Z`;
         const { data: deja } = await resultatContexte.contexte.client
-          .from("avancements_chantier")
+          .from("rapports_intemperies")
           .select("id")
           .eq("entreprise_id", entrepriseId)
           .eq("chantier_id", ch.id)
-          .eq("date", today)
-          .ilike("commentaire", "%Intempérie détectée auto%");
+          .gte("cree_le", debutJour)
+          .lte("cree_le", finJour)
+          .limit(1);
 
         if (deja && deja.length > 0) { dejaExistant++; continue; }
 
-        const { data: prev } = await resultatContexte.contexte.client
-          .from("avancements_chantier")
-          .select("pourcentage, details")
-          .eq("entreprise_id", entrepriseId)
-          .eq("chantier_id", ch.id)
-          .order("id", { ascending: false })
-          .limit(1);
-
-        const ancienPct = prev && prev.length > 0 ? (prev[0].pourcentage ?? 0) : 0;
-        const details = prev && prev.length > 0 && prev[0].details && typeof prev[0].details === "object"
-          ? prev[0].details : detailsVierges();
-
         const jour = ch.jours[0];
-        const sourceVigilance = ch.vigilanceOfficielle && ["orange", "rouge"].includes(ch.vigilanceOfficielle)
-          ? `Vigilance MétéoFrance ${ch.vigilanceOfficielle.toUpperCase()} + Open-Meteo`
-          : "Open-Meteo";
-
-        const { error } = await resultatContexte.contexte.client
-          .from("avancements_chantier")
-          .insert({
-            entreprise_id: entrepriseId,
-            chantier_id: ch.id,
-            date: today,
-            commentaire: `🌧️ Intempérie détectée auto : ${jour.raisons.join(" / ")} (${sourceVigilance})`,
-            pourcentage: ancienPct,
-            details,
-          } as TablesInsert<"avancements_chantier">);
-
-        if (error) console.error("Erreur insert avancement:", error.message);
-        else rapportes.push(ch.nom);
-
-        // `pluie_cumul` porte la pluie PENDANT les horaires de pose quand elle
-        // est connue : c'est elle qui a motivé le rapport. On retombe sur le
-        // cumul journalier uniquement quand les horaires ne sont pas lisibles, et
-        // `pluie_continue` reflète alors honnêtement le périmètre utilisé. P5 :
-        // une pluie inconnue (`null`) n'est JAMAIS retenue comme cumul 0.
         const pluieRetenue = jour.pluiePose ?? jour.pluie;
         const pluieContinue =
           jour.horairesStatut === "configuree"
             ? (jour.pluiePose ?? 0) > 0
             : typeof jour.pluie === "number" && jour.pluie > 0;
 
-        await resultatContexte.contexte.client
+        const { error: errInsertRapport } = await resultatContexte.contexte.client
           .from("rapports_intemperies")
           .insert({
             entreprise_id: entrepriseId,
             numero: await prochainNumeroIntemperie(entrepriseId),
             chantier_id: ch.id,
             a_valider: true,
-            ampleur_impact: ch.vigilanceOfficielle === "rouge" ? "totale" : "partielle",
+            ampleur_impact: ch.vigilanceOfficielle === "rouge" ? "complete" : "partielle",
             cree_par: "auto",
             departement: ch.departement,
-            // `jour_arrete` reste `true` : ce champ est une PROPOSITION soumise à
-            // validation humaine (`a_valider`), pas une qualification automatique.
-            // La refonte n'a pas changé cette règle métier.
-            jour_arrete: true,
+            jour_arrete: false,
             pluie_continue: pluieContinue,
             pluie_cumul: typeof pluieRetenue === "number" && pluieRetenue > 0 ? pluieRetenue : null,
             rafales_max: jour.vent > 0 ? jour.vent : null,
             temp_max: null,
-            motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau}`,
+            motif: `${jour.raisons.join(" / ")} — accès: ${ch.moyenAcces}, matériau: ${ch.materiau} (en attente de validation)`,
             vigilance_officielle: ch.vigilanceOfficielle,
           } as TablesInsert<"rapports_intemperies">);
+
+        if (errInsertRapport) {
+          console.error("Erreur insert rapport intempéries:", errInsertRapport.message);
+        } else {
+          rapportes.push(ch.nom);
+        }
       }
     }
 

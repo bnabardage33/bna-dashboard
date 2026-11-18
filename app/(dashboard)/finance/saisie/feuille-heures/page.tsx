@@ -7,7 +7,10 @@ import { UserPlus, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
 import {
   AlerteIntemperiePointage,
+  calculerIndemnitesPointage,
+  deduireHeuresARattraper,
   useArretIntemperieJour,
+  type TypeHeurePointage,
 } from "@/components/AlerteIntemperiePointage";
 
 type Chantier = { id: string; nom: string | null; metier?: string | null };
@@ -21,7 +24,7 @@ type Ouvrier = {
 type LigneSaisie = {
   ouvrier_id: string;
   heures: number;
-  type_heure: "normale" | "supplementaire" | "intempéries";
+  type_heure: TypeHeurePointage;
   coche: boolean;
 };
 
@@ -31,16 +34,19 @@ export default function FeuilleHeuresPage() {
   const [chantierId, setChantierId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [tauxHoraire, setTauxHoraire] = useState(28.5);
+  const [panierBase, setPanierBase] = useState(10.5);
+  const [transportBase, setTransportBase] = useState(8.0);
+  const [trajetBase, setTrajetBase] = useState(6.0);
   const [lignes, setLignes] = useState<Record<string, LigneSaisie>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const {
-    rapportArrete,
-    confirme: intemperieConfirme,
-    setConfirme: setIntemperieConfirme,
-  } = useArretIntemperieJour(chantierId, date);
+  const { rapportArrete } = useArretIntemperieJour(chantierId, date);
+  const indemnitesCalculees = calculerIndemnitesPointage(
+    { panier: panierBase, transport: transportBase, trajet: trajetBase },
+    rapportArrete
+  );
 
   // Formulaire ajout ouvrier
   const [formOuvrierOuvert, setFormOuvrierOuvert] = useState(false);
@@ -63,7 +69,7 @@ export default function FeuilleHeuresPage() {
       setOuvriers(oData);
       const initial: Record<string, LigneSaisie> = {};
       oData.forEach((o: Ouvrier) => {
-        initial[o.id] = { ouvrier_id: o.id, heures: 7, type_heure: "normale", coche: false };
+        initial[o.id] = { ouvrier_id: o.id, heures: 7, type_heure: "productive", coche: false };
       });
       setLignes(initial);
     }
@@ -109,15 +115,15 @@ export default function FeuilleHeuresPage() {
       alert("Sélectionne un chantier.");
       return;
     }
-    if (rapportArrete && !intemperieConfirme) {
-      setMessage(
-        `⚠️ Arrêt intempéries validé (${rapportArrete.numero}) à cette date : cochez la confirmation avant d'enregistrer.`
-      );
-      return;
-    }
     const selectionnes = Object.values(lignes).filter((l) => l.coche && l.heures > 0);
     if (selectionnes.length === 0) {
       alert("Coche au moins un ouvrier avec des heures.");
+      return;
+    }
+    if (rapportArrete && selectionnes.some((l) => l.type_heure === "productive")) {
+      setMessage(
+        `⚠️ Arrêt intempéries validé (${rapportArrete.numero}) à cette date : la saisie d'heures productives est bloquée. Basculez les lignes concernées en « Intempérie ».`
+      );
       return;
     }
 
@@ -128,9 +134,15 @@ export default function FeuilleHeuresPage() {
       chantier_id: chantierId,
       user_id: l.ouvrier_id,
       date,
-      heures: l.heures,
+      heures:
+        l.type_heure === "recuperation_intemperie"
+          ? Math.min(1, Math.max(0, l.heures))
+          : l.heures,
       taux_horaire_charge: tauxHoraire,
       type_heure: l.type_heure,
+      panier_repas: indemnitesCalculees.panier,
+      indemnite_transport: indemnitesCalculees.transport,
+      indemnite_trajet: indemnitesCalculees.trajet,
     }));
 
     const { error } = await supabase.from("pointages").insert(inserts as TablesInsert<"pointages">[]);
@@ -138,6 +150,12 @@ export default function FeuilleHeuresPage() {
     if (error) {
       setMessage("❌ Erreur : " + error.message);
     } else {
+      const totalRecup = selectionnes
+        .filter((l) => l.type_heure === "recuperation_intemperie")
+        .reduce((acc, l) => acc + Math.min(1, Math.max(0, l.heures)), 0);
+      if (totalRecup > 0) {
+        await deduireHeuresARattraper(chantierId, totalRecup);
+      }
       setMessage(`✓ ${selectionnes.length} pointage(s) enregistré(s) pour le ${new Date(date).toLocaleDateString("fr-FR")}.`);
       // Décoche tout après succès
       setLignes((prev) => {
@@ -191,12 +209,68 @@ export default function FeuilleHeuresPage() {
               className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             />
           </div>
+          <div>
+            <label htmlFor="chp-panier-fh" className="block text-xs text-gray-400 mb-1">Panier (€)</label>
+            <input
+              id="chp-panier-fh"
+              type="number"
+              step="0.5"
+              min="0"
+              disabled={Boolean(rapportArrete)}
+              value={indemnitesCalculees.panier}
+              onChange={(e) => setPanierBase(parseFloat(e.target.value) || 0)}
+              className="w-full bg-[#252525] border border-white/10 rounded-md p-2 text-sm disabled:opacity-60 outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="chp-transport-fh" className="block text-xs text-gray-400 mb-1">Transport (€)</label>
+            <input
+              id="chp-transport-fh"
+              type="number"
+              step="0.5"
+              min="0"
+              disabled={Boolean(rapportArrete)}
+              value={indemnitesCalculees.transport}
+              onChange={(e) => setTransportBase(parseFloat(e.target.value) || 0)}
+              className="w-full bg-[#252525] border border-white/10 rounded-md p-2 text-sm disabled:opacity-60 outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="chp-trajet-fh" className="block text-xs text-gray-400 mb-1">Trajet (€)</label>
+            <input
+              id="chp-trajet-fh"
+              type="number"
+              step="0.5"
+              min="0"
+              disabled={Boolean(rapportArrete)}
+              value={indemnitesCalculees.trajet}
+              onChange={(e) => setTrajetBase(parseFloat(e.target.value) || 0)}
+              className="w-full bg-[#252525] border border-white/10 rounded-md p-2 text-sm disabled:opacity-60 outline-none"
+            />
+          </div>
         </div>
 
         <AlerteIntemperiePointage
           rapport={rapportArrete}
-          confirme={intemperieConfirme}
-          onConfirmerChange={setIntemperieConfirme}
+          bloqueProductive={Object.values(lignes).some(
+            (l) => l.coche && l.type_heure === "productive"
+          )}
+          onBasculerIntemperie={() =>
+            setLignes((prev) => {
+              const maj: Record<string, LigneSaisie> = {};
+              for (const k of Object.keys(prev)) {
+                maj[k] = {
+                  ...prev[k],
+                  type_heure:
+                    prev[k].coche && prev[k].type_heure === "productive"
+                      ? "intemperie"
+                      : prev[k].type_heure,
+                };
+              }
+              return maj;
+            })
+          }
+          regleIndemnite={indemnitesCalculees.regle}
         />
 
         {/* Formulaire ajout ouvrier (dépliable) */}
@@ -310,9 +384,10 @@ export default function FeuilleHeuresPage() {
                       className="bg-[#252525] border border-white/10 rounded-md p-1.5 text-xs focus:border-white/10 outline-none disabled:opacity-40"
                       aria-label="Type d'heure"
                     >
-                      <option value="normale">Normale</option>
+                      <option value="productive">Productive</option>
+                      <option value="intemperie">Intempérie</option>
+                      <option value="recuperation_intemperie">Récup. intemp. (max 1h/j)</option>
                       <option value="supplementaire">Supplémentaire</option>
-                      <option value="intempéries">Intempéries</option>
                     </select>
                   </div>
                 );

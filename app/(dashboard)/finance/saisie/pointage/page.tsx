@@ -6,7 +6,10 @@ import type { TablesInsert } from "@/types/supabase";
 import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
 import {
   AlerteIntemperiePointage,
+  calculerIndemnitesPointage,
+  deduireHeuresARattraper,
   useArretIntemperieJour,
+  type TypeHeurePointage,
 } from "@/components/AlerteIntemperiePointage";
 import { useRouter } from "next/navigation";
 
@@ -23,19 +26,27 @@ export default function SaisiePointage() {
     ouvrier_id: "",
     heures: 7,
     taux_horaire_charge: 28.50,
-    type_heure: "Normale",
-    phase_travail: "general"
+    type_heure: "productive" as TypeHeurePointage,
+    phase_travail: "general",
+    panier_repas: 10.5,
+    indemnite_transport: 8.0,
+    indemnite_trajet: 6.0,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const {
-    rapportArrete,
-    confirme: intemperieConfirme,
-    setConfirme: setIntemperieConfirme,
-  } = useArretIntemperieJour(formData.chantier_id, formData.date);
+  const { rapportArrete } = useArretIntemperieJour(formData.chantier_id, formData.date);
+
+  const indemnitesCalculees = calculerIndemnitesPointage(
+    {
+      panier: formData.panier_repas,
+      transport: formData.indemnite_transport,
+      trajet: formData.indemnite_trajet,
+    },
+    rapportArrete
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -62,23 +73,35 @@ export default function SaisiePointage() {
       if (!formData.chantier_id || !formData.ouvrier_id) {
         throw new Error("Chantier et Ouvrier sont requis.");
       }
-      if (rapportArrete && !intemperieConfirme) {
+      if (rapportArrete && formData.type_heure === "productive") {
         throw new Error(
-          `Arrêt intempéries validé (${rapportArrete.numero}) à cette date : cochez la confirmation avant d'enregistrer.`
+          `Arrêt intempéries validé (${rapportArrete.numero}) à cette date : la saisie d'heures productives est bloquée. Basculez en « Intempérie ».`
         );
       }
+
+      const heuresSaisies =
+        formData.type_heure === "recuperation_intemperie"
+          ? Math.min(1, Math.max(0, formData.heures))
+          : formData.heures;
 
       const { error: insertError } = await supabase.from("pointages").insert({
         chantier_id: formData.chantier_id,
         user_id: formData.ouvrier_id,
-        heures: formData.heures,
+        heures: heuresSaisies,
         taux_horaire_charge: formData.taux_horaire_charge,
         date: formData.date,
         type_heure: formData.type_heure,
-        phase_travail: formData.phase_travail
+        phase_travail: formData.phase_travail,
+        panier_repas: indemnitesCalculees.panier,
+        indemnite_transport: indemnitesCalculees.transport,
+        indemnite_trajet: indemnitesCalculees.trajet,
       } as TablesInsert<"pointages">);
 
       if (insertError) throw insertError;
+
+      if (formData.type_heure === "recuperation_intemperie") {
+        await deduireHeuresARattraper(formData.chantier_id, heuresSaisies);
+      }
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -87,7 +110,7 @@ export default function SaisiePointage() {
         ...prev,
         ouvrier_id: "",
         heures: 7,
-        type_heure: "Normale",
+        type_heure: "productive",
         phase_travail: "general"
       }));
     } catch (err) {
@@ -107,8 +130,11 @@ export default function SaisiePointage() {
       <div className="mb-4">
         <AlerteIntemperiePointage
           rapport={rapportArrete}
-          confirme={intemperieConfirme}
-          onConfirmerChange={setIntemperieConfirme}
+          bloqueProductive={formData.type_heure === "productive"}
+          onBasculerIntemperie={() =>
+            setFormData((prev) => ({ ...prev, type_heure: "intemperie" }))
+          }
+          regleIndemnite={indemnitesCalculees.regle}
         />
       </div>
 
@@ -162,20 +188,90 @@ export default function SaisiePointage() {
           </select>
         </div>
 
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label htmlFor="chp-panier" className="block text-xs text-gray-400 mb-1">
+              Panier (€)
+            </label>
+            <input
+              id="chp-panier"
+              type="number"
+              step="0.5"
+              min="0"
+              disabled={Boolean(rapportArrete)}
+              className="w-full bg-surface-raised border border-white/10 rounded-md p-2 text-sm disabled:opacity-60 outline-none"
+              value={indemnitesCalculees.panier}
+              onChange={(e) =>
+                setFormData({ ...formData, panier_repas: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div>
+            <label htmlFor="chp-transport" className="block text-xs text-gray-400 mb-1">
+              Transport (€)
+            </label>
+            <input
+              id="chp-transport"
+              type="number"
+              step="0.5"
+              min="0"
+              disabled={Boolean(rapportArrete)}
+              className="w-full bg-surface-raised border border-white/10 rounded-md p-2 text-sm disabled:opacity-60 outline-none"
+              value={indemnitesCalculees.transport}
+              onChange={(e) =>
+                setFormData({ ...formData, indemnite_transport: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div>
+            <label htmlFor="chp-trajet" className="block text-xs text-gray-400 mb-1">
+              Trajet (€)
+            </label>
+            <input
+              id="chp-trajet"
+              type="number"
+              step="0.5"
+              min="0"
+              disabled={Boolean(rapportArrete)}
+              className="w-full bg-surface-raised border border-white/10 rounded-md p-2 text-sm disabled:opacity-60 outline-none"
+              value={indemnitesCalculees.trajet}
+              onChange={(e) =>
+                setFormData({ ...formData, indemnite_trajet: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+        </div>
+
         <div>
-          <label id="grp-type-d-heure" className="block text-sm text-gray-400 mb-1">Type d'heure</label>
-          <div role="group" aria-labelledby="grp-type-d-heure" className="flex gap-2">
-            {["Normale", "Supplémentaire", "Intempéries"].map(type => (
+          <label id="grp-type-d-heure" className="block text-sm text-gray-400 mb-1">Type d&apos;heure</label>
+          <div role="group" aria-labelledby="grp-type-d-heure" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {(
+              [
+                { value: "productive", label: "Productive" },
+                { value: "intemperie", label: "Intempérie" },
+                { value: "recuperation_intemperie", label: "Récup. intemp. (max 1h/j)" },
+                { value: "supplementaire", label: "Supplémentaire" },
+              ] as const
+            ).map((opt) => (
               <button
-                key={type}
+                key={opt.value}
                 type="button"
-                onClick={() => setFormData({...formData, type_heure: type})}
-                className={`flex-1 py-2 text-sm rounded-md border transition-colors ${formData.type_heure === type ? 'bg-red-600/20 border-white/10 text-gray-400' : 'border-white/10 bg-transparent text-gray-400 hover:bg-[#1E1E1E]'}`}
+                onClick={() => setFormData({ ...formData, type_heure: opt.value })}
+                className={`py-2 px-2 text-xs font-medium rounded-md border transition-colors ${
+                  formData.type_heure === opt.value
+                    ? "bg-[#D96B27]/25 border-[#D96B27] text-amber-200"
+                    : "border-white/10 bg-transparent text-gray-400 hover:bg-[#1E1E1E]"
+                }`}
               >
-                {type}
+                {opt.label}
               </button>
             ))}
           </div>
+          {formData.type_heure === "recuperation_intemperie" && (
+            <p className="mt-1 text-[11px] text-amber-200/80">
+              Récupération intempéries : sans majoration +25 %, plafonnée à 1 h/jour et déduite automatiquement de heures_a_rattraper.
+            </p>
+          )}
         </div>
 
         <div className="pt-4 flex justify-between items-center">

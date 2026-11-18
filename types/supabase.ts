@@ -1364,6 +1364,7 @@ export type Database = {
           date_fin: string | null
           entreprise_id: string
           epaisseur_isolant_mm: number | null
+          heures_a_rattraper: number
           horaires: string | null
           id: string
           materiau_structurel: string
@@ -1396,6 +1397,7 @@ export type Database = {
           date_fin?: string | null
           entreprise_id: string
           epaisseur_isolant_mm?: number | null
+          heures_a_rattraper?: number
           horaires?: string | null
           id?: string
           materiau_structurel?: string
@@ -1428,6 +1430,7 @@ export type Database = {
           date_fin?: string | null
           entreprise_id?: string
           epaisseur_isolant_mm?: number | null
+          heures_a_rattraper?: number
           horaires?: string | null
           id?: string
           materiau_structurel?: string
@@ -3302,6 +3305,9 @@ export type Database = {
           entreprise_id: string
           heures: number
           id: string
+          indemnite_trajet: number
+          indemnite_transport: number
+          panier_repas: number
           phase_travail: string | null
           taux_horaire_charge: number
           type_heure: string | null
@@ -3314,6 +3320,9 @@ export type Database = {
           entreprise_id: string
           heures: number
           id?: string
+          indemnite_trajet?: number
+          indemnite_transport?: number
+          panier_repas?: number
           phase_travail?: string | null
           taux_horaire_charge?: number
           type_heure?: string | null
@@ -3326,6 +3335,9 @@ export type Database = {
           entreprise_id?: string
           heures?: number
           id?: string
+          indemnite_trajet?: number
+          indemnite_transport?: number
+          panier_repas?: number
           phase_travail?: string | null
           taux_horaire_charge?: number
           type_heure?: string | null
@@ -3617,11 +3629,14 @@ export type Database = {
           a_valider: boolean
           acces: string | null
           ampleur_impact: string | null
+          arret_decide_sur_place: boolean
           chantier_id: string
           cree_le: string
           cree_par: string
           departement: string | null
           entreprise_id: string
+          heure_arret_constatee: string | null
+          heures_perdues: number
           id: string
           jour_arrete: boolean
           materiau: string | null
@@ -3632,8 +3647,10 @@ export type Database = {
           pluie_cumul: number | null
           rafales_max: number | null
           releve_horaire: Json | null
+          repli_impossible: boolean
           risque_technique_motif: string | null
           risque_technique_niveau: string | null
+          signature_data_url: string | null
           temp_max: number | null
           valide_le: string | null
           valide_par: string | null
@@ -3643,11 +3660,14 @@ export type Database = {
           a_valider?: boolean
           acces?: string | null
           ampleur_impact?: string | null
+          arret_decide_sur_place?: boolean
           chantier_id: string
           cree_le?: string
           cree_par?: string
           departement?: string | null
           entreprise_id: string
+          heure_arret_constatee?: string | null
+          heures_perdues?: number
           id?: string
           jour_arrete?: boolean
           materiau?: string | null
@@ -3658,8 +3678,10 @@ export type Database = {
           pluie_cumul?: number | null
           rafales_max?: number | null
           releve_horaire?: Json | null
+          repli_impossible?: boolean
           risque_technique_motif?: string | null
           risque_technique_niveau?: string | null
+          signature_data_url?: string | null
           temp_max?: number | null
           valide_le?: string | null
           valide_par?: string | null
@@ -3669,11 +3691,14 @@ export type Database = {
           a_valider?: boolean
           acces?: string | null
           ampleur_impact?: string | null
+          arret_decide_sur_place?: boolean
           chantier_id?: string
           cree_le?: string
           cree_par?: string
           departement?: string | null
           entreprise_id?: string
+          heure_arret_constatee?: string | null
+          heures_perdues?: number
           id?: string
           jour_arrete?: boolean
           materiau?: string | null
@@ -3684,8 +3709,10 @@ export type Database = {
           pluie_cumul?: number | null
           rafales_max?: number | null
           releve_horaire?: Json | null
+          repli_impossible?: boolean
           risque_technique_motif?: string | null
           risque_technique_niveau?: string | null
+          signature_data_url?: string | null
           temp_max?: number | null
           valide_le?: string | null
           valide_par?: string | null
@@ -4124,6 +4151,8 @@ export type Database = {
           cree_le: string | null
           cree_par: string | null
           departement: string | null
+          heure_arret_constatee: string | null
+          heures_perdues: number | null
           id: string | null
           jour_arrete: boolean | null
           materiau: string | null

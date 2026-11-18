@@ -14,10 +14,11 @@ import {
   type Materiau,
 } from "@/lib/meteoAlerte";
 import RapportIntemperiesPDF, { RapportIntemperiesData, Chantier } from "@/components/RapportIntemperiesPDF";
+import SignatureTactileCanvas from "@/components/SignatureTactileCanvas";
 import { Entreprise } from "@/types/entreprise";
 import { Surface } from '@/components/ui/Surface';
 
-function ajouterUnJourOuvre(dateStr: string | null | undefined): string {
+function ajouterJoursOuvres(dateStr: string | null | undefined, nbJoursOuvres: number): string {
   const base =
     dateStr && /^\d{4}-\d{2}-\d{2}/.test(dateStr)
       ? new Date(`${dateStr.slice(0, 10)}T12:00:00`)
@@ -27,14 +28,27 @@ function ajouterUnJourOuvre(dateStr: string | null | undefined): string {
     today.setHours(12, 0, 0, 0);
     base.setTime(today.getTime());
   }
-  base.setDate(base.getDate() + 1);
-  while (base.getDay() === 0 || base.getDay() === 6) {
+  let restant = Math.max(0, Math.round(nbJoursOuvres));
+  while (restant > 0) {
     base.setDate(base.getDate() + 1);
+    if (base.getDay() !== 0 && base.getDay() !== 6) {
+      restant -= 1;
+    }
   }
   const yyyy = base.getFullYear();
   const mm = String(base.getMonth() + 1).padStart(2, "0");
   const dd = String(base.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+}
+
+function calculerHeuresPerduesDepuisHeure(heureStr: string): number {
+  const m = /^(\d{2}):(\d{2})$/.exec(heureStr);
+  if (!m) return 7;
+  const debutMin = Number(m[1]) * 60 + Number(m[2]);
+  const finJourneeMin = 17 * 60;
+  const pauseDejMin = debutMin <= 12 * 60 ? 60 : 0;
+  const perdues = Math.max(0.5, Math.min(7, (finJourneeMin - debutMin - pauseDejMin) / 60));
+  return Math.round(perdues * 2) / 2;
 }
 
 function RapportDetailContent() {
@@ -62,8 +76,14 @@ function RapportDetailContent() {
   const [validentEnCours, setValidantEnCours] = useState(false);
   const [chantierId, setChantierId] = useState<string | null>(null);
   const [chantierDateFin, setChantierDateFin] = useState<string | null>(null);
+  const [chantierHeuresARattraper, setChantierHeuresARattraper] = useState<number>(0);
   const [rapportEntrepriseId, setRapportEntrepriseId] = useState<string | null>(null);
   const [decalerDateFin, setDecalerDateFin] = useState(true);
+  const [heureArretConstatee, setHeureArretConstatee] = useState("08:00");
+  const [heuresPerdues, setHeuresPerdues] = useState<number>(7);
+  const [arretDecideSurPlace, setArretDecideSurPlace] = useState(false);
+  const [repliImpossible, setRepliImpossible] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [feedbackAction, setFeedbackAction] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,8 +126,23 @@ function RapportDetailContent() {
         metier: null,
         departement: dataRapport.departement ?? null,
         mesures_prises: dataRapport.mesures_prises ?? null,
+        heure_arret_constatee: dataRapport.heure_arret_constatee ?? null,
+        heures_perdues: dataRapport.heures_perdues ?? 7,
+        repli_impossible: dataRapport.repli_impossible ?? false,
+        arret_decide_sur_place: dataRapport.arret_decide_sur_place ?? false,
+        signature_data_url: dataRapport.signature_data_url ?? null,
         heures: dataRapport.releve_horaire as { heure: string; temp: number; vent: number; rafales: number; pluie: number }[] | undefined,
       });
+
+      if (dataRapport.heure_arret_constatee) {
+        setHeureArretConstatee(dataRapport.heure_arret_constatee.slice(0, 5));
+      }
+      if (typeof dataRapport.heures_perdues === "number") {
+        setHeuresPerdues(dataRapport.heures_perdues);
+      }
+      setArretDecideSurPlace(Boolean(dataRapport.arret_decide_sur_place));
+      setRepliImpossible(Boolean(dataRapport.repli_impossible));
+      setSignatureDataUrl(dataRapport.signature_data_url ?? null);
 
       setRapportEntrepriseId(dataRapport.entreprise_id ?? null);
       setChantierId(dataRapport.chantier_id ?? null);
@@ -115,12 +150,13 @@ function RapportDetailContent() {
       if (dataRapport.chantier_id) {
         const { data: ch } = await supabase
           .from("chantiers")
-          .select("id, nom, adresse_chantier, metier, date_fin")
+          .select("id, nom, adresse_chantier, metier, date_fin, heures_a_rattraper")
           .eq("id", dataRapport.chantier_id)
           .maybeSingle();
 
         if (ch) {
           setChantierDateFin(ch.date_fin ?? null);
+          setChantierHeuresARattraper(Number(ch.heures_a_rattraper ?? 0));
           setRapport((prev) => (prev ? { ...prev, metier: ch.metier ?? null } : prev));
           setChantier({
             nom: ch.nom,
@@ -165,19 +201,49 @@ function RapportDetailContent() {
   }, [id]);
 
   async function validerArretChantier(arreter: boolean) {
+    if (arreter && !repliImpossible) {
+      setFeedbackAction(
+        "⚠️ Veuillez certifier qu'aucun repli en atelier ou tâche à l'abri n'était praticable avant de valider l'arrêt."
+      );
+      return;
+    }
+
     setValidantEnCours(true);
     setFeedbackAction(null);
-    const { error } = await supabase
+
+    const heuresFinales = arreter ? Math.max(0.5, Math.min(24, Number(heuresPerdues) || 7)) : 0;
+
+    // Garde-fou idempotent : la transition ne s'applique QUE si `a_valider = true`
+    const { data: updatedRow, error } = await supabase
       .from("rapports_intemperies")
       .update({
         a_valider: false,
         jour_arrete: arreter,
         ampleur_impact: arreter ? "complete" : "partielle",
+        valide_le: new Date().toISOString(),
+        ...(arreter
+          ? {
+              heure_arret_constatee: heureArretConstatee,
+              heures_perdues: heuresFinales,
+              arret_decide_sur_place: arretDecideSurPlace,
+              repli_impossible: repliImpossible,
+              signature_data_url: signatureDataUrl,
+            }
+          : {}),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("a_valider", true)
+      .select("id")
+      .maybeSingle();
 
     if (error) {
       setFeedbackAction(`❌ Erreur validation (${error.code ?? "SQL"}) : ${error.message}`);
+      setValidantEnCours(false);
+      return;
+    }
+
+    if (!updatedRow) {
+      setFeedbackAction("ℹ️ Ce rapport a déjà été validé ou clôturé.");
       setValidantEnCours(false);
       return;
     }
@@ -187,22 +253,39 @@ function RapportDetailContent() {
         ...rapport,
         a_valider: false,
         jour_arrete: arreter,
+        ...(arreter
+          ? {
+              heure_arret_constatee: heureArretConstatee,
+              heures_perdues: heuresFinales,
+              arret_decide_sur_place: arretDecideSurPlace,
+              repli_impossible: repliImpossible,
+              signature_data_url: signatureDataUrl,
+            }
+          : {}),
       });
     }
 
     if (arreter && chantierId && rapport) {
-      let nouvelleDateFin: string | null = null;
-      if (decalerDateFin) {
-        nouvelleDateFin = ajouterUnJourOuvre(chantierDateFin);
-        const { error: errChantier } = await supabase
-          .from("chantiers")
-          .update({ date_fin: nouvelleDateFin })
-          .eq("id", chantierId);
-        if (errChantier) {
-          console.error("[rapport-detail] Erreur décalage date_fin :", errChantier);
-        } else {
-          setChantierDateFin(nouvelleDateFin);
-        }
+      const joursOuvres = Math.max(1, Math.ceil(heuresFinales / 7));
+      const nouvelleDateFin = decalerDateFin
+        ? ajouterJoursOuvres(chantierDateFin, joursOuvres)
+        : null;
+      const nouveauCumulRattraper =
+        Math.round((chantierHeuresARattraper + heuresFinales) * 100) / 100;
+
+      const { error: errChantier } = await supabase
+        .from("chantiers")
+        .update({
+          heures_a_rattraper: nouveauCumulRattraper,
+          ...(nouvelleDateFin ? { date_fin: nouvelleDateFin } : {}),
+        })
+        .eq("id", chantierId);
+
+      if (errChantier) {
+        console.error("[rapport-detail] Erreur mise à jour chantier :", errChantier);
+      } else {
+        setChantierHeuresARattraper(nouveauCumulRattraper);
+        if (nouvelleDateFin) setChantierDateFin(nouvelleDateFin);
       }
 
       try {
@@ -233,7 +316,7 @@ function RapportDetailContent() {
 
           const dateAujourdhui = new Date().toISOString().slice(0, 10);
           const suffixPlanning = nouvelleDateFin
-            ? ` · Planning décalé au ${new Date(`${nouvelleDateFin}T12:00:00`).toLocaleDateString("fr-FR")}`
+            ? ` · +${joursOuvres} j ouvré(s) → fin au ${new Date(`${nouvelleDateFin}T12:00:00`).toLocaleDateString("fr-FR")}`
             : "";
 
           const { error: errAv } = await supabase.from("avancements_chantier").insert({
@@ -241,7 +324,7 @@ function RapportDetailContent() {
             chantier_id: chantierId,
             date: dateAujourdhui,
             pourcentage,
-            commentaire: `🌧️ Arrêt intempéries validé (${rapport.numero}) : ${rapport.motif}${suffixPlanning}`,
+            commentaire: `🌧️ Arrêt intempéries validé (${rapport.numero}, ${heuresFinales}h perdues) : ${rapport.motif}${suffixPlanning}`,
             details,
           });
           if (errAv) {
@@ -254,8 +337,8 @@ function RapportDetailContent() {
 
       setFeedbackAction(
         nouvelleDateFin
-          ? `✓ Arrêt de chantier validé (${rapport.numero}) · Date de fin décalée au ${new Date(`${nouvelleDateFin}T12:00:00`).toLocaleDateString("fr-FR")} et journalisée dans l'avancement.`
-          : `✓ Arrêt de chantier validé (${rapport.numero}) et journalisé dans l'avancement.`
+          ? `✓ Arrêt validé (${rapport.numero}) · +${heuresFinales}h à rattraper · Fin décalée de ${joursOuvres} jour(s) ouvré(s) au ${new Date(`${nouvelleDateFin}T12:00:00`).toLocaleDateString("fr-FR")}.`
+          : `✓ Arrêt validé (${rapport.numero}) · +${heuresFinales}h à rattraper.`
       );
     } else if (!arreter && rapport) {
       setFeedbackAction(`✓ Rapport ${rapport.numero} clôturé : travail maintenu.`);
@@ -349,11 +432,86 @@ function RapportDetailContent() {
                 className="h-4 w-4 rounded border-white/20 bg-[#120F0D] accent-[#D96B27]"
               />
               <span>
-                Décaler automatiquement la date de fin du chantier (+1 jour ouvré, hors week-end) sur le planning
+                Décaler automatiquement la date de fin (+{Math.max(1, Math.ceil((Number(heuresPerdues) || 7) / 7))} j ouvré(s), hors week-end) sur le planning
               </span>
             </label>
           )}
         </div>
+
+        {/* Formulaire légal & signature tactile avant validation */}
+        {rapport.a_valider && (
+          <div className="space-y-4 rounded-2xl border border-[#D96B27]/35 bg-[#1B1511] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-bold text-white">
+                Validation légale de l&apos;arrêt de chantier
+              </h2>
+              <span className="rounded-full border border-[#D96B27]/40 bg-[#D96B27]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#F59E0B]">
+                En attente de décision du chef d&apos;entreprise
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  Heure d&apos;arrêt constatée
+                </label>
+                <input
+                  type="time"
+                  value={heureArretConstatee}
+                  onChange={(e) => {
+                    setHeureArretConstatee(e.target.value);
+                    setHeuresPerdues(calculerHeuresPerduesDepuisHeure(e.target.value));
+                  }}
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-sm text-white focus:border-[#D96B27] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  Heures perdues sur la journée
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  max="12"
+                  value={heuresPerdues}
+                  onChange={(e) => setHeuresPerdues(parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-sm text-white focus:border-[#D96B27] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <label className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs text-gray-200">
+                  <span>Équipe déplacée sur place avant l&apos;arrêt ?</span>
+                  <input
+                    type="checkbox"
+                    checked={arretDecideSurPlace}
+                    onChange={(e) => setArretDecideSurPlace(e.target.checked)}
+                    className="h-4 w-4 rounded border-white/20 accent-[#D96B27]"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/10 bg-[#120F0D] p-3 text-xs text-amber-100">
+              <input
+                type="checkbox"
+                checked={repliImpossible}
+                onChange={(e) => setRepliImpossible(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 accent-[#D96B27]"
+              />
+              <span>
+                <strong className="text-[#F59E0B]">Attestation obligatoire :</strong> Je certifie qu&apos;aucun repli en atelier ou tâche à l&apos;abri n&apos;était praticable.
+              </span>
+            </label>
+
+            <SignatureTactileCanvas
+              value={signatureDataUrl}
+              onChange={setSignatureDataUrl}
+            />
+          </div>
+        )}
 
         {feedbackAction && (
           <div

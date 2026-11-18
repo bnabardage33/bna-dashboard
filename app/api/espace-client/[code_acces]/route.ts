@@ -310,7 +310,7 @@ export async function GET(
   //    contient des lignes de test "conditions normales" qui ne doivent pas sortir).
   const { data: intemperiesBruts } = await supabaseAdmin
     .from("rapports_intemperies_jours_arretes")
-    .select("id, numero, motif, jour_arrete, cree_le, pluie_cumul, rafales_max, vigilance_officielle")
+    .select("id, numero, motif, jour_arrete, cree_le, pluie_cumul, rafales_max, vigilance_officielle, heures_perdues, heure_arret_constatee")
     .eq("chantier_id", chantier.id)
     .eq("jour_arrete", true)
     .order("cree_le", { ascending: false });
@@ -324,6 +324,8 @@ export async function GET(
     pluie_cumul: r.pluie_cumul,
     rafales_max: r.rafales_max,
     vigilance_officielle: r.vigilance_officielle,
+    heures_perdues: r.heures_perdues ?? null,
+    heure_arret_constatee: r.heure_arret_constatee ?? null,
   }));
 
   // 8. Photos du chantier — serties côté serveur (périmètre scropé au code,
