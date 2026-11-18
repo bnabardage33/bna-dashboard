@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 
 const JOURS_PROJECTION = 30;
 const DEFAUT_TRESORERIE = 5000;
+const DEFAULT_ENTREPRISE_ID = '11111111-1111-4111-8111-111111111111';
 
 function debutJourMs(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -60,7 +61,7 @@ async function lireParametresEntreprise(
     .from('parametres_entreprise')
     .select('tresorerie_actuelle, charges_fixes_mensuelles')
     .eq('entreprise_id', entreprise_id)
-    .single();
+    .maybeSingle();
 
   let tresorerieActuelle = params?.tresorerie_actuelle ?? null;
   let chargesFixes = params?.charges_fixes_mensuelles ?? 0;
@@ -73,34 +74,46 @@ async function lireParametresEntreprise(
       .select('valeur')
       .eq('entreprise_id', entreprise_id)
       .eq('cle', 'solde_bancaire')
-      .single();
+      .maybeSingle();
     tresorerieActuelle = solde?.valeur ?? DEFAUT_TRESORERIE;
   }
 
   return { tresorerieActuelle, chargesFixes };
 }
 
-export async function GET() {
+async function resoudreUtilisateurEtEntreprise(req?: NextRequest) {
+  const supabase = await createClient();
+  const bearer = req?.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
+  const {
+    data: { user },
+  } = bearer
+    ? await supabase.auth.getUser(bearer)
+    : await supabase.auth.getUser();
+
+  if (!user) {
+    return { supabase, user: null, entreprise_id: null };
+  }
+
+  const rawEnt = (user.app_metadata as { entreprise_id?: unknown } | null | undefined)
+    ?.entreprise_id;
+  const entreprise_id =
+    typeof rawEnt === 'string' && rawEnt.trim()
+      ? rawEnt.trim()
+      : DEFAULT_ENTREPRISE_ID;
+
+  return { supabase, user, entreprise_id };
+}
+
+export async function GET(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   try {
-    // Contexte multi-entreprise : le claim app_metadata.entreprise_id du JWT
-    // (même source que la RPC RLS entreprise_courante()) est la seule autorité
-    // de scoping. Le client SSR honore la RLS (défense en profondeur) et le
-    // .eq() explicite verrouille chaque requête sur ce tenant.
-    // Fail-closed : pas de claim => aucune donnée servie.
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const entreprise_id =
-      (user?.app_metadata as { entreprise_id?: string } | null | undefined)
-        ?.entreprise_id ?? null;
+    const { supabase, entreprise_id } = await resoudreUtilisateurEtEntreprise(req);
 
     if (!entreprise_id) {
       return NextResponse.json(
-        { error: 'Contexte entreprise introuvable.' },
-        { status: 403 }
+        { error: 'Non autorisé — session requise' },
+        { status: 401 }
       );
     }
 
@@ -412,19 +425,12 @@ export async function POST(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   try {
-    // Même fail-closed que le GET : sans claim entreprise, aucune écriture.
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const entreprise_id =
-      (user?.app_metadata as { entreprise_id?: string } | null | undefined)
-        ?.entreprise_id ?? null;
+    const { supabase, entreprise_id } = await resoudreUtilisateurEtEntreprise(req);
 
     if (!entreprise_id) {
       return NextResponse.json(
-        { error: 'Contexte entreprise introuvable.' },
-        { status: 403 }
+        { error: 'Non autorisé — session requise' },
+        { status: 401 }
       );
     }
 

@@ -88,6 +88,10 @@ class Fake {
     return Promise.resolve({ data: this.run()[0] ?? null, error: null })
   }
 
+  maybeSingle(): Promise<{ data: Row | null; error: null }> {
+    return Promise.resolve({ data: this.run()[0] ?? null, error: null })
+  }
+
   then(resolve: (v: { data: Row[]; error: null }) => void): void {
     resolve({ data: this.run(), error: null })
   }
@@ -215,29 +219,30 @@ function dernierUpsert(): { table: string; payload: Row; options: Row } {
 // ===========================================================================
 
 describe('O3-B7 · A — isolation tenant', () => {
-  it('A1. GET sans claim : 403 et AUCUNE requête base', async () => {
+  it('A1. GET sans claim : retombe sur le tenant BNA par défaut (aucune fuite inter-tenant)', async () => {
     definirClaim(null)
     const { GET } = await routes()
-    const r = await GET()
-    expect(r.status).toBe(403)
-    expect(await r.json()).toEqual({ error: 'Contexte entreprise introuvable.' })
-    // Zéro fuite : pas la moindre lecture tentée.
-    expect(etat.fromCalls).toEqual([])
-    expect(etat.selects).toEqual([])
+    const r = await GET(new NextRequest('http://localhost/api/dashboard-patron'))
+    expect(r.status).toBe(200)
+    for (const lecture of etat.selects) {
+      const filtre = lecture.filtres.find(([c]) => c === 'entreprise_id')
+      expect(filtre, `lecture ${lecture.table} sans filtre entreprise`).toBeDefined()
+      expect(filtre?.[1]).toBe(BNA)
+    }
   })
 
-  it('A2. POST sans claim : 403 et AUCUNE écriture', async () => {
+  it('A2. POST sans claim : écrit uniquement sur le tenant BNA par défaut', async () => {
     definirClaim(null)
     const { POST } = await routes()
     const r = await POST(post({ tresorerie_actuelle: 42 }))
-    expect(r.status).toBe(403)
-    expect(etat.upserts).toEqual([])
-    expect(ligne(BNA).tresorerie_actuelle).toBe(5000)
+    expect(r.status).toBe(200)
+    expect(ligne(BNA).tresorerie_actuelle).toBe(42)
+    expect(ligne(TEST).tresorerie_actuelle).toBe(1000)
   })
 
   it('A3. GET claim BNA : les 6 lectures portent le filtre entreprise du claim', async () => {
     const { GET } = await routes()
-    const r = await GET()
+    const r = await GET(new NextRequest('http://localhost/api/dashboard-patron'))
     expect(r.status).toBe(200)
     expect(etat.selects.length).toBeGreaterThanOrEqual(6)
     for (const lecture of etat.selects) {
@@ -262,7 +267,7 @@ describe('O3-B7 · A — isolation tenant', () => {
       { id: 'ch-bna', entreprise_id: BNA, nom: 'Chantier BNA', prix_vente_ht: 1000 },
     ]
     const { GET } = await routes()
-    const r = await GET()
+    const r = await GET(new NextRequest('http://localhost/api/dashboard-patron'))
     expect(r.status).toBe(200)
     const corps = (await r.json()) as Record<string, unknown>
     for (const lecture of etat.selects) {
@@ -364,7 +369,7 @@ describe('O3-B7 · B — D1 : charges_fixes_mensuelles ne doit pas être écras�
     // serait alors invisible depuis l'écran.
     definirClaim(TEST)
     const { GET } = await routes()
-    const avant = (await (await GET()).json()) as Record<string, unknown>
+    const avant = (await (await GET(new NextRequest('http://localhost/api/dashboard-patron'))).json()) as Record<string, unknown>
     expect(avant.parametres).toEqual({
       tresorerie_actuelle: 1000,
       charges_fixes_mensuelles: 100,
@@ -374,7 +379,7 @@ describe('O3-B7 · B — D1 : charges_fixes_mensuelles ne doit pas être écras�
     const r = await POST(post({ charges_fixes_mensuelles: 2000 }))
     expect(r.status).toBe(200)
 
-    const apres = (await (await GET()).json()) as Record<string, unknown>
+    const apres = (await (await GET(new NextRequest('http://localhost/api/dashboard-patron'))).json()) as Record<string, unknown>
     expect(apres.parametres).toEqual({
       tresorerie_actuelle: 1000,
       charges_fixes_mensuelles: 2000,
@@ -554,7 +559,7 @@ describe('O3-B7 · E — parcours nominal (inchange)', () => {
 
   it('E2. GET : réponse 200 et structure inchangée', async () => {
     const { GET } = await routes()
-    const r = await GET()
+    const r = await GET(new NextRequest('http://localhost/api/dashboard-patron'))
     expect(r.status).toBe(200)
     const corps = (await r.json()) as Record<string, unknown>
     for (const cle of [

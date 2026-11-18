@@ -8,6 +8,16 @@ import {
   Loader2, RotateCcw, ArrowRight, Building2, PiggyBank
 } from "lucide-react";
 import { Surface } from '@/components/ui/Surface';
+import { supabase } from "@/lib/supabase";
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {};
+}
 
 type ChantierRentabilite = {
   id: string;
@@ -61,9 +71,16 @@ export default function DashboardPatronPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/dashboard-patron", { cache: "no-store" });
-      if (!res.ok) throw new Error(`Erreur API (${res.status})`);
-      const json = await res.json();
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/dashboard-patron", {
+        cache: "no-store",
+        credentials: "include",
+        headers,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || `Erreur API (${res.status})`);
+      }
       if (json.error) throw new Error(json.error);
       setData(json);
     } catch (e) {
@@ -85,9 +102,11 @@ export default function DashboardPatronPage() {
     }
     setSavingTreso(true);
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch("/api/dashboard-patron", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ tresorerie_actuelle: val }),
       });
       if (!res.ok) throw new Error("Erreur sauvegarde");
