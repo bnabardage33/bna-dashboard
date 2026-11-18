@@ -43,6 +43,15 @@ BEGIN
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION public.entreprise_courante() TO authenticated, anon, service_role;
+
+-- 1b. Colonnes created_at manquantes sur notifications et chantier_zones
+ALTER TABLE IF EXISTS public.notifications
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
+ALTER TABLE IF EXISTS public.chantier_zones
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
 -- 2. Garantir un DEFAULT sur entreprise_id et des droits GRANT / RLS complets
 DO $$
 DECLARE
@@ -51,6 +60,10 @@ DECLARE
     'clients',
     'chantiers',
     'chantier_zones',
+    'chantier_zones_modules',
+    'chantier_zones_module_groups',
+    'chantier_zones_ouvertures',
+    'chantier_zones_percages',
     'chantier_terrasses',
     'chantier_clotures',
     'fournisseurs',
