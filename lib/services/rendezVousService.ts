@@ -36,11 +36,7 @@ export interface CreerRendezVousInput {
 
 function isMissingTableError(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
-  return (
-    error.code === "42P01" ||
-    error.code === "PGRST205" ||
-    Boolean(error.message?.includes("rendez_vous"))
-  );
+  return error.code === "42P01" || error.code === "PGRST205";
 }
 
 export async function listerRendezVous(

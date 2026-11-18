@@ -70,3 +70,5 @@ CREATE POLICY "rendez_vous_ent_delete"
     entreprise_id = public.entreprise_courante()
     OR public.entreprise_courante() IS NULL
   );
+
+NOTIFY pgrst, 'reload schema';

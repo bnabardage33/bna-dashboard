@@ -45,6 +45,7 @@ export default function PlanningPage() {
   const [rdvs, setRdvs] = useState<RendezVousRow[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [migrationRequired, setMigrationRequired] = useState(false);
+  const [rdvError, setRdvError] = useState<string | null>(null);
 
   const [displayMode, setDisplayMode] = useState<"gantt" | "liste">("gantt");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("tous");
@@ -88,10 +89,13 @@ export default function PlanningPage() {
         chantiersQuery,
         commandesQuery,
         clientsQuery,
-        listerRendezVous(supabase, entId).catch(() => ({
-          data: [] as RendezVousRow[],
-          migrationRequired: true,
-        })),
+        listerRendezVous(supabase, entId)
+          .then((res) => ({ ...res, errorMessage: null as string | null }))
+          .catch((err: unknown) => ({
+            data: [] as RendezVousRow[],
+            migrationRequired: false,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          })),
       ]);
 
       if (!chRes.error && chRes.data) {
@@ -122,6 +126,7 @@ export default function PlanningPage() {
 
       setRdvs(rdvRes.data);
       setMigrationRequired(rdvRes.migrationRequired);
+      setRdvError(rdvRes.errorMessage);
     } finally {
       setLoading(false);
     }
@@ -242,6 +247,13 @@ export default function PlanningPage() {
             <code>supabase/migrations/20261118_rendez_vous_planning.sql</code> pour activer
             l&apos;ajout et la sauvegarde des rendez-vous.
           </span>
+        </div>
+      )}
+
+      {rdvError && !migrationRequired && (
+        <div className="rounded-2xl border border-red-500/40 bg-red-950/40 p-3.5 text-xs text-red-200 flex items-center gap-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+          <span>Erreur chargement des rendez-vous : {rdvError}</span>
         </div>
       )}
 
