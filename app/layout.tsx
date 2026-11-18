@@ -128,7 +128,15 @@ export default function RootLayout({
 
               {/* Titre / contexte de travail sur grand écran (≥ 1024px) */}
               <div className="hidden lg:flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                <Image
+                  src="/logo-bna.png"
+                  alt="BNA Bardage"
+                  width={140}
+                  height={36}
+                  className="h-7 w-auto object-contain shrink-0 pointer-events-none"
+                />
+                <span className="h-4 w-px bg-white/10 shrink-0" aria-hidden="true" />
+                <span className="text-xs font-semibold tracking-wider text-gray-400 uppercase truncate">
                   Espace de travail
                 </span>
               </div>

@@ -217,27 +217,28 @@ export default function Drawer() {
       {/* OVERLAY */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/60 z-[50]"
+          className="fixed inset-0 bg-black/60 z-[50] lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
       {/* DRAWER */}
-        <aside
+      <aside
         id="bna-drawer"
         role="navigation"
         aria-label="Navigation principale"
-        className={`fixed top-0 left-0 h-full w-[76vw] max-w-[300px] border-r border-white/[0.08] bg-[#1A1A1A] flex flex-col shadow-2xl transition-transform duration-300 z-[100] ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full min-h-0 overflow-hidden w-[76vw] max-w-[300px] border-r border-white/[0.08] bg-[#1A1A1A] flex flex-col lg:hidden shadow-2xl transition-transform duration-300 z-[100] ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* DRAWER HEADER */}
-        <div className="flex items-center justify-between px-5 pt-12 pb-5 border-b border-white/[0.06]">
-          <div>
-            <p className="text-white font-black text-[15px] tracking-tight">BNA Bardage</p>
-            <p className="text-[#BDBDBD] text-3xs mt-0.5">Dashboard Pro</p>
+        <div className="shrink-0 flex items-center justify-between gap-2 pl-4 pr-3 pt-4 pb-4 border-b border-white/[0.06]">
+          <div className="min-w-0">
+            <p className="text-white font-black text-[15px] tracking-tight truncate">BNA Bardage</p>
+            <p className="text-[#BDBDBD] text-3xs mt-0.5 truncate">Dashboard Pro</p>
           </div>
           <button
+            type="button"
             onClick={() => setOpen(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] transition-all"
+            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] transition-all"
             aria-label="Fermer le menu"
           >
             <X size={16} className="text-[#D0D0D0]" />
@@ -245,7 +246,7 @@ export default function Drawer() {
         </div>
 
         {/* NAV LINKS */}
-        <nav className="flex-1 px-3 pt-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 min-h-0 px-3 pt-3 pb-2 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             // Pour éviter les erreurs d'hydratation liées à usePathname()
             // (middleware, rewrites, etc.) on n'applique le style actif qu'une
@@ -371,7 +372,7 @@ export default function Drawer() {
         </nav>
 
         {/* FOOTER */}
-        <div className="px-3 pb-10 pt-3 border-t border-white/[0.06] space-y-1">
+        <div className="shrink-0 mt-auto px-3 pb-6 pt-3 border-t border-white/[0.06] space-y-1 bg-[#1A1A1A]">
           <Link
             href="/parametres"
             onClick={() => setOpen(false)}

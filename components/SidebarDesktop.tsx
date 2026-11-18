@@ -90,8 +90,8 @@ export default function SidebarDesktop() {
       id="bna-desktop-sidebar"
       role="navigation"
       aria-label="Navigation principale ordinateur"
-      className={`hidden lg:flex flex-col shrink-0 border-r border-white/[0.08] bg-[#1A1A1A] text-gray-300 select-none print:hidden transition-[width] duration-300 ease-in-out relative z-30 min-h-screen ${
-        collapsedEffectif ? "w-[72px]" : "w-[260px]"
+      className={`hidden lg:flex flex-col shrink-0 border-r border-white/[0.08] bg-[#1A1A1A] text-gray-300 select-none print:hidden transition-[width] duration-300 ease-in-out sticky top-0 z-30 h-screen min-h-0 ${
+        collapsedEffectif ? "w-[72px]" : "w-[260px] overflow-hidden"
       }`}
     >
       <Suspense fallback={null}>
@@ -99,7 +99,7 @@ export default function SidebarDesktop() {
       </Suspense>
       {/* ── EN-TÊTE SIDEBAR : LOGO & BOUTON RÉDUCTION ───────────────────── */}
       {collapsedEffectif ? (
-        <div className="py-2.5 px-2 flex flex-col items-center gap-2 border-b border-white/[0.06]">
+        <div className="shrink-0 py-2.5 px-2 flex flex-col items-center gap-2 border-b border-white/[0.06]">
           <Link
             href="/terrain/accueil"
             className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden group hover:border-[#B85B2B]/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
@@ -125,7 +125,7 @@ export default function SidebarDesktop() {
           </button>
         </div>
       ) : (
-        <div className="h-16 flex items-center justify-between px-3.5 border-b border-white/[0.06]">
+        <div className="shrink-0 h-16 flex items-center justify-between gap-2 pl-4 pr-3 border-b border-white/[0.06]">
           <Link
             href="/terrain/accueil"
             className="flex items-center min-w-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] rounded-xl p-1"
@@ -155,7 +155,7 @@ export default function SidebarDesktop() {
 
       {/* ── LISTE DE NAVIGATION PRINCIPALE ─────────────────────────────── */}
       <nav
-        className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1 scrollbar-thin scrollbar-thumb-white/10"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1 scrollbar-thin scrollbar-thumb-white/10"
         aria-label="Sections de navigation"
       >
         {NAV_ITEMS.map((item) => {
@@ -321,7 +321,7 @@ export default function SidebarDesktop() {
       </nav>
 
       {/* ── PIED DE NAVIGATION : PARAMÈTRES & DÉCONNEXION ───────────────── */}
-      <div className="p-2 border-t border-white/[0.06] space-y-1">
+      <div className="shrink-0 mt-auto p-2 border-t border-white/[0.06] space-y-1 bg-[#1A1A1A]">
         {/* Paramètres */}
         <div className="relative group">
           <Link
