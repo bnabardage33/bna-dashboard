@@ -1,18 +1,10 @@
 "use client";
 
-// app/terrain/meteo/page.tsx
-// Météo GÉNÉRALE — page complète alignée sur la nouvelle identité visuelle claire (/login).
-//
-// Palette claire :
-// - Fond : #F3F3F1
-// - Cartes : blanc pur bg-white, bordures #E5E5E5, ombres légères
-// - Titres & textes : #23272B (anthracite) et #777777
-// - Accents & boutons : #B85B2B (cuivre) et #D97732
-
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { fetchMeteo, JourMeteo } from "@/lib/meteo";
-import { texteDegre, texteKmh, texteMm, texteNature } from "@/components/TableauPrecipitations";
+import { supabase } from "@/lib/supabase";
+import { texteDegre, texteKmh, texteMm } from "@/components/TableauPrecipitations";
 import {
   Search,
   Sun,
@@ -27,507 +19,520 @@ import {
   MapPin,
   ShieldAlert,
   HardHat,
-  Thermometer,
-  Gauge,
   Clock,
   CalendarDays,
 } from "lucide-react";
 
 const COULEURS = {
-  vert:   "border-emerald-200 bg-emerald-50 text-emerald-900",
-  jaune:  "border-amber-200 bg-amber-50 text-amber-900",
-  orange: "border-orange-200 bg-orange-50 text-orange-950",
-  rouge:  "border-red-200 bg-red-50 text-red-950",
+  vert: "border-emerald-500/35 bg-emerald-950/40 text-emerald-200",
+  jaune: "border-amber-500/40 bg-amber-950/45 text-amber-200",
+  orange: "border-orange-500/45 bg-orange-950/50 text-orange-200",
+  rouge: "border-red-500/50 bg-red-950/55 text-red-200",
 } as const;
 
 const EMOJIS = { vert: "🟢", jaune: "🟡", orange: "🟠", rouge: "🔴" } as const;
 
-function IconeMeteo({ icon, conditions, className }: { icon: string; conditions?: string; className?: string }) {
-  const props = { className: className || "h-8 w-8" };
-  const c = (conditions || "").toLowerCase();
-  const pluie = c.includes("rain") || c.includes("shower") || c.includes("drizzle") || c.includes("pluie");
-  const orage = c.includes("thunder") || c.includes("storm") || c.includes("orage");
-  const neige = c.includes("snow") || c.includes("neige");
+interface ChantierRaccourci {
+  id: string;
+  label: string;
+  ville: string;
+}
 
-  switch (icon) {
-    case "clear-day":
-      return <Sun {...props} className={`${props.className} text-amber-500`} />;
-    case "clear-night":
-      return <Sun {...props} className={`${props.className} text-gray-400`} />;
-    case "partly-cloudy-day":
-      return pluie
-        ? <CloudRain {...props} className={`${props.className} text-sky-500`} />
-        : <CloudSun  {...props} className={`${props.className} text-amber-500`} />;
-    case "partly-cloudy-night":
-      return <Cloud {...props} className={`${props.className} text-gray-400`} />;
-    case "cloudy":
-      if (orage) return <CloudRain {...props} className={`${props.className} text-amber-600`} />;
-      if (neige) return <Snowflake {...props} className={`${props.className} text-sky-400`} />;
-      if (pluie) return <CloudRain {...props} className={`${props.className} text-sky-500`} />;
-      return <Cloud {...props} className={`${props.className} text-gray-500`} />;
-    case "rain":
-      return <CloudRain {...props} className={`${props.className} text-sky-500`} />;
-    case "snow":
-      return <Snowflake {...props} className={`${props.className} text-sky-400`} />;
-    case "fog":
-      return <CloudFog  {...props} className={`${props.className} text-gray-400`} />;
-    case "wind":
-      return <Wind {...props} className={`${props.className} text-teal-600`} />;
-    default:
-      if (orage) return <CloudRain {...props} className={`${props.className} text-amber-600`} />;
-      if (neige) return <Snowflake {...props} className={`${props.className} text-sky-400`} />;
-      if (pluie) return <CloudRain {...props} className={`${props.className} text-sky-500`} />;
-      return <Cloud {...props} className={`${props.className} text-gray-500`} />;
+function extraireVilleDepuisAdresse(adresse: string): string {
+  const clean = adresse.trim();
+  if (!clean) return "";
+  const cpMatch = clean.match(/\b\d{5}\s+([A-Za-zÀ-ÿ' -]{2,})/);
+  if (cpMatch) return cpMatch[1].trim();
+  const parts = clean.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts[parts.length - 1] ?? clean;
+}
+
+function IconeMeteo({
+  icon,
+  conditions,
+  className,
+}: {
+  icon: string;
+  conditions?: string;
+  className?: string;
+}) {
+  const c = (conditions || "").toLowerCase();
+  const i = (icon || "").toLowerCase();
+
+  if (i.includes("rain") || c.includes("pluie") || c.includes("averse") || c.includes("bruine")) {
+    return <CloudRain className={className || "h-7 w-7 text-sky-400"} />;
   }
+  if (i.includes("snow") || c.includes("neige")) {
+    return <Snowflake className={className || "h-7 w-7 text-sky-200"} />;
+  }
+  if (i.includes("fog") || c.includes("brouillard") || c.includes("brume")) {
+    return <CloudFog className={className || "h-7 w-7 text-slate-400"} />;
+  }
+  if (i.includes("wind") || c.includes("vent")) {
+    return <Wind className={className || "h-7 w-7 text-amber-300"} />;
+  }
+  if (i.includes("partly") || c.includes("éclaircie") || c.includes("peu nuageux") || c.includes("passages")) {
+    return <CloudSun className={className || "h-7 w-7 text-amber-400"} />;
+  }
+  if (i.includes("clear") || c.includes("ensoleillé") || c.includes("dégagé")) {
+    return <Sun className={className || "h-7 w-7 text-amber-400"} />;
+  }
+  return <Cloud className={className || "h-7 w-7 text-slate-300"} />;
 }
 
 function nomJour(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  const j = d.toLocaleDateString("fr-FR", { weekday: "long" });
-  return j.charAt(0).toUpperCase() + j.slice(1);
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("fr-FR", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 export default function MeteoPage() {
-  const [villeInput, setVilleInput] = useState("Bordeaux");
   const [ville, setVille] = useState("Bordeaux");
+  const [villeSaisie, setVilleSaisie] = useState("Bordeaux");
   const [meteo, setMeteo] = useState<JourMeteo | null>(null);
-  const [loadingMeteo, setLoadingMeteo] = useState(true);
-  const [erreurMeteo, setErreurMeteo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [chantiersRaccourcis, setChantiersRaccourcis] = useState<ChantierRaccourci[]>([]);
+  const [voirHeuresPassees, setVoirHeuresPassees] = useState(false);
 
   useEffect(() => {
+    let annule = false;
     async function charger() {
-      setLoadingMeteo(true);
-      setErreurMeteo(null);
+      setLoading(true);
       try {
         const data = await fetchMeteo(ville);
-        setMeteo(data);
-      } catch (err) {
-        console.error(err);
-        setMeteo(null);
-        setErreurMeteo(err instanceof Error ? err.message : "Erreur météo");
+        if (!annule) setMeteo(data);
+      } catch {
+        if (!annule) setMeteo(null);
       } finally {
-        setLoadingMeteo(false);
+        if (!annule) setLoading(false);
       }
     }
     charger();
+    return () => {
+      annule = true;
+    };
   }, [ville]);
+
+  useEffect(() => {
+    let actif = true;
+    async function chargerChantiers() {
+      try {
+        const { data, error } = await supabase
+          .from("chantiers")
+          .select("id, nom, client_nom, adresse_chantier, statut")
+          .limit(12);
+        if (!actif || error || !Array.isArray(data)) return;
+        const items: ChantierRaccourci[] = [];
+        for (const c of data) {
+          const s = (c.statut ?? "").toLowerCase();
+          if (["termine", "terminé", "archive", "archivé", "annule", "annulé"].includes(s)) {
+            continue;
+          }
+          const v = c.adresse_chantier ? extraireVilleDepuisAdresse(c.adresse_chantier) : "";
+          if (!v) continue;
+          items.push({
+            id: c.id,
+            label: c.nom || c.client_nom || v,
+            ville: v,
+          });
+        }
+        setChantiersRaccourcis(items.slice(0, 6));
+      } catch {
+        // Ignorer si hors-ligne ou variables env absentes en test
+      }
+    }
+    chargerChantiers();
+    return () => {
+      actif = false;
+    };
+  }, []);
 
   function handleRechercherVille(e: React.FormEvent) {
     e.preventDefault();
-    if (villeInput.trim()) setVille(villeInput.trim());
+    const v = villeSaisie.trim();
+    if (!v || v === ville) return;
+    setVille(v);
   }
 
+  const heuresAffichees = useMemo(() => {
+    if (!meteo?.heures) return [];
+    if (voirHeuresPassees) return meteo.heures;
+    const futures = meteo.heures.filter((h) => h.statut === "avenir");
+    return futures.length > 0 ? futures : meteo.heures;
+  }, [meteo, voirHeuresPassees]);
+
+  const creneauxCles = useMemo(() => {
+    if (!meteo) return [];
+    const trouverHeure = (cibleH: number) =>
+      meteo.heures.find((h) => parseInt(h.heure.slice(0, 2), 10) >= cibleH) ?? null;
+
+    const midi = trouverHeure(12);
+    const soir = trouverHeure(18);
+    return [
+      {
+        titre: "Matin",
+        heure: "08h",
+        temp: meteo.matin.temp,
+        vent: meteo.matin.vent,
+        rafales: meteo.matin.rafales,
+        pluie: trouverHeure(8)?.pluie ?? null,
+      },
+      {
+        titre: "Midi",
+        heure: "12h",
+        temp: midi?.temp ?? meteo.apresMidi.temp,
+        vent: midi?.vent ?? meteo.apresMidi.vent,
+        rafales: midi?.rafales ?? meteo.apresMidi.rafales,
+        pluie: midi?.pluie ?? null,
+      },
+      {
+        titre: "Après-midi",
+        heure: "15h",
+        temp: meteo.apresMidi.temp,
+        vent: meteo.apresMidi.vent,
+        rafales: meteo.apresMidi.rafales,
+        pluie: trouverHeure(15)?.pluie ?? null,
+      },
+      {
+        titre: "Soir",
+        heure: "18h",
+        temp: soir?.temp ?? null,
+        vent: soir?.vent ?? null,
+        rafales: soir?.rafales ?? null,
+        pluie: soir?.pluie ?? null,
+      },
+    ];
+  }, [meteo]);
+
+  const rafaleMaxJour = useMemo(() => {
+    if (!meteo) return null;
+    const vals = [
+      meteo.matin.rafales,
+      meteo.apresMidi.rafales,
+      ...meteo.heures.map((h) => h.rafales),
+    ].filter((v): v is number => v !== null && Number.isFinite(v));
+    return vals.length > 0 ? Math.max(...vals) : null;
+  }, [meteo]);
+
   return (
-    <div className="-mt-4 -mb-12 min-h-screen bg-[#F3F3F1] text-[#23272B] selection:bg-[#D97732]/20 selection:text-[#B85B2B] px-4 py-6 sm:py-8 transition-colors">
-      <div className="mx-auto w-full max-w-7xl space-y-6">
-        {/* ── SECTION A. EN-TÊTE MÉTÉO & RECHERCHE ─────────────────────────────── */}
-        <header className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.9fr)] lg:items-center">
+    <div className="min-h-screen bg-[#120F0D] text-white">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 pb-20">
+        {/* En-tête & Sélecteur rapide Chantier / Ville */}
+        <header className="rounded-2xl border border-white/10 bg-[#1E1916] p-5 shadow-xl">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B]">
-                  <CloudSun className="h-6 w-6" />
-                </span>
-                <div>
-                  <h1 className="text-xl font-bold tracking-tight text-[#23272B] sm:text-2xl md:text-3xl">
-                    Accueil Météo
-                  </h1>
-                  <p className="text-xs sm:text-sm text-[#777777]">
-                    Conditions actuelles et prévisions disponibles pour{" "}
-                    <span className="font-semibold text-[#23272B]">{ville}</span>.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#D96B27]">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>Météo Chantiers BTP</span>
               </div>
+              <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
+                Accueil Météo
+              </h1>
+              <p className="mt-0.5 text-sm text-gray-400">
+                Conditions actuelles et prévisions disponibles pour{" "}
+                <span className="font-semibold text-white">{ville}</span>
+              </p>
             </div>
 
             <form
               onSubmit={handleRechercherVille}
-              aria-label="Rechercher la météo d’une ville"
-              className="flex min-w-0 items-center gap-2 rounded-2xl border border-[#D8D8D8] bg-[#F8F9FA] p-1.5 focus-within:border-[#D97732] focus-within:ring-2 focus-within:ring-[#D97732]/20 focus-within:bg-white transition-all"
+              className="flex w-full max-w-md items-center gap-2"
             >
-              <div className="relative min-w-0 flex-1">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#999999]" />
-                <label htmlFor="ville-meteo-detaillee" className="sr-only">
-                  Rechercher une ville
-                </label>
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   id="ville-meteo-detaillee"
                   type="text"
-                  value={villeInput}
-                  onChange={(e) => setVilleInput(e.target.value)}
-                  placeholder="Rechercher une ville (ex. Bordeaux, Mérignac)..."
-                  className="h-11 w-full rounded-xl bg-transparent py-2 pl-10 pr-3 text-sm text-[#23272B] placeholder:text-[#999999] outline-none"
+                  value={villeSaisie}
+                  onChange={(e) => setVilleSaisie(e.target.value)}
+                  placeholder="Rechercher une ville (ex: Bordeaux, Mérignac...)"
+                  className="w-full rounded-xl border border-white/15 bg-[#14110F] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-500 focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="h-11 shrink-0 rounded-xl bg-[#D97732] hover:bg-[#B85B2B] active:scale-[0.98] px-5 text-sm font-bold text-white transition-all shadow-sm"
+                className="shrink-0 rounded-xl bg-[#D96B27] px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#C25B1B]"
               >
                 Rechercher
               </button>
             </form>
           </div>
+
+          {chantiersRaccourcis.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                Chantiers actifs :
+              </span>
+              {chantiersRaccourcis.map((c) => {
+                const actif = ville.toLowerCase() === c.ville.toLowerCase();
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setVilleSaisie(c.ville);
+                      setVille(c.ville);
+                    }}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                      actif
+                        ? "border-[#D96B27] bg-[#D96B27]/20 text-amber-200"
+                        : "border-white/10 bg-[#14110F] text-gray-300 hover:border-[#D96B27]/50 hover:text-white"
+                    }`}
+                  >
+                    {c.label} · {c.ville}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </header>
 
-        {loadingMeteo ? (
-          <div
-            className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]"
-            aria-label="Chargement météo"
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#D97732] border-t-transparent" />
-              <p className="text-sm font-medium text-[#777777]">Chargement des données météo pour {ville}...</p>
-            </div>
+        {loading && !meteo ? (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="h-56 animate-pulse rounded-2xl border border-white/10 bg-[#1E1916]" />
+            <div className="h-56 animate-pulse rounded-2xl border border-white/10 bg-[#1E1916]" />
           </div>
-        ) : meteo ? (
-          <div className="space-y-6">
-            {/* ── SECTION B. CONDITIONS ACTUELLES ───────────────────────────────── */}
-            <section aria-label="Conditions actuelles">
-              <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-6 sm:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                  {/* Bloc principal température et état */}
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-1 text-xs font-semibold tracking-wide text-[#23272B]">
-                      <MapPin className="h-3.5 w-3.5 text-[#B85B2B]" />
-                      <span>{ville}</span>
-                      <span className="text-[#CCCCCC]">·</span>
-                      <span className="text-[#777777]">Conditions actuelles</span>
+        ) : !meteo ? (
+          <div className="rounded-2xl border border-white/10 bg-[#1E1916] p-8 text-center">
+            <Cloud className="mx-auto h-10 w-10 text-gray-500" />
+            <p className="mt-3 text-base font-semibold text-white">
+              Impossible de récupérer la météo pour « {ville} »
+            </p>
+            <p className="mt-1 text-sm text-gray-400">
+              Vérifiez l&apos;orthographe de la ville ou réessayez dans quelques instants.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Bloc 1 : Décision Chantier du jour */}
+            <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {/* Carte gauche : Conditions actuelles & Vigilance BTP */}
+              <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-[#1E1916] p-5 shadow-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/30 bg-[#D96B27]/15">
+                      <IconeMeteo
+                        icon={meteo.icon}
+                        conditions={meteo.conditions}
+                        className="h-9 w-9 text-amber-400"
+                      />
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-5 sm:gap-7">
-                      <div className="flex h-20 w-20 sm:h-24 sm:w-24 shrink-0 items-center justify-center rounded-2xl bg-[#F3F3F1] border border-[#E5E5E5] shadow-xs">
-                        <IconeMeteo
-                          icon={meteo.icon}
-                          conditions={meteo.conditions}
-                          className="h-14 w-14 sm:h-16 sm:w-16 drop-shadow-xs"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-baseline gap-3">
-                          <span className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#23272B]">
-                            {meteo.tempActuelle}°
-                          </span>
-                          <span className="text-lg sm:text-xl font-medium text-[#777777] capitalize">
-                            {meteo.conditions}
-                          </span>
-                        </div>
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F8F9FA] border border-[#E5E5E5] px-3 py-1 text-[#23272B]">
-                            <Thermometer className="h-3.5 w-3.5 text-amber-500" />
-                            Max <strong className="text-[#23272B] font-bold">{meteo.tempMaxJour}°</strong>
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F8F9FA] border border-[#E5E5E5] px-3 py-1 text-[#777777]">
-                            <Thermometer className="h-3.5 w-3.5 text-sky-500" />
-                            Min <strong className="text-[#23272B] font-bold">{meteo.tempMinJour}°</strong>
-                          </span>
-                          {typeof meteo.cumulPluie === "number" && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 border border-sky-200 px-3 py-1 font-semibold text-[#0284C7]">
-                              <Droplets className="h-3.5 w-3.5 text-sky-500" />
-                              Cumul {texteMm(meteo.cumulPluie)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bandeau vigilance météo */}
-                  <div className="w-full lg:max-w-md">
-                    <div
-                      className={`rounded-2xl border p-5 transition-all shadow-xs ${
-                        COULEURS[meteo.alerte.niveau]
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <ShieldAlert className="h-5 w-5 shrink-0" />
-                          <span className="text-xs font-bold uppercase tracking-wider">
-                            Vigilance météo · {meteo.alerte.niveau}
-                          </span>
-                        </div>
-                        <span className="text-lg">{EMOJIS[meteo.alerte.niveau]}</span>
-                      </div>
-                      <p className="mt-2 text-sm sm:text-base font-semibold leading-snug">
-                        {meteo.alerte.motif}
+                    <div>
+                      <p className="text-4xl font-black tracking-tight text-white">
+                        {texteDegre(meteo.tempActuelle)}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-200">{meteo.conditions}</p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        Max {texteDegre(meteo.tempMaxJour)} · Min {texteDegre(meteo.tempMinJour)}
                       </p>
                     </div>
                   </div>
+                  <div className="text-right text-xs text-gray-300 space-y-1">
+                    <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#14110F] px-2.5 py-1">
+                      <Wind className="h-3.5 w-3.5 text-[#D96B27]" />
+                      <span>Rafales max : {texteKmh(rafaleMaxJour)}</span>
+                    </div>
+                    <div className="flex items-center justify-end gap-1.5 text-sky-300">
+                      <Droplets className="h-3.5 w-3.5" />
+                      <span>Cumul jour : {texteMm(meteo.cumulPluie)}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </section>
 
-            {/* ── SECTION C. PRÉVISIONS HORAIRES ───────────────────────────────── */}
-            <section aria-labelledby="previsions-horaires" className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#B85B2B]/10 text-[#B85B2B]">
-                    <Clock className="h-4 w-4" />
+                <div
+                  className={`flex items-start gap-3 rounded-xl border p-3.5 ${
+                    COULEURS[meteo.alerte.niveau]
+                  }`}
+                >
+                  <span className="text-lg leading-none" aria-hidden="true">
+                    {EMOJIS[meteo.alerte.niveau]}
                   </span>
-                  <h2 id="previsions-horaires" className="text-lg font-bold text-[#23272B] sm:text-xl">
-                    Prévisions horaires
-                  </h2>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wider">
+                      Vigilance météo · {meteo.alerte.niveau}
+                    </p>
+                    <p className="mt-0.5 text-xs opacity-90">{meteo.alerte.motif}</p>
+                  </div>
                 </div>
-                <span className="text-xs text-[#777777] hidden sm:inline font-medium">
-                  Défilement horizontal disponible
-                </span>
               </div>
 
-              {meteo.heures.length > 0 ? (
-                <div className="flex gap-3 overflow-x-auto pb-3 pt-1 scrollbar-thin snap-x snap-mandatory sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6">
-                  {meteo.heures.map((h) => (
+              {/* Carte droite : Détails météorologiques (4 Créneaux Clés) */}
+              <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-[#1E1916] p-5 shadow-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold text-white">
+                    Détails météorologiques · Créneaux clés
+                  </h2>
+                  <span className="inline-flex items-center gap-1 text-xs text-sky-300">
+                    <Droplets className="h-3.5 w-3.5" />
+                    Précipitations prévues : {texteMm(meteo.cumulPluie)}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {creneauxCles.map((c) => (
                     <div
-                      key={h.heure}
-                      className="w-[142px] shrink-0 snap-start sm:w-auto p-4 flex flex-col justify-between rounded-2xl border border-[#E5E5E5] bg-white hover:border-[#D97732]/50 hover:shadow-md transition-all shadow-xs"
+                      key={c.titre}
+                      className="rounded-xl border border-white/10 bg-[#14110F] p-3 text-center"
                     >
-                      <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-2">
-                        <span className="text-sm font-bold text-[#23272B]">{h.heure}</span>
-                        <span className="text-[10px] uppercase font-semibold text-[#777777]">
-                          {texteNature(h.nature)}
-                        </span>
-                      </div>
-                      <div className="my-3">
-                        <p className="text-2xl font-black tracking-tight text-[#23272B]">
-                          {texteDegre(h.temp)}
-                        </p>
-                      </div>
-                      <div className="space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between gap-1 text-[#777777]">
-                          <span className="flex items-center gap-1.5">
-                            <Wind className="h-3.5 w-3.5 text-teal-600" /> Vent
-                          </span>
-                          <span className="font-semibold text-[#23272B]">{texteKmh(h.vent)}</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-1 text-[#777777]">
-                          <span className="flex items-center gap-1.5">
-                            <Gauge className="h-3.5 w-3.5 text-amber-500" /> Rafales
-                          </span>
-                          <span className="font-semibold text-[#23272B]">{texteKmh(h.rafales)}</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-1 text-[#777777]">
-                          <span className="flex items-center gap-1.5">
-                            <Droplets className="h-3.5 w-3.5 text-sky-500" /> Pluie
-                          </span>
-                          <span className="font-semibold text-[#0284C7]">{texteMm(h.pluie)}</span>
-                        </div>
-                      </div>
+                      <p className="text-xs font-bold text-white">{c.titre}</p>
+                      <p className="text-[10px] text-gray-400">{c.heure}</p>
+                      <p className="mt-1.5 text-lg font-black text-amber-300">
+                        {texteDegre(c.temp)}
+                      </p>
+                      <p className="mt-1 text-[11px] text-gray-300">
+                        Vent {texteKmh(c.vent)}
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        Raf. {texteKmh(c.rafales)}
+                      </p>
+                      <p className="mt-1 text-[10px] font-semibold text-sky-300">
+                        {texteMm(c.pluie)}
+                      </p>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="rounded-2xl border border-[#E5E5E5] bg-white p-5 text-sm text-[#777777] shadow-xs">
-                  Aucune prévision horaire disponible.
-                </div>
-              )}
+              </div>
             </section>
 
-            {/* ── SECTION D. PRÉVISIONS SUR PLUSIEURS JOURS ─────────────────────── */}
-            <section aria-labelledby="previsions-jours" className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#B85B2B]/10 text-[#B85B2B]">
-                  <CalendarDays className="h-4 w-4" />
-                </span>
-                <div>
-                  <h2 id="previsions-jours" className="text-lg font-bold text-[#23272B] sm:text-xl">
-                    Prévisions sur plusieurs jours
-                  </h2>
-                  <p className="text-xs text-[#777777]">
-                    Prévisions journalières renvoyées par la source météo.
-                  </p>
-                </div>
+            {/* Bloc 2 : Prévisions sur plusieurs jours + Cumuls Pluie */}
+            <section className="rounded-2xl border border-white/10 bg-[#1E1916] p-5 shadow-lg">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-white">
+                  <CalendarDays className="h-4 w-4 text-[#D96B27]" />
+                  Prévisions sur plusieurs jours
+                </h2>
+                <span className="text-xs text-gray-400">Min / Max · Cumuls pluie</span>
               </div>
 
               {meteo.prochainsJours.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                   {meteo.prochainsJours.map((j) => (
                     <div
                       key={j.date}
-                      className="flex min-w-0 flex-col justify-between p-5 rounded-2xl border border-[#E5E5E5] bg-white hover:border-[#D97732]/50 hover:shadow-md transition-all shadow-xs"
+                      className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#14110F] p-3.5"
                     >
-                      <div>
-                        <p className="truncate text-sm font-bold text-[#23272B]">
-                          {nomJour(j.date)}
-                        </p>
-                        <div className="my-3 flex items-center justify-center rounded-2xl bg-[#F8F9FA] border border-[#E5E5E5] p-3">
-                          <IconeMeteo
-                            icon={j.icon}
-                            conditions={j.conditions}
-                            className="h-10 w-10 sm:h-12 sm:w-12 drop-shadow-xs"
-                          />
+                      <div className="flex items-center gap-3 min-w-0">
+                        <IconeMeteo
+                          icon={j.icon}
+                          conditions={j.conditions}
+                          className="h-7 w-7 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold capitalize text-white truncate">
+                            {nomJour(j.date)}
+                          </p>
+                          <p className="text-[11px] text-gray-400 truncate">{j.conditions}</p>
                         </div>
-                        <p className="truncate text-xs capitalize text-[#777777] font-medium">
-                          {j.conditions}
-                        </p>
                       </div>
-
-                      <div className="mt-4 border-t border-[#F0F0F0] pt-3">
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-lg font-bold text-[#23272B]">{j.tempMax}°</span>
-                          <span className="text-sm font-medium text-[#777777]">/ {j.tempMin}°</span>
-                        </div>
-                        <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#0284C7]">
-                          <Droplets className="h-3.5 w-3.5 shrink-0" />
-                          Pluie : {texteMm(j.cumulPluie)}
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-bold text-white">
+                          {j.tempMin}° / <span className="text-amber-300">{j.tempMax}°</span>
+                        </p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-sky-300">
+                          {j.cumulPluie !== undefined ? `${j.cumulPluie.toFixed(1)} mm` : "—"}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-[#E5E5E5] bg-white p-5 text-sm text-[#777777] shadow-xs">
-                  Aucune prévision journalière disponible.
-                </div>
+                <p className="text-sm text-gray-400">Prévisions multi-jours indisponibles.</p>
               )}
             </section>
 
-            {/* ── SECTION E. DÉTAILS MÉTÉOROLOGIQUES (MATIN / APRÈS-MIDI / PRÉCIPITATIONS) ── */}
-            <section aria-labelledby="details-meteorologiques" className="space-y-3">
-              <h2 id="details-meteorologiques" className="text-lg font-bold text-[#23272B] sm:text-xl">
-                Détails météorologiques
-              </h2>
-
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Matin */}
-                <div className="p-5 sm:p-6 rounded-2xl border border-[#E5E5E5] bg-white shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#777777]">Matin</span>
-                    <Sun className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <p className="mt-2 text-3xl font-black text-[#23272B]">
-                    {texteDegre(meteo.matin.temp)}
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#F0F0F0] pt-3 text-sm">
-                    <span className="flex items-center gap-1.5 text-[#777777]">
-                      <Wind className="h-4 w-4 text-teal-600" /> Vent
-                    </span>
-                    <span className="text-right font-semibold text-[#23272B]">
-                      {texteKmh(meteo.matin.vent)}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[#777777]">
-                      <Gauge className="h-4 w-4 text-amber-500" /> Rafales
-                    </span>
-                    <span className="text-right font-semibold text-[#23272B]">
-                      {texteKmh(meteo.matin.rafales)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Après-midi */}
-                <div className="p-5 sm:p-6 rounded-2xl border border-[#E5E5E5] bg-white shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#777777]">Après-midi</span>
-                    <CloudSun className="h-5 w-5 text-[#B85B2B]" />
-                  </div>
-                  <p className="mt-2 text-3xl font-black text-[#23272B]">
-                    {texteDegre(meteo.apresMidi.temp)}
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#F0F0F0] pt-3 text-sm">
-                    <span className="flex items-center gap-1.5 text-[#777777]">
-                      <Wind className="h-4 w-4 text-teal-600" /> Vent
-                    </span>
-                    <span className="text-right font-semibold text-[#23272B]">
-                      {texteKmh(meteo.apresMidi.vent)}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[#777777]">
-                      <Gauge className="h-4 w-4 text-amber-500" /> Rafales
-                    </span>
-                    <span className="text-right font-semibold text-[#23272B]">
-                      {texteKmh(meteo.apresMidi.rafales)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Précipitations prévues */}
-                <div className="p-5 sm:p-6 sm:col-span-2 lg:col-span-1 rounded-2xl border border-[#E5E5E5] bg-white shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#777777]">
-                      <Droplets className="h-4 w-4 text-sky-500" /> Précipitations prévues
-                    </span>
-                  </div>
-                  <div className="mt-3.5 grid grid-cols-3 gap-2">
-                    {[
-                      { label: "Aujourd’hui", valeur: meteo.cumulPluie },
-                      { label: "Demain", valeur: meteo.prochainsJours[0]?.cumulPluie },
-                      { label: "Après-demain", valeur: meteo.prochainsJours[1]?.cumulPluie },
-                    ].map(({ label, valeur }) => (
-                      <div
-                        key={label}
-                        className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-2.5 text-center"
-                      >
-                        <p className="text-[11px] font-medium text-[#777777]">{label}</p>
-                        <p className="mt-1 text-base sm:text-lg font-bold text-[#23272B]">
-                          {texteMm(valeur)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            {/* Bloc 3 : Prévisions heure par heure en ruban horizontal */}
+            <section className="rounded-2xl border border-white/10 bg-[#1E1916] p-5 shadow-lg">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Clock className="h-4 w-4 text-[#D96B27]" />
+                  Prévisions horaires
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setVoirHeuresPassees((prev) => !prev)}
+                  className="rounded-lg border border-white/10 bg-[#14110F] px-3 py-1 text-xs font-semibold text-gray-300 hover:border-[#D96B27]/50 hover:text-white transition-colors"
+                >
+                  {voirHeuresPassees ? "Masquer les heures passées" : "Voir les heures passées"}
+                </button>
               </div>
-            </section>
 
-            {/* ── SECTION F. ACTIONS MÉTIER & OUTILS OPÉRATIONNELS ──────────────── */}
-            <section aria-label="Actions métier et outils opérationnels" className="space-y-3 pt-2">
-              <h2 className="text-lg font-bold text-[#23272B] sm:text-xl">
-                Actions métier & suivi opérationnel
-              </h2>
-
-              {/* Veille intempéries & Impact chantiers */}
-              <nav aria-label="Autres vues météo et chantier" className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                <Link
-                  href="/bureau/meteo"
-                  className="group flex min-h-[76px] items-center justify-between gap-4 rounded-2xl border border-[#E5E5E5] bg-white p-4.5 text-[#23272B] transition-all hover:border-[#D97732] hover:shadow-md shadow-xs"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B] group-hover:bg-[#B85B2B] group-hover:text-white transition-colors">
-                      <ShieldAlert className="h-6 w-6" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-bold text-[#23272B]">
-                        Veille des intempéries
+              {heuresAffichees.length > 0 ? (
+                <div className="flex gap-2.5 overflow-x-auto pb-2">
+                  {heuresAffichees.map((h) => (
+                    <div
+                      key={h.heure}
+                      className="min-w-[104px] shrink-0 rounded-xl border border-white/10 bg-[#14110F] p-3 text-center"
+                    >
+                      <p className="text-xs font-bold text-white">{h.heure}</p>
+                      <div className="my-1.5 flex justify-center">
+                        <IconeMeteo icon={meteo.icon} className="h-5 w-5" />
+                      </div>
+                      <p className="text-base font-black text-amber-300">
+                        {texteDegre(h.temp)}
                       </p>
-                      <p className="text-xs text-[#777777]">
-                        Relevés officiels, arrêts chantier et attestations
+                      <p className="mt-1 text-[10px] text-gray-300">
+                        Raf. {texteKmh(h.rafales)}
+                      </p>
+                      <p className="text-[10px] font-semibold text-sky-300">
+                        {texteMm(h.pluie)}
                       </p>
                     </div>
-                  </div>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F8F9FA] text-[#B85B2B] group-hover:bg-[#D97732] group-hover:text-white transition-all">
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
-                </Link>
-
-                <Link
-                  href="/terrain/accueil"
-                  className="group flex min-h-[76px] items-center justify-between gap-4 rounded-2xl border border-[#E5E5E5] bg-white p-4.5 text-[#23272B] transition-all hover:border-[#D97732] hover:shadow-md shadow-xs"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B] group-hover:bg-[#B85B2B] group-hover:text-white transition-colors">
-                      <HardHat className="h-6 w-6" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-bold text-[#23272B]">
-                        Impact météo sur les chantiers
-                      </p>
-                      <p className="text-xs text-[#777777]">
-                        Vue opérationnelle par chantier et conditions d'accès
-                      </p>
-                    </div>
-                  </div>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F8F9FA] text-[#B85B2B] group-hover:bg-[#D97732] group-hover:text-white transition-all">
-                    <ArrowRight className="h-4 w-4" />
-                  </span>
-                </Link>
-              </nav>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">Données horaires indisponibles.</p>
+              )}
             </section>
-          </div>
-        ) : (
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777] shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-            <p className="text-base font-semibold text-[#23272B]">
-              {erreurMeteo ?? "Météo indisponible pour cette ville."}
-            </p>
-            <p className="mt-1 text-xs text-[#999999]">
-              Vérifiez l'orthographe du nom de la commune ou réessayez avec une ville voisine.
-            </p>
-          </div>
+          </>
         )}
+
+        {/* Bloc 4 : Actions métier BTP */}
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Link
+            href="/bureau/meteo"
+            className="group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1E1916] p-5 transition-all hover:border-[#D96B27]/60"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/15 text-[#D96B27]">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Veille des intempéries</h3>
+                <p className="text-xs text-gray-400">
+                  Suivi des alertes, arrêts et rapports intempéries BTP
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-[#D96B27]" />
+          </Link>
+
+          <Link
+            href="/terrain/accueil"
+            className="group flex items-center justify-between rounded-2xl border border-white/10 bg-[#1E1916] p-5 transition-all hover:border-[#D96B27]/60"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/15 text-[#D96B27]">
+                <HardHat className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  Impact météo sur les chantiers
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Consulter les chantiers actifs exposés et leurs plannings
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-[#D96B27]" />
+          </Link>
+        </section>
       </div>
     </div>
   );

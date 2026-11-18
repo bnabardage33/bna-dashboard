@@ -91,33 +91,36 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <div id="login-page" className="fixed inset-0 z-[100000] overflow-y-auto bg-[#F3F3F1] text-[#23272B] selection:bg-[#D97732]/20 selection:text-[#B85B2B]">
+    <div
+      id="login-page"
+      className="fixed inset-0 z-[100000] overflow-y-auto bg-gradient-to-b from-[#161311] via-[#1B1511] to-[#231811] text-white selection:bg-[#D96B27]/30 selection:text-amber-200"
+    >
       <main className="min-h-full w-full flex flex-col items-center justify-start md:justify-center pt-4 sm:pt-6 md:py-10 px-4">
-        {/* 1. Logo BNA XXL sur mobile, proportionné et élégant sur ordinateur */}
+        {/* 1. Logo BNA centré et proportionné sur fond sombre */}
         <div className="w-full flex justify-center mb-6 md:mb-8 mt-1 md:mt-0">
           <div className="relative w-[95%] max-w-[440px] md:max-w-[340px]">
             <Image
-              src="/logo.bna.png"
+              src="/logo-bna.png"
               alt="BNA - Bâtiment Nouvelle Aquitaine"
               width={1774}
               height={887}
               priority
-              className="w-full h-auto object-contain pointer-events-none drop-shadow-sm"
+              className="w-full h-auto object-contain pointer-events-none drop-shadow-md"
             />
           </div>
         </div>
 
-        {/* 2. Carte de connexion blanche (compacte et moderne sur ordi, confortable sur mobile) */}
-        <div className="w-[calc(100%-36px)] max-w-[440px] md:max-w-[420px] bg-white rounded-[26px] md:rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.06)] p-6 sm:p-7 md:p-8 transition-all">
+        {/* 2. Carte de connexion sombre vitrée (Dark Wood & Copper) */}
+        <div className="w-[calc(100%-36px)] max-w-[440px] md:max-w-[420px] bg-[#1E1916]/90 backdrop-blur-md border border-white/10 rounded-[26px] md:rounded-[32px] shadow-2xl p-6 sm:p-7 md:p-8 transition-all">
           {/* En-tête de la carte */}
           <div className="text-center mb-5 md:mb-6">
-            <p className="text-[14px] md:text-[13px] font-bold text-[#B85B2B] uppercase tracking-[3px] md:tracking-[3.5px] mb-1">
+            <p className="text-[14px] md:text-[13px] font-bold text-[#D96B27] uppercase tracking-[3px] md:tracking-[3.5px] mb-1">
               ESPACE PROFESSIONNEL
             </p>
-            <h1 className="text-[26px] md:text-[28px] font-bold text-[#23272B] tracking-tight mb-1 leading-tight">
+            <h1 className="text-[26px] md:text-[28px] font-bold text-white tracking-tight mb-1 leading-tight">
               Connexion BNA
             </h1>
-            <p className="text-[15px] md:text-[15px] text-[#777777] leading-snug">
+            <p className="text-[15px] md:text-[15px] text-white/60 leading-snug">
               Connectez-vous à votre espace de travail.
             </p>
           </div>
@@ -133,7 +136,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
-                className="w-full h-[64px] md:h-[52px] bg-white border border-[#D8D8D8] rounded-[16px] md:rounded-[14px] px-5 text-[17px] md:text-[15px] text-[#23272B] placeholder:text-[#999999] focus:outline-none focus:border-[#D97732] focus:ring-2 focus:ring-[#D97732]/20 transition-all"
+                className="w-full h-[64px] md:h-[52px] bg-[#14110F] border border-white/15 rounded-[16px] md:rounded-[14px] px-5 text-[17px] md:text-[15px] text-white placeholder:text-white/40 focus:outline-none focus:border-[#D96B27] focus:ring-2 focus:ring-[#D96B27]/25 transition-all"
               />
             </div>
 
@@ -146,26 +149,26 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
-                className="w-full h-[64px] md:h-[52px] bg-white border border-[#D8D8D8] rounded-[16px] md:rounded-[14px] px-5 pr-14 text-[17px] md:text-[15px] text-[#23272B] placeholder:text-[#999999] focus:outline-none focus:border-[#D97732] focus:ring-2 focus:ring-[#D97732]/20 transition-all"
+                className="w-full h-[64px] md:h-[52px] bg-[#14110F] border border-white/15 rounded-[16px] md:rounded-[14px] px-5 pr-14 text-[17px] md:text-[15px] text-white placeholder:text-white/40 focus:outline-none focus:border-[#D96B27] focus:ring-2 focus:ring-[#D96B27]/25 transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-[#777777] hover:text-[#23272B] focus:outline-none transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white/60 hover:text-white focus:outline-none transition-colors"
                 aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               >
                 {showPassword ? (
-                  <EyeOff className="w-5 h-5 text-[#777777]" />
+                  <EyeOff className="w-5 h-5" />
                 ) : (
-                  <Eye className="w-5 h-5 text-[#777777]" />
+                  <Eye className="w-5 h-5" />
                 )}
               </button>
             </div>
 
             {/* Message d'erreur */}
             {error && (
-              <div className="rounded-[14px] bg-red-50 border border-red-200 p-3 text-center">
-                <p className="text-red-600 text-[14px] font-medium">{error}</p>
+              <div className="rounded-[14px] bg-red-950/60 border border-red-500/40 p-3 text-center">
+                <p className="text-red-200 text-[14px] font-medium">{error}</p>
               </div>
             )}
 
@@ -173,7 +176,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[62px] md:h-[50px] bg-[#D97732] hover:bg-[#C26526] text-white text-[18px] md:text-[16px] font-bold rounded-[16px] md:rounded-[14px] shadow-md shadow-[#D97732]/25 focus:outline-none focus:ring-4 focus:ring-[#D97732]/30 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3 cursor-pointer"
+              className="w-full h-[62px] md:h-[50px] bg-[#D96B27] hover:bg-[#C25B1B] text-white text-[18px] md:text-[16px] font-bold rounded-[16px] md:rounded-[14px] shadow-lg shadow-[#D96B27]/25 focus:outline-none focus:ring-4 focus:ring-[#D96B27]/30 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -187,7 +190,7 @@ export default function LoginPage() {
           </form>
 
           {/* Signature en bas de carte */}
-          <p className="mt-6 md:mt-7 text-center text-[14px] md:text-[13px] font-medium text-[#8F6A4C]">
+          <p className="mt-6 md:mt-7 text-center text-[14px] md:text-[13px] font-medium text-amber-200/60">
             BNA · Bâtiment Nouvelle Aquitaine
           </p>
         </div>
