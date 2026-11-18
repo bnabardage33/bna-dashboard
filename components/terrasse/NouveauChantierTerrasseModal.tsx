@@ -186,19 +186,19 @@ export default function NouveauChantierTerrasseModal({
       aria-modal="true"
       className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white text-[#23272B] shadow-[0_25px_60px_rgba(0,0,0,0.15)]">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] text-[#F5EFEA] shadow-[0_25px_60px_rgba(0,0,0,0.15)]">
         {/* En-tête cuivré et élégant */}
-        <div className="border-b border-[#F0F0F0] bg-[#F8F9FA] px-6 py-5">
+        <div className="border-b border-white/10 bg-[#120F0D] px-6 py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
                 <Layers3 className="h-5 w-5" strokeWidth={2} />
               </span>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#B85B2B]">
+                <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#D96B27]">
                   Nouveau Projet
                 </p>
-                <h2 className="text-xl font-bold tracking-tight text-[#23272B]">
+                <h2 className="text-xl font-bold tracking-tight text-[#F5EFEA]">
                   Créer un Chantier Terrasse
                 </h2>
               </div>
@@ -206,7 +206,7 @@ export default function NouveauChantierTerrasseModal({
             <button
               type="button"
               onClick={onFermer}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#23272B]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-[#221B17] hover:text-[#F5EFEA]"
               aria-label="Fermer"
             >
               <X className="h-5 w-5" />
@@ -217,14 +217,14 @@ export default function NouveauChantierTerrasseModal({
         {/* Formulaire */}
         <form onSubmit={handleSubmit} className="space-y-5 p-6">
           {erreur && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <div className="rounded-xl border border-red-200 bg-red-500/15 p-3 text-sm text-red-300">
               {erreur}
             </div>
           )}
 
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]">
-              Nom du chantier <span className="text-[#B85B2B]">*</span>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
+              Nom du chantier <span className="text-[#D96B27]">*</span>
             </label>
             <input
               type="text"
@@ -232,14 +232,14 @@ export default function NouveauChantierTerrasseModal({
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               placeholder="Ex : Terrasse Pinède — M. Dupont"
-              className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+              className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
             />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]">
-                Client associé <span className="text-[#B85B2B]">*</span>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
+                Client associé <span className="text-[#D96B27]">*</span>
               </label>
               <div className="relative">
                 <select
@@ -247,7 +247,7 @@ export default function NouveauChantierTerrasseModal({
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   disabled={loadingClients}
-                  className="w-full appearance-none rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full appearance-none rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 >
                   {clients.length === 0 ? (
                     <option value="">Chargement des clients...</option>
@@ -264,7 +264,7 @@ export default function NouveauChantierTerrasseModal({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Adresse de réalisation
               </label>
               <div className="relative">
@@ -273,7 +273,7 @@ export default function NouveauChantierTerrasseModal({
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   placeholder="Ex : 14 rue des Pins, 33000 Bordeaux"
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white pl-4 pr-9 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] pl-4 pr-9 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 />
                 <MapPin className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-400" />
               </div>
@@ -282,7 +282,7 @@ export default function NouveauChantierTerrasseModal({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Date début prévisionnelle
               </label>
               <div className="relative">
@@ -290,14 +290,14 @@ export default function NouveauChantierTerrasseModal({
                   type="date"
                   value={dateDebut}
                   onChange={(e) => setDateDebut(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white pl-4 pr-9 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] pl-4 pr-9 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 />
                 <Calendar className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-400" />
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Date fin estimée
               </label>
               <div className="relative">
@@ -305,7 +305,7 @@ export default function NouveauChantierTerrasseModal({
                   type="date"
                   value={dateFin}
                   onChange={(e) => setDateFin(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white pl-4 pr-9 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] pl-4 pr-9 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 />
                 <Calendar className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-400" />
               </div>
@@ -313,42 +313,42 @@ export default function NouveauChantierTerrasseModal({
           </div>
 
           {/* Spécificités Terrasse initiales */}
-          <div className="rounded-2xl border border-[#E5E5E5] bg-[#FAFAFA] p-4 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#B85B2B]">
+          <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#D96B27]">
               Configuration Initiale Terrasse (DTU 51.4)
             </p>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#777777]">Longueur (m)</label>
+                <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Longueur (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0.5"
                   value={longueurM}
                   onChange={(e) => setLongueurM(e.target.value)}
-                  className="w-full rounded-lg border border-[#E5E5E5] bg-white px-3 py-1.5 text-sm font-bold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-[#1B1511] px-3 py-1.5 text-sm font-bold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#777777]">Largeur (m)</label>
+                <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Largeur (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   min="0.5"
                   value={largeurM}
                   onChange={(e) => setLargeurM(e.target.value)}
-                  className="w-full rounded-lg border border-[#E5E5E5] bg-white px-3 py-1.5 text-sm font-bold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-[#1B1511] px-3 py-1.5 text-sm font-bold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#777777]">Support sol</label>
+                <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Support sol</label>
                 <select
                   value={typeSol}
                   onChange={(e) => setTypeSol(e.target.value)}
-                  className="w-full rounded-lg border border-[#E5E5E5] bg-white px-2 py-1.5 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-[#1B1511] px-2 py-1.5 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 >
                   <option value="dalle_beton">Dalle béton</option>
                   <option value="sol_naturel">Terre / Gazon</option>
@@ -358,11 +358,11 @@ export default function NouveauChantierTerrasseModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#777777]">Matériau</label>
+                <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Matériau</label>
                 <select
                   value={essence}
                   onChange={(e) => setEssence(e.target.value)}
-                  className="w-full rounded-lg border border-[#E5E5E5] bg-white px-2 py-1.5 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-[#1B1511] px-2 py-1.5 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 >
                   <option value="pin_cl4">Pin Cl. 4</option>
                   <option value="douglas">Douglas</option>
@@ -373,7 +373,7 @@ export default function NouveauChantierTerrasseModal({
               </div>
             </div>
             <p className="text-[11px] text-gray-500">
-              Surface estimée : <strong className="text-[#23272B]">{(Number(longueurM) * Number(largeurM) || 0).toFixed(1)} m²</strong>. Ces paramètres seront éditables avec précision dans le module Calepinage.
+              Surface estimée : <strong className="text-[#F5EFEA]">{(Number(longueurM) * Number(largeurM) || 0).toFixed(1)} m²</strong>. Ces paramètres seront éditables avec précision dans le module Calepinage.
             </p>
           </div>
 
@@ -382,7 +382,7 @@ export default function NouveauChantierTerrasseModal({
             <button
               type="button"
               onClick={onFermer}
-              className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-semibold text-[#777777] transition-colors hover:bg-gray-50 hover:text-[#23272B]"
+              className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-semibold text-[#8E7F74] transition-colors hover:bg-[#120F0D] hover:text-[#F5EFEA]"
             >
               Annuler
             </button>
@@ -390,7 +390,7 @@ export default function NouveauChantierTerrasseModal({
             <button
               type="submit"
               disabled={creationEnCours}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#D97732] focus:outline-none focus:ring-2 focus:ring-[#B85B2B] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] focus:outline-none focus:ring-2 focus:ring-[#B85B2B] disabled:opacity-50"
             >
               {creationEnCours ? (
                 <>

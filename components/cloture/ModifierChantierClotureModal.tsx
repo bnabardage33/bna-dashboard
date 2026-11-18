@@ -63,16 +63,16 @@ export default function ModifierChantierClotureModal({
       <form
         onSubmit={enregistrer}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl bg-white border border-[#E5E5E5] shadow-2xl overflow-hidden"
+        className="w-full max-w-md rounded-2xl bg-[#1B1511] border border-white/10 shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-[#E5E5E5] p-4">
-          <h2 className="text-base font-bold text-[#23272B]">
+        <div className="flex items-center justify-between border-b border-white/10 p-4">
+          <h2 className="text-base font-bold text-[#F5EFEA]">
             Modifier le chantier Clôture
           </h2>
           <button
             type="button"
             onClick={onFermer}
-            className="rounded-lg p-1 text-[#888888] hover:text-[#23272B]"
+            className="rounded-lg p-1 text-[#8E7F74] hover:text-[#F5EFEA]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -80,29 +80,29 @@ export default function ModifierChantierClotureModal({
 
         <div className="p-4 space-y-3 text-xs">
           <div>
-            <label className="font-semibold text-[#555555]">Nom du chantier</label>
+            <label className="font-semibold text-[#B8A99E]">Nom du chantier</label>
             <input
               required
               value={nom}
               onChange={(e) => setNom(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+              className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
             />
           </div>
           <div>
-            <label className="font-semibold text-[#555555]">Adresse</label>
+            <label className="font-semibold text-[#B8A99E]">Adresse</label>
             <input
               value={adresse}
               onChange={(e) => setAdresse(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+              className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-semibold text-[#555555]">Statut</label>
+              <label className="font-semibold text-[#B8A99E]">Statut</label>
               <select
                 value={statut}
                 onChange={(e) => setStatut(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               >
                 <option value="prevu">Prévu</option>
                 <option value="en_cours">En cours</option>
@@ -110,29 +110,29 @@ export default function ModifierChantierClotureModal({
               </select>
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">Date début</label>
+              <label className="font-semibold text-[#B8A99E]">Date début</label>
               <input
                 type="date"
                 value={dateDebut}
                 onChange={(e) => setDateDebut(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-[#E5E5E5] p-4">
+        <div className="flex justify-end gap-2 border-t border-white/10 p-4">
           <button
             type="button"
             onClick={onFermer}
-            className="rounded-xl border border-[#E5E5E5] px-4 py-2 text-xs font-semibold text-[#555555]"
+            className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-[#B8A99E]"
           >
             Annuler
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white"
+            className="rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white"
           >
             {saving ? "Enregistrement..." : "Enregistrer"}
           </button>

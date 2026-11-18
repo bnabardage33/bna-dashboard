@@ -119,16 +119,16 @@ function getMetierStyle(metier?: string | null) {
       label: "Terrasse",
       barBg: "bg-amber-600",
       barBorder: "border-amber-700",
-      badge: "border-amber-200 bg-amber-50 text-amber-800",
+      badge: "border-amber-200 bg-amber-500/15 text-amber-300",
       hubHref: (id: string) => `/terrain/terrasse/${id}`,
     };
   }
   if (m === "cloture") {
     return {
       label: "Clôture",
-      barBg: "bg-[#B85B2B]",
+      barBg: "bg-[#D96B27]",
       barBorder: "border-[#96461E]",
-      badge: "border-[#B85B2B]/30 bg-[#B85B2B]/10 text-[#B85B2B]",
+      badge: "border-[#D96B27]/30 bg-[#D96B27]/10 text-[#D96B27]",
       hubHref: (id: string) => `/terrain/cloture/${id}`,
     };
   }
@@ -136,7 +136,7 @@ function getMetierStyle(metier?: string | null) {
     label: "Bardage",
     barBg: "bg-slate-700",
     barBorder: "border-slate-800",
-    badge: "border-blue-200 bg-blue-50 text-blue-700",
+    badge: "border-blue-200 bg-sky-500/15 text-sky-300",
     hubHref: (id: string) => `/terrain/chantier/${id}`,
   };
 }
@@ -340,16 +340,16 @@ export default function PlanningChantiers({
   return (
     <div className="space-y-4">
       {/* 1. Barre de contrôles supérieure (design clair BnaPlanningView) */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1 text-xs font-bold">
+          <div className="inline-flex rounded-xl border border-white/10 bg-[#120F0D] p-1 text-xs font-bold">
             <button
               type="button"
               onClick={() => setViewMode("semaine")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
                 viewMode === "semaine"
-                  ? "bg-white text-[#B85B2B] shadow-xs"
-                  : "text-[#666666] hover:text-[#23272B]"
+                  ? "bg-[#1B1511] text-[#D96B27] shadow-xs"
+                  : "text-[#B8A99E] hover:text-[#F5EFEA]"
               }`}
             >
               <Calendar className="h-3.5 w-3.5" /> Semaine
@@ -359,15 +359,15 @@ export default function PlanningChantiers({
               onClick={() => setViewMode("mois")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all ${
                 viewMode === "mois"
-                  ? "bg-white text-[#B85B2B] shadow-xs"
-                  : "text-[#666666] hover:text-[#23272B]"
+                  ? "bg-[#1B1511] text-[#D96B27] shadow-xs"
+                  : "text-[#B8A99E] hover:text-[#F5EFEA]"
               }`}
             >
               <CalendarDays className="h-3.5 w-3.5" /> Mois
             </button>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-3 py-1 text-xs font-bold text-[#B85B2B]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D96B27]/20 bg-[#D96B27]/10 px-3 py-1 text-xs font-bold text-[#D96B27]">
             <HardHat className="h-3.5 w-3.5" />
             {chantiersSurPeriode.length} chantier(s) sur la période
           </span>
@@ -384,7 +384,7 @@ export default function PlanningChantiers({
                 return n;
               })
             }
-            className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-2 text-[#23272B] hover:border-[#B85B2B]/40"
+            className="rounded-xl border border-white/10 bg-[#120F0D] p-2 text-[#F5EFEA] hover:border-[#D96B27]/40"
             aria-label="Période précédente"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -392,11 +392,11 @@ export default function PlanningChantiers({
           <button
             type="button"
             onClick={() => setCurrentDate(new Date())}
-            className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-bold text-[#23272B] hover:border-[#B85B2B]/40"
+            className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs font-bold text-[#F5EFEA] hover:border-[#D96B27]/40"
           >
             Aujourd&apos;hui
           </button>
-          <span className="min-w-[160px] text-center text-xs sm:text-sm font-extrabold text-[#23272B]">
+          <span className="min-w-[160px] text-center text-xs sm:text-sm font-extrabold text-[#F5EFEA]">
             {periodLabel}
           </span>
           <button
@@ -409,7 +409,7 @@ export default function PlanningChantiers({
                 return n;
               })
             }
-            className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-2 text-[#23272B] hover:border-[#B85B2B]/40"
+            className="rounded-xl border border-white/10 bg-[#120F0D] p-2 text-[#F5EFEA] hover:border-[#D96B27]/40"
             aria-label="Période suivante"
           >
             <ChevronRight className="h-4 w-4" />
@@ -418,11 +418,11 @@ export default function PlanningChantiers({
       </div>
 
       {/* 2. Grille temporelle claire */}
-      <div className="overflow-x-auto rounded-2xl border border-[#E5E5E5] bg-white shadow-xs">
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#1B1511] shadow-xs">
         <div className="min-w-max">
           {/* En-tête des jours */}
-          <div className="flex border-b border-[#E5E5E5] bg-[#F8F9FA]">
-            <div className="w-36 sm:w-44 shrink-0 sticky left-0 z-20 bg-[#F8F9FA] border-r border-[#E5E5E5] px-3 py-2.5 flex items-center text-[11px] font-extrabold uppercase tracking-wider text-[#666666]">
+          <div className="flex border-b border-white/10 bg-[#120F0D]">
+            <div className="w-36 sm:w-44 shrink-0 sticky left-0 z-20 bg-[#120F0D] border-r border-white/10 px-3 py-2.5 flex items-center text-[11px] font-extrabold uppercase tracking-wider text-[#B8A99E]">
               Chantiers
             </div>
             <div
@@ -439,22 +439,22 @@ export default function PlanningChantiers({
                     key={idx}
                     className={`flex flex-col items-center justify-center py-2 px-1 border-r border-[#EFEFEF] ${colMinW} ${
                       isToday
-                        ? "bg-[#B85B2B]/10"
+                        ? "bg-[#D96B27]/10"
                         : isWeekend
-                          ? "bg-slate-100/70"
-                          : "bg-white"
+                          ? "bg-[#221B17]/70"
+                          : "bg-[#1B1511]"
                     }`}
                   >
                     <span
                       className={`text-[10px] font-bold uppercase ${
-                        isToday ? "text-[#B85B2B]" : "text-[#888888]"
+                        isToday ? "text-[#D96B27]" : "text-[#8E7F74]"
                       }`}
                     >
                       {viewMode === "mois" ? JOURS_LETTRES[dayIdx] : JOURS_COURTS[dayIdx]}
                     </span>
                     <span
                       className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-extrabold ${
-                        isToday ? "bg-[#B85B2B] text-white" : "text-[#23272B]"
+                        isToday ? "bg-[#D96B27] text-white" : "text-[#F5EFEA]"
                       }`}
                     >
                       {d.getDate()}
@@ -467,11 +467,11 @@ export default function PlanningChantiers({
 
           {/* Lignes de chantiers */}
           {chantiersSurPeriode.length === 0 ? (
-            <div className="p-8 text-center text-xs text-[#777777] italic">
+            <div className="p-8 text-center text-xs text-[#8E7F74] italic">
               Aucun chantier planifié sur cette période. Naviguez ou définissez des dates sur vos chantiers.
             </div>
           ) : (
-            <div className="divide-y divide-[#F0F0F0]">
+            <div className="divide-y divide-white/10">
               {chantiersSurPeriode.map(
                 ({
                   chantier: ch,
@@ -489,9 +489,9 @@ export default function PlanningChantiers({
                   const nomClient = ch.client_societe || ch.client_nom || "Client";
 
                   return (
-                    <div key={ch.id} className="flex items-center hover:bg-[#F8F9FA]/60">
-                      <div className="w-36 sm:w-44 shrink-0 sticky left-0 z-10 bg-white border-r border-[#E5E5E5] px-3 py-3">
-                        <p className="text-xs font-bold text-[#23272B] truncate">
+                    <div key={ch.id} className="flex items-center hover:bg-[#120F0D]/60">
+                      <div className="w-36 sm:w-44 shrink-0 sticky left-0 z-10 bg-[#1B1511] border-r border-white/10 px-3 py-3">
+                        <p className="text-xs font-bold text-[#F5EFEA] truncate">
                           {ch.nom || nomClient}
                         </p>
                         <span
@@ -553,8 +553,8 @@ export default function PlanningChantiers({
           )}
 
           {chantiersSansDates.length > 0 && (
-            <div className="border-t border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2.5 flex flex-wrap items-center gap-2 text-xs text-[#666666]">
-              <span className="font-bold text-[#23272B]">Sans dates :</span>
+            <div className="border-t border-white/10 bg-[#120F0D] px-4 py-2.5 flex flex-wrap items-center gap-2 text-xs text-[#B8A99E]">
+              <span className="font-bold text-[#F5EFEA]">Sans dates :</span>
               {chantiersSansDates.map((c) => (
                 <button
                   key={c.id}
@@ -565,7 +565,7 @@ export default function PlanningChantiers({
                     setEditDebut(t);
                     setEditFin(t);
                   }}
-                  className="rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 font-semibold text-[#23272B] hover:border-[#B85B2B]"
+                  className="rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1 font-semibold text-[#F5EFEA] hover:border-[#D96B27]"
                 >
                   + {c.nom || c.client_nom || "Chantier"}
                 </button>
@@ -583,7 +583,7 @@ export default function PlanningChantiers({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-2xl space-y-4"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1B1511] p-5 shadow-2xl space-y-4"
           >
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -594,17 +594,17 @@ export default function PlanningChantiers({
                 >
                   {getMetierStyle(ficheRapide.metier).label}
                 </span>
-                <h3 className="mt-1 text-base font-bold text-[#23272B]">
+                <h3 className="mt-1 text-base font-bold text-[#F5EFEA]">
                   {ficheRapide.nom || "Chantier"}
                 </h3>
-                <p className="text-xs text-[#777777]">
+                <p className="text-xs text-[#8E7F74]">
                   {ficheRapide.client_societe || ficheRapide.client_nom || "Client"}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setFicheRapide(null)}
-                className="rounded-lg p-1 text-[#888888] hover:text-[#23272B]"
+                className="rounded-lg p-1 text-[#8E7F74] hover:text-[#F5EFEA]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -612,29 +612,29 @@ export default function PlanningChantiers({
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="font-semibold text-[#555555]">Date début</label>
+                <label className="font-semibold text-[#B8A99E]">Date début</label>
                 <input
                   type="date"
                   value={editDebut}
                   onChange={(e) => setEditDebut(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#555555]">Date fin</label>
+                <label className="font-semibold text-[#B8A99E]">Date fin</label>
                 <input
                   type="date"
                   value={editFin}
                   onChange={(e) => setEditFin(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
                 />
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#F0F0F0]">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
               <Link
                 href={getMetierStyle(ficheRapide.metier).hubHref(ficheRapide.id)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#23272B] hover:bg-[#B85B2B] px-3.5 py-2 text-xs font-bold text-white transition-all"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#23272B] hover:bg-[#D96B27] px-3.5 py-2 text-xs font-bold text-white transition-all"
               >
                 <span>Ouvrir Hub</span>
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -647,7 +647,7 @@ export default function PlanningChantiers({
                   onUpdateDates(ficheRapide.id, editDebut, editFin || editDebut);
                   setFicheRapide(null);
                 }}
-                className="rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 text-xs font-bold text-white"
+                className="rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2 text-xs font-bold text-white"
               >
                 Enregistrer les dates
               </button>

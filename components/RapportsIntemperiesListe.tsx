@@ -66,42 +66,42 @@ const VIGILANCE_CARTE_STYLE: Record<
 > = {
   vert: {
     borderLeft: "border-l-emerald-500",
-    badgeBg: "bg-emerald-50",
-    badgeText: "text-emerald-800",
+    badgeBg: "bg-emerald-500/15",
+    badgeText: "text-emerald-300",
     badgeBorder: "border-emerald-200",
   },
   jaune: {
     borderLeft: "border-l-amber-400",
-    badgeBg: "bg-amber-50",
+    badgeBg: "bg-amber-500/15",
     badgeText: "text-amber-900",
     badgeBorder: "border-amber-200",
   },
   orange: {
     borderLeft: "border-l-orange-500",
-    badgeBg: "bg-orange-50",
+    badgeBg: "bg-[#D96B27]/15",
     badgeText: "text-orange-900",
     badgeBorder: "border-orange-200",
   },
   rouge: {
     borderLeft: "border-l-red-500",
-    badgeBg: "bg-red-50",
+    badgeBg: "bg-red-500/15",
     badgeText: "text-red-900",
     badgeBorder: "border-red-200",
   },
   indisponible: {
     borderLeft: "border-l-slate-300",
-    badgeBg: "bg-slate-50",
-    badgeText: "text-slate-700",
-    badgeBorder: "border-slate-200",
+    badgeBg: "bg-[#120F0D]",
+    badgeText: "text-[#B8A99E]",
+    badgeBorder: "border-white/10",
   },
 };
 
 const COULEUR_BORDURE_CLAIR: Record<string, string> = {
-  vert: "border-emerald-300/80 hover:border-emerald-500 bg-white shadow-2xs hover:shadow-xs",
-  jaune: "border-amber-300/80 hover:border-amber-500 bg-white shadow-2xs hover:shadow-xs",
-  orange: "border-orange-300/80 hover:border-orange-500 bg-white shadow-2xs hover:shadow-xs",
-  rouge: "border-red-300/80 hover:border-red-500 bg-white shadow-2xs hover:shadow-xs",
-  indisponible: "border-[#E5E5E5] hover:border-[#CCCCCC] bg-white shadow-2xs hover:shadow-xs",
+  vert: "border-emerald-300/80 hover:border-emerald-500 bg-[#1B1511] shadow-2xs hover:shadow-xs",
+  jaune: "border-amber-300/80 hover:border-amber-500 bg-[#1B1511] shadow-2xs hover:shadow-xs",
+  orange: "border-orange-300/80 hover:border-orange-500 bg-[#1B1511] shadow-2xs hover:shadow-xs",
+  rouge: "border-red-300/80 hover:border-red-500 bg-[#1B1511] shadow-2xs hover:shadow-xs",
+  indisponible: "border-white/10 hover:border-[#CCCCCC] bg-[#1B1511] shadow-2xs hover:shadow-xs",
 };
 
 const LABEL_VIGILANCE: Record<string, string> = {
@@ -253,13 +253,13 @@ export default function RapportsIntemperiesListe({
   return (
     <div className="space-y-3">
       {/* En-tête */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div className="flex items-center gap-2.5">
           <p
             className={
               estClair
-                ? "text-xs font-bold uppercase tracking-wider text-[#23272B]"
-                : "text-xs font-semibold uppercase tracking-wide text-slate-400"
+                ? "text-xs font-bold uppercase tracking-wider text-[#F5EFEA]"
+                : "text-xs font-semibold uppercase tracking-wide text-[#8E7F74]"
             }
           >
             Rapports intempéries ({rapports.length})
@@ -269,7 +269,7 @@ export default function RapportsIntemperiesListe({
             <span
               className={
                 estClair
-                  ? "rounded-full bg-[#B85B2B]/10 border border-[#B85B2B]/20 px-2.5 py-0.5 text-xs font-bold text-[#B85B2B]"
+                  ? "rounded-full bg-[#D96B27]/10 border border-[#D96B27]/20 px-2.5 py-0.5 text-xs font-bold text-[#D96B27]"
                   : "rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-400"
               }
             >
@@ -279,7 +279,7 @@ export default function RapportsIntemperiesListe({
             <span
               className={
                 estClair
-                  ? "rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"
+                  ? "rounded-full bg-emerald-500/15 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold text-emerald-300"
                   : "rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400"
               }
             >
@@ -294,7 +294,7 @@ export default function RapportsIntemperiesListe({
           disabled={generationEnCours}
           className={
             estClair
-              ? "flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#a04e24] px-3.5 py-2 text-xs font-bold text-white transition-all active:scale-[0.98] shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+              ? "flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#a04e24] px-3.5 py-2 text-xs font-bold text-white transition-all active:scale-[0.98] shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
               : "flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           }
         >
@@ -311,8 +311,8 @@ export default function RapportsIntemperiesListe({
             estClair
               ? `rounded-xl p-3 text-xs font-semibold ${
                   messageFeedback.startsWith("✓")
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
-                    : "border border-red-200 bg-red-50 text-red-900"
+                    ? "border border-emerald-200 bg-emerald-500/15 text-emerald-900"
+                    : "border border-red-200 bg-red-500/15 text-red-900"
                 }`
               : `rounded-lg p-2.5 text-xs font-medium ${
                   messageFeedback.startsWith("✓")
@@ -330,11 +330,11 @@ export default function RapportsIntemperiesListe({
         <div
           className={
             estClair
-              ? "rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-6 text-center"
-              : "rounded-lg border border-slate-700 bg-slate-900/50 p-4"
+              ? "rounded-2xl border border-white/10 bg-[#120F0D] p-6 text-center"
+              : "rounded-lg border border-white/15 bg-slate-900/50 p-4"
           }
         >
-          <p className={estClair ? "text-xs font-medium text-[#777777]" : "text-sm text-slate-400"}>
+          <p className={estClair ? "text-xs font-medium text-[#8E7F74]" : "text-sm text-[#8E7F74]"}>
             Chargement des rapports d&apos;intempéries…
           </p>
         </div>
@@ -343,12 +343,12 @@ export default function RapportsIntemperiesListe({
         <div
           className={
             estClair
-              ? "rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-6 text-xs text-[#777777] leading-relaxed text-center sm:text-left"
-              : "rounded-lg border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-400"
+              ? "rounded-2xl border border-white/10 bg-[#120F0D] p-6 text-xs text-[#8E7F74] leading-relaxed text-center sm:text-left"
+              : "rounded-lg border border-white/15 bg-slate-900/50 p-4 text-sm text-[#8E7F74]"
           }
         >
           Aucun rapport pour ce chantier. Cliquez sur{" "}
-          <strong className={estClair ? "text-[#23272B] font-bold" : "text-slate-200"}>
+          <strong className={estClair ? "text-[#F5EFEA] font-bold" : "text-slate-200"}>
             « Générer le rapport du jour »
           </strong>{" "}
           pour analyser les conditions météo et créer le document officiel.
@@ -367,7 +367,7 @@ export default function RapportsIntemperiesListe({
                   key={r.id}
                   href={`/rapports-intemperies/${r.id}`}
                   className={`block rounded-lg border bg-slate-900/50 p-3 transition-colors hover:bg-slate-800 ${
-                    COULEUR_BORDURE[r.vigilance_officielle] ?? "border-slate-700"
+                    COULEUR_BORDURE[r.vigilance_officielle] ?? "border-white/15"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -385,24 +385,24 @@ export default function RapportsIntemperiesListe({
                           À valider
                         </span>
                       )}
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-[#8E7F74]">
                         {new Date(r.cree_le).toLocaleDateString("fr-FR")}
                       </span>
                     </div>
                   </div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     <p className="text-xs font-medium text-slate-300">{labelStatut(r)}</p>
-                    <span className="text-slate-700">·</span>
-                    <p className="text-xs text-slate-500">{labelVigilance(r.vigilance_officielle)}</p>
+                    <span className="text-[#B8A99E]">·</span>
+                    <p className="text-xs text-[#8E7F74]">{labelVigilance(r.vigilance_officielle)}</p>
                     {labelRisqueTechnique(r.risque_technique_niveau) && (
                       <>
-                        <span className="text-slate-700">·</span>
-                        <p className="text-xs text-slate-500">{labelRisqueTechnique(r.risque_technique_niveau)}</p>
+                        <span className="text-[#B8A99E]">·</span>
+                        <p className="text-xs text-[#8E7F74]">{labelRisqueTechnique(r.risque_technique_niveau)}</p>
                       </>
                     )}
                   </div>
-                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-400">{r.motif}</p>
-                  <div className="mt-2 flex items-center justify-between border-t border-slate-800 pt-2 text-2xs text-slate-600">
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#8E7F74]">{r.motif}</p>
+                  <div className="mt-2 flex items-center justify-between border-t border-slate-800 pt-2 text-2xs text-[#B8A99E]">
                     <span>{r.cree_par === "auto" ? "⚡ Généré automatiquement" : "✎ Manuel"}</span>
                     <button
                       type="button"
@@ -426,7 +426,7 @@ export default function RapportsIntemperiesListe({
               <Link
                 key={r.id}
                 href={`/rapports-intemperies/${r.id}`}
-                className={`group relative block rounded-2xl border border-[#E5E5E5] border-l-4 ${vigilanceInfo.borderLeft} bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-r-[#B85B2B]/30 hover:border-t-[#B85B2B]/30 hover:border-b-[#B85B2B]/30 transition-all duration-150`}
+                className={`group relative block rounded-2xl border border-white/10 border-l-4 ${vigilanceInfo.borderLeft} bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-r-[#B85B2B]/30 hover:border-t-[#B85B2B]/30 hover:border-b-[#B85B2B]/30 transition-all duration-150`}
               >
                 {/* Ligne principale : Numéro, Badge Vigilance, Badge Statut & Date */}
                 <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -434,7 +434,7 @@ export default function RapportsIntemperiesListe({
                     <span className="shrink-0 text-base">
                       {EMOJI_VIGILANCE[r.vigilance_officielle] ?? "⚪"}
                     </span>
-                    <span className="font-mono font-bold text-sm sm:text-base text-[#23272B] tracking-tight group-hover:text-[#B85B2B] transition-colors">
+                    <span className="font-mono font-bold text-sm sm:text-base text-[#F5EFEA] tracking-tight group-hover:text-[#D96B27] transition-colors">
                       {r.numero}
                     </span>
                     <span
@@ -446,18 +446,18 @@ export default function RapportsIntemperiesListe({
 
                   <div className="flex shrink-0 items-center gap-2">
                     {r.a_valider ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#B85B2B]/10 border border-[#B85B2B]/25 px-2.5 py-0.5 text-2xs font-bold text-[#B85B2B]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#B85B2B]" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#D96B27]/10 border border-[#D96B27]/25 px-2.5 py-0.5 text-2xs font-bold text-[#D96B27]">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#D96B27]" />
                         À valider
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-2xs font-semibold text-emerald-800">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-200 px-2.5 py-0.5 text-2xs font-semibold text-emerald-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
                         Validé
                       </span>
                     )}
 
-                    <span className="text-xs font-semibold text-[#777777] font-mono">
+                    <span className="text-xs font-semibold text-[#8E7F74] font-mono">
                       {new Date(r.cree_le).toLocaleDateString("fr-FR")}
                     </span>
                   </div>
@@ -468,8 +468,8 @@ export default function RapportsIntemperiesListe({
                   <span
                     className={`rounded-md px-2 py-0.5 text-2xs font-bold ${
                       r.jour_arrete
-                        ? "bg-red-50 text-red-800 border border-red-200"
-                        : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                        ? "bg-red-500/15 text-red-300 border border-red-200"
+                        : "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                     }`}
                   >
                     {labelStatut(r)}
@@ -478,7 +478,7 @@ export default function RapportsIntemperiesListe({
                   {labelRisqueTechnique(r.risque_technique_niveau) && (
                     <>
                       <span className="text-[#CCCCCC]">·</span>
-                      <span className="text-xs font-semibold text-[#777777]">
+                      <span className="text-xs font-semibold text-[#8E7F74]">
                         {labelRisqueTechnique(r.risque_technique_niveau)}
                       </span>
                     </>
@@ -487,18 +487,18 @@ export default function RapportsIntemperiesListe({
 
                 {/* Motif */}
                 {r.motif && (
-                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[#555555]">
+                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[#B8A99E]">
                     {r.motif}
                   </p>
                 )}
 
                 {/* Pied de carte : Origine & Action */}
-                <div className="mt-3 flex items-center justify-between border-t border-[#F0F0F0] pt-2.5 text-[11px] text-[#777777]">
+                <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5 text-[11px] text-[#8E7F74]">
                   <span>
                     {r.cree_par === "auto" ? "⚡ Relevé automatique" : "✎ Saisie manuelle"}
                   </span>
                   <div className="flex items-center gap-2.5 sm:gap-3">
-                    <span className="font-bold text-[#B85B2B] group-hover:translate-x-0.5 transition-transform">
+                    <span className="font-bold text-[#D96B27] group-hover:translate-x-0.5 transition-transform">
                       Consulter le rapport →
                     </span>
                     <button
@@ -531,7 +531,7 @@ export default function RapportsIntemperiesListe({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-[#E5E5E5] space-y-4"
+            className="w-full max-w-md rounded-2xl bg-[#1B1511] p-5 sm:p-6 shadow-2xl border border-white/10 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* En-tête modale */}
@@ -543,11 +543,11 @@ export default function RapportsIntemperiesListe({
                 <div>
                   <h3
                     id="suppression-modal-title"
-                    className="text-base font-bold text-[#23272B]"
+                    className="text-base font-bold text-[#F5EFEA]"
                   >
                     Supprimer ce rapport d'intempéries ?
                   </h3>
-                  <p className="text-xs text-[#777777]">
+                  <p className="text-xs text-[#8E7F74]">
                     Cette action est irréversible.
                   </p>
                 </div>
@@ -556,7 +556,7 @@ export default function RapportsIntemperiesListe({
                 type="button"
                 onClick={() => !suppressionEnCours && setRapportASupprimer(null)}
                 disabled={suppressionEnCours}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors disabled:opacity-50"
+                className="rounded-lg p-1.5 text-[#8E7F74] hover:bg-[#221B17] hover:text-[#B8A99E] transition-colors disabled:opacity-50"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
@@ -566,14 +566,14 @@ export default function RapportsIntemperiesListe({
             {/* Détails du rapport ciblé */}
             <div className="rounded-xl border border-slate-100 bg-[#F9F9F8] p-3.5 text-xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#777777]">Rapport :</span>
-                <span className="font-mono font-bold text-[#23272B]">
+                <span className="font-semibold text-[#8E7F74]">Rapport :</span>
+                <span className="font-mono font-bold text-[#F5EFEA]">
                   {rapportASupprimer.numero}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#777777]">Date :</span>
-                <span className="font-medium text-[#23272B]">
+                <span className="font-semibold text-[#8E7F74]">Date :</span>
+                <span className="font-medium text-[#F5EFEA]">
                   {new Date(rapportASupprimer.cree_le).toLocaleDateString("fr-FR", {
                     weekday: "long",
                     year: "numeric",
@@ -583,28 +583,28 @@ export default function RapportsIntemperiesListe({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#777777]">Vigilance :</span>
-                <span className="inline-flex items-center gap-1.5 font-semibold text-[#23272B]">
+                <span className="font-semibold text-[#8E7F74]">Vigilance :</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold text-[#F5EFEA]">
                   {EMOJI_VIGILANCE[rapportASupprimer.vigilance_officielle] ?? "⚪"}
                   {labelVigilance(rapportASupprimer.vigilance_officielle)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#777777]">Statut :</span>
+                <span className="font-semibold text-[#8E7F74]">Statut :</span>
                 <span
                   className={`rounded-md px-2 py-0.5 text-2xs font-bold ${
                     rapportASupprimer.jour_arrete
-                      ? "bg-red-50 text-red-800 border border-red-200"
-                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      ? "bg-red-500/15 text-red-300 border border-red-200"
+                      : "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                   }`}
                 >
                   {labelStatut(rapportASupprimer)}
                 </span>
               </div>
               {rapportASupprimer.motif && (
-                <div className="pt-1 border-t border-slate-200/60">
-                  <span className="font-semibold text-[#777777] block mb-0.5">Motif :</span>
-                  <p className="text-slate-600 italic line-clamp-2">
+                <div className="pt-1 border-t border-white/10/60">
+                  <span className="font-semibold text-[#8E7F74] block mb-0.5">Motif :</span>
+                  <p className="text-[#B8A99E] italic line-clamp-2">
                     {rapportASupprimer.motif}
                   </p>
                 </div>
@@ -622,7 +622,7 @@ export default function RapportsIntemperiesListe({
                 type="button"
                 onClick={() => setRapportASupprimer(null)}
                 disabled={suppressionEnCours}
-                className="h-10 px-4 rounded-xl border border-[#E5E5E5] bg-white text-xs font-semibold text-[#555555] hover:bg-slate-50 transition-colors disabled:opacity-50"
+                className="h-10 px-4 rounded-xl border border-white/10 bg-[#1B1511] text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D] transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>

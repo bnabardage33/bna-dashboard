@@ -112,27 +112,27 @@ const STATUTS = [
   {
     value: "a_commander",
     label: "À commander",
-    couleur: "border-[#E5E5E5] bg-[#F8F9FA] text-[#555555]",
+    couleur: "border-white/10 bg-[#120F0D] text-[#B8A99E]",
   },
   {
     value: "commandee",
     label: "Commandée",
-    couleur: "border-blue-200 bg-blue-50 text-blue-700",
+    couleur: "border-blue-200 bg-sky-500/15 text-sky-300",
   },
   {
     value: "partiellement_livree",
     label: "Partiellement livrée",
-    couleur: "border-amber-200 bg-amber-50 text-amber-800",
+    couleur: "border-amber-200 bg-amber-500/15 text-amber-300",
   },
   {
     value: "livree",
     label: "Livrée",
-    couleur: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    couleur: "border-emerald-200 bg-emerald-500/15 text-emerald-300",
   },
   {
     value: "annulee",
     label: "Annulée",
-    couleur: "border-red-200 bg-red-50 text-red-700",
+    couleur: "border-red-200 bg-red-500/15 text-red-300",
   },
 ];
 
@@ -140,12 +140,12 @@ const RELATIONS: { value: StatutRelation; label: string; couleurActif: string }[
   {
     value: "principal",
     label: "Principal",
-    couleurActif: "border-[#B85B2B] bg-[#B85B2B]/10 text-[#B85B2B]",
+    couleurActif: "border-[#D96B27] bg-[#D96B27]/10 text-[#D96B27]",
   },
   {
     value: "regulier",
     label: "Régulier",
-    couleurActif: "border-slate-300 bg-slate-100 text-slate-700",
+    couleurActif: "border-white/15 bg-[#221B17] text-[#B8A99E]",
   },
   {
     value: "remplacant",
@@ -670,20 +670,20 @@ function FournisseursContenu() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F3F3F1] pb-24 text-[#23272B]">
+    <div className="min-h-screen bg-[#120F0D] pb-24 text-[#F5EFEA]">
       <div className="mx-auto max-w-6xl space-y-5 px-4 pt-4 sm:px-6">
         {/* En-tête blanc BNA Pilotage BTP */}
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs">
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#B85B2B]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D96B27]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#D96B27]">
                 <Truck className="h-3.5 w-3.5" />
                 BNA Pilotage BTP · Fournisseurs & Achats
               </div>
-              <h1 className="mt-2 text-xl font-bold text-[#23272B] sm:text-2xl">
+              <h1 className="mt-2 text-xl font-bold text-[#F5EFEA] sm:text-2xl">
                 Fournisseurs, Commandes & Marges Matériaux
               </h1>
-              <p className="mt-0.5 text-sm text-[#666666]">
+              <p className="mt-0.5 text-sm text-[#B8A99E]">
                 Répertoire fournisseurs, approvisionnement Bardage / Terrasse / Clôture et suivi des marges.
               </p>
             </div>
@@ -691,15 +691,15 @@ function FournisseursContenu() {
               <button
                 type="button"
                 onClick={() => setModalFournisseur(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2.5 text-xs font-bold text-[#23272B] transition-colors hover:bg-white"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] px-4 py-2.5 text-xs font-bold text-[#F5EFEA] transition-colors hover:bg-[#221B17]"
               >
-                <Plus className="h-4 w-4 text-[#B85B2B]" />
+                <Plus className="h-4 w-4 text-[#D96B27]" />
                 Nouveau fournisseur
               </button>
               <button
                 type="button"
                 onClick={() => setModalCommande(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#9E4B20]"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#E07A38]"
               >
                 <Plus className="h-4 w-4" />
                 Nouvelle commande
@@ -710,33 +710,33 @@ function FournisseursContenu() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-            <p className="text-xs font-medium text-[#777777]">Fournisseurs actifs</p>
-            <p className="mt-1 text-2xl font-bold text-[#23272B]">{kpis.fournisseursActifs}</p>
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#8E7F74]">Fournisseurs actifs</p>
+            <p className="mt-1 text-2xl font-bold text-[#F5EFEA]">{kpis.fournisseursActifs}</p>
           </div>
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-            <p className="text-xs font-medium text-[#777777]">Commandes en cours</p>
-            <p className="mt-1 text-2xl font-bold text-[#23272B]">{kpis.commandesEnCours}</p>
-            <p className="mt-0.5 text-[11px] text-[#777777]">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#8E7F74]">Commandes en cours</p>
+            <p className="mt-1 text-2xl font-bold text-[#F5EFEA]">{kpis.commandesEnCours}</p>
+            <p className="mt-0.5 text-[11px] text-[#8E7F74]">
               {kpis.livraisonsAttendues} livraison(s) attendue(s)
             </p>
           </div>
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-            <p className="text-xs font-medium text-[#777777]">Achats engagés (mois)</p>
-            <p className="mt-1 text-2xl font-bold text-[#B85B2B]">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#8E7F74]">Achats engagés (mois)</p>
+            <p className="mt-1 text-2xl font-bold text-[#D96B27]">
               {fmtEuro(kpis.achatsEngages)}
             </p>
           </div>
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-            <p className="text-xs font-medium text-[#777777]">Achats reçus (mois)</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+            <p className="text-xs font-medium text-[#8E7F74]">Achats reçus (mois)</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-300">
               {fmtEuro(kpis.achatsRecus)}
             </p>
           </div>
         </div>
 
         {/* Barre d'onglets + Filtre métier */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E5E5E5] bg-white p-3 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#1B1511] p-3 shadow-xs">
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -751,8 +751,8 @@ function FournisseursContenu() {
                 onClick={() => setTab(t.id)}
                 className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
                   tab === t.id
-                    ? "bg-[#B85B2B] text-white shadow-xs"
-                    : "border border-[#E5E5E5] bg-[#F8F9FA] text-[#555555] hover:bg-white hover:text-[#23272B]"
+                    ? "bg-[#D96B27] text-white shadow-xs"
+                    : "border border-white/10 bg-[#120F0D] text-[#B8A99E] hover:bg-[#221B17] hover:text-[#F5EFEA]"
                 }`}
               >
                 {t.label}
@@ -776,7 +776,7 @@ function FournisseursContenu() {
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                   filtreMetier === m.id
                     ? "bg-[#23272B] text-white"
-                    : "border border-[#E5E5E5] bg-white text-[#666666] hover:bg-[#F8F9FA]"
+                    : "border border-white/10 bg-[#1B1511] text-[#B8A99E] hover:bg-[#120F0D]"
                 }`}
               >
                 {m.label}
@@ -789,11 +789,11 @@ function FournisseursContenu() {
         {tab === "fournisseurs" && (
           <div className="space-y-4">
             {loading ? (
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-8 text-center text-sm text-[#8E7F74]">
                 Chargement des fournisseurs...
               </div>
             ) : fournisseursFiltres.length === 0 ? (
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-8 text-center text-sm text-[#8E7F74]">
                 Aucun fournisseur trouvé pour ce filtre.
               </div>
             ) : (
@@ -804,17 +804,17 @@ function FournisseursContenu() {
                   return (
                     <div
                       key={f.id}
-                      className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs transition-shadow hover:shadow-sm"
+                      className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs transition-shadow hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-[#B85B2B]" />
-                            <p className="font-bold text-[#23272B]">{f.nom}</p>
+                            <Building2 className="h-4 w-4 text-[#D96B27]" />
+                            <p className="font-bold text-[#F5EFEA]">{f.nom}</p>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {f.specialite && (
-                              <span className="inline-block rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-0.5 text-xs font-medium text-[#555555]">
+                              <span className="inline-block rounded-full border border-white/10 bg-[#120F0D] px-2.5 py-0.5 text-xs font-medium text-[#B8A99E]">
                                 {f.specialite}
                               </span>
                             )}
@@ -828,7 +828,7 @@ function FournisseursContenu() {
                         <button
                           type="button"
                           onClick={() => supprimerFournisseur(f)}
-                          className="rounded-lg p-1.5 text-[#999999] transition-colors hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-1.5 text-[#8E7F74] transition-colors hover:bg-red-500/15 hover:text-red-600"
                           aria-label="Supprimer le fournisseur"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -836,7 +836,7 @@ function FournisseursContenu() {
                       </div>
 
                       {f.contact && (
-                        <p className="mt-2.5 text-sm font-medium text-[#555555]">
+                        <p className="mt-2.5 text-sm font-medium text-[#B8A99E]">
                           Contact : {f.contact}
                         </p>
                       )}
@@ -844,7 +844,7 @@ function FournisseursContenu() {
                         {f.telephone && (
                           <a
                             href={`tel:${f.telephone}`}
-                            className="inline-flex items-center gap-1 font-semibold text-[#B85B2B] hover:underline"
+                            className="inline-flex items-center gap-1 font-semibold text-[#D96B27] hover:underline"
                           >
                             <Phone className="h-3.5 w-3.5" />
                             {f.telephone}
@@ -853,7 +853,7 @@ function FournisseursContenu() {
                         {f.email && (
                           <a
                             href={`mailto:${f.email}`}
-                            className="inline-flex items-center gap-1 font-medium text-[#555555] hover:text-[#23272B] hover:underline"
+                            className="inline-flex items-center gap-1 font-medium text-[#B8A99E] hover:text-[#F5EFEA] hover:underline"
                           >
                             <Mail className="h-3.5 w-3.5" />
                             {f.email}
@@ -861,11 +861,11 @@ function FournisseursContenu() {
                         )}
                       </div>
                       {f.conditions_paiement && (
-                        <p className="mt-2 text-xs text-[#777777]">
+                        <p className="mt-2 text-xs text-[#8E7F74]">
                           Paiement : {f.conditions_paiement}
                         </p>
                       )}
-                      {f.notes && <p className="mt-1 text-xs text-[#777777]">{f.notes}</p>}
+                      {f.notes && <p className="mt-1 text-xs text-[#8E7F74]">{f.notes}</p>}
                     </div>
                   );
                 })}
@@ -885,8 +885,8 @@ function FournisseursContenu() {
                   onClick={() => setFiltreCommandes(f)}
                   className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
                     filtreCommandes === f
-                      ? "bg-[#B85B2B] text-white shadow-xs"
-                      : "border border-[#E5E5E5] bg-white text-[#555555] hover:bg-[#F8F9FA]"
+                      ? "bg-[#D96B27] text-white shadow-xs"
+                      : "border border-white/10 bg-[#1B1511] text-[#B8A99E] hover:bg-[#120F0D]"
                   }`}
                 >
                   {f === "toutes" ? "Toutes les commandes" : `En retard (${nbRetards})`}
@@ -895,11 +895,11 @@ function FournisseursContenu() {
             </div>
 
             {loading ? (
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-8 text-center text-sm text-[#8E7F74]">
                 Chargement des commandes...
               </div>
             ) : commandesFiltrees.length === 0 ? (
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-8 text-center text-sm text-[#777777]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-8 text-center text-sm text-[#8E7F74]">
                 {filtreCommandes === "en_retard"
                   ? "Aucune commande en retard."
                   : "Aucune commande pour l'instant."}
@@ -927,17 +927,17 @@ function FournisseursContenu() {
                     <div
                       key={c.id}
                       id={miseEnAvant ? "commande-notification" : undefined}
-                      className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-xs ${
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-[#1B1511] p-4 shadow-xs ${
                         miseEnAvant
-                          ? "border-[#B85B2B] ring-2 ring-[#B85B2B]/25"
+                          ? "border-[#D96B27] ring-2 ring-[#B85B2B]/25"
                           : enRetard
-                            ? "border-red-300 bg-red-50/30"
-                            : "border-[#E5E5E5]"
+                            ? "border-red-300 bg-red-500/15/30"
+                            : "border-white/10"
                       }`}
                     >
                       <div className="min-w-[240px] flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-bold text-[#23272B]">{c.designation}</p>
+                          <p className="font-bold text-[#F5EFEA]">{c.designation}</p>
                           {metierBadge && (
                             <span
                               className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-bold ${metierBadge.badgeClass}`}
@@ -946,7 +946,7 @@ function FournisseursContenu() {
                             </span>
                           )}
                           {miseEnAvant && (
-                            <span className="rounded-full bg-[#B85B2B]/15 px-2 py-0.5 text-[11px] font-bold text-[#B85B2B]">
+                            <span className="rounded-full bg-[#D96B27]/15 px-2 py-0.5 text-[11px] font-bold text-[#D96B27]">
                               Ouvert depuis une notification
                             </span>
                           )}
@@ -958,8 +958,8 @@ function FournisseursContenu() {
                           )}
                         </div>
 
-                        <p className="mt-1 text-xs text-[#666666]">
-                          <span className="font-semibold text-[#23272B]">
+                        <p className="mt-1 text-xs text-[#B8A99E]">
+                          <span className="font-semibold text-[#F5EFEA]">
                             {c.fournisseurs?.nom ?? "Fournisseur non défini"}
                           </span>{" "}
                           · {c.chantiers?.nom ?? c.chantiers?.clients?.nom ?? "Sans chantier"}
@@ -967,14 +967,14 @@ function FournisseursContenu() {
                           {c.montant_ht ? ` · ${fmtEuro(c.montant_ht)} HT` : ""}
                         </p>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#666666]">
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#B8A99E]">
                           <label className="flex items-center gap-1.5">
                             <span>Commandé le :</span>
                             <input
                               type="date"
                               value={c.date_commande ?? ""}
                               onChange={(e) => definirDateCommande(c, e.target.value)}
-                              className="rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] px-2 py-0.5 text-xs text-[#23272B]"
+                              className="rounded-lg border border-white/10 bg-[#120F0D] px-2 py-0.5 text-xs text-[#F5EFEA]"
                               aria-label="Date de commande"
                             />
                           </label>
@@ -985,14 +985,14 @@ function FournisseursContenu() {
                             </span>
                           )}
                           {c.date_livraison_reelle && (
-                            <span className="font-semibold text-emerald-700">
+                            <span className="font-semibold text-emerald-300">
                               Livré le :{" "}
                               {new Date(c.date_livraison_reelle).toLocaleDateString("fr-FR")}
                             </span>
                           )}
                         </div>
                         {c.notes && (
-                          <p className="mt-1 text-xs italic text-[#777777]">
+                          <p className="mt-1 text-xs italic text-[#8E7F74]">
                             Note / BL : {c.notes}
                           </p>
                         )}
@@ -1003,7 +1003,7 @@ function FournisseursContenu() {
                           <button
                             type="button"
                             onClick={() => ouvrirModalReception(c)}
-                            className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                            className="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-100"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Réceptionner
@@ -1012,16 +1012,16 @@ function FournisseursContenu() {
                         <button
                           type="button"
                           onClick={() => setApercuCommande(c)}
-                          className="inline-flex items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:bg-white"
+                          className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs font-semibold text-[#F5EFEA] hover:bg-[#221B17]"
                           title="Voir et imprimer le bon de commande officiel"
                         >
-                          <Printer className="h-3.5 w-3.5 text-[#555555]" />
+                          <Printer className="h-3.5 w-3.5 text-[#B8A99E]" />
                           Bon PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => setCommandePourEmail(c)}
-                          className="inline-flex items-center gap-1 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3 py-1.5 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15"
+                          className="inline-flex items-center gap-1 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 px-3 py-1.5 text-xs font-bold text-[#D96B27] hover:bg-[#D96B27]/15"
                           title="Envoyer le bon de commande par email au fournisseur"
                         >
                           <Mail className="h-3.5 w-3.5" />
@@ -1042,7 +1042,7 @@ function FournisseursContenu() {
                         <button
                           type="button"
                           onClick={() => supprimerCommande(c)}
-                          className="rounded-lg p-1.5 text-[#999999] hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-1.5 text-[#8E7F74] hover:bg-red-500/15 hover:text-red-600"
                           aria-label="Supprimer la commande"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1061,38 +1061,38 @@ function FournisseursContenu() {
           <div className="space-y-4">
             {/* KPIs globaux marges matériaux */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-                <p className="text-xs font-medium text-[#777777]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#8E7F74]">
                   Ventes matériaux devisées HT
                 </p>
-                <p className="mt-1 text-xl font-bold text-[#23272B]">
+                <p className="mt-1 text-xl font-bold text-[#F5EFEA]">
                   {fmtEuro(analyseMarges.totalVentesMateriauxHt)}
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-                <p className="text-xs font-medium text-[#777777]">Achats engagés HT</p>
-                <p className="mt-1 text-xl font-bold text-[#B85B2B]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#8E7F74]">Achats engagés HT</p>
+                <p className="mt-1 text-xl font-bold text-[#D96B27]">
                   {fmtEuro(analyseMarges.totalAchatsEngagesHt)}
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-                <p className="text-xs font-medium text-[#777777]">Achats livrés HT</p>
-                <p className="mt-1 text-xl font-bold text-emerald-700">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#8E7F74]">Achats livrés HT</p>
+                <p className="mt-1 text-xl font-bold text-emerald-300">
                   {fmtEuro(analyseMarges.totalAchatsLivresHt)}
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-                <p className="text-xs font-medium text-[#777777]">
+              <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+                <p className="text-xs font-medium text-[#8E7F74]">
                   Marge brute matériaux
                 </p>
                 <p
                   className={`mt-1 text-xl font-bold ${
-                    analyseMarges.margeBruteHt >= 0 ? "text-emerald-700" : "text-red-600"
+                    analyseMarges.margeBruteHt >= 0 ? "text-emerald-300" : "text-red-600"
                   }`}
                 >
                   {fmtEuro(analyseMarges.margeBruteHt)}
                 </p>
-                <p className="mt-0.5 text-[11px] font-semibold text-[#666666]">
+                <p className="mt-0.5 text-[11px] font-semibold text-[#B8A99E]">
                   Taux : {analyseMarges.margeBrutePct.toFixed(1)} %
                 </p>
               </div>
@@ -1106,7 +1106,7 @@ function FournisseursContenu() {
                 return (
                   <div
                     key={m}
-                    className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs"
+                    className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span
@@ -1114,29 +1114,29 @@ function FournisseursContenu() {
                       >
                         {badge.label}
                       </span>
-                      <span className="text-xs text-[#777777]">
+                      <span className="text-xs text-[#8E7F74]">
                         {stats.nbChantiers} chantier(s)
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <p className="text-[#777777]">Devisé matériaux</p>
-                        <p className="font-bold text-[#23272B]">
+                        <p className="text-[#8E7F74]">Devisé matériaux</p>
+                        <p className="font-bold text-[#F5EFEA]">
                           {fmtEuro(stats.ventesMateriauxHt)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[#777777]">Achats engagés</p>
-                        <p className="font-bold text-[#B85B2B]">
+                        <p className="text-[#8E7F74]">Achats engagés</p>
+                        <p className="font-bold text-[#D96B27]">
                           {fmtEuro(stats.achatsEngagesHt)}
                         </p>
                       </div>
                     </div>
-                    <div className="mt-2 border-t border-[#E5E5E5] pt-2 flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[#555555]">Marge brute</span>
+                    <div className="mt-2 border-t border-white/10 pt-2 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-[#B8A99E]">Marge brute</span>
                       <span
                         className={`font-bold ${
-                          stats.margeBruteHt >= 0 ? "text-emerald-700" : "text-red-600"
+                          stats.margeBruteHt >= 0 ? "text-emerald-300" : "text-red-600"
                         }`}
                       >
                         {fmtEuro(stats.margeBruteHt)} ({stats.margeBrutePct.toFixed(1)} %)
@@ -1148,27 +1148,27 @@ function FournisseursContenu() {
             </div>
 
             {/* Tableau comparatif détaillé par chantier */}
-            <div className="overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white shadow-xs">
-              <div className="flex items-center justify-between border-b border-[#E5E5E5] px-4 py-3">
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#1B1511] shadow-xs">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-[#B85B2B]" />
-                  <h2 className="text-sm font-bold text-[#23272B]">
+                  <TrendingUp className="h-4 w-4 text-[#D96B27]" />
+                  <h2 className="text-sm font-bold text-[#F5EFEA]">
                     Comparatif Devis Matériaux vs Achats Fournisseurs par chantier
                   </h2>
                 </div>
-                <span className="text-xs text-[#777777]">
+                <span className="text-xs text-[#8E7F74]">
                   {lignesAnalyseFiltrees.length} chantier(s)
                 </span>
               </div>
 
               {lignesAnalyseFiltrees.length === 0 ? (
-                <p className="p-6 text-center text-sm text-[#777777]">
+                <p className="p-6 text-center text-sm text-[#8E7F74]">
                   Aucune donnée devis ou commande disponible pour ce filtre.
                 </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#F8F9FA] text-[11px] font-bold uppercase tracking-wider text-[#666666]">
+                    <thead className="bg-[#120F0D] text-[11px] font-bold uppercase tracking-wider text-[#B8A99E]">
                       <tr>
                         <th className="px-4 py-3">Chantier</th>
                         <th className="px-4 py-3">Métier</th>
@@ -1180,15 +1180,15 @@ function FournisseursContenu() {
                         <th className="px-4 py-3 text-right">Marge %</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E5E5E5]">
+                    <tbody className="divide-y divide-white/10">
                       {lignesAnalyseFiltrees.map((l) => {
                         const badge = badgeMetierConfig(l.metier);
                         return (
-                          <tr key={l.chantierId} className="hover:bg-[#F8F9FA]/70">
+                          <tr key={l.chantierId} className="hover:bg-[#120F0D]/70">
                             <td className="px-4 py-3">
-                              <p className="font-bold text-[#23272B]">{l.chantierNom}</p>
+                              <p className="font-bold text-[#F5EFEA]">{l.chantierNom}</p>
                               {l.clientNom && (
-                                <p className="text-[11px] text-[#777777]">{l.clientNom}</p>
+                                <p className="text-[11px] text-[#8E7F74]">{l.clientNom}</p>
                               )}
                             </td>
                             <td className="px-4 py-3">
@@ -1198,28 +1198,28 @@ function FournisseursContenu() {
                                 {badge.label}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-[#555555]">
+                            <td className="px-4 py-3 text-right font-semibold text-[#B8A99E]">
                               {l.nbCommandes}
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-[#23272B]">
+                            <td className="px-4 py-3 text-right font-semibold text-[#F5EFEA]">
                               {fmtEuro(l.ventesMateriauxHt)}
                             </td>
-                            <td className="px-4 py-3 text-right font-semibold text-[#B85B2B]">
+                            <td className="px-4 py-3 text-right font-semibold text-[#D96B27]">
                               {fmtEuro(l.achatsEngagesHt)}
                             </td>
-                            <td className="px-4 py-3 text-right text-emerald-700">
+                            <td className="px-4 py-3 text-right text-emerald-300">
                               {fmtEuro(l.achatsLivresHt)}
                             </td>
                             <td
                               className={`px-4 py-3 text-right font-bold ${
-                                l.margeBruteHt >= 0 ? "text-emerald-700" : "text-red-600"
+                                l.margeBruteHt >= 0 ? "text-emerald-300" : "text-red-600"
                               }`}
                             >
                               {fmtEuro(l.margeBruteHt)}
                             </td>
                             <td
                               className={`px-4 py-3 text-right font-bold ${
-                                l.margeBrutePct >= 0 ? "text-emerald-700" : "text-red-600"
+                                l.margeBrutePct >= 0 ? "text-emerald-300" : "text-red-600"
                               }`}
                             >
                               {l.margeBrutePct.toFixed(1)} %
@@ -1245,14 +1245,14 @@ function FournisseursContenu() {
           <form
             onSubmit={creerFournisseur}
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xl"
+            className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-white/10 bg-[#1B1511] shadow-xl"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-[#E5E5E5] p-4">
-              <h2 className="text-base font-bold text-[#23272B]">Nouveau fournisseur</h2>
+            <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
+              <h2 className="text-base font-bold text-[#F5EFEA]">Nouveau fournisseur</h2>
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
-                className="rounded-lg p-1.5 text-[#777777] hover:bg-[#F3F3F1] hover:text-[#23272B]"
+                className="rounded-lg p-1.5 text-[#8E7F74] hover:bg-[#120F0D] hover:text-[#F5EFEA]"
                 aria-label="Fermer"
               >
                 <X className="h-4 w-4" />
@@ -1265,12 +1265,12 @@ function FournisseursContenu() {
                 onChange={(e) => setFNom(e.target.value)}
                 placeholder="Nom de l'entreprise"
                 required
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
               />
               <select
                 value={fSpecialite}
                 onChange={(e) => setFSpecialite(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 aria-label="Spécialité"
               >
                 {SPECIALITES_FOURNISSEUR.map((s) => (
@@ -1283,7 +1283,7 @@ function FournisseursContenu() {
               <div>
                 <label
                   id="grp-statut-du-fournisseur"
-                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Statut du fournisseur
                 </label>
@@ -1300,7 +1300,7 @@ function FournisseursContenu() {
                       className={`rounded-xl border px-2 py-2 text-xs font-bold transition-colors ${
                         fStatutRelation === r.value
                           ? r.couleurActif
-                          : "border-[#E5E5E5] bg-[#F8F9FA] text-[#666666] hover:bg-white"
+                          : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:bg-[#221B17]"
                       }`}
                     >
                       {r.label}
@@ -1313,48 +1313,48 @@ function FournisseursContenu() {
                 value={fContact}
                 onChange={(e) => setFContact(e.target.value)}
                 placeholder="Nom du contact"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <input
                   value={fTel}
                   onChange={(e) => setFTel(e.target.value)}
                   placeholder="Téléphone"
-                  className="rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                  className="rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
                 />
                 <input
                   value={fEmail}
                   onChange={(e) => setFEmail(e.target.value)}
                   placeholder="Email"
-                  className="rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                  className="rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
               <input
                 value={fConditions}
                 onChange={(e) => setFConditions(e.target.value)}
                 placeholder="Conditions de paiement (ex. 30j fin de mois)"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
               />
               <textarea
                 value={fNotes}
                 onChange={(e) => setFNotes(e.target.value)}
                 placeholder="Notes et commentaires"
                 rows={2}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
 
-            <div className="mt-auto flex shrink-0 justify-end gap-3 rounded-b-2xl border-t border-[#E5E5E5] bg-[#F8F9FA] p-4">
+            <div className="mt-auto flex shrink-0 justify-end gap-3 rounded-b-2xl border-t border-white/10 bg-[#120F0D] p-4">
               <button
                 type="button"
                 onClick={() => setModalFournisseur(false)}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs font-semibold text-[#555555] hover:bg-[#F3F3F1]"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-[#B85B2B] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20]"
+                className="rounded-xl bg-[#D96B27] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#E07A38]"
               >
                 Enregistrer le fournisseur
               </button>
@@ -1372,16 +1372,16 @@ function FournisseursContenu() {
           <form
             onSubmit={creerCommande}
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-[88vh] w-full max-w-xl flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xl"
+            className="flex max-h-[88vh] w-full max-w-xl flex-col rounded-2xl border border-white/10 bg-[#1B1511] shadow-xl"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-[#E5E5E5] p-4">
-              <h2 className="text-base font-bold text-[#23272B]">
+            <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
+              <h2 className="text-base font-bold text-[#F5EFEA]">
                 {lignesMultiples ? "Commande depuis quantitatifs" : "Nouvelle commande"}
               </h2>
               <button
                 type="button"
                 onClick={fermerModalCommande}
-                className="rounded-lg p-1.5 text-[#777777] hover:bg-[#F3F3F1] hover:text-[#23272B]"
+                className="rounded-lg p-1.5 text-[#8E7F74] hover:bg-[#120F0D] hover:text-[#F5EFEA]"
                 aria-label="Fermer"
               >
                 <X className="h-4 w-4" />
@@ -1390,15 +1390,15 @@ function FournisseursContenu() {
 
             <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto p-4">
               {/* Sélection chantier + Import quantitatifs Q_appro */}
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 space-y-2">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#666666]">
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 space-y-2">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#B8A99E]">
                   Chantier & Import quantitatifs (Bardage / Terrasse / Clôture)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   <select
                     value={cChantierId}
                     onChange={(e) => setCChantierId(e.target.value)}
-                    className="flex-1 min-w-[200px] rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                    className="flex-1 min-w-[200px] rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                     aria-label="Chantier"
                   >
                     <option value="">-- Chantier (optionnel) --</option>
@@ -1412,19 +1412,19 @@ function FournisseursContenu() {
                     type="button"
                     onClick={importerQuantitatifsChantier}
                     disabled={importLoading || !cChantierId}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3 py-2 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 px-3 py-2 text-xs font-bold text-[#D96B27] hover:bg-[#D96B27]/15 disabled:opacity-50"
                   >
                     <Download className="h-3.5 w-3.5" />
                     {importLoading ? "Import..." : "Importer quantitatifs d'un chantier"}
                   </button>
                 </div>
                 {importMessage && (
-                  <p className="text-xs font-medium text-[#B85B2B]">{importMessage}</p>
+                  <p className="text-xs font-medium text-[#D96B27]">{importMessage}</p>
                 )}
               </div>
 
               {prefillInfo && (
-                <div className="rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/10 px-3.5 py-2 text-xs font-semibold text-[#B85B2B]">
+                <div className="rounded-xl border border-[#D96B27]/25 bg-[#D96B27]/10 px-3.5 py-2 text-xs font-semibold text-[#D96B27]">
                   {prefillInfo.chantierNom} — {prefillInfo.zoneNom}
                 </div>
               )}
@@ -1438,7 +1438,7 @@ function FournisseursContenu() {
                         onChange={(e) =>
                           updateLigneMultiple(i, { designation: e.target.value })
                         }
-                        className="flex-1 rounded-xl border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#23272B]"
+                        className="flex-1 rounded-xl border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-xs text-[#F5EFEA]"
                         aria-label="Désignation"
                       />
                       <input
@@ -1449,26 +1449,26 @@ function FournisseursContenu() {
                             quantite: parseFloat(e.target.value) || 0,
                           })
                         }
-                        className="w-20 rounded-xl border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#23272B]"
+                        className="w-20 rounded-xl border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-xs text-[#F5EFEA]"
                         aria-label="Quantité"
                       />
                       <input
                         value={l.unite}
                         onChange={(e) => updateLigneMultiple(i, { unite: e.target.value })}
-                        className="w-16 rounded-xl border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs text-[#23272B]"
+                        className="w-16 rounded-xl border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-xs text-[#F5EFEA]"
                         aria-label="Unité"
                       />
                       <button
                         type="button"
                         onClick={() => supprimerLigneMultiple(i)}
-                        className="rounded-lg p-1 text-[#999999] hover:text-red-600"
+                        className="rounded-lg p-1 text-[#8E7F74] hover:text-red-600"
                         aria-label="Supprimer la ligne"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
-                  <p className="text-[11px] text-[#777777]">
+                  <p className="text-[11px] text-[#8E7F74]">
                     Sélectionnez le fournisseur ci-dessous. Les lignes sans PU seront créées à chiffrer.
                   </p>
                 </div>
@@ -1478,14 +1478,14 @@ function FournisseursContenu() {
                   onChange={(e) => setCDesignation(e.target.value)}
                   placeholder="Désignation (ex. Bardage Douglas claire-voie)"
                   required
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
                 />
               )}
 
               <select
                 value={cFournisseurId}
                 onChange={(e) => setCFournisseurId(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 aria-label="Fournisseur"
               >
                 <option value="">-- Fournisseur (optionnel) --</option>
@@ -1503,20 +1503,20 @@ function FournisseursContenu() {
                     value={cQuantite}
                     onChange={(e) => setCQuantite(e.target.value)}
                     placeholder="Quantité"
-                    className="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                    className="rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                   />
                   <input
                     value={cUnite}
                     onChange={(e) => setCUnite(e.target.value)}
                     placeholder="Unité"
-                    className="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                    className="rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                   />
                   <input
                     type="number"
                     value={cMontant}
                     onChange={(e) => setCMontant(e.target.value)}
                     placeholder="Montant HT (€)"
-                    className="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                    className="rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
               )}
@@ -1524,7 +1524,7 @@ function FournisseursContenu() {
               <div>
                 <label
                   htmlFor="chp-date-livraison-prevue"
-                  className="text-[11px] font-bold uppercase tracking-wider text-[#777777]"
+                  className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Date de livraison prévue
                 </label>
@@ -1533,22 +1533,22 @@ function FournisseursContenu() {
                   type="date"
                   value={cDateLivraison}
                   onChange={(e) => setCDateLivraison(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="mt-auto flex shrink-0 justify-end gap-3 rounded-b-2xl border-t border-[#E5E5E5] bg-[#F8F9FA] p-4">
+            <div className="mt-auto flex shrink-0 justify-end gap-3 rounded-b-2xl border-t border-white/10 bg-[#120F0D] p-4">
               <button
                 type="button"
                 onClick={fermerModalCommande}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs font-semibold text-[#555555] hover:bg-[#F3F3F1]"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-[#B85B2B] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20]"
+                className="rounded-xl bg-[#D96B27] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#E07A38]"
               >
                 Enregistrer la commande
               </button>
@@ -1566,19 +1566,19 @@ function FournisseursContenu() {
           <form
             onSubmit={validerReception}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white shadow-xl"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1B1511] shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-[#E5E5E5] p-4">
+            <div className="flex items-center justify-between border-b border-white/10 p-4">
               <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-[#B85B2B]" />
-                <h2 className="text-base font-bold text-[#23272B]">
+                <Package className="h-4 w-4 text-[#D96B27]" />
+                <h2 className="text-base font-bold text-[#F5EFEA]">
                   Réceptionner la livraison
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setCommandeReception(null)}
-                className="rounded-lg p-1.5 text-[#777777] hover:bg-[#F3F3F1]"
+                className="rounded-lg p-1.5 text-[#8E7F74] hover:bg-[#120F0D]"
                 aria-label="Fermer"
               >
                 <X className="h-4 w-4" />
@@ -1586,16 +1586,16 @@ function FournisseursContenu() {
             </div>
 
             <div className="space-y-3.5 p-4">
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-xs">
-                <p className="font-bold text-[#23272B]">{commandeReception.designation}</p>
-                <p className="mt-0.5 text-[#666666]">
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-xs">
+                <p className="font-bold text-[#F5EFEA]">{commandeReception.designation}</p>
+                <p className="mt-0.5 text-[#B8A99E]">
                   {commandeReception.fournisseurs?.nom ?? "Fournisseur"} ·{" "}
                   {commandeReception.quantite ?? "—"} {commandeReception.unite ?? ""}
                 </p>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">
                   Type de réception
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1604,8 +1604,8 @@ function FournisseursContenu() {
                     onClick={() => setRStatut("livree")}
                     className={`rounded-xl border px-3 py-2 text-xs font-bold ${
                       rStatut === "livree"
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : "border-[#E5E5E5] bg-white text-[#555555]"
+                        ? "border-emerald-300 bg-emerald-500/15 text-emerald-300"
+                        : "border-white/10 bg-[#1B1511] text-[#B8A99E]"
                     }`}
                   >
                     Livraison totale
@@ -1615,8 +1615,8 @@ function FournisseursContenu() {
                     onClick={() => setRStatut("partiellement_livree")}
                     className={`rounded-xl border px-3 py-2 text-xs font-bold ${
                       rStatut === "partiellement_livree"
-                        ? "border-amber-300 bg-amber-50 text-amber-800"
-                        : "border-[#E5E5E5] bg-white text-[#555555]"
+                        ? "border-amber-300 bg-amber-500/15 text-amber-300"
+                        : "border-white/10 bg-[#1B1511] text-[#B8A99E]"
                     }`}
                   >
                     Partielle
@@ -1625,7 +1625,7 @@ function FournisseursContenu() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">
                   Date de livraison réelle
                 </label>
                 <input
@@ -1633,12 +1633,12 @@ function FournisseursContenu() {
                   value={rDateReelle}
                   onChange={(e) => setRDateReelle(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">
                   N° Bon de livraison (BL) / Réserves éventuelles
                 </label>
                 <textarea
@@ -1646,23 +1646,23 @@ function FournisseursContenu() {
                   onChange={(e) => setRNoteBl(e.target.value)}
                   rows={2}
                   placeholder="Ex. BL-2026-441 — Conforme, complet"
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 rounded-b-2xl border-t border-[#E5E5E5] bg-[#F8F9FA] p-4">
+            <div className="flex justify-end gap-3 rounded-b-2xl border-t border-white/10 bg-[#120F0D] p-4">
               <button
                 type="button"
                 onClick={() => setCommandeReception(null)}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555]"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2 text-xs font-semibold text-[#B8A99E]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={savingReception}
-                className="rounded-xl bg-[#B85B2B] px-5 py-2 text-xs font-bold text-white hover:bg-[#9E4B20] disabled:opacity-60"
+                className="rounded-xl bg-[#D96B27] px-5 py-2 text-xs font-bold text-white hover:bg-[#E07A38] disabled:opacity-60"
               >
                 {savingReception ? "Validation..." : "Valider la réception"}
               </button>
@@ -1682,7 +1682,7 @@ function FournisseursContenu() {
               <button
                 type="button"
                 onClick={() => setCommandePourEmail(apercuCommande)}
-                className="flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/40 bg-white px-4 py-2 text-xs font-bold text-[#B85B2B] hover:bg-[#F8F9FA]"
+                className="flex items-center gap-1.5 rounded-xl border border-[#D96B27]/40 bg-[#1B1511] px-4 py-2 text-xs font-bold text-[#D96B27] hover:bg-[#120F0D]"
               >
                 <Mail className="h-3.5 w-3.5" />
                 Envoyer par email
@@ -1690,7 +1690,7 @@ function FournisseursContenu() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#9E4B20]"
+                className="flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#E07A38]"
               >
                 <Printer className="h-3.5 w-3.5" />
                 Imprimer / Exporter PDF
@@ -1698,7 +1698,7 @@ function FournisseursContenu() {
               <button
                 type="button"
                 onClick={() => setApercuCommande(null)}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:bg-[#F8F9FA]"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D]"
               >
                 Fermer
               </button>
@@ -1776,7 +1776,7 @@ export default function FournisseursPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F3F3F1] p-6 text-sm text-[#777777]">
+        <div className="min-h-screen bg-[#120F0D] p-6 text-sm text-[#8E7F74]">
           Chargement du module Fournisseurs & Achats...
         </div>
       }

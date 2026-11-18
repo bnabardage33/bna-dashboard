@@ -708,7 +708,7 @@ export default function ZoneCard({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-md transition-all">
+    <div className="space-y-4 rounded-2xl border border-white/15 bg-slate-800 p-4 shadow-md transition-all">
 
       {/* ====================================================== */}
       {/* EN-TÊTE ACCORDÉON */}
@@ -719,7 +719,7 @@ export default function ZoneCard({
           <button
             type="button"
             onClick={() => setReplie(!replie)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-sky-400 hover:bg-slate-750 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-slate-900 text-sky-400 hover:bg-slate-750 transition-colors"
             aria-label={replie ? "Déplier la zone" : "Replier la zone"}
             title={replie ? "Déplier la zone" : "Replier la zone"}
           >
@@ -735,7 +735,7 @@ export default function ZoneCard({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-slate-900 border border-slate-700 px-2.5 py-1 text-xs font-bold text-emerald-400">
+          <span className="rounded-full bg-slate-900 border border-white/15 px-2.5 py-1 text-xs font-bold text-emerald-400">
             {calc.surfaceNette.toFixed(1)} m² net
           </span>
 
@@ -846,7 +846,7 @@ export default function ZoneCard({
         )}
 
         <div>
-          <label htmlFor={`chp-materiau-marge-commande-${zone.id}`} className="text-xs uppercase tracking-wide text-slate-500">
+          <label htmlFor={`chp-materiau-marge-commande-${zone.id}`} className="text-xs uppercase tracking-wide text-[#8E7F74]">
             Matériau (marge commande)
           </label>
 
@@ -875,9 +875,9 @@ export default function ZoneCard({
       {/* FAMILLE DE POSE */}
       {/* ====================================================== */}
 
-      <div className="space-y-2 border-t border-slate-700 pt-3">
+      <div className="space-y-2 border-t border-white/15 pt-3">
 
-        <label htmlFor={`chp-famille-de-pose-calcul-technique-${zone.id}`} className="text-xs uppercase tracking-wide text-slate-500">
+        <label htmlFor={`chp-famille-de-pose-calcul-technique-${zone.id}`} className="text-xs uppercase tracking-wide text-[#8E7F74]">
           Famille de pose (calcul technique)
         </label>
 
@@ -953,7 +953,7 @@ export default function ZoneCard({
               )}
             </div>
 
-            <div className="rounded-md border border-slate-700 bg-slate-900/60 p-2.5 text-3xs text-slate-400">
+            <div className="rounded-md border border-white/15 bg-slate-900/60 p-2.5 text-3xs text-[#8E7F74]">
               Configuration technique du chantier (onglet « Métrés &amp; Technique ») :
               isolant{" "}
               <span className="font-semibold text-slate-200">
@@ -979,19 +979,19 @@ export default function ZoneCard({
 
             {/* Badge de synthèse technique */}
             {pose && (
-              <div className="rounded-md border border-slate-700 bg-slate-900/80 p-2 text-3xs text-slate-300 space-y-1">
+              <div className="rounded-md border border-white/15 bg-slate-900/80 p-2 text-3xs text-slate-300 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Modèle d'équerre auto :</span>
+                  <span className="text-[#8E7F74]">Modèle d'équerre auto :</span>
                   <span className="font-semibold text-sky-400">{pose.isolant.modeleEquerreIsolco}</span>
                 </div>
                 {pose.isolant.actif && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Chevilles rosaces isolant (5/m²) :</span>
+                    <span className="text-[#8E7F74]">Chevilles rosaces isolant (5/m²) :</span>
                     <span className="font-semibold text-emerald-400">{pose.isolant.nbChevillesRosaces} chevilles à frapper</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Vis Inox chevron/équerre :</span>
+                  <span className="text-[#8E7F74]">Vis Inox chevron/équerre :</span>
                   <span className="font-semibold text-amber-400">{pose.nbVisChevronEquerre} vis (4/porteuse, 2/guide)</span>
                 </div>
               </div>
@@ -1007,16 +1007,16 @@ export default function ZoneCard({
           "hpl" && (
           <div className="space-y-4 rounded-lg border border-slate-600 bg-slate-900/60 p-3.5">
             {/* PARTIE 1 : PLAQUE BRUTE MATIÈRE PREMIÈRE */}
-            <div className="space-y-2 rounded-lg border border-slate-700 bg-slate-800/60 p-2.5">
+            <div className="space-y-2 rounded-lg border border-white/15 bg-slate-800/60 p-2.5">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
                   📦 Plaque brute (Approvisionnement / Stock)
                 </p>
-                <span className="text-2xs text-slate-400">Matière première</span>
+                <span className="text-2xs text-[#8E7F74]">Matière première</span>
               </div>
 
               <div>
-                <label htmlFor={`chp-format-standard-fabricant-${zone.id}`} className="text-3xs text-slate-400">Format standard fabricant</label>
+                <label htmlFor={`chp-format-standard-fabricant-${zone.id}`} className="text-3xs text-[#8E7F74]">Format standard fabricant</label>
                 <select id={`chp-format-standard-fabricant-${zone.id}`}
                   value={plaqueFormatValeur}
                   onChange={(e) => {
@@ -1078,7 +1078,7 @@ export default function ZoneCard({
               </div>
 
               <div>
-                <label htmlFor={`chp-trame-cible-des-modules-${zone.id}`} className="text-3xs text-slate-400">Trame cible des modules</label>
+                <label htmlFor={`chp-trame-cible-des-modules-${zone.id}`} className="text-3xs text-[#8E7F74]">Trame cible des modules</label>
                 <select id={`chp-trame-cible-des-modules-${zone.id}`}
                   value={moduleTrameValeur}
                   onChange={(e) => {
@@ -1135,7 +1135,7 @@ export default function ZoneCard({
 
               {/* SENS DE POSE */}
               <div className="pt-1">
-                <label id={`grp-orientation-de-pose-${zone.id}`} className="text-xs uppercase tracking-wide text-slate-400">
+                <label id={`grp-orientation-de-pose-${zone.id}`} className="text-xs uppercase tracking-wide text-[#8E7F74]">
                   Orientation de pose
                 </label>
                 <div role="group" aria-labelledby="grp-orientation-de-pose-${zone.id}" className="mt-1 flex gap-2">
@@ -1185,7 +1185,7 @@ export default function ZoneCard({
                     <span className="text-3xs font-bold text-slate-300 block">
                       Décor directionnel (Fil du bois imposé)
                     </span>
-                    <span className="text-4xs text-slate-400 block leading-tight">
+                    <span className="text-4xs text-[#8E7F74] block leading-tight">
                       Cocher si le décor a un sens. Interdit le pivot des plaques à 90° dans l'atelier.
                     </span>
                   </div>
@@ -1204,7 +1204,7 @@ export default function ZoneCard({
 
         <div className="flex items-center justify-between">
 
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-[#8E7F74]">
             Ouvertures
           </p>
 
@@ -1244,7 +1244,7 @@ export default function ZoneCard({
               className="flex items-center gap-2"
             >
 
-              <span className="w-16 text-xs text-slate-400">
+              <span className="w-16 text-xs text-[#8E7F74]">
                 {o.type ===
                 "fenetre"
                   ? "Fenêtre"
@@ -1289,7 +1289,7 @@ export default function ZoneCard({
                 className="w-20 rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
               />
 
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-[#8E7F74]">
                 {(
                   o.largeur *
                   o.hauteur
@@ -1398,7 +1398,7 @@ export default function ZoneCard({
 
           </div>
 
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#8E7F74]">
             {pose.joint}
           </p>
 
@@ -1419,7 +1419,7 @@ export default function ZoneCard({
                 Voir les spécifications de pose et fixations détaillées (DTU)
               </button>
               {specsPoseOuvertes && (
-                <ul className="list-inside list-disc text-xs text-slate-500 mt-2 pl-4 space-y-1">
+                <ul className="list-inside list-disc text-xs text-[#8E7F74] mt-2 pl-4 space-y-1">
                   {pose.remarques.map(
                     (r, i) => (
                       <li key={i}>
@@ -1530,7 +1530,7 @@ export default function ZoneCard({
       {zone.famille_pose ===
         "hpl" &&
         !peutCalepiner && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#8E7F74]">
             Renseigne la longueur, la
             largeur de plaque et le sens
             de pose ci-dessus pour voir le
@@ -1600,7 +1600,7 @@ export default function ZoneCard({
           onClick={() => setModalDebitOuvert(false)}
         >
           <div className="mx-auto max-w-4xl space-y-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 bg-slate-900/90 p-3 rounded-2xl print:hidden">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 bg-slate-900/90 p-3 rounded-2xl print:hidden">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -1608,7 +1608,7 @@ export default function ZoneCard({
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "nesting"
                       ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
-                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      : "border border-white/15 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   <span>📐</span> Plan de Découpe &amp; Nesting
@@ -1619,7 +1619,7 @@ export default function ZoneCard({
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "vue_3d_dtu"
                       ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
-                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      : "border border-white/15 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   <span>🧊</span> Vue 3D Éclatée DTU
@@ -1630,7 +1630,7 @@ export default function ZoneCard({
                   className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                     ongletDebit === "fiche_a4"
                       ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
-                      : "border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      : "border border-white/15 bg-slate-800 text-slate-300 hover:bg-slate-700"
                   }`}
                 >
                   <span>📑</span> Fiche Débit Atelier A4
@@ -1656,7 +1656,7 @@ export default function ZoneCard({
             </div>
 
             {ongletDebit === "vue_3d_dtu" && peutCalepiner ? (
-              <div className="rounded-2xl border border-slate-700 bg-slate-900/95 p-4 shadow-2xl">
+              <div className="rounded-2xl border border-white/15 bg-slate-900/95 p-4 shadow-2xl">
                 {(() => {
                   const poseEffective =
                     pose ??
@@ -1706,7 +1706,7 @@ export default function ZoneCard({
                 })()}
               </div>
             ) : ongletDebit === "nesting" && calepinage ? (
-              <div className="rounded-2xl border border-slate-700 bg-slate-800/90 p-4 shadow-2xl">
+              <div className="rounded-2xl border border-white/15 bg-slate-800/90 p-4 shadow-2xl">
                 <VisualiseurDebitPlaques calepinage={calepinage} titreZone={zone.nom} />
               </div>
             ) : (
@@ -1773,7 +1773,7 @@ function Field({
   const fieldId = useId();
   return (
     <div>
-      <label htmlFor={fieldId} className="text-xs uppercase tracking-wide text-slate-500">
+      <label htmlFor={fieldId} className="text-xs uppercase tracking-wide text-[#8E7F74]">
         {label}
       </label>
 
@@ -1814,7 +1814,7 @@ function Chiffre({
 }) {
   return (
     <div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-[#8E7F74]">
         {label}
       </p>
 

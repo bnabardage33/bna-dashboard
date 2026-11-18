@@ -176,17 +176,17 @@ export default function TerrasseGeneralDeplacementsModule({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Informations Générales & Organisationnelles */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-4">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <Building2 className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-lg font-bold text-[#23272B]">
+              <h3 className="text-lg font-bold text-[#F5EFEA]">
                 Informations Générales du Chantier
               </h3>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Identification, calendrier prévisionnel et accès chantier
               </p>
             </div>
@@ -197,10 +197,10 @@ export default function TerrasseGeneralDeplacementsModule({
               <button
                 type="button"
                 onClick={handleCopierCode}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F7F7F6] px-3 py-1.5 text-xs font-semibold text-[#23272B] transition-colors hover:border-[#B85B2B]"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#F7F7F6] px-3 py-1.5 text-xs font-semibold text-[#F5EFEA] transition-colors hover:border-[#D96B27]"
                 title="Copier le code portail client"
               >
-                <KeyRound className="h-3.5 w-3.5 text-[#B85B2B]" />
+                <KeyRound className="h-3.5 w-3.5 text-[#D96B27]" />
                 <span>Portail client : {codeAcces}</span>
                 {copiedCode ? (
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
@@ -215,13 +215,13 @@ export default function TerrasseGeneralDeplacementsModule({
         <form onSubmit={handleSauvegarderGeneral} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Statut du chantier
               </label>
               <select
                 value={statut}
                 onChange={(e) => setStatut(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm font-semibold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm font-semibold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               >
                 <option value="prevu">Prévu (En attente)</option>
                 <option value="en_cours">En cours de pose</option>
@@ -231,33 +231,33 @@ export default function TerrasseGeneralDeplacementsModule({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Date début prévisionnelle
               </label>
               <input
                 type="date"
                 value={dateDebut}
                 onChange={(e) => setDateDebut(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Date fin estimée
               </label>
               <input
                 type="date"
                 value={dateFin}
                 onChange={(e) => setDateFin(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Contact sur place / Téléphone
               </label>
               <input
@@ -265,12 +265,12 @@ export default function TerrasseGeneralDeplacementsModule({
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
                 placeholder="Ex : M. Dupont - 06 12 34 56 78"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#777777]">
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Consignes d&apos;accès & Terrain
               </label>
               <input
@@ -278,7 +278,7 @@ export default function TerrasseGeneralDeplacementsModule({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ex : Portail côté jardin, point d'eau disponible"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
           </div>
@@ -292,7 +292,7 @@ export default function TerrasseGeneralDeplacementsModule({
             <button
               type="submit"
               disabled={savingGeneral}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#23272B] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#B85B2B] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#23272B] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D96B27] disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
               {savingGeneral ? "Enregistrement..." : "Sauvegarder les infos générales"}
@@ -302,45 +302,45 @@ export default function TerrasseGeneralDeplacementsModule({
       </section>
 
       {/* 2. Frais de Déplacement Intégrés (FUSION OBLIGATOIRE) */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-4">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <Car className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-lg font-bold text-[#23272B]">
+              <h3 className="text-lg font-bold text-[#F5EFEA]">
                 Frais de Déplacement & Trajets Associés
               </h3>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Calcul kilométrique, barème d&apos;indemnités et liaison directe avec les devis terrasse
               </p>
             </div>
           </div>
 
           {historique.length > 0 && (
-            <div className="flex items-center gap-3 rounded-xl bg-[#F8F9FA] px-3.5 py-1.5 border border-[#E5E5E5]">
+            <div className="flex items-center gap-3 rounded-xl bg-[#120F0D] px-3.5 py-1.5 border border-white/10">
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">Total trajets</p>
-                <p className="text-sm font-bold text-[#B85B2B]">{fmtEuro(totalHT)}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">Total trajets</p>
+                <p className="text-sm font-bold text-[#D96B27]">{fmtEuro(totalHT)}</p>
               </div>
-              <div className="h-6 w-px bg-gray-200" />
+              <div className="h-6 w-px bg-white/10" />
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">Cumul distance</p>
-                <p className="text-sm font-bold text-[#23272B]">{totalKmAR.toFixed(1)} km</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">Cumul distance</p>
+                <p className="text-sm font-bold text-[#F5EFEA]">{totalKmAR.toFixed(1)} km</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Formulaire d'évaluation */}
-        <div className="mb-6 rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 sm:p-5">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#B85B2B]">
+        <div className="mb-6 rounded-2xl border border-white/10 bg-[#120F0D] p-4 sm:p-5">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#D96B27]">
             Évaluer un trajet pour ce chantier
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">
                 Départ (Dépôt / Entreprise)
               </label>
               <div className="relative">
@@ -349,14 +349,14 @@ export default function TerrasseGeneralDeplacementsModule({
                   value={adresseDepart}
                   onChange={(e) => setAdresseDepart(e.target.value)}
                   placeholder="Adresse de départ..."
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
                 <MapPin className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">
                 Arrivée (Adresse Terrasse)
               </label>
               <div className="relative">
@@ -365,7 +365,7 @@ export default function TerrasseGeneralDeplacementsModule({
                   value={adresseArrivee}
                   onChange={(e) => setAdresseArrivee(e.target.value)}
                   placeholder="Adresse du chantier terrasse..."
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
                 <MapPin className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
@@ -380,7 +380,7 @@ export default function TerrasseGeneralDeplacementsModule({
               type="button"
               onClick={handleEvaluer}
               disabled={isEvaluating || !adresseDepart.trim() || !adresseArrivee.trim()}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D97732] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] disabled:opacity-50"
             >
               <Calculator className="h-4 w-4" />
               {isEvaluating ? "Calcul de distance..." : "Calculer le trajet"}
@@ -388,19 +388,19 @@ export default function TerrasseGeneralDeplacementsModule({
           </div>
 
           {evalError && (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-500/15 p-2.5 text-xs text-red-300">
               {evalError}
             </div>
           )}
 
           {evaluation && (
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 animate-in fade-in">
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-500/15/60 p-4 animate-in fade-in">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold text-emerald-900">
                     Trajet calculé : Aller {evaluation.distanceAllerKm} km · Retour {evaluation.distanceRetourKm} km
                   </p>
-                  <p className="text-xs text-emerald-700">
+                  <p className="text-xs text-emerald-300">
                     Indemnité kilométrique : {evaluation.tarifKm} €/km · Total HT :{" "}
                     <strong>{fmtEuro(evaluation.montantHt)}</strong>
                   </p>
@@ -410,7 +410,7 @@ export default function TerrasseGeneralDeplacementsModule({
                   <button
                     type="button"
                     onClick={resetEvaluation}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                    className="rounded-lg border border-white/15 bg-[#1B1511] px-3 py-1.5 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D]"
                   >
                     Effacer
                   </button>
@@ -431,20 +431,20 @@ export default function TerrasseGeneralDeplacementsModule({
 
         {/* Historique des trajets enregistrés pour ce chantier */}
         <div>
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-[#777777]">
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
             Trajets & Déplacements Enregistrés ({historique.length})
           </h4>
 
           {isLoadingHistorique ? (
             <p className="py-4 text-center text-xs text-gray-400">Chargement des trajets...</p>
           ) : historique.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-500">
+            <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-xs text-gray-500">
               Aucun déplacement n&apos;est encore associé à ce chantier terrasse. Utilisez le formulaire ci-dessus pour évaluer et enregistrer un premier trajet.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-[#E5E5E5]">
+            <div className="overflow-hidden rounded-xl border border-white/10">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#F7F7F6] text-[#777777]">
+                <thead className="bg-[#F7F7F6] text-[#8E7F74]">
                   <tr>
                     <th className="px-4 py-2.5 font-bold">Date</th>
                     <th className="px-4 py-2.5 font-bold">Trajet Aller / Retour</th>
@@ -454,9 +454,9 @@ export default function TerrasseGeneralDeplacementsModule({
                     <th className="px-4 py-2.5 text-right font-bold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F0F0F0] text-[#23272B]">
+                <tbody className="divide-y divide-white/10 text-[#F5EFEA]">
                   {historique.map((dep) => (
-                    <tr key={dep.id} className="hover:bg-gray-50/70">
+                    <tr key={dep.id} className="hover:bg-[#120F0D]">
                       <td className="px-4 py-3 font-medium">
                         {new Date(dep.date).toLocaleDateString("fr-FR")}
                       </td>
@@ -464,19 +464,19 @@ export default function TerrasseGeneralDeplacementsModule({
                         <div className="max-w-xs truncate text-[11px] text-gray-500">
                           De : {dep.adresse_depart || "Dépôt"}
                         </div>
-                        <div className="max-w-xs truncate text-[11px] font-semibold text-[#23272B]">
+                        <div className="max-w-xs truncate text-[11px] font-semibold text-[#F5EFEA]">
                           À : {dep.adresse_arrivee || "Chantier"}
                         </div>
                       </td>
                       <td className="px-4 py-3 font-semibold">
                         {(dep.distance_aller_km + dep.distance_retour_km).toFixed(1)} km
                       </td>
-                      <td className="px-4 py-3 font-bold text-[#B85B2B]">
+                      <td className="px-4 py-3 font-bold text-[#D96B27]">
                         {fmtEuro(dep.montant_ht)}
                       </td>
                       <td className="px-4 py-3">
                         {dep.devis_id ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300 border border-emerald-200">
                             <CheckCircle className="h-3 w-3" /> Devis rattaché
                           </span>
                         ) : devisLikables.length > 0 ? (
@@ -489,7 +489,7 @@ export default function TerrasseGeneralDeplacementsModule({
                                   [dep.id]: e.target.value,
                                 }))
                               }
-                              className="rounded-lg border border-[#E5E5E5] bg-white px-2 py-1 text-[11px] text-[#23272B] focus:outline-none"
+                              className="rounded-lg border border-white/10 bg-[#1B1511] px-2 py-1 text-[11px] text-[#F5EFEA] focus:outline-none"
                             >
                               <option value="">Sélectionner devis...</option>
                               {devisLikables.map((d) => (
@@ -502,7 +502,7 @@ export default function TerrasseGeneralDeplacementsModule({
                               type="button"
                               onClick={() => handleLier(dep.id)}
                               disabled={isLinking || !selectedDevisId[dep.id]}
-                              className="rounded-lg bg-[#23272B] px-2 py-1 text-[11px] font-bold text-white hover:bg-[#B85B2B] disabled:opacity-40"
+                              className="rounded-lg bg-[#23272B] px-2 py-1 text-[11px] font-bold text-white hover:bg-[#D96B27] disabled:opacity-40"
                               title="Lier au devis"
                             >
                               <LinkIcon className="h-3 w-3" />

@@ -102,7 +102,7 @@ export default function TableauPrecipitations({
         }}
         className={
           estClair
-            ? "w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-left text-xs font-semibold text-[#23272B] hover:border-[#B85B2B]/40 hover:text-[#B85B2B] transition-colors"
+            ? "w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2.5 text-left text-xs font-semibold text-[#F5EFEA] hover:border-[#D96B27]/40 hover:text-[#D96B27] transition-colors"
             : "w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-left text-xs font-medium text-gray-300 hover:border-white/20 hover:text-white"
         }
       >
@@ -113,7 +113,7 @@ export default function TableauPrecipitations({
         <div
           className={
             estClair
-              ? "overflow-x-auto rounded-xl border border-[#E5E5E5] bg-white shadow-xs"
+              ? "overflow-x-auto rounded-xl border border-white/10 bg-[#1B1511] shadow-xs"
               : "overflow-x-auto rounded-lg border border-white/10"
           }
           // Le dépliant est cliquable en lui-même : on empêche que son
@@ -128,13 +128,13 @@ export default function TableauPrecipitations({
               <tr
                 className={
                   estClair
-                    ? "border-b border-[#E5E5E5] bg-[#F8F9FA] text-[#777777]"
+                    ? "border-b border-white/10 bg-[#120F0D] text-[#8E7F74]"
                     : "border-b border-white/10 text-gray-500"
                 }
               >
                 <th
                   className={`px-2.5 py-2 font-bold sticky left-0 ${
-                    estClair ? "bg-[#F8F9FA] text-[#23272B]" : "bg-[#0b0f1a]"
+                    estClair ? "bg-[#120F0D] text-[#F5EFEA]" : "bg-[#0b0f1a]"
                   }`}
                 >
                   Heure
@@ -152,8 +152,8 @@ export default function TableauPrecipitations({
                   className={
                     estClair
                       ? h.statut === "ecoulee"
-                        ? "border-b border-[#F0F0F0] text-[#888888] bg-gray-50/50"
-                        : "border-b border-[#F0F0F0] text-[#23272B] hover:bg-[#F8F9FA]"
+                        ? "border-b border-white/10 text-[#8E7F74] bg-[#120F0D]"
+                        : "border-b border-white/10 text-[#F5EFEA] hover:bg-[#120F0D]"
                       : h.statut === "ecoulee"
                       ? "border-b border-white/5 text-gray-500"
                       : "border-b border-white/5 text-gray-300"
@@ -163,8 +163,8 @@ export default function TableauPrecipitations({
                     className={`px-2.5 py-2 sticky left-0 whitespace-nowrap font-medium ${
                       estClair
                         ? h.statut === "ecoulee"
-                          ? "bg-gray-50/50 text-[#888888]"
-                          : "bg-white text-[#23272B]"
+                          ? "bg-[#120F0D] text-[#8E7F74]"
+                          : "bg-[#1B1511] text-[#F5EFEA]"
                         : "bg-[#0b0f1a]"
                     }`}
                   >
@@ -178,7 +178,7 @@ export default function TableauPrecipitations({
                       sinon tiret, jamais une supposition. */}
                   <td
                     className={`px-2.5 py-2 whitespace-nowrap ${
-                      estClair ? "text-[#777777]" : "text-gray-500"
+                      estClair ? "text-[#8E7F74]" : "text-gray-500"
                     }`}
                   >
                     {texteNature(h.nature)}
@@ -189,7 +189,7 @@ export default function TableauPrecipitations({
           </table>
           <p
             className={`px-2.5 py-2 text-2xs ${
-              estClair ? "text-[#777777]" : "text-gray-600"
+              estClair ? "text-[#8E7F74]" : "text-[#B8A99E]"
             }`}
           >
             Heure suivie de « · » = heure déjà écoulée. Tiret « — » = donnée non
@@ -199,7 +199,7 @@ export default function TableauPrecipitations({
           {couverture && (
             <p
               className={`px-2.5 pb-2 text-2xs ${
-                estClair ? "text-[#777777]" : "text-gray-600"
+                estClair ? "text-[#8E7F74]" : "text-[#B8A99E]"
               }`}
             >
               Période couverte : {couverture.periode}

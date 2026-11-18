@@ -228,22 +228,22 @@ function ClotureScene({ result }: { result: FenceResult }) {
 
 export default function ClotureVue3D({ result }: ClotureVue3DProps) {
   return (
-    <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+    <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h4 className="text-sm font-bold text-[#23272B]">
+          <h4 className="text-sm font-bold text-[#F5EFEA]">
             Maquette 3D interactive Clôture
           </h4>
-          <p className="text-xs text-[#777777]">
+          <p className="text-xs text-[#8E7F74]">
             Glissez pour pivoter · Molette pour zoomer · Clic droit pour déplacer
           </p>
         </div>
-        <span className="rounded-lg bg-[#B85B2B]/10 px-2.5 py-1 text-xs font-bold text-[#B85B2B]">
+        <span className="rounded-lg bg-[#D96B27]/10 px-2.5 py-1 text-xs font-bold text-[#D96B27]">
           Three.js PBR · {result.config.materiau}
         </span>
       </div>
 
-      <div className="h-[380px] w-full overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#F1F5F9]">
+      <div className="h-[380px] w-full overflow-hidden rounded-xl border border-white/10 bg-[#F1F5F9]">
         <Canvas shadows camera={{ position: [9, 6, 11], fov: 45 }}>
           <ClotureScene result={result} />
         </Canvas>

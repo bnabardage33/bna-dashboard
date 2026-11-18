@@ -34,7 +34,7 @@ import {
 const ClotureVue3D = dynamic(() => import("@/components/cloture/ClotureVue3D"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[380px] items-center justify-center rounded-2xl border border-[#E5E5E5] bg-white text-xs text-[#777777]">
+    <div className="flex h-[380px] items-center justify-center rounded-2xl border border-white/10 bg-[#1B1511] text-xs text-[#8E7F74]">
       Chargement de la maquette 3D...
     </div>
   ),
@@ -231,16 +231,16 @@ export default function ClotureCalepinageModule({
   return (
     <div className="space-y-6">
       {/* Barre d'actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B85B2B]/10 text-[#B85B2B]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D96B27]/10 text-[#D96B27]">
             <Sliders className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#23272B]">
+            <h3 className="text-sm font-bold text-[#F5EFEA]">
               Paramétrage &amp; Calepinage Clôture
             </h3>
-            <p className="text-xs text-[#777777]">
+            <p className="text-xs text-[#8E7F74]">
               {result.lineaireTotalM.toFixed(2)} ml · {result.nbTraveesTotal} travées ·{" "}
               {result.totalPoteauxComplets} poteaux · Chute {result.tauxChuteGlobalPct.toFixed(1)} %
             </p>
@@ -248,12 +248,12 @@ export default function ClotureCalepinageModule({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1 text-xs font-bold">
+          <div className="flex rounded-xl border border-white/10 bg-[#120F0D] p-1 text-xs font-bold">
             <button
               type="button"
               onClick={() => setOngletVisu("2d")}
               className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 ${
-                ongletVisu === "2d" ? "bg-white text-[#B85B2B] shadow-xs" : "text-[#666666]"
+                ongletVisu === "2d" ? "bg-[#1B1511] text-[#D96B27] shadow-xs" : "text-[#B8A99E]"
               }`}
             >
               <Layers className="h-3.5 w-3.5" /> Plan 2D
@@ -262,7 +262,7 @@ export default function ClotureCalepinageModule({
               type="button"
               onClick={() => setOngletVisu("3d")}
               className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 ${
-                ongletVisu === "3d" ? "bg-white text-[#B85B2B] shadow-xs" : "text-[#666666]"
+                ongletVisu === "3d" ? "bg-[#1B1511] text-[#D96B27] shadow-xs" : "text-[#B8A99E]"
               }`}
             >
               <Box className="h-3.5 w-3.5" /> Vue 3D
@@ -271,16 +271,16 @@ export default function ClotureCalepinageModule({
 
           <a
             href={`/api/chantiers/${chantierId}/cloture/export?format=csv`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white px-3.5 py-2 text-xs font-bold text-[#23272B]"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] px-3.5 py-2 text-xs font-bold text-[#F5EFEA]"
           >
-            <Download className="h-3.5 w-3.5 text-[#B85B2B]" /> Export Excel / CSV
+            <Download className="h-3.5 w-3.5 text-[#D96B27]" /> Export Excel / CSV
           </a>
 
           <button
             type="button"
             onClick={creerCommandeFournisseur}
             disabled={chiffrage.lignesFournitures.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 hover:bg-[#B85B2B]/15 px-3.5 py-2 text-xs font-bold text-[#B85B2B] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 hover:bg-[#D96B27]/15 px-3.5 py-2 text-xs font-bold text-[#D96B27] disabled:opacity-50"
           >
             <Package className="h-3.5 w-3.5" /> Commander matériaux
           </button>
@@ -289,7 +289,7 @@ export default function ClotureCalepinageModule({
             type="button"
             onClick={sauvegarderConfiguration}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-60"
           >
             {saveMessage ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
             {saving ? "Enregistrement..." : saveMessage || "Enregistrer"}
@@ -299,17 +299,17 @@ export default function ClotureCalepinageModule({
 
       {/* Formulaire de paramétrage */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 space-y-3 text-xs shadow-xs">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#B85B2B]">
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 space-y-3 text-xs shadow-xs">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#D96B27]">
             1. Géométrie &amp; Longueurs
           </p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="font-semibold text-[#555555]">Forme</label>
+              <label className="font-semibold text-[#B8A99E]">Forme</label>
               <select
                 value={forme}
                 onChange={(e) => setForme(e.target.value as FenceShape)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-2 text-[#F5EFEA]"
               >
                 <option value="DROITE">1 Côté (I)</option>
                 <option value="EN_L">2 Côtés (L)</option>
@@ -318,11 +318,11 @@ export default function ClotureCalepinageModule({
               </select>
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">Extrémités</label>
+              <label className="font-semibold text-[#B8A99E]">Extrémités</label>
               <select
                 value={extremites}
                 onChange={(e) => setExtremites(e.target.value as FenceEndsConfig)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-2 text-[#F5EFEA]"
               >
                 <option value="LIBRE">Libre / Boucle</option>
                 <option value="DEPART_MUR">Départ mur</option>
@@ -333,61 +333,61 @@ export default function ClotureCalepinageModule({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="font-semibold text-[#555555]">Côté A (m)</label>
+              <label className="font-semibold text-[#B8A99E]">Côté A (m)</label>
               <input
                 type="number"
                 step="0.1"
                 value={segA}
                 onChange={(e) => setSegA(parseFloat(e.target.value) || 0.5)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
               />
             </div>
             {forme !== "DROITE" && (
               <div>
-                <label className="font-semibold text-[#555555]">Côté B (m)</label>
+                <label className="font-semibold text-[#B8A99E]">Côté B (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={segB}
                   onChange={(e) => setSegB(parseFloat(e.target.value) || 0.5)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
                 />
               </div>
             )}
             {(forme === "EN_U" || forme === "4_COTES") && (
               <div>
-                <label className="font-semibold text-[#555555]">Côté C (m)</label>
+                <label className="font-semibold text-[#B8A99E]">Côté C (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={segC}
                   onChange={(e) => setSegC(parseFloat(e.target.value) || 0.5)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
                 />
               </div>
             )}
             {forme === "4_COTES" && (
               <div>
-                <label className="font-semibold text-[#555555]">Côté D (m)</label>
+                <label className="font-semibold text-[#B8A99E]">Côté D (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={segD}
                   onChange={(e) => setSegD(parseFloat(e.target.value) || 0.5)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
                 />
               </div>
             )}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 space-y-3 text-xs shadow-xs">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#B85B2B]">
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 space-y-3 text-xs shadow-xs">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#D96B27]">
             2. Matériau, Lames &amp; Pose
           </p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="font-semibold text-[#555555]">Matériau</label>
+              <label className="font-semibold text-[#B8A99E]">Matériau</label>
               <select
                 value={materiau}
                 onChange={(e) => {
@@ -396,7 +396,7 @@ export default function ClotureCalepinageModule({
                   setLongueurLameBrute(FENCE_MATERIAL_PRESETS[m].defaultBladeLengthM);
                   setHauteurLame(FENCE_MATERIAL_PRESETS[m].defaultBladeHeightM);
                 }}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-2 text-[#F5EFEA]"
               >
                 <option value="COMPOSITE">Composite</option>
                 <option value="BOIS">Bois</option>
@@ -404,11 +404,11 @@ export default function ClotureCalepinageModule({
               </select>
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">Pose</label>
+              <label className="font-semibold text-[#B8A99E]">Pose</label>
               <select
                 value={typePoseSol}
                 onChange={(e) => setTypePoseSol(e.target.value as FenceGroundType)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-2 text-[#F5EFEA]"
               >
                 <option value="DIRECT_SOL">Scellement sol</option>
                 <option value="SUR_MURET">Platines muret</option>
@@ -418,44 +418,44 @@ export default function ClotureCalepinageModule({
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="font-semibold text-[#555555]">H. utile (m)</label>
+              <label className="font-semibold text-[#B8A99E]">H. utile (m)</label>
               <input
                 type="number"
                 step="0.05"
                 value={hauteurUtile}
                 onChange={(e) => setHauteurUtile(parseFloat(e.target.value) || 1.8)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
               />
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">L. lame (m)</label>
+              <label className="font-semibold text-[#B8A99E]">L. lame (m)</label>
               <input
                 type="number"
                 step="0.1"
                 value={longueurLameBrute}
                 onChange={(e) => setLongueurLameBrute(parseFloat(e.target.value) || 1.8)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
               />
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">H. lame (m)</label>
+              <label className="font-semibold text-[#B8A99E]">H. lame (m)</label>
               <input
                 type="number"
                 step="0.005"
                 value={hauteurLame}
                 onChange={(e) => setHauteurLame(parseFloat(e.target.value) || 0.15)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
               />
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 space-y-3 text-xs shadow-xs">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#B85B2B]">
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 space-y-3 text-xs shadow-xs">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#D96B27]">
             3. Soubassement, Redans &amp; Portillon
           </p>
           <div className="flex items-center justify-between gap-2">
-            <label className="flex items-center gap-2 font-semibold text-[#23272B] cursor-pointer">
+            <label className="flex items-center gap-2 font-semibold text-[#F5EFEA] cursor-pointer">
               <input
                 type="checkbox"
                 checked={presenceSoubassement}
@@ -467,7 +467,7 @@ export default function ClotureCalepinageModule({
               <select
                 value={hauteurSoubassementM}
                 onChange={(e) => setHauteurSoubassementM(parseFloat(e.target.value))}
-                className="rounded-lg border border-[#E5E5E5] px-2 py-1 text-xs"
+                className="rounded-lg border border-white/10 px-2 py-1 text-xs"
               >
                 <option value={0.25}>250 mm</option>
                 <option value={0.5}>500 mm</option>
@@ -477,11 +477,11 @@ export default function ClotureCalepinageModule({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="font-semibold text-[#555555]">Gestion pente</label>
+              <label className="font-semibold text-[#B8A99E]">Gestion pente</label>
               <select
                 value={gestionPente}
                 onChange={(e) => setGestionPente(e.target.value as GestionPenteType)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
               >
                 <option value="PLAT">Terrain plat</option>
                 <option value="REDANS">Redans (escalier)</option>
@@ -490,20 +490,20 @@ export default function ClotureCalepinageModule({
             </div>
             {gestionPente !== "PLAT" && (
               <div>
-                <label className="font-semibold text-[#555555]">Dénivelé A (m)</label>
+                <label className="font-semibold text-[#B8A99E]">Dénivelé A (m)</label>
                 <input
                   type="number"
                   step="0.1"
                   value={deniveleA}
                   onChange={(e) => setDeniveleA(parseFloat(e.target.value) || 0)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-2.5 py-1.5 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-2.5 py-1.5 text-[#F5EFEA]"
                 />
               </div>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <label className="flex items-center gap-2 font-semibold text-[#23272B] cursor-pointer">
+            <label className="flex items-center gap-2 font-semibold text-[#F5EFEA] cursor-pointer">
               <input
                 type="checkbox"
                 checked={presencePortillon}
@@ -516,7 +516,7 @@ export default function ClotureCalepinageModule({
                 <select
                   value={segmentPortillon}
                   onChange={(e) => setSegmentPortillon(e.target.value as SegmentId)}
-                  className="rounded-lg border border-[#E5E5E5] px-2 py-1 text-xs"
+                  className="rounded-lg border border-white/10 px-2 py-1 text-xs"
                 >
                   {result.segmentsActifs.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -529,9 +529,9 @@ export default function ClotureCalepinageModule({
                   step="0.05"
                   value={largeurPortillonM}
                   onChange={(e) => setLargeurPortillonM(parseFloat(e.target.value) || 1.0)}
-                  className="w-16 rounded-lg border border-[#E5E5E5] px-2 py-1 text-xs"
+                  className="w-16 rounded-lg border border-white/10 px-2 py-1 text-xs"
                 />
-                <span className="text-[#777777]">m</span>
+                <span className="text-[#8E7F74]">m</span>
               </>
             )}
           </div>
@@ -539,7 +539,7 @@ export default function ClotureCalepinageModule({
       </div>
 
       {result.alerteChuteElevee && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-amber-300 bg-amber-500/15 px-4 py-3 text-xs font-semibold text-amber-900">
           <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
           <span>
             Attention : le taux de chute global est élevé ({result.tauxChuteGlobalPct.toFixed(1)} % &gt; 15 %). Pensez à ajuster la longueur de lame brute pour optimiser le calepinage.
@@ -563,12 +563,12 @@ export default function ClotureCalepinageModule({
 
       {/* Quantitatif, Temps de pose & Chiffrage */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs space-y-4">
+        <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#1B1511] p-5 shadow-xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-sm font-bold text-[#23272B]">
+            <h4 className="text-sm font-bold text-[#F5EFEA]">
               Quantitatif &amp; Chiffrage estimatif
             </h4>
-            <label className="flex items-center gap-2 text-xs font-semibold text-[#23272B] cursor-pointer">
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#F5EFEA] cursor-pointer">
               <input
                 type="checkbox"
                 checked={inclureMainOeuvre}
@@ -580,7 +580,7 @@ export default function ClotureCalepinageModule({
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-[#F8F9FA] text-[11px] uppercase text-[#777777] border-b border-[#E5E5E5]">
+              <thead className="bg-[#120F0D] text-[11px] uppercase text-[#8E7F74] border-b border-white/10">
                 <tr>
                   <th className="px-3 py-2 text-left">Poste</th>
                   <th className="px-3 py-2 text-right">Qté</th>
@@ -588,20 +588,20 @@ export default function ClotureCalepinageModule({
                   <th className="px-3 py-2 text-right">Total HT</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F0F0F0]">
+              <tbody className="divide-y divide-white/10">
                 {chiffrage.lignesDevis.map((l, idx) => (
                   <tr key={idx}>
                     <td className="px-3 py-2">
-                      <p className="font-semibold text-[#23272B]">{l.designation}</p>
+                      <p className="font-semibold text-[#F5EFEA]">{l.designation}</p>
                       {l.description && (
-                        <p className="text-[11px] text-[#777777]">{l.description}</p>
+                        <p className="text-[11px] text-[#8E7F74]">{l.description}</p>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right font-mono">
                       {l.qte} {l.unite}
                     </td>
                     <td className="px-3 py-2 text-right font-mono">{fmtEuro(l.pu_ht)}</td>
-                    <td className="px-3 py-2 text-right font-mono font-bold text-[#23272B]">
+                    <td className="px-3 py-2 text-right font-mono font-bold text-[#F5EFEA]">
                       {fmtEuro(l.qte * l.pu_ht)}
                     </td>
                   </tr>
@@ -610,50 +610,50 @@ export default function ClotureCalepinageModule({
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#F8F9FA] p-3.5 border border-[#E5E5E5] text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#120F0D] p-3.5 border border-white/10 text-xs">
             <span>
               Fournitures : <strong className="font-mono">{fmtEuro(chiffrage.totalFournituresHT)}</strong>
             </span>
             <span>
               Main-d&apos;œuvre : <strong className="font-mono">{fmtEuro(chiffrage.totalMainOeuvreHT)}</strong>
             </span>
-            <span className="text-sm font-extrabold text-[#B85B2B]">
+            <span className="text-sm font-extrabold text-[#D96B27]">
               Total HT : <span className="font-mono">{fmtEuro(chiffrage.totalHT)}</span>
             </span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs space-y-3">
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 shadow-xs space-y-3">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-[#B85B2B]" />
-            <h4 className="text-sm font-bold text-[#23272B]">Temps de pose prévu</h4>
+            <Clock className="h-4 w-4 text-[#D96B27]" />
+            <h4 className="text-sm font-bold text-[#F5EFEA]">Temps de pose prévu</h4>
           </div>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-[#666666]">Implantation &amp; scellements</span>
+              <span className="text-[#B8A99E]">Implantation &amp; scellements</span>
               <span className="font-mono font-bold">
                 {chiffrage.tempsPose.parPhase.implantation_scellement} h
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#666666]">Pose poteaux &amp; soubassements</span>
+              <span className="text-[#B8A99E]">Pose poteaux &amp; soubassements</span>
               <span className="font-mono font-bold">
                 {chiffrage.tempsPose.parPhase.pose_poteaux_soubassement} h
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#666666]">Pose lames / panneaux</span>
+              <span className="text-[#B8A99E]">Pose lames / panneaux</span>
               <span className="font-mono font-bold">
                 {chiffrage.tempsPose.parPhase.pose_panneaux_lames} h
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#666666]">Portillons &amp; finitions</span>
+              <span className="text-[#B8A99E]">Portillons &amp; finitions</span>
               <span className="font-mono font-bold">
                 {chiffrage.tempsPose.parPhase.portillons_finitions} h
               </span>
             </div>
-            <div className="flex justify-between border-t border-[#F0F0F0] pt-2 text-sm font-extrabold text-[#B85B2B]">
+            <div className="flex justify-between border-t border-white/10 pt-2 text-sm font-extrabold text-[#D96B27]">
               <span>Total main-d&apos;œuvre</span>
               <span className="font-mono">{chiffrage.tempsPose.totalHeures} h</span>
             </div>

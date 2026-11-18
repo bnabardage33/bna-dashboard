@@ -85,7 +85,7 @@ function ListeResultats({
         <Link key={c.id} href="/bureau/clients" onClick={onFermer} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
           <Users size={14} className="text-blue-400" />
           <div><p className="font-medium">{c.nom}</p><p className="text-xs text-gray-500">{c.societe || c.email}</p></div>
-          <ChevronRight size={14} className="ml-auto text-gray-600" />
+          <ChevronRight size={14} className="ml-auto text-[#B8A99E]" />
         </Link>
       ))}
       {results.chantiers.length > 0 && (
@@ -95,7 +95,7 @@ function ListeResultats({
         <Link key={c.id} href={`/terrain/chantier/${c.id}`} onClick={onFermer} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
           <HardHat size={14} className="text-orange-400" />
           <div><p className="font-medium">{c.nom}</p><p className="text-xs text-gray-500">{c.adresse_chantier}</p></div>
-          <ChevronRight size={14} className="ml-auto text-gray-600" />
+          <ChevronRight size={14} className="ml-auto text-[#B8A99E]" />
         </Link>
       ))}
       {results.devis.length > 0 && (
@@ -105,7 +105,7 @@ function ListeResultats({
         <Link key={d.id} href={`/bureau/devis-factures`} onClick={onFermer} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
           <FileText size={14} className="text-emerald-400" />
           <div><p className="font-medium">{d.numero}</p><p className="text-xs text-gray-500">{d.statut}</p></div>
-          <ChevronRight size={14} className="ml-auto text-gray-600" />
+          <ChevronRight size={14} className="ml-auto text-[#B8A99E]" />
         </Link>
       ))}
       {results.fournisseurs.length > 0 && (
@@ -115,7 +115,7 @@ function ListeResultats({
         <Link key={f.id} href={`/bureau/fournisseurs`} onClick={onFermer} className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 text-sm text-gray-300 transition-colors">
           <Package size={14} className="text-purple-400" />
           <div><p className="font-medium">{f.nom}</p><p className="text-xs text-gray-500">{f.email}</p></div>
-          <ChevronRight size={14} className="ml-auto text-gray-600" />
+          <ChevronRight size={14} className="ml-auto text-[#B8A99E]" />
         </Link>
       ))}
     </div>
@@ -370,7 +370,7 @@ export default function SearchNav() {
                 placeholder="Rechercher..."
                 value={query}
                 onChange={(e) => { setOpen(true); chercherTexte(e.target.value); }}
-                className="w-full rounded-lg border border-white/10 bg-[#1E1E1E] py-2 pl-9 pr-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#B85B2B]/50"
+                className="w-full rounded-lg border border-white/10 bg-[#1E1E1E] py-2 pl-9 pr-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#D96B27]/50"
               />
             </form>
             {query.length >= 2 && (
@@ -401,7 +401,7 @@ export default function SearchNav() {
         >
           <Bell size={14} className="text-white/60" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#B85B2B] text-white text-2xs font-bold rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D96B27] text-white text-2xs font-bold rounded-full flex items-center justify-center">{unreadCount > 9 ? "9+" : unreadCount}</span>
           )}
         </button>
         {notifOpen && (
@@ -409,7 +409,7 @@ export default function SearchNav() {
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">Notifications</h3>
               {unreadCount > 0 && (
-                <button onClick={() => marquerLu(notifications.filter(n => !n.lu).map(n => n.id))} className="text-2xs text-[#B85B2B] hover:text-red-400 font-medium">Tout marquer lu</button>
+                <button onClick={() => marquerLu(notifications.filter(n => !n.lu).map(n => n.id))} className="text-2xs text-[#D96B27] hover:text-red-400 font-medium">Tout marquer lu</button>
               )}
             </div>
             <div className="max-h-64 overflow-y-auto">
@@ -425,7 +425,7 @@ export default function SearchNav() {
                   >
                     <p className="text-sm font-medium text-white">{n.titre}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
-                    <p className="text-2xs text-gray-600 mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString("fr-FR") : ""}</p>
+                    <p className="text-2xs text-[#B8A99E] mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString("fr-FR") : ""}</p>
                   </Link>
                 ))
               )}

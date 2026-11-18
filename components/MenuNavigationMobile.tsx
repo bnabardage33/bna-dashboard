@@ -332,19 +332,19 @@ export default function Drawer() {
                   suppressHydrationWarning
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] text-left ${
                     groupeActif
-                      ? "bg-[#B85B2B]/15 border border-[#B85B2B]/30 text-white"
+                      ? "bg-[#D96B27]/15 border border-[#D96B27]/30 text-white"
                       : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   <div
                     suppressHydrationWarning
                     className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      groupeActif ? "bg-[#B85B2B]/20" : "bg-white/[0.05]"
+                      groupeActif ? "bg-[#D96B27]/20" : "bg-white/[0.05]"
                     }`}
                   >
                     <Icon
                       size={16}
-                      className={groupeActif ? "text-[#B85B2B]" : "text-[#D0D0D0]"}
+                      className={groupeActif ? "text-[#D96B27]" : "text-[#D0D0D0]"}
                       strokeWidth={groupeActif ? 2.5 : 1.8}
                     />
                   </div>
@@ -372,7 +372,7 @@ export default function Drawer() {
                             suppressHydrationWarning
                             className={`block py-2.5 px-3 rounded-xl transition-all text-[13px] ${
                               enfantActif
-                                ? "bg-[#B85B2B]/15 text-white font-medium"
+                                ? "bg-[#D96B27]/15 text-white font-medium"
                                 : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
                             }`}
                           >
@@ -396,7 +396,7 @@ export default function Drawer() {
             suppressHydrationWarning
             className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-[14px] ${
               (open || mounted ? estActif("/parametres") : false)
-                ? "bg-[#B85B2B]/15 border border-[#B85B2B]/30 text-white"
+                ? "bg-[#D96B27]/15 border border-[#D96B27]/30 text-white"
                 : "text-[#BDBDBD] hover:text-white hover:bg-white/[0.06]"
              }`}
            >

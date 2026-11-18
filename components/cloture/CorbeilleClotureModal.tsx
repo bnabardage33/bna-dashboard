@@ -43,16 +43,16 @@ export default function CorbeilleClotureModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg max-h-[80vh] flex flex-col rounded-2xl bg-white border border-[#E5E5E5] shadow-2xl overflow-hidden"
+        className="w-full max-w-lg max-h-[80vh] flex flex-col rounded-2xl bg-[#1B1511] border border-white/10 shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-[#E5E5E5] p-4">
-          <h2 className="text-base font-bold text-[#23272B]">
+        <div className="flex items-center justify-between border-b border-white/10 p-4">
+          <h2 className="text-base font-bold text-[#F5EFEA]">
             Corbeille Chantiers Clôture
           </h2>
           <button
             type="button"
             onClick={onFermer}
-            className="rounded-lg p-1 text-[#888888] hover:text-[#23272B]"
+            className="rounded-lg p-1 text-[#8E7F74] hover:text-[#F5EFEA]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -60,22 +60,22 @@ export default function CorbeilleClotureModal({
 
         <div className="p-4 overflow-y-auto space-y-2 text-xs">
           {loading ? (
-            <p className="text-center text-[#777777] py-4">Chargement...</p>
+            <p className="text-center text-[#8E7F74] py-4">Chargement...</p>
           ) : items.length === 0 ? (
-            <p className="text-center text-[#777777] py-6">
+            <p className="text-center text-[#8E7F74] py-6">
               La corbeille Clôture est vide.
             </p>
           ) : (
             items.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3"
+                className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#120F0D] p-3"
               >
                 <div className="min-w-0">
-                  <p className="font-bold text-[#23272B] truncate">
+                  <p className="font-bold text-[#F5EFEA] truncate">
                     {item.nom || "Chantier Clôture"}
                   </p>
-                  <p className="text-[11px] text-[#777777] truncate">
+                  <p className="text-[11px] text-[#8E7F74] truncate">
                     {item.clients?.societe || item.clients?.nom || "Client"} ·{" "}
                     {item.adresse_chantier || "Sans adresse"}
                   </p>

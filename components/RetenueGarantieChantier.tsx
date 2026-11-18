@@ -92,15 +92,15 @@ interface ApiResponse {
 const LABELS_STATUT: Record<string, { label: string; color: string }> = {
   non_constituee: {
     label: "Non constituée",
-    color: "bg-[#B85B2B]/10 text-[#B85B2B] border-[#B85B2B]/20",
+    color: "bg-[#D96B27]/10 text-[#D96B27] border-[#D96B27]/20",
   },
   en_cours: {
     label: "En cours de retenue",
-    color: "bg-amber-50 text-amber-800 border-amber-200",
+    color: "bg-amber-500/15 text-amber-300 border-amber-200",
   },
   liberable: {
     label: "Libérable (réserves levées)",
-    color: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    color: "bg-emerald-500/15 text-emerald-300 border-emerald-200",
   },
   liberee_partiellement: {
     label: "Libérée partiellement",
@@ -108,7 +108,7 @@ const LABELS_STATUT: Record<string, { label: string; color: string }> = {
   },
   liberee_totalement: {
     label: "Soldée & Libérée",
-    color: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    color: "bg-emerald-500/15 text-emerald-300 border-emerald-200",
   },
 };
 
@@ -239,8 +239,8 @@ export default function RetenueGarantieChantier({
 
   if (loading) {
     return (
-      <div className={`rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-8 text-center text-xs text-[#777777] ${className}`}>
-        <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#B85B2B] mb-2" />
+      <div className={`rounded-2xl border border-white/10 bg-[#120F0D] p-8 text-center text-xs text-[#8E7F74] ${className}`}>
+        <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#D96B27] mb-2" />
         Chargement du compte de retenue de garantie…
       </div>
     );
@@ -255,7 +255,7 @@ export default function RetenueGarantieChantier({
         <p className="text-rose-700">{error}</p>
         <button
           onClick={chargerCompte}
-          className="mt-3 rounded-xl border border-rose-300 bg-white px-3 py-1 text-2xs font-semibold text-rose-800 hover:bg-rose-100 transition"
+          className="mt-3 rounded-xl border border-rose-300 bg-[#1B1511] px-3 py-1 text-2xs font-semibold text-rose-800 hover:bg-rose-100 transition"
         >
           Réessayer
         </button>
@@ -277,19 +277,19 @@ export default function RetenueGarantieChantier({
   return (
     <div className={`space-y-5 ${className}`}>
       {/* En-tête & Statut */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-bold text-[#23272B] flex flex-wrap items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-[#F5EFEA] flex flex-wrap items-center gap-2">
               <span>Retenue de Garantie (5 % BTP)</span>
               <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${statutInfo.color}`}>
                 {statutInfo.label}
               </span>
             </h2>
-            <p className="text-xs text-[#777777] mt-0.5 font-normal">
+            <p className="text-xs text-[#8E7F74] mt-0.5 font-normal">
               Garantie légale Loi n° 71-584 du 16 juillet 1971 {chantierNom ? `— ${chantierNom}` : ""}
             </p>
           </div>
@@ -298,7 +298,7 @@ export default function RetenueGarantieChantier({
         {montantRestant > 0 && (
           <button
             onClick={ouvrirModal}
-            className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#a04e24] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all"
+            className="flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#a04e24] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all"
           >
             <Unlock className="h-3.5 w-3.5" />
             Libérer la retenue ({fmtEuro(montantRestant)})
@@ -308,18 +308,18 @@ export default function RetenueGarantieChantier({
 
       {/* Cartes financières de synthèse */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Cumul Retenu (TTC)</p>
-          <p className="text-xl sm:text-2xl font-black text-[#23272B] font-mono mt-1">{fmtEuro(montantRetenu)}</p>
-          <p className="text-xs text-[#777777] mt-1">
+        <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 shadow-sm">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Cumul Retenu (TTC)</p>
+          <p className="text-xl sm:text-2xl font-black text-[#F5EFEA] font-mono mt-1">{fmtEuro(montantRetenu)}</p>
+          <p className="text-xs text-[#8E7F74] mt-1">
             Assiette HT : {fmtEuro(compte?.montant_retenu_cumule_ht ?? 0)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Cumul Restitué (TTC)</p>
+        <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 shadow-sm">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Cumul Restitué (TTC)</p>
           <p className="text-xl sm:text-2xl font-black text-emerald-600 font-mono mt-1">{fmtEuro(montantLibere)}</p>
-          <p className="text-xs text-[#777777] mt-1">
+          <p className="text-xs text-[#8E7F74] mt-1">
             {liberations.length} versement(s) libéré(s)
           </p>
         </div>
@@ -327,26 +327,26 @@ export default function RetenueGarantieChantier({
         <div
           className={`rounded-2xl border p-4 shadow-sm ${
             montantRestant > 0
-              ? "border-[#B85B2B]/25 bg-[#B85B2B]/5"
-              : "border-emerald-200 bg-emerald-50/50"
+              ? "border-[#D96B27]/25 bg-[#D96B27]/5"
+              : "border-emerald-200 bg-emerald-500/15/50"
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Solde Restant à Libérer</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Solde Restant à Libérer</p>
             {montantRestant > 0 ? (
-              <Lock className="h-4 w-4 text-[#B85B2B]" />
+              <Lock className="h-4 w-4 text-[#D96B27]" />
             ) : (
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             )}
           </div>
           <p
             className={`text-xl sm:text-2xl font-black font-mono mt-1 ${
-              montantRestant > 0 ? "text-[#B85B2B]" : "text-emerald-600"
+              montantRestant > 0 ? "text-[#D96B27]" : "text-emerald-600"
             }`}
           >
             {fmtEuro(montantRestant)}
           </p>
-          <p className={`text-xs mt-1 ${montantRestant === 0 ? "text-emerald-700 font-medium" : "text-[#777777]"}`}>
+          <p className={`text-xs mt-1 ${montantRestant === 0 ? "text-emerald-300 font-medium" : "text-[#8E7F74]"}`}>
             {montantRestant === 0 ? "Totalement restitué au titulaire" : "Détenu sous séquestre"}
           </p>
         </div>
@@ -357,10 +357,10 @@ export default function RetenueGarantieChantier({
         <div
           className={`rounded-2xl border p-4 text-xs ${
             peutLiberer
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              ? "border-emerald-200 bg-emerald-500/15 text-emerald-900"
               : pvEnReserves.length > 0
-              ? "border-amber-200 bg-amber-50 text-amber-900"
-              : "border-[#E5E5E5] bg-[#F8F9FA] text-[#23272B]"
+              ? "border-amber-200 bg-amber-500/15 text-amber-900"
+              : "border-white/10 bg-[#120F0D] text-[#F5EFEA]"
           }`}
         >
           <div className="flex items-start gap-2.5">
@@ -369,7 +369,7 @@ export default function RetenueGarantieChantier({
             ) : pvEnReserves.length > 0 ? (
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
             ) : (
-              <Info className="h-4 w-4 shrink-0 text-[#777777] mt-0.5" />
+              <Info className="h-4 w-4 shrink-0 text-[#8E7F74] mt-0.5" />
             )}
             <div>
               <p className="font-bold">
@@ -382,10 +382,10 @@ export default function RetenueGarantieChantier({
               <p
                 className={`text-2xs mt-0.5 leading-relaxed ${
                   peutLiberer
-                    ? "text-emerald-800"
+                    ? "text-emerald-300"
                     : pvEnReserves.length > 0
-                    ? "text-amber-800"
-                    : "text-[#777777]"
+                    ? "text-amber-300"
+                    : "text-[#8E7F74]"
                 }`}
               >
                 {peutLiberer
@@ -401,29 +401,29 @@ export default function RetenueGarantieChantier({
 
       {/* Factures ayant constitué la retenue */}
       {factures.length > 0 && (
-        <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#23272B]">
-            <FileText className="h-3.5 w-3.5 text-[#B85B2B]" />
+        <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#F5EFEA]">
+            <FileText className="h-3.5 w-3.5 text-[#D96B27]" />
             Factures actives avec retenue de garantie
           </div>
-          <div className="divide-y divide-[#E5E5E5] text-xs">
+          <div className="divide-y divide-white/10 text-xs">
             {factures.map((fac) => (
               <div key={fac.id} className="py-2.5 flex items-center justify-between gap-3">
                 <div>
-                  <span className="font-mono font-bold text-[#23272B]">{fac.numero}</span>
-                  <span className="text-2xs text-[#777777] ml-2">
+                  <span className="font-mono font-bold text-[#F5EFEA]">{fac.numero}</span>
+                  <span className="text-2xs text-[#8E7F74] ml-2">
                     {fac.date_emission ? new Date(fac.date_emission).toLocaleDateString("fr-FR") : "—"}
                   </span>
-                  <span className="ml-2 rounded bg-white px-1.5 py-0.5 text-3xs font-semibold text-[#777777] border border-[#E5E5E5]">
+                  <span className="ml-2 rounded bg-[#1B1511] px-1.5 py-0.5 text-3xs font-semibold text-[#8E7F74] border border-white/10">
                     TVA {fac.tva_pct} %
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xs text-[#B85B2B] font-mono font-semibold">
+                  <div className="text-2xs text-[#D96B27] font-mono font-semibold">
                     Retenue {fac.retenue_garantie_pct} % : -{fmtEuro(fac.montant_retenue_ttc)}
                   </div>
-                  <div className="text-3xs text-[#777777]">
-                    Net payé : <span className="text-[#23272B] font-semibold">{fmtEuro(fac.net_a_payer_ttc)}</span>
+                  <div className="text-3xs text-[#8E7F74]">
+                    Net payé : <span className="text-[#F5EFEA] font-semibold">{fmtEuro(fac.net_a_payer_ttc)}</span>
                   </div>
                 </div>
               </div>
@@ -434,26 +434,26 @@ export default function RetenueGarantieChantier({
 
       {/* Historique des libérations */}
       {liberations.length > 0 && (
-        <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#23272B]">
+        <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#F5EFEA]">
             <History className="h-3.5 w-3.5 text-emerald-600" />
             Historique des libérations de retenue
           </div>
-          <div className="divide-y divide-[#E5E5E5] text-xs">
+          <div className="divide-y divide-white/10 text-xs">
             {liberations.map((lib) => {
               const motifObj = MOTIFS_LIBERATION.find((m) => m.id === lib.motif);
               return (
                 <div key={lib.id} className="py-2.5 flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-[#23272B]">
+                    <p className="font-semibold text-[#F5EFEA]">
                       {motifObj?.label || lib.motif}
                     </p>
-                    <p className="text-3xs text-[#777777] mt-0.5">
+                    <p className="text-3xs text-[#8E7F74] mt-0.5">
                       Libéré le {new Date(lib.date_liberation).toLocaleDateString("fr-FR")}
                       {lib.document_ref && ` · Réf: ${lib.document_ref}`}
                     </p>
                     {lib.observations && (
-                      <p className="text-3xs text-[#777777] italic mt-0.5">
+                      <p className="text-3xs text-[#8E7F74] italic mt-0.5">
                         « {lib.observations} »
                       </p>
                     )}
@@ -477,17 +477,17 @@ export default function RetenueGarantieChantier({
           <form
             onSubmit={executerLiberation}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-lg rounded-2xl border border-[#E5E5E5] shadow-2xl p-5 sm:p-6 space-y-4 animate-in fade-in"
+            className="bg-[#1B1511] w-full max-w-lg rounded-2xl border border-white/10 shadow-2xl p-5 sm:p-6 space-y-4 animate-in fade-in"
           >
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
-              <h3 className="text-sm font-bold text-[#23272B] flex items-center gap-2">
-                <Unlock className="h-4 w-4 text-[#B85B2B]" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-sm font-bold text-[#F5EFEA] flex items-center gap-2">
+                <Unlock className="h-4 w-4 text-[#D96B27]" />
                 Libérer la Retenue de Garantie
               </h3>
               <button
                 type="button"
                 onClick={() => setModalLiberation(false)}
-                className="text-[#777777] hover:text-[#23272B] text-base leading-none p-1"
+                className="text-[#8E7F74] hover:text-[#F5EFEA] text-base leading-none p-1"
               >
                 ✕
               </button>
@@ -500,7 +500,7 @@ export default function RetenueGarantieChantier({
             )}
 
             {succesModal && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-500/15 p-3 text-xs text-emerald-300">
                 {succesModal}
               </div>
             )}
@@ -508,11 +508,11 @@ export default function RetenueGarantieChantier({
             {/* Montant TTC */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <label className="font-semibold text-[#23272B]">Montant TTC à libérer (€) *</label>
+                <label className="font-semibold text-[#F5EFEA]">Montant TTC à libérer (€) *</label>
                 <button
                   type="button"
                   onClick={() => setMontantALiberer(String(montantRestant))}
-                  className="text-3xs font-semibold text-[#B85B2B] hover:underline"
+                  className="text-3xs font-semibold text-[#D96B27] hover:underline"
                 >
                   Tout libérer ({fmtEuro(montantRestant)})
                 </button>
@@ -525,21 +525,21 @@ export default function RetenueGarantieChantier({
                 value={montantALiberer}
                 onChange={(e) => setMontantALiberer(e.target.value)}
                 placeholder="Ex: 600.00"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none font-mono"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none font-mono"
                 required
               />
-              <p className="text-3xs text-[#777777]">
+              <p className="text-3xs text-[#8E7F74]">
                 Solde maximum disponible : {fmtEuro(montantRestant)}
               </p>
             </div>
 
             {/* Motif légal */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#23272B]">Motif de libération *</label>
+              <label className="text-xs font-semibold text-[#F5EFEA]">Motif de libération *</label>
               <select
                 value={motifSelectionne}
                 onChange={(e) => setMotifSelectionne(e.target.value as MotifLiberationRetenue)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
               >
                 {MOTIFS_LIBERATION.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -552,12 +552,12 @@ export default function RetenueGarantieChantier({
             {/* Sélection du PV si levee_reserves */}
             {motifSelectionne === "levee_reserves" && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#23272B]">PV de réception purgé de réserves *</label>
+                <label className="text-xs font-semibold text-[#F5EFEA]">PV de réception purgé de réserves *</label>
                 {pvPurges.length > 0 ? (
                   <select
                     value={pvChoisiId}
                     onChange={(e) => setPvChoisiId(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
                     required
                   >
                     <option value="">-- Sélectionner un PV purgé --</option>
@@ -568,7 +568,7 @@ export default function RetenueGarantieChantier({
                     ))}
                   </select>
                 ) : (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-2xs text-amber-800">
+                  <div className="rounded-xl border border-amber-200 bg-amber-500/15 p-2.5 text-2xs text-amber-300">
                     ⚠️ Aucun PV sans réserve ou avec réserves levées n&apos;est disponible. Vous devez d&apos;abord lever les réserves dans l&apos;onglet Réceptions.
                   </div>
                 )}
@@ -578,40 +578,40 @@ export default function RetenueGarantieChantier({
             {/* Réf document & Observations */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-2xs font-semibold text-[#23272B]">Réf. règlement / virement</label>
+                <label className="text-2xs font-semibold text-[#F5EFEA]">Réf. règlement / virement</label>
                 <input
                   type="text"
                   value={documentRef}
                   onChange={(e) => setDocumentRef(e.target.value)}
                   placeholder="Ex: VIR-2026-442"
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-2xs font-semibold text-[#23272B]">Observations</label>
+                <label className="text-2xs font-semibold text-[#F5EFEA]">Observations</label>
                 <input
                   type="text"
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
                   placeholder="Note interne..."
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#F0F0F0]">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setModalLiberation(false)}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#23272B] hover:bg-[#F8F9FA] transition"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-1.5 text-xs font-semibold text-[#F5EFEA] hover:bg-[#120F0D] transition"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={submitting || (motifSelectionne === "levee_reserves" && !pvChoisiId)}
-                className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#a04e24] px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition"
+                className="flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#a04e24] px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition"
               >
                 {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Valider la libération

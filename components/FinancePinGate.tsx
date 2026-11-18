@@ -73,16 +73,16 @@ export default function FinancePinGate({ children }: { children: React.ReactNode
   if (!unlocked) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <form onSubmit={handleSubmit} className="w-full max-w-xs bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 text-center">
-          <Lock className="mx-auto text-slate-400" size={28} />
-          <h2 className="font-bold text-slate-800">Module Finance verrouillé</h2>
+        <form onSubmit={handleSubmit} className="w-full max-w-xs bg-[#1B1511] p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 text-center">
+          <Lock className="mx-auto text-[#8E7F74]" size={28} />
+          <h2 className="font-bold text-[#F5EFEA]">Module Finance verrouillé</h2>
           <input
             type="password"
             inputMode="numeric"
             placeholder="Code PIN"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            className="w-full text-center text-lg tracking-widest px-3 py-2 text-slate-900 border border-slate-200 rounded-xl outline-none focus:border-blue-500"
+            className="w-full text-center text-lg tracking-widest px-3 py-2 text-[#F5EFEA] border border-white/10 rounded-xl outline-none focus:border-blue-500"
             autoFocus
             required
           />

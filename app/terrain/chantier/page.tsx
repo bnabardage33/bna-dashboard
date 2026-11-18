@@ -259,24 +259,24 @@ export default function ChantiersPage() {
   }, [chantiers, filtreStatut, recherche]);
 
   return (
-    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] selection:bg-[#D97732]/20 selection:text-[#B85B2B] px-4 py-6 sm:py-8 transition-colors">
+    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] selection:bg-[#D97732]/20 selection:text-[#D96B27] px-4 py-6 sm:py-8 transition-colors">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         {/* 1. Bannière d'en-tête (Identité BNA Espace Métier Bardage) */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+        <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
                   <Layers3 className="h-5 w-5" strokeWidth={2} />
                 </span>
-                <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#B85B2B]">
+                <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#D96B27]">
                   BNA Pilotage BTP · Espace Métier
                 </p>
               </div>
-              <h1 className="mt-2 text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#23272B]">
+              <h1 className="mt-2 text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#F5EFEA]">
                 Chantiers Bardage
               </h1>
-              <p className="mt-1 text-xs sm:text-sm text-[#777777] max-w-2xl leading-relaxed">
+              <p className="mt-1 text-xs sm:text-sm text-[#8E7F74] max-w-2xl leading-relaxed">
                 Espace dédié aux projets de bardage : calepinage 2D/3D DTU 41.2 / DTU 45.4, suivi des 4 phases de pose et pilotage d&apos;exécution.
               </p>
             </div>
@@ -285,13 +285,13 @@ export default function ChantiersPage() {
               <button
                 type="button"
                 onClick={() => setCorbeilleOuverte(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white px-4 py-3 text-sm font-bold text-[#23272B] hover:text-[#B85B2B] hover:border-[#B85B2B]/40 transition-all shadow-xs"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] px-4 py-3 text-sm font-bold text-[#F5EFEA] hover:text-[#D96B27] hover:border-[#D96B27]/40 transition-all shadow-xs"
                 title="Accéder à la corbeille des chantiers bardage"
               >
-                <Trash2 className="h-4 w-4 text-[#B85B2B]" />
+                <Trash2 className="h-4 w-4 text-[#D96B27]" />
                 <span>Corbeille</span>
                 {nbCorbeille > 0 && (
-                  <span className="rounded-full bg-[#B85B2B] px-2 py-0.5 text-xs font-bold text-white">
+                  <span className="rounded-full bg-[#D96B27] px-2 py-0.5 text-xs font-bold text-white">
                     {nbCorbeille}
                   </span>
                 )}
@@ -301,7 +301,7 @@ export default function ChantiersPage() {
                 type="button"
                 onClick={() => setModalOuvert(true)}
                 aria-label="Ajouter un chantier"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#D97732] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]"
               >
                 <Plus className="h-5 w-5" />
                 <span>Nouveau Chantier Bardage</span>
@@ -310,28 +310,28 @@ export default function ChantiersPage() {
           </div>
 
           {/* Barre de recherche, bascule vue et filtres de statut */}
-          <div className="mt-6 flex flex-col gap-3 pt-5 border-t border-[#F0F0F0] sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-3 pt-5 border-t border-white/10 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
               <input
                 type="text"
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Rechercher par nom de chantier, client, adresse..."
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] pl-10 pr-4 py-2.5 text-sm text-[#23272B] placeholder:text-[#999999] focus:border-[#B85B2B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 transition-all"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] pl-10 pr-4 py-2.5 text-sm text-[#F5EFEA] placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 transition-all"
               />
-              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#999999]" />
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#8E7F74]" />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               {/* Bascule Vue Liste / Gantt */}
-              <div className="flex items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#120F0D] p-1">
                 <button
                   type="button"
                   onClick={() => setViewMode("liste")}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                     viewMode === "liste"
-                      ? "bg-white text-[#23272B] shadow-sm"
-                      : "text-[#777777] hover:text-[#23272B]"
+                      ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                      : "text-[#8E7F74] hover:text-[#F5EFEA]"
                   }`}
                 >
                   <List className="h-3.5 w-3.5" />
@@ -342,8 +342,8 @@ export default function ChantiersPage() {
                   onClick={() => setViewMode("gantt")}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                     viewMode === "gantt"
-                      ? "bg-white text-[#23272B] shadow-sm"
-                      : "text-[#777777] hover:text-[#23272B]"
+                      ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                      : "text-[#8E7F74] hover:text-[#F5EFEA]"
                   }`}
                 >
                   <BarChartHorizontal className="h-3.5 w-3.5" />
@@ -352,7 +352,7 @@ export default function ChantiersPage() {
               </div>
 
               {/* Filtres de statut */}
-              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] p-1">
                 {[
                   { id: "tous", label: "Tous" },
                   { id: "prevu", label: "Prévus" },
@@ -365,8 +365,8 @@ export default function ChantiersPage() {
                     onClick={() => setFiltreStatut(f.id)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                       filtreStatut === f.id
-                        ? "bg-white text-[#23272B] shadow-sm"
-                        : "text-[#777777] hover:text-[#23272B]"
+                        ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                        : "text-[#8E7F74] hover:text-[#F5EFEA]"
                     }`}
                   >
                     {f.label}
@@ -379,25 +379,25 @@ export default function ChantiersPage() {
 
         {/* 2. Grille des Chantiers Bardage */}
         {loading ? (
-          <div className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+          <div className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
             <div className="flex flex-col items-center gap-3">
               <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#D97732] border-t-transparent" />
-              <p className="text-sm font-medium text-[#777777]">
+              <p className="text-sm font-medium text-[#8E7F74]">
                 Chargement des chantiers bardage...
               </p>
             </div>
           </div>
         ) : chantiersFiltres.length === 0 ? (
-          <section className="rounded-2xl sm:rounded-3xl border border-dashed border-[#DCDCDC] bg-white p-10 sm:p-12 text-center shadow-xs">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B]">
+          <section className="rounded-2xl sm:rounded-3xl border border-dashed border-[#DCDCDC] bg-[#1B1511] p-10 sm:p-12 text-center shadow-xs">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#D96B27]/10 border border-[#D96B27]/20 text-[#D96B27]">
               <Layers3 className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-[#23272B]">
+            <h3 className="mt-4 text-lg font-bold text-[#F5EFEA]">
               {chantiers.length === 0
                 ? "Aucun chantier bardage pour le moment"
                 : "Aucun résultat pour cette recherche"}
             </h3>
-            <p className="mt-1 text-xs text-[#777777] max-w-md mx-auto">
+            <p className="mt-1 text-xs text-[#8E7F74] max-w-md mx-auto">
               {chantiers.length === 0
                 ? "Créez votre premier projet de bardage pour accéder au calepinage 2D/3D et au suivi complet des travaux."
                 : "Modifiez vos filtres ou lancez une autre recherche."}
@@ -406,7 +406,7 @@ export default function ChantiersPage() {
               <button
                 type="button"
                 onClick={() => setModalOuvert(true)}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] active:scale-[0.98] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all"
               >
                 <Plus className="h-4 w-4" />
                 Créer mon premier chantier bardage
@@ -440,22 +440,22 @@ export default function ChantiersPage() {
               return (
                 <div
                   key={ch.id}
-                  className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#B85B2B]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)]"
+                  className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#D96B27]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)]"
                 >
                   <div>
                     {/* Statut & badge métier */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="rounded-md border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#B85B2B]">
+                      <span className="rounded-md border border-[#D96B27]/20 bg-[#D96B27]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#D96B27]">
                         Bardage DTU 41.2 / 45.4
                       </span>
 
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                           ch.statut === "termine"
-                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                             : ch.statut === "en_cours"
-                            ? "bg-amber-50 text-amber-900 border border-amber-200"
-                            : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                            ? "bg-amber-500/15 text-amber-900 border border-amber-200"
+                            : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                         }`}
                       >
                         {ch.statut === "termine"
@@ -467,25 +467,25 @@ export default function ChantiersPage() {
                     </div>
 
                     {/* Titre & Client */}
-                    <h3 className="text-lg font-bold text-[#23272B] tracking-tight group-hover:text-[#B85B2B] transition-colors truncate">
+                    <h3 className="text-lg font-bold text-[#F5EFEA] tracking-tight group-hover:text-[#D96B27] transition-colors truncate">
                       {ch.nom || nomClient}
                     </h3>
 
-                    <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[#777777] truncate">
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[#8E7F74] truncate">
                       <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                       <span className="truncate">{nomClient}</span>
                     </p>
 
                     {/* Adresse */}
                     {ch.adresse_chantier && (
-                      <p className="mt-2 flex items-center gap-1.5 text-xs text-[#777777] truncate">
-                        <MapPin className="h-3.5 w-3.5 text-[#B85B2B] shrink-0" />
+                      <p className="mt-2 flex items-center gap-1.5 text-xs text-[#8E7F74] truncate">
+                        <MapPin className="h-3.5 w-3.5 text-[#D96B27] shrink-0" />
                         <span className="truncate">{ch.adresse_chantier}</span>
                       </p>
                     )}
 
                     {/* Planning / Démarrage — Zone dédiée claire */}
-                    <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#777777]">
+                    <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#8E7F74]">
                       <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                       <span>
                         {ch.date_debut
@@ -496,7 +496,7 @@ export default function ChantiersPage() {
                   </div>
 
                   {/* Zone d'actions inférieure : Grille équilibrée 2x2 + Bouton Hub maîtrisé */}
-                  <div className="mt-4 pt-3.5 border-t border-[#F0F0F0] flex flex-col gap-2">
+                  <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-col gap-2">
                     {/* Grille équilibrée de deux colonnes pour les 4 actions secondaires */}
                     <div className="grid grid-cols-2 gap-2">
                       {/* 1. Bouton Modifier — Accent cuivre BNA */}
@@ -507,11 +507,11 @@ export default function ChantiersPage() {
                           e.stopPropagation();
                           setChantierAModifier(ch);
                         }}
-                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-2.5 text-xs font-semibold text-[#23272B] hover:text-[#B85B2B] active:scale-[0.98] transition-all shadow-2xs group"
+                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-2.5 text-xs font-semibold text-[#F5EFEA] hover:text-[#D96B27] active:scale-[0.98] transition-all shadow-2xs group"
                         title="Modifier les informations du chantier"
                         aria-label={`Modifier ${ch.nom || "le chantier"}`}
                       >
-                        <Pencil className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#B85B2B] shrink-0 transition-colors" />
+                        <Pencil className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#D96B27] shrink-0 transition-colors" />
                         <span className="truncate">Modifier</span>
                       </button>
 
@@ -522,14 +522,14 @@ export default function ChantiersPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-2.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] active:scale-[0.98] transition-all shadow-2xs truncate"
+                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-2.5 text-xs font-semibold text-[#8E7F74] hover:text-[#F5EFEA] active:scale-[0.98] transition-all shadow-2xs truncate"
                           title="Lancer l'itinéraire GPS Google Maps vers le chantier"
                         >
                           <span className="truncate">🗺️ GPS Itinéraire</span>
                         </a>
                       ) : (
                         <div
-                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5]/60 bg-[#F8F9FA]/60 px-2.5 text-xs font-semibold text-[#AAAAAA] cursor-not-allowed select-none"
+                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10/60 bg-[#120F0D]/60 px-2.5 text-xs font-semibold text-[#AAAAAA] cursor-not-allowed select-none"
                           title="Adresse non renseignée — navigation indisponible"
                         >
                           <span className="truncate">🗺️ GPS Itinéraire</span>
@@ -549,7 +549,7 @@ export default function ChantiersPage() {
                           setTimeout(() => setCopiedId(null), 2000);
                         }}
                         disabled={!ch.code_acces}
-                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-2.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] active:scale-[0.98] transition-all shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-2.5 text-xs font-semibold text-[#8E7F74] hover:text-[#F5EFEA] active:scale-[0.98] transition-all shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                         title={ch.code_acces ? "Copier le lien d'accès espace client" : "Code d'accès non généré"}
                       >
                         {copiedId === ch.id ? (
@@ -568,7 +568,7 @@ export default function ChantiersPage() {
                           e.stopPropagation();
                           setChantierAMettreEnCorbeille(ch);
                         }}
-                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300 hover:text-red-700 active:scale-[0.98] transition-all shadow-2xs"
+                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-500/15 text-red-600 hover:bg-red-100 hover:border-red-300 hover:text-red-300 active:scale-[0.98] transition-all shadow-2xs"
                         title="Mettre ce chantier à la corbeille"
                         aria-label={`Mettre à la corbeille ${ch.nom || "le chantier"}`}
                       >
@@ -580,7 +580,7 @@ export default function ChantiersPage() {
                     {/* Action principale au poids visuel maîtrisé */}
                     <Link
                       href={`/terrain/chantier/${ch.id}`}
-                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[#23272B] px-3 text-xs font-bold text-white transition-all hover:bg-[#B85B2B] active:scale-[0.98] shadow-2xs"
+                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[#23272B] px-3 text-xs font-bold text-white transition-all hover:bg-[#D96B27] active:scale-[0.98] shadow-2xs"
                     >
                       <span>Ouvrir Hub Bardage</span>
                       <ArrowRight className="h-3.5 w-3.5 shrink-0" />
@@ -601,21 +601,21 @@ export default function ChantiersPage() {
             onClick={() => setModalOuvert(false)}
           >
             <div
-              className="relative w-full max-w-xl overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white text-[#23272B] shadow-[0_25px_60px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-150"
+              className="relative w-full max-w-xl overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] text-[#F5EFEA] shadow-[0_25px_60px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
               {/* En-tête cuivré et élégant */}
-              <div className="border-b border-[#F0F0F0] bg-[#F8F9FA] px-6 py-5">
+              <div className="border-b border-white/10 bg-[#120F0D] px-6 py-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
                       <Layers3 className="h-5 w-5" strokeWidth={2} />
                     </span>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#B85B2B]">
+                      <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#D96B27]">
                         Nouveau Projet
                       </p>
-                      <h2 className="text-xl font-bold tracking-tight text-[#23272B]">
+                      <h2 className="text-xl font-bold tracking-tight text-[#F5EFEA]">
                         Créer un Chantier Bardage
                       </h2>
                     </div>
@@ -623,7 +623,7 @@ export default function ChantiersPage() {
                   <button
                     type="button"
                     onClick={() => setModalOuvert(false)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#23272B]"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-[#221B17] hover:text-[#F5EFEA]"
                     aria-label="Fermer"
                   >
                     <X className="h-5 w-5" />
@@ -636,9 +636,9 @@ export default function ChantiersPage() {
                 <div>
                   <label
                     htmlFor="chp-nom-du-chantier"
-                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                   >
-                    Nom du chantier <span className="text-[#B85B2B]">*</span>
+                    Nom du chantier <span className="text-[#D96B27]">*</span>
                   </label>
                   <input
                     id="chp-nom-du-chantier"
@@ -646,23 +646,23 @@ export default function ChantiersPage() {
                     onChange={(e) => setNom(e.target.value)}
                     placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
                     required
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                    className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="chp-client-associe"
-                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                   >
-                    Client associé <span className="text-[#B85B2B]">*</span>
+                    Client associé <span className="text-[#D96B27]">*</span>
                   </label>
                   <select
                     id="chp-client-associe"
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                    className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                   >
                     <option value="">— Sélectionner un client —</option>
                     {clients.map((c) => (
@@ -676,7 +676,7 @@ export default function ChantiersPage() {
                 <div>
                   <label
                     htmlFor="chp-adresse-du-site-des-travaux"
-                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                   >
                     Adresse du site des travaux
                   </label>
@@ -685,14 +685,14 @@ export default function ChantiersPage() {
                     value={adresse}
                     onChange={(e) => setAdresse(e.target.value)}
                     placeholder="Ex. 14 Route des Plages, 33120 Arcachon"
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                    className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="chp-materiau-predominant"
-                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                   >
                     Matériau prédominant
                   </label>
@@ -700,7 +700,7 @@ export default function ChantiersPage() {
                     id="chp-materiau-predominant"
                     value={materiauStructurel}
                     onChange={(e) => setMateriauStructurel(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                    className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                   >
                     <option value="Bois / Mélèze">Bois Naturel / Mélèze</option>
                     <option value="Panneaux HPL Trespa">Panneaux HPL (Trespa / Fundermax)</option>
@@ -713,7 +713,7 @@ export default function ChantiersPage() {
                   <div>
                     <label
                       htmlFor="chp-date-debut-prevue"
-                      className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                      className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                     >
                       Date début prévue
                     </label>
@@ -722,14 +722,14 @@ export default function ChantiersPage() {
                       type="date"
                       value={dateDebut}
                       onChange={(e) => setDateDebut(e.target.value)}
-                      className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                      className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="chp-date-fin-estimee"
-                      className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                      className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                     >
                       Date fin estimée
                     </label>
@@ -738,17 +738,17 @@ export default function ChantiersPage() {
                       type="date"
                       value={dateFin}
                       onChange={(e) => setDateFin(e.target.value)}
-                      className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                      className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                     />
                   </div>
                 </div>
 
                 {/* Boutons d'action du formulaire */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#F0F0F0]">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setModalOuvert(false)}
-                    className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs font-bold text-[#23272B] hover:bg-gray-50 transition-colors"
+                    className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-xs font-bold text-[#F5EFEA] hover:bg-[#120F0D] transition-colors"
                   >
                     Annuler
                   </button>
@@ -756,7 +756,7 @@ export default function ChantiersPage() {
                   <button
                     type="submit"
                     disabled={creationEnCours}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D97732] active:scale-[0.98] disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] active:scale-[0.98] disabled:opacity-50"
                   >
                     {creationEnCours ? "Création en cours..." : "Enregistrer le Chantier"}
                   </button>

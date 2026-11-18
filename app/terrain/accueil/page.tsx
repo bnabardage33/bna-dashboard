@@ -21,7 +21,7 @@ export default async function AccueilChantierPage() {
     await chargerDonneesAccueil(supabase);
 
   return (
-    <div className="min-h-screen bg-[#F3F3F1] text-[#23272B]">
+    <div className="min-h-screen bg-[#120F0D] text-[#F5EFEA]">
       <div
         id="accueil-container"
         className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6"

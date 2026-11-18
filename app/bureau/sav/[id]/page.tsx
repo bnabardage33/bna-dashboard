@@ -545,29 +545,29 @@ export default function FicheSAV() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F3F3F1] flex items-center justify-center p-12">
-        <div className="h-9 w-9 animate-spin rounded-full border-3 border-[#B85B2B] border-t-transparent" />
+      <div className="min-h-screen bg-[#120F0D] flex items-center justify-center p-12">
+        <div className="h-9 w-9 animate-spin rounded-full border-3 border-[#D96B27] border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] px-4 py-6 sm:py-8">
+    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] px-4 py-6 sm:py-8">
       <div className="mx-auto w-full max-w-5xl space-y-6 pb-28">
         {/* En-tête blanc */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/bureau/sav"
-              className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-2.5 text-[#23272B] hover:border-[#B85B2B]"
+              className="rounded-xl border border-white/10 bg-[#120F0D] p-2.5 text-[#F5EFEA] hover:border-[#D96B27]"
             >
               <ArrowLeft size={18} />
             </Link>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#B85B2B]">
+              <p className="text-[11px] font-bold uppercase tracking-[2px] text-[#D96B27]">
                 SAV &amp; Garanties · {refNormatif.libelleMetier}
               </p>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#23272B]">
+              <h1 className="text-xl sm:text-2xl font-bold text-[#F5EFEA]">
                 {isNew ? "Nouveau Ticket SAV" : "Fiche Intervention SAV"}
               </h1>
             </div>
@@ -578,7 +578,7 @@ export default function FicheSAV() {
               <button
                 type="button"
                 onClick={() => setShowPDF(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2.5 text-xs font-bold text-[#23272B] hover:border-[#B85B2B]"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] px-4 py-2.5 text-xs font-bold text-[#F5EFEA] hover:border-[#D96B27]"
               >
                 <Printer size={16} /> Rapport PDF
               </button>
@@ -587,7 +587,7 @@ export default function FicheSAV() {
               type="button"
               onClick={() => saveTicket()}
               disabled={saving}
-              className="inline-flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-5 py-2.5 text-xs font-bold text-white shadow-xs"
+              className="inline-flex flex-1 sm:flex-initial items-center justify-center gap-2 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-5 py-2.5 text-xs font-bold text-white shadow-xs"
             >
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               Enregistrer
@@ -596,16 +596,16 @@ export default function FicheSAV() {
         </section>
 
         {/* Choix Origine + Chantier/Client + Garantie automatique */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 space-y-4 shadow-xs">
+        <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 space-y-4 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1 text-xs font-bold">
+            <div className="inline-flex rounded-xl border border-white/10 bg-[#120F0D] p-1 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => handleOrigineChange("chantier_bna")}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
                   ticket.type_origine === "chantier_bna"
-                    ? "bg-white text-[#B85B2B] shadow-xs"
-                    : "text-[#666666]"
+                    ? "bg-[#1B1511] text-[#D96B27] shadow-xs"
+                    : "text-[#B8A99E]"
                 }`}
               >
                 <Building2 size={14} /> Chantier BNA (Garantie / SAV)
@@ -615,8 +615,8 @@ export default function FicheSAV() {
                 onClick={() => handleOrigineChange("client_externe")}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 transition-all ${
                   ticket.type_origine === "client_externe"
-                    ? "bg-white text-[#B85B2B] shadow-xs"
-                    : "text-[#666666]"
+                    ? "bg-[#1B1511] text-[#D96B27] shadow-xs"
+                    : "text-[#B8A99E]"
                 }`}
               >
                 <UserPlus size={14} /> Client Externe (Hors chantier BNA)
@@ -625,16 +625,16 @@ export default function FicheSAV() {
 
             <div className="flex flex-wrap items-center gap-2">
               {ticket.sous_garantie ? (
-                <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300">
                   <ShieldCheck size={15} /> {garantieCalculee.libelleStatut}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700">
+                <span className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-300">
                   <AlertTriangle size={15} /> {garantieCalculee.libelleStatut}
                 </span>
               )}
               {(ticket.facturable || !ticket.sous_garantie) && (
-                <span className="inline-flex items-center gap-1 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3 py-1.5 text-xs font-bold text-[#B85B2B]">
+                <span className="inline-flex items-center gap-1 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 px-3 py-1.5 text-xs font-bold text-[#D96B27]">
                   <Receipt size={14} /> Intervention facturable
                 </span>
               )}
@@ -644,11 +644,11 @@ export default function FicheSAV() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             {ticket.type_origine === "chantier_bna" ? (
               <div className="md:col-span-2">
-                <label className="font-bold uppercase text-[#666666] block mb-1">
+                <label className="font-bold uppercase text-[#B8A99E] block mb-1">
                   Chantier BNA concerné
                 </label>
                 <select
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-sm text-[#23272B]"
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2.5 text-sm text-[#F5EFEA]"
                   value={ticket.chantier_id}
                   onChange={(e) => handleChantierChange(e.target.value)}
                 >
@@ -663,13 +663,13 @@ export default function FicheSAV() {
             ) : (
               <div className="md:col-span-2 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold uppercase text-[#666666]">
+                  <label className="font-bold uppercase text-[#B8A99E]">
                     Client externe
                   </label>
                   <button
                     type="button"
                     onClick={() => setCreationClientRapide((v) => !v)}
-                    className="text-xs font-bold text-[#B85B2B] hover:underline"
+                    className="text-xs font-bold text-[#D96B27] hover:underline"
                   >
                     {creationClientRapide ? "Annuler" : "+ Nouveau client rapide"}
                   </button>
@@ -677,7 +677,7 @@ export default function FicheSAV() {
 
                 {!creationClientRapide ? (
                   <select
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-sm text-[#23272B]"
+                    className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2.5 text-sm text-[#F5EFEA]"
                     value={ticket.client_id}
                     onChange={(e) =>
                       setTicket((prev) => ({ ...prev, client_id: e.target.value }))
@@ -691,30 +691,30 @@ export default function FicheSAV() {
                     ))}
                   </select>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-xl border border-white/10 bg-[#120F0D] p-2.5">
                     <input
                       placeholder="Nom client *"
                       value={nouveauClientNom}
                       onChange={(e) => setNouveauClientNom(e.target.value)}
-                      className="rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs"
+                      className="rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-xs"
                     />
                     <input
                       placeholder="Téléphone"
                       value={nouveauClientTel}
                       onChange={(e) => setNouveauClientTel(e.target.value)}
-                      className="rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs"
+                      className="rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-xs"
                     />
                     <div className="flex gap-1.5">
                       <input
                         placeholder="Adresse"
                         value={nouveauClientAdresse}
                         onChange={(e) => setNouveauClientAdresse(e.target.value)}
-                        className="min-w-0 flex-1 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-xs"
+                        className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-xs"
                       />
                       <button
                         type="button"
                         onClick={creerClientExterneRapide}
-                        className="rounded-lg bg-[#B85B2B] px-3 py-1.5 text-xs font-bold text-white"
+                        className="rounded-lg bg-[#D96B27] px-3 py-1.5 text-xs font-bold text-white"
                       >
                         OK
                       </button>
@@ -725,7 +725,7 @@ export default function FicheSAV() {
             )}
 
             <div>
-              <label className="font-bold uppercase text-[#666666] block mb-1">
+              <label className="font-bold uppercase text-[#B8A99E] block mb-1">
                 Corps d&apos;état / Métier
               </label>
               <select
@@ -738,7 +738,7 @@ export default function FicheSAV() {
                     type_sinistre: "",
                   }))
                 }
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-sm text-[#23272B] disabled:opacity-70"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2.5 text-sm text-[#F5EFEA] disabled:opacity-70"
               >
                 <option value="bardage">Bardage</option>
                 <option value="terrasse">Terrasse &amp; Mobile</option>
@@ -748,15 +748,15 @@ export default function FicheSAV() {
           </div>
 
           {(!ticket.sous_garantie || ticket.facturable) && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#B85B2B]/25 bg-[#B85B2B]/5 px-4 py-3 text-xs">
-              <span className="font-semibold text-[#23272B]">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#D96B27]/25 bg-[#D96B27]/5 px-4 py-3 text-xs">
+              <span className="font-semibold text-[#F5EFEA]">
                 Intervention hors garantie / client externe : générez un devis pré-rempli (fournitures + temps estimé × {tauxHoraireVente} € HT/h).
               </span>
               <button
                 type="button"
                 onClick={handleGenerateDevis}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 font-bold text-white shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2 font-bold text-white shadow-xs"
               >
                 <Receipt size={15} /> Générer un devis d&apos;intervention
               </button>
@@ -767,17 +767,17 @@ export default function FicheSAV() {
         {/* Grille 4 tuiles */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* TUILE 1 : SINISTRE */}
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 space-y-4 shadow-xs">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#D96B27] flex items-center gap-2">
               <AlertTriangle size={17} /> 1. Fiche Sinistre ({refNormatif.libelleMetier})
             </h2>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-[#555555] block mb-1">
+                <label className="font-semibold text-[#B8A99E] block mb-1">
                   Type de problème
                 </label>
                 <select
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-sm text-[#23272B]"
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-sm text-[#F5EFEA]"
                   value={ticket.type_sinistre}
                   onChange={(e) => handleSinistreChange(e.target.value)}
                 >
@@ -792,7 +792,7 @@ export default function FicheSAV() {
 
               {ticket.type_origine === "chantier_bna" && (
                 <div>
-                  <label className="font-semibold text-[#555555] block mb-1">
+                  <label className="font-semibold text-[#B8A99E] block mb-1">
                     Régime de garantie légal
                   </label>
                   <select
@@ -811,7 +811,7 @@ export default function FicheSAV() {
                         facturable: calc.facturable,
                       }));
                     }}
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-sm text-[#23272B]"
+                    className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-sm text-[#F5EFEA]"
                   >
                     <option value="gpa_1an">GPA — Garantie de Parfait Achèvement (1 an)</option>
                     <option value="biennale_2ans">Biennale — Équipements &amp; Motorisations (2 ans)</option>
@@ -821,12 +821,12 @@ export default function FicheSAV() {
               )}
 
               <div>
-                <label className="font-semibold text-[#555555] block mb-1">
+                <label className="font-semibold text-[#B8A99E] block mb-1">
                   Localisation précise
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-sm text-[#23272B]"
+                  className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-[#F5EFEA]"
                   placeholder={refNormatif.placeholderLocalisation}
                   value={ticket.localisation}
                   onChange={(e) =>
@@ -838,17 +838,17 @@ export default function FicheSAV() {
           </section>
 
           {/* TUILE 2 : DIAGNOSTIC */}
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 space-y-4 shadow-xs">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#D96B27] flex items-center gap-2">
               <FileCheck size={17} /> {refNormatif.titreDiagnostic}
             </h2>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-[#555555] block mb-1">
+                <label className="font-semibold text-[#B8A99E] block mb-1">
                   Diagnostic &amp; Cause probable
                 </label>
                 <textarea
-                  className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-sm text-[#23272B] h-24 resize-none"
+                  className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-[#F5EFEA] h-24 resize-none"
                   placeholder="Constat technique, origine du désordre..."
                   value={ticket.diagnostic_dtu}
                   onChange={(e) =>
@@ -857,8 +857,8 @@ export default function FicheSAV() {
                 />
               </div>
 
-              <label className="flex items-center justify-between rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 cursor-pointer">
-                <span className="font-semibold text-[#23272B]">
+              <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#120F0D] p-3 cursor-pointer">
+                <span className="font-semibold text-[#F5EFEA]">
                   {refNormatif.labelNorme}
                 </span>
                 <input
@@ -867,19 +867,19 @@ export default function FicheSAV() {
                   onChange={(e) =>
                     setTicket((prev) => ({ ...prev, respect_dtu: e.target.checked }))
                   }
-                  className="h-4 w-4 rounded text-[#B85B2B]"
+                  className="h-4 w-4 rounded text-[#D96B27]"
                 />
               </label>
             </div>
           </section>
 
           {/* TUILE 3 : MATÉRIEL */}
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 space-y-4 shadow-xs">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#D96B27] flex items-center gap-2">
               <Wrench size={17} /> 3. Matériel &amp; Fournitures à prévoir
             </h2>
             <textarea
-              className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-sm text-[#23272B] h-28 resize-none"
+              className="w-full rounded-xl border border-white/10 bg-[#120F0D] p-3 text-sm text-[#F5EFEA] h-28 resize-none"
               placeholder={refNormatif.placeholderMateriel}
               value={ticket.description}
               onChange={(e) =>
@@ -889,16 +889,16 @@ export default function FicheSAV() {
           </section>
 
           {/* TUILE 4 : INTERVENTION */}
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 space-y-4 shadow-xs">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#D96B27] flex items-center gap-2">
               <Calendar size={17} /> 4. Planification Intervention
             </h2>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="font-semibold text-[#555555] block mb-1">Date prévue</label>
+                <label className="font-semibold text-[#B8A99E] block mb-1">Date prévue</label>
                 <input
                   type="date"
-                  className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-sm text-[#23272B]"
+                  className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-[#F5EFEA]"
                   value={ticket.date_intervention}
                   onChange={(e) =>
                     setTicket((prev) => ({ ...prev, date_intervention: e.target.value }))
@@ -906,11 +906,11 @@ export default function FicheSAV() {
                 />
               </div>
               <div>
-                <label className="font-semibold text-[#555555] block mb-1">Temps estimé</label>
+                <label className="font-semibold text-[#B8A99E] block mb-1">Temps estimé</label>
                 <input
                   type="text"
                   placeholder="Ex: 1h30"
-                  className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-sm text-[#23272B]"
+                  className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-[#F5EFEA]"
                   value={ticket.temps_estime}
                   onChange={(e) =>
                     setTicket((prev) => ({ ...prev, temps_estime: e.target.value }))
@@ -918,11 +918,11 @@ export default function FicheSAV() {
                 />
               </div>
               <div className="col-span-2">
-                <label className="font-semibold text-[#555555] block mb-1">Équipe / Intervenant</label>
+                <label className="font-semibold text-[#B8A99E] block mb-1">Équipe / Intervenant</label>
                 <input
                   type="text"
                   placeholder="Ex: Gaël"
-                  className="w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-sm text-[#23272B]"
+                  className="w-full rounded-xl border border-white/10 px-3 py-2 text-sm text-[#F5EFEA]"
                   value={ticket.intervenant}
                   onChange={(e) =>
                     setTicket((prev) => ({ ...prev, intervenant: e.target.value }))
@@ -935,15 +935,15 @@ export default function FicheSAV() {
 
         {/* PHOTOS & SIGNATURES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 space-y-3 shadow-xs">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 space-y-3 shadow-xs">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#D96B27] flex items-center gap-2">
               <Camera size={17} /> Photos Avant / Après
             </h2>
             <div className="grid grid-cols-2 gap-3 text-xs">
               {(["avant", "apres"] as const).map((type) => (
                 <label
                   key={type}
-                  className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#DCDCDC] bg-[#F8F9FA] p-3 cursor-pointer hover:border-[#B85B2B]"
+                  className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#DCDCDC] bg-[#120F0D] p-3 cursor-pointer hover:border-[#D96B27]"
                 >
                   {ticket.photos?.[type] ? (
                     <Image
@@ -954,7 +954,7 @@ export default function FicheSAV() {
                       className="h-24 w-full object-cover rounded-lg"
                     />
                   ) : (
-                    <span className="font-semibold text-[#666666] py-6">
+                    <span className="font-semibold text-[#B8A99E] py-6">
                       {uploading[type] ? "Envoi..." : `+ Photo ${type}`}
                     </span>
                   )}
@@ -969,8 +969,8 @@ export default function FicheSAV() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-5 space-y-4 shadow-xs">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#B85B2B] flex items-center gap-2">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 space-y-4 shadow-xs">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#D96B27] flex items-center gap-2">
               <CheckCircle size={17} /> Clôture &amp; Signatures
             </h2>
             <div className="space-y-3">
@@ -1013,14 +1013,14 @@ export default function FicheSAV() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white"
+                className="rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white"
               >
                 Imprimer / PDF
               </button>
               <button
                 type="button"
                 onClick={() => setShowPDF(false)}
-                className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-[#23272B]"
+                className="rounded-xl bg-[#1B1511] px-4 py-2 text-xs font-bold text-[#F5EFEA]"
               >
                 <X size={16} />
               </button>

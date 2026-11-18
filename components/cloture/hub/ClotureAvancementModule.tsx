@@ -69,24 +69,24 @@ export default function ClotureAvancementModule({
   }
 
   return (
-    <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-6 shadow-xs space-y-5">
+    <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-6 shadow-xs space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-[#23272B]">
+          <h3 className="text-base font-bold text-[#F5EFEA]">
             Avancement d&apos;exécution Clôture
           </h3>
-          <p className="text-xs text-[#777777]">
+          <p className="text-xs text-[#8E7F74]">
             Cochez chaque étape validée sur le terrain {saving ? "· Enregistrement..." : ""}
           </p>
         </div>
-        <span className="rounded-xl bg-[#B85B2B]/10 px-3 py-1.5 text-xs font-extrabold text-[#B85B2B]">
+        <span className="rounded-xl bg-[#D96B27]/10 px-3 py-1.5 text-xs font-extrabold text-[#D96B27]">
           {pct} % ({nbFaites}/{PHASES_CLOTURE.length})
         </span>
       </div>
 
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#F1F5F9]">
         <div
-          className="h-full rounded-full bg-[#B85B2B] transition-all duration-300"
+          className="h-full rounded-full bg-[#D96B27] transition-all duration-300"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -101,18 +101,18 @@ export default function ClotureAvancementModule({
               onClick={() => togglePhase(phase.cle)}
               className={`w-full text-left flex items-start gap-3 rounded-2xl border p-4 transition-all ${
                 coche
-                  ? "border-emerald-200 bg-emerald-50/60"
-                  : "border-[#E5E5E5] bg-[#F8F9FA] hover:border-[#B85B2B]/40"
+                  ? "border-emerald-200 bg-emerald-500/15/60"
+                  : "border-white/10 bg-[#120F0D] hover:border-[#D96B27]/40"
               }`}
             >
               {coche ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
               ) : (
-                <Circle className="h-5 w-5 text-[#999999] shrink-0 mt-0.5" />
+                <Circle className="h-5 w-5 text-[#8E7F74] shrink-0 mt-0.5" />
               )}
               <div>
-                <p className="text-sm font-bold text-[#23272B]">{phase.titre}</p>
-                <p className="text-xs text-[#666666] mt-0.5">{phase.description}</p>
+                <p className="text-sm font-bold text-[#F5EFEA]">{phase.titre}</p>
+                <p className="text-xs text-[#B8A99E] mt-0.5">{phase.description}</p>
               </div>
             </button>
           );

@@ -329,19 +329,19 @@ export default function BardageCalepinageModule({
   return (
     <div className="space-y-6">
       {/* 1. Raccourci vers Devis */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-wrap items-center justify-between gap-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
             Chiffrage & Génération de Devis
           </h3>
-          <p className="mt-0.5 text-xs text-[#777777]">
+          <p className="mt-0.5 text-xs text-[#8E7F74]">
             Chiffre directement ce chantier sur la base des résultats techniques et métrés persistés.
           </p>
         </div>
 
         <Link
           href={`/bureau/devis-factures?chantier_id=${encodeURIComponent(chantierId)}`}
-          className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 text-xs font-bold text-white transition shadow-xs"
+          className="flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2 text-xs font-bold text-white transition shadow-xs"
         >
           <FileSpreadsheet size={13} />
           <span>Générer un devis →</span>
@@ -349,7 +349,7 @@ export default function BardageCalepinageModule({
       </div>
 
       {/* 2. Tiroir Configuration Technique */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
         <button
           type="button"
           onClick={() => setConfigOpen(!configOpen)}
@@ -357,30 +357,30 @@ export default function BardageCalepinageModule({
           aria-expanded={configOpen}
         >
           <div className="flex items-center gap-2.5">
-            <SlidersHorizontal className="h-5 w-5 text-[#B85B2B]" />
+            <SlidersHorizontal className="h-5 w-5 text-[#D96B27]" />
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B] group-hover:text-[#B85B2B] transition-colors">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA] group-hover:text-[#D96B27] transition-colors">
                 Configuration Technique du Chantier (Isolant & Chutes)
               </h3>
-              <p className="text-3xs text-[#777777]">
+              <p className="text-3xs text-[#8E7F74]">
                 Valeurs globales appliquées au calcul d&apos;isolant, des rives et de l&apos;équerrerie.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-block rounded-md bg-[#F8F9FA] px-2 py-0.5 text-3xs font-semibold text-[#777777] border border-[#E5E5E5]">
+            <span className="hidden sm:inline-block rounded-md bg-[#120F0D] px-2 py-0.5 text-3xs font-semibold text-[#8E7F74] border border-white/10">
               Persistée
             </span>
-            {configOpen ? <ChevronUp size={16} className="text-[#B85B2B]" /> : <ChevronDown size={16} className="text-[#777777]" />}
+            {configOpen ? <ChevronUp size={16} className="text-[#D96B27]" /> : <ChevronDown size={16} className="text-[#8E7F74]" />}
           </div>
         </button>
 
         {configOpen && (
-          <div className="pt-3 border-t border-[#F0F0F0] space-y-4 animate-in fade-in duration-150">
+          <div className="pt-3 border-t border-white/10 space-y-4 animate-in fade-in duration-150">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <div>
-                <label className="text-3xs font-semibold text-[#777777]">Type d&apos;isolant</label>
+                <label className="text-3xs font-semibold text-[#8E7F74]">Type d&apos;isolant</label>
                 <select
                   value={configDraft.type_isolant ?? ""}
                   onChange={(e) =>
@@ -388,7 +388,7 @@ export default function BardageCalepinageModule({
                       type_isolant: (e.target.value || null) as ConfigTechnique["type_isolant"],
                     })
                   }
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-2.5 py-1.5 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-2.5 py-1.5 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
                 >
                   <option value="">— (secours : laine de roche)</option>
                   <option value="laine_roche">Laine de roche (Fixrock)</option>
@@ -398,7 +398,7 @@ export default function BardageCalepinageModule({
               </div>
 
               <div>
-                <label className="text-3xs font-semibold text-[#777777]">Épaisseur isolant</label>
+                <label className="text-3xs font-semibold text-[#8E7F74]">Épaisseur isolant</label>
                 <select
                   value={configDraft.epaisseur_isolant_mm ?? ""}
                   onChange={(e) =>
@@ -407,7 +407,7 @@ export default function BardageCalepinageModule({
                         e.target.value === "" ? null : parseInt(e.target.value, 10),
                     })
                   }
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-2.5 py-1.5 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-2.5 py-1.5 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
                 >
                   <option value="">— (secours : 120 mm)</option>
                   <option value={0}>0 mm (Lame d&apos;air seule)</option>
@@ -422,7 +422,7 @@ export default function BardageCalepinageModule({
               </div>
 
               <div>
-                <label className="text-3xs font-semibold text-[#777777]">Surface / Paquet (m²)</label>
+                <label className="text-3xs font-semibold text-[#8E7F74]">Surface / Paquet (m²)</label>
                 <input
                   type="number"
                   min={0.1}
@@ -435,13 +435,13 @@ export default function BardageCalepinageModule({
                         e.target.value === "" ? null : parseFloat(e.target.value),
                     })
                   }
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-2.5 py-1.5 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-2.5 py-1.5 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
                 />
               </div>
 
               <div>
-                <label className="text-3xs font-semibold text-[#777777]">Rives renforcées (40 cm)</label>
-                <div className="mt-1 flex gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-0.5">
+                <label className="text-3xs font-semibold text-[#8E7F74]">Rives renforcées (40 cm)</label>
+                <div className="mt-1 flex gap-1 rounded-xl border border-white/10 bg-[#120F0D] p-0.5">
                   {[
                     { v: null, l: "Auto" },
                     { v: true, l: "Oui" },
@@ -453,8 +453,8 @@ export default function BardageCalepinageModule({
                       onClick={() => majConfigTechnique({ zone_vent_rive: opt.v })}
                       className={`flex-1 rounded-lg px-2 py-1 text-3xs font-bold transition ${
                         configDraft.zone_vent_rive === opt.v
-                          ? "bg-[#B85B2B] text-white shadow-2xs"
-                          : "text-[#777777] hover:text-[#23272B]"
+                          ? "bg-[#D96B27] text-white shadow-2xs"
+                          : "text-[#8E7F74] hover:text-[#F5EFEA]"
                       }`}
                     >
                       {opt.l}
@@ -464,7 +464,7 @@ export default function BardageCalepinageModule({
               </div>
 
               <div>
-                <label className="text-3xs font-semibold text-[#B85B2B]">Coef chute matériaux</label>
+                <label className="text-3xs font-semibold text-[#D96B27]">Coef chute matériaux</label>
                 <input
                   type="number"
                   min={1}
@@ -477,7 +477,7 @@ export default function BardageCalepinageModule({
                         e.target.value === "" ? null : parseFloat(e.target.value),
                     })
                   }
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-2.5 py-1.5 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-2.5 py-1.5 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
                 />
               </div>
             </div>
@@ -489,7 +489,7 @@ export default function BardageCalepinageModule({
               <button
                 type="button"
                 onClick={sauvegarderConfigTechnique}
-                className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-3.5 py-1.5 text-xs font-bold text-white transition shadow-xs"
+                className="flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-3.5 py-1.5 text-xs font-bold text-white transition shadow-xs"
               >
                 <Check size={13} />
                 <span>Enregistrer la configuration</span>
@@ -501,29 +501,29 @@ export default function BardageCalepinageModule({
 
       {/* 3. Grille de Synthèse des Surfaces */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <p className="text-3xs font-semibold uppercase tracking-wider text-[#777777]">Brut façades</p>
-          <p className="mt-1 text-base sm:text-lg font-bold text-[#23272B]">{totaux.bruteFacade.toFixed(1)} m²</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+          <p className="text-3xs font-semibold uppercase tracking-wider text-[#8E7F74]">Brut façades</p>
+          <p className="mt-1 text-base sm:text-lg font-bold text-[#F5EFEA]">{totaux.bruteFacade.toFixed(1)} m²</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <p className="text-3xs font-semibold uppercase tracking-wider text-[#777777]">Brut pignons</p>
-          <p className="mt-1 text-base sm:text-lg font-bold text-[#23272B]">{totaux.brutePignon.toFixed(1)} m²</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+          <p className="text-3xs font-semibold uppercase tracking-wider text-[#8E7F74]">Brut pignons</p>
+          <p className="mt-1 text-base sm:text-lg font-bold text-[#F5EFEA]">{totaux.brutePignon.toFixed(1)} m²</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <p className="text-3xs font-semibold uppercase tracking-wider text-[#777777]">Ouvertures</p>
-          <p className="mt-1 text-base sm:text-lg font-bold text-[#23272B]">{totaux.ouvertures.toFixed(1)} m²</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+          <p className="text-3xs font-semibold uppercase tracking-wider text-[#8E7F74]">Ouvertures</p>
+          <p className="mt-1 text-base sm:text-lg font-bold text-[#F5EFEA]">{totaux.ouvertures.toFixed(1)} m²</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <p className="text-3xs font-semibold uppercase tracking-wider text-[#B85B2B]">Total net</p>
-          <p className="mt-1 text-base sm:text-lg font-bold text-[#B85B2B]">{totaux.nette.toFixed(1)} m²</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+          <p className="text-3xs font-semibold uppercase tracking-wider text-[#D96B27]">Total net</p>
+          <p className="mt-1 text-base sm:text-lg font-bold text-[#D96B27]">{totaux.nette.toFixed(1)} m²</p>
         </div>
 
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-          <p className="text-3xs font-semibold uppercase tracking-wider text-emerald-800">À commander</p>
-          <p className="mt-1 text-base sm:text-lg font-bold text-emerald-700">{totaux.aCommander.toFixed(1)} m²</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-500/15/60 p-3.5 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+          <p className="text-3xs font-semibold uppercase tracking-wider text-emerald-300">À commander</p>
+          <p className="mt-1 text-base sm:text-lg font-bold text-emerald-300">{totaux.aCommander.toFixed(1)} m²</p>
         </div>
       </div>
 
@@ -531,7 +531,7 @@ export default function BardageCalepinageModule({
       <button
         type="button"
         onClick={handleCreerCommandeQuincaillerie}
-        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#B85B2B] hover:bg-[#D97732] py-3 text-xs sm:text-sm font-bold text-white transition-all shadow-xs"
+        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#D96B27] hover:bg-[#E07A38] py-3 text-xs sm:text-sm font-bold text-white transition-all shadow-xs"
       >
         <Package size={15} />
         <span>Générer le Bon de Commande Quincaillerie (Chevrons, Équerres, Vis)</span>
@@ -555,7 +555,7 @@ export default function BardageCalepinageModule({
         <button
           type="button"
           onClick={ajouterZone}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#E5E5E5] bg-white py-3.5 text-xs sm:text-sm font-bold text-[#777777] hover:text-[#B85B2B] hover:border-[#B85B2B]/40 hover:bg-[#FDFBF9] transition"
+          className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/10 bg-[#1B1511] py-3.5 text-xs sm:text-sm font-bold text-[#8E7F74] hover:text-[#D96B27] hover:border-[#D96B27]/40 hover:bg-[#FDFBF9] transition"
         >
           <Plus size={15} />
           <span>Ajouter une nouvelle zone / façade de bardage</span>

@@ -288,19 +288,19 @@ export default function CatalogueCloturePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#23272B] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#120F0D] text-[#F5EFEA] p-4 sm:p-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white p-6 shadow-xs">
+        <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-6 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D96B27]/10 border border-[#D96B27]/20 text-[#D96B27]">
                 <Fence className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-[#23272B]">
+                <h1 className="text-xl font-bold text-[#F5EFEA]">
                   Catalogue Clôture &amp; Brise-vue
                 </h1>
-                <p className="text-xs text-[#777777]">
+                <p className="text-xs text-[#8E7F74]">
                   Lames, poteaux, soubassements béton, platines, portillons et cadences de pose
                 </p>
               </div>
@@ -315,23 +315,23 @@ export default function CatalogueCloturePage() {
                 setPrixVenteModifieManuellement(false);
                 setModalOuvert(true);
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2.5 text-xs font-bold text-white shadow-xs transition-all"
             >
               <Plus className="h-4 w-4" />
               Nouvel article Clôture
             </button>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 pt-4 border-t border-[#F0F0F0] sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 pt-4 border-t border-white/10 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
               <input
                 type="text"
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Rechercher par désignation, référence, matériau..."
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] pl-9 pr-4 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] pl-9 pr-4 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
               />
-              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#8E7F74]" />
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
@@ -345,7 +345,7 @@ export default function CatalogueCloturePage() {
                       : normaliserGammeMateriau(e.target.value)
                   )
                 }
-                className="rounded-lg border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                className="rounded-lg border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
               >
                 <option value="toutes">Toutes gammes</option>
                 {GAMMES_MATERIAU_ORDRE.map((g) => (
@@ -361,8 +361,8 @@ export default function CatalogueCloturePage() {
                   onClick={() => setCategorie(c.id)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                     categorie === c.id
-                      ? "bg-[#B85B2B] text-white"
-                      : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                      ? "bg-[#D96B27] text-white"
+                      : "bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA]"
                   }`}
                 >
                   {c.label}
@@ -374,24 +374,24 @@ export default function CatalogueCloturePage() {
 
         <CadencesMainOeuvreSection metier="cloture" />
 
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white overflow-hidden shadow-xs">
+        <section className="rounded-2xl border border-white/10 bg-[#1B1511] overflow-hidden shadow-xs">
           {loading ? (
-            <div className="p-8 text-center text-xs text-[#777777]">
+            <div className="p-8 text-center text-xs text-[#8E7F74]">
               Chargement du catalogue Clôture...
             </div>
           ) : articlesFiltres.length === 0 ? (
             <div className="p-10 text-center space-y-2">
-              <p className="text-sm font-bold text-[#23272B]">
+              <p className="text-sm font-bold text-[#F5EFEA]">
                 Aucun article Clôture enregistré
               </p>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Ajoutez vos lames, poteaux, soubassements et portillons pour les chiffrages automatiques.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#F8F9FA] text-[11px] uppercase tracking-wider text-[#777777] border-b border-[#E5E5E5]">
+                <thead className="bg-[#120F0D] text-[11px] uppercase tracking-wider text-[#8E7F74] border-b border-white/10">
                   <tr>
                     <th className="px-4 py-3">Catégorie</th>
                     <th className="px-4 py-3">Matériau</th>
@@ -402,16 +402,16 @@ export default function CatalogueCloturePage() {
                     <th className="px-4 py-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F0F0F0]">
+                <tbody className="divide-y divide-white/10">
                   {articlesFiltres.map((a) => (
-                    <tr key={a.id} className="hover:bg-[#F8F9FA]/60">
-                      <td className="px-4 py-3 font-semibold uppercase text-[#B85B2B]">
+                    <tr key={a.id} className="hover:bg-[#120F0D]/60">
+                      <td className="px-4 py-3 font-semibold uppercase text-[#D96B27]">
                         {a.categorie}
                       </td>
-                      <td className="px-4 py-3 text-[#555555]">{a.materiau}</td>
+                      <td className="px-4 py-3 text-[#B8A99E]">{a.materiau}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-bold text-[#23272B]">{a.designation}</p>
+                          <p className="font-bold text-[#F5EFEA]">{a.designation}</p>
                           {(() => {
                             const gammeNorm = normaliserGammeMateriau(a.gamme_qualite);
                             const ctxGamme = estContexteOssature({
@@ -434,12 +434,12 @@ export default function CatalogueCloturePage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mt-0.5">
                           {a.reference && (
-                            <p className="text-[11px] text-[#888888] font-mono">Réf: {a.reference}</p>
+                            <p className="text-[11px] text-[#8E7F74] font-mono">Réf: {a.reference}</p>
                           )}
                           {a.coloris && (() => {
                             const ralHex = getRalHexColor(a.coloris);
                             return (
-                              <span className="inline-flex items-center gap-1 rounded border border-[#E5E5E5] bg-[#F8F9FA] px-1.5 py-0.5 text-[10px] font-medium text-[#444444]">
+                              <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-[#120F0D] px-1.5 py-0.5 text-[10px] font-medium text-[#444444]">
                                 {ralHex && (
                                   <span
                                     className="inline-block h-2 w-2 rounded-full border border-black/25 shrink-0"
@@ -453,14 +453,14 @@ export default function CatalogueCloturePage() {
                           })()}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right text-[#666666] font-mono">
+                      <td className="px-4 py-3 text-right text-[#B8A99E] font-mono">
                         {a.longueur_m ? `${a.longueur_m}m` : "—"}
                         {a.hauteur_m ? ` × ${Math.round(a.hauteur_m * 1000)}mm` : ""}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-[#666666]">
+                      <td className="px-4 py-3 text-right font-mono text-[#B8A99E]">
                         {fmtEuro(a.prix_achat_ht)}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-[#23272B]">
+                      <td className="px-4 py-3 text-right font-mono font-bold text-[#F5EFEA]">
                         {fmtEuro(a.prix_vente_ht)} / {normaliserUniteVente(a.unite, "U")}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -471,7 +471,7 @@ export default function CatalogueCloturePage() {
                               e.stopPropagation();
                               ouvrirEditionCloture(a);
                             }}
-                            className="text-slate-400 hover:text-[#23272B] hover:bg-[#F3F3F1] p-1.5 rounded-lg transition-colors"
+                            className="text-[#8E7F74] hover:text-[#F5EFEA] hover:bg-[#120F0D] p-1.5 rounded-lg transition-colors"
                             title="Modifier la fiche article"
                             aria-label={`Modifier ${a.designation}`}
                           >
@@ -483,7 +483,7 @@ export default function CatalogueCloturePage() {
                               e.stopPropagation();
                               supprimerArticle(a.id, a.designation);
                             }}
-                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                            className="text-[#8E7F74] hover:text-red-600 hover:bg-red-500/15 p-1.5 rounded-lg transition-colors"
                             title="Supprimer cet article"
                             aria-label="Supprimer"
                           >
@@ -508,31 +508,31 @@ export default function CatalogueCloturePage() {
           <form
             onSubmit={creerArticle}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg rounded-2xl bg-[#0B0F19] border border-slate-700 shadow-2xl overflow-hidden text-white"
+            className="w-full max-w-lg rounded-2xl bg-[#1B1511] border border-white/15 shadow-2xl overflow-hidden text-white"
           >
-            <div className="flex items-center justify-between border-b border-slate-700 bg-[#111827] p-4">
+            <div className="flex items-center justify-between border-b border-white/15 bg-[#111827] p-4">
               <h2 className="text-base font-bold text-white">
                 {editingId ? "Modifier l'article Clôture" : "Nouvel article Catalogue Clôture"}
               </h2>
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-lg p-1 text-slate-400 hover:text-white"
+                className="rounded-lg p-1 text-[#8E7F74] hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="p-4 space-y-3 text-xs bg-[#0B0F19]">
+            <div className="p-4 space-y-3 text-xs bg-[#1B1511]">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold text-slate-300">Catégorie</label>
                   <select
                     value={formCat}
                     onChange={(e) => setFormCat(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   >
                     {CATEGORIES.filter((c) => c.id !== "tous").map((c) => (
-                      <option key={c.id} value={c.id} className="bg-[#151C2C] text-white">
+                      <option key={c.id} value={c.id} className="bg-[#120F0D] text-white">
                         {c.label}
                       </option>
                     ))}
@@ -543,13 +543,13 @@ export default function CatalogueCloturePage() {
                   <select
                     value={formMat}
                     onChange={(e) => setFormMat(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   >
-                    <option value="COMPOSITE" className="bg-[#151C2C] text-white">Composite</option>
-                    <option value="BOIS" className="bg-[#151C2C] text-white">Bois</option>
-                    <option value="ALU" className="bg-[#151C2C] text-white">Aluminium</option>
-                    <option value="BETON" className="bg-[#151C2C] text-white">Béton</option>
-                    <option value="ACIER" className="bg-[#151C2C] text-white">Acier</option>
+                    <option value="COMPOSITE" className="bg-[#120F0D] text-white">Composite</option>
+                    <option value="BOIS" className="bg-[#120F0D] text-white">Bois</option>
+                    <option value="ALU" className="bg-[#120F0D] text-white">Aluminium</option>
+                    <option value="BETON" className="bg-[#120F0D] text-white">Béton</option>
+                    <option value="ACIER" className="bg-[#120F0D] text-white">Acier</option>
                   </select>
                 </div>
               </div>
@@ -570,7 +570,7 @@ export default function CatalogueCloturePage() {
                       id="cloture-gamme-qualite"
                       value={formGamme}
                       onChange={(e) => modifierClotureGamme(normaliserGammeMateriau(e.target.value))}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                      className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                     >
                       {GAMMES_MATERIAU_ORDRE.map((g) => {
                         const lib = getGammeLibellesContextuels(g, ctxForm);
@@ -579,7 +579,7 @@ export default function CatalogueCloturePage() {
                             ? lib.labelInterne
                             : `${lib.labelClient} / ${lib.labelInterne}`;
                         return (
-                          <option key={g} value={g} className="bg-[#151C2C] text-white">
+                          <option key={g} value={g} className="bg-[#120F0D] text-white">
                             {label}
                           </option>
                         );
@@ -596,7 +596,7 @@ export default function CatalogueCloturePage() {
                     value={formDesignation}
                     onChange={(e) => setFormDesignation(e.target.value)}
                     placeholder="Ex: Lame composite anthracite 1.80m"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white placeholder:text-slate-500 focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -605,7 +605,7 @@ export default function CatalogueCloturePage() {
                     value={formRef}
                     onChange={(e) => setFormRef(e.target.value)}
                     placeholder="CLO-LAM-01"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white placeholder:text-slate-500 focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
               </div>
@@ -615,7 +615,7 @@ export default function CatalogueCloturePage() {
                   value={formColoris}
                   onChange={(e) => setFormColoris(e.target.value)}
                   placeholder="Ex: Gris Anthracite RAL 7016"
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white placeholder:text-slate-500 focus:border-[#E30613] focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -624,7 +624,7 @@ export default function CatalogueCloturePage() {
                   <input
                     value={formLongueur}
                     onChange={(e) => setFormLongueur(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -632,7 +632,7 @@ export default function CatalogueCloturePage() {
                   <input
                     value={formHauteur}
                     onChange={(e) => setFormHauteur(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -646,17 +646,17 @@ export default function CatalogueCloturePage() {
                         appliquerCalculMainOeuvreCloture(formTempsUnitaireH, newUnite, formGamme);
                       }
                     }}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   >
                     {UNITES_VENTE.map((u) => (
-                      <option key={u} value={u} className="bg-[#151C2C] text-white">
+                      <option key={u} value={u} className="bg-[#120F0D] text-white">
                         {u}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-700 bg-[#111827] p-3 space-y-2">
+              <div className="rounded-xl border border-white/15 bg-[#111827] p-3 space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-200">
                   <input
                     type="checkbox"
@@ -668,7 +668,7 @@ export default function CatalogueCloturePage() {
                         appliquerCalculMainOeuvreCloture(formTempsUnitaireH, formUnite, formGamme);
                       }
                     }}
-                    className="h-4 w-4 rounded border-slate-600 bg-[#151C2C] accent-[#E30613]"
+                    className="h-4 w-4 rounded border-slate-600 bg-[#120F0D] accent-[#D96B27]"
                   />
                   Calculer comme prestation Main-d&apos;œuvre (taux horaires catalogue_temps)
                 </label>
@@ -690,11 +690,11 @@ export default function CatalogueCloturePage() {
                             setFormUnite(preset.unite);
                             appliquerCalculMainOeuvreCloture(tStr, preset.unite, formGamme);
                           }}
-                          className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                         >
                           <option value="">Choisir une cadence...</option>
                           {presets.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-[#151C2C] text-white">
+                            <option key={p.id} value={p.id} className="bg-[#120F0D] text-white">
                               {p.label}
                             </option>
                           ))}
@@ -715,7 +715,7 @@ export default function CatalogueCloturePage() {
                             setPresetCadenceId("");
                             appliquerCalculMainOeuvreCloture(val, formUnite, formGamme);
                           }}
-                          className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                         />
                       </div>
                     </div>
@@ -728,7 +728,7 @@ export default function CatalogueCloturePage() {
                   <input
                     value={formPrixAchat}
                     onChange={(e) => modifierCloturePrixAchat(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -747,7 +747,7 @@ export default function CatalogueCloturePage() {
                   <input
                     value={formPrixVente}
                     onChange={(e) => modifierCloturePrixVente(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-white focus:border-[#E30613] focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-white focus:border-[#D96B27] focus:outline-none"
                   />
                 </div>
               </div>
@@ -766,7 +766,7 @@ export default function CatalogueCloturePage() {
                   const margePct = vente > 0 ? (marge / vente) * 100 : 0;
                   const fmtDec = (n: number) => n.toFixed(2).replace(".", ",");
                   return (
-                    <div className="rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-[11px] text-slate-300">
+                    <div className="rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-[11px] text-slate-300">
                       {calc.estHoraire || calc.tempsUnitaireH > 0 ? (
                         <span>
                           Cadence : <strong className="text-white">{fmtDec(calc.tempsUnitaireH)} h</strong> × coef pose{" "}
@@ -788,7 +788,7 @@ export default function CatalogueCloturePage() {
                 }
                 const ind = calculerIndicateurMargeTarif(vente, revient, formGamme);
                 return (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700 bg-[#151C2C] px-3 py-2 text-[11px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#120F0D] px-3 py-2 text-[11px]">
                     <span className="text-slate-300">
                       Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
                     </span>
@@ -797,24 +797,24 @@ export default function CatalogueCloturePage() {
                         Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
                       </span>
                     ) : (
-                      <span className="text-slate-400">Saisissez un coût d&apos;achat HT</span>
+                      <span className="text-[#8E7F74]">Saisissez un coût d&apos;achat HT</span>
                     )}
                   </div>
                 );
               })()}
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-700/80 bg-[#111827] p-4">
+            <div className="flex justify-end gap-2 border-t border-white/15/80 bg-[#111827] p-4">
               <button
                 type="button"
                 onClick={() => setModalOuvert(false)}
-                className="rounded-xl border border-slate-700 bg-[#151C2C] px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white"
+                className="rounded-xl border border-white/15 bg-[#120F0D] px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#E30613] hover:bg-red-700 px-4 py-2 text-xs font-bold text-white transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-red-700 px-4 py-2 text-xs font-bold text-white transition-colors"
               >
                 <Check className="h-4 w-4" />
                 {saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Ajouter"}

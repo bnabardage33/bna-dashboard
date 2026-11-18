@@ -245,7 +245,7 @@ export default function CommandeModal({
                       Imprimer / Exporter PDF
                     </button>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white p-2">
+                  <div className="rounded-xl border border-white/10 bg-[#1B1511] p-2">
                     <BonCommandePDF
                       commande={g.commande}
                       fournisseur={g.fournisseur}

@@ -1072,7 +1072,7 @@ export const BardagePlan3D: React.FC<{
             className={`px-2.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
               mode3D === "coupe"
                 ? "bg-orange-500 text-white shadow-sm shadow-orange-500/20"
-                : "bg-slate-900 text-slate-300 border border-slate-700 hover:text-white"
+                : "bg-slate-900 text-slate-300 border border-white/15 hover:text-white"
             }`}
           >
             <Layers className="w-3.5 h-3.5" /> Façade ({activeFacade.nom})
@@ -1084,7 +1084,7 @@ export const BardagePlan3D: React.FC<{
               className={`px-2.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
                 mode3D === "batiment"
                   ? "bg-orange-500 text-white shadow-sm shadow-orange-500/20"
-                  : "bg-slate-900 text-slate-300 border border-slate-700 hover:text-white"
+                  : "bg-slate-900 text-slate-300 border border-white/15 hover:text-white"
               }`}
             >
               <Box className="w-3.5 h-3.5" /> Bâtiment 3D ({allFacades.length} façades)
@@ -1126,35 +1126,35 @@ export const BardagePlan3D: React.FC<{
           <button
             type="button"
             onClick={() => setCameraPreset("isoG")}
-            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-slate-700 text-slate-300 hover:text-white"
+            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-white/15 text-slate-300 hover:text-white"
           >
             Iso G
           </button>
           <button
             type="button"
             onClick={() => setCameraPreset("isoD")}
-            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-slate-700 text-slate-300 hover:text-white"
+            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-white/15 text-slate-300 hover:text-white"
           >
             Iso D
           </button>
           <button
             type="button"
             onClick={() => setCameraPreset("face")}
-            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-slate-700 text-slate-300 hover:text-white"
+            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-white/15 text-slate-300 hover:text-white"
           >
             Face
           </button>
           <button
             type="button"
             onClick={() => setCameraPreset("dessus")}
-            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-slate-700 text-slate-300 hover:text-white"
+            className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900 border border-white/15 text-slate-300 hover:text-white"
           >
             Dessus
           </button>
           <button
             type="button"
             onClick={() => setCameraPreset("reset")}
-            className="p-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:text-white"
+            className="p-1 rounded-lg bg-slate-900 border border-white/15 text-[#8E7F74] hover:text-white"
             title="Réinitialiser la caméra"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -1164,7 +1164,7 @@ export const BardagePlan3D: React.FC<{
 
       {/* FILTRES DE VISIBILITÉ DES 5 COUCHES DTU 41.2 */}
       <div className="flex flex-wrap items-center gap-2 text-[11px] px-1">
-        <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
+        <span className="text-[10px] font-bold uppercase text-[#8E7F74] flex items-center gap-1">
           <Eye className="w-3 h-3 text-orange-400" /> Couches DTU :
         </span>
         {[
@@ -1176,7 +1176,7 @@ export const BardagePlan3D: React.FC<{
         ].map((layer) => (
           <label
             key={layer.label}
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-800 cursor-pointer select-none hover:border-slate-700 transition"
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950 border border-slate-800 cursor-pointer select-none hover:border-white/15 transition"
           >
             <input
               type="checkbox"
@@ -1214,7 +1214,7 @@ export const BardagePlan3D: React.FC<{
             />
           </Canvas>
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+          <div className="w-full h-full flex items-center justify-center text-[#8E7F74] text-xs">
             Chargement de la maquette 3D PBR...
           </div>
         )}
@@ -1225,7 +1225,7 @@ export const BardagePlan3D: React.FC<{
           <span className="font-semibold">
             {facadeNomFamille(activeFacade.famille)}
           </span>
-          <span className="text-slate-400">· Joints creux 8 mm</span>
+          <span className="text-[#8E7F74]">· Joints creux 8 mm</span>
         </div>
 
         {/* FICHE D'INSPECTION DÉTAILLÉE AU CLIC (HUD) */}
@@ -1261,7 +1261,7 @@ export const BardagePlan3D: React.FC<{
       </div>
 
       {/* PIED DE VISUALISATION : CONSEILS D'INTERACTION */}
-      <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+      <div className="flex items-center justify-between text-[11px] text-[#8E7F74] px-1">
         <span>
           Glisse pour pivoter à 360° · Molette/Pincement pour zoomer · Clic sur un panneau ou encadrement pour inspecter
         </span>

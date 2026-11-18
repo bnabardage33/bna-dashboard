@@ -66,7 +66,7 @@ function IconeMeteo({
     return <Snowflake className={className || "h-7 w-7 text-sky-200"} />;
   }
   if (i.includes("fog") || c.includes("brouillard") || c.includes("brume")) {
-    return <CloudFog className={className || "h-7 w-7 text-slate-400"} />;
+    return <CloudFog className={className || "h-7 w-7 text-[#8E7F74]"} />;
   }
   if (i.includes("wind") || c.includes("vent")) {
     return <Wind className={className || "h-7 w-7 text-amber-300"} />;

@@ -111,7 +111,7 @@ export default function SidebarDesktop() {
         <div className="shrink-0 py-2.5 px-2 flex flex-col items-center gap-2 border-b border-white/[0.06]">
           <Link
             href="/"
-            className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden group hover:border-[#B85B2B]/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
+            className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden group hover:border-[#D96B27]/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B]"
             title="BNA Bardage — Accueil"
           >
             <Image
@@ -248,7 +248,7 @@ export default function SidebarDesktop() {
                   <Icone
                     size={18}
                     className={`shrink-0 transition-colors ${
-                      estGroupeActif ? "text-[#B85B2B]" : "text-gray-400 group-hover:text-white"
+                      estGroupeActif ? "text-[#D96B27]" : "text-gray-400 group-hover:text-white"
                     }`}
                     aria-hidden="true"
                   />
@@ -278,7 +278,7 @@ export default function SidebarDesktop() {
                           href={enfant.href}
                           className={`block px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] ${
                             actif
-                              ? "bg-[#B85B2B]/20 text-white font-semibold border-l-2 border-[#B85B2B] -ml-[13px] pl-[11px]"
+                              ? "bg-[#D96B27]/20 text-white font-semibold border-l-2 border-[#D96B27] -ml-[13px] pl-[11px]"
                               : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
                           }`}
                           aria-current={actif ? "page" : undefined}
@@ -298,7 +298,7 @@ export default function SidebarDesktop() {
                   aria-label={item.label}
                   className="absolute left-full top-0 ml-2 w-52 bg-[#1E1E1E] border border-white/10 rounded-xl p-2 shadow-2xl pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50"
                 >
-                  <div className="px-2.5 py-1.5 text-2xs font-bold text-[#B85B2B] uppercase tracking-wider border-b border-white/[0.08] mb-1">
+                  <div className="px-2.5 py-1.5 text-2xs font-bold text-[#D96B27] uppercase tracking-wider border-b border-white/[0.08] mb-1">
                     {item.label}
                   </div>
                   <ul className="space-y-0.5">
@@ -311,7 +311,7 @@ export default function SidebarDesktop() {
                             role="menuitem"
                             className={`block px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B85B2B] ${
                               actif
-                                ? "bg-[#B85B2B]/20 text-white font-semibold"
+                                ? "bg-[#D96B27]/20 text-white font-semibold"
                                 : "text-gray-300 hover:text-white hover:bg-white/[0.08]"
                             }`}
                             aria-current={actif ? "page" : undefined}
@@ -339,7 +339,7 @@ export default function SidebarDesktop() {
               collapsedEffectif ? "h-10 w-10 mx-auto justify-center" : "px-3 py-2"
             } ${
               estLienActif("/parametres", pathname, ongletEffectif)
-                ? "bg-[#B85B2B]/20 text-white font-semibold border border-[#B85B2B]/40"
+                ? "bg-[#D96B27]/20 text-white font-semibold border border-[#D96B27]/40"
                 : "text-gray-400 hover:text-white hover:bg-white/[0.06]"
             }`}
             title={collapsedEffectif ? "Paramètres" : undefined}

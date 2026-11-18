@@ -218,23 +218,23 @@ export default function ModifierChantierBardageModal({
       onClick={onFermer}
     >
       <div
-        className="relative w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white text-[#23272B] shadow-[0_25px_60px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] text-[#F5EFEA] shadow-[0_25px_60px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* En-tête harmonisé BNA clair */}
-        <div className="border-b border-[#F0F0F0] bg-[#F8F9FA] px-6 py-5 shrink-0">
+        <div className="border-b border-white/10 bg-[#120F0D] px-6 py-5 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
                 <Pencil className="h-5 w-5" strokeWidth={2} />
               </span>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[2px] text-[#B85B2B]">
+                <p className="text-xs font-bold uppercase tracking-[2px] text-[#D96B27]">
                   Édition Chantier · Bardage
                 </p>
                 <h2
                   id="titre-modal-modifier-bardage"
-                  className="text-lg sm:text-xl font-bold tracking-tight text-[#23272B]"
+                  className="text-lg sm:text-xl font-bold tracking-tight text-[#F5EFEA]"
                 >
                   Modifier les Informations
                 </h2>
@@ -243,7 +243,7 @@ export default function ModifierChantierBardageModal({
             <button
               type="button"
               onClick={onFermer}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#23272B]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-[#221B17] hover:text-[#F5EFEA]"
               aria-label="Fermer"
             >
               <X className="h-5 w-5" />
@@ -259,7 +259,7 @@ export default function ModifierChantierBardageModal({
         >
           {/* Message d'erreur éventuel */}
           {erreur && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700 flex items-center gap-2">
+            <div className="rounded-xl border border-red-200 bg-red-500/15 p-3.5 text-xs font-semibold text-red-300 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
               <span>{erreur}</span>
             </div>
@@ -267,17 +267,17 @@ export default function ModifierChantierBardageModal({
 
           {/* Section 1 : Informations principales */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#777777] border-b border-[#F0F0F0] pb-1.5">
-              <Layers3 className="h-4 w-4 text-[#B85B2B]" />
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#8E7F74] border-b border-white/10 pb-1.5">
+              <Layers3 className="h-4 w-4 text-[#D96B27]" />
               <span>Identification du Projet</span>
             </div>
 
             <div>
               <label
                 htmlFor="mod-nom-du-chantier"
-                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
               >
-                Nom du chantier <span className="text-[#B85B2B]">*</span>
+                Nom du chantier <span className="text-[#D96B27]">*</span>
               </label>
               <input
                 id="mod-nom-du-chantier"
@@ -286,7 +286,7 @@ export default function ModifierChantierBardageModal({
                 onChange={(e) => setNom(e.target.value)}
                 placeholder="Ex. Bardage Clin Bois — Villa Arcachon"
                 required
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
               />
             </div>
 
@@ -294,16 +294,16 @@ export default function ModifierChantierBardageModal({
               <div>
                 <label
                   htmlFor="mod-client-associe"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
-                  Client associé <span className="text-[#B85B2B]">*</span>
+                  Client associé <span className="text-[#D96B27]">*</span>
                 </label>
                 <select
                   id="mod-client-associe"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 >
                   <option value="">— Sélectionner un client —</option>
                   {clients.map((c) => (
@@ -317,7 +317,7 @@ export default function ModifierChantierBardageModal({
               <div>
                 <label
                   htmlFor="mod-statut-chantier"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Statut du chantier
                 </label>
@@ -327,7 +327,7 @@ export default function ModifierChantierBardageModal({
                   onChange={(e) =>
                     setStatut(e.target.value as "prevu" | "en_cours" | "termine")
                   }
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 >
                   <option value="prevu">Prévu (Non démarré)</option>
                   <option value="en_cours">En cours de réalisation</option>
@@ -339,15 +339,15 @@ export default function ModifierChantierBardageModal({
 
           {/* Section 2 : Localisation & Planning */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#777777] border-b border-[#F0F0F0] pb-1.5">
-              <MapPin className="h-4 w-4 text-[#B85B2B]" />
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#8E7F74] border-b border-white/10 pb-1.5">
+              <MapPin className="h-4 w-4 text-[#D96B27]" />
               <span>Localisation & Calendrier</span>
             </div>
 
             <div>
               <label
                 htmlFor="mod-adresse-du-site"
-                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
               >
                 Adresse du site des travaux
               </label>
@@ -357,9 +357,9 @@ export default function ModifierChantierBardageModal({
                 value={adresse}
                 onChange={(e) => setAdresse(e.target.value)}
                 placeholder="Ex. 14 Route des Plages, 33120 Arcachon"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
               />
-              <p className="mt-1 text-[11px] text-[#777777]">
+              <p className="mt-1 text-[11px] text-[#8E7F74]">
                 L&apos;adresse alimente dynamiquement le calcul du lien GPS Itinéraire Google Maps.
               </p>
             </div>
@@ -368,7 +368,7 @@ export default function ModifierChantierBardageModal({
               <div>
                 <label
                   htmlFor="mod-date-debut-prevue"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Date début prévue
                 </label>
@@ -377,14 +377,14 @@ export default function ModifierChantierBardageModal({
                   type="date"
                   value={dateDebut}
                   onChange={(e) => setDateDebut(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="mod-date-fin-estimee"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Date fin estimée
                 </label>
@@ -393,7 +393,7 @@ export default function ModifierChantierBardageModal({
                   type="date"
                   value={dateFin}
                   onChange={(e) => setDateFin(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 />
               </div>
             </div>
@@ -401,8 +401,8 @@ export default function ModifierChantierBardageModal({
 
           {/* Section 3 : Spécifications techniques générales */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#777777] border-b border-[#F0F0F0] pb-1.5">
-              <ShieldCheck className="h-4 w-4 text-[#B85B2B]" />
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#8E7F74] border-b border-white/10 pb-1.5">
+              <ShieldCheck className="h-4 w-4 text-[#D96B27]" />
               <span>Paramètres Métier Bardage</span>
             </div>
 
@@ -410,7 +410,7 @@ export default function ModifierChantierBardageModal({
               <div>
                 <label
                   htmlFor="mod-materiau-predominant"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Famille / Revêtement
                 </label>
@@ -418,7 +418,7 @@ export default function ModifierChantierBardageModal({
                   id="mod-materiau-predominant"
                   value={materiauStructurel}
                   onChange={(e) => setMateriauStructurel(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 >
                   <option value="Bois / Mélèze">Bois Naturel / Mélèze</option>
                   <option value="Panneaux HPL Trespa">Panneaux HPL (Trespa / Fundermax)</option>
@@ -430,7 +430,7 @@ export default function ModifierChantierBardageModal({
               <div>
                 <label
                   htmlFor="mod-moyen-acces"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Moyen d&apos;accès
                 </label>
@@ -438,7 +438,7 @@ export default function ModifierChantierBardageModal({
                   id="mod-moyen-acces"
                   value={moyenAcces}
                   onChange={(e) => setMoyenAcces(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 >
                   <option value="echafaudage">Échafaudage fixe</option>
                   <option value="nacelle">Nacelle élévatrice</option>
@@ -450,7 +450,7 @@ export default function ModifierChantierBardageModal({
               <div>
                 <label
                   htmlFor="mod-zone-vent"
-                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                  className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
                 >
                   Zone de vent
                 </label>
@@ -458,7 +458,7 @@ export default function ModifierChantierBardageModal({
                   id="mod-zone-vent"
                   value={zoneVent}
                   onChange={(e) => setZoneVent(e.target.value)}
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                 >
                   <option value="1">Zone 1 (Normale)</option>
                   <option value="2">Zone 2 (Modérée)</option>
@@ -471,15 +471,15 @@ export default function ModifierChantierBardageModal({
 
           {/* Section 4 : Contact & Notes */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#777777] border-b border-[#F0F0F0] pb-1.5">
-              <Phone className="h-4 w-4 text-[#B85B2B]" />
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#8E7F74] border-b border-white/10 pb-1.5">
+              <Phone className="h-4 w-4 text-[#D96B27]" />
               <span>Contact & Notes de Chantier</span>
             </div>
 
             <div>
               <label
                 htmlFor="mod-contact-chantier"
-                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
               >
                 Contact sur place (Nom / Téléphone)
               </label>
@@ -489,14 +489,14 @@ export default function ModifierChantierBardageModal({
                 value={contactChantier}
                 onChange={(e) => setContactChantier(e.target.value)}
                 placeholder="Ex. M. Dupont - 06 12 34 56 78"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="mod-notes-terrain"
-                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#777777]"
+                className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
               >
                 Notes de terrain / Instructions d&apos;accès
               </label>
@@ -506,19 +506,19 @@ export default function ModifierChantierBardageModal({
                 value={notesTerrain}
                 onChange={(e) => setNotesTerrain(e.target.value)}
                 placeholder="Ex. Portail à code, stocker les palettes côté Nord..."
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-sm font-medium text-[#23272B] placeholder:text-gray-400 focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 resize-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] placeholder:text-gray-400 focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 resize-none"
               />
             </div>
           </div>
         </form>
 
         {/* Pied de modale sticky */}
-        <div className="border-t border-[#F0F0F0] bg-[#F8F9FA] px-6 py-4 shrink-0 flex items-center justify-end gap-3">
+        <div className="border-t border-white/10 bg-[#120F0D] px-6 py-4 shrink-0 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onFermer}
             disabled={enCours}
-            className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs font-bold text-[#23272B] hover:bg-gray-50 transition-colors"
+            className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-xs font-bold text-[#F5EFEA] hover:bg-[#120F0D] transition-colors"
           >
             Annuler
           </button>
@@ -526,7 +526,7 @@ export default function ModifierChantierBardageModal({
             type="submit"
             form="form-modifier-chantier-bardage"
             disabled={enCours}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D97732] active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] active:scale-[0.98] disabled:opacity-50"
           >
             {enCours ? (
               <>

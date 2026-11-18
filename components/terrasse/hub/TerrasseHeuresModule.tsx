@@ -219,17 +219,17 @@ export default function TerrasseHeuresModule({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Synthèse des heures pointées */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F0F0F0] pb-4">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <Clock className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[2px] text-[#B85B2B]">
+              <p className="text-xs font-bold uppercase tracking-[2px] text-[#D96B27]">
                 Gestion du Temps & Productivité
               </p>
-              <h3 className="text-xl font-bold text-[#23272B]">
+              <h3 className="text-xl font-bold text-[#F5EFEA]">
                 Suivi des Heures — Chantier Terrasse
               </h3>
             </div>
@@ -237,16 +237,16 @@ export default function TerrasseHeuresModule({
 
           <div className="flex flex-wrap items-center gap-3">
             {estimationPrevue && (
-              <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2 text-right">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Heures prévues</p>
-                <p className="text-2xl font-bold tracking-tight text-[#23272B]">
+              <div className="rounded-2xl border border-white/10 bg-[#120F0D] px-4 py-2 text-right">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Heures prévues</p>
+                <p className="text-2xl font-bold tracking-tight text-[#F5EFEA]">
                   {totalPrevu.toFixed(1)} h
                 </p>
               </div>
             )}
-            <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] px-4 py-2 text-right">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Heures réalisées</p>
-              <p className="text-2xl font-bold tracking-tight text-[#B85B2B]">
+            <div className="rounded-2xl border border-white/10 bg-[#120F0D] px-4 py-2 text-right">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Heures réalisées</p>
+              <p className="text-2xl font-bold tracking-tight text-[#D96B27]">
                 {totalHeures.toFixed(1)} h
               </p>
             </div>
@@ -254,14 +254,14 @@ export default function TerrasseHeuresModule({
               <div
                 className={`rounded-2xl border px-4 py-2 text-right ${
                   ecartTotalH >= 0
-                    ? "border-emerald-200 bg-emerald-50/70"
-                    : "border-red-200 bg-red-50/70"
+                    ? "border-emerald-200 bg-emerald-500/15/70"
+                    : "border-red-200 bg-red-500/15/70"
                 }`}
               >
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Écart prévu / réalisé</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Écart prévu / réalisé</p>
                 <p
                   className={`text-xl font-bold tracking-tight ${
-                    ecartTotalH >= 0 ? "text-emerald-700" : "text-red-700"
+                    ecartTotalH >= 0 ? "text-emerald-300" : "text-red-300"
                   }`}
                 >
                   {ecartTotalH >= 0 ? "+" : ""}
@@ -281,15 +281,15 @@ export default function TerrasseHeuresModule({
             return (
               <div
                 key={ph.id}
-                className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-left space-y-1.5"
+                className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-left space-y-1.5"
               >
-                <p className="text-[11px] font-semibold text-[#777777] truncate">{ph.label}</p>
+                <p className="text-[11px] font-semibold text-[#8E7F74] truncate">{ph.label}</p>
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-lg font-bold text-[#23272B]">
-                    {ph.total.toFixed(1)} <span className="text-xs font-normal text-[#777777]">h</span>
+                  <p className="text-lg font-bold text-[#F5EFEA]">
+                    {ph.total.toFixed(1)} <span className="text-xs font-normal text-[#8E7F74]">h</span>
                   </p>
                   {estimationPrevue && (
-                    <span className="text-[11px] font-medium text-[#777777]">
+                    <span className="text-[11px] font-medium text-[#8E7F74]">
                       / {ph.prevu.toFixed(1)} h prévues
                     </span>
                   )}
@@ -304,7 +304,7 @@ export default function TerrasseHeuresModule({
                     </div>
                     <p
                       className={`text-[11px] font-semibold ${
-                        ph.ecartH >= 0 ? "text-emerald-700" : "text-red-700"
+                        ph.ecartH >= 0 ? "text-emerald-300" : "text-red-300"
                       }`}
                     >
                       Écart : {ph.ecartH >= 0 ? "+" : ""}
@@ -320,19 +320,19 @@ export default function TerrasseHeuresModule({
       </section>
 
       {/* 2. Formulaire de saisie d'un pointage */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#B85B2B]">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#D96B27]">
           Pointer des heures sur ce chantier
         </p>
 
         <form onSubmit={handleValiderPointage} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">Compagnon / Poseur</label>
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Compagnon / Poseur</label>
               <select
                 value={ouvrierId}
                 onChange={(e) => setOuvrierId(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               >
                 <option value="">Pointage collectif (Équipe)</option>
                 {ouvriers.map((u) => (
@@ -344,18 +344,18 @@ export default function TerrasseHeuresModule({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">Date d&apos;intervention</label>
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Date d&apos;intervention</label>
               <input
                 type="date"
                 required
                 value={datePointage}
                 onChange={(e) => setDatePointage(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">Heures effectuées</label>
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Heures effectuées</label>
               <input
                 type="number"
                 step="0.5"
@@ -364,16 +364,16 @@ export default function TerrasseHeuresModule({
                 required
                 value={heures}
                 onChange={(e) => setHeures(Number(e.target.value))}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm font-bold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm font-bold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">Phase Terrasse</label>
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">Phase Terrasse</label>
               <select
                 value={phaseSelectionnee}
                 onChange={(e) => setPhaseSelectionnee(e.target.value)}
-                className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
               >
                 {PHASES_TERRASSE_HEURES.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -385,7 +385,7 @@ export default function TerrasseHeuresModule({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-[#777777]">
+            <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">
               Commentaire / Tâches réalisées (optionnel)
             </label>
             <input
@@ -393,7 +393,7 @@ export default function TerrasseHeuresModule({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ex : Réglage au laser de 45 plots et pose des bandes EPDM..."
-              className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
             />
           </div>
 
@@ -404,7 +404,7 @@ export default function TerrasseHeuresModule({
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D97732] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               {submitting ? "Validation..." : "Enregistrer le pointage"}
@@ -414,21 +414,21 @@ export default function TerrasseHeuresModule({
       </section>
 
       {/* 3. Historique des pointages du chantier */}
-      <section className="rounded-[24px] border border-[#E5E5E5] bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#777777]">
+      <section className="rounded-[24px] border border-white/10 bg-[#1B1511] p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
           Journal des Interventions ({pointages.length})
         </h4>
 
         {loading ? (
           <p className="py-6 text-center text-xs text-gray-400">Chargement des heures...</p>
         ) : pointages.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center text-xs text-gray-500">
+          <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-xs text-gray-500">
             Aucun pointage n&apos;a été saisi pour l&apos;instant sur ce chantier terrasse.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-[#E5E5E5]">
+          <div className="overflow-hidden rounded-xl border border-white/10">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#F7F7F6] text-[#777777]">
+              <thead className="bg-[#F7F7F6] text-[#8E7F74]">
                 <tr>
                   <th className="px-4 py-2.5 font-bold">Date</th>
                   <th className="px-4 py-2.5 font-bold">Compagnon</th>
@@ -439,21 +439,21 @@ export default function TerrasseHeuresModule({
                   <th className="px-4 py-2.5 text-right font-bold">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F0F0F0] text-[#23272B]">
+              <tbody className="divide-y divide-white/10 text-[#F5EFEA]">
                 {pointages.map((pt) => (
-                  <tr key={pt.id} className="hover:bg-gray-50/70">
+                  <tr key={pt.id} className="hover:bg-[#120F0D]">
                     <td className="px-4 py-3 font-semibold">
                       {new Date(pt.date).toLocaleDateString("fr-FR")}
                     </td>
                     <td className="px-4 py-3 font-medium">{pt.user_nom}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-md border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-2 py-0.5 text-[11px] font-bold text-[#B85B2B]">
+                      <span className="rounded-md border border-[#D96B27]/20 bg-[#D96B27]/10 px-2 py-0.5 text-[11px] font-bold text-[#D96B27]">
                         {pt.phase}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold text-[#23272B]">{pt.heures} h</td>
-                    <td className="px-4 py-3 text-gray-600">{pt.meteo_relevee || "Normale"}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
+                    <td className="px-4 py-3 font-bold text-[#F5EFEA]">{pt.heures} h</td>
+                    <td className="px-4 py-3 text-[#B8A99E]">{pt.meteo_relevee || "Normale"}</td>
+                    <td className="px-4 py-3 text-[#B8A99E] max-w-xs truncate">
                       {pt.commentaire || "—"}
                     </td>
                     <td className="px-4 py-3 text-right">

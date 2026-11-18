@@ -85,7 +85,7 @@ export default function PlanCalepinageCanvas({
   return (
     <div
       ref={containerRef}
-      className="relative w-full overflow-hidden rounded-xl bg-slate-100"
+      className="relative w-full overflow-hidden rounded-xl bg-[#221B17]"
       style={{ height: HAUTEUR }}
     >
       <canvas
@@ -96,7 +96,7 @@ export default function PlanCalepinageCanvas({
         style={{ touchAction: "none" }}
       />
       {!zoneValide && (
-        <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-slate-500">
+        <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-[#8E7F74]">
           Dimensions de la zone manquantes : le plan ne peut pas être affiché.
         </p>
       )}

@@ -163,18 +163,18 @@ export default function NouveauChantierClotureModal({
       <form
         onSubmit={creerChantier}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl max-h-[85vh] flex flex-col rounded-2xl bg-white border border-[#E5E5E5] shadow-2xl overflow-hidden"
+        className="w-full max-w-xl max-h-[85vh] flex flex-col rounded-2xl bg-[#1B1511] border border-white/10 shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between border-b border-[#E5E5E5] p-4">
+        <div className="flex items-center justify-between border-b border-white/10 p-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#B85B2B]/10 text-[#B85B2B]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D96B27]/10 text-[#D96B27]">
               <Fence className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#23272B]">
+              <h2 className="text-base font-bold text-[#F5EFEA]">
                 Nouveau Chantier Clôture
               </h2>
-              <p className="text-[11px] text-[#777777]">
+              <p className="text-[11px] text-[#8E7F74]">
                 Configuration initiale &amp; calepinage métier dédié
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function NouveauChantierClotureModal({
           <button
             type="button"
             onClick={onFermer}
-            className="rounded-lg p-1.5 text-[#888888] hover:text-[#23272B]"
+            className="rounded-lg p-1.5 text-[#8E7F74] hover:text-[#F5EFEA]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -190,12 +190,12 @@ export default function NouveauChantierClotureModal({
 
         <div className="p-4 overflow-y-auto space-y-3 text-xs">
           <div>
-            <label className="font-semibold text-[#555555]">Client *</label>
+            <label className="font-semibold text-[#B8A99E]">Client *</label>
             <select
               required
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-[#23272B]"
+              className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-[#F5EFEA]"
             >
               <option value="">-- Sélectionner un client --</option>
               {clients.map((c) => (
@@ -208,43 +208,43 @@ export default function NouveauChantierClotureModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="font-semibold text-[#555555]">Nom du chantier *</label>
+              <label className="font-semibold text-[#B8A99E]">Nom du chantier *</label>
               <input
                 required
                 value={nom}
                 onChange={(e) => setNom(e.target.value)}
                 placeholder="Ex: Clôture composite Jardin Sud"
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               />
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">Date de début</label>
+              <label className="font-semibold text-[#B8A99E]">Date de début</label>
               <input
                 type="date"
                 value={dateDebut}
                 onChange={(e) => setDateDebut(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               />
             </div>
           </div>
 
           <div>
-            <label className="font-semibold text-[#555555]">Adresse du chantier</label>
+            <label className="font-semibold text-[#B8A99E]">Adresse du chantier</label>
             <input
               value={adresse}
               onChange={(e) => setAdresse(e.target.value)}
               placeholder="Adresse complète"
-              className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+              className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
             />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
-              <label className="font-semibold text-[#555555]">Forme</label>
+              <label className="font-semibold text-[#B8A99E]">Forme</label>
               <select
                 value={forme}
                 onChange={(e) => setForme(e.target.value as FenceShape)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               >
                 <option value="DROITE">1 Côté (Droite)</option>
                 <option value="EN_L">2 Côtés (En L)</option>
@@ -253,11 +253,11 @@ export default function NouveauChantierClotureModal({
               </select>
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">Matériau</label>
+              <label className="font-semibold text-[#B8A99E]">Matériau</label>
               <select
                 value={materiau}
                 onChange={(e) => setMateriau(e.target.value as FenceMaterial)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               >
                 <option value="COMPOSITE">Composite</option>
                 <option value="BOIS">Bois</option>
@@ -265,11 +265,11 @@ export default function NouveauChantierClotureModal({
               </select>
             </div>
             <div>
-              <label className="font-semibold text-[#555555]">Pose au sol</label>
+              <label className="font-semibold text-[#B8A99E]">Pose au sol</label>
               <select
                 value={typePoseSol}
                 onChange={(e) => setTypePoseSol(e.target.value as FenceGroundType)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               >
                 <option value="DIRECT_SOL">Scellement sol</option>
                 <option value="SUR_MURET">Platines sur muret</option>
@@ -279,56 +279,56 @@ export default function NouveauChantierClotureModal({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="font-semibold text-[#555555]">Longueur A (m)</label>
+              <label className="font-semibold text-[#B8A99E]">Longueur A (m)</label>
               <input
                 value={longueurA}
                 onChange={(e) => setLongueurA(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               />
             </div>
             {forme !== "DROITE" && (
               <div>
-                <label className="font-semibold text-[#555555]">Longueur B (m)</label>
+                <label className="font-semibold text-[#B8A99E]">Longueur B (m)</label>
                 <input
                   value={longueurB}
                   onChange={(e) => setLongueurB(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                  className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
                 />
               </div>
             )}
             <div>
-              <label className="font-semibold text-[#555555]">Hauteur utile (m)</label>
+              <label className="font-semibold text-[#B8A99E]">Hauteur utile (m)</label>
               <input
                 value={hauteurUtile}
                 onChange={(e) => setHauteurUtile(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] px-3 py-2 text-[#23272B]"
+                className="mt-1 w-full rounded-xl border border-white/10 px-3 py-2 text-[#F5EFEA]"
               />
             </div>
           </div>
 
-          <label className="flex items-center gap-2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 cursor-pointer font-semibold text-[#23272B]">
+          <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 cursor-pointer font-semibold text-[#F5EFEA]">
             <input
               type="checkbox"
               checked={soubassement}
               onChange={(e) => setSoubassement(e.target.checked)}
-              className="rounded border-slate-300 text-[#B85B2B]"
+              className="rounded border-white/15 text-[#D96B27]"
             />
             <span>Inclure plaques de soubassement béton (250 mm)</span>
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-[#E5E5E5] p-4">
+        <div className="flex justify-end gap-2 border-t border-white/10 p-4">
           <button
             type="button"
             onClick={onFermer}
-            className="rounded-xl border border-[#E5E5E5] px-4 py-2 text-xs font-semibold text-[#555555]"
+            className="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-[#B8A99E]"
           >
             Annuler
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 text-xs font-bold text-white"
+            className="rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2 text-xs font-bold text-white"
           >
             {saving ? "Création..." : "Créer le chantier Clôture"}
           </button>

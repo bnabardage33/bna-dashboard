@@ -219,17 +219,17 @@ export default function BardageGeneralDeplacementsModule({
   return (
     <div className="space-y-6">
       {/* 1. Bloc Sécurité & PPSPS Express IA */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#23272B] tracking-tight">
+              <h3 className="text-sm font-bold text-[#F5EFEA] tracking-tight">
                 PPSPS Express (Consignes de Sécurité IA)
               </h3>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Génération instantanée des 5 règles d&apos;or de sécurité selon le matériau et l&apos;accès en hauteur.
               </p>
             </div>
@@ -240,7 +240,7 @@ export default function BardageGeneralDeplacementsModule({
               type="button"
               onClick={genererSecuriteIA}
               disabled={isGeneratingSecurite}
-              className="flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] px-3.5 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] active:scale-[0.98] px-3.5 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50"
             >
               {isGeneratingSecurite ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -253,13 +253,13 @@ export default function BardageGeneralDeplacementsModule({
         </div>
 
         {consignesSecurite && (
-          <div className="mt-4 rounded-xl border border-[#B85B2B]/20 bg-[#FDFBF9] p-4 text-xs text-[#23272B] whitespace-pre-wrap leading-relaxed">
+          <div className="mt-4 rounded-xl border border-[#D96B27]/20 bg-[#FDFBF9] p-4 text-xs text-[#F5EFEA] whitespace-pre-wrap leading-relaxed">
             {consignesSecurite}
             <div className="mt-3 flex justify-end">
               <button
                 type="button"
                 onClick={() => setConsignesSecurite(null)}
-                className="text-xs font-semibold text-[#777777] hover:text-[#23272B] underline"
+                className="text-xs font-semibold text-[#8E7F74] hover:text-[#F5EFEA] underline"
               >
                 Fermer les consignes
               </button>
@@ -270,11 +270,11 @@ export default function BardageGeneralDeplacementsModule({
 
       {/* 2. Formulaire des Informations Générales du Chantier (Épuré et Réorganisé) */}
       <form onSubmit={handleSauvegarder}>
-        <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-3">
+        <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-[#B85B2B]" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+              <Building2 className="h-5 w-5 text-[#D96B27]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                 Informations Générales du Chantier
               </h3>
             </div>
@@ -282,13 +282,13 @@ export default function BardageGeneralDeplacementsModule({
               <button
                 type="button"
                 onClick={handleCopierCode}
-                className="flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white px-3 py-1.5 text-xs font-semibold text-[#23272B] transition"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] px-3 py-1.5 text-xs font-semibold text-[#F5EFEA] transition"
                 title="Copier le code d'accès client"
               >
                 {copiedCode ? (
                   <Check size={13} className="text-emerald-600" />
                 ) : (
-                  <Copy size={13} className="text-[#B85B2B]" />
+                  <Copy size={13} className="text-[#D96B27]" />
                 )}
                 <span>Code client : <strong>{codeAcces}</strong></span>
               </button>
@@ -297,34 +297,34 @@ export default function BardageGeneralDeplacementsModule({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-semibold text-[#777777]">Client</label>
-              <p className="mt-1 font-bold text-xs text-[#23272B] px-3 py-2 rounded-xl bg-[#F8F9FA] border border-[#E5E5E5]">
+              <label className="text-xs font-semibold text-[#8E7F74]">Client</label>
+              <p className="mt-1 font-bold text-xs text-[#F5EFEA] px-3 py-2 rounded-xl bg-[#120F0D] border border-white/10">
                 {clientNom || "Client non renseigné"}
               </p>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-[#777777]">Date de début</label>
+              <label className="text-xs font-semibold text-[#8E7F74]">Date de début</label>
               <input
                 type="date"
                 value={dateDebut}
                 onChange={(e) => setDateDebut(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-3 py-2 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-[#777777]">Date de fin prévisionnelle</label>
+              <label className="text-xs font-semibold text-[#8E7F74]">Date de fin prévisionnelle</label>
               <input
                 type="date"
                 value={dateFin}
                 onChange={(e) => setDateFin(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-3 py-2 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-[#777777]">Adresse du chantier</label>
+              <label className="text-xs font-semibold text-[#8E7F74]">Adresse du chantier</label>
               <input
                 type="text"
                 value={adresse}
@@ -333,7 +333,7 @@ export default function BardageGeneralDeplacementsModule({
                   setAdresseArrivee(e.target.value);
                 }}
                 placeholder="Ex. 12 rue des Vignes, 33000 Bordeaux"
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-3 py-2 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
               />
               {adresse && (
                 <a
@@ -342,7 +342,7 @@ export default function BardageGeneralDeplacementsModule({
                   )}&travelmode=driving`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 text-2xs font-semibold text-[#B85B2B] hover:underline"
+                  className="mt-1.5 inline-flex items-center gap-1 text-2xs font-semibold text-[#D96B27] hover:underline"
                 >
                   <MapPin size={11} /> Ouvrir l&apos;itinéraire GPS (Google Maps)
                 </a>
@@ -350,11 +350,11 @@ export default function BardageGeneralDeplacementsModule({
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-[#777777]">Statut opérationnel</label>
+              <label className="text-xs font-semibold text-[#8E7F74]">Statut opérationnel</label>
               <select
                 value={statut}
                 onChange={(e) => setStatut(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white focus:bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B]"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] focus:bg-[#1E1916] px-3 py-2 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27]"
               >
                 <option value="prevu">Prévu</option>
                 <option value="en_cours">En cours</option>
@@ -364,8 +364,8 @@ export default function BardageGeneralDeplacementsModule({
           </div>
 
           {/* Action d'enregistrement dédiée aux informations générales */}
-          <div className="pt-3 border-t border-[#F0F0F0] flex flex-wrap items-center justify-between gap-3">
-            <p className="text-2xs text-[#777777]">
+          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-2xs text-[#8E7F74]">
               L&apos;adresse alimente le calcul automatique des trajets et des frais de déplacement ci-dessous.
             </p>
             <div className="flex items-center gap-3">
@@ -377,7 +377,7 @@ export default function BardageGeneralDeplacementsModule({
               <button
                 type="submit"
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] px-4 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] active:scale-[0.98] px-4 py-2 text-xs font-bold text-white transition shadow-xs disabled:opacity-50"
               >
                 {isSaving ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -392,45 +392,45 @@ export default function BardageGeneralDeplacementsModule({
       </form>
 
       {/* 3. Frais de Déplacement & Trajets Associés (HARMONISÉ SUR LE HUB TERRASSE - THEME CLAIR BNA) */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-4">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <Car className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-lg font-bold text-[#23272B]">
+              <h3 className="text-lg font-bold text-[#F5EFEA]">
                 Frais de Déplacement &amp; Trajets Associés
               </h3>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Calcul kilométrique, barème d&apos;indemnités et liaison directe avec les devis bardage
               </p>
             </div>
           </div>
 
           {historique.length > 0 && (
-            <div className="flex items-center gap-3 rounded-xl bg-[#F8F9FA] px-3.5 py-1.5 border border-[#E5E5E5]">
+            <div className="flex items-center gap-3 rounded-xl bg-[#120F0D] px-3.5 py-1.5 border border-white/10">
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">Total trajets</p>
-                <p className="text-sm font-bold text-[#B85B2B]">{fmtEuro(totalHT)}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">Total trajets</p>
+                <p className="text-sm font-bold text-[#D96B27]">{fmtEuro(totalHT)}</p>
               </div>
-              <div className="h-6 w-px bg-gray-200" />
+              <div className="h-6 w-px bg-white/10" />
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">Cumul distance</p>
-                <p className="text-sm font-bold text-[#23272B]">{totalKmAR.toFixed(1)} km</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">Cumul distance</p>
+                <p className="text-sm font-bold text-[#F5EFEA]">{totalKmAR.toFixed(1)} km</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Formulaire de calcul d'un trajet */}
-        <div className="mb-6 rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 sm:p-5">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#B85B2B]">
+        <div className="mb-6 rounded-2xl border border-white/10 bg-[#120F0D] p-4 sm:p-5">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#D96B27]">
             Évaluer un trajet pour ce chantier
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">
                 Départ (Dépôt / Entreprise)
               </label>
               <div className="relative">
@@ -439,14 +439,14 @@ export default function BardageGeneralDeplacementsModule({
                   value={adresseDepart}
                   onChange={(e) => setAdresseDepart(e.target.value)}
                   placeholder="Adresse de départ..."
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
                 <MapPin className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#777777]">
+              <label className="mb-1 block text-xs font-semibold text-[#8E7F74]">
                 Arrivée (Adresse Bardage)
               </label>
               <div className="relative">
@@ -455,7 +455,7 @@ export default function BardageGeneralDeplacementsModule({
                   value={adresseArrivee}
                   onChange={(e) => setAdresseArrivee(e.target.value)}
                   placeholder="Adresse du chantier bardage..."
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                 />
                 <MapPin className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
@@ -470,7 +470,7 @@ export default function BardageGeneralDeplacementsModule({
               type="button"
               onClick={handleEvaluer}
               disabled={isEvaluating || !adresseDepart.trim() || !adresseArrivee.trim()}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D97732] active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] active:scale-[0.98] disabled:opacity-50"
             >
               <Calculator className="h-4 w-4" />
               {isEvaluating ? "Calcul de distance..." : "Calculer le trajet"}
@@ -478,19 +478,19 @@ export default function BardageGeneralDeplacementsModule({
           </div>
 
           {evalError && (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-500/15 p-2.5 text-xs text-red-300">
               {evalError}
             </div>
           )}
 
           {evaluation && (
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 animate-in fade-in">
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-500/15/60 p-4 animate-in fade-in">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold text-emerald-900">
                     Trajet calculé : Aller {evaluation.distanceAllerKm} km · Retour {evaluation.distanceRetourKm} km
                   </p>
-                  <p className="text-xs text-emerald-700">
+                  <p className="text-xs text-emerald-300">
                     Indemnité kilométrique : {evaluation.tarifKm} €/km · Total HT :{" "}
                     <strong>{fmtEuro(evaluation.montantHt)}</strong>
                   </p>
@@ -500,7 +500,7 @@ export default function BardageGeneralDeplacementsModule({
                   <button
                     type="button"
                     onClick={resetEvaluation}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 active:scale-[0.98]"
+                    className="rounded-lg border border-white/15 bg-[#1B1511] px-3 py-1.5 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D] active:scale-[0.98]"
                   >
                     Effacer
                   </button>
@@ -521,20 +521,20 @@ export default function BardageGeneralDeplacementsModule({
 
         {/* Historique des trajets enregistrés pour ce chantier */}
         <div>
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-[#777777]">
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
             Trajets &amp; Déplacements Enregistrés ({historique.length})
           </h4>
 
           {isLoadingHistorique ? (
             <p className="py-4 text-center text-xs text-gray-400">Chargement des trajets...</p>
           ) : historique.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-500">
+            <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-xs text-gray-500">
               Aucun déplacement n&apos;est encore associé à ce chantier bardage. Utilisez le formulaire ci-dessus pour évaluer et enregistrer un premier trajet.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[#E5E5E5]">
+            <div className="overflow-x-auto rounded-xl border border-white/10">
               <table className="w-full text-left text-xs min-w-[600px]">
-                <thead className="bg-[#F7F7F6] text-[#777777]">
+                <thead className="bg-[#F7F7F6] text-[#8E7F74]">
                   <tr>
                     <th className="px-4 py-2.5 font-bold">Date</th>
                     <th className="px-4 py-2.5 font-bold">Trajet Aller / Retour</th>
@@ -544,9 +544,9 @@ export default function BardageGeneralDeplacementsModule({
                     <th className="px-4 py-2.5 text-right font-bold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F0F0F0] text-[#23272B]">
+                <tbody className="divide-y divide-white/10 text-[#F5EFEA]">
                   {historique.map((dep) => (
-                    <tr key={dep.id} className="hover:bg-gray-50/70">
+                    <tr key={dep.id} className="hover:bg-[#120F0D]">
                       <td className="px-4 py-3 font-medium whitespace-nowrap">
                         {new Date(dep.date).toLocaleDateString("fr-FR")}
                       </td>
@@ -554,19 +554,19 @@ export default function BardageGeneralDeplacementsModule({
                         <div className="max-w-xs truncate text-[11px] text-gray-500">
                           De : {dep.adresse_depart || "Dépôt"}
                         </div>
-                        <div className="max-w-xs truncate text-[11px] font-semibold text-[#23272B]">
+                        <div className="max-w-xs truncate text-[11px] font-semibold text-[#F5EFEA]">
                           À : {dep.adresse_arrivee || "Chantier"}
                         </div>
                       </td>
                       <td className="px-4 py-3 font-semibold whitespace-nowrap">
                         {(dep.distance_aller_km + dep.distance_retour_km).toFixed(1)} km
                       </td>
-                      <td className="px-4 py-3 font-bold text-[#B85B2B] whitespace-nowrap">
+                      <td className="px-4 py-3 font-bold text-[#D96B27] whitespace-nowrap">
                         {fmtEuro(dep.montant_ht)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {dep.devis_id ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300 border border-emerald-200">
                             <CheckCircle className="h-3 w-3" /> Devis rattaché
                           </span>
                         ) : devisLikables.length > 0 ? (
@@ -579,7 +579,7 @@ export default function BardageGeneralDeplacementsModule({
                                   [dep.id]: e.target.value,
                                 }))
                               }
-                              className="rounded-lg border border-[#E5E5E5] bg-white px-2 py-1 text-[11px] text-[#23272B] focus:outline-none"
+                              className="rounded-lg border border-white/10 bg-[#1B1511] px-2 py-1 text-[11px] text-[#F5EFEA] focus:outline-none"
                             >
                               <option value="">Sélectionner devis...</option>
                               {devisLikables.map((d) => (
@@ -592,7 +592,7 @@ export default function BardageGeneralDeplacementsModule({
                               type="button"
                               onClick={() => handleLier(dep.id)}
                               disabled={isLinking || !selectedDevisId[dep.id]}
-                              className="rounded-lg bg-[#23272B] px-2 py-1 text-[11px] font-bold text-white hover:bg-[#B85B2B] disabled:opacity-40"
+                              className="rounded-lg bg-[#23272B] px-2 py-1 text-[11px] font-bold text-white hover:bg-[#D96B27] disabled:opacity-40"
                               title="Lier au devis"
                             >
                               <LinkIcon className="h-3 w-3" />
@@ -622,12 +622,12 @@ export default function BardageGeneralDeplacementsModule({
       </section>
 
       {/* 4. Fin de Chantier & PV de Réception */}
-      <div className="rounded-2xl sm:rounded-3xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-wrap items-center justify-between gap-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-emerald-200 bg-emerald-500/15/50 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex flex-wrap items-center justify-between gap-4">
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
             🏁 Fin de Chantier &amp; Procès-Verbal de Réception
           </h4>
-          <p className="mt-1 text-xs text-emerald-800/80">
+          <p className="mt-1 text-xs text-emerald-300/80">
             Rédiger le procès-verbal, consigner les réserves éventuelles, faire signer le client et déclencher la garantie décennale.
           </p>
         </div>

@@ -156,10 +156,10 @@ export default function BardageCardNavigation({
       {/* En-tête de section des cartes */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-[#23272B] tracking-tight">
+          <h2 className="text-base sm:text-lg font-bold text-[#F5EFEA] tracking-tight">
             Modules d&apos;Exploitation Chantier Bardage
           </h2>
-          <p className="text-xs text-[#777777]">
+          <p className="text-xs text-[#8E7F74]">
             Sélectionnez une carte pour accéder aux outils opérationnels du chantier.
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function BardageCardNavigation({
               key={m.cle}
               type="button"
               onClick={() => onSelectionnerModule(m.cle)}
-              className="group relative flex flex-col justify-between text-left rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] hover:shadow-[0_14px_35px_rgba(184,91,43,0.08)] hover:border-[#B85B2B]/40 transition-all duration-200 cursor-pointer overflow-hidden"
+              className="group relative flex flex-col justify-between text-left rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] hover:shadow-[0_14px_35px_rgba(184,91,43,0.08)] hover:border-[#D96B27]/40 transition-all duration-200 cursor-pointer overflow-hidden"
             >
               {/* Effet visuel au survol */}
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-[#B85B2B]/5 to-transparent rounded-bl-full pointer-events-none group-hover:from-[#B85B2B]/10 transition-all" />
@@ -182,19 +182,19 @@ export default function BardageCardNavigation({
               <div>
                 {/* Icône + Badge indicateur */}
                 <div className="flex items-start justify-between gap-2 mb-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B] group-hover:scale-105 group-hover:bg-[#B85B2B]/15 transition-all">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27] group-hover:scale-105 group-hover:bg-[#D96B27]/15 transition-all">
                     <Icone className="h-6 w-6" strokeWidth={2.2} />
                   </div>
 
                   <span
                     className={`rounded-full px-2.5 py-1 text-3xs font-bold tracking-wide border ${
                       m.indicateur.couleur === "cuivre"
-                        ? "bg-[#B85B2B]/10 text-[#B85B2B] border-[#B85B2B]/20"
+                        ? "bg-[#D96B27]/10 text-[#D96B27] border-[#D96B27]/20"
                         : m.indicateur.couleur === "vert"
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-200"
                         : m.indicateur.couleur === "bleu"
                         ? "bg-sky-50 text-sky-800 border-sky-200"
-                        : "bg-[#F3F3F1] text-[#777777] border-[#E5E5E5]"
+                        : "bg-[#120F0D] text-[#8E7F74] border-white/10"
                     }`}
                   >
                     {m.indicateur.label}
@@ -202,23 +202,23 @@ export default function BardageCardNavigation({
                 </div>
 
                 {/* Titre & Sous-titre */}
-                <h3 className="text-sm font-bold text-[#23272B] group-hover:text-[#B85B2B] transition-colors leading-snug">
+                <h3 className="text-sm font-bold text-[#F5EFEA] group-hover:text-[#D96B27] transition-colors leading-snug">
                   {m.titre}
                 </h3>
-                <p className="mt-0.5 text-xs font-semibold text-[#B85B2B]/80">
+                <p className="mt-0.5 text-xs font-semibold text-[#D96B27]/80">
                   {m.sousTitre}
                 </p>
 
                 {/* Description */}
-                <p className="mt-2 text-xs text-[#777777] line-clamp-3 leading-relaxed">
+                <p className="mt-2 text-xs text-[#8E7F74] line-clamp-3 leading-relaxed">
                   {m.description}
                 </p>
               </div>
 
               {/* Pied de carte : Action d'ouverture */}
-              <div className="mt-5 pt-3 border-t border-[#F0F0F0] flex items-center justify-between text-xs font-bold text-[#777777] group-hover:text-[#B85B2B] transition-colors">
+              <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold text-[#8E7F74] group-hover:text-[#D96B27] transition-colors">
                 <span className="text-3xs uppercase tracking-wider">Ouvrir le module</span>
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#F8F9FA] group-hover:bg-[#B85B2B] group-hover:text-white transition-all">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#120F0D] group-hover:bg-[#D96B27] group-hover:text-white transition-all">
                   <ArrowRight size={13} />
                 </div>
               </div>

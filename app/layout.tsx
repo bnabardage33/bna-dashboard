@@ -51,7 +51,7 @@ export default function RootLayout({
           seul conteneur qui englobe aussi le header, donc le reflet part du
           tout-haut de la page et passe derrière le logo. Motivation détaillée
           dans le commentaire situé plus bas, au-dessus de `<main>`. */}
-      <body className="bg-[#121212] min-h-screen text-gray-300 antialiased selection:bg-[#B85B2B]/30 selection:text-red-200 flex flex-col bg-[radial-gradient(ellipse_at_top,rgba(184,91,43,0.15),transparent_60%)] bg-size-[100%_380px] bg-no-repeat bg-top">
+      <body className="bg-[#121212] min-h-screen text-gray-300 antialiased selection:bg-[#D96B27]/30 selection:text-red-200 flex flex-col bg-[radial-gradient(ellipse_at_top,rgba(184,91,43,0.15),transparent_60%)] bg-size-[100%_380px] bg-no-repeat bg-top">
         <a href="#main-content-wrapper" className="skip-link">Aller au contenu principal</a>
         <EnregistrementServiceWorker />
         <InactivityLogout />

@@ -67,25 +67,25 @@ export default function TerrasseMeteoModule({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Conditions Météo du Site Terrasse */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F0F0F0] pb-4">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <CloudSun className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[2px] text-[#B85B2B]">
+              <p className="text-xs font-bold uppercase tracking-[2px] text-[#D96B27]">
                 Conditions Météo sur le Site
               </p>
-              <h3 className="text-xl font-bold text-[#23272B]">
+              <h3 className="text-xl font-bold text-[#F5EFEA]">
                 {adresseChantier ? `Chantier à ${ville}` : "Météo Locale Terrasse"}
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl bg-[#F8F9FA] px-3.5 py-1.5 border border-[#E5E5E5]">
-            <MapPin className="h-4 w-4 text-[#B85B2B]" />
-            <span className="text-xs font-semibold text-[#23272B] truncate max-w-xs">
+          <div className="flex items-center gap-2 rounded-xl bg-[#120F0D] px-3.5 py-1.5 border border-white/10">
+            <MapPin className="h-4 w-4 text-[#D96B27]" />
+            <span className="text-xs font-semibold text-[#F5EFEA] truncate max-w-xs">
               {adresseChantier || "Adresse non configurée"}
             </span>
           </div>
@@ -94,45 +94,45 @@ export default function TerrasseMeteoModule({
         {loading ? (
           <p className="py-6 text-center text-xs text-gray-400">Chargement des données météo...</p>
         ) : erreur ? (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-500/15 p-3 text-xs text-amber-300">
             {erreur}
           </div>
         ) : meteo ? (
           <div className="mt-5 space-y-5">
             {/* Cartouches Météo du jour */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 text-center">
                 <Thermometer className="mx-auto h-5 w-5 text-amber-600 mb-1" />
-                <p className="text-[11px] font-semibold text-[#777777]">Température</p>
-                <p className="text-2xl font-bold text-[#23272B]">{texteDegre(tempActuelle)}</p>
+                <p className="text-[11px] font-semibold text-[#8E7F74]">Température</p>
+                <p className="text-2xl font-bold text-[#F5EFEA]">{texteDegre(tempActuelle)}</p>
               </div>
 
-              <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 text-center">
                 <CloudRain className="mx-auto h-5 w-5 text-sky-600 mb-1" />
-                <p className="text-[11px] font-semibold text-[#777777]">Précipitations</p>
-                <p className="text-2xl font-bold text-[#23272B]">
+                <p className="text-[11px] font-semibold text-[#8E7F74]">Précipitations</p>
+                <p className="text-2xl font-bold text-[#F5EFEA]">
                   {texteMm(meteo.cumulPluie ?? 0)}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 text-center">
                 <Wind className="mx-auto h-5 w-5 text-teal-600 mb-1" />
-                <p className="text-[11px] font-semibold text-[#777777]">Vent max</p>
-                <p className="text-2xl font-bold text-[#23272B]">{texteKmh(ventActuel)}</p>
+                <p className="text-[11px] font-semibold text-[#8E7F74]">Vent max</p>
+                <p className="text-2xl font-bold text-[#F5EFEA]">{texteKmh(ventActuel)}</p>
               </div>
 
-              <div className="rounded-2xl border border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center">
-                <CloudSun className="mx-auto h-5 w-5 text-[#B85B2B] mb-1" />
-                <p className="text-[11px] font-semibold text-[#777777]">Conditions</p>
-                <p className="text-sm font-bold text-[#23272B] mt-1">{meteo.conditions}</p>
+              <div className="rounded-2xl border border-white/10 bg-[#120F0D] p-4 text-center">
+                <CloudSun className="mx-auto h-5 w-5 text-[#D96B27] mb-1" />
+                <p className="text-[11px] font-semibold text-[#8E7F74]">Conditions</p>
+                <p className="text-sm font-bold text-[#F5EFEA] mt-1">{meteo.conditions}</p>
               </div>
             </div>
 
             {/* Vigilance Spécifique DTU 51.4 Terrasse */}
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4">
               <div className="flex items-center gap-2 mb-3">
-                <ShieldAlert className="h-4 w-4 text-[#B85B2B]" />
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <ShieldAlert className="h-4 w-4 text-[#D96B27]" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Vigilance Pose Terrasse & DTU 51.4
                 </h4>
               </div>
@@ -142,8 +142,8 @@ export default function TerrasseMeteoModule({
                 <div
                   className={`rounded-xl border p-3 ${
                     pluiePrevue
-                      ? "border-red-200 bg-red-50 text-red-900"
-                      : "border-emerald-200 bg-emerald-50/50 text-emerald-900"
+                      ? "border-red-200 bg-red-500/15 text-red-900"
+                      : "border-emerald-200 bg-emerald-500/15/50 text-emerald-900"
                   }`}
                 >
                   <p className="text-xs font-bold flex items-center gap-1.5">
@@ -160,8 +160,8 @@ export default function TerrasseMeteoModule({
                 <div
                   className={`rounded-xl border p-3 ${
                     risqueGel
-                      ? "border-amber-200 bg-amber-50 text-amber-900"
-                      : "border-emerald-200 bg-emerald-50/50 text-emerald-900"
+                      ? "border-amber-200 bg-amber-500/15 text-amber-900"
+                      : "border-emerald-200 bg-emerald-500/15/50 text-emerald-900"
                   }`}
                 >
                   <p className="text-xs font-bold flex items-center gap-1.5">
@@ -178,8 +178,8 @@ export default function TerrasseMeteoModule({
                 <div
                   className={`rounded-xl border p-3 ${
                     risqueForteChaleur
-                      ? "border-orange-200 bg-orange-50 text-orange-950"
-                      : "border-emerald-200 bg-emerald-50/50 text-emerald-900"
+                      ? "border-orange-200 bg-[#D96B27]/15 text-orange-950"
+                      : "border-emerald-200 bg-emerald-500/15/50 text-emerald-900"
                   }`}
                 >
                   <p className="text-xs font-bold flex items-center gap-1.5">
@@ -198,8 +198,8 @@ export default function TerrasseMeteoModule({
       </section>
 
       {/* 2. Rapports Officiels d'Intempéries BTP rattachés à ce chantier */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#777777]">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#8E7F74]">
           Arrêts de Travail & Déclarations Intempéries BTP du Chantier
         </h4>
         <RapportsIntemperiesListe chantierId={chantierId} variante="clair" />

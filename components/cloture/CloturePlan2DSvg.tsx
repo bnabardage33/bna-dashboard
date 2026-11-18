@@ -230,19 +230,19 @@ export const PlanCalepinage4Cotes2DSvg: React.FC<{
   };
 
   return (
-    <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+    <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h4 className="text-sm font-bold text-[#23272B]">
+          <h4 className="text-sm font-bold text-[#F5EFEA]">
             Plan de calepinage 2D coté ({config.forme.replace("_", " ")})
           </h4>
-          <p className="text-xs text-[#777777]">
+          <p className="text-xs text-[#8E7F74]">
             Cliquez sur un côté (A, B, C, D) pour inspecter son élévation détaillée
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#555555]">
+        <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#B8A99E]">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-xs bg-[#B85B2B]" /> Poteau d&apos;angle
+            <span className="h-2.5 w-2.5 rounded-xs bg-[#D96B27]" /> Poteau d&apos;angle
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#23272B]" /> Terminaison
@@ -258,7 +258,7 @@ export const PlanCalepinage4Cotes2DSvg: React.FC<{
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl bg-[#F8F9FA] border border-[#EFEFEF]">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl bg-[#120F0D] border border-[#EFEFEF]">
         {/* Grille architecturale légère */}
         <defs>
           <pattern id="grid-cloture-2d" width="30" height="30" patternUnits="userSpaceOnUse">
@@ -365,13 +365,13 @@ export const ElevationPlan2DSvg: React.FC<{
   const sign = segment.deniveleM < 0 ? -1 : 1;
 
   return (
-    <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
+    <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h4 className="text-sm font-bold text-[#23272B]">
+          <h4 className="text-sm font-bold text-[#F5EFEA]">
             Élévation 2D — {segment.fullLabel}
           </h4>
-          <p className="text-xs text-[#777777]">
+          <p className="text-xs text-[#8E7F74]">
             Hauteur utile {formatM(config.hauteurUtile)} ·{" "}
             {config.typePoseSol === "DIRECT_SOL" ? "Scellement béton" : "Platines sur muret"}
             {result.hauteurSoubassementRetenueM > 0
@@ -382,12 +382,12 @@ export const ElevationPlan2DSvg: React.FC<{
               : ""}
           </p>
         </div>
-        <span className="rounded-lg bg-[#B85B2B]/10 px-2.5 py-1 text-xs font-bold text-[#B85B2B]">
+        <span className="rounded-lg bg-[#D96B27]/10 px-2.5 py-1 text-xs font-bold text-[#D96B27]">
           Coupe lame : {formatM(segment.longueurCoupeLame)}
         </span>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl bg-[#F8F9FA] border border-[#EFEFEF]">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto rounded-xl bg-[#120F0D] border border-[#EFEFEF]">
         {/* Sol ou Muret */}
         <rect
           x={0}

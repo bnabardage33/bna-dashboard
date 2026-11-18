@@ -74,8 +74,8 @@ type Onglet = "general" | "dimensions" | "tarifs";
 
 const labelCls = "block text-xs font-semibold text-gray-400 mb-1";
 const inputCls =
-  "w-full rounded border border-slate-700 bg-[#151C2C] p-2 text-sm text-slate-100 focus:border-[#E30613] focus:outline-none";
-const blocCls = "rounded-lg border border-slate-700 bg-[#111827] p-3 space-y-3";
+  "w-full rounded border border-white/15 bg-[#120F0D] p-2 text-sm text-slate-100 focus:border-[#D96B27] focus:outline-none";
+const blocCls = "rounded-lg border border-white/15 bg-[#111827] p-3 space-y-3";
 
 /** Fusion d'un patch scrapé dans l'état courant (conserve les champs vides). */
 function appliquerPatch(prev: ProductDraft, patch: ProductDraftPatch): ProductDraft {
@@ -559,9 +559,9 @@ export default function ProductFormModal({
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-2 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-xl border border-slate-700 bg-[#0B0F19] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="w-full max-w-2xl rounded-xl border border-white/15 bg-[#1B1511] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-[#111827] shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-white/15 bg-[#111827] shrink-0">
           <h2 className="text-xl font-bold text-white">{titre}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Fermer">
             <X className="h-5 w-5" />
@@ -569,7 +569,7 @@ export default function ProductFormModal({
         </div>
 
         {/* Onglets */}
-        <div className="flex px-4 pt-2 border-b border-slate-700 space-x-4 bg-[#111827]">
+        <div className="flex px-4 pt-2 border-b border-white/15 space-x-4 bg-[#111827]">
           {ongletBtn("general", "Général")}
           {afficheDimensions &&
             ongletBtn("dimensions", values.kind === "BARDAGE" ? "Dimensions & Décor" : "Dimensions")}
@@ -616,7 +616,7 @@ export default function ProductFormModal({
                     placeholder="Collez l'URL d'un produit (Leroy Merlin, Point.P...)"
                     value={importUrl}
                     onChange={(e) => setImportUrl(e.target.value)}
-                    className="flex-1 rounded border border-cyan-500/50 bg-[#151C2C] p-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
+                    className="flex-1 rounded border border-cyan-500/50 bg-[#120F0D] p-2 text-sm text-white focus:border-cyan-400 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -768,14 +768,14 @@ export default function ProductFormModal({
             )}
 
             {activeTab === "general" && (
-              <div className="rounded-lg border border-slate-700 bg-[#111827] p-3 space-y-1.5">
+              <div className="rounded-lg border border-white/15 bg-[#111827] p-3 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <label htmlFor="chp-gamme-qualite" className="text-xs font-bold uppercase tracking-wider text-slate-300">
                     {contexteGamme === "ossature"
                       ? "Classe d'emploi bois (EN 335)"
                       : "Gamme matériau (Qualité & Positionnement)"}
                   </label>
-                  <span className="text-[11px] font-semibold text-slate-400">
+                  <span className="text-[11px] font-semibold text-[#8E7F74]">
                     Pose ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].coefTempsPose.toFixed(2)} · Marge cible ×{GAMME_MATERIAU_CONFIG[normaliserGammeMateriau(values.gamme_qualite)].margeCibleDefaut.toFixed(2)}
                   </span>
                 </div>
@@ -785,7 +785,7 @@ export default function ProductFormModal({
                   onChange={(e) =>
                     modifierGammeQualite(normaliserGammeMateriau(e.target.value))
                   }
-                  className="w-full rounded-lg border border-slate-700 bg-[#151C2C] p-2 text-sm font-medium text-slate-100 focus:border-[#E30613] focus:outline-none"
+                  className="w-full rounded-lg border border-white/15 bg-[#120F0D] p-2 text-sm font-medium text-slate-100 focus:border-[#D96B27] focus:outline-none"
                 >
                   {GAMMES_MATERIAU_ORDRE.map((g) => {
                     const lib = getGammeLibellesContextuels(g, contexteGamme);
@@ -794,13 +794,13 @@ export default function ProductFormModal({
                         ? lib.labelInterne
                         : `${lib.labelClient} / ${lib.labelInterne}`;
                     return (
-                      <option key={g} value={g} className="bg-[#151C2C] text-slate-100">
+                      <option key={g} value={g} className="bg-[#120F0D] text-slate-100">
                         {label}
                       </option>
                     );
                   })}
                 </select>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[#8E7F74]">
                   {getGammeLibellesContextuels(normaliserGammeMateriau(values.gamme_qualite), contexteGamme).description}
                 </p>
               </div>
@@ -972,7 +972,7 @@ export default function ProductFormModal({
                   </div>
                   <div className="space-y-3">
                     {values.dimensions_disponibles.map((dim, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-[#151C2C] p-3 rounded-lg border border-slate-700/80">
+                      <div key={idx} className="flex items-center gap-3 bg-[#120F0D] p-3 rounded-lg border border-white/15/80">
                         <div className="flex-1 grid grid-cols-1 gap-3 sm:grid-cols-3">
                           {(["longueur_mm", "largeur_mm", "epaisseur_mm"] as const).map((champ) => (
                             <div key={champ}>
@@ -990,7 +990,7 @@ export default function ProductFormModal({
                                   dims[idx] = { ...dims[idx], [champ]: valeur };
                                   patch({ dimensions_disponibles: dims });
                                 }}
-                                className="w-full rounded border border-slate-700 bg-[#151C2C] px-2 py-1.5 text-sm text-slate-100 focus:border-[#E30613] focus:outline-none"
+                                className="w-full rounded border border-white/15 bg-[#120F0D] px-2 py-1.5 text-sm text-slate-100 focus:border-[#D96B27] focus:outline-none"
                               />
                             </div>
                           ))}
@@ -1096,7 +1096,7 @@ export default function ProductFormModal({
                 {estMainOeuvre && (() => {
                   const presets = getPresetsCadenceMainOeuvre(cadencesMo, "bardage");
                   return (
-                    <div className="rounded-lg border border-slate-700 bg-[#0B0F19] p-3 space-y-2.5">
+                    <div className="rounded-lg border border-white/15 bg-[#1B1511] p-3 space-y-2.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label htmlFor="chp-cadence-preset" className={labelCls}>
@@ -1123,7 +1123,7 @@ export default function ProductFormModal({
                           >
                             <option value="">Choisir une cadence entreprise...</option>
                             {presets.map((p) => (
-                              <option key={p.id} value={p.id} className="bg-[#151C2C] text-slate-100">
+                              <option key={p.id} value={p.id} className="bg-[#120F0D] text-slate-100">
                                 {p.label}
                               </option>
                             ))}
@@ -1203,7 +1203,7 @@ export default function ProductFormModal({
                     const margePct = vente > 0 ? (marge / vente) * 100 : 0;
                     const fmtDec = (n: number) => n.toFixed(2).replace(".", ",");
                     return (
-                      <div className="mt-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs text-slate-300 space-y-1">
+                      <div className="mt-2 rounded-lg border border-white/15 bg-[#120F0D] px-3 py-2 text-xs text-slate-300 space-y-1">
                         {(calc.estHoraire || calc.tempsUnitaireH > 0) ? (
                           <p className="leading-relaxed">
                             Cadence : <strong className="text-white">{fmtDec(calc.tempsUnitaireH)} h</strong> × coef pose{" "}
@@ -1234,7 +1234,7 @@ export default function ProductFormModal({
                   }
                   const ind = calculerIndicateurMargeTarif(vente, revient, values.gamme_qualite, contexteGamme);
                   return (
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/15 bg-[#120F0D] px-3 py-2 text-xs">
                       <span className="font-medium text-slate-300">
                         Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
                       </span>
@@ -1243,7 +1243,7 @@ export default function ProductFormModal({
                           Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
                         </span>
                       ) : (
-                        <span className="text-slate-400">
+                        <span className="text-[#8E7F74]">
                           Saisissez un coût de revient HT pour calculer le prix conseillé
                         </span>
                       )}
@@ -1273,7 +1273,7 @@ export default function ProductFormModal({
                       Fournisseur &amp; Tarifs
                     </span>
                     {surfaceM2 > 0 && (
-                      <span className="text-[11px] font-mono text-slate-400">
+                      <span className="text-[11px] font-mono text-[#8E7F74]">
                         Surface lame : {surfaceM2.toFixed(3).replace(".", ",")} m²
                       </span>
                     )}
@@ -1340,7 +1340,7 @@ export default function ProductFormModal({
                         onChange={(e) => modifierLamePrixUnitaire(e.target.value)} className={inputCls} />
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/15 bg-[#120F0D] px-3 py-2 text-xs">
                     <span className="font-medium text-slate-300">
                       Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
                     </span>
@@ -1349,7 +1349,7 @@ export default function ProductFormModal({
                         Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
                       </span>
                     ) : (
-                      <span className="text-slate-400">
+                      <span className="text-[#8E7F74]">
                         {surfaceM2 > 0
                           ? "Conversion m² ↔ lame synchronisée automatiquement"
                           : "Renseignez Longueur & Largeur utile pour synchroniser m² ↔ lame"}
@@ -1386,7 +1386,7 @@ export default function ProductFormModal({
                 {estPrestationAccessoire && (() => {
                   const presets = getPresetsCadenceMainOeuvre(cadencesMo, "terrasse");
                   return (
-                    <div className="rounded-lg border border-slate-700 bg-[#0B0F19] p-3 space-y-2.5">
+                    <div className="rounded-lg border border-white/15 bg-[#1B1511] p-3 space-y-2.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label htmlFor="chp-cadence-preset-acc" className={labelCls}>
@@ -1413,7 +1413,7 @@ export default function ProductFormModal({
                           >
                             <option value="">Choisir une cadence entreprise...</option>
                             {presets.map((p) => (
-                              <option key={p.id} value={p.id} className="bg-[#151C2C] text-slate-100">
+                              <option key={p.id} value={p.id} className="bg-[#120F0D] text-slate-100">
                                 {p.label}
                               </option>
                             ))}
@@ -1523,7 +1523,7 @@ export default function ProductFormModal({
                             onChange={(e) => modifierPuRevient(e.target.value)} className={inputCls} />
                         </div>
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/15 bg-[#120F0D] px-3 py-2 text-xs">
                         <span className="font-medium text-slate-300">
                           {contexteGamme === "ossature" ? "Coef classe" : "Coef gamme"}{" "}
                           <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
@@ -1533,7 +1533,7 @@ export default function ProductFormModal({
                             Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
                           </span>
                         ) : (
-                          <span className="text-slate-400">
+                          <span className="text-[#8E7F74]">
                             Saisissez un coût de revient HT pour calculer le prix conseillé
                           </span>
                         )}
@@ -1562,7 +1562,7 @@ export default function ProductFormModal({
                       const margePct = vente > 0 ? (marge / vente) * 100 : 0;
                       const fmtDec = (n: number) => n.toFixed(2).replace(".", ",");
                       return (
-                        <div className="mt-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs text-slate-300">
+                        <div className="mt-2 rounded-lg border border-white/15 bg-[#120F0D] px-3 py-2 text-xs text-slate-300">
                           {(calc.estHoraire || calc.tempsUnitaireH > 0) ? (
                             <p className="leading-relaxed">
                               Cadence : <strong className="text-white">{fmtDec(calc.tempsUnitaireH)} h</strong> × coef pose{" "}
@@ -1598,7 +1598,7 @@ export default function ProductFormModal({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-700 flex justify-end gap-3 mt-auto shrink-0 bg-[#111827] rounded-b-xl">
+          <div className="p-4 border-t border-white/15 flex justify-end gap-3 mt-auto shrink-0 bg-[#111827] rounded-b-xl">
             <button
               type="button"
               onClick={onClose}

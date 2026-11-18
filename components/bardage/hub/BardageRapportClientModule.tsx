@@ -14,23 +14,23 @@ export default function BardageRapportClientModule({
   return (
     <div className="space-y-6">
       {/* En-tête du module Rapport Client Bardage */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <FileText className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="text-base font-bold text-[#23272B]">
+              <h3 className="text-base font-bold text-[#F5EFEA]">
                 Compte-Rendu d&apos;Intervention &amp; Rapport Client
               </h3>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Synthèse d&apos;activité, relevés météo, photos d&apos;avancement et transmission directe au client
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-3 py-1.5 text-xs font-bold text-[#B85B2B]">
+          <div className="flex items-center gap-2 rounded-xl border border-[#D96B27]/20 bg-[#D96B27]/10 px-3 py-1.5 text-xs font-bold text-[#D96B27]">
             <Sparkles className="h-4 w-4" />
             <span>Synthèse hebdomadaire Bardage</span>
           </div>

@@ -452,7 +452,7 @@ export default function OssaturePosee({
                   ? "Ex. : rafales dans l'après-midi, accès échafaudage mouillé…"
                   : "Ex. : façade très exposée à la pluie, prévision défavorable…"
               }
-              className="mt-1.5 w-full rounded-lg border border-white/10 bg-transparent p-2 text-xs text-white placeholder:text-gray-600 focus:border-white/30 focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-white/10 bg-transparent p-2 text-xs text-white placeholder:text-[#B8A99E] focus:border-white/30 focus:outline-none"
             />
           </div>
 
@@ -484,7 +484,7 @@ export default function OssaturePosee({
                 onChange={(e) => setRepriseNote(e.target.value)}
                 rows={2}
                 placeholder="Décrivez la reprise (ce qui a été fait, quand)…"
-                className="w-full rounded-lg border border-white/10 bg-transparent p-2 text-xs text-white placeholder:text-gray-600 focus:border-white/30 focus:outline-none"
+                className="w-full rounded-lg border border-white/10 bg-transparent p-2 text-xs text-white placeholder:text-[#B8A99E] focus:border-white/30 focus:outline-none"
               />
               <div className="flex gap-2">
                 <button

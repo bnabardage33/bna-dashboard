@@ -856,7 +856,7 @@ export default function FacturesPage() {
                     onChange={(e) => setSirenClient(e.target.value)}
                     placeholder="SIREN client (B2B, optionnel — 9 chiffres)"
                     maxLength={20}
-                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -928,7 +928,7 @@ export default function FacturesPage() {
                       insererDepuisCatalogue(e.target.value);
                       e.target.value = "";
                     }}
-                    className="flex-1 rounded-xl border border-red-600/50 bg-transparent px-3 py-1.5 text-xs text-gray-400 font-medium hover:border-gray-300"
+                    className="flex-1 rounded-xl border border-red-600/50 bg-transparent px-3 py-1.5 text-xs text-gray-400 font-medium hover:border-white/15"
                     aria-label="Insérer un ouvrage depuis le catalogue standard"
                   >
                     <option value="" disabled>
@@ -1126,7 +1126,7 @@ export default function FacturesPage() {
                     value={referenceReglement}
                     onChange={(e) => setReferenceReglement(e.target.value)}
                     placeholder="Ex: VIR-2026-04"
-                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>

@@ -160,15 +160,15 @@ export default function DashboardAccueil({
   const nonLues = notifications?.filter((n) => !n.lu).length ?? 0;
 
   return (
-    <div className="space-y-5 text-[#23272B]">
+    <div className="space-y-5 text-[#F5EFEA]">
       {/* ── 1. Actions rapides terrain ───────────────────────────────────── */}
-      <header className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
+      <header className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-[#23272B] sm:text-lg">
+            <h2 className="text-base font-bold text-[#F5EFEA] sm:text-lg">
               Actions rapides du jour
             </h2>
-            <p className="text-xs text-[#666666]">
+            <p className="text-xs text-[#B8A99E]">
               Dictée vocale instantanée, planning consolidé et bulletin météo complet.
             </p>
           </div>
@@ -184,16 +184,16 @@ export default function DashboardAccueil({
             </div>
             <Link
               href="/terrain"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-bold text-[#23272B] transition-colors hover:border-[#B85B2B]/40 hover:bg-white"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2 text-xs font-bold text-[#F5EFEA] transition-colors hover:border-[#D96B27]/40 hover:bg-[#221B17]"
             >
-              <CalendarDays className="h-4 w-4 text-[#B85B2B]" />
+              <CalendarDays className="h-4 w-4 text-[#D96B27]" />
               Planning multi-métiers
             </Link>
             <Link
               href="/terrain/meteo"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-bold text-[#23272B] transition-colors hover:border-[#B85B2B]/40 hover:bg-white"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2 text-xs font-bold text-[#F5EFEA] transition-colors hover:border-[#D96B27]/40 hover:bg-[#221B17]"
             >
-              <CloudSun className="h-4 w-4 text-[#B85B2B]" />
+              <CloudSun className="h-4 w-4 text-[#D96B27]" />
               Météo complète
             </Link>
           </div>
@@ -205,27 +205,27 @@ export default function DashboardAccueil({
             aria-live="polite"
             className={`mt-3 rounded-xl border p-3 text-xs ${
               phaseDictee === 'erreur'
-                ? 'border-red-200 bg-red-50 text-red-700'
-                : 'border-[#B85B2B]/30 bg-[#B85B2B]/10 text-[#23272B]'
+                ? 'border-red-200 bg-red-500/15 text-red-300'
+                : 'border-[#D96B27]/30 bg-[#D96B27]/10 text-[#F5EFEA]'
             }`}
           >
             <div className="flex items-center gap-2 font-semibold">
               {phaseDictee === 'transcription' || phaseDictee === 'reformulation' || isSavingNote ? (
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#B85B2B]" />
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#D96B27]" />
               ) : (
-                <Mic className="h-4 w-4 shrink-0 text-[#B85B2B]" />
+                <Mic className="h-4 w-4 shrink-0 text-[#D96B27]" />
               )}
               <span>{titreBulle}</span>
             </div>
             {texteDictee && (
-              <p className="mt-1.5 whitespace-pre-wrap text-[#555555]">{texteDictee}</p>
+              <p className="mt-1.5 whitespace-pre-wrap text-[#B8A99E]">{texteDictee}</p>
             )}
-            {erreurDictee && <p className="mt-1 font-medium text-red-700">{erreurDictee}</p>}
+            {erreurDictee && <p className="mt-1 font-medium text-red-300">{erreurDictee}</p>}
           </div>
         )}
 
         {error && (
-          <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+          <p className="mt-3 rounded-xl border border-red-200 bg-red-500/15 p-3 text-xs font-medium text-red-300">
             {error}
           </p>
         )}
@@ -233,15 +233,15 @@ export default function DashboardAccueil({
 
       {/* ── 3. Impact météo sur les chantiers actifs (compact, sans doublon) ── */}
       {blocMeteo && (
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
+        <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-base font-bold text-[#23272B] sm:text-lg">
-              <CloudSun className="h-5 w-5 shrink-0 text-[#B85B2B]" />
+            <h2 className="flex items-center gap-2 text-base font-bold text-[#F5EFEA] sm:text-lg">
+              <CloudSun className="h-5 w-5 shrink-0 text-[#D96B27]" />
               Impact météo sur les chantiers actifs
             </h2>
             <Link
               href="/terrain/meteo"
-              className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+              className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
             >
               Prévisions complètes <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -255,22 +255,22 @@ export default function DashboardAccueil({
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
           {/* Colonne gauche : Chantiers à préparer */}
           {chantiersAPreparer && (
-            <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
+            <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="flex items-center gap-2 text-base font-bold text-[#23272B]">
-                  <HardHat className="h-5 w-5 shrink-0 text-[#B85B2B]" />
+                <h2 className="flex items-center gap-2 text-base font-bold text-[#F5EFEA]">
+                  <HardHat className="h-5 w-5 shrink-0 text-[#D96B27]" />
                   Chantiers à préparer
                 </h2>
                 <Link
                   href="/terrain"
-                  className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+                  className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
                 >
                   Planning <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
 
               {chantiersAPreparer.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center text-xs text-[#777777]">
+                <div className="rounded-xl border border-dashed border-white/10 bg-[#120F0D] p-4 text-center text-xs text-[#8E7F74]">
                   Aucun chantier en attente de préparation.
                 </div>
               ) : (
@@ -281,7 +281,7 @@ export default function DashboardAccueil({
                       <li key={c.id}>
                         <Link
                           href={urlHubChantier(c.id, c.metier)}
-                          className="group block rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3.5 transition-all hover:border-[#B85B2B]/50 hover:bg-white"
+                          className="group block rounded-xl border border-white/10 bg-[#120F0D] p-3.5 transition-all hover:border-[#D96B27]/50 hover:bg-[#221B17]"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
@@ -290,15 +290,15 @@ export default function DashboardAccueil({
                               >
                                 {badge.label}
                               </span>
-                              <p className="mt-1 line-clamp-2 text-sm font-bold text-[#23272B] group-hover:text-[#B85B2B]">
+                              <p className="mt-1 line-clamp-2 text-sm font-bold text-[#F5EFEA] group-hover:text-[#D96B27]">
                                 {c.nom || 'Chantier sans nom'}
                               </p>
                             </div>
-                            <ArrowRight className="h-4 w-4 shrink-0 text-[#999999] transition-transform group-hover:translate-x-1 group-hover:text-[#B85B2B]" />
+                            <ArrowRight className="h-4 w-4 shrink-0 text-[#8E7F74] transition-transform group-hover:translate-x-1 group-hover:text-[#D96B27]" />
                           </div>
                           {c.adresse && (
-                            <p className="mt-1 flex items-center gap-1 text-xs text-[#666666]">
-                              <MapPin className="h-3 w-3 shrink-0 text-[#999999]" />
+                            <p className="mt-1 flex items-center gap-1 text-xs text-[#B8A99E]">
+                              <MapPin className="h-3 w-3 shrink-0 text-[#8E7F74]" />
                               <span className="truncate">{c.adresse}</span>
                             </p>
                           )}
@@ -312,23 +312,23 @@ export default function DashboardAccueil({
           )}
 
           {/* Colonne droite : Alertes & Dernières notes */}
-          <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs space-y-5">
+          <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs space-y-5">
             {notifications && (
               <div>
                 <div className="mb-2.5 flex items-center justify-between gap-2">
-                  <h2 className="flex items-center gap-2 text-base font-bold text-[#23272B]">
-                    <Bell className="h-5 w-5 shrink-0 text-[#B85B2B]" />
+                  <h2 className="flex items-center gap-2 text-base font-bold text-[#F5EFEA]">
+                    <Bell className="h-5 w-5 shrink-0 text-[#D96B27]" />
                     Alertes
                   </h2>
                   {nonLues > 0 && (
-                    <span className="shrink-0 rounded-full bg-[#B85B2B] px-2.5 py-0.5 text-[11px] font-bold text-white">
+                    <span className="shrink-0 rounded-full bg-[#D96B27] px-2.5 py-0.5 text-[11px] font-bold text-white">
                       {nonLues} non lue{nonLues > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
 
                 {notifications.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center text-xs text-[#777777]">
+                  <div className="rounded-xl border border-dashed border-white/10 bg-[#120F0D] p-4 text-center text-xs text-[#8E7F74]">
                     Aucune alerte pour le moment.
                   </div>
                 ) : (
@@ -338,26 +338,26 @@ export default function DashboardAccueil({
                       const contenu = (
                         <>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#666666]">
+                            <span className="rounded-full border border-white/10 bg-[#1B1511] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#B8A99E]">
                               Alerte
                             </span>
                             {n.created_at && (
-                              <span className="shrink-0 text-[11px] text-[#777777]">
+                              <span className="shrink-0 text-[11px] text-[#8E7F74]">
                                 {new Date(n.created_at).toLocaleDateString('fr-FR')}
                               </span>
                             )}
                           </div>
-                          <p className="mt-1.5 text-sm font-bold text-[#23272B]">
+                          <p className="mt-1.5 text-sm font-bold text-[#F5EFEA]">
                             {!n.lu && (
                               <span
-                                className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full bg-[#B85B2B] align-middle"
+                                className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full bg-[#D96B27] align-middle"
                                 aria-label="non lue"
                               />
                             )}
                             {n.titre}
                           </p>
                           {n.message && (
-                            <p className="mt-1 line-clamp-2 text-xs text-[#666666]">{n.message}</p>
+                            <p className="mt-1 line-clamp-2 text-xs text-[#B8A99E]">{n.message}</p>
                           )}
                         </>
                       );
@@ -365,7 +365,7 @@ export default function DashboardAccueil({
                       return (
                         <li
                           key={n.id}
-                          className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 transition-colors hover:border-[#B85B2B]/40 hover:bg-white"
+                          className="rounded-xl border border-white/10 bg-[#120F0D] p-3 transition-colors hover:border-[#D96B27]/40 hover:bg-[#221B17]"
                         >
                           {lienNormalise ? (
                             <Link href={lienNormalise} className="group block">
@@ -384,20 +384,20 @@ export default function DashboardAccueil({
 
             <div>
               <div className="mb-2.5 flex items-center justify-between gap-2">
-                <h2 className="flex items-center gap-2 text-base font-bold text-[#23272B]">
-                  <FileText className="h-5 w-5 shrink-0 text-[#B85B2B]" />
+                <h2 className="flex items-center gap-2 text-base font-bold text-[#F5EFEA]">
+                  <FileText className="h-5 w-5 shrink-0 text-[#D96B27]" />
                   Dernières notes vocales
                 </h2>
                 <Link
                   href="/terrain/notes"
-                  className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+                  className="flex shrink-0 items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
                 >
                   Tout voir <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
 
               {dernieresNotes.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] p-4 text-center text-xs text-[#777777]">
+                <div className="rounded-xl border border-dashed border-white/10 bg-[#120F0D] p-4 text-center text-xs text-[#8E7F74]">
                   Aucune note récente. Dictez-en une ci-dessus.
                 </div>
               ) : (
@@ -406,20 +406,20 @@ export default function DashboardAccueil({
                     <Link
                       key={n.id}
                       href="/terrain/notes"
-                      className="group block rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 transition-colors hover:border-[#B85B2B]/40 hover:bg-white"
+                      className="group block rounded-xl border border-white/10 bg-[#120F0D] p-3 transition-colors hover:border-[#D96B27]/40 hover:bg-[#221B17]"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#666666]">
+                        <span className="rounded-full border border-white/10 bg-[#1B1511] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#B8A99E]">
                           Note
                         </span>
-                        <span className="shrink-0 text-[11px] text-[#777777]">
+                        <span className="shrink-0 text-[11px] text-[#8E7F74]">
                           {n.created_at ? new Date(n.created_at).toLocaleDateString('fr-FR') : ''}
                         </span>
                       </div>
-                      <h3 className="mt-1.5 line-clamp-1 text-sm font-bold text-[#23272B] group-hover:text-[#B85B2B]">
+                      <h3 className="mt-1.5 line-clamp-1 text-sm font-bold text-[#F5EFEA] group-hover:text-[#D96B27]">
                         {n.titre || 'Note sans titre'}
                       </h3>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-[#666666]">{n.contenu}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-[#B8A99E]">{n.contenu}</p>
                     </Link>
                   ))}
                 </div>

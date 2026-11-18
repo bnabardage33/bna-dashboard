@@ -320,7 +320,7 @@ const positionsX =
       className={
         pleinEcran
           ? "fixed inset-0 z-50 overflow-y-auto bg-slate-950/98 p-4 sm:p-8 space-y-4 backdrop-blur-md animate-in fade-in"
-          : "space-y-3 rounded-xl border border-slate-700 bg-slate-900/60 p-3.5"
+          : "space-y-3 rounded-xl border border-white/15 bg-slate-900/60 p-3.5"
       }
     >
       {/* ====================================================== */}
@@ -328,19 +328,19 @@ const positionsX =
       {/* ====================================================== */}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#8E7F74]">
           Plan de calepinage dynamique
         </p>
 
         <div className="flex items-center gap-2">
-          <div className="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+          <div className="flex overflow-hidden rounded-lg border border-white/15 bg-slate-900">
             <button
               type="button"
               onClick={() => setVue("ossature")}
               className={`px-3 py-1 text-xs font-semibold transition-colors ${
                 vue === "ossature"
                   ? "bg-sky-500 text-slate-950"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  : "bg-slate-900 text-[#8E7F74] hover:text-white"
               }`}
             >
               Ossature
@@ -352,7 +352,7 @@ const positionsX =
               className={`px-3 py-1 text-xs font-semibold transition-colors ${
                 vue === "plaques"
                   ? "bg-sky-500 text-slate-950"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  : "bg-slate-900 text-[#8E7F74] hover:text-white"
               }`}
             >
               Plaques
@@ -362,7 +362,7 @@ const positionsX =
           <button
             type="button"
             onClick={() => setPleinEcran(!pleinEcran)}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-bold text-sky-400 hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-slate-900 px-3 py-1 text-xs font-bold text-sky-400 hover:bg-slate-800 transition-colors shadow-sm"
           >
             <span>{pleinEcran ? "✕ Réduire" : "⛶ Plein écran"}</span>
           </button>
@@ -670,50 +670,50 @@ const positionsX =
       {vue === "ossature" && (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-2xs uppercase text-slate-400">Lignes montants</p>
+            <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+              <p className="text-2xs uppercase text-[#8E7F74]">Lignes montants</p>
               <p className="text-base font-bold text-white">
                 {pose ? pose.nbMontants : chevrons.length}
               </p>
-              <p className="text-2xs text-slate-500">
+              <p className="text-2xs text-[#8E7F74]">
                 Entraxe HPL : {pose && pose.entraxeHorizontal
                   ? `${(pose.entraxeHorizontal * 100).toFixed(0)} cm`
                   : "—"}
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-2xs uppercase text-slate-400">Chevrons (max 3m)</p>
+            <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+              <p className="text-2xs uppercase text-[#8E7F74]">Chevrons (max 3m)</p>
               <p className="text-base font-bold text-sky-400">
                 {chevrons.length} chevrons
               </p>
-              <p className="text-2xs text-slate-500">
+              <p className="text-2xs text-[#8E7F74]">
                 ~{pose ? pose.lineaireChevronsM.toFixed(1) : 0} ml total
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-2xs uppercase text-slate-400">Équerres Isolco</p>
+            <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+              <p className="text-2xs uppercase text-[#8E7F74]">Équerres Isolco</p>
               <p className="text-base font-bold text-red-400">
                 {equerres.length} équerres
               </p>
-              <p className="text-2xs text-slate-500">
+              <p className="text-2xs text-[#8E7F74]">
                 {equerres.length * 2} chevilles Spit MP3-S
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-              <p className="text-2xs uppercase text-slate-400">Bande EPDM (80mm)</p>
+            <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+              <p className="text-2xs uppercase text-[#8E7F74]">Bande EPDM (80mm)</p>
               <p className="text-base font-bold text-emerald-400">
                 {pose ? pose.lineaireBandeEPDMM : 0} ml
               </p>
-              <p className="text-2xs text-slate-500">
+              <p className="text-2xs text-[#8E7F74]">
                 Entraxe vert. {pose ? `${Math.round(pose.entraxeVertical * 100)} cm` : "135 cm"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-3xs text-slate-400">
+          <div className="flex items-center gap-4 text-3xs text-[#8E7F74]">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-2.5 w-2.5 rounded-full border border-red-200 bg-red-500"></span>
               Équerre Porteuse (Point Fixe en tête) : {pose ? pose.nbEquerresPorteuses : chevrons.length}
@@ -734,28 +734,28 @@ const positionsX =
         calepinage && (
           <div className="space-y-2.5">
             <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-2xs uppercase text-slate-400">Plaques brutes à cder</p>
+              <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+                <p className="text-2xs uppercase text-[#8E7F74]">Plaques brutes à cder</p>
                 <p className="text-base font-bold text-white">
                   {calepinage.nbPlaquesNecessaires}
                 </p>
-                <p className="text-2xs text-slate-500">
+                <p className="text-2xs text-[#8E7F74]">
                   {calepinage.plaqueBruteLongueurMm}×{calepinage.plaqueBruteLargeurMm} mm
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-2xs uppercase text-slate-400">Modules posés</p>
+              <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+                <p className="text-2xs uppercase text-[#8E7F74]">Modules posés</p>
                 <p className="text-base font-bold text-sky-400">
                   {calepinage.nbPiecesPosees}
                 </p>
-                <p className="text-2xs text-slate-500">
+                <p className="text-2xs text-[#8E7F74]">
                   Trame {calepinage.moduleCibleLargeurMm}×{calepinage.moduleCibleHauteurMm} mm
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-2xs uppercase text-slate-400">Taux de chute réel</p>
+              <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+                <p className="text-2xs uppercase text-[#8E7F74]">Taux de chute réel</p>
                 <p
                   className={`text-base font-bold ${
                     calepinage.tauxChutePct <= 15 ? "text-emerald-400" : "text-amber-400"
@@ -763,23 +763,23 @@ const positionsX =
                 >
                   {calepinage.tauxChutePct.toFixed(1)} %
                 </p>
-                <p className="text-2xs text-slate-500">
+                <p className="text-2xs text-[#8E7F74]">
                   {(calepinage.surfacePlaquesAchetesM2 - calepinage.surfaceZoneM2).toFixed(2)} m² chute
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-700 bg-slate-800/80 p-2">
-                <p className="text-2xs uppercase text-slate-400">Rendement de débit</p>
+              <div className="rounded-lg border border-white/15 bg-slate-800/80 p-2">
+                <p className="text-2xs uppercase text-[#8E7F74]">Rendement de débit</p>
                 <p className="text-base font-bold text-white">
-                  ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-slate-400">mod./plaque</span>
+                  ~{calepinage.modulesParPlaqueBrute} <span className="text-xs font-normal text-[#8E7F74]">mod./plaque</span>
                 </p>
-                <p className="text-2xs text-slate-500">
+                <p className="text-2xs text-[#8E7F74]">
                   {calepinage.nbJoints} joints façade
                 </p>
               </div>
             </div>
 
-            <p className="text-3xs text-slate-400 italic">
+            <p className="text-3xs text-[#8E7F74] italic">
               💡 Imbrication 2D : {calepinage.nbPiecesPosees} modules débités dans {calepinage.nbPlaquesNecessaires} plaques brutes ({calepinage.surfacePlaquesAchetesM2.toFixed(1)} m² bruts pour {calepinage.surfaceZoneM2.toFixed(1)} m² nets posés).
             </p>
           </div>
@@ -789,7 +789,7 @@ const positionsX =
       {/* RÈGLE MÉTIER */}
       {/* ====================================================== */}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-[#8E7F74]">
         Chevron limité à 3,00 m. Chaque segment
         possède ses propres équerres.
       </p>

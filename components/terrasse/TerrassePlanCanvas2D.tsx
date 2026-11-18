@@ -1031,7 +1031,7 @@ export default function TerrassePlanCanvas2D({
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-[#121214] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl border border-white/10 bg-[#121214] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         {/* Barre d'outils supérieure */}
         <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
           {/* Toggles des calques */}
@@ -1213,15 +1213,15 @@ export default function TerrassePlanCanvas2D({
       {rowsSummary.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Colonne 1 : Séquence de pose rangée par rangée */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-2.5">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
               <div className="flex items-center gap-2">
-                <Scissors className="h-4 w-4 text-[#B85B2B]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <Scissors className="h-4 w-4 text-[#D96B27]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Séquence de Coupe Poseur ({rowsSummary.length} rangées)
                 </h3>
               </div>
-              <span className="text-3xs text-emerald-700 font-bold">
+              <span className="text-3xs text-emerald-300 font-bold">
                 {nbChutesReemployeesTotal} chute(s) réemployée(s) ♻️
               </span>
             </div>
@@ -1236,27 +1236,27 @@ export default function TerrassePlanCanvas2D({
                     onMouseLeave={() => setHoveredRowIndex(null)}
                     className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition cursor-pointer ${
                       isSelected
-                        ? "bg-amber-50 border border-amber-300 text-[#23272B]"
-                        : "bg-[#F8F9FA] hover:bg-gray-100 text-[#23272B] border border-[#E5E5E5]"
+                        ? "bg-amber-500/15 border border-amber-300 text-[#F5EFEA]"
+                        : "bg-[#120F0D] hover:bg-[#221B17] text-[#F5EFEA] border border-white/10"
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#B85B2B]">
+                      <span className="font-bold text-[#D96B27]">
                         Rang #{r.rowIndex + 1}
                       </span>
-                      <span className="text-3xs text-[#777777]">
+                      <span className="text-3xs text-[#8E7F74]">
                         (larg. {r.widthMm} mm)
                       </span>
                     </div>
-                    <div className="font-mono text-[11px] text-right text-[#23272B]">
+                    <div className="font-mono text-[11px] text-right text-[#F5EFEA]">
                       {r.segments.map((s, idx) => (
                         <span key={s.id}>
-                          {idx > 0 && <span className="text-[#999999]"> + </span>}
+                          {idx > 0 && <span className="text-[#8E7F74]"> + </span>}
                           <span
                             className={
                               s.isFromOffcutReuse
-                                ? "font-bold text-emerald-700"
-                                : "text-[#23272B]"
+                                ? "font-bold text-emerald-300"
+                                : "text-[#F5EFEA]"
                             }
                           >
                             {(s.lengthNetMm / 10).toFixed(1)}cm
@@ -1272,15 +1272,15 @@ export default function TerrassePlanCanvas2D({
           </div>
 
           {/* Colonne 2 : Plan de débit 1D barre par barre (Trait de scie 3 mm & Purge 15 mm) */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-2.5">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
               <div className="flex items-center gap-2">
-                <Recycle className="h-4 w-4 text-emerald-700" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <Recycle className="h-4 w-4 text-emerald-300" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Plan de Débit 1D dans les Barres ({bladeCuttingBars.length} lames)
                 </h3>
               </div>
-              <span className="text-3xs text-[#777777]">
+              <span className="text-3xs text-[#8E7F74]">
                 Purge : 15 mm · Trait de scie : 3 mm
               </span>
             </div>
@@ -1289,16 +1289,16 @@ export default function TerrassePlanCanvas2D({
               {bladeCuttingBars.map((bar, idx) => (
                 <div
                   key={bar.barId}
-                  className="flex items-center justify-between rounded-xl bg-[#F8F9FA] px-2.5 py-1.5 text-xs border border-[#E5E5E5]"
+                  className="flex items-center justify-between rounded-xl bg-[#120F0D] px-2.5 py-1.5 text-xs border border-white/10"
                 >
                   <div>
                     <span className="font-bold text-sky-800">
                       Barre #{idx + 1}
                     </span>{" "}
-                    <span className="text-3xs text-[#777777]">
+                    <span className="text-3xs text-[#8E7F74]">
                       ({bar.commercialLengthMm} mm)
                     </span>
-                    <div className="font-mono text-[11px] text-[#23272B]">
+                    <div className="font-mono text-[11px] text-[#F5EFEA]">
                       Coupes :{" "}
                       {bar.cuts.map((c) => `${c.cutLengthMm} mm`).join(" + ")}
                     </div>
@@ -1307,10 +1307,10 @@ export default function TerrassePlanCanvas2D({
                     <span
                       className={`inline-block rounded-lg px-2 py-0.5 text-[10px] font-bold ${
                         bar.offcutStatus === "REUSED_IN_PLAN"
-                          ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                          ? "bg-emerald-500/15 text-emerald-300 border border-emerald-300"
                           : bar.offcutStatus === "REUSABLE_STOCK"
                           ? "bg-sky-50 text-sky-800 border border-sky-300"
-                          : "bg-gray-100 text-[#777777] border border-[#E5E5E5]"
+                          : "bg-[#221B17] text-[#8E7F74] border border-white/10"
                       }`}
                     >
                       Chute : {bar.offcutLengthMm} mm (

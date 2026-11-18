@@ -1312,7 +1312,7 @@ function DevisContenu() {
                   onClick={() => setMetierConversion("bardage")}
                   className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
                     metierConversion === "bardage"
-                      ? "border-[#B85B2B] bg-[#B85B2B]/20 text-white shadow-sm"
+                      ? "border-[#D96B27] bg-[#D96B27]/20 text-white shadow-sm"
                       : "border-white/10 bg-white/5 text-gray-400 hover:border-gray-500"
                   }`}
                 >
@@ -1331,7 +1331,7 @@ function DevisContenu() {
                   onClick={() => setMetierConversion("terrasse")}
                   className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
                     metierConversion === "terrasse"
-                      ? "border-[#B85B2B] bg-[#B85B2B]/20 text-white shadow-sm"
+                      ? "border-[#D96B27] bg-[#D96B27]/20 text-white shadow-sm"
                       : "border-white/10 bg-white/5 text-gray-400 hover:border-gray-500"
                   }`}
                 >
@@ -1360,7 +1360,7 @@ function DevisContenu() {
                 data-testid="confirmer-conversion-chantier"
                 disabled={conversionEnCours}
                 onClick={() => executerConversionEnChantier(devisToConvert, metierConversion)}
-                className="rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                className="rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all flex items-center gap-2 cursor-pointer"
               >
                 {conversionEnCours && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <span>Confirmer et créer le chantier</span>
@@ -1419,7 +1419,7 @@ function DevisContenu() {
                   }
                 }}
                 required
-                className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                 aria-label="Client"
               >
                 <option value="">-- Choisir un client --</option>
@@ -1441,7 +1441,7 @@ function DevisContenu() {
                       const ch = chantiersClient.find(c => c.id === id);
                       if (ch && !adresseChantier) setAdresseChantier(ch.adresse_chantier || "");
                     }}
-                    className="flex-1 w-full min-h-[42px] rounded-xl border border-red-700 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                    className="flex-1 w-full min-h-[42px] rounded-xl border border-red-700 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                     aria-label="Chantier"
                   >
                     <option value="">-- Lier à un chantier (optionnel) --</option>
@@ -1481,7 +1481,7 @@ function DevisContenu() {
                           value={surfacePonctuelle}
                           onChange={(e) => setSurfacePonctuelle(e.target.value)}
                           placeholder={surfChantier ? `automatique : ${surfChantier} m²` : "surface ponctuelle…"}
-                          className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
+                          className="mt-1 w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-sm text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                         />
                       </div>
                       <p className="text-xs text-gray-400 sm:max-w-[240px]">
@@ -1498,20 +1498,20 @@ function DevisContenu() {
                 value={objet}
                 onChange={(e) => setObjet(e.target.value)}
                 placeholder="Objet (ex. Bardage bois claire-voie)"
-                className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <input
                   value={adresseChantier}
                   onChange={(e) => setAdresseChantier(e.target.value)}
                   placeholder="Adresse du chantier"
-                  className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                  className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                 />
                 <input
                   value={typeTravaux}
                   onChange={(e) => setTypeTravaux(e.target.value)}
                   placeholder="Type de travaux"
-                  className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
+                  className="w-full min-h-[42px] rounded-xl border border-slate-600 bg-transparent px-3.5 py-2 text-sm text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none sm:py-2.5 sm:text-sm sm:min-h-0"
                 />
               </div>
 
@@ -1550,8 +1550,8 @@ function DevisContenu() {
                     onChange={(e) => setRetenueGarantie(parseFloat(e.target.value) || 0)}
                     className="mt-1 w-full min-h-[42px] rounded-xl border border-amber-600/50 bg-amber-900/10 px-3 py-2 text-sm text-amber-100 focus:border-amber-400 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   >
-                    <option value="0" className="text-gray-900">0% (Aucune)</option>
-                    <option value="5" className="text-gray-900">5% (Loi 71-584)</option>
+                    <option value="0" className="text-[#F5EFEA]">0% (Aucune)</option>
+                    <option value="5" className="text-[#F5EFEA]">5% (Loi 71-584)</option>
                   </select>
                 </div>
                 <div>
@@ -1572,11 +1572,11 @@ function DevisContenu() {
                     onChange={(e) => setProfilRevenu(e.target.value as ProfilRevenu)}
                     className="mt-1 w-full min-h-[42px] rounded-xl border border-cyan-600/50 bg-cyan-900/10 px-3 py-2 text-sm text-cyan-100 focus:border-cyan-400 focus:outline-none sm:py-2 sm:text-sm sm:min-h-0"
                   >
-                    <option value="aucun" className="text-gray-900">Aucun</option>
-                    <option value="bleu" className="text-gray-900">Bleu (Très modeste)</option>
-                    <option value="jaune" className="text-gray-900">Jaune (Modeste)</option>
-                    <option value="violet" className="text-gray-900">Violet (Interm.)</option>
-                    <option value="rose" className="text-gray-900">Rose (Aisé)</option>
+                    <option value="aucun" className="text-[#F5EFEA]">Aucun</option>
+                    <option value="bleu" className="text-[#F5EFEA]">Bleu (Très modeste)</option>
+                    <option value="jaune" className="text-[#F5EFEA]">Jaune (Modeste)</option>
+                    <option value="violet" className="text-[#F5EFEA]">Violet (Interm.)</option>
+                    <option value="rose" className="text-[#F5EFEA]">Rose (Aisé)</option>
                   </select>
                 </div>
               </div>
@@ -1602,7 +1602,7 @@ function DevisContenu() {
                     onChange={(e) => setSirenClient(e.target.value)}
                     placeholder="SIREN client (B2B, optionnel — 9 chiffres)"
                     maxLength={20}
-                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-red-600 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-600 bg-transparent px-3 py-2 text-xs text-white placeholder:text-[#8E7F74] focus:border-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1626,7 +1626,7 @@ function DevisContenu() {
                         value={l.designation}
                         onChange={(e) => updateLigne(i, { designation: e.target.value })}
                         placeholder="Désignation"
-                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-[#8E7F74] sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                       {l.justification && (
                         <p className="mt-1 text-2xs leading-tight text-emerald-300/80 sm:text-2xs" title={`Confiance : ${Math.round((l.confiance ?? 0) * 100)} %`}>
@@ -1641,7 +1641,7 @@ function DevisContenu() {
                         value={l.qte ?? ""}
                         onChange={(e) => updateLigne(i, { qte: parseFloat(e.target.value) || 0 })}
                         placeholder="Qté"
-                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-[#8E7F74] sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
@@ -1650,7 +1650,7 @@ function DevisContenu() {
                         value={l.unite}
                         onChange={(e) => updateLigne(i, { unite: e.target.value })}
                         placeholder="Unité"
-                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-[#8E7F74] sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
                     <div className="col-span-1 sm:col-span-3">
@@ -1660,7 +1660,7 @@ function DevisContenu() {
                         value={l.pu_ht ?? ""}
                         onChange={(e) => updateLigne(i, { pu_ht: parseFloat(e.target.value) || 0 })}
                         placeholder="PU HT"
-                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-slate-500 sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
+                        className="w-full min-h-[40px] rounded-xl border border-slate-600 bg-transparent px-2.5 py-2 text-sm text-white placeholder:text-[#8E7F74] sm:min-h-0 sm:rounded-lg sm:py-2 sm:text-xs"
                       />
                     </div>
                     <div className="col-span-3 flex items-end justify-end sm:col-span-1 sm:items-center sm:justify-center">
@@ -1747,7 +1747,7 @@ function DevisContenu() {
                   <button
                     type="button"
                     onClick={ajouterLigne}
-                    className="w-full sm:w-auto min-h-[42px] sm:min-h-0 rounded-xl border-2 border-dashed border-slate-600 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs font-semibold text-gray-200 hover:bg-white/5 hover:border-gray-300"
+                    className="w-full sm:w-auto min-h-[42px] sm:min-h-0 rounded-xl border-2 border-dashed border-slate-600 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs font-semibold text-gray-200 hover:bg-white/5 hover:border-white/15"
                   >
                     + Ajouter une ligne vierge
                   </button>
@@ -1757,7 +1757,7 @@ function DevisContenu() {
                       insererDepuisCatalogue(e.target.value);
                       e.target.value = "";
                     }}
-                    className="w-full sm:flex-1 min-h-[42px] sm:min-h-0 rounded-xl border border-red-600/50 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs text-gray-400 font-medium hover:border-gray-300"
+                    className="w-full sm:flex-1 min-h-[42px] sm:min-h-0 rounded-xl border border-red-600/50 bg-transparent px-3 py-2 text-sm sm:py-1.5 sm:text-xs text-gray-400 font-medium hover:border-white/15"
                     aria-label="Insérer un ouvrage depuis le catalogue standard"
                   >
                     <option value="" disabled>

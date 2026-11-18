@@ -200,17 +200,17 @@ export default function TerrasseAvancementModule({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Carte Synthèse & Jauge Globale */}
-      <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+      <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <CheckCircle2 className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[2px] text-[#B85B2B]">
+              <p className="text-xs font-bold uppercase tracking-[2px] text-[#D96B27]">
                 Suivi Normatif de Pose
               </p>
-              <h3 className="text-xl font-bold text-[#23272B]">
+              <h3 className="text-xl font-bold text-[#F5EFEA]">
                 Avancement DTU 51.4 (6 Phases Clés)
               </h3>
             </div>
@@ -218,11 +218,11 @@ export default function TerrasseAvancementModule({
 
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-xs font-semibold text-[#777777]">Progression globale</p>
-              <p className="text-2xl font-bold tracking-tight text-[#B85B2B]">{pourcentage}%</p>
+              <p className="text-xs font-semibold text-[#8E7F74]">Progression globale</p>
+              <p className="text-2xl font-bold tracking-tight text-[#D96B27]">{pourcentage}%</p>
             </div>
             {messageSucces && (
-              <span className="flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200">
+              <span className="flex items-center gap-1 rounded-xl bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 border border-emerald-200">
                 <Check className="h-4 w-4" /> Sauvegardé
               </span>
             )}
@@ -237,9 +237,9 @@ export default function TerrasseAvancementModule({
               style={{ width: `${pourcentage}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs font-semibold text-[#777777]">
+          <div className="mt-2 flex items-center justify-between text-xs font-semibold text-[#8E7F74]">
             <span>{nbTermine} sur 6 phases achevées</span>
-            <span>Phase active : <strong className="text-[#23272B]">{phaseActive}</strong></span>
+            <span>Phase active : <strong className="text-[#F5EFEA]">{phaseActive}</strong></span>
           </div>
         </div>
       </section>
@@ -255,27 +255,27 @@ export default function TerrasseAvancementModule({
               key={phase.id}
               className={`rounded-2xl border p-5 transition-all shadow-xs ${
                 estTermine
-                  ? "border-emerald-200 bg-emerald-50/30"
+                  ? "border-emerald-200 bg-emerald-500/15/30"
                   : estEnCours
-                  ? "border-[#B85B2B]/40 bg-white shadow-sm ring-1 ring-[#B85B2B]/20"
-                  : "border-[#E5E5E5] bg-white"
+                  ? "border-[#D96B27]/40 bg-[#1B1511] shadow-sm ring-1 ring-[#B85B2B]/20"
+                  : "border-white/10 bg-[#1B1511]"
               }`}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 {/* Libellé & description */}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-base font-bold text-[#23272B]">{phase.nom}</h4>
-                    <span className="rounded-md border border-[#E5E5E5] bg-[#F8F9FA] px-2 py-0.5 text-[10px] font-bold text-[#777777]">
+                    <h4 className="text-base font-bold text-[#F5EFEA]">{phase.nom}</h4>
+                    <span className="rounded-md border border-white/10 bg-[#120F0D] px-2 py-0.5 text-[10px] font-bold text-[#8E7F74]">
                       {phase.normeDTU}
                     </span>
                     {phase.dateValidation && (
-                      <span className="text-[11px] font-semibold text-emerald-700">
+                      <span className="text-[11px] font-semibold text-emerald-300">
                         Validé le {new Date(phase.dateValidation).toLocaleDateString("fr-FR")}
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-[#777777]">
+                  <p className="mt-1 text-xs leading-relaxed text-[#8E7F74]">
                     {phase.description}
                   </p>
 
@@ -287,20 +287,20 @@ export default function TerrasseAvancementModule({
                       onChange={(e) => handleModifierRemarques(phase.id, e.target.value)}
                       onBlur={() => persisterPhases()}
                       placeholder="Remarques éventuelles sur cette phase (ex: dénivelé compensé de 4 cm)..."
-                      className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] focus:bg-white px-3 py-1.5 text-xs text-[#23272B] placeholder:text-[#999999] focus:border-[#B85B2B] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 transition-all"
+                      className="w-full rounded-xl border border-white/10 bg-[#120F0D] focus:bg-[#1E1916] px-3 py-1.5 text-xs text-[#F5EFEA] placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Sélecteur de statut à 3 boutons */}
-                <div className="flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F7F7F6] p-1 shrink-0">
+                <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#F7F7F6] p-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => handleModifierStatut(phase.id, "a_faire")}
                     className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
                       phase.statut === "a_faire"
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-500 hover:text-gray-900"
+                        ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                        : "text-gray-500 hover:text-[#F5EFEA]"
                     }`}
                   >
                     À faire
@@ -310,8 +310,8 @@ export default function TerrasseAvancementModule({
                     onClick={() => handleModifierStatut(phase.id, "en_cours")}
                     className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
                       phase.statut === "en_cours"
-                        ? "bg-[#B85B2B] text-white shadow-sm"
-                        : "text-gray-500 hover:text-[#B85B2B]"
+                        ? "bg-[#D96B27] text-white shadow-sm"
+                        : "text-gray-500 hover:text-[#D96B27]"
                     }`}
                   >
                     En cours
@@ -322,7 +322,7 @@ export default function TerrasseAvancementModule({
                     className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
                       phase.statut === "termine"
                         ? "bg-emerald-600 text-white shadow-sm"
-                        : "text-gray-500 hover:text-emerald-700"
+                        : "text-gray-500 hover:text-emerald-300"
                     }`}
                   >
                     Terminé ✓
@@ -339,7 +339,7 @@ export default function TerrasseAvancementModule({
           type="button"
           onClick={() => persisterPhases()}
           disabled={sauvegardeEnCours}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#23272B] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#B85B2B] disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#23272B] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#D96B27] disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
           {sauvegardeEnCours ? "Enregistrement..." : "Sauvegarder l'avancement"}

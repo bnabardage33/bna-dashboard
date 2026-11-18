@@ -336,7 +336,7 @@ export default function Vue3DFacade({
             className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
               modeRendu === "dtu"
                 ? "bg-orange-500 text-white shadow-sm shadow-orange-500/20"
-                : "bg-slate-800 text-slate-300 border border-slate-700 hover:text-white"
+                : "bg-slate-800 text-slate-300 border border-white/15 hover:text-white"
             }`}
           >
             <Layers className="w-3.5 h-3.5" /> Coupe 3D Éclatée DTU
@@ -347,13 +347,13 @@ export default function Vue3DFacade({
             className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all ${
               modeRendu === "css3d"
                 ? "bg-sky-500 text-slate-950 shadow-sm shadow-sky-500/20"
-                : "bg-slate-800 text-slate-300 border border-slate-700 hover:text-white"
+                : "bg-slate-800 text-slate-300 border border-white/15 hover:text-white"
             }`}
           >
             <Box className="w-3.5 h-3.5" /> Modules CSS 3D ({modules.length})
           </button>
         </div>
-        <span className="text-[11px] text-slate-400 hidden sm:inline">
+        <span className="text-[11px] text-[#8E7F74] hidden sm:inline">
           {modeRendu === "dtu" ? "Support + ITE + Chevrons + Panneaux" : "Trame calepinée interactive"}
         </span>
       </div>
@@ -487,7 +487,7 @@ export default function Vue3DFacade({
           </p>
         )}
         {!zoneValide && (
-          <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-slate-500">
+          <p className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-[#8E7F74]">
             Dimensions de la zone manquantes : la vue 3D ne peut pas être affichée.
           </p>
         )}

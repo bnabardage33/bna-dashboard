@@ -292,12 +292,12 @@ function HubBardageContenu() {
 
   if (loading) {
     return (
-      <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] px-4 py-6 sm:py-8 transition-colors">
+      <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] px-4 py-6 sm:py-8 transition-colors">
         <div className="mx-auto w-full max-w-5xl">
-          <div className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+          <div className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
             <div className="flex flex-col items-center gap-3">
-              <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#B85B2B] border-t-transparent" />
-              <p className="text-sm font-medium text-[#777777]">
+              <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#D96B27] border-t-transparent" />
+              <p className="text-sm font-medium text-[#8E7F74]">
                 Chargement du Hub Bardage...
               </p>
             </div>
@@ -309,16 +309,16 @@ function HubBardageContenu() {
 
   if (!chantier) {
     return (
-      <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] px-4 py-6 sm:py-8 transition-colors">
+      <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] px-4 py-6 sm:py-8 transition-colors">
         <div className="mx-auto w-full max-w-5xl">
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-10 sm:p-12 text-center shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
-            <h3 className="text-lg font-bold text-[#23272B]">Chantier Bardage introuvable</h3>
-            <p className="mt-1 text-xs text-[#777777]">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-10 sm:p-12 text-center shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+            <h3 className="text-lg font-bold text-[#F5EFEA]">Chantier Bardage introuvable</h3>
+            <p className="mt-1 text-xs text-[#8E7F74]">
               Ce chantier n&apos;existe pas ou a été archivé.
             </p>
             <Link
               href="/terrain/chantier"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] active:scale-[0.98] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Retour à la liste des chantiers</span>
@@ -330,36 +330,36 @@ function HubBardageContenu() {
   }
 
   return (
-    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] selection:bg-[#B85B2B]/20 selection:text-[#B85B2B] px-4 py-6 sm:py-8 transition-colors">
+    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] selection:bg-[#D96B27]/20 selection:text-[#D96B27] px-4 py-6 sm:py-8 transition-colors">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         {/* 1. En-tête Général du Hub Chantier Bardage */}
-        <header className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+        <header className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
           {/* Ligne 1 : Navigation retour & Fil d'ariane */}
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[#F0F0F0] pb-3 text-xs">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3 text-xs">
             <Link
               href="/terrain/chantier"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-3.5 py-1.5 text-xs font-bold text-[#23272B] hover:text-[#B85B2B] transition-all shadow-xs"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-3.5 py-1.5 text-xs font-bold text-[#F5EFEA] hover:text-[#D96B27] transition-all shadow-xs"
               title="Retour à la liste des chantiers"
             >
-              <Home className="h-4 w-4 text-[#B85B2B]" />
+              <Home className="h-4 w-4 text-[#D96B27]" />
               <span>Accueil chantier</span>
             </Link>
 
             {moduleActif ? (
-              <div className="flex items-center gap-1.5 font-semibold text-[#777777]">
+              <div className="flex items-center gap-1.5 font-semibold text-[#8E7F74]">
                 <button
                   type="button"
                   onClick={() => selectionnerModule(null)}
-                  className="hover:text-[#B85B2B] transition-colors cursor-pointer"
+                  className="hover:text-[#D96B27] transition-colors cursor-pointer"
                   title="Revenir aux 8 cartes du Hub"
                 >
                   Hub Bardage
                 </button>
                 <ChevronRight className="h-3.5 w-3.5" />
-                <span className="font-bold text-[#B85B2B]">{MODULE_TITRES[moduleActif]}</span>
+                <span className="font-bold text-[#D96B27]">{MODULE_TITRES[moduleActif]}</span>
               </div>
             ) : (
-              <span className="rounded-full border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#B85B2B]">
+              <span className="rounded-full border border-[#D96B27]/20 bg-[#D96B27]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#D96B27]">
                 Hub Chantier Bardage · Vue d&apos;ensemble
               </span>
             )}
@@ -369,19 +369,19 @@ function HubBardageContenu() {
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
                   <Building2 className="h-5 w-5" />
                 </span>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#23272B]">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#F5EFEA]">
                   {chantier.nom || chantier.clients?.nom || "Chantier Bardage"}
                 </h1>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
                     chantier.statut === "termine"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                       : chantier.statut === "en_cours"
-                      ? "bg-amber-50 text-amber-900 border border-amber-200"
-                      : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                      ? "bg-amber-500/15 text-amber-900 border border-amber-200"
+                      : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                   }`}
                 >
                   {chantier.statut === "termine"
@@ -392,22 +392,22 @@ function HubBardageContenu() {
                 </span>
               </div>
 
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#777777]">
-                <span className="flex items-center gap-1 font-semibold text-[#23272B]">
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#8E7F74]">
+                <span className="flex items-center gap-1 font-semibold text-[#F5EFEA]">
                   <User className="h-3.5 w-3.5 text-gray-400" />
                   {chantier.clients?.nom || "Client inconnu"}{" "}
                   {chantier.clients?.societe ? `(${chantier.clients.societe})` : ""}
                 </span>
 
                 {chantier.adresse_chantier && (
-                  <span className="flex items-center gap-1 text-[#777777]">
-                    <MapPin className="h-3.5 w-3.5 text-[#B85B2B]" />
+                  <span className="flex items-center gap-1 text-[#8E7F74]">
+                    <MapPin className="h-3.5 w-3.5 text-[#D96B27]" />
                     {chantier.adresse_chantier}
                   </span>
                 )}
 
                 {chantier.date_debut && (
-                  <span className="flex items-center gap-1 text-[#777777]">
+                  <span className="flex items-center gap-1 text-[#8E7F74]">
                     <Calendar className="h-3.5 w-3.5 text-gray-400" />
                     Du {new Date(chantier.date_debut).toLocaleDateString("fr-FR")}{" "}
                     {chantier.date_fin ? `au ${new Date(chantier.date_fin).toLocaleDateString("fr-FR")}` : ""}
@@ -422,10 +422,10 @@ function HubBardageContenu() {
                 <button
                   type="button"
                   onClick={handleCopierCode}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:border-[#B85B2B] transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] px-3 py-1.5 text-xs font-semibold text-[#F5EFEA] hover:border-[#D96B27] transition-colors"
                   title="Copier le code client"
                 >
-                  <KeyRound className="h-3.5 w-3.5 text-[#B85B2B]" />
+                  <KeyRound className="h-3.5 w-3.5 text-[#D96B27]" />
                   <span>Code : {chantier.code_acces}</span>
                   {copiedCode ? (
                     <Check className="h-3.5 w-3.5 text-emerald-600" />
@@ -435,20 +435,20 @@ function HubBardageContenu() {
                 </button>
               )}
 
-              <div className="rounded-xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-3.5 py-1.5 text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">Avancement</p>
-                <p className="text-xs font-bold text-[#B85B2B]">{avancementPct}% validé</p>
+              <div className="rounded-xl border border-[#D96B27]/20 bg-[#D96B27]/10 px-3.5 py-1.5 text-right">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">Avancement</p>
+                <p className="text-xs font-bold text-[#D96B27]">{avancementPct}% validé</p>
               </div>
             </div>
           </div>
 
           {/* Si un module est actif : bandeau de retour immédiat vers les cartes du Hub */}
           {moduleActif && (
-            <div className="mt-5 pt-4 border-t border-[#F0F0F0] flex flex-wrap items-center justify-between gap-2">
+            <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => selectionnerModule(null)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#23272B] hover:bg-[#B85B2B] active:scale-[0.98] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#23272B] hover:bg-[#D96B27] active:scale-[0.98] px-4 py-2.5 text-xs font-bold text-white transition-all shadow-sm cursor-pointer"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>← Retour à la navigation par cartes du Hub</span>
@@ -458,13 +458,13 @@ function HubBardageContenu() {
                 {/* Raccourci devis (présent pour contrat test ia-devis-metre) */}
                 <Link
                   href={`/bureau/devis-factures?chantier_id=${encodeURIComponent(chantier.id)}`}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#777777] hover:text-[#B85B2B] transition-colors"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#8E7F74] hover:text-[#D96B27] transition-colors"
                 >
                   <FileSpreadsheet size={13} />
                   <span>Devis associé</span>
                 </Link>
 
-                <span className="text-xs font-bold text-[#B85B2B]">
+                <span className="text-xs font-bold text-[#D96B27]">
                   Espace actif : {MODULE_TITRES[moduleActif]}
                 </span>
               </div>
@@ -574,7 +574,7 @@ export default function ChantierDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-72 items-center justify-center p-8 text-center text-sm text-[#777777] bg-transparent">
+        <div className="flex min-h-72 items-center justify-center p-8 text-center text-sm text-[#8E7F74] bg-transparent">
           Chargement du Hub Chantier...
         </div>
       }

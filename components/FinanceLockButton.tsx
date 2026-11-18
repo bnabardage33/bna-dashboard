@@ -11,7 +11,7 @@ export default function FinanceLockButton() {
   return (
     <button
       onClick={handleLock}
-      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition"
+      className="flex items-center gap-1.5 text-xs text-[#8E7F74] hover:text-[#B8A99E] transition"
       title="Verrouiller le module Finance"
     >
       <Lock size={14} />

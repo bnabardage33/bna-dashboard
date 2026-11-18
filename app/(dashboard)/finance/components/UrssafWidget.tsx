@@ -24,7 +24,7 @@ export default function UrssafWidget({ mois }: { mois?: string }) {
             Charges sociales estimées
           </h2>
         </div>
-        <div className="text-2xl font-black text-slate-600">
+        <div className="text-2xl font-black text-[#B8A99E]">
           {fmtPct(taux_global_pct)}
         </div>
       </div>

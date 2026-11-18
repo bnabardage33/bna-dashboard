@@ -167,7 +167,7 @@ function renderBnaMessageContent(content: string, isUser: boolean): React.ReactN
       nodes.push(
         <hr
           key={`hr-${i}`}
-          className={`my-1.5 ${isUser ? "border-white/25" : "border-[#E5E5E5]"}`}
+          className={`my-1.5 ${isUser ? "border-white/25" : "border-white/10"}`}
         />
       );
       continue;
@@ -194,7 +194,7 @@ function renderBnaMessageContent(content: string, isUser: boolean): React.ReactN
         <div key={`tbl-${i}`} className="flex items-start gap-2 pl-1">
           <span
             className={`mt-0.5 font-bold ${
-              isUser ? "text-white/90" : "text-[#B85B2B]"
+              isUser ? "text-white/90" : "text-[#D96B27]"
             }`}
           >
             •
@@ -214,7 +214,7 @@ function renderBnaMessageContent(content: string, isUser: boolean): React.ReactN
         <p
           key={`h-${i}`}
           className={`font-bold ${
-            isUser ? "text-white" : "text-[#23272B]"
+            isUser ? "text-white" : "text-[#F5EFEA]"
           } ${i > 0 ? "pt-1.5" : ""}`}
         >
           {renderInlineMarkdown(headingMatch[1])}
@@ -229,7 +229,7 @@ function renderBnaMessageContent(content: string, isUser: boolean): React.ReactN
         <div key={`li-${i}`} className="flex items-start gap-2 pl-1">
           <span
             className={`mt-0.5 font-bold ${
-              isUser ? "text-white/90" : "text-[#B85B2B]"
+              isUser ? "text-white/90" : "text-[#D96B27]"
             }`}
           >
             •
@@ -974,20 +974,20 @@ export default function BnaIaCentreControle() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3F3F1] pb-24 text-[#23272B]">
+    <div className="min-h-screen bg-[#120F0D] pb-24 text-[#F5EFEA]">
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6">
         {/* En-tête blanc unifié */}
-        <header className="rounded-2xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-xs">
+        <header className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#B85B2B]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-[#D96B27]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#D96B27]">
                 <Sparkles className="h-3.5 w-3.5" />
                 BNA Pilotage BTP · BNA-IA Centre de Contrôle
               </div>
-              <h1 className="mt-2 text-xl font-bold text-[#23272B] sm:text-2xl">
+              <h1 className="mt-2 text-xl font-bold text-[#F5EFEA] sm:text-2xl">
                 BNA-IA · Copilote Chantiers &amp; Gestion
               </h1>
-              <p className="mt-0.5 text-xs sm:text-sm text-[#666666]">
+              <p className="mt-0.5 text-xs sm:text-sm text-[#B8A99E]">
                 Connecté en direct à vos chantiers Bardage, Terrasse &amp; Mobile, Clôture, Planning, Devis, Commandes et SAV.
               </p>
             </div>
@@ -996,15 +996,15 @@ export default function BnaIaCentreControle() {
                 type="button"
                 onClick={chargerContexte}
                 disabled={loadingCtx}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs font-bold text-[#23272B] hover:bg-white transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2 text-xs font-bold text-[#F5EFEA] hover:bg-[#221B17] transition-colors"
               >
-                <RefreshCw className={`h-3.5 w-3.5 text-[#B85B2B] ${loadingCtx ? "animate-spin" : ""}`} />
+                <RefreshCw className={`h-3.5 w-3.5 text-[#D96B27] ${loadingCtx ? "animate-spin" : ""}`} />
                 Actualiser contexte
               </button>
               <button
                 type="button"
                 onClick={ouvrirModaleSauvegarde}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3.5 py-2 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 px-3.5 py-2 text-xs font-bold text-[#D96B27] hover:bg-[#D96B27]/15 transition-colors"
               >
                 <BookmarkPlus className="h-3.5 w-3.5" />
                 Sauvegarder la conversation
@@ -1012,7 +1012,7 @@ export default function BnaIaCentreControle() {
               <button
                 type="button"
                 onClick={nouveauChat}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#E07A38] transition-colors"
               >
                 <MessageSquarePlus className="h-3.5 w-3.5" />
                 Nouveau chat
@@ -1021,17 +1021,17 @@ export default function BnaIaCentreControle() {
           </div>
 
           {context && (
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-[#F0F0F0] pt-3 text-xs text-[#666666]">
-              <span className="rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1 font-semibold text-[#23272B]">
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-3 text-xs text-[#B8A99E]">
+              <span className="rounded-full border border-white/10 bg-[#120F0D] px-2.5 py-1 font-semibold text-[#F5EFEA]">
                 {context.chantiers.length} chantier(s)
               </span>
-              <span className="rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1 font-semibold text-[#23272B]">
+              <span className="rounded-full border border-white/10 bg-[#120F0D] px-2.5 py-1 font-semibold text-[#F5EFEA]">
                 {context.commandes.length} commande(s)
               </span>
-              <span className="rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1 font-semibold text-[#23272B]">
+              <span className="rounded-full border border-white/10 bg-[#120F0D] px-2.5 py-1 font-semibold text-[#F5EFEA]">
                 {context.devis.length} devis · {context.factures.length} facture(s)
               </span>
-              <span className="rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1 font-semibold text-[#23272B]">
+              <span className="rounded-full border border-white/10 bg-[#120F0D] px-2.5 py-1 font-semibold text-[#F5EFEA]">
                 {context.ticketsSav.length} ticket(s) SAV
               </span>
             </div>
@@ -1039,21 +1039,21 @@ export default function BnaIaCentreControle() {
         </header>
 
         {/* Bandeau d'Alertes Proactives */}
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
+        <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-[#23272B]">
-              <AlertTriangle className="h-4 w-4 text-[#B85B2B]" />
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[#F5EFEA]">
+              <AlertTriangle className="h-4 w-4 text-[#D96B27]" />
               Alertes proactives détectées
             </h2>
-            <span className="text-xs font-semibold text-[#777777]">
+            <span className="text-xs font-semibold text-[#8E7F74]">
               {alertes.length} alerte(s)
             </span>
           </div>
 
           {loadingCtx ? (
-            <p className="text-xs text-[#777777]">Analyse des données entreprise en cours...</p>
+            <p className="text-xs text-[#8E7F74]">Analyse des données entreprise en cours...</p>
           ) : alertes.length === 0 ? (
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-800">
+            <p className="rounded-xl border border-emerald-200 bg-emerald-500/15 px-3.5 py-2.5 text-xs font-semibold text-emerald-300">
               Aucune alerte critique : commandes, factures échues, SAV et réserves PV sont sous contrôle.
             </p>
           ) : (
@@ -1063,26 +1063,26 @@ export default function BnaIaCentreControle() {
                   key={a.id}
                   className={`flex flex-col justify-between gap-2 rounded-xl border p-3 ${
                     a.severite === "haute"
-                      ? "border-red-200 bg-red-50/60"
-                      : "border-amber-200 bg-amber-50/60"
+                      ? "border-red-200 bg-red-500/15/60"
+                      : "border-amber-200 bg-amber-500/15/60"
                   }`}
                 >
                   <div>
-                    <p className="text-xs font-bold text-[#23272B]">{a.titre}</p>
-                    <p className="mt-0.5 text-[11px] text-[#555555]">{a.detail}</p>
+                    <p className="text-xs font-bold text-[#F5EFEA]">{a.titre}</p>
+                    <p className="mt-0.5 text-[11px] text-[#B8A99E]">{a.detail}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => envoyerMessage(a.promptIA)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#B85B2B] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#9E4B20]"
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#D96B27] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#E07A38]"
                     >
                       <Sparkles className="h-3 w-3" />
                       Analyser avec BNA-IA
                     </button>
                     <Link
                       href={a.href}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#23272B] hover:border-[#B85B2B]/40"
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1 text-[11px] font-semibold text-[#F5EFEA] hover:border-[#D96B27]/40"
                     >
                       Ouvrir le dossier
                       <ArrowUpRight className="h-3 w-3" />
@@ -1095,8 +1095,8 @@ export default function BnaIaCentreControle() {
         </section>
 
         {/* Grille des 8 raccourcis intelligents */}
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
-          <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#777777]">
+        <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs">
+          <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">
             Raccourcis intelligents
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -1105,7 +1105,7 @@ export default function BnaIaCentreControle() {
                 key={qp.label}
                 type="button"
                 onClick={() => envoyerMessage(qp.prompt)}
-                className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-left text-xs font-semibold text-[#23272B] transition-colors hover:border-[#B85B2B]/50 hover:bg-white"
+                className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-left text-xs font-semibold text-[#F5EFEA] transition-colors hover:border-[#D96B27]/50 hover:bg-[#221B17]"
               >
                 {qp.label}
               </button>
@@ -1116,7 +1116,7 @@ export default function BnaIaCentreControle() {
         {/* Zone de conversation */}
         <section
           ref={chatSectionRef}
-          className="flex flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-xs overflow-hidden"
+          className="flex flex-col rounded-2xl border border-white/10 bg-[#1B1511] shadow-xs overflow-hidden"
         >
           <div className="min-h-[380px] max-h-[65vh] space-y-4 overflow-y-auto p-4 sm:p-5">
             {messages.map((m) => (
@@ -1125,7 +1125,7 @@ export default function BnaIaCentreControle() {
                 className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {m.role === "assistant" && (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#B85B2B]/10 text-[#B85B2B] border border-[#B85B2B]/25">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#D96B27]/10 text-[#D96B27] border border-[#D96B27]/25">
                     <Bot className="h-4 w-4" />
                   </div>
                 )}
@@ -1133,8 +1133,8 @@ export default function BnaIaCentreControle() {
                 <div
                   className={`max-w-[85%] space-y-2 rounded-2xl p-3.5 text-xs sm:text-sm ${
                     m.role === "user"
-                      ? "bg-[#B85B2B] text-white"
-                      : "border border-[#E5E5E5] bg-[#F8F9FA] text-[#23272B]"
+                      ? "bg-[#D96B27] text-white"
+                      : "border border-white/10 bg-[#120F0D] text-[#F5EFEA]"
                   }`}
                 >
                   {m.role === "assistant" && (
@@ -1143,7 +1143,7 @@ export default function BnaIaCentreControle() {
                         {m.tags?.map((t) => (
                           <span
                             key={t}
-                            className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-bold text-[#666666]"
+                            className="rounded-full border border-white/10 bg-[#1B1511] px-2 py-0.5 text-[10px] font-bold text-[#B8A99E]"
                           >
                             {t}
                           </span>
@@ -1165,8 +1165,8 @@ export default function BnaIaCentreControle() {
                           }
                           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors ${
                             speakingId === m.id
-                              ? "border-[#B85B2B] bg-[#B85B2B] text-white"
-                              : "border-[#E5E5E5] bg-white text-[#666666] hover:border-[#B85B2B]/50 hover:text-[#B85B2B]"
+                              ? "border-[#D96B27] bg-[#D96B27] text-white"
+                              : "border-white/10 bg-[#1B1511] text-[#B8A99E] hover:border-[#D96B27]/50 hover:text-[#D96B27]"
                           }`}
                         >
                           {speakingId === m.id ? (
@@ -1199,15 +1199,15 @@ export default function BnaIaCentreControle() {
                   {renderBnaMessageContent(m.content, m.role === "user")}
 
                   {m.actions && m.actions.length > 0 && (
-                    <div className="space-y-1.5 pt-2 border-t border-[#E5E5E5]">
+                    <div className="space-y-1.5 pt-2 border-t border-white/10">
                       {m.actions.map((act) => (
                         <div
                           key={act.id}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#E5E5E5] bg-white p-2.5"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#1B1511] p-2.5"
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-[#23272B]">{act.title}</p>
-                            <p className="text-[11px] text-[#666666]">{act.description}</p>
+                            <p className="text-xs font-bold text-[#F5EFEA]">{act.title}</p>
+                            <p className="text-[11px] text-[#B8A99E]">{act.description}</p>
                           </div>
                           <button
                             type="button"
@@ -1215,8 +1215,8 @@ export default function BnaIaCentreControle() {
                             onClick={() => executerAction(m.id, act)}
                             className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
                               act.executed
-                                ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : "bg-[#B85B2B] text-white hover:bg-[#9E4B20]"
+                                ? "border border-emerald-200 bg-emerald-500/15 text-emerald-300"
+                                : "bg-[#D96B27] text-white hover:bg-[#E07A38]"
                             }`}
                           >
                             {act.executed ? (
@@ -1250,8 +1250,8 @@ export default function BnaIaCentreControle() {
               </div>
             ))}
             {isSending && (
-              <div className="flex items-center gap-2 text-xs text-[#777777]">
-                <Loader2 className="h-4 w-4 animate-spin text-[#B85B2B]" />
+              <div className="flex items-center gap-2 text-xs text-[#8E7F74]">
+                <Loader2 className="h-4 w-4 animate-spin text-[#D96B27]" />
                 <span>BNA-IA analyse votre demande...</span>
               </div>
             )}
@@ -1264,25 +1264,25 @@ export default function BnaIaCentreControle() {
               e.preventDefault();
               envoyerMessage();
             }}
-            className="border-t border-[#E5E5E5] bg-[#F8F9FA] p-3 sm:p-4"
+            className="border-t border-white/10 bg-[#120F0D] p-3 sm:p-4"
           >
             {micError && (
               <p className="mb-2 text-xs font-medium text-red-600">{micError}</p>
             )}
             {pendingImage && (
-              <div className="mb-2.5 flex items-center justify-between gap-2 rounded-xl border border-[#B85B2B]/30 bg-white p-2">
+              <div className="mb-2.5 flex items-center justify-between gap-2 rounded-xl border border-[#D96B27]/30 bg-[#1B1511] p-2">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={pendingImage}
                     alt="Aperçu photo chantier"
-                    className="h-14 w-14 shrink-0 rounded-lg border border-[#E5E5E5] object-cover"
+                    className="h-14 w-14 shrink-0 rounded-lg border border-white/10 object-cover"
                   />
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#23272B]">
+                    <p className="text-xs font-bold text-[#F5EFEA]">
                       Photo chantier prête pour diagnostic
                     </p>
-                    <p className="text-[11px] text-[#666666]">
+                    <p className="text-[11px] text-[#B8A99E]">
                       Compressée (max 1280 px) · Analyse Vision DTU
                     </p>
                   </div>
@@ -1292,7 +1292,7 @@ export default function BnaIaCentreControle() {
                   onClick={() => setPendingImage(null)}
                   title="Retirer la photo"
                   aria-label="Retirer la photo"
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#E5E5E5] text-[#666666] hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 text-[#B8A99E] hover:bg-red-500/15 hover:text-red-600"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1313,7 +1313,7 @@ export default function BnaIaCentreControle() {
                 disabled={isCompressingImage || isSending}
                 title="Photo chantier (diagnostic DTU / SAV)"
                 aria-label="Photo chantier"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E5E5E5] bg-white text-[#B85B2B] transition-colors hover:border-[#B85B2B]/50 disabled:opacity-50"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#1B1511] text-[#D96B27] transition-colors hover:border-[#D96B27]/50 disabled:opacity-50"
               >
                 {isCompressingImage ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1331,7 +1331,7 @@ export default function BnaIaCentreControle() {
                 className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
                   isRecording
                     ? "border-red-300 bg-red-600 text-white animate-pulse"
-                    : "border-[#E5E5E5] bg-white text-[#B85B2B] hover:border-[#B85B2B]/50"
+                    : "border-white/10 bg-[#1B1511] text-[#D96B27] hover:border-[#D96B27]/50"
                 }`}
               >
                 {isTranscribing ? (
@@ -1352,13 +1352,13 @@ export default function BnaIaCentreControle() {
                     ? "Écoute en cours... Appuyez à nouveau pour transcrire"
                     : "Posez une question (briefing, DTU, avancement, planning, commandes...)"
                 }
-                className="flex-1 rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2.5 text-xs sm:text-sm text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:outline-none"
+                className="flex-1 rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2.5 text-xs sm:text-sm text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:outline-none"
               />
 
               <button
                 type="submit"
                 disabled={(!input.trim() && !pendingImage) || isSending}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#E07A38] disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
                 <span className="hidden sm:inline">Envoyer</span>
@@ -1368,34 +1368,34 @@ export default function BnaIaCentreControle() {
         </section>
 
         {/* Bibliothèque « Historique des conversations » */}
-        <section className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-xs">
+        <section className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-xs">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-[#23272B]">
-              <History className="h-4 w-4 text-[#B85B2B]" />
+            <h2 className="flex items-center gap-2 text-sm font-bold text-[#F5EFEA]">
+              <History className="h-4 w-4 text-[#D96B27]" />
               Historique des conversations
             </h2>
             <div className="flex items-center gap-2">
               <span
                 className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
                   syncSupabase
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-amber-200 bg-amber-50 text-amber-800"
+                    ? "border-emerald-200 bg-emerald-500/15 text-emerald-300"
+                    : "border-amber-200 bg-amber-500/15 text-amber-300"
                 }`}
               >
                 {syncSupabase ? "Synchronisé cloud" : "Stockage local"}
               </span>
-              <span className="text-xs font-semibold text-[#777777]">
+              <span className="text-xs font-semibold text-[#8E7F74]">
                 {savedConversations.length} conversation(s)
               </span>
             </div>
           </div>
 
           {loadingSaved ? (
-            <p className="text-xs text-[#777777]">Chargement de l&apos;historique...</p>
+            <p className="text-xs text-[#8E7F74]">Chargement de l&apos;historique...</p>
           ) : savedConversations.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] px-4 py-5 text-center text-xs text-[#777777]">
+            <div className="rounded-xl border border-dashed border-white/10 bg-[#120F0D] px-4 py-5 text-center text-xs text-[#8E7F74]">
               Aucune conversation sauvegardée pour le moment. Utilisez{" "}
-              <span className="font-bold text-[#B85B2B]">Sauvegarder la conversation</span>{" "}
+              <span className="font-bold text-[#D96B27]">Sauvegarder la conversation</span>{" "}
               dans l&apos;en-tête pour archiver un échange important.
             </div>
           ) : (
@@ -1406,7 +1406,7 @@ export default function BnaIaCentreControle() {
                 return (
                   <div
                     key={conv.id}
-                    className="flex flex-col gap-3 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3.5 sm:flex-row sm:items-center sm:justify-between hover:border-[#B85B2B]/40 hover:bg-white transition-colors"
+                    className="flex flex-col gap-3 rounded-xl border border-white/10 bg-[#120F0D] p-3.5 sm:flex-row sm:items-center sm:justify-between hover:border-[#D96B27]/40 hover:bg-[#221B17] transition-colors"
                   >
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -1415,14 +1415,14 @@ export default function BnaIaCentreControle() {
                         >
                           {badge.label}
                         </span>
-                        <span className="text-[11px] font-medium text-[#777777]">
+                        <span className="text-[11px] font-medium text-[#8E7F74]">
                           {formaterDateConversationFr(conv.updated_at)}
                         </span>
-                        <span className="rounded-full border border-[#E5E5E5] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#555555]">
+                        <span className="rounded-full border border-white/10 bg-[#1B1511] px-2 py-0.5 text-[10px] font-semibold text-[#B8A99E]">
                           {conv.nb_messages} message(s)
                         </span>
                       </div>
-                      <p className="truncate text-xs sm:text-sm font-bold text-[#23272B]">
+                      <p className="truncate text-xs sm:text-sm font-bold text-[#F5EFEA]">
                         {conv.titre}
                       </p>
                     </div>
@@ -1431,15 +1431,15 @@ export default function BnaIaCentreControle() {
                       <button
                         type="button"
                         onClick={() => setViewingConv(conv)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#23272B] hover:border-[#B85B2B]/40"
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-[11px] font-bold text-[#F5EFEA] hover:border-[#D96B27]/40"
                       >
-                        <Eye className="h-3.5 w-3.5 text-[#555555]" />
+                        <Eye className="h-3.5 w-3.5 text-[#B8A99E]" />
                         Ouvrir
                       </button>
                       <button
                         type="button"
                         onClick={() => restaurerConversation(conv)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-[#B85B2B] px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-[#9E4B20]"
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#D96B27] px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-[#E07A38]"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Restaurer
@@ -1457,7 +1457,7 @@ export default function BnaIaCentreControle() {
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
-                            className="inline-flex items-center rounded-lg border border-[#E5E5E5] bg-white px-2 py-1.5 text-[11px] font-semibold text-[#666666]"
+                            className="inline-flex items-center rounded-lg border border-white/10 bg-[#1B1511] px-2 py-1.5 text-[11px] font-semibold text-[#B8A99E]"
                           >
                             Annuler
                           </button>
@@ -1466,7 +1466,7 @@ export default function BnaIaCentreControle() {
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(conv.id)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#666666] hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#1B1511] px-2.5 py-1.5 text-[11px] font-bold text-[#B8A99E] hover:border-red-200 hover:bg-red-500/15 hover:text-red-600"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           Supprimer
@@ -1484,7 +1484,7 @@ export default function BnaIaCentreControle() {
         <div className="flex justify-end">
           <Link
             href="/terrain"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#B85B2B] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#D96B27] hover:underline"
           >
             <CalendarDays className="h-3.5 w-3.5" />
             Voir le Planning Général Multi-Métiers
@@ -1501,28 +1501,28 @@ export default function BnaIaCentreControle() {
           <form
             onSubmit={confirmerSauvegardeConversation}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white shadow-2xl overflow-hidden text-[#23272B]"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1B1511] shadow-2xl overflow-hidden text-[#F5EFEA]"
           >
-            <div className="flex items-center justify-between border-b border-[#E5E5E5] bg-[#F8F9FA] px-5 py-4">
+            <div className="flex items-center justify-between border-b border-white/10 bg-[#120F0D] px-5 py-4">
               <div className="flex items-center gap-2">
-                <BookmarkPlus className="h-4 w-4 text-[#B85B2B]" />
-                <h3 className="text-sm font-bold text-[#23272B]">
+                <BookmarkPlus className="h-4 w-4 text-[#D96B27]" />
+                <h3 className="text-sm font-bold text-[#F5EFEA]">
                   Sauvegarder la conversation
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSaveModalOpen(false)}
-                className="rounded-lg p-1 text-[#777777] hover:text-[#23272B]"
+                className="rounded-lg p-1 text-[#8E7F74] hover:text-[#F5EFEA]"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="p-5 space-y-3 bg-white">
+            <div className="p-5 space-y-3 bg-[#1B1511]">
               <div>
                 <label
                   htmlFor="bna-ia-save-title"
-                  className="block text-xs font-bold text-[#555555] mb-1"
+                  className="block text-xs font-bold text-[#B8A99E] mb-1"
                 >
                   Titre de la conversation
                 </label>
@@ -1533,27 +1533,27 @@ export default function BnaIaCentreControle() {
                   value={saveTitle}
                   onChange={(e) => setSaveTitle(e.target.value)}
                   placeholder="Ex: Devis bardage claire-voie 45 m²"
-                  className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs sm:text-sm text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2 text-xs sm:text-sm text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
                 />
               </div>
-              <p className="text-[11px] text-[#777777]">
+              <p className="text-[11px] text-[#8E7F74]">
                 Date : {formaterDateConversationFr(new Date().toISOString())} ·{" "}
                 {messages.filter((m) => m.id !== "welcome-bna-ia" && !m.id.startsWith("reset-")).length}{" "}
                 message(s) seront archivés{dernierPreChiffrage ? " (avec pré-chiffrage actif)" : ""}.
               </p>
             </div>
-            <div className="flex justify-end gap-2 border-t border-[#E5E5E5] bg-[#F8F9FA] px-5 py-3.5">
+            <div className="flex justify-end gap-2 border-t border-white/10 bg-[#120F0D] px-5 py-3.5">
               <button
                 type="button"
                 onClick={() => setSaveModalOpen(false)}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:text-[#23272B]"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2 text-xs font-semibold text-[#B8A99E] hover:text-[#F5EFEA]"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={isSavingConv || !saveTitle.trim()}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9E4B20] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white hover:bg-[#E07A38] disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
                 {isSavingConv ? "Enregistrement..." : "Valider"}
@@ -1571,9 +1571,9 @@ export default function BnaIaCentreControle() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-2xl border border-[#E5E5E5] bg-white shadow-2xl overflow-hidden text-[#23272B]"
+            className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-2xl border border-white/10 bg-[#1B1511] shadow-2xl overflow-hidden text-[#F5EFEA]"
           >
-            <div className="flex items-start justify-between gap-3 border-b border-[#E5E5E5] bg-[#F8F9FA] px-5 py-4 shrink-0">
+            <div className="flex items-start justify-between gap-3 border-b border-white/10 bg-[#120F0D] px-5 py-4 shrink-0">
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
@@ -1583,40 +1583,40 @@ export default function BnaIaCentreControle() {
                   >
                     {getBadgeMetierConversation(viewingConv.metier).label}
                   </span>
-                  <span className="text-[11px] font-medium text-[#777777]">
+                  <span className="text-[11px] font-medium text-[#8E7F74]">
                     {formaterDateConversationFr(viewingConv.updated_at)} · {viewingConv.nb_messages} message(s)
                   </span>
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#23272B] leading-snug">
+                <h3 className="text-sm sm:text-base font-bold text-[#F5EFEA] leading-snug">
                   {viewingConv.titre}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setViewingConv(null)}
-                className="rounded-lg p-1 text-[#777777] hover:text-[#23272B]"
+                className="rounded-lg p-1 text-[#8E7F74] hover:text-[#F5EFEA]"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 p-4 sm:p-5 bg-white">
+            <div className="flex-1 overflow-y-auto space-y-3 p-4 sm:p-5 bg-[#1B1511]">
               {viewingConv.messages.map((m, idx) => (
                 <div
                   key={`${m.id}-${idx}`}
                   className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {m.role === "assistant" && (
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#B85B2B]/10 text-[#B85B2B] border border-[#B85B2B]/25">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#D96B27]/10 text-[#D96B27] border border-[#D96B27]/25">
                       <Bot className="h-3.5 w-3.5" />
                     </div>
                   )}
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm ${
                       m.role === "user"
-                        ? "bg-[#B85B2B] text-white"
-                        : "border border-[#E5E5E5] bg-[#F8F9FA] text-[#23272B]"
+                        ? "bg-[#D96B27] text-white"
+                        : "border border-white/10 bg-[#120F0D] text-[#F5EFEA]"
                     }`}
                   >
                     {m.role === "user" ? (
@@ -1634,18 +1634,18 @@ export default function BnaIaCentreControle() {
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E5E5E5] bg-[#F8F9FA] px-5 py-3.5 shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-[#120F0D] px-5 py-3.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setViewingConv(null)}
-                className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:text-[#23272B]"
+                className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2 text-xs font-semibold text-[#B8A99E] hover:text-[#F5EFEA]"
               >
                 Fermer
               </button>
               <button
                 type="button"
                 onClick={() => restaurerConversation(viewingConv)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9E4B20]"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white hover:bg-[#E07A38]"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Restaurer dans le chat
@@ -1659,9 +1659,9 @@ export default function BnaIaCentreControle() {
       {toastMessage && (
         <div
           role="status"
-          className="fixed bottom-20 right-4 z-[220] flex items-center gap-2 rounded-xl border border-[#B85B2B]/30 bg-white px-4 py-2.5 text-xs font-bold text-[#23272B] shadow-xl"
+          className="fixed bottom-20 right-4 z-[220] flex items-center gap-2 rounded-xl border border-[#D96B27]/30 bg-[#1B1511] px-4 py-2.5 text-xs font-bold text-[#F5EFEA] shadow-xl"
         >
-          <CheckCircle2 className="h-4 w-4 text-[#B85B2B]" />
+          <CheckCircle2 className="h-4 w-4 text-[#D96B27]" />
           <span>{toastMessage}</span>
         </div>
       )}

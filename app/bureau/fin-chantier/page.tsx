@@ -32,9 +32,9 @@ import {
 } from "@/lib/finChantierMetier";
 
 const BADGE_METIER_FIN: Record<MetierFinChantier, string> = {
-  bardage: "border-blue-200 bg-blue-50 text-blue-700",
-  terrasse: "border-amber-200 bg-amber-50 text-amber-800",
-  cloture: "border-[#B85B2B]/30 bg-[#B85B2B]/10 text-[#B85B2B]",
+  bardage: "border-blue-200 bg-sky-500/15 text-sky-300",
+  terrasse: "border-amber-200 bg-amber-500/15 text-amber-300",
+  cloture: "border-[#D96B27]/30 bg-[#D96B27]/10 text-[#D96B27]",
 };
 
 type PVRow = {
@@ -694,39 +694,39 @@ export default function FinChantierPage() {
   const nbReservesLevees = pvs.filter((p) => p.statut === "reserves_levees").length;
 
   return (
-    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] px-4 py-6 sm:py-8">
+    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] px-4 py-6 sm:py-8">
       <div className="mx-auto w-full max-w-6xl space-y-6 pb-24">
         {/* En-tête blanc épuré + Terracotta #B85B2B */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-7 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+        <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-7 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#B85B2B]">
+              <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#D96B27]">
                 BNA Pilotage BTP · Multi-Métiers
               </p>
-              <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl font-bold text-[#23272B]">
+              <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl font-bold text-[#F5EFEA]">
                 Fin de chantier &amp; Réceptions
               </h1>
-              <p className="mt-1 text-xs sm:text-sm text-[#777777]">
+              <p className="mt-1 text-xs sm:text-sm text-[#8E7F74]">
                 Procès-verbaux de réception (Art. 1792-6), métrés multi-métiers, notices d&apos;entretien et retenues de garantie 5 %.
               </p>
             </div>
 
             <button
               onClick={() => ouvrirNouveauPV()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-all"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-all"
             >
               <span>+</span> Nouveau PV de Réception
             </button>
           </div>
 
           {/* Sélecteur de vue : PVs vs Retenues de garantie */}
-          <div className="mt-5 flex border-b border-[#F0F0F0] gap-6 text-xs font-bold">
+          <div className="mt-5 flex border-b border-white/10 gap-6 text-xs font-bold">
             <button
               onClick={() => setVueOnglet("pvs")}
               className={`pb-3 transition-colors border-b-2 ${
                 vueOnglet === "pvs"
-                  ? "border-[#B85B2B] text-[#B85B2B]"
-                  : "border-transparent text-[#777777] hover:text-[#23272B]"
+                  ? "border-[#D96B27] text-[#D96B27]"
+                  : "border-transparent text-[#8E7F74] hover:text-[#F5EFEA]"
               }`}
             >
               📋 Procès-Verbaux de Réception ({totalPV})
@@ -735,13 +735,13 @@ export default function FinChantierPage() {
               onClick={() => setVueOnglet("retenues")}
               className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
                 vueOnglet === "retenues"
-                  ? "border-[#B85B2B] text-[#B85B2B]"
-                  : "border-transparent text-[#777777] hover:text-[#23272B]"
+                  ? "border-[#D96B27] text-[#D96B27]"
+                  : "border-transparent text-[#8E7F74] hover:text-[#F5EFEA]"
               }`}
             >
               <span>💰 Retenues de Garantie 5 % &amp; Réserves</span>
               {nbReservesLevees > 0 && (
-                <span className="rounded-full bg-emerald-50 text-emerald-700 text-[10px] px-2 py-0.5 border border-emerald-200">
+                <span className="rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] px-2 py-0.5 border border-emerald-200">
                   Déblocable
                 </span>
               )}
@@ -751,15 +751,15 @@ export default function FinChantierPage() {
 
       {vueOnglet === "retenues" ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white flex flex-wrap items-center justify-between gap-3 p-4 shadow-xs">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] flex flex-wrap items-center justify-between gap-3 p-4 shadow-xs">
             <div>
-              <p className="text-xs font-bold text-[#23272B]">Chantier concerné :</p>
-              <p className="text-[11px] text-[#777777]">Consulter le compte séquestre de retenue de garantie et les réserves</p>
+              <p className="text-xs font-bold text-[#F5EFEA]">Chantier concerné :</p>
+              <p className="text-[11px] text-[#8E7F74]">Consulter le compte séquestre de retenue de garantie et les réserves</p>
             </div>
             <select
               value={chantierRetenueId || chantiers[0]?.id || ""}
               onChange={(e) => setChantierRetenueId(e.target.value)}
-              className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:outline-none min-w-[260px]"
+              className="rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none min-w-[260px]"
             >
               {chantiers.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -781,35 +781,35 @@ export default function FinChantierPage() {
         <>
           {/* KPI Cards blanches */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Total PV Émis</p>
-          <p className="mt-0.5 text-2xl font-black text-[#23272B] font-mono">{totalPV}</p>
-          <p className="text-[11px] text-[#999999]">Chantiers clôturés</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Total PV Émis</p>
+          <p className="mt-0.5 text-2xl font-black text-[#F5EFEA] font-mono">{totalPV}</p>
+          <p className="text-[11px] text-[#8E7F74]">Chantiers clôturés</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Sans Réserve</p>
-          <p className="mt-0.5 text-2xl font-black text-emerald-700 font-mono">{nbSansReserve}</p>
-          <p className="text-[11px] text-[#999999]">GPA &amp; Décennale actives</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Sans Réserve</p>
+          <p className="mt-0.5 text-2xl font-black text-emerald-300 font-mono">{nbSansReserve}</p>
+          <p className="text-[11px] text-[#8E7F74]">GPA &amp; Décennale actives</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#777777]">Avec Réserves</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#8E7F74]">Avec Réserves</p>
           <p className="mt-0.5 text-2xl font-black text-amber-600 font-mono">{nbAvecReserves}</p>
-          <p className="text-[11px] text-[#999999]">En cours de levée</p>
+          <p className="text-[11px] text-[#8E7F74]">En cours de levée</p>
         </div>
 
-        <div className="rounded-2xl border border-[#B85B2B]/30 bg-white p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">Réserves Levées</p>
-          <p className="mt-0.5 text-2xl font-black text-[#B85B2B] font-mono">{nbReservesLevees}</p>
-          <p className="text-[11px] text-[#999999]">Solde déblocable</p>
+        <div className="rounded-2xl border border-[#D96B27]/30 bg-[#1B1511] p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#D96B27]">Réserves Levées</p>
+          <p className="mt-0.5 text-2xl font-black text-[#D96B27] font-mono">{nbReservesLevees}</p>
+          <p className="text-[11px] text-[#8E7F74]">Solde déblocable</p>
         </div>
       </div>
 
       {/* Barre de Filtres Métiers + Statut + Recherche */}
-      <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-xs space-y-3">
+      <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-white/10 bg-[#120F0D] p-1">
             {(
               [
                 { id: "tous", label: "Tous métiers" },
@@ -824,8 +824,8 @@ export default function FinChantierPage() {
                 onClick={() => setFiltreMetier(m.id)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                   filtreMetier === m.id
-                    ? "bg-white text-[#B85B2B] shadow-xs"
-                    : "text-[#777777] hover:text-[#23272B]"
+                    ? "bg-[#1B1511] text-[#D96B27] shadow-xs"
+                    : "text-[#8E7F74] hover:text-[#F5EFEA]"
                 }`}
               >
                 {m.label}
@@ -839,7 +839,7 @@ export default function FinChantierPage() {
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
               placeholder="Rechercher par n°, chantier, client…"
-              className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2 text-xs text-[#23272B] placeholder:text-[#999999] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2 text-xs text-[#F5EFEA] placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
             />
           </div>
         </div>
@@ -849,8 +849,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("tous")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "tous"
-                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
-                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
+                ? "bg-[#D96B27] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA] rounded-full px-4 py-1.5 border border-white/10"
             }`}
           >
             Tous ({pvs.length})
@@ -859,8 +859,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("sans_reserve")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "sans_reserve"
-                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
-                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
+                ? "bg-[#D96B27] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA] rounded-full px-4 py-1.5 border border-white/10"
             }`}
           >
             Sans réserve ({nbSansReserve})
@@ -869,8 +869,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("avec_reserves")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "avec_reserves"
-                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
-                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
+                ? "bg-[#D96B27] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA] rounded-full px-4 py-1.5 border border-white/10"
             }`}
           >
             Avec réserves ({nbAvecReserves})
@@ -879,8 +879,8 @@ export default function FinChantierPage() {
             onClick={() => setFiltre("reserves_levees")}
             className={`text-xs whitespace-nowrap transition-all ${
               filtre === "reserves_levees"
-                ? "bg-[#B85B2B] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
-                : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B] rounded-full px-4 py-1.5 border border-[#E5E5E5]"
+                ? "bg-[#D96B27] text-white font-bold rounded-full px-4 py-1.5 shadow-xs"
+                : "bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA] rounded-full px-4 py-1.5 border border-white/10"
             }`}
           >
             Réserves levées ({nbReservesLevees})
@@ -890,15 +890,15 @@ export default function FinChantierPage() {
 
       {/* Liste des PV en Cartes blanches */}
       {loading ? (
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-12 text-center text-xs text-[#777777]">
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-12 text-center text-xs text-[#8E7F74]">
           Chargement des procès-verbaux…
         </div>
       ) : pvsFiltres.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#DCDCDC] bg-white p-12 text-center space-y-3">
-          <p className="text-sm font-medium text-[#777777]">Aucun procès-verbal de réception pour ce filtre.</p>
+        <div className="rounded-2xl border border-dashed border-[#DCDCDC] bg-[#1B1511] p-12 text-center space-y-3">
+          <p className="text-sm font-medium text-[#8E7F74]">Aucun procès-verbal de réception pour ce filtre.</p>
           <button
             onClick={() => ouvrirNouveauPV()}
-            className="rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#D97732]"
+            className="rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white hover:bg-[#E07A38]"
           >
             + Rédiger un premier PV de réception
           </button>
@@ -921,7 +921,7 @@ export default function FinChantierPage() {
             return (
               <div
                 key={pv.id}
-                className="flex flex-col justify-between rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-xs transition-all hover:border-[#B85B2B]/60"
+                className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#1B1511] p-5 shadow-xs transition-all hover:border-[#D96B27]/60"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -932,22 +932,22 @@ export default function FinChantierPage() {
                         >
                           {metierPv}
                         </span>
-                        <span className="font-mono text-xs font-bold text-[#23272B]">{pv.numero}</span>
-                        <span className="text-xs text-[#888888]">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
+                        <span className="font-mono text-xs font-bold text-[#F5EFEA]">{pv.numero}</span>
+                        <span className="text-xs text-[#8E7F74]">· {new Date(pv.date_reception).toLocaleDateString("fr-FR")}</span>
                       </div>
-                      <h2 className="text-base font-bold text-[#23272B] mt-1">{pv.chantiers?.nom || "Chantier"}</h2>
-                      <p className="text-xs text-[#777777]">{pv.clients?.nom || "Client direct"}</p>
+                      <h2 className="text-base font-bold text-[#F5EFEA] mt-1">{pv.chantiers?.nom || "Chantier"}</h2>
+                      <p className="text-xs text-[#8E7F74]">{pv.clients?.nom || "Client direct"}</p>
                     </div>
 
                     <span
                       className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
                         pv.statut === "sans_reserve"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                           : pv.statut === "reserves_levees"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                           : pv.statut === "refuse"
-                          ? "bg-red-50 text-red-700 border border-red-200"
-                          : "bg-amber-50 text-amber-800 border border-amber-200"
+                          ? "bg-red-500/15 text-red-300 border border-red-200"
+                          : "bg-amber-500/15 text-amber-300 border border-amber-200"
                       }`}
                     >
                       {pv.statut === "sans_reserve"
@@ -960,45 +960,45 @@ export default function FinChantierPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#F8F9FA] p-2.5 border border-[#E5E5E5] text-center">
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#120F0D] p-2.5 border border-white/10 text-center">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#888888]">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8E7F74]">
                         {metierPv === "cloture" ? "Linéaire" : "Surface"}
                       </p>
-                      <p className="text-xs font-bold text-[#23272B] mt-0.5">
+                      <p className="text-xs font-bold text-[#F5EFEA] mt-0.5">
                         {totalMetre > 0 ? `${totalMetre.toFixed(1)} ${uniteMetre}` : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#888888]">Réserves</p>
-                      <p className="text-xs font-bold text-[#23272B] mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8E7F74]">Réserves</p>
+                      <p className="text-xs font-bold text-[#F5EFEA] mt-0.5">
                         {nbRes === 0 ? "0" : `${nbLevees}/${nbRes}`}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#888888]">Photos</p>
-                      <p className="text-xs font-bold text-[#23272B] mt-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-[#8E7F74]">Photos</p>
+                      <p className="text-xs font-bold text-[#F5EFEA] mt-0.5">
                         {nbPhotos > 0 ? `📷 ${nbPhotos}` : "0"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#F0F0F0] pt-3">
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <button
                       onClick={() => {
                         setPvSelectionne(pv);
                         setModalPdfOuvert(true);
                       }}
-                      className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:border-[#B85B2B] flex items-center gap-1"
+                      className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs font-semibold text-[#F5EFEA] hover:border-[#D96B27] flex items-center gap-1"
                     >
                       📄 PDF
                     </button>
 
                     <button
                       onClick={() => handleCreerFactureSolde(pv)}
-                      className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#23272B] hover:border-[#B85B2B] flex items-center gap-1"
+                      className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-1.5 text-xs font-semibold text-[#F5EFEA] hover:border-[#D96B27] flex items-center gap-1"
                     >
                       🧾 Solde
                     </button>
@@ -1009,7 +1009,7 @@ export default function FinChantierPage() {
                           setPvSelectionne(pv);
                           setModalReservesOuvert(true);
                         }}
-                        className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1.5 text-xs font-semibold text-[#23272B]"
+                        className="rounded-xl border border-white/10 bg-[#120F0D] px-2.5 py-1.5 text-xs font-semibold text-[#F5EFEA]"
                       >
                         🔧 Réserves
                       </button>
@@ -1023,7 +1023,7 @@ export default function FinChantierPage() {
                             nom: pv.chantiers?.nom || "Chantier",
                           })
                         }
-                        className="rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-2.5 py-1.5 text-xs font-semibold text-[#B85B2B] hover:bg-[#B85B2B]/20 flex items-center gap-1"
+                        className="rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 px-2.5 py-1.5 text-xs font-semibold text-[#D96B27] hover:bg-[#D96B27]/20 flex items-center gap-1"
                         title="Consulter et libérer la retenue de garantie 5 %"
                       >
                         💰 Retenue 5%
@@ -1034,7 +1034,7 @@ export default function FinChantierPage() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => ouvrirEditionPV(pv)}
-                      className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1.5 text-xs text-[#555555] hover:text-[#23272B]"
+                      className="rounded-xl border border-white/10 bg-[#120F0D] p-1.5 text-xs text-[#B8A99E] hover:text-[#F5EFEA]"
                       aria-label="Modifier le PV"
                       title="Modifier le PV"
                     >
@@ -1043,7 +1043,7 @@ export default function FinChantierPage() {
 
                     <button
                       onClick={() => handleSupprimerPV(pv.id, pv.numero)}
-                      className="text-xs text-[#999999] hover:text-red-600 p-1.5 transition-colors"
+                      className="text-xs text-[#8E7F74] hover:text-red-600 p-1.5 transition-colors"
                       aria-label="Supprimer le PV"
                       title="Supprimer le PV"
                     >

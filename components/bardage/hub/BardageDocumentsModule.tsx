@@ -140,41 +140,41 @@ export default function BardageDocumentsModule({
     <div className="space-y-6">
       {/* 1. Synthèse financière */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] text-center">
-          <p className="text-3xs uppercase tracking-wider font-semibold text-[#777777]">Total Devisé HT</p>
-          <p className="mt-1 text-xl font-bold text-[#23272B]">{fmtEuro(totalDeviseHt)}</p>
-          <p className="text-3xs text-[#777777]">{devisLies.length} devis rattaché(s)</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] text-center">
+          <p className="text-3xs uppercase tracking-wider font-semibold text-[#8E7F74]">Total Devisé HT</p>
+          <p className="mt-1 text-xl font-bold text-[#F5EFEA]">{fmtEuro(totalDeviseHt)}</p>
+          <p className="text-3xs text-[#8E7F74]">{devisLies.length} devis rattaché(s)</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] text-center">
-          <p className="text-3xs uppercase tracking-wider font-semibold text-[#B85B2B]">Total Facturé TTC</p>
-          <p className="mt-1 text-xl font-bold text-[#B85B2B]">{fmtEuro(totalFactureTtc)}</p>
-          <p className="text-3xs text-[#777777]">{facturesLiees.length} facture(s)</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] text-center">
+          <p className="text-3xs uppercase tracking-wider font-semibold text-[#D96B27]">Total Facturé TTC</p>
+          <p className="mt-1 text-xl font-bold text-[#D96B27]">{fmtEuro(totalFactureTtc)}</p>
+          <p className="text-3xs text-[#8E7F74]">{facturesLiees.length} facture(s)</p>
         </div>
 
-        <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] text-center">
-          <p className="text-3xs uppercase tracking-wider font-semibold text-[#777777]">Achats Matériaux HT</p>
-          <p className="mt-1 text-xl font-bold text-[#23272B]">{fmtEuro(totalAchatsHt)}</p>
-          <p className="text-3xs text-[#777777]">{commandesLiees.length} commande(s) fournisseur</p>
+        <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] text-center">
+          <p className="text-3xs uppercase tracking-wider font-semibold text-[#8E7F74]">Achats Matériaux HT</p>
+          <p className="mt-1 text-xl font-bold text-[#F5EFEA]">{fmtEuro(totalAchatsHt)}</p>
+          <p className="text-3xs text-[#8E7F74]">{commandesLiees.length} commande(s) fournisseur</p>
         </div>
       </div>
 
       {loading ? (
-        <p className="py-6 text-center text-xs text-[#777777]">Chargement des documents du chantier...</p>
+        <p className="py-6 text-center text-xs text-[#8E7F74]">Chargement des documents du chantier...</p>
       ) : (
         <div className="space-y-6">
           {/* 2. Devis Client */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-[#B85B2B]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <FileSpreadsheet className="h-5 w-5 text-[#D96B27]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Devis Client
                 </h3>
               </div>
               <Link
                 href="/bureau/devis-factures"
-                className="flex items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+                className="flex items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
               >
                 <Plus size={13} />
                 <span>Nouveau devis</span>
@@ -182,12 +182,12 @@ export default function BardageDocumentsModule({
             </div>
 
             {devisLies.length === 0 ? (
-              <p className="py-3 text-xs text-[#777777]">Aucun devis lié pour ce client.</p>
+              <p className="py-3 text-xs text-[#8E7F74]">Aucun devis lié pour ce client.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#F0F0F0] bg-[#F8F9FA] text-3xs font-semibold uppercase text-[#777777]">
+                    <tr className="border-b border-white/10 bg-[#120F0D] text-3xs font-semibold uppercase text-[#8E7F74]">
                       <th className="p-3">Numéro</th>
                       <th className="p-3">Objet</th>
                       <th className="p-3">Date</th>
@@ -195,25 +195,25 @@ export default function BardageDocumentsModule({
                       <th className="p-3">Statut</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0F0F0]">
+                  <tbody className="divide-y divide-white/10">
                     {devisLies.map((d) => {
                       const ht = (d.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                       return (
-                        <tr key={d.id} className="hover:bg-[#F8F9FA] transition-colors">
-                          <td className="p-3 font-bold text-[#23272B]">{d.numero}</td>
-                          <td className="p-3 text-[#555555]">{d.objet || "—"}</td>
-                          <td className="p-3 text-[#777777]">
+                        <tr key={d.id} className="hover:bg-[#120F0D] transition-colors">
+                          <td className="p-3 font-bold text-[#F5EFEA]">{d.numero}</td>
+                          <td className="p-3 text-[#B8A99E]">{d.objet || "—"}</td>
+                          <td className="p-3 text-[#8E7F74]">
                             {new Date(d.date_emission).toLocaleDateString("fr-FR")}
                           </td>
-                          <td className="p-3 text-right font-bold text-[#23272B]">{fmtEuro(ht)}</td>
+                          <td className="p-3 text-right font-bold text-[#F5EFEA]">{fmtEuro(ht)}</td>
                           <td className="p-3">
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-3xs font-bold uppercase ${
                                 d.statut === "accepte" || d.statut === "signe"
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                                   : d.statut === "refuse"
-                                  ? "bg-red-50 text-red-900 border border-red-200"
-                                  : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                                  ? "bg-red-500/15 text-red-900 border border-red-200"
+                                  : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                               }`}
                             >
                               {d.statut}
@@ -229,17 +229,17 @@ export default function BardageDocumentsModule({
           </div>
 
           {/* 3. Factures & Acomptes */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-[#B85B2B]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <FileText className="h-5 w-5 text-[#D96B27]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Factures & Acomptes
                 </h3>
               </div>
               <Link
                 href="/bureau/factures"
-                className="flex items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+                className="flex items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
               >
                 <Plus size={13} />
                 <span>Nouvelle facture</span>
@@ -247,12 +247,12 @@ export default function BardageDocumentsModule({
             </div>
 
             {facturesLiees.length === 0 ? (
-              <p className="py-3 text-xs text-[#777777]">Aucune facture pour ce client.</p>
+              <p className="py-3 text-xs text-[#8E7F74]">Aucune facture pour ce client.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#F0F0F0] bg-[#F8F9FA] text-3xs font-semibold uppercase text-[#777777]">
+                    <tr className="border-b border-white/10 bg-[#120F0D] text-3xs font-semibold uppercase text-[#8E7F74]">
                       <th className="p-3">Numéro</th>
                       <th className="p-3">Type</th>
                       <th className="p-3">Objet</th>
@@ -261,31 +261,31 @@ export default function BardageDocumentsModule({
                       <th className="p-3">Statut</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0F0F0]">
+                  <tbody className="divide-y divide-white/10">
                     {facturesLiees.map((f) => {
                       const ht = (f.lignes || []).reduce((s, l) => s + l.qte * l.pu_ht, 0);
                       const ttc = ht * (1 + (f.tva_pct || 10) / 100);
                       return (
-                        <tr key={f.id} className="hover:bg-[#F8F9FA] transition-colors">
-                          <td className="p-3 font-bold text-[#23272B]">{f.numero}</td>
+                        <tr key={f.id} className="hover:bg-[#120F0D] transition-colors">
+                          <td className="p-3 font-bold text-[#F5EFEA]">{f.numero}</td>
                           <td className="p-3">
-                            <span className="rounded-md bg-[#F0F0F0] px-2 py-0.5 text-3xs uppercase font-medium text-[#23272B]">
+                            <span className="rounded-md bg-[#221B17] px-2 py-0.5 text-3xs uppercase font-medium text-[#F5EFEA]">
                               {f.type_facture || "totale"}
                             </span>
                           </td>
-                          <td className="p-3 text-[#555555]">{f.objet || "—"}</td>
-                          <td className="p-3 text-[#777777]">
+                          <td className="p-3 text-[#B8A99E]">{f.objet || "—"}</td>
+                          <td className="p-3 text-[#8E7F74]">
                             {new Date(f.date_emission).toLocaleDateString("fr-FR")}
                           </td>
-                          <td className="p-3 text-right font-bold text-[#23272B]">{fmtEuro(ttc)}</td>
+                          <td className="p-3 text-right font-bold text-[#F5EFEA]">{fmtEuro(ttc)}</td>
                           <td className="p-3">
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-3xs font-bold uppercase ${
                                 f.statut === "payee"
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                                   : f.statut === "envoyee"
                                   ? "bg-sky-50 text-sky-800 border border-sky-200"
-                                  : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                                  : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                               }`}
                             >
                               {f.statut}
@@ -301,17 +301,17 @@ export default function BardageDocumentsModule({
           </div>
 
           {/* 4. Procès-Verbaux de Réception */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-[#B85B2B]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <ShieldCheck className="h-5 w-5 text-[#D96B27]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Procès-Verbaux de Réception (Fin de Chantier)
                 </h3>
               </div>
               <Link
                 href={`/bureau/fin-chantier?chantierId=${chantierId}`}
-                className="flex items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+                className="flex items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
               >
                 <Plus size={13} />
                 <span>Rédiger un PV</span>
@@ -319,12 +319,12 @@ export default function BardageDocumentsModule({
             </div>
 
             {pvsLies.length === 0 ? (
-              <p className="py-3 text-xs text-[#777777]">Aucun procès-verbal émis pour ce chantier.</p>
+              <p className="py-3 text-xs text-[#8E7F74]">Aucun procès-verbal émis pour ce chantier.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#F0F0F0] bg-[#F8F9FA] text-3xs font-semibold uppercase text-[#777777]">
+                    <tr className="border-b border-white/10 bg-[#120F0D] text-3xs font-semibold uppercase text-[#8E7F74]">
                       <th className="p-3">Numéro</th>
                       <th className="p-3">Date</th>
                       <th className="p-3">Statut</th>
@@ -332,24 +332,24 @@ export default function BardageDocumentsModule({
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0F0F0]">
+                  <tbody className="divide-y divide-white/10">
                     {pvsLies.map((p) => {
                       const nbRes = (p.reserves || []).length;
                       const nbLevees = (p.reserves || []).filter((r) => r.levee).length;
                       return (
-                        <tr key={p.id} className="hover:bg-[#F8F9FA] transition-colors">
-                          <td className="p-3 font-bold font-mono text-[#23272B]">{p.numero}</td>
-                          <td className="p-3 text-[#777777]">
+                        <tr key={p.id} className="hover:bg-[#120F0D] transition-colors">
+                          <td className="p-3 font-bold font-mono text-[#F5EFEA]">{p.numero}</td>
+                          <td className="p-3 text-[#8E7F74]">
                             {new Date(p.date_reception).toLocaleDateString("fr-FR")}
                           </td>
                           <td className="p-3">
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-3xs font-bold uppercase ${
                                 p.statut === "sans_reserve"
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                                   : p.statut === "reserves_levees"
                                   ? "bg-sky-50 text-sky-800 border border-sky-200"
-                                  : "bg-amber-50 text-amber-900 border border-amber-200"
+                                  : "bg-amber-500/15 text-amber-900 border border-amber-200"
                               }`}
                             >
                               {p.statut === "sans_reserve"
@@ -359,13 +359,13 @@ export default function BardageDocumentsModule({
                                 : "Avec réserves"}
                             </span>
                           </td>
-                          <td className="p-3 text-center text-[#777777]">
+                          <td className="p-3 text-center text-[#8E7F74]">
                             {nbRes === 0 ? "—" : `${nbLevees}/${nbRes} levée(s)`}
                           </td>
                           <td className="p-3 text-right">
                             <Link
                               href="/bureau/fin-chantier"
-                              className="rounded-xl bg-[#F8F9FA] hover:bg-[#B85B2B] hover:text-white border border-[#E5E5E5] px-2.5 py-1 text-2xs font-bold text-[#23272B] transition"
+                              className="rounded-xl bg-[#120F0D] hover:bg-[#D96B27] hover:text-white border border-white/10 px-2.5 py-1 text-2xs font-bold text-[#F5EFEA] transition"
                             >
                               Gérer / PDF →
                             </Link>
@@ -380,7 +380,7 @@ export default function BardageDocumentsModule({
           </div>
 
           {/* 5. Retenue de Garantie (5%) */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
             <RetenueGarantieChantier
               chantierId={chantierId}
               chantierNom={chantierNom}
@@ -388,17 +388,17 @@ export default function BardageDocumentsModule({
           </div>
 
           {/* 6. Commandes Fournisseurs & Matériaux */}
-          <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
+          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-[#B85B2B]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <ShoppingCart className="h-5 w-5 text-[#D96B27]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Commandes Fournisseurs & Achats Matériaux
                 </h3>
               </div>
               <Link
                 href="/bureau/fournisseurs"
-                className="flex items-center gap-1 text-xs font-bold text-[#B85B2B] hover:underline"
+                className="flex items-center gap-1 text-xs font-bold text-[#D96B27] hover:underline"
               >
                 <Plus size={13} />
                 <span>Gérer les achats</span>
@@ -406,12 +406,12 @@ export default function BardageDocumentsModule({
             </div>
 
             {commandesLiees.length === 0 ? (
-              <p className="py-3 text-xs text-[#777777]">Aucune commande fournisseur pour ce chantier.</p>
+              <p className="py-3 text-xs text-[#8E7F74]">Aucune commande fournisseur pour ce chantier.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#F0F0F0] bg-[#F8F9FA] text-3xs font-semibold uppercase text-[#777777]">
+                    <tr className="border-b border-white/10 bg-[#120F0D] text-3xs font-semibold uppercase text-[#8E7F74]">
                       <th className="p-3">Fournisseur</th>
                       <th className="p-3">Désignation</th>
                       <th className="p-3">Quantité</th>
@@ -420,20 +420,20 @@ export default function BardageDocumentsModule({
                       <th className="p-3">Statut</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0F0F0]">
+                  <tbody className="divide-y divide-white/10">
                     {commandesLiees.map((c) => (
-                      <tr key={c.id} className="hover:bg-[#F8F9FA] transition-colors">
-                        <td className="p-3 font-bold text-[#23272B]">
+                      <tr key={c.id} className="hover:bg-[#120F0D] transition-colors">
+                        <td className="p-3 font-bold text-[#F5EFEA]">
                           {c.fournisseurs?.nom || "Fournisseur"}
                         </td>
-                        <td className="p-3 text-[#555555]">{c.designation}</td>
-                        <td className="p-3 text-[#777777]">
+                        <td className="p-3 text-[#B8A99E]">{c.designation}</td>
+                        <td className="p-3 text-[#8E7F74]">
                           {c.quantite ? `${c.quantite} ${c.unite || ""}` : "—"}
                         </td>
-                        <td className="p-3 text-right font-bold text-[#23272B]">
+                        <td className="p-3 text-right font-bold text-[#F5EFEA]">
                           {c.montant_ht ? fmtEuro(c.montant_ht) : "—"}
                         </td>
-                        <td className="p-3 text-[#777777]">
+                        <td className="p-3 text-[#8E7F74]">
                           {c.date_livraison_prevue
                             ? new Date(c.date_livraison_prevue).toLocaleDateString("fr-FR")
                             : "—"}
@@ -442,10 +442,10 @@ export default function BardageDocumentsModule({
                           <span
                             className={`rounded-full px-2.5 py-0.5 text-3xs font-bold uppercase ${
                               c.statut === "livree"
-                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                                 : c.statut === "commandee"
                                 ? "bg-sky-50 text-sky-800 border border-sky-200"
-                                : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                                : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                             }`}
                           >
                             {c.statut}

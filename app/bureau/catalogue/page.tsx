@@ -647,23 +647,23 @@ export default function CataloguePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F3F3F1] pb-24 text-[#23272B]">
+    <div className="min-h-screen bg-[#120F0D] pb-24 text-[#F5EFEA]">
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-        <header className="rounded-2xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-xs">
+        <header className="rounded-2xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-xs">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <Link
                 href="/bureau"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] transition-colors mb-2"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8E7F74] hover:text-[#F5EFEA] transition-colors mb-2"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Retour au Bureau
               </Link>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#B85B2B]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#D96B27]">
                 BNA Pilotage BTP · Catalogue des Ouvrages
               </p>
-              <h1 className="text-xl font-bold text-[#23272B]">Catalogue des Ouvrages</h1>
-              <p className="text-xs text-[#777777] mt-0.5">
+              <h1 className="text-xl font-bold text-[#F5EFEA]">Catalogue des Ouvrages</h1>
+              <p className="text-xs text-[#8E7F74] mt-0.5">
                 Référentiel commun Bardage &amp; ITE avec tarifs et coûts personnalisés pour votre entreprise.
               </p>
             </div>
@@ -678,18 +678,18 @@ export default function CataloguePage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-xs font-bold text-[#23272B] hover:bg-white transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2.5 text-xs font-bold text-[#F5EFEA] hover:bg-[#221B17] transition-colors disabled:opacity-50"
               >
                 {isImporting ? (
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#B85B2B] border-t-transparent" />
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#D96B27] border-t-transparent" />
                 ) : (
-                  <Upload className="h-3.5 w-3.5 text-[#B85B2B]" />
+                  <Upload className="h-3.5 w-3.5 text-[#D96B27]" />
                 )}
                 {isImporting ? "Importation..." : "Importer CSV"}
               </button>
               <button
                 onClick={() => handleOpenModal(undefined, "main_oeuvre")}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#B85B2B]/30 bg-[#B85B2B]/10 px-3.5 py-2.5 text-xs font-bold text-[#B85B2B] hover:bg-[#B85B2B]/15 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 px-3.5 py-2.5 text-xs font-bold text-[#D96B27] hover:bg-[#D96B27]/15 transition-colors"
                 title="Créer une prestation de main-d'œuvre (pose, dépose, finition…)"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -697,7 +697,7 @@ export default function CataloguePage() {
               </button>
               <button
                 onClick={() => handleOpenModal()}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#9E4B20] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#E07A38] transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Nouvel Ouvrage
@@ -706,7 +706,7 @@ export default function CataloguePage() {
           </div>
 
           {/* Filtres */}
-          <div className="mt-5 space-y-3 pt-4 border-t border-[#F0F0F0]">
+          <div className="mt-5 space-y-3 pt-4 border-t border-white/10">
             {/* Catégorie */}
             <div className="flex flex-wrap gap-1.5">
               {displayCategories.map((cat) => (
@@ -718,8 +718,8 @@ export default function CataloguePage() {
                   }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
                     activeCategory === cat
-                      ? "bg-[#B85B2B] text-white"
-                      : "bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                      ? "bg-[#D96B27] text-white"
+                      : "bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA]"
                   }`}
                 >
                   {cat}
@@ -728,7 +728,7 @@ export default function CataloguePage() {
             </div>
 
             {activeCategory === "Parements & Bardages" && (
-              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#F0F0F0]">
+              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/10">
                 {["Tous", "Bois Massif", "Lame Composite", "HPL (Trespa/Polyrey)", "Fibrociment"].map(
                   (sub) => (
                     <button
@@ -736,8 +736,8 @@ export default function CataloguePage() {
                       onClick={() => setActiveSubCategory(sub)}
                       className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors border ${
                         activeSubCategory === sub
-                          ? "border-[#B85B2B] bg-[#B85B2B]/10 text-[#B85B2B]"
-                          : "border-[#E5E5E5] bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                          ? "border-[#D96B27] bg-[#D96B27]/10 text-[#D96B27]"
+                          : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA]"
                       }`}
                     >
                       {sub}
@@ -750,7 +750,7 @@ export default function CataloguePage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* Type de prestation */}
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-[#777777] font-bold uppercase tracking-wider mr-1">
+                <span className="text-[11px] text-[#8E7F74] font-bold uppercase tracking-wider mr-1">
                   Type :
                 </span>
                 {(["tous", "matiere", "main_oeuvre"] as const).map((t) => (
@@ -760,7 +760,7 @@ export default function CataloguePage() {
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors border ${
                       typeFiltre === t
                         ? "border-[#23272B] bg-[#23272B] text-white"
-                        : "border-[#E5E5E5] bg-[#F8F9FA] text-[#666666] hover:text-[#23272B]"
+                        : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:text-[#F5EFEA]"
                     }`}
                   >
                     {t === "tous" ? "Tous" : t === "matiere" ? "Matériaux" : "Main-d'œuvre"}
@@ -775,7 +775,7 @@ export default function CataloguePage() {
                   aria-label="Fabricant"
                   value={activeFabricant}
                   onChange={(e) => setActiveFabricant(e.target.value)}
-                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] focus:border-[#B85B2B] focus:bg-white focus:outline-none"
+                  className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs text-[#F5EFEA] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none"
                 >
                   <option value="All">Tous fabricants</option>
                   {Array.from(new Set(ouvrages.map((o) => o.fabricant).filter(Boolean)))
@@ -798,7 +798,7 @@ export default function CataloguePage() {
                         : normaliserGammeMateriau(e.target.value)
                     )
                   }
-                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                  className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs text-[#F5EFEA] outline-none focus:border-[#D96B27] focus:bg-[#1E1916]"
                 >
                   <option value="toutes">Toutes gammes</option>
                   {GAMMES_MATERIAU_ORDRE.map((g) => (
@@ -810,13 +810,13 @@ export default function CataloguePage() {
 
                 {/* Recherche texte */}
                 <div className="relative w-full sm:w-64">
-                  <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#999999]" />
+                  <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#8E7F74]" />
                   <input
                     type="text"
                     placeholder="Rechercher (couleur / code décor)..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] py-2 pl-9 pr-4 text-xs text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                    className="w-full rounded-xl border border-white/10 bg-[#120F0D] py-2 pl-9 pr-4 text-xs text-[#F5EFEA] outline-none focus:border-[#D96B27] focus:bg-[#1E1916]"
                   />
                 </div>
 
@@ -831,7 +831,7 @@ export default function CataloguePage() {
                     setTypeFiltre("tous");
                     setGammeFiltre("toutes");
                   }}
-                  className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-xs font-semibold text-[#666666] hover:bg-white hover:text-[#23272B]"
+                  className="rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-xs font-semibold text-[#B8A99E] hover:bg-[#221B17] hover:text-[#F5EFEA]"
                 >
                   Réinitialiser
                 </button>
@@ -843,7 +843,7 @@ export default function CataloguePage() {
         <CadencesMainOeuvreSection metier="bardage" />
 
         {/* Bannière explicative Option A */}
-        <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-xs text-[#23272B] flex items-start sm:items-center gap-3">
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-3 text-xs text-[#F5EFEA] flex items-start sm:items-center gap-3">
           <Info className="h-5 w-5 shrink-0 text-sky-600 mt-0.5 sm:mt-0" />
           <div className="leading-relaxed">
             <strong className="font-bold text-sky-900">Mode Multi-Entreprise (Option A) :</strong> Le
@@ -855,8 +855,8 @@ export default function CataloguePage() {
 
         {/* Liste */}
         {isLoading ? (
-          <div className="flex h-32 items-center justify-center rounded-2xl border border-[#E5E5E5] bg-white">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#E5E5E5] border-t-[#B85B2B]"></div>
+          <div className="flex h-32 items-center justify-center rounded-2xl border border-white/10 bg-[#1B1511]">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/10 border-t-[#B85B2B]"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -875,8 +875,8 @@ export default function CataloguePage() {
                   key={o.id}
                   className={`flex flex-col rounded-2xl border p-5 shadow-xs transition-colors ${
                     o.type_cout === "main_oeuvre"
-                      ? "border-[#B85B2B]/30 bg-white hover:border-[#B85B2B]/60"
-                      : "border-[#E5E5E5] bg-white hover:border-[#B85B2B]/40"
+                      ? "border-[#D96B27]/30 bg-[#1B1511] hover:border-[#D96B27]/60"
+                      : "border-white/10 bg-[#1B1511] hover:border-[#D96B27]/40"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2 gap-2">
@@ -884,32 +884,32 @@ export default function CataloguePage() {
                       <span
                         className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
                           o.type_cout === "main_oeuvre"
-                            ? "border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]"
-                            : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            ? "border-[#D96B27]/25 bg-[#D96B27]/10 text-[#D96B27]"
+                            : "border-emerald-200 bg-emerald-500/15 text-emerald-300"
                         }`}
                       >
                         {o.type_cout === "main_oeuvre" ? "Main-d'œuvre" : "Matériau"}
                       </span>
-                      <span className="inline-block px-2 py-0.5 border border-[#E5E5E5] bg-[#F8F9FA] text-[#555555] text-[10px] font-bold uppercase tracking-wider rounded-full">
+                      <span className="inline-block px-2 py-0.5 border border-white/10 bg-[#120F0D] text-[#B8A99E] text-[10px] font-bold uppercase tracking-wider rounded-full">
                         {mapToMainFamily(o.famille_label || o.categorie, o.type_cout)}
                       </span>
 
                       {/* Statut Tarif Vente */}
                       {resolu.statut_vente === "personnalise" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 border border-emerald-200">
                           <CheckCircle2 className="h-3 w-3" />
                           Tarif personnalisé
                         </span>
                       ) : resolu.statut_vente === "indicatif_non_personnalise" ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200"
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-200"
                           title="Tarif indicatif non personnalisé. Cliquez sur Personnaliser pour adapter le prix de votre entreprise."
                         >
                           <AlertTriangle className="h-3 w-3" />
                           Tarif indicatif
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#F8F9FA] px-2 py-0.5 text-[10px] font-semibold text-[#666666] border border-[#E5E5E5]">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#120F0D] px-2 py-0.5 text-[10px] font-semibold text-[#B8A99E] border border-white/10">
                           À chiffrer
                         </span>
                       )}
@@ -937,7 +937,7 @@ export default function CataloguePage() {
                       {/* Statut Coût Revient */}
                       {resolu.statut_cout === "a_completer" ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 border border-red-200"
+                          className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-300 border border-red-200"
                           title="Coût de revient absent : la marge brute restera indicative tant que le coût n'est pas complété."
                         >
                           <AlertTriangle className="h-3 w-3" />
@@ -948,7 +948,7 @@ export default function CataloguePage() {
                           Coût perso
                         </span>
                       ) : (
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium text-[#777777] bg-[#F8F9FA] border border-[#E5E5E5]">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium text-[#8E7F74] bg-[#120F0D] border border-white/10">
                           Coût indicatif
                         </span>
                       )}
@@ -961,7 +961,7 @@ export default function CataloguePage() {
                           e.stopPropagation();
                           handleOpenModal(o);
                         }}
-                        className="text-[#888888] hover:text-[#23272B] p-1 rounded-lg hover:bg-[#F3F3F1] transition-colors"
+                        className="text-[#8E7F74] hover:text-[#F5EFEA] p-1 rounded-lg hover:bg-[#120F0D] transition-colors"
                         title="Modifier la fiche produit complète"
                         aria-label={`Modifier la fiche de ${o.designation}`}
                       >
@@ -973,7 +973,7 @@ export default function CataloguePage() {
                           e.stopPropagation();
                           ouvrirModalPrix(o);
                         }}
-                        className="text-[#888888] hover:text-[#B85B2B] p-1 rounded-lg hover:bg-[#B85B2B]/10 transition-colors"
+                        className="text-[#8E7F74] hover:text-[#D96B27] p-1 rounded-lg hover:bg-[#D96B27]/10 transition-colors"
                         title="Tarif entreprise (surcharge rapide)"
                         aria-label={`Personnaliser les tarifs de ${o.designation}`}
                       >
@@ -985,7 +985,7 @@ export default function CataloguePage() {
                           e.stopPropagation();
                           handleDeleteOuvrage(o);
                         }}
-                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                        className="text-[#8E7F74] hover:text-red-600 hover:bg-red-500/15 p-1.5 rounded-lg transition-colors"
                         title="Supprimer cet article"
                         aria-label="Supprimer"
                       >
@@ -994,7 +994,7 @@ export default function CataloguePage() {
                       {o.aUneSurcharge && (
                         <button
                           onClick={() => handleResetPrix(o.id)}
-                          className="text-amber-600 hover:text-amber-700 p-1 rounded-lg hover:bg-amber-50 transition-colors"
+                          className="text-amber-600 hover:text-amber-300 p-1 rounded-lg hover:bg-amber-500/15 transition-colors"
                           title="Réinitialiser au tarif indicatif commun"
                           aria-label={`Réinitialiser le tarif de ${o.designation}`}
                         >
@@ -1004,7 +1004,7 @@ export default function CataloguePage() {
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-[#23272B] text-sm leading-tight mb-1">
+                  <h3 className="font-bold text-[#F5EFEA] text-sm leading-tight mb-1">
                     {o.designation}
                   </h3>
 
@@ -1049,7 +1049,7 @@ export default function CataloguePage() {
                     }
 
                     return text ? (
-                      <p className="text-[11px] text-[#666666] font-mono mb-2">{text}</p>
+                      <p className="text-[11px] text-[#B8A99E] font-mono mb-2">{text}</p>
                     ) : (
                       <div className="mb-2"></div>
                     );
@@ -1064,7 +1064,7 @@ export default function CataloguePage() {
                     }
                     if (o.code_ral) {
                       parts.push(
-                        <span key="ral" className="font-mono font-semibold text-[#23272B]">
+                        <span key="ral" className="font-mono font-semibold text-[#F5EFEA]">
                           {/^ral/i.test(o.code_ral.trim()) ? o.code_ral.trim() : `RAL ${o.code_ral.trim()}`}
                         </span>
                       );
@@ -1074,7 +1074,7 @@ export default function CataloguePage() {
                     }
                     return (
                       <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-[#444444]">
-                        <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md border border-[#E5E5E5] bg-[#F8F9FA] px-2 py-0.5">
+                        <span className="inline-flex flex-wrap items-center gap-1.5 rounded-md border border-white/10 bg-[#120F0D] px-2 py-0.5">
                           {ralHex && (
                             <span
                               className="inline-block h-2.5 w-2.5 rounded-full border border-black/25 shrink-0"
@@ -1093,41 +1093,41 @@ export default function CataloguePage() {
                     );
                   })()}
 
-                  <p className="text-xs text-[#666666] line-clamp-3 mb-4 flex-grow">
+                  <p className="text-xs text-[#B8A99E] line-clamp-3 mb-4 flex-grow">
                     {o.description}
                   </p>
 
-                  <div className="mt-auto flex items-end justify-between border-t border-[#F0F0F0] pt-3">
-                    <span className="text-xs font-medium text-[#777777]">Unité : {o.unite}</span>
+                  <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-3">
+                    <span className="text-xs font-medium text-[#8E7F74]">Unité : {o.unite}</span>
                     <div className="flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] uppercase tracking-wider text-[#777777]">Revient :</span>
+                        <span className="text-[10px] uppercase tracking-wider text-[#8E7F74]">Revient :</span>
                         <span
                           className={`text-xs font-medium ${
                             resolu.statut_cout === "a_completer"
                               ? "text-red-600 italic"
-                              : "text-[#555555]"
+                              : "text-[#B8A99E]"
                           }`}
                         >
                           {hasPuRevient ? `${fmtEuro(resolu.pu_revient!)} HT` : "Non renseigné"}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] uppercase tracking-wider text-[#777777]">Vente :</span>
-                        <span className="text-lg font-black text-[#23272B]">
+                        <span className="text-[10px] uppercase tracking-wider text-[#8E7F74]">Vente :</span>
+                        <span className="text-lg font-black text-[#F5EFEA]">
                           {hasPuHt ? `${fmtEuro(resolu.pu_ht!)} HT` : "— HT"}
                         </span>
                       </div>
                       {margeUnitaire !== null ? (
                         <span
                           className={`text-[11px] font-semibold ${
-                            margeUnitaire >= 0 ? "text-emerald-700" : "text-red-600"
+                            margeUnitaire >= 0 ? "text-emerald-300" : "text-red-600"
                           }`}
                         >
                           Marge : {fmtEuro(margeUnitaire)} HT ({tauxMarge?.toFixed(1)} %)
                         </span>
                       ) : resolu.statut_cout === "a_completer" ? (
-                        <span className="text-[11px] text-amber-700 font-medium">
+                        <span className="text-[11px] text-amber-300 font-medium">
                           Marge indicative (coût absent)
                         </span>
                       ) : null}
@@ -1137,7 +1137,7 @@ export default function CataloguePage() {
               );
             })}
             {filteredOuvrages.length === 0 && (
-              <div className="col-span-full rounded-2xl border border-dashed border-[#E5E5E5] bg-white py-12 text-center text-xs text-[#777777]">
+              <div className="col-span-full rounded-2xl border border-dashed border-white/10 bg-[#1B1511] py-12 text-center text-xs text-[#8E7F74]">
                 Aucun ouvrage trouvé pour cette recherche.
               </div>
             )}
@@ -1147,34 +1147,34 @@ export default function CataloguePage() {
         {/* Modal Personnalisation Tarif Ouvrage pour le Tenant */}
         {modalPrixOuvrage && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-            <div className="w-full max-w-lg rounded-2xl border border-[#E5E5E5] bg-white p-6 shadow-xl space-y-5 text-[#23272B]">
+            <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#1B1511] p-6 shadow-xl space-y-5 text-[#F5EFEA]">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="rounded-full bg-[#B85B2B]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#B85B2B] border border-[#B85B2B]/25">
+                    <span className="rounded-full bg-[#D96B27]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#D96B27] border border-[#D96B27]/25">
                       Tarif Entreprise
                     </span>
-                    <span className="text-xs text-[#777777] font-mono">
+                    <span className="text-xs text-[#8E7F74] font-mono">
                       Unité : {modalPrixOuvrage.unite}
                     </span>
                   </div>
-                  <h2 className="text-lg font-bold text-[#23272B] leading-snug">
+                  <h2 className="text-lg font-bold text-[#F5EFEA] leading-snug">
                     {modalPrixOuvrage.designation}
                   </h2>
                 </div>
                 <button
                   onClick={fermerModalPrix}
-                  className="rounded-lg p-1 text-[#777777] hover:bg-[#F3F3F1] hover:text-[#23272B] transition-colors"
+                  className="rounded-lg p-1 text-[#8E7F74] hover:bg-[#120F0D] hover:text-[#F5EFEA] transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Fiche technique commune (Lecture seule) */}
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-xs space-y-1.5 text-[#555555]">
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-xs space-y-1.5 text-[#B8A99E]">
                 <div className="flex justify-between">
-                  <span className="text-[#777777]">Catégorie :</span>
-                  <span className="font-semibold text-[#23272B]">
+                  <span className="text-[#8E7F74]">Catégorie :</span>
+                  <span className="font-semibold text-[#F5EFEA]">
                     {mapToMainFamily(
                       modalPrixOuvrage.famille_label || modalPrixOuvrage.categorie,
                       modalPrixOuvrage.type_cout
@@ -1183,17 +1183,17 @@ export default function CataloguePage() {
                 </div>
                 {modalPrixOuvrage.fabricant && (
                   <div className="flex justify-between">
-                    <span className="text-[#777777]">Fabricant :</span>
-                    <span className="font-semibold text-[#23272B]">{modalPrixOuvrage.fabricant}</span>
+                    <span className="text-[#8E7F74]">Fabricant :</span>
+                    <span className="font-semibold text-[#F5EFEA]">{modalPrixOuvrage.fabricant}</span>
                   </div>
                 )}
                 {modalPrixOuvrage.gamme && (
                   <div className="flex justify-between">
-                    <span className="text-[#777777]">Gamme :</span>
-                    <span className="font-semibold text-[#23272B]">{modalPrixOuvrage.gamme}</span>
+                    <span className="text-[#8E7F74]">Gamme :</span>
+                    <span className="font-semibold text-[#F5EFEA]">{modalPrixOuvrage.gamme}</span>
                   </div>
                 )}
-                <div className="border-t border-[#E5E5E5] pt-2 flex justify-between text-[11px] text-[#666666]">
+                <div className="border-t border-white/10 pt-2 flex justify-between text-[11px] text-[#B8A99E]">
                   <span>Tarif indicatif commun : {fmtEuro(modalPrixOuvrage.pu_ht)} HT</span>
                   <span>
                     Coût commun :{" "}
@@ -1209,7 +1209,7 @@ export default function CataloguePage() {
                 <div>
                   <label
                     htmlFor="saisie-pu-ht"
-                    className="block text-xs font-semibold text-[#23272B] mb-1"
+                    className="block text-xs font-semibold text-[#F5EFEA] mb-1"
                   >
                     Prix de vente HT (€ HT / {modalPrixOuvrage.unite})
                   </label>
@@ -1221,9 +1221,9 @@ export default function CataloguePage() {
                     placeholder={String(modalPrixOuvrage.pu_ht ?? 0)}
                     value={prixSaisieHt}
                     onChange={(e) => setPrixSaisieHt(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-sm text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                    className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-sm text-[#F5EFEA] outline-none focus:border-[#D96B27] focus:bg-[#1E1916]"
                   />
-                  <p className="mt-1 text-[11px] text-[#777777]">
+                  <p className="mt-1 text-[11px] text-[#8E7F74]">
                     Ce tarif remplacera le prix indicatif commun par défaut dans vos nouveaux devis.
                   </p>
                 </div>
@@ -1231,7 +1231,7 @@ export default function CataloguePage() {
                 <div>
                   <label
                     htmlFor="saisie-pu-revient"
-                    className="block text-xs font-semibold text-[#23272B] mb-1"
+                    className="block text-xs font-semibold text-[#F5EFEA] mb-1"
                   >
                     Coût de revient HT (€ HT / {modalPrixOuvrage.unite})
                   </label>
@@ -1247,9 +1247,9 @@ export default function CataloguePage() {
                     }
                     value={prixSaisieRevient}
                     onChange={(e) => setPrixSaisieRevient(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3 py-2 text-sm text-[#23272B] outline-none focus:border-[#B85B2B] focus:bg-white"
+                    className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3 py-2 text-sm text-[#F5EFEA] outline-none focus:border-[#D96B27] focus:bg-[#1E1916]"
                   />
-                  <p className="mt-1 text-[11px] text-[#777777]">
+                  <p className="mt-1 text-[11px] text-[#8E7F74]">
                     Coût d&apos;achat matière ou taux horaire pour calculer précisément vos marges.
                   </p>
                 </div>
@@ -1263,7 +1263,7 @@ export default function CataloguePage() {
                     const marge = ht - revient;
                     const taux = ht > 0 ? (marge / ht) * 100 : 0;
                     return (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800 flex items-center justify-between">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-500/15 p-2.5 text-xs text-emerald-300 flex items-center justify-between">
                         <span>Marge unitaire prévisionnelle :</span>
                         <strong className="font-bold">
                           {fmtEuro(marge)} HT ({taux.toFixed(1)} %)
@@ -1272,7 +1272,7 @@ export default function CataloguePage() {
                     );
                   } else if (ht !== null && revient === null) {
                     return (
-                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 flex items-center gap-2">
+                      <div className="rounded-xl border border-amber-200 bg-amber-500/15 p-2.5 text-xs text-amber-300 flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
                         <span>
                           Coût de revient non renseigné : la marge sera signalée comme indicative.
@@ -1283,13 +1283,13 @@ export default function CataloguePage() {
                   return null;
                 })()}
 
-                <div className="flex items-center justify-between pt-3 border-t border-[#E5E5E5]">
+                <div className="flex items-center justify-between pt-3 border-t border-white/10">
                   <div>
                     {modalPrixOuvrage.aUneSurcharge && (
                       <button
                         type="button"
                         onClick={() => handleResetPrix(modalPrixOuvrage.id)}
-                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/15 transition-colors"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Réinitialiser au tarif commun
@@ -1301,14 +1301,14 @@ export default function CataloguePage() {
                     <button
                       type="button"
                       onClick={fermerModalPrix}
-                      className="rounded-xl border border-[#E5E5E5] bg-white px-4 py-2 text-xs font-semibold text-[#555555] hover:bg-[#F3F3F1] transition-colors"
+                      className="rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D] transition-colors"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
                       disabled={isSavingPrix}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9E4B20] transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white hover:bg-[#E07A38] transition-colors disabled:opacity-50"
                     >
                       {isSavingPrix ? (
                         <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />

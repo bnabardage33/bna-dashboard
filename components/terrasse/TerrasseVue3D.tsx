@@ -1304,7 +1304,7 @@ export default function TerrasseVue3D({
 
   if (!mounted) {
     return (
-      <div className="relative w-full h-[480px] rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-[#0d0f12] flex items-center justify-center">
+      <div className="relative w-full h-[480px] rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0d0f12] flex items-center justify-center">
         <div className="flex flex-col items-center gap-2 text-gray-400 text-xs">
           <Loader2 className="animate-spin text-amber-500" size={24} />
           <span>Chargement du moteur 3D Three.js...</span>
@@ -1315,7 +1315,7 @@ export default function TerrasseVue3D({
 
   return (
     <div className="space-y-3">
-      <div className="relative w-full rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-[#0d0f12] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0d0f12] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
         {/* BARRE D'OUTILS SUPÉRIEURE : Vues Caméra + Mode Éclaté + Curseur Terrasse Mobile */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-black/60 px-3.5 py-2.5">
           {/* Vues Caméra & Éclaté */}

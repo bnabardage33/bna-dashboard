@@ -67,20 +67,20 @@ export default function BardageMeteoModule({
   return (
     <div className="space-y-6">
       {/* 1. Météo en direct & Décision de Pose */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F0F0F0] pb-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <CloudSun className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-3xs font-bold uppercase tracking-wider text-[#B85B2B]">
+              <p className="text-3xs font-bold uppercase tracking-wider text-[#D96B27]">
                 Relevé en Temps Réel & Sécurité Chantier
               </p>
-              <h3 className="text-base sm:text-lg font-bold text-[#23272B] tracking-tight">
+              <h3 className="text-base sm:text-lg font-bold text-[#F5EFEA] tracking-tight">
                 Météo Site · {adresseChantier || "Adresse non renseignée"}
               </h3>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Matériau : <strong>{LABELS_MATERIAU[materiauStructurel]}</strong> · Accès :{" "}
                 <strong>{LABELS_ACCES[moyenAcces]}</strong>
               </p>
@@ -91,12 +91,12 @@ export default function BardageMeteoModule({
             <span
               className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide border ${
                 meteo.alerte.niveau === "rouge"
-                  ? "bg-red-50 text-red-900 border-red-200"
+                  ? "bg-red-500/15 text-red-900 border-red-200"
                   : meteo.alerte.niveau === "orange"
-                  ? "bg-amber-50 text-amber-900 border-amber-200"
+                  ? "bg-amber-500/15 text-amber-900 border-amber-200"
                   : meteo.alerte.niveau === "jaune"
                   ? "bg-yellow-50 text-yellow-900 border-yellow-200"
-                  : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : "bg-emerald-500/15 text-emerald-300 border-emerald-200"
               }`}
             >
               {meteo.alerte.niveau === "rouge"
@@ -111,7 +111,7 @@ export default function BardageMeteoModule({
         </div>
 
         {loading ? (
-          <p className="py-6 text-center text-xs text-[#777777]">
+          <p className="py-6 text-center text-xs text-[#8E7F74]">
             Chargement des relevés météo en temps réel...
           </p>
         ) : meteo ? (
@@ -120,12 +120,12 @@ export default function BardageMeteoModule({
             <div
               className={`rounded-xl border p-3.5 text-xs font-semibold ${
                 meteo.alerte.niveau === "rouge"
-                  ? "border-red-200 bg-red-50 text-red-900"
+                  ? "border-red-200 bg-red-500/15 text-red-900"
                   : meteo.alerte.niveau === "orange"
-                  ? "border-amber-200 bg-amber-50 text-amber-900"
+                  ? "border-amber-200 bg-amber-500/15 text-amber-900"
                   : meteo.alerte.niveau === "jaune"
                   ? "border-yellow-200 bg-yellow-50 text-yellow-900"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : "border-emerald-200 bg-emerald-500/15 text-emerald-900"
               }`}
             >
               {meteo.alerte.motif}
@@ -136,17 +136,17 @@ export default function BardageMeteoModule({
               <div
                 className={`rounded-xl border p-4 text-xs ${
                   meteo.pose.statut === "non_determine"
-                    ? "border-[#E5E5E5] bg-[#F8F9FA] text-[#777777]"
+                    ? "border-white/10 bg-[#120F0D] text-[#8E7F74]"
                     : meteo.pose.niveau === "rouge"
-                    ? "border-red-200 bg-red-50 text-red-900"
+                    ? "border-red-200 bg-red-500/15 text-red-900"
                     : meteo.pose.niveau === "orange"
-                    ? "border-amber-200 bg-amber-50 text-amber-900"
+                    ? "border-amber-200 bg-amber-500/15 text-amber-900"
                     : meteo.pose.niveau === "jaune"
                     ? "border-yellow-200 bg-yellow-50 text-yellow-900"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-900"
+                    : "border-emerald-200 bg-emerald-500/15 text-emerald-900"
                 }`}
               >
-                <p className="text-3xs uppercase font-bold tracking-wider text-[#777777]">
+                <p className="text-3xs uppercase font-bold tracking-wider text-[#8E7F74]">
                   Décision de pose sur les horaires du chantier
                 </p>
                 <p className="mt-1 font-bold">
@@ -162,7 +162,7 @@ export default function BardageMeteoModule({
                   {meteo.pose.motif}
                 </p>
                 {meteo.pose.horairesStatut === "non_configuree" && (
-                  <p className="mt-1.5 text-3xs text-[#777777]">
+                  <p className="mt-1.5 text-3xs text-[#8E7F74]">
                     Renseignez vos horaires de travail dans le module « Photos & Notes » pour affiner cette décision.
                   </p>
                 )}
@@ -171,7 +171,7 @@ export default function BardageMeteoModule({
 
             {/* Avertissements Matériaux */}
             {meteo.pose && meteo.pose.avertissements.length > 0 && (
-              <ul className="space-y-1.5 rounded-xl border border-amber-200 bg-amber-50/50 p-3.5">
+              <ul className="space-y-1.5 rounded-xl border border-amber-200 bg-amber-500/15/50 p-3.5">
                 {meteo.pose.avertissements.map((a) => (
                   <li key={a} className="text-xs text-amber-900 flex items-center gap-2">
                     <span className="shrink-0">⚠️</span>
@@ -183,32 +183,32 @@ export default function BardageMeteoModule({
 
             {/* KPIs synthétiques */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-center">
-                <p className="text-3xs uppercase font-semibold text-[#777777]">Matin</p>
-                <p className="text-lg font-bold text-[#23272B]">{texteDegre(meteo.matin.temp)}</p>
-                <p className="text-3xs text-[#777777]">Rafales {texteKmh(meteo.matin.rafales)}</p>
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-center">
+                <p className="text-3xs uppercase font-semibold text-[#8E7F74]">Matin</p>
+                <p className="text-lg font-bold text-[#F5EFEA]">{texteDegre(meteo.matin.temp)}</p>
+                <p className="text-3xs text-[#8E7F74]">Rafales {texteKmh(meteo.matin.rafales)}</p>
               </div>
 
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-center">
-                <p className="text-3xs uppercase font-semibold text-[#777777]">Après-midi</p>
-                <p className="text-lg font-bold text-[#23272B]">{texteDegre(meteo.apresMidi.temp)}</p>
-                <p className="text-3xs text-[#777777]">Rafales {texteKmh(meteo.apresMidi.rafales)}</p>
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-center">
+                <p className="text-3xs uppercase font-semibold text-[#8E7F74]">Après-midi</p>
+                <p className="text-lg font-bold text-[#F5EFEA]">{texteDegre(meteo.apresMidi.temp)}</p>
+                <p className="text-3xs text-[#8E7F74]">Rafales {texteKmh(meteo.apresMidi.rafales)}</p>
               </div>
 
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-center">
-                <p className="text-3xs uppercase font-semibold text-[#B85B2B]">Rafales Max</p>
-                <p className="text-lg font-bold text-[#B85B2B]">
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-center">
+                <p className="text-3xs uppercase font-semibold text-[#D96B27]">Rafales Max</p>
+                <p className="text-lg font-bold text-[#D96B27]">
                   {texteKmh(maxConnu(meteo.matin.rafales, meteo.apresMidi.rafales))}
                 </p>
-                <p className="text-3xs text-[#777777]">Sur la journée</p>
+                <p className="text-3xs text-[#8E7F74]">Sur la journée</p>
               </div>
 
-              <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3 text-center">
-                <p className="text-3xs uppercase font-semibold text-[#777777]">Précipitations</p>
-                <p className="text-lg font-bold text-[#23272B]">
+              <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3 text-center">
+                <p className="text-3xs uppercase font-semibold text-[#8E7F74]">Précipitations</p>
+                <p className="text-lg font-bold text-[#F5EFEA]">
                   {texteMm(meteo.cumulPluie ?? sommeConnue(meteo.heures.map((h) => h.pluie)))}
                 </p>
-                <p className="text-3xs text-[#777777]">Cumul journalier</p>
+                <p className="text-3xs text-[#8E7F74]">Cumul journalier</p>
               </div>
             </div>
 
@@ -218,17 +218,17 @@ export default function BardageMeteoModule({
             </div>
           </div>
         ) : (
-          <p className="py-4 text-xs text-amber-800">
+          <p className="py-4 text-xs text-amber-300">
             Impossible de charger les données météo pour cette adresse.
           </p>
         )}
       </div>
 
       {/* 2. Liste & Déclarations des Rapports d'Intempéries BTP */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
-        <div className="flex items-center gap-2.5 border-b border-[#F0F0F0] pb-3">
-          <ShieldAlert className="h-5 w-5 text-[#B85B2B]" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
+          <ShieldAlert className="h-5 w-5 text-[#D96B27]" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
             Arrêts de Travail &amp; Déclarations Intempéries BTP du Chantier
           </h4>
         </div>

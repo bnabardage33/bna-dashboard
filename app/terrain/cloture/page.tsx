@@ -115,24 +115,24 @@ export default function ChantiersCloturePage() {
   }, [chantiers, filtreStatut, recherche]);
 
   return (
-    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#F3F3F1] text-[#23272B] selection:bg-[#D97732]/20 selection:text-[#B85B2B] px-4 py-6 sm:py-8 transition-colors">
+    <div className="-mt-4 -mb-12 -mx-4 sm:mx-0 min-h-screen bg-[#120F0D] text-[#F5EFEA] selection:bg-[#D97732]/20 selection:text-[#D96B27] px-4 py-6 sm:py-8 transition-colors">
       <div className="mx-auto w-full max-w-5xl space-y-6">
         {/* 1. Bannière d'en-tête (Identité BNA Pilotage BTP) */}
-        <section className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+        <section className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
                   <Fence className="h-5 w-5" strokeWidth={2} />
                 </span>
-                <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#B85B2B]">
+                <p className="text-xs font-bold uppercase tracking-[2.5px] text-[#D96B27]">
                   BNA Pilotage BTP · Espace Métier
                 </p>
               </div>
-              <h1 className="mt-2 text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#23272B]">
+              <h1 className="mt-2 text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#F5EFEA]">
                 Chantiers Clôture
               </h1>
-              <p className="mt-1 text-xs sm:text-sm text-[#777777] max-w-2xl leading-relaxed">
+              <p className="mt-1 text-xs sm:text-sm text-[#8E7F74] max-w-2xl leading-relaxed">
                 Espace dédié aux projets de clôtures : calepinage 1 à 4 côtés 2D/3D, soubassements béton, redans, portillons et suivi d&apos;exécution.
               </p>
             </div>
@@ -141,13 +141,13 @@ export default function ChantiersCloturePage() {
               <button
                 type="button"
                 onClick={() => setCorbeilleOuverte(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white px-4 py-3 text-sm font-bold text-[#23272B] hover:text-[#B85B2B] hover:border-[#B85B2B]/40 transition-all shadow-xs"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] px-4 py-3 text-sm font-bold text-[#F5EFEA] hover:text-[#D96B27] hover:border-[#D96B27]/40 transition-all shadow-xs"
                 title="Accéder à la corbeille des chantiers clôture"
               >
-                <Trash2 className="h-4 w-4 text-[#B85B2B]" />
+                <Trash2 className="h-4 w-4 text-[#D96B27]" />
                 <span>Corbeille</span>
                 {nbCorbeille > 0 && (
-                  <span className="rounded-full bg-[#B85B2B] px-2 py-0.5 text-xs font-bold text-white">
+                  <span className="rounded-full bg-[#D96B27] px-2 py-0.5 text-xs font-bold text-white">
                     {nbCorbeille}
                   </span>
                 )}
@@ -156,7 +156,7 @@ export default function ChantiersCloturePage() {
               <button
                 type="button"
                 onClick={() => setModalOuvert(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#D97732] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#D96B27] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#E07A38] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]"
               >
                 <Plus className="h-5 w-5" />
                 <span>Nouveau Chantier Clôture</span>
@@ -165,28 +165,28 @@ export default function ChantiersCloturePage() {
           </div>
 
           {/* Barre de recherche et filtres */}
-          <div className="mt-6 flex flex-col gap-3 pt-5 border-t border-[#F0F0F0] sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-3 pt-5 border-t border-white/10 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
               <input
                 type="text"
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
                 placeholder="Rechercher par nom, client, adresse..."
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] pl-10 pr-4 py-2.5 text-sm text-[#23272B] placeholder:text-[#999999] focus:border-[#B85B2B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 transition-all"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] pl-10 pr-4 py-2.5 text-sm text-[#F5EFEA] placeholder:text-[#8E7F74] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20 transition-all"
               />
-              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#999999]" />
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#8E7F74]" />
             </div>
 
             {/* Bascule Liste / Planning + Filtres de statut */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+              <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#120F0D] p-1">
                 <button
                   type="button"
                   onClick={() => setViewMode("liste")}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                     viewMode === "liste"
-                      ? "bg-white text-[#23272B] shadow-sm"
-                      : "text-[#777777] hover:text-[#23272B]"
+                      ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                      : "text-[#8E7F74] hover:text-[#F5EFEA]"
                   }`}
                 >
                   <List className="h-3.5 w-3.5" />
@@ -197,8 +197,8 @@ export default function ChantiersCloturePage() {
                   onClick={() => setViewMode("gantt")}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                     viewMode === "gantt"
-                      ? "bg-white text-[#23272B] shadow-sm"
-                      : "text-[#777777] hover:text-[#23272B]"
+                      ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                      : "text-[#8E7F74] hover:text-[#F5EFEA]"
                   }`}
                 >
                   <BarChartHorizontal className="h-3.5 w-3.5" />
@@ -206,7 +206,7 @@ export default function ChantiersCloturePage() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-1">
+              <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] p-1">
                 {[
                   { id: "tous", label: "Tous" },
                   { id: "prevu", label: "Prévus" },
@@ -219,8 +219,8 @@ export default function ChantiersCloturePage() {
                     onClick={() => setFiltreStatut(f.id)}
                     className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                       filtreStatut === f.id
-                        ? "bg-white text-[#23272B] shadow-sm"
-                        : "text-[#777777] hover:text-[#23272B]"
+                        ? "bg-[#1B1511] text-[#F5EFEA] shadow-sm"
+                        : "text-[#8E7F74] hover:text-[#F5EFEA]"
                     }`}
                   >
                     {f.label}
@@ -233,25 +233,25 @@ export default function ChantiersCloturePage() {
 
         {/* 2. Grille des Chantiers Clôture */}
         {loading ? (
-          <div className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+          <div className="flex min-h-72 items-center justify-center rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
             <div className="flex flex-col items-center gap-3">
               <div className="h-10 w-10 animate-spin rounded-full border-3 border-[#D97732] border-t-transparent" />
-              <p className="text-sm font-medium text-[#777777]">
+              <p className="text-sm font-medium text-[#8E7F74]">
                 Chargement des chantiers clôture...
               </p>
             </div>
           </div>
         ) : chantiersFiltres.length === 0 ? (
-          <section className="rounded-2xl sm:rounded-3xl border border-dashed border-[#DCDCDC] bg-white p-10 sm:p-12 text-center shadow-xs">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B]">
+          <section className="rounded-2xl sm:rounded-3xl border border-dashed border-[#DCDCDC] bg-[#1B1511] p-10 sm:p-12 text-center shadow-xs">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#D96B27]/10 border border-[#D96B27]/20 text-[#D96B27]">
               <Fence className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-[#23272B]">
+            <h3 className="mt-4 text-lg font-bold text-[#F5EFEA]">
               {chantiers.length === 0
                 ? "Aucun chantier clôture pour le moment"
                 : "Aucun résultat pour cette recherche"}
             </h3>
-            <p className="mt-1 text-xs text-[#777777] max-w-md mx-auto">
+            <p className="mt-1 text-xs text-[#8E7F74] max-w-md mx-auto">
               {chantiers.length === 0
                 ? "Créez votre premier projet clôture pour accéder au calepinage 2D/3D, redans, portillons et au suivi complet des travaux."
                 : "Modifiez vos filtres ou lancez une autre recherche."}
@@ -260,7 +260,7 @@ export default function ChantiersCloturePage() {
               <button
                 type="button"
                 onClick={() => setModalOuvert(true)}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#D96B27] hover:bg-[#E07A38] active:scale-[0.98] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all"
               >
                 <Plus className="h-4 w-4" />
                 Créer mon premier chantier clôture
@@ -303,22 +303,22 @@ export default function ChantiersCloturePage() {
               return (
                 <div
                   key={c.id}
-                  className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#B85B2B]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)]"
+                  className="group relative flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#D96B27]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)]"
                 >
                   <div>
                     {/* Statut & badge clôture */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="rounded-md border border-[#B85B2B]/20 bg-[#B85B2B]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#B85B2B]">
+                      <span className="rounded-md border border-[#D96B27]/20 bg-[#D96B27]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#D96B27]">
                         Clôture {info?.forme?.replace("_", " ") || "Sur mesure"}
                       </span>
 
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                           c.statut === "termine"
-                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                             : c.statut === "en_cours"
-                            ? "bg-amber-50 text-amber-900 border border-amber-200"
-                            : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                            ? "bg-amber-500/15 text-amber-900 border border-amber-200"
+                            : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                         }`}
                       >
                         {c.statut === "termine"
@@ -330,11 +330,11 @@ export default function ChantiersCloturePage() {
                     </div>
 
                     {/* Titre & Client */}
-                    <h3 className="text-lg font-bold text-[#23272B] tracking-tight group-hover:text-[#B85B2B] transition-colors">
+                    <h3 className="text-lg font-bold text-[#F5EFEA] tracking-tight group-hover:text-[#D96B27] transition-colors">
                       {c.nom || "Chantier Clôture"}
                     </h3>
 
-                    <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[#777777]">
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[#8E7F74]">
                       <User className="h-3.5 w-3.5 text-gray-400" />
                       <span>
                         {c.clients?.nom || "Client non associé"}{" "}
@@ -344,28 +344,28 @@ export default function ChantiersCloturePage() {
 
                     {/* Adresse */}
                     {c.adresse_chantier && (
-                      <p className="mt-2 flex items-center gap-1.5 text-xs text-[#777777] truncate">
-                        <MapPin className="h-3.5 w-3.5 text-[#B85B2B] shrink-0" />
+                      <p className="mt-2 flex items-center gap-1.5 text-xs text-[#8E7F74] truncate">
+                        <MapPin className="h-3.5 w-3.5 text-[#D96B27] shrink-0" />
                         <span className="truncate">{c.adresse_chantier}</span>
                       </p>
                     )}
 
                     {/* Linéaire & Matériau */}
                     {(lineaireAffiche || info?.materiau) && (
-                      <div className="mt-3.5 flex items-center gap-2 rounded-xl bg-[#F8F9FA] px-3 py-1.5 border border-[#E5E5E5] text-xs">
-                        <SlidersHorizontal className="h-3.5 w-3.5 text-[#B85B2B]" />
-                        <span className="font-bold text-[#23272B]">
+                      <div className="mt-3.5 flex items-center gap-2 rounded-xl bg-[#120F0D] px-3 py-1.5 border border-white/10 text-xs">
+                        <SlidersHorizontal className="h-3.5 w-3.5 text-[#D96B27]" />
+                        <span className="font-bold text-[#F5EFEA]">
                           {lineaireAffiche ? `${lineaireAffiche} ml` : "Calepinage prêt"}
                         </span>
                         <span className="text-[#CCCCCC]">·</span>
-                        <span className="text-[#777777] capitalize">
+                        <span className="text-[#8E7F74] capitalize">
                           {(info?.materiau || "COMPOSITE").toLowerCase()}
                         </span>
                       </div>
                     )}
 
                     {/* Planning / Démarrage */}
-                    <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#777777]">
+                    <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#8E7F74]">
                       <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                       <span>
                         {c.date_debut
@@ -376,7 +376,7 @@ export default function ChantiersCloturePage() {
                   </div>
 
                   {/* Zone d'actions inférieure : Grille équilibrée 2x2 + Bouton Hub */}
-                  <div className="mt-4 pt-3.5 border-t border-[#F0F0F0] flex flex-col gap-2">
+                  <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
                       {/* 1. Modifier */}
                       <button
@@ -386,11 +386,11 @@ export default function ChantiersCloturePage() {
                           e.stopPropagation();
                           setChantierAModifier(c);
                         }}
-                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-2.5 text-xs font-semibold text-[#23272B] hover:text-[#B85B2B] active:scale-[0.98] transition-all shadow-2xs group"
+                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-2.5 text-xs font-semibold text-[#F5EFEA] hover:text-[#D96B27] active:scale-[0.98] transition-all shadow-2xs group"
                         title="Modifier les informations du chantier clôture"
                         aria-label={`Modifier ${c.nom || "le chantier clôture"}`}
                       >
-                        <Pencil className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#B85B2B] shrink-0 transition-colors" />
+                        <Pencil className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#D96B27] shrink-0 transition-colors" />
                         <span className="truncate">Modifier</span>
                       </button>
 
@@ -401,14 +401,14 @@ export default function ChantiersCloturePage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-2.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] active:scale-[0.98] transition-all shadow-2xs truncate"
+                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-2.5 text-xs font-semibold text-[#8E7F74] hover:text-[#F5EFEA] active:scale-[0.98] transition-all shadow-2xs truncate"
                           title="Lancer l'itinéraire GPS Google Maps vers le chantier"
                         >
                           <span className="truncate">🗺️ GPS Itinéraire</span>
                         </a>
                       ) : (
                         <div
-                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5]/60 bg-[#F8F9FA]/60 px-2.5 text-xs font-semibold text-[#AAAAAA] cursor-not-allowed select-none"
+                          className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10/60 bg-[#120F0D]/60 px-2.5 text-xs font-semibold text-[#AAAAAA] cursor-not-allowed select-none"
                           title="Adresse non renseignée — navigation indisponible"
                         >
                           <span className="truncate">🗺️ GPS Itinéraire</span>
@@ -428,7 +428,7 @@ export default function ChantiersCloturePage() {
                           setTimeout(() => setCopiedId(null), 2000);
                         }}
                         disabled={!c.code_acces}
-                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] hover:bg-white hover:border-[#B85B2B]/40 px-2.5 text-xs font-semibold text-[#777777] hover:text-[#23272B] active:scale-[0.98] transition-all shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#120F0D] hover:bg-[#221B17] hover:border-[#D96B27]/40 px-2.5 text-xs font-semibold text-[#8E7F74] hover:text-[#F5EFEA] active:scale-[0.98] transition-all shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                         title={c.code_acces ? "Copier le lien d'accès espace client" : "Code d'accès non généré"}
                       >
                         {copiedId === c.id ? (
@@ -449,7 +449,7 @@ export default function ChantiersCloturePage() {
                           await mettreChantierClotureEnCorbeille(c.id);
                           chargerChantiers();
                         }}
-                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50 text-red-500 hover:bg-red-100 hover:border-red-300 hover:text-red-700 active:scale-[0.98] transition-all shadow-2xs"
+                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-red-200/80 bg-red-500/15 text-red-500 hover:bg-red-100 hover:border-red-300 hover:text-red-300 active:scale-[0.98] transition-all shadow-2xs"
                         title="Mettre ce chantier à la corbeille"
                         aria-label={`Mettre à la corbeille ${c.nom || "le chantier"}`}
                       >
@@ -461,7 +461,7 @@ export default function ChantiersCloturePage() {
                     {/* Action principale au poids visuel maîtrisé */}
                     <Link
                       href={`/terrain/cloture/${c.id}`}
-                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[#23272B] px-3 text-xs font-bold text-white transition-all hover:bg-[#B85B2B] active:scale-[0.98] shadow-2xs"
+                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[#23272B] px-3 text-xs font-bold text-white transition-all hover:bg-[#D96B27] active:scale-[0.98] shadow-2xs"
                     >
                       <span>Ouvrir Hub Clôture</span>
                       <ArrowRight className="h-3.5 w-3.5 shrink-0" />

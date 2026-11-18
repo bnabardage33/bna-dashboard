@@ -439,8 +439,8 @@ export default function AvancementFacades({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8 text-xs font-semibold text-[#777777]">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#B85B2B]" /> Chargement de l&apos;avancement du chantier...
+      <div className="flex items-center justify-center p-8 text-xs font-semibold text-[#8E7F74]">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#D96B27]" /> Chargement de l&apos;avancement du chantier...
       </div>
     );
   }
@@ -448,17 +448,17 @@ export default function AvancementFacades({
   return (
     <div className="space-y-6">
       {/* 1. En-tête Général du Suivi d'Avancement (Thème clair BNA) */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F0F0F0] pb-4">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27]">
               <Building2 className="h-5 w-5" />
             </span>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-[#23272B]">
+              <h2 className="text-base sm:text-lg font-bold text-[#F5EFEA]">
                 Avancement du Chantier &amp; Suivi des Façades
               </h2>
-              <p className="text-xs text-[#777777]">
+              <p className="text-xs text-[#8E7F74]">
                 Configuration personnalisée ({facades.length} façade{facades.length > 1 ? "s" : ""}) · {totalEtapes} étapes techniques totales
               </p>
             </div>
@@ -466,25 +466,25 @@ export default function AvancementFacades({
 
           {/* Indicateurs de synthèse en haut à droite */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-3 rounded-xl bg-[#F8F9FA] px-3.5 py-1.5 border border-[#E5E5E5]">
+            <div className="flex items-center gap-3 rounded-xl bg-[#120F0D] px-3.5 py-1.5 border border-white/10">
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">
                   Avancement Global
                 </p>
                 <p
                   className={`text-base sm:text-lg font-black ${
-                    pourcentage === 100 ? "text-emerald-600" : "text-[#B85B2B]"
+                    pourcentage === 100 ? "text-emerald-600" : "text-[#D96B27]"
                   }`}
                 >
                   {pourcentage}%
                 </p>
               </div>
-              <div className="h-7 w-px bg-gray-200" />
+              <div className="h-7 w-px bg-white/10" />
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#777777]">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#8E7F74]">
                   Étapes Validées
                 </p>
-                <p className="text-xs sm:text-sm font-bold text-[#23272B]">
+                <p className="text-xs sm:text-sm font-bold text-[#F5EFEA]">
                   {etapesValidees} / {totalEtapes}
                 </p>
               </div>
@@ -496,8 +496,8 @@ export default function AvancementFacades({
               onClick={() => setConfigOuverte((prev) => !prev)}
               className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                 configOuverte
-                  ? "border-[#B85B2B] bg-[#B85B2B]/10 text-[#B85B2B]"
-                  : "border-[#E5E5E5] bg-[#F8F9FA] text-[#23272B] hover:border-[#B85B2B]"
+                  ? "border-[#D96B27] bg-[#D96B27]/10 text-[#D96B27]"
+                  : "border-white/10 bg-[#120F0D] text-[#F5EFEA] hover:border-[#D96B27]"
               }`}
               title="Configurer le nombre et les noms des façades"
             >
@@ -509,22 +509,22 @@ export default function AvancementFacades({
 
         {/* 2. Panneau de Configuration du Nombre et Noms de Façades (Phase 2 & 3) */}
         {configOuverte && (
-          <div className="mt-4 rounded-2xl border border-[#B85B2B]/20 bg-[#FDFBF9] p-4 sm:p-5 space-y-4 animate-in fade-in">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#B85B2B]/10 pb-3">
-              <div className="flex items-center gap-2 text-[#B85B2B]">
+          <div className="mt-4 rounded-2xl border border-[#D96B27]/20 bg-[#FDFBF9] p-4 sm:p-5 space-y-4 animate-in fade-in">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D96B27]/10 pb-3">
+              <div className="flex items-center gap-2 text-[#D96B27]">
                 <Sliders className="h-4 w-4" />
                 <h3 className="text-xs font-bold uppercase tracking-wider">
                   Configuration des Façades du Chantier
                 </h3>
               </div>
-              <p className="text-2xs text-[#777777]">
+              <p className="text-2xs text-[#8E7F74]">
                 Adapter le nombre de façades (1 à 4) et saisir les noms réels du chantier.
               </p>
             </div>
 
             {/* Sélecteur du nombre de façades (1, 2, 3 ou 4) */}
             <div>
-              <label className="block text-2xs font-bold uppercase tracking-wider text-[#777777] mb-2">
+              <label className="block text-2xs font-bold uppercase tracking-wider text-[#8E7F74] mb-2">
                 Nombre de façades à traiter
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -537,8 +537,8 @@ export default function AvancementFacades({
                       onClick={() => handleChangerNombreFacades(nb)}
                       className={`flex flex-col items-center justify-center rounded-xl border p-2.5 sm:p-3 transition text-center ${
                         estSelectionne
-                          ? "border-[#B85B2B] bg-[#B85B2B] text-white shadow-sm"
-                          : "border-[#E5E5E5] bg-white text-[#23272B] hover:border-[#B85B2B]/50"
+                          ? "border-[#D96B27] bg-[#D96B27] text-white shadow-sm"
+                          : "border-white/10 bg-[#1B1511] text-[#F5EFEA] hover:border-[#D96B27]/50"
                       }`}
                     >
                       <span className="text-sm sm:text-base font-black">
@@ -546,7 +546,7 @@ export default function AvancementFacades({
                       </span>
                       <span
                         className={`text-3xs mt-0.5 ${
-                          estSelectionne ? "text-white/80" : "text-[#777777]"
+                          estSelectionne ? "text-white/80" : "text-[#8E7F74]"
                         }`}
                       >
                         {nb * 4} étapes totales
@@ -559,13 +559,13 @@ export default function AvancementFacades({
 
             {/* Saisie des noms personnalisés de chaque façade */}
             <div>
-              <label className="block text-2xs font-bold uppercase tracking-wider text-[#777777] mb-2">
+              <label className="block text-2xs font-bold uppercase tracking-wider text-[#8E7F74] mb-2">
                 Noms des façades actives
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {facades.map((f, idx) => (
                   <div key={f.id} className="space-y-1">
-                    <label className="text-3xs font-semibold text-[#777777]">
+                    <label className="text-3xs font-semibold text-[#8E7F74]">
                       Façade n°{idx + 1} ({f.id})
                     </label>
                     <input
@@ -573,7 +573,7 @@ export default function AvancementFacades({
                       value={f.label}
                       onChange={(e) => handleChangerNomFacade(idx, e.target.value)}
                       placeholder={`Ex: Façade ${idx + 1}, Façade rue, Pignon...`}
-                      className="w-full rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs font-semibold text-[#23272B] focus:border-[#B85B2B] focus:outline-none"
+                      className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-3 py-2 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
                     />
                   </div>
                 ))}
@@ -582,7 +582,7 @@ export default function AvancementFacades({
 
             {/* Modal / Avertissement de confirmation de réduction si des données existent (Phase 6) */}
             {avertissementReduction.ouvert && (
-              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 animate-in fade-in space-y-2">
+              <div className="rounded-xl border border-amber-300 bg-amber-500/15 p-4 text-xs text-amber-900 animate-in fade-in space-y-2">
                 <div className="flex items-center gap-2 font-bold text-amber-900">
                   <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
                   <span>Confirmation de réduction du nombre de façades</span>
@@ -595,7 +595,7 @@ export default function AvancementFacades({
                     <li key={i}>{nom}</li>
                   ))}
                 </ul>
-                <p className="text-2xs text-amber-800">
+                <p className="text-2xs text-amber-300">
                   Réduire le nombre à {avertissementReduction.nouveauNb} façade{avertissementReduction.nouveauNb > 1 ? "s" : ""} masquera ces données du calcul d&apos;avancement, mais les données historiques resteront préservées en base.
                 </p>
                 <div className="flex items-center justify-end gap-2 pt-2">
@@ -604,7 +604,7 @@ export default function AvancementFacades({
                     onClick={() =>
                       setAvertissementReduction({ ouvert: false, nouveauNb: nbFacadesChoisi, facadesImpactees: [] })
                     }
-                    className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                    className="rounded-lg border border-amber-300 bg-[#1B1511] px-3 py-1.5 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D]"
                   >
                     Annuler
                   </button>
@@ -623,7 +623,7 @@ export default function AvancementFacades({
               <button
                 type="button"
                 onClick={() => setConfigOuverte(false)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#23272B] hover:bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white transition shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#23272B] hover:bg-[#D96B27] px-4 py-2 text-xs font-bold text-white transition shadow-sm"
               >
                 <Check className="h-3.5 w-3.5" />
                 <span>Terminer la configuration</span>
@@ -643,13 +643,13 @@ export default function AvancementFacades({
           return (
             <div
               key={facade.id}
-              className="rounded-2xl border border-[#E5E5E5] bg-white overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all"
+              className="rounded-2xl border border-white/10 bg-[#1B1511] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all"
             >
               {/* En-tête de la façade */}
               <button
                 type="button"
                 onClick={() => toggleExpandFacade(facade.id)}
-                className="w-full flex items-center justify-between p-4 bg-[#F8F9FA]/80 hover:bg-[#F0F0F0]/80 transition-colors text-left"
+                className="w-full flex items-center justify-between p-4 bg-[#120F0D]/80 hover:bg-[#221B17]/80 transition-colors text-left"
               >
                 <div className="flex items-center gap-3">
                   <span
@@ -662,10 +662,10 @@ export default function AvancementFacades({
                     {index + 1}
                   </span>
                   <div>
-                    <span className="font-bold text-sm text-[#23272B]">
+                    <span className="font-bold text-sm text-[#F5EFEA]">
                       {facade.label}
                     </span>
-                    <span className="text-3xs text-[#777777] block sm:inline sm:ml-2">
+                    <span className="text-3xs text-[#8E7F74] block sm:inline sm:ml-2">
                       (Façade active {index + 1}/{facades.length})
                     </span>
                   </div>
@@ -675,23 +675,23 @@ export default function AvancementFacades({
                   <span
                     className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
                       facadeComplete
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-white text-[#777777] border-[#E5E5E5]"
+                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-200"
+                        : "bg-[#1B1511] text-[#8E7F74] border-white/10"
                     }`}
                   >
                     {etapesCochees} / 4 étapes
                   </span>
                   {isExpanded ? (
-                    <ChevronUp size={18} className="text-[#777777]" />
+                    <ChevronUp size={18} className="text-[#8E7F74]" />
                   ) : (
-                    <ChevronDown size={18} className="text-[#777777]" />
+                    <ChevronDown size={18} className="text-[#8E7F74]" />
                   )}
                 </div>
               </button>
 
               {/* Corps de la façade avec les 4 étapes techniques indépendantes */}
               {isExpanded && (
-                <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white">
+                <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#1B1511]">
                   {ETAPES_TECHNIQUES.map((etape, etapeIdx) => {
                     const isChecked = etat[facade.id]?.[etape.id] ?? false;
 
@@ -702,8 +702,8 @@ export default function AvancementFacades({
                         onClick={() => toggleEtape(facade.id, etape.id)}
                         className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all active:scale-[0.99] min-h-[52px] ${
                           isChecked
-                            ? "bg-emerald-50/80 border-emerald-300 text-emerald-900 shadow-xs"
-                            : "bg-[#F8F9FA] border-[#E5E5E5] text-[#23272B] hover:border-[#B85B2B]/40 hover:bg-white"
+                            ? "bg-emerald-500/15/80 border-emerald-300 text-emerald-900 shadow-xs"
+                            : "bg-[#120F0D] border-white/10 text-[#F5EFEA] hover:border-[#D96B27]/40 hover:bg-[#221B17]"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -723,7 +723,7 @@ export default function AvancementFacades({
                         </div>
 
                         {isChecked && (
-                          <span className="text-3xs font-black text-emerald-700 uppercase tracking-wider bg-emerald-100/60 px-1.5 py-0.5 rounded">
+                          <span className="text-3xs font-black text-emerald-300 uppercase tracking-wider bg-emerald-100/60 px-1.5 py-0.5 rounded">
                             Fait
                           </span>
                         )}
@@ -738,11 +738,11 @@ export default function AvancementFacades({
       </div>
 
       {/* 4. Observations du jour & Dictée Vocale IA */}
-      <div className="rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F0F0F0] pb-3">
+      <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
           <label
             htmlFor="chp-observations-du-jour"
-            className="text-xs font-bold uppercase tracking-wider text-[#23272B]"
+            className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]"
           >
             Observations du jour &amp; Journal de Chantier
           </label>
@@ -756,8 +756,8 @@ export default function AvancementFacades({
               etatDictee === "enregistrement"
                 ? "bg-red-600 text-white animate-pulse"
                 : dicteeEnTraitement
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-[#B85B2B]/10 text-[#B85B2B] hover:bg-[#B85B2B]/20 border border-[#B85B2B]/30"
+                ? "bg-[#221B17] text-gray-400 cursor-not-allowed"
+                : "bg-[#D96B27]/10 text-[#D96B27] hover:bg-[#D96B27]/20 border border-[#D96B27]/30"
             }`}
           >
             {etatDictee === "enregistrement" ? (
@@ -783,22 +783,22 @@ export default function AvancementFacades({
           onChange={(e) => setObservations(e.target.value)}
           placeholder="Ex: Vent modéré, pose du bardage terminée sur la façade principale, début de l'isolation sur la façade arrière..."
           rows={3}
-          className="w-full bg-[#F8F9FA] border border-[#E5E5E5] rounded-xl p-3 text-xs font-medium text-[#23272B] placeholder-gray-400 focus:outline-none focus:border-[#B85B2B] focus:bg-white transition"
+          className="w-full bg-[#120F0D] border border-white/10 rounded-xl p-3 text-xs font-medium text-[#F5EFEA] placeholder-gray-400 focus:outline-none focus:border-[#D96B27] focus:bg-[#1E1916] transition"
         />
 
         {etatDictee === "ia" && (
-          <p className="text-2xs text-[#B85B2B] font-semibold">
+          <p className="text-2xs text-[#D96B27] font-semibold">
             Remplissage automatique des étapes d&apos;avancement selon votre note vocale…
           </p>
         )}
         {etatDictee === "inactif" && (
-          <p className="text-3xs text-[#777777]">
+          <p className="text-3xs text-[#8E7F74]">
             Exemple de dictée : « {facades[0]?.label || "Façade 1"} terminée à 100%, {facades[1]?.label || "Façade 2"} à 50%, conditions météo favorables. »
           </p>
         )}
 
         {/* Action d'enregistrement de l'avancement */}
-        <div className="pt-3 border-t border-[#F0F0F0] flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
           <div>
             {saveSuccess && (
               <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 animate-in fade-in">
@@ -811,7 +811,7 @@ export default function AvancementFacades({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 bg-[#B85B2B] hover:bg-[#D97732] active:scale-[0.98] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition"
+            className="flex items-center gap-2 bg-[#D96B27] hover:bg-[#E07A38] active:scale-[0.98] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition"
           >
             {saving ? (
               <Loader2 size={15} className="animate-spin" />

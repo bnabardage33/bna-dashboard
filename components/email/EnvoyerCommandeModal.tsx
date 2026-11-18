@@ -184,7 +184,7 @@ export default function EnvoyerCommandeModal({
         {/* Corps avec scroll si nécessaire */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
           {/* Badge Provider Outlook V1 */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-700/50 text-xs">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/15/50 text-xs">
             <span className="text-gray-300 font-medium flex items-center gap-1.5">
               <span>📮</span> Provider actif : <strong className="text-white">Outlook Personnel (SMTP)</strong>
             </span>
@@ -229,7 +229,7 @@ export default function EnvoyerCommandeModal({
                   value={destinataireEmail}
                   onChange={(e) => setDestinataireEmail(e.target.value)}
                   placeholder="contact@fournisseur.fr"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
                 />
               </div>
 
@@ -242,7 +242,7 @@ export default function EnvoyerCommandeModal({
                   value={destinataireNom}
                   onChange={(e) => setDestinataireNom(e.target.value)}
                   placeholder="Ex : M. Dupont (Commercial)"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -257,7 +257,7 @@ export default function EnvoyerCommandeModal({
                 required
                 value={objet}
                 onChange={(e) => setObjet(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
+                className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
               />
             </div>
 
@@ -271,7 +271,7 @@ export default function EnvoyerCommandeModal({
                 value={messagePersonnalise}
                 onChange={(e) => setMessagePersonnalise(e.target.value)}
                 placeholder="Précisions de livraison, code d'accès chantier ou contact chef de chantier..."
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
+                className="w-full rounded-xl border border-white/15 bg-slate-900/50 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
               />
             </div>
 

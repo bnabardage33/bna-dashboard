@@ -80,21 +80,21 @@ function statutFacadeClair(n: number): {
   if (n >= 4) {
     return {
       label: "Terminée",
-      cardClass: "border-emerald-200 bg-emerald-50/70",
-      textClass: "text-emerald-800 font-bold",
+      cardClass: "border-emerald-200 bg-emerald-500/15/70",
+      textClass: "text-emerald-300 font-bold",
     };
   }
   if (n > 0) {
     return {
       label: "En cours",
-      cardClass: "border-amber-200 bg-amber-50/70",
-      textClass: "text-amber-800 font-bold",
+      cardClass: "border-amber-200 bg-amber-500/15/70",
+      textClass: "text-amber-300 font-bold",
     };
   }
   return {
     label: "À commencer",
-    cardClass: "border-[#E5E5E5] bg-[#F8F9FA]",
-    textClass: "text-[#777777]",
+    cardClass: "border-white/10 bg-[#120F0D]",
+    textClass: "text-[#8E7F74]",
   };
 }
 
@@ -379,13 +379,13 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
       )}
 
       {/* Action principale : générer le rapport */}
-      <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+      <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-0.5">
-            <h3 className="text-sm sm:text-base font-bold text-[#23272B]">
+            <h3 className="text-sm sm:text-base font-bold text-[#F5EFEA]">
               Rapport hebdomadaire client
             </h3>
-            <p className="text-xs text-[#777777]">
+            <p className="text-xs text-[#8E7F74]">
               Fige un snapshot de la semaine passée (lundi → dimanche) puis envoyez-le au client.
             </p>
           </div>
@@ -394,7 +394,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
             type="button"
             onClick={generer}
             disabled={generationEnCours}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#B85B2B] px-4 sm:px-5 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-[#9C4B23] active:scale-98 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#D96B27] px-4 sm:px-5 text-xs sm:text-sm font-bold text-white shadow-sm hover:bg-[#9C4B23] active:scale-98 transition-all disabled:cursor-not-allowed disabled:opacity-50"
           >
             {generationEnCours ? (
               <>
@@ -412,25 +412,25 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
       </div>
 
       {/* Liste des rapports existants */}
-      <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
+      <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
             Rapports existants ({rapports.length})
           </p>
           {rapports.length > 0 && (
-            <span className="text-2xs font-semibold text-[#777777]">
+            <span className="text-2xs font-semibold text-[#8E7F74]">
               Sélectionnez un rapport pour le consulter
             </span>
           )}
         </div>
 
         {chargementListe ? (
-          <div className="flex items-center justify-center gap-2 py-6 text-xs text-[#777777]">
-            <Loader2 className="h-4 w-4 animate-spin text-[#B85B2B]" />
+          <div className="flex items-center justify-center gap-2 py-6 text-xs text-[#8E7F74]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#D96B27]" />
             <span>Chargement des rapports…</span>
           </div>
         ) : rapports.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] p-6 text-center text-xs text-[#777777]">
+          <div className="rounded-xl border border-dashed border-white/10 bg-[#120F0D] p-6 text-center text-xs text-[#8E7F74]">
             Aucun rapport généré. Cliquez sur « Générer le rapport de la semaine passée » pour commencer.
           </div>
         ) : (
@@ -444,13 +444,13 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                   onClick={() => setIdSelectionne(r.id)}
                   className={`rounded-xl border p-3.5 text-left transition-all duration-150 ${
                     actif
-                      ? "border-[#B85B2B] bg-[#FFF7ED]/70 shadow-xs ring-1 ring-[#B85B2B]/30"
-                      : "border-[#E5E5E5] bg-white hover:border-[#B85B2B]/40 hover:bg-[#F8F9FA]"
+                      ? "border-[#D96B27] bg-[#FFF7ED]/70 shadow-xs ring-1 ring-[#B85B2B]/30"
+                      : "border-white/10 bg-[#1B1511] hover:border-[#D96B27]/40 hover:bg-[#120F0D]"
                   }`}
                 >
                   <p
                     className={`truncate text-xs sm:text-sm font-bold transition-colors ${
-                      actif ? "text-[#B85B2B]" : "text-[#23272B]"
+                      actif ? "text-[#D96B27]" : "text-[#F5EFEA]"
                     }`}
                   >
                     {r.semaine_label}
@@ -459,8 +459,8 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-bold border ${
                         r.statut === "envoye"
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                          : "bg-amber-50 border-amber-200 text-amber-800"
+                          ? "bg-emerald-500/15 border-emerald-200 text-emerald-300"
+                          : "bg-amber-500/15 border-amber-200 text-amber-300"
                       }`}
                     >
                       <span
@@ -470,7 +470,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       />
                       {r.statut === "envoye" ? "Envoyé" : "Brouillon"}
                     </span>
-                    <span className="text-2xs font-semibold font-mono text-[#777777]">
+                    <span className="text-2xs font-semibold font-mono text-[#8E7F74]">
                       {formatDateFr(r.created_at)}
                     </span>
                   </div>
@@ -485,19 +485,19 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
       {rapportSelectionne && snapshotSelectionne && (
         <div className="space-y-4">
           {/* En-tête du rapport sélectionné */}
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
-                <h3 className="text-sm sm:text-base font-bold text-[#23272B]">
+                <h3 className="text-sm sm:text-base font-bold text-[#F5EFEA]">
                   {snapshotSelectionne.periode.semaine || rapportSelectionne.semaine_label}
                 </h3>
                 {estEnvoye ? (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-2xs font-bold text-emerald-800">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-200 px-2.5 py-0.5 text-2xs font-bold text-emerald-300">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                     <span>Envoyé le {formatDateFr(rapportSelectionne.envoye_le)}</span>
                   </div>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-2xs font-semibold text-amber-800">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-200 px-2.5 py-0.5 text-2xs font-semibold text-amber-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                     Brouillon — lecture seule pour le client après envoi
                   </span>
@@ -513,9 +513,9 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       snapshot: snapshotSelectionne,
                     })
                   }
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2 text-xs font-bold text-[#23272B] hover:bg-[#F8F9FA] hover:border-[#B85B2B]/40 hover:text-[#B85B2B] shadow-2xs transition-colors active:scale-98"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2 text-xs font-bold text-[#F5EFEA] hover:bg-[#120F0D] hover:border-[#D96B27]/40 hover:text-[#D96B27] shadow-2xs transition-colors active:scale-98"
                 >
-                  <Printer className="h-3.5 w-3.5 text-[#B85B2B]" />
+                  <Printer className="h-3.5 w-3.5 text-[#D96B27]" />
                   Aperçu PDF
                 </button>
 
@@ -524,12 +524,12 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     type="button"
                     onClick={sauvegarderMotPatron}
                     disabled={sauvegardeEnCours}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2 text-xs font-bold text-[#23272B] hover:bg-[#F8F9FA] hover:border-[#B85B2B]/40 hover:text-[#B85B2B] shadow-2xs transition-colors active:scale-98 disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2 text-xs font-bold text-[#F5EFEA] hover:bg-[#120F0D] hover:border-[#D96B27]/40 hover:text-[#D96B27] shadow-2xs transition-colors active:scale-98 disabled:opacity-50"
                   >
                     {sauvegardeEnCours ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#B85B2B]" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D96B27]" />
                     ) : (
-                      <Pencil className="h-3.5 w-3.5 text-[#B85B2B]" />
+                      <Pencil className="h-3.5 w-3.5 text-[#D96B27]" />
                     )}
                     Enregistrer
                   </button>
@@ -540,7 +540,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     type="button"
                     onClick={ouvrirModaleEnvoi}
                     disabled={envoiEnCours}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#9C4B23] active:scale-98 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#9C4B23] active:scale-98 transition-all disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {envoiEnCours ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -554,7 +554,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
             </div>
 
             {estEnvoye && (
-              <p className="mt-2.5 text-xs text-[#777777] border-t border-[#F0F0F0] pt-2">
+              <p className="mt-2.5 text-xs text-[#8E7F74] border-t border-white/10 pt-2">
                 Ce rapport a été transmis au client. Il est désormais figé en lecture seule.
               </p>
             )}
@@ -562,7 +562,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
 
           {/* Avertissement si mot du patron vide */}
           {!estEnvoye && motPatron.trim() === "" && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900">
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-500/15/70 p-3 text-xs text-amber-900">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               <span>Ajoutez un mot personnel avant l&apos;envoi au client.</span>
             </div>
@@ -570,52 +570,52 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
 
           {/* Indicateurs de synthèse : Delta, Avancement global et Temps */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
-              <p className="text-3xs sm:text-2xs font-bold uppercase tracking-wider text-[#777777]">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+              <p className="text-3xs sm:text-2xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Avancement période
               </p>
-              <p className="mt-1 text-2xl sm:text-3xl font-black text-[#B85B2B]">
+              <p className="mt-1 text-2xl sm:text-3xl font-black text-[#D96B27]">
                 {snapshotSelectionne.avancement.delta > 0 ? "+" : ""}
                 {snapshotSelectionne.avancement.delta.toFixed(0)}%
               </p>
-              <p className="mt-0.5 text-xs text-[#777777]">
+              <p className="mt-0.5 text-xs text-[#8E7F74]">
                 {snapshotSelectionne.avancement.pct_debut.toFixed(0)}% →{" "}
                 {snapshotSelectionne.avancement.pct_fin.toFixed(0)}%
               </p>
             </div>
 
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
-              <p className="text-3xs sm:text-2xs font-bold uppercase tracking-wider text-[#777777]">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+              <p className="text-3xs sm:text-2xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Avancement global
               </p>
-              <p className="mt-1 text-2xl sm:text-3xl font-black text-[#23272B]">
+              <p className="mt-1 text-2xl sm:text-3xl font-black text-[#F5EFEA]">
                 {snapshotSelectionne.avancement.pct_fin.toFixed(0)}%
               </p>
-              <p className="mt-0.5 text-xs text-[#777777]">
+              <p className="mt-0.5 text-xs text-[#8E7F74]">
                 {snapshotSelectionne.avancement.cases_cochees} case(s) cochée(s)
               </p>
             </div>
 
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
-              <p className="text-3xs sm:text-2xs font-bold uppercase tracking-wider text-[#777777]">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
+              <p className="text-3xs sm:text-2xs font-bold uppercase tracking-wider text-[#8E7F74]">
                 Temps de la semaine
               </p>
-              <p className="mt-1 text-2xl sm:text-3xl font-black text-[#23272B]">
+              <p className="mt-1 text-2xl sm:text-3xl font-black text-[#F5EFEA]">
                 {snapshotSelectionne.pointages.total_heures.toFixed(1)} h
               </p>
-              <p className="mt-0.5 text-xs text-[#777777]">
+              <p className="mt-0.5 text-xs text-[#8E7F74]">
                 {snapshotSelectionne.pointages.jours_pointes} jour(s) travaillé(s)
               </p>
             </div>
           </div>
 
           {/* Suivi des Façades (Façades dynamiques adaptées) */}
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                 Suivi des Façades
               </p>
-              <span className="text-3xs font-semibold text-[#777777]">
+              <span className="text-3xs font-semibold text-[#8E7F74]">
                 4 étapes techniques par façade
               </span>
             </div>
@@ -641,7 +641,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     key={f.id}
                     className={`rounded-xl border p-3 text-center transition-colors ${statut.cardClass}`}
                   >
-                    <p className="text-xs font-bold text-[#23272B] truncate">{f.label}</p>
+                    <p className="text-xs font-bold text-[#F5EFEA] truncate">{f.label}</p>
                     <p className={`mt-1 text-2xs font-semibold ${statut.textClass}`}>
                       {statut.label} · {compteur}/4
                     </p>
@@ -652,12 +652,12 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
           </div>
 
           {/* Photos de la semaine */}
-          <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+          <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
               Photos de la semaine
             </p>
             {snapshotSelectionne.photos.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[#E5E5E5] bg-[#F8F9FA] p-6 text-center text-xs text-[#777777]">
+              <div className="rounded-xl border border-dashed border-white/10 bg-[#120F0D] p-6 text-center text-xs text-[#8E7F74]">
                 Aucune photo prise cette semaine.
               </div>
             ) : (
@@ -668,7 +668,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                     href={photo.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative block rounded-xl overflow-hidden border border-[#E5E5E5] bg-[#F8F9FA] p-1.5 transition-all hover:border-[#B85B2B]/40 hover:shadow-sm"
+                    className="group relative block rounded-xl overflow-hidden border border-white/10 bg-[#120F0D] p-1.5 transition-all hover:border-[#D96B27]/40 hover:shadow-sm"
                   >
                     <Image
                       src={photo.url}
@@ -677,7 +677,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       height={180}
                       className="aspect-video w-full rounded-lg object-cover transition-transform group-hover:scale-[1.02]"
                     />
-                    <span className="mt-1.5 block truncate text-xs font-medium text-[#555555] px-1">
+                    <span className="mt-1.5 block truncate text-xs font-medium text-[#B8A99E] px-1">
                       {photo.legende ||
                         (photo.date ? `Photo du ${formatDateFr(photo.date)}` : "Photo de chantier")}
                     </span>
@@ -690,62 +690,62 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
           {/* Météo & Intempéries */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {/* Météo relevée */}
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                 Météo relevée
               </p>
               {snapshotSelectionne.pointages.meteo_relevee.length === 0 ? (
-                <p className="text-xs text-[#777777] italic">Aucun relevé météo cette semaine.</p>
+                <p className="text-xs text-[#8E7F74] italic">Aucun relevé météo cette semaine.</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {snapshotSelectionne.pointages.meteo_relevee.map((m) => (
                     <span
                       key={m}
-                      className="rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2.5 py-1 text-2xs font-semibold text-[#23272B]"
+                      className="rounded-full border border-white/10 bg-[#120F0D] px-2.5 py-1 text-2xs font-semibold text-[#F5EFEA]"
                     >
                       {m}
                     </span>
                   ))}
                 </div>
               )}
-              <p className="text-xs text-[#777777] border-t border-[#F0F0F0] pt-2">
+              <p className="text-xs text-[#8E7F74] border-t border-white/10 pt-2">
                 {snapshotSelectionne.pointages.nb_pointages} pointage(s) · Coef météo moyen :{" "}
-                <span className="font-semibold text-[#23272B]">
+                <span className="font-semibold text-[#F5EFEA]">
                   {snapshotSelectionne.pointages.coef_meteo_moyen ?? "—"}
                 </span>
               </p>
             </div>
 
             {/* Intempéries & Arrêts */}
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Intempéries &amp; Arrêts
                 </p>
                 {snapshotSelectionne.intemperies.vigilance_max &&
                   (NIVEAUX_VIGILANCE.has(snapshotSelectionne.intemperies.vigilance_max) ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#23272B]">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F5EFEA]">
                       {EMOJI_VIGILANCE[snapshotSelectionne.intemperies.vigilance_max]}
                       <span className="capitalize">{snapshotSelectionne.intemperies.vigilance_max}</span>
                     </span>
                   ) : (
-                    <span className="rounded-full border border-[#E5E5E5] bg-[#F8F9FA] px-2 py-0.5 text-3xs font-semibold uppercase text-[#777777]">
+                    <span className="rounded-full border border-white/10 bg-[#120F0D] px-2 py-0.5 text-3xs font-semibold uppercase text-[#8E7F74]">
                       Vigilance indisponible
                     </span>
                   ))}
               </div>
 
               {snapshotSelectionne.intemperies.jours_arret_total === 0 ? (
-                <p className="text-xs text-[#777777] italic">
+                <p className="text-xs text-[#8E7F74] italic">
                   Aucune interruption météo constatée cette semaine.
                 </p>
               ) : (
                 <div className="space-y-2">
                   <div>
-                    <p className="text-2xl font-black text-[#B85B2B]">
+                    <p className="text-2xl font-black text-[#D96B27]">
                       {snapshotSelectionne.intemperies.jours_arret_total} jour(s)
                     </p>
-                    <p className="text-xs text-[#777777]">d&apos;arrêt lié à la météo</p>
+                    <p className="text-xs text-[#8E7F74]">d&apos;arrêt lié à la météo</p>
                   </div>
 
                   <div className="space-y-1.5 pt-1">
@@ -754,13 +754,13 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                       .map((j) => (
                         <div
                           key={j.date}
-                          className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-2.5 text-xs text-[#23272B]"
+                          className="rounded-xl border border-white/10 bg-[#120F0D] p-2.5 text-xs text-[#F5EFEA]"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-[#23272B]">{j.date}</span>
+                            <span className="font-bold text-[#F5EFEA]">{j.date}</span>
                             <span>{EMOJI_VIGILANCE[j.vigilance] ?? "⚪"}</span>
                           </div>
-                          <p className="mt-1 line-clamp-2 text-xs text-[#555555]">{j.motif}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-[#B8A99E]">{j.motif}</p>
                         </div>
                       ))}
                   </div>
@@ -772,29 +772,29 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
           {/* Observations & Mot du patron pour le client */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {/* Observations de la semaine */}
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                 Observations de la semaine
               </p>
               {snapshotSelectionne.communication.observations ? (
-                <div className="rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] p-3.5">
-                  <p className="whitespace-pre-wrap text-xs sm:text-sm text-[#23272B] leading-relaxed">
+                <div className="rounded-xl border border-white/10 bg-[#120F0D] p-3.5">
+                  <p className="whitespace-pre-wrap text-xs sm:text-sm text-[#F5EFEA] leading-relaxed">
                     {snapshotSelectionne.communication.observations}
                   </p>
                 </div>
               ) : (
-                <p className="text-xs text-[#777777] italic">Aucune observation enregistrée.</p>
+                <p className="text-xs text-[#8E7F74] italic">Aucune observation enregistrée.</p>
               )}
             </div>
 
             {/* Mot du patron pour le client */}
-            <div className="rounded-2xl border border-[#E5E5E5] bg-white p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
+            <div className="rounded-2xl border border-white/10 bg-[#1B1511] p-4 sm:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2.5">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#23272B]">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#F5EFEA]">
                   Mot du patron pour le client
                 </p>
                 {estEnvoye && (
-                  <span className="text-3xs font-semibold text-[#777777]">
+                  <span className="text-3xs font-semibold text-[#8E7F74]">
                     Lecture seule
                   </span>
                 )}
@@ -808,16 +808,16 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 disabled={estEnvoye}
                 rows={4}
                 placeholder="Un mot personnel pour accompagner ce rapport…"
-                className="w-full rounded-xl border border-[#E5E5E5] bg-[#F8F9FA] px-3.5 py-2.5 text-xs sm:text-sm text-[#23272B] placeholder-[#999999] focus:border-[#B85B2B] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#B85B2B]/30 disabled:bg-[#F0F0F0] disabled:text-[#777777] disabled:cursor-not-allowed transition-all"
+                className="w-full rounded-xl border border-white/10 bg-[#120F0D] px-3.5 py-2.5 text-xs sm:text-sm text-[#F5EFEA] placeholder-[#999999] focus:border-[#D96B27] focus:bg-[#1E1916] focus:outline-none focus:ring-1 focus:ring-[#B85B2B]/30 disabled:bg-[#221B17] disabled:text-[#8E7F74] disabled:cursor-not-allowed transition-all"
               />
               {statutSauvegarde === "ok" && (
-                <p className="text-xs font-semibold text-emerald-700">✓ Mot enregistré avec succès.</p>
+                <p className="text-xs font-semibold text-emerald-300">✓ Mot enregistré avec succès.</p>
               )}
               {statutSauvegarde === "erreur" && (
                 <p className="text-xs font-semibold text-rose-600">✕ Échec de l&apos;enregistrement.</p>
               )}
               {estEnvoye && (
-                <p className="text-xs text-[#777777]">
+                <p className="text-xs text-[#8E7F74]">
                   Ce message est figé car le rapport a déjà été transmis au client.
                 </p>
               )}
@@ -835,22 +835,22 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
           className="fixed inset-0 z-[210] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150"
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white p-5 sm:p-6 shadow-2xl space-y-4"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1B1511] p-5 sm:p-6 shadow-2xl space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#B85B2B]/10 border border-[#B85B2B]/20 text-[#B85B2B]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D96B27]/10 border border-[#D96B27]/20 text-[#D96B27]">
                   <Send className="h-5 w-5" />
                 </div>
                 <div>
                   <h3
                     id="envoi-modal-title"
-                    className="text-base font-bold text-[#23272B]"
+                    className="text-base font-bold text-[#F5EFEA]"
                   >
                     Envoyer le rapport au client ?
                   </h3>
-                  <p className="text-xs text-[#777777]">
+                  <p className="text-xs text-[#8E7F74]">
                     Transmission officielle du compte-rendu hebdomadaire
                   </p>
                 </div>
@@ -859,18 +859,18 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 type="button"
                 onClick={() => !envoiEnCours && setModaleEnvoiOuverte(false)}
                 disabled={envoiEnCours}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors disabled:opacity-50"
+                className="rounded-lg p-1.5 text-[#8E7F74] hover:bg-[#221B17] hover:text-[#B8A99E] transition-colors disabled:opacity-50"
                 aria-label="Fermer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="rounded-xl border border-slate-100 bg-[#F9F9F8] p-3.5 text-xs text-[#555555] space-y-1.5">
+            <div className="rounded-xl border border-slate-100 bg-[#F9F9F8] p-3.5 text-xs text-[#B8A99E] space-y-1.5">
               <p>
-                Le rapport <strong className="font-bold text-[#23272B]">{rapportSelectionne?.semaine_label}</strong> sera transmis au client avec votre mot personnalisé.
+                Le rapport <strong className="font-bold text-[#F5EFEA]">{rapportSelectionne?.semaine_label}</strong> sera transmis au client avec votre mot personnalisé.
               </p>
-              <p className="text-[#B85B2B] font-semibold">
+              <p className="text-[#D96B27] font-semibold">
                 ⚠️ Une fois envoyé, ce rapport passera définitivement en lecture seule.
               </p>
             </div>
@@ -880,7 +880,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 type="button"
                 onClick={() => setModaleEnvoiOuverte(false)}
                 disabled={envoiEnCours}
-                className="h-10 px-4 rounded-xl border border-[#E5E5E5] bg-white text-xs font-semibold text-[#555555] hover:bg-slate-50 transition-colors disabled:opacity-50"
+                className="h-10 px-4 rounded-xl border border-white/10 bg-[#1B1511] text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D] transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>
@@ -888,7 +888,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
                 type="button"
                 onClick={confirmerEnvoi}
                 disabled={envoiEnCours}
-                className="inline-flex h-10 items-center justify-center gap-2 px-4 rounded-xl bg-[#B85B2B] text-xs font-bold text-white hover:bg-[#9C4B23] active:scale-98 transition-all disabled:opacity-50 shadow-sm"
+                className="inline-flex h-10 items-center justify-center gap-2 px-4 rounded-xl bg-[#D96B27] text-xs font-bold text-white hover:bg-[#9C4B23] active:scale-98 transition-all disabled:opacity-50 shadow-sm"
               >
                 {envoiEnCours ? (
                   <>
@@ -909,18 +909,18 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
 
       {/* Overlay : aperçu PDF (rendu clair client) */}
       {apercu && (
-        <div className="fixed inset-0 z-[220] overflow-y-auto bg-slate-900/80 p-4 sm:p-6 print:overflow-visible print:bg-white print:p-0 backdrop-blur-xs">
+        <div className="fixed inset-0 z-[220] overflow-y-auto bg-slate-900/80 p-4 sm:p-6 print:overflow-visible print:bg-[#1B1511] print:p-0 backdrop-blur-xs">
           <style>{STYLES_PRINT_RAPPORT}</style>
 
-          <div className="mx-auto mb-4 flex max-w-[860px] items-center justify-between gap-3 print:hidden bg-white/95 backdrop-blur-sm rounded-2xl p-4 border border-[#E5E5E5] shadow-lg">
-            <p className="text-sm font-bold text-[#23272B]">{apercu.titre}</p>
+          <div className="mx-auto mb-4 flex max-w-[860px] items-center justify-between gap-3 print:hidden bg-white/95 backdrop-blur-sm rounded-2xl p-4 border border-white/10 shadow-lg">
+            <p className="text-sm font-bold text-[#F5EFEA]">{apercu.titre}</p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => {
                   void preparerEtImprimer();
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#B85B2B] px-4 py-2 text-xs font-bold text-white hover:bg-[#9C4B23] shadow-sm transition-all"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white hover:bg-[#9C4B23] shadow-sm transition-all"
               >
                 <Printer className="h-3.5 w-3.5" />
                 Imprimer / Export PDF
@@ -928,7 +928,7 @@ export default function RapportClient({ chantierId }: { chantierId: string }) {
               <button
                 type="button"
                 onClick={() => setApercu(null)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E5E5] bg-white px-3.5 py-2 text-xs font-semibold text-[#555555] hover:bg-slate-50 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1B1511] px-3.5 py-2 text-xs font-semibold text-[#B8A99E] hover:bg-[#120F0D] transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
                 Fermer

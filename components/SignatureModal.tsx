@@ -400,7 +400,7 @@ export default function SignatureModal({
                 Tracez votre signature ci-dessous, puis validez.
               </p>
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-800" />
+                <span className="text-xs font-bold text-[#F5EFEA]" />
                 <button
                   onClick={effacer}
                   className="text-xs text-gray-400 hover:text-slate-200 underline"
@@ -408,7 +408,7 @@ export default function SignatureModal({
                   Effacer
                 </button>
               </div>
-              <div className="w-full h-40 border-2 border-dashed border-slate-600 rounded-xl bg-white overflow-hidden relative touch-none">
+              <div className="w-full h-40 border-2 border-dashed border-slate-600 rounded-xl bg-[#1B1511] overflow-hidden relative touch-none">
                 <canvas
                   ref={canvasRef}
                   width={400}

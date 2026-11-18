@@ -158,14 +158,14 @@ export default function TerrasseCardNavigation({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[2px] text-[#B85B2B]">
+          <p className="text-xs font-bold uppercase tracking-[2px] text-[#D96B27]">
             Navigation Intérieure
           </p>
-          <h2 className="text-lg font-bold text-[#23272B] sm:text-xl">
+          <h2 className="text-lg font-bold text-[#F5EFEA] sm:text-xl">
             Modules du Chantier Terrasse
           </h2>
         </div>
-        <span className="text-xs font-medium text-[#777777]">
+        <span className="text-xs font-medium text-[#8E7F74]">
           Sélectionnez une carte pour ouvrir son espace
         </span>
       </div>
@@ -178,23 +178,23 @@ export default function TerrasseCardNavigation({
               key={m.cle}
               type="button"
               onClick={() => onSelectionnerModule(m.cle)}
-              className="group relative flex flex-col text-left rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#B85B2B]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]"
+              className="group relative flex flex-col text-left rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#D96B27]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]"
             >
               {/* En-tête de carte */}
               <div className="mb-3 flex items-start justify-between gap-2">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B] transition-colors group-hover:bg-[#B85B2B] group-hover:text-white">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27] transition-colors group-hover:bg-[#D96B27] group-hover:text-white">
                   <Icone className="h-5 w-5" strokeWidth={1.9} />
                 </span>
 
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                     m.indicateur.couleur === "vert"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      ? "bg-emerald-500/15 text-emerald-300 border border-emerald-200"
                       : m.indicateur.couleur === "bleu"
                       ? "bg-sky-50 text-sky-800 border border-sky-200"
                       : m.indicateur.couleur === "cuivre"
-                      ? "bg-[#B85B2B]/10 text-[#B85B2B] border border-[#B85B2B]/20"
-                      : "bg-[#F8F9FA] text-[#777777] border border-[#E5E5E5]"
+                      ? "bg-[#D96B27]/10 text-[#D96B27] border border-[#D96B27]/20"
+                      : "bg-[#120F0D] text-[#8E7F74] border border-white/10"
                   }`}
                 >
                   {m.indicateur.label}
@@ -202,20 +202,20 @@ export default function TerrasseCardNavigation({
               </div>
 
               {/* Contenu */}
-              <h3 className="text-base font-bold text-[#23272B] transition-colors group-hover:text-[#B85B2B]">
+              <h3 className="text-base font-bold text-[#F5EFEA] transition-colors group-hover:text-[#D96B27]">
                 {m.titre}
               </h3>
-              <p className="mt-0.5 text-xs font-semibold text-[#B85B2B]">
+              <p className="mt-0.5 text-xs font-semibold text-[#D96B27]">
                 {m.sousTitre}
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-[#777777] line-clamp-3">
+              <p className="mt-2 text-xs leading-relaxed text-[#8E7F74] line-clamp-3">
                 {m.description}
               </p>
 
               {/* Action / Flèche */}
-              <div className="mt-auto pt-4 flex items-center justify-between border-t border-[#F0F0F0] text-xs font-bold text-[#777777] transition-colors group-hover:text-[#B85B2B]">
+              <div className="mt-auto pt-4 flex items-center justify-between border-t border-white/10 text-xs font-bold text-[#8E7F74] transition-colors group-hover:text-[#D96B27]">
                 <span>Accéder au module</span>
-                <ArrowRight className="h-4 w-4 text-[#B85B2B] transition-transform duration-200 group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 text-[#D96B27] transition-transform duration-200 group-hover:translate-x-1" />
               </div>
             </button>
           );

@@ -152,13 +152,13 @@ export default function ClotureCardNavigation({
   const badgeCouleur = (c: "cuivre" | "vert" | "bleu" | "gris") => {
     switch (c) {
       case "cuivre":
-        return "border-[#B85B2B]/25 bg-[#B85B2B]/10 text-[#B85B2B]";
+        return "border-[#D96B27]/25 bg-[#D96B27]/10 text-[#D96B27]";
       case "vert":
-        return "border-emerald-200 bg-emerald-50 text-emerald-700";
+        return "border-emerald-200 bg-emerald-500/15 text-emerald-300";
       case "bleu":
         return "border-sky-200 bg-sky-50 text-sky-700";
       default:
-        return "border-slate-200 bg-slate-100 text-slate-600";
+        return "border-white/10 bg-[#221B17] text-[#B8A99E]";
     }
   };
 
@@ -171,26 +171,26 @@ export default function ClotureCardNavigation({
             key={m.cle}
             type="button"
             onClick={() => onSelectionnerModule(m.cle)}
-            className="group text-left flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-[#E5E5E5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#B85B2B]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)]"
+            className="group text-left flex flex-col justify-between rounded-2xl sm:rounded-3xl border border-white/10 bg-[#1B1511] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-[#D96B27]/60 hover:shadow-[0_15px_35px_rgba(184,91,43,0.08)]"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#B85B2B]/20 bg-[#B85B2B]/10 text-[#B85B2B] transition-colors group-hover:bg-[#B85B2B] group-hover:text-white">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D96B27]/20 bg-[#D96B27]/10 text-[#D96B27] transition-colors group-hover:bg-[#D96B27] group-hover:text-white">
                   <Icon className="h-5 w-5" />
                 </div>
-                <ArrowRight className="h-4 w-4 text-[#999999] transition-transform group-hover:translate-x-1 group-hover:text-[#B85B2B]" />
+                <ArrowRight className="h-4 w-4 text-[#8E7F74] transition-transform group-hover:translate-x-1 group-hover:text-[#D96B27]" />
               </div>
 
-              <h3 className="text-sm font-extrabold text-[#23272B]">{m.titre}</h3>
-              <p className="text-[11px] font-semibold text-[#B85B2B] mt-0.5">
+              <h3 className="text-sm font-extrabold text-[#F5EFEA]">{m.titre}</h3>
+              <p className="text-[11px] font-semibold text-[#D96B27] mt-0.5">
                 {m.sousTitre}
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-[#666666]">
+              <p className="mt-2 text-xs leading-relaxed text-[#B8A99E]">
                 {m.description}
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#F0F0F0]">
+            <div className="mt-4 pt-3 border-t border-white/10">
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${badgeCouleur(m.indicateur.couleur)}`}
               >

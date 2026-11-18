@@ -146,7 +146,7 @@ export default function TresorerieWidget() {
               </div>
             ))}
             {factures.length > 3 && (
-              <div className="text-xs text-slate-600 pl-2">...et {factures.length - 3} autre(s)</div>
+              <div className="text-xs text-[#B8A99E] pl-2">...et {factures.length - 3} autre(s)</div>
             )}
           </div>
 
