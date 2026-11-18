@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { fmtEuro } from "@/lib/financeCalculs";
+import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
 import type { TablesInsert } from "@/types/supabase";
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
@@ -17,7 +18,7 @@ function estUuid(value: string | null): value is string {
   return typeof value === "string" && UUID_RE.test(value);
 }
 
-type Chantier = { id: string; nom: string | null };
+type Chantier = { id: string; nom: string | null; metier?: string | null };
 
 export default function FraisInterimPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function FraisInterimPage() {
 
   useEffect(() => {
     async function charger() {
-      const { data } = await supabase.from("chantiers").select("id, nom").neq("statut", "termine");
+      const { data } = await supabase.from("chantiers").select("id, nom, metier").neq("statut", "termine");
       if (data) setChantiers(data);
     }
     charger();
@@ -161,7 +162,9 @@ export default function FraisInterimPage() {
                 >
                   <option value="">-- Sans affectation --</option>
                   {chantiers.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nom}</option>
+                    <option key={c.id} value={c.id}>
+                      [{METIER_BADGE_CONFIG[normaliserMetierCode(c.metier)].label}] {c.nom}
+                    </option>
                   ))}
                 </select>
               </div>

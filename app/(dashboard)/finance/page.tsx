@@ -15,10 +15,12 @@ import MargeParTypeChart from "./components/charts/MargeParTypeChart";
 import RapportMensuelPDF from "./components/exports/RapportMensuelPDF";
 import { useState } from "react";
 import { genererExportComptaCSV } from "@/lib/csvExport";
+import type { MetierFiltre } from "@/lib/metierBadge";
 
 export default function FinanceDashboard() {
   const [printingRapport, setPrintingRapport] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [metierFilter, setMetierFilter] = useState<MetierFiltre>("tous");
   const [selectedMois, setSelectedMois] = useState(
     new Date().toISOString().slice(0, 7)
   );
@@ -119,13 +121,42 @@ export default function FinanceDashboard() {
           </div>
         </header>
 
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#1B1511] p-3">
+          <span className="text-xs font-semibold text-[#B8A99E]">
+            Filtrer la rentabilité par métier :
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                { key: "tous", label: "Tous les métiers" },
+                { key: "bardage", label: "Bardage" },
+                { key: "terrasse", label: "Terrasse" },
+                { key: "cloture", label: "Clôture" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setMetierFilter(opt.key)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-semibold border transition-colors cursor-pointer ${
+                  metierFilter === opt.key
+                    ? "border-[#D96B27] bg-[#D96B27] text-white"
+                    : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section>
           <KpiGrid mois={selectedMois} />
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <ChantierRentabilite />
+            <ChantierRentabilite metierFilter={metierFilter} />
             <div className="mt-6">
               <RentabiliteMainOeuvreWidget />
             </div>
@@ -138,12 +169,12 @@ export default function FinanceDashboard() {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-lg font-semibold text-white mb-4">Analyses & Tendances</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Analyses &amp; Tendances</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <CaEvolutionChart endMois={selectedMois} />
             <CoutRepartitionChart mois={selectedMois} />
             <TresoreriePrevisionChart />
-            <MargeParTypeChart />
+            <MargeParTypeChart metierFilter={metierFilter} />
           </div>
         </section>
       </div>

@@ -16,6 +16,7 @@ import { verifierSession } from "@/lib/auth";
 import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
 import { dateParis, dateParisDans } from "@/lib/dateParis";
 import { SEUIL_GEL_C, SEUIL_PLUIE_MM } from "@/lib/intemperiesSeuils";
+import { resoudreEntrepriseIdDepuisUser } from "@/lib/contexteEntrepriseServer";
 
 type ClientMeteo = SupabaseClient<Database>;
 
@@ -49,16 +50,14 @@ async function resoudreContexteMeteo(
       };
     }
 
-    const claim = (user.app_metadata as { entreprise_id?: unknown } | null | undefined)
-      ?.entreprise_id;
-    const entrepriseId = typeof claim === "string" ? claim.trim() : "";
+    const entrepriseId = resoudreEntrepriseIdDepuisUser(user);
 
     if (!entrepriseId) {
       return {
         ok: false,
         reponse: NextResponse.json(
-          { error: "Contexte entreprise introuvable." },
-          { status: 403 }
+          { error: "Non autorisé" },
+          { status: 401 }
         ),
       };
     }

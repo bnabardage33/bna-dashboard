@@ -7,8 +7,17 @@ import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import type { RentabiliteChantierExt } from "@/hooks/useFinance";
 import BilanChantierPDF from "./exports/BilanChantierPDF";
+import {
+  METIER_BADGE_CONFIG,
+  normaliserMetierCode,
+  type MetierFiltre,
+} from "@/lib/metierBadge";
 
-export default function ChantierRentabilite() {
+export default function ChantierRentabilite({
+  metierFilter = "tous",
+}: {
+  metierFilter?: MetierFiltre;
+}) {
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
   const [printingBilan, setPrintingBilan] = useState<RentabiliteChantierExt | null>(null);
   const [supprimantId, setSupprimantId] = useState<string | null>(null);
@@ -62,10 +71,10 @@ export default function ChantierRentabilite() {
         </div>
       )}
 
-      <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 overflow-hidden">
+      <div className="rounded-xl border border-white/10 bg-[#1B1511] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-300">
-            <thead className="border-b border-white/10 bg-[#1E1E1E]/80 text-xs uppercase text-gray-400">
+          <table className="w-full text-left text-sm text-[#B8A99E]">
+            <thead className="border-b border-white/10 bg-[#221B17] text-xs uppercase text-[#B8A99E]">
               <tr>
                 <th className="px-4 py-3 font-medium">Chantier</th>
                 <th className="px-4 py-3 font-medium text-right">Prix vente</th>
@@ -77,19 +86,34 @@ export default function ChantierRentabilite() {
                 <th className="px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
-              {rentabilites.map((r) => {
-                return (
-                  <tr
-                    key={r.chantier_id}
-                    className={`hover:bg-[#1E1E1E]/20 transition-colors ${
-                      r.alerte_depassement ? "border-l-2 border-l-rose-500" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-white">{r.nom}</div>
-                      <div className="text-xs text-gray-500">{r.client_nom}</div>
-                    </td>
+            <tbody className="divide-y divide-white/10">
+              {rentabilites
+                .filter(
+                  (r) =>
+                    metierFilter === "tous" ||
+                    normaliserMetierCode(r.metier) === metierFilter
+                )
+                .map((r) => {
+                  const mCode = normaliserMetierCode(r.metier);
+                  const mCfg = METIER_BADGE_CONFIG[mCode];
+                  return (
+                    <tr
+                      key={r.chantier_id}
+                      className={`hover:bg-white/[0.03] transition-colors ${
+                        r.alerte_depassement ? "border-l-2 border-l-rose-500" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-[#F5EFEA]">{r.nom}</span>
+                          <span
+                            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${mCfg.badgeClass}`}
+                          >
+                            {mCfg.label}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#8E7F74]">{r.client_nom}</div>
+                      </td>
                     <td className="px-4 py-3 text-right font-medium">
                       {fmtEuro(r.prix_vente_ht)}
                     </td>

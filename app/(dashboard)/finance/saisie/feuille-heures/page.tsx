@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import { UserPlus, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
 
-type Chantier = { id: string; nom: string | null };
+type Chantier = { id: string; nom: string | null; metier?: string | null };
 type Ouvrier = {
   id: string;
   full_name: string;
@@ -41,7 +42,7 @@ export default function FeuilleHeuresPage() {
   async function chargerDonnees() {
     setIsLoading(true);
     const [{ data: cData }, { data: oData }] = await Promise.all([
-      supabase.from("chantiers").select("id, nom").neq("statut", "termine"),
+      supabase.from("chantiers").select("id, nom, metier").neq("statut", "termine"),
       supabase.from("profiles").select("id, full_name, qualification, statut_emploi").order("full_name"),
     ]);
     if (cData) {
@@ -149,7 +150,9 @@ export default function FeuilleHeuresPage() {
               className="w-full bg-[#252525] border border-white/10 rounded-md p-2 focus:border-white/10 outline-none"
             >
               {chantiers.map((c) => (
-                <option key={c.id} value={c.id}>{c.nom}</option>
+                <option key={c.id} value={c.id}>
+                  [{METIER_BADGE_CONFIG[normaliserMetierCode(c.metier)].label}] {c.nom}
+                </option>
               ))}
             </select>
           </div>

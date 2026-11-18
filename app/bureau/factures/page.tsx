@@ -20,6 +20,12 @@ import {
   calculerRetenueFacture,
   calculerSoldeRestantDu,
 } from "@/lib/retenueCalculs";
+import {
+  METIER_BADGE_CONFIG,
+  normaliserMetierCode,
+  type MetierCode,
+  type MetierFiltre,
+} from "@/lib/metierBadge";
 
 type CatalogueOuvrage = {
   id: string;
@@ -113,6 +119,8 @@ type Entreprise = {
 const LIGNE_VIDE: Ligne = { designation: "", description: "", qte: 1, unite: "forfait", pu_ht: 0 };
 
 export default function FacturesPage() {
+  const [metierFilter, setMetierFilter] = useState<MetierFiltre>("tous");
+  const [chantierMetierMap, setChantierMetierMap] = useState<Record<string, MetierCode>>({});
   const [factures, setFactures] = useState<Facture[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [catalogue, setCatalogue] = useState<CatalogueOuvrage[]>([]);
@@ -160,19 +168,20 @@ export default function FacturesPage() {
 
   async function fetchTout() {
     setLoading(true);
-    const [facturesRes, clientsRes, devisRes, settingsRes, catRes, reglementsRes] = await Promise.all([
+    const [facturesRes, clientsRes, devisRes, settingsRes, catRes, reglementsRes, chantiersRes] = await Promise.all([
       supabase
         .from("factures")
         .select("*, clients(*)")
         .order("created_at", { ascending: false }),
       supabase.from("clients").select("*").order("nom"),
       supabase.from("devis").select("*").eq("statut", "accepte"),
-      supabase.from("entreprise_settings").select("*").eq("id", 1).single(),
+      supabase.from("entreprise_settings").select("*").limit(1).maybeSingle(),
       supabase.from("catalogue_ouvrages").select("*").order("designation"),
       supabase
         .from("reglements_factures")
         .select("*")
         .order("date_reglement", { ascending: true }),
+      supabase.from("chantiers").select("id, metier"),
     ]);
     if (facturesRes.error) console.error(facturesRes.error);
     else setFactures(facturesRes.data as unknown as Facture[]);
@@ -180,6 +189,13 @@ export default function FacturesPage() {
     if (catRes && catRes.data) setCatalogue(catRes.data as CatalogueOuvrage[]);
     if (devisRes.data) setDevisAcceptes(devisRes.data as unknown as Devis[]);
     if (settingsRes.data) setEntreprise(settingsRes.data as Entreprise);
+    if (chantiersRes?.data) {
+      const mMap: Record<string, MetierCode> = {};
+      for (const ch of chantiersRes.data as Array<{ id: string; metier?: string | null }>) {
+        mMap[ch.id] = normaliserMetierCode(ch.metier);
+      }
+      setChantierMetierMap(mMap);
+    }
     if (reglementsRes && !reglementsRes.error && reglementsRes.data) {
       const grouped: Record<string, ReglementFacture[]> = {};
       for (const r of reglementsRes.data as ReglementFacture[]) {
@@ -545,6 +561,31 @@ export default function FacturesPage() {
         </Surface>
       </div>
 
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-[#1B1511] p-2.5">
+        <span className="text-xs font-semibold text-[#B8A99E] px-2">Corps d&apos;état :</span>
+        {(
+          [
+            { key: "tous", label: "Tous" },
+            { key: "bardage", label: "Bardage" },
+            { key: "terrasse", label: "Terrasse" },
+            { key: "cloture", label: "Clôture" },
+          ] as const
+        ).map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => setMetierFilter(opt.key)}
+            className={`rounded-xl px-3 py-1 text-xs font-semibold border transition-colors cursor-pointer ${
+              metierFilter === opt.key
+                ? "border-[#D96B27] bg-[#D96B27] text-white"
+                : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:text-white"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des factures…
@@ -561,7 +602,15 @@ export default function FacturesPage() {
         </div>
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2">
-          {factures.map((f) => {
+          {factures
+            .filter((f) => {
+              if (metierFilter === "tous") return true;
+              const code =
+                (f.chantier_id && chantierMetierMap[f.chantier_id]) ||
+                normaliserMetierCode(f.objet);
+              return code === metierFilter;
+            })
+            .map((f) => {
             const ht = f.lignes.reduce((s, l) => s + l.qte * l.pu_ht, 0);
             const ttc = ht * (1 + f.tva_pct / 100);
             const aRetenue = (f.montant_retenue_ttc ?? 0) > 0;
@@ -569,6 +618,10 @@ export default function FacturesPage() {
             const nomClient = f.clients?.societe || f.clients?.nom || "Client direct";
             const reglementsFacture = reglementsParFacture[f.id] || [];
             const soldeFacture = calculerSoldeRestantDu(netAPayer, reglementsFacture);
+            const metierCode =
+              (f.chantier_id && chantierMetierMap[f.chantier_id]) ||
+              normaliserMetierCode(f.objet);
+            const metierCfg = METIER_BADGE_CONFIG[metierCode];
 
             return (
               <div
@@ -578,8 +631,11 @@ export default function FacturesPage() {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs font-bold text-gray-300">{f.numero}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${metierCfg.badgeClass}`}>
+                          {metierCfg.label}
+                        </span>
                         {f.type_facture !== "totale" && (
                           <span className="rounded-full bg-red-600/15 border border-red-600/40 px-2 py-0.5 text-2xs font-bold uppercase text-gray-400">
                             {f.type_facture}

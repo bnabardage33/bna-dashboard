@@ -115,20 +115,39 @@ const toJours = (raw: RawJour[]): Jour[] =>
         : undefined,
   }));
 
+const DEFAULT_GIRONDE = {
+  lat: 44.8378,
+  lon: -0.5792,
+  libelle: "Bordeaux",
+  codePostal: "33000",
+};
+
 export async function GET(req: NextRequest) {
   const session = await verifierSession();
   if (!session.authentifie) return session.reponse;
   const { searchParams } = new URL(req.url);
-  const location = (searchParams.get("location") ?? "").trim() || "Bordeaux, FR";
+  const rawLocation = (searchParams.get("location") ?? "").trim();
+  const isDefaultLocation =
+    !rawLocation || /^bordeaux(\s*,\s*fr)?$/i.test(rawLocation);
+  const location = rawLocation || "Bordeaux, FR";
 
-  const localisation = await resoudreLocalisationMeteo(location);
-  if (!localisation.ok) {
-    return NextResponse.json(
-      { error: localisation.erreur, localisation: false },
-      { status: 422 },
-    );
+  let locData: {
+    lat: number;
+    lon: number;
+    libelle: string;
+    codePostal: string | null;
+  } = DEFAULT_GIRONDE;
+  if (!isDefaultLocation) {
+    const localisation = await resoudreLocalisationMeteo(location);
+    if (!localisation.ok) {
+      return NextResponse.json(
+        { error: localisation.erreur, localisation: false },
+        { status: 422 },
+      );
+    }
+    locData = localisation.data;
   }
-  const { lat, lon } = localisation.data;
+  const { lat, lon } = locData;
 
   // Source unique gratuite : Open-Meteo (modèle AROME / best_match, sans clé API).
   const data = await fetchDonneesOpenMeteo(location, { lat, lon });
@@ -277,8 +296,8 @@ export async function GET(req: NextRequest) {
     localisation: {
       lat,
       lon,
-      libelle: localisation.data.libelle,
-      codePostal: localisation.data.codePostal,
+      libelle: locData.libelle,
+      codePostal: locData.codePostal,
     },
     matin,
     apresMidi,
@@ -312,5 +331,7 @@ export async function GET(req: NextRequest) {
     genereLe: heureParis(),
     ...(referenceSource ? { referenceSource } : {}),
     prochainsJours,
+  }, {
+    headers: { "Cache-Control": "no-store, max-age=0" },
   });
 }

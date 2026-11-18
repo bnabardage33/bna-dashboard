@@ -9,6 +9,12 @@ import {
 } from "lucide-react";
 import { Surface } from '@/components/ui/Surface';
 import { supabase } from "@/lib/supabase";
+import {
+  METIER_BADGE_CONFIG,
+  normaliserMetierCode,
+  type MetierCode,
+  type MetierFiltre,
+} from "@/lib/metierBadge";
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const {
@@ -22,10 +28,19 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 type ChantierRentabilite = {
   id: string;
   nom: string;
+  metier?: string;
   statut: string;
   budget: number;
   depenses: number;
   marge: number;
+};
+
+type SyntheseMetier = {
+  metier: MetierCode;
+  nb_chantiers: number;
+  budget_ht: number;
+  depenses_ht: number;
+  marge_ht: number;
 };
 
 type Alerte = {
@@ -50,6 +65,7 @@ type ReponseDashboard = {
   alertes: Alerte[];
   top_chantiers_rentables: ChantierRentabilite[];
   top_chantiers_pertes: ChantierRentabilite[];
+  synthese_par_metier?: SyntheseMetier[];
 };
 
 const COULEURS_NIVEAU = {
@@ -66,6 +82,7 @@ export default function DashboardPatronPage() {
   const [editTreso, setEditTreso] = useState(false);
   const [inputTreso, setInputTreso] = useState("");
   const [savingTreso, setSavingTreso] = useState(false);
+  const [metierFilter, setMetierFilter] = useState<MetierFiltre>("tous");
 
   const charger = useCallback(async () => {
     setLoading(true);
@@ -287,6 +304,86 @@ export default function DashboardPatronPage() {
         </div>
       </Surface>
 
+      {data.synthese_par_metier && data.synthese_par_metier.length > 0 && (
+        <Surface className="p-4 border border-white/10 bg-[#1B1511]" radius="2xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h2 className="text-sm font-bold text-[#F5EFEA]">
+              Répartition par corps d&apos;état (3 métiers)
+            </h2>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(
+                [
+                  { key: "tous", label: "Tous" },
+                  { key: "bardage", label: "Bardage" },
+                  { key: "terrasse", label: "Terrasse" },
+                  { key: "cloture", label: "Clôture" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setMetierFilter(opt.key)}
+                  className={`rounded-xl px-3 py-1 text-xs font-semibold border transition-colors cursor-pointer ${
+                    metierFilter === opt.key
+                      ? "border-[#D96B27] bg-[#D96B27] text-white"
+                      : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {data.synthese_par_metier.map((m) => {
+              const cfg = METIER_BADGE_CONFIG[m.metier];
+              const actif = metierFilter === "tous" || metierFilter === m.metier;
+              return (
+                <button
+                  key={m.metier}
+                  type="button"
+                  onClick={() =>
+                    setMetierFilter((prev) => (prev === m.metier ? "tous" : m.metier))
+                  }
+                  className={`text-left rounded-xl border p-3.5 transition-all cursor-pointer ${
+                    actif
+                      ? "border-white/15 bg-[#120F0D] hover:border-[#D96B27]/50"
+                      : "border-white/5 bg-[#120F0D]/40 opacity-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${cfg.badgeClass}`}
+                    >
+                      {cfg.label}
+                    </span>
+                    <span className="text-[11px] text-[#8E7F74]">
+                      {m.nb_chantiers} chantier(s)
+                    </span>
+                  </div>
+                  <div className="mt-2.5 flex items-baseline justify-between gap-2">
+                    <span className="text-xs text-[#B8A99E]">Budget HT</span>
+                    <span className="text-sm font-bold text-[#F5EFEA]">
+                      {fmtEuro(m.budget_ht)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between gap-2">
+                    <span className="text-xs text-[#B8A99E]">Marge HT</span>
+                    <span
+                      className={`text-sm font-bold ${
+                        m.marge_ht >= 0 ? "text-emerald-400" : "text-rose-400"
+                      }`}
+                    >
+                      {fmtEuro(m.marge_ht)}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Surface>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-4 items-start">
         <Surface className="lg:col-span-1 p-4" radius="2xl">
           <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
@@ -294,17 +391,37 @@ export default function DashboardPatronPage() {
             Top 3 chantiers rentables
           </h2>
           <div className="space-y-2">
-            {data.top_chantiers_rentables.map((c, i) => (
-              <div key={c.id} className="rounded-lg border border-white/10 bg-[#121212]/50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-white truncate">{i + 1}. {c.nom}</span>
-                  <span className="text-xs font-bold text-emerald-400">{fmtEuro(c.marge)}</span>
-                </div>
-                <div className="text-2xs text-gray-500 mt-0.5">
-                  Budget {fmtEuro(c.budget)} · Consommé {fmtEuro(c.depenses)}
-                </div>
-              </div>
-            ))}
+            {data.top_chantiers_rentables
+              .filter(
+                (c) =>
+                  metierFilter === "tous" ||
+                  normaliserMetierCode(c.metier) === metierFilter
+              )
+              .map((c, i) => {
+                const cfg = METIER_BADGE_CONFIG[normaliserMetierCode(c.metier)];
+                return (
+                  <div key={c.id} className="rounded-lg border border-white/10 bg-[#121212]/50 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-white truncate">
+                        {i + 1}. {c.nom}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-400">
+                        {fmtEuro(c.marge)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <span className="text-2xs text-gray-500">
+                        Budget {fmtEuro(c.budget)} · Consommé {fmtEuro(c.depenses)}
+                      </span>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${cfg.badgeClass}`}
+                      >
+                        {cfg.label}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             {data.top_chantiers_rentables.length === 0 && (
               <p className="text-xs text-gray-500 italic">Aucun chantier budgété</p>
             )}
@@ -317,17 +434,37 @@ export default function DashboardPatronPage() {
             Top 3 qui perdent de l&apos;argent
           </h2>
           <div className="space-y-2">
-            {data.top_chantiers_pertes.map((c, i) => (
-              <div key={c.id} className="rounded-lg border border-rose-500/20 bg-[#121212]/50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-white truncate">{i + 1}. {c.nom}</span>
-                  <span className="text-xs font-bold text-rose-400">-{fmtEuro(Math.abs(c.marge))}</span>
-                </div>
-                <div className="text-2xs text-gray-500 mt-0.5">
-                  Budget {fmtEuro(c.budget)} · Consommé {fmtEuro(c.depenses)}
-                </div>
-              </div>
-            ))}
+            {data.top_chantiers_pertes
+              .filter(
+                (c) =>
+                  metierFilter === "tous" ||
+                  normaliserMetierCode(c.metier) === metierFilter
+              )
+              .map((c, i) => {
+                const cfg = METIER_BADGE_CONFIG[normaliserMetierCode(c.metier)];
+                return (
+                  <div key={c.id} className="rounded-lg border border-rose-500/20 bg-[#121212]/50 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-white truncate">
+                        {i + 1}. {c.nom}
+                      </span>
+                      <span className="text-xs font-bold text-rose-400">
+                        -{fmtEuro(Math.abs(c.marge))}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <span className="text-2xs text-gray-500">
+                        Budget {fmtEuro(c.budget)} · Consommé {fmtEuro(c.depenses)}
+                      </span>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${cfg.badgeClass}`}
+                      >
+                        {cfg.label}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             {data.top_chantiers_pertes.length === 0 && (
               <p className="text-xs text-gray-500 italic">Aucun chantier en perte</p>
             )}

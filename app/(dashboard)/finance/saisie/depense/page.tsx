@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import { useRouter } from "next/navigation";
+import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
 import type { TablesInsert } from "@/types/supabase";
 
 // O3-B9 : le claim `app_metadata.entreprise_id` doit être un UUID avant d'être
@@ -19,7 +20,7 @@ function estUuid(value: string | null): value is string {
 export default function SaisieDepense() {
   const router = useRouter();
   
-  const [chantiers, setChantiers] = useState<{ id: string; nom: string | null }[]>([]);
+  const [chantiers, setChantiers] = useState<{ id: string; nom: string | null; metier?: string | null }[]>([]);
   const [fournisseurs, setFournisseurs] = useState<{id: string; nom: string}[]>([]);
   
   const [formData, setFormData] = useState({
@@ -40,7 +41,7 @@ export default function SaisieDepense() {
   useEffect(() => {
     let isMounted = true;
     const fetchSelects = async () => {
-      const { data: cData } = await supabase.from("chantiers").select("id, nom").in("statut", ["en_cours", "prevu"]);
+      const { data: cData } = await supabase.from("chantiers").select("id, nom, metier").in("statut", ["en_cours", "prevu"]);
       if (cData && isMounted) setChantiers(cData);
       
       const { data: fData } = await supabase.from("fournisseurs").select("id, nom");
@@ -149,7 +150,11 @@ export default function SaisieDepense() {
             <label htmlFor="chp-chantier-optionnel" className="block text-sm text-gray-400 mb-1">Chantier <span className="text-xs text-gray-500">(Optionnel)</span></label>
             <select id="chp-chantier-optionnel" className="w-full bg-surface-raised border border-white/10 rounded-md p-2 focus:border-white/10 outline-none" value={formData.chantier_id} onChange={e => setFormData({...formData, chantier_id: e.target.value})}>
               <option value="">-- Sans affectation --</option>
-              {chantiers.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+              {chantiers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  [{METIER_BADGE_CONFIG[normaliserMetierCode(c.metier)].label}] {c.nom}
+                </option>
+              ))}
             </select>
           </div>
         </div>

@@ -49,6 +49,11 @@ import {
   type MetierBna,
   type QuantitatifExportable,
 } from "@/lib/quantitatifs/types";
+import {
+  METIER_BADGE_CONFIG,
+  normaliserMetierCode,
+  type MetierFiltre,
+} from "@/lib/metierBadge";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
@@ -193,6 +198,7 @@ function DevisContenu() {
   // Modale de conversion Devis -> Chantier avec qualification explicite du métier
   const [devisToConvert, setDevisToConvert] = useState<Devis | null>(null);
   const [metierConversion, setMetierConversion] = useState<MetierBna>("bardage");
+  const [metierFilter, setMetierFilter] = useState<MetierFiltre>("tous");
   const [conversionEnCours, setConversionEnCours] = useState(false);
 
   const [toast, setToast] = useState<string | null>(null);
@@ -1089,6 +1095,31 @@ function DevisContenu() {
         </button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-[#1B1511] p-2.5">
+        <span className="text-xs font-semibold text-[#B8A99E] px-2">Corps d&apos;état :</span>
+        {(
+          [
+            { key: "tous", label: "Tous" },
+            { key: "bardage", label: "Bardage" },
+            { key: "terrasse", label: "Terrasse" },
+            { key: "cloture", label: "Clôture" },
+          ] as const
+        ).map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => setMetierFilter(opt.key)}
+            className={`rounded-xl px-3 py-1 text-xs font-semibold border transition-colors cursor-pointer ${
+              metierFilter === opt.key
+                ? "border-[#D96B27] bg-[#D96B27] text-white"
+                : "border-white/10 bg-[#120F0D] text-[#B8A99E] hover:text-white"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="rounded-2xl border border-white/10 bg-[#1E1E1E]/40 p-12 text-center text-xs text-gray-400">
           Chargement des devis…
@@ -1105,7 +1136,13 @@ function DevisContenu() {
         </div>
       ) : (
         <div className="grid gap-3.5 sm:grid-cols-2">
-          {devis.map((d) => {
+          {devis
+            .filter((d) => {
+              if (metierFilter === "tous") return true;
+              const code = normaliserMetierCode(`${d.type_travaux ?? ""} ${d.objet ?? ""}`);
+              return code === metierFilter;
+            })
+            .map((d) => {
             const totalHT = d.total_ht && d.total_ht > 0 ? d.total_ht : calculerDevis(d.lignes || []).total_ht;
             const totalTTC = totalHT * (1 + (d.tva_pct || 10) / 100);
             const nomClient = d.clients?.societe || d.clients?.nom || "Client direct";
@@ -1113,6 +1150,8 @@ function DevisContenu() {
             const margeConnue =
               (d.cout_matiere_ht ?? 0) + (d.cout_main_oeuvre_ht ?? 0) > 0 ||
               (d.marge_ht ?? 0) !== 0;
+            const metierCode = normaliserMetierCode(`${d.type_travaux ?? ""} ${d.objet ?? ""}`);
+            const metierCfg = METIER_BADGE_CONFIG[metierCode];
 
             return (
               <Surface
@@ -1123,8 +1162,11 @@ function DevisContenu() {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-xs font-bold text-gray-300">{d.numero}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${metierCfg.badgeClass}`}>
+                          {metierCfg.label}
+                        </span>
                         <span className="text-xs text-gray-500">· {new Date(d.date_emission).toLocaleDateString("fr-FR")}</span>
                         {Number(d.retenue_garantie_pct ?? 0) > 0 && (
                           <span className="rounded-md bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 text-3xs font-semibold text-amber-300">

@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Database, TablesInsert } from "@/types/supabase";
 import { verifierSession } from "@/lib/auth";
+import { resoudreEntrepriseIdDepuisUser } from "@/lib/contexteEntrepriseServer";
 import { adresseVersDepartement } from "@/lib/meteoDepartements";
 import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
 import { fetchDonneesOpenMeteo } from "@/lib/meteoOpenMeteo";
@@ -128,17 +129,14 @@ async function resoudreContexteGeneration(
         };
       }
 
-      const claim = (
-        user.app_metadata as { entreprise_id?: unknown } | null | undefined
-      )?.entreprise_id;
-      const entrepriseId = typeof claim === "string" ? claim.trim() : "";
+      const entrepriseId = resoudreEntrepriseIdDepuisUser(user);
 
-      if (!estUuid(entrepriseId)) {
+      if (!entrepriseId) {
         return {
           ok: false,
           reponse: NextResponse.json(
-            { error: "Contexte entreprise introuvable ou invalide." },
-            { status: 403 }
+            { error: "Non autorisé" },
+            { status: 401 }
           ),
         };
       }
