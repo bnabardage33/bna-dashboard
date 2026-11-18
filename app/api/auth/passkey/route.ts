@@ -60,93 +60,103 @@ export async function GET(request: NextRequest) {
 
   const action = request.nextUrl.searchParams.get('action') || 'register-options';
 
-  if (action === 'list') {
-    const { data, error } = await supabaseAdmin
-      .from('user_passkeys')
-      .select('id, device_name, created_at, last_used_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+  try {
+    if (action === 'list') {
+      const { data, error } = await supabaseAdmin
+        .from('user_passkeys')
+        .select('id, device_name, created_at, last_used_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      if (isMissingTableError(error)) {
-        return NextResponse.json({ passkeys: [], migrationRequired: true });
+      if (error) {
+        if (isMissingTableError(error)) {
+          return NextResponse.json({ passkeys: [], migrationRequired: true });
+        }
+        return NextResponse.json({ error: error.message || 'Erreur lecture passkeys' }, { status: 500 });
       }
-      return NextResponse.json({ error: 'Erreur lecture passkeys' }, { status: 500 });
+
+      return NextResponse.json({ passkeys: data ?? [] });
     }
 
-    return NextResponse.json({ passkeys: data ?? [] });
-  }
+    // register-options
+    const { rpId, origins } = deriveRpIdAndOrigins(
+      request.headers.get('host'),
+      request.headers.get('origin'),
+      request.headers.get('x-forwarded-proto')
+    );
 
-  // register-options
-  const { rpId, origins } = deriveRpIdAndOrigins(
-    request.headers.get('host'),
-    request.headers.get('origin'),
-    request.headers.get('x-forwarded-proto')
-  );
+    const challenge = toBase64Url(crypto.randomBytes(32));
+    const { data: existing, error: existingErr } = await supabaseAdmin
+      .from('user_passkeys')
+      .select('credential_id')
+      .eq('user_id', user.id);
 
-  const challenge = toBase64Url(crypto.randomBytes(32));
-  const { data: existing, error: existingErr } = await supabaseAdmin
-    .from('user_passkeys')
-    .select('credential_id')
-    .eq('user_id', user.id);
+    if (existingErr && isMissingTableError(existingErr)) {
+      return NextResponse.json(
+        { error: 'Table user_passkeys absente. Appliquez la migration SQL Supabase.' },
+        { status: 503 }
+      );
+    }
 
-  if (existingErr && isMissingTableError(existingErr)) {
+    if (existingErr) {
+      return NextResponse.json({ error: existingErr.message }, { status: 500 });
+    }
+
+    const excludeCredentials = (existing ?? []).map((row) => ({
+      id: row.credential_id,
+      type: 'public-key' as const,
+    }));
+
+    const token = signChallengeCookie(
+      {
+        challenge,
+        userId: user.id,
+        purpose: 'register',
+        rpId,
+        origins,
+        exp: Date.now() + CHALLENGE_TTL_MS,
+      },
+      getChallengeSecret()
+    );
+
+    const displayName =
+      (typeof user.user_metadata?.full_name === 'string' && user.user_metadata.full_name) ||
+      user.email ||
+      'Utilisateur BNA';
+
+    const res = NextResponse.json({
+      challenge,
+      rp: {
+        name: 'BNA • Bâtiment Nouvelle Aquitaine',
+        id: rpId,
+      },
+      user: {
+        id: toBase64Url(Buffer.from(user.id, 'utf8')),
+        name: user.email || user.id,
+        displayName,
+      },
+      pubKeyCredParams: [
+        { type: 'public-key', alg: -7 },
+        { type: 'public-key', alg: -257 },
+      ],
+      timeout: 60000,
+      attestation: 'none',
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        requireResidentKey: false,
+        userVerification: 'preferred',
+      },
+      excludeCredentials,
+    });
+
+    setChallengeCookie(res, token);
+    return res;
+  } catch (err) {
     return NextResponse.json(
-      { error: 'Table user_passkeys absente. Appliquez la migration SQL Supabase.' },
-      { status: 503 }
+      { error: err instanceof Error ? err.message : 'Erreur serveur passkey' },
+      { status: 500 }
     );
   }
-
-  const excludeCredentials = (existing ?? []).map((row) => ({
-    id: row.credential_id,
-    type: 'public-key' as const,
-  }));
-
-  const token = signChallengeCookie(
-    {
-      challenge,
-      userId: user.id,
-      purpose: 'register',
-      rpId,
-      origins,
-      exp: Date.now() + CHALLENGE_TTL_MS,
-    },
-    getChallengeSecret()
-  );
-
-  const displayName =
-    (typeof user.user_metadata?.full_name === 'string' && user.user_metadata.full_name) ||
-    user.email ||
-    'Utilisateur BNA';
-
-  const res = NextResponse.json({
-    challenge,
-    rp: {
-      name: 'BNA • Bâtiment Nouvelle Aquitaine',
-      id: rpId,
-    },
-    user: {
-      id: toBase64Url(Buffer.from(user.id, 'utf8')),
-      name: user.email || user.id,
-      displayName,
-    },
-    pubKeyCredParams: [
-      { type: 'public-key', alg: -7 },
-      { type: 'public-key', alg: -257 },
-    ],
-    timeout: 60000,
-    attestation: 'none',
-    authenticatorSelection: {
-      authenticatorAttachment: 'platform',
-      residentKey: 'preferred',
-      requireResidentKey: false,
-      userVerification: 'required',
-    },
-    excludeCredentials,
-  });
-
-  setChallengeCookie(res, token);
-  return res;
 }
 
 export async function POST(request: NextRequest) {
@@ -289,7 +299,7 @@ export async function POST(request: NextRequest) {
       challenge,
       rpId,
       timeout: 60000,
-      userVerification: 'required',
+      userVerification: 'preferred',
     });
     setChallengeCookie(res, token);
     return res;

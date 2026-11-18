@@ -27,6 +27,11 @@ export function base64UrlToUint8Array(base64url: string): Uint8Array {
   return bytes;
 }
 
+export function base64UrlToBuffer(base64url: string): ArrayBuffer {
+  const bytes = base64UrlToUint8Array(base64url);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
 export function getFriendlyDeviceName(): string {
   if (typeof navigator === 'undefined') return 'Appareil biométrique';
   const ua = navigator.userAgent;

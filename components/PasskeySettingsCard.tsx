@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check, Fingerprint, Loader2, ShieldAlert, Smartphone, Trash2 } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import {
-  base64UrlToUint8Array,
+  base64UrlToBuffer,
   bufferToBase64Url,
   getFriendlyDeviceName,
   isWebAuthnSupported,
@@ -78,10 +78,10 @@ export function PasskeySettingsCard() {
 
       const credential = (await navigator.credentials.create({
         publicKey: {
-          challenge: base64UrlToUint8Array(opts.challenge) as BufferSource,
+          challenge: base64UrlToBuffer(opts.challenge),
           rp: opts.rp,
           user: {
-            id: base64UrlToUint8Array(opts.user.id) as BufferSource,
+            id: base64UrlToBuffer(opts.user.id),
             name: opts.user.name,
             displayName: opts.user.displayName,
           },
@@ -92,12 +92,11 @@ export function PasskeySettingsCard() {
           timeout: opts.timeout ?? 60000,
           attestation: opts.attestation ?? 'none',
           authenticatorSelection: opts.authenticatorSelection ?? {
-            authenticatorAttachment: 'platform',
             residentKey: 'preferred',
-            userVerification: 'required',
+            userVerification: 'preferred',
           },
           excludeCredentials: (opts.excludeCredentials ?? []).map((c) => ({
-            id: base64UrlToUint8Array(c.id) as BufferSource,
+            id: base64UrlToBuffer(c.id),
             type: 'public-key',
           })),
         },
@@ -146,10 +145,11 @@ export function PasskeySettingsCard() {
       });
       await loadPasskeys();
     } catch (err) {
+      const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
         setFeedback({
           type: 'error',
-          message: 'Enregistrement annulé ou refusé par le navigateur.',
+          message: `Enregistrement annulé ou refusé par le navigateur (${detail}).`,
         });
       } else if (err instanceof DOMException && err.name === 'InvalidStateError') {
         setFeedback({
@@ -159,7 +159,7 @@ export function PasskeySettingsCard() {
       } else {
         setFeedback({
           type: 'error',
-          message: 'Enregistrement biométrique impossible sur ce navigateur.',
+          message: detail,
         });
       }
     } finally {

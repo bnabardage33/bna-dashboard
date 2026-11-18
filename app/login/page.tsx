@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Eye, EyeOff, Fingerprint, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
-  base64UrlToUint8Array,
+  base64UrlToBuffer,
   bufferToBase64Url,
   isWebAuthnSupported,
 } from '@/lib/webauthnClient';
@@ -87,10 +87,10 @@ export default function LoginPage() {
 
       const credential = (await navigator.credentials.get({
         publicKey: {
-          challenge: base64UrlToUint8Array(opts.challenge) as BufferSource,
+          challenge: base64UrlToBuffer(opts.challenge),
           rpId: opts.rpId,
           timeout: opts.timeout ?? 60000,
-          userVerification: opts.userVerification ?? 'required',
+          userVerification: opts.userVerification ?? 'preferred',
         },
       })) as PublicKeyCredential | null;
 
@@ -138,10 +138,11 @@ export default function LoginPage() {
 
       window.location.href = '/terrain/meteo';
     } catch (err) {
+      const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
         setError('Authentification biométrique annulée ou aucune empreinte enregistrée sur cet appareil.');
       } else {
-        setError('Connexion biométrique impossible sur cet appareil.');
+        setError(detail);
       }
       setBiometricLoading(false);
     }

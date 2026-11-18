@@ -55,6 +55,7 @@ const DEFAULT_SETTINGS: Settings = {
 export default function ParametresPage() {
   const [form, setForm] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsId, setSettingsId] = useState<number | null>(null);
+  const [entrepriseId, setEntrepriseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "ok" | "erreur">("idle");
@@ -63,12 +64,28 @@ export default function ParametresPage() {
   useEffect(() => {
     async function charger() {
       try {
-        const { data, error } = await supabase
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const metaEntrepriseId =
+          typeof user?.app_metadata?.entreprise_id === "string"
+            ? user.app_metadata.entreprise_id
+            : null;
+        if (metaEntrepriseId) {
+          setEntrepriseId(metaEntrepriseId);
+        }
+
+        let query = supabase
           .from("entreprise_settings")
           .select("*")
           .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .limit(1);
+
+        if (metaEntrepriseId) {
+          query = query.eq("entreprise_id", metaEntrepriseId);
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (error) {
           console.error("Erreur de chargement des paramètres :", error.message);
@@ -76,6 +93,9 @@ export default function ParametresPage() {
 
         if (data?.id != null) {
           setSettingsId(data.id);
+        }
+        if (data?.entreprise_id) {
+          setEntrepriseId(data.entreprise_id);
         }
 
         const fb = data || DEFAULT_SETTINGS;
@@ -137,14 +157,32 @@ export default function ParametresPage() {
         .eq("id", settingsId);
       saveError = error;
     } else {
-      const { data: inserted, error } = await supabase
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const resolvedEntrepriseId =
+        entrepriseId ||
+        (typeof user?.app_metadata?.entreprise_id === "string"
+          ? user.app_metadata.entreprise_id
+          : null);
+
+      const insertPayload = resolvedEntrepriseId
+        ? { ...payload, entreprise_id: resolvedEntrepriseId }
+        : payload;
+
+      const { data: savedRow, error } = await supabase
         .from("entreprise_settings")
-        .insert(payload as never)
-        .select("id")
+        .upsert(insertPayload as never, {
+          onConflict: resolvedEntrepriseId ? "entreprise_id" : "id",
+        })
+        .select("id, entreprise_id")
         .maybeSingle();
       saveError = error;
-      if (inserted?.id != null) {
-        setSettingsId(inserted.id);
+      if (savedRow?.id != null) {
+        setSettingsId(savedRow.id);
+      }
+      if (savedRow?.entreprise_id) {
+        setEntrepriseId(savedRow.entreprise_id);
       }
     }
 
