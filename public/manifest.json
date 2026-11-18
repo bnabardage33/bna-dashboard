@@ -4,6 +4,7 @@
   "description": "Dashboard de pilotage chantiers, calepinage, devis et facturation - Bâtiment Nouvelle Aquitaine",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#161311",
   "theme_color": "#161311",
   "orientation": "any",
