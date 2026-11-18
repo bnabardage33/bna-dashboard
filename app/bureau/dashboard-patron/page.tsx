@@ -109,7 +109,10 @@ export default function DashboardPatronPage() {
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ tresorerie_actuelle: val }),
       });
-      if (!res.ok) throw new Error("Erreur sauvegarde");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.error || `Erreur sauvegarde (${res.status})`);
+      }
       setEditTreso(false);
       await charger();
     } catch (e) {
