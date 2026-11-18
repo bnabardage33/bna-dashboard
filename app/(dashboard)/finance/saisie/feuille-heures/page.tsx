@@ -5,6 +5,10 @@ import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import { UserPlus, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
+import {
+  AlerteIntemperiePointage,
+  useArretIntemperieJour,
+} from "@/components/AlerteIntemperiePointage";
 
 type Chantier = { id: string; nom: string | null; metier?: string | null };
 type Ouvrier = {
@@ -31,6 +35,12 @@ export default function FeuilleHeuresPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const {
+    rapportArrete,
+    confirme: intemperieConfirme,
+    setConfirme: setIntemperieConfirme,
+  } = useArretIntemperieJour(chantierId, date);
 
   // Formulaire ajout ouvrier
   const [formOuvrierOuvert, setFormOuvrierOuvert] = useState(false);
@@ -97,6 +107,12 @@ export default function FeuilleHeuresPage() {
   async function handleEnregistrer() {
     if (!chantierId) {
       alert("Sélectionne un chantier.");
+      return;
+    }
+    if (rapportArrete && !intemperieConfirme) {
+      setMessage(
+        `⚠️ Arrêt intempéries validé (${rapportArrete.numero}) à cette date : cochez la confirmation avant d'enregistrer.`
+      );
       return;
     }
     const selectionnes = Object.values(lignes).filter((l) => l.coche && l.heures > 0);
@@ -176,6 +192,12 @@ export default function FeuilleHeuresPage() {
             />
           </div>
         </div>
+
+        <AlerteIntemperiePointage
+          rapport={rapportArrete}
+          confirme={intemperieConfirme}
+          onConfirmerChange={setIntemperieConfirme}
+        />
 
         {/* Formulaire ajout ouvrier (dépliable) */}
         <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 overflow-hidden">

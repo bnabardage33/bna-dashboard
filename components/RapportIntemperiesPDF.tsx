@@ -10,6 +10,13 @@ export type StatutVigilanceOfficielle = NiveauVigilance | "indisponible";
 
 import { Entreprise } from "@/types/entreprise";
 import Image from "next/image";
+import {
+  LABELS_METIER_METEO,
+  normaliserMetierChantier,
+  resumeSeuilsMetier,
+  type Acces,
+  type Materiau,
+} from "@/lib/meteoAlerte";
 
 export type Chantier = {
   nom: string | null;
@@ -35,6 +42,7 @@ export type RapportIntemperiesData = {
   pluie_cumul: number | null;
   materiau: string | null;
   acces: string | null;
+  metier?: string | null;
   departement: string | null;
   mesures_prises: string | null;
   heures?: { heure: string; temp: number; vent: number; rafales: number; pluie: number }[];
@@ -171,6 +179,10 @@ export default function RapportIntemperiesPDF({
         {rapport.acces && (
           <p><span className="text-slate-400">Moyen d&apos;accès :</span> {LABELS_ACCES[rapport.acces] ?? rapport.acces}</p>
         )}
+        <p>
+          <span className="text-slate-400">Corps d&apos;état / Métier :</span>{" "}
+          {LABELS_METIER_METEO[normaliserMetierChantier(rapport.metier)]}
+        </p>
       </div>
 
       {/* 2. Données météorologiques de contrôle */}
@@ -197,10 +209,18 @@ export default function RapportIntemperiesPDF({
             ci-dessus. Les deux ne sont jamais fusionnés. */}
         <div className="mt-1">
           <p className="text-[11px] font-bold uppercase text-slate-700">
-            🔧 Risque technique chantier (matériau / accès)
+            🔧 Risque technique chantier ({LABELS_METIER_METEO[normaliserMetierChantier(rapport.metier)]})
           </p>
           <p className="text-[11px] text-slate-600">
             {LABELS_RISQUE_TECHNIQUE[rapport.risque_technique_niveau ?? ""] ?? "Non évalué"}
+          </p>
+          <p className="mt-0.5 text-[10px] text-slate-500">
+            Seuils appliqués :{" "}
+            {resumeSeuilsMetier(
+              normaliserMetierChantier(rapport.metier),
+              (rapport.materiau as Materiau | null) ?? "bois",
+              (rapport.acces as Acces | null) ?? "echafaudage"
+            )}
           </p>
         </div>
 

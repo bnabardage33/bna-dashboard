@@ -48,6 +48,18 @@ export type Acces =
   | "echafaudage"
   | "nacelle";
 
+export type MetierChantier =
+  | "bardage"
+  | "terrasse"
+  | "cloture";
+
+export function normaliserMetierChantier(v?: string | null): MetierChantier {
+  const s = (v ?? "").trim().toLowerCase();
+  if (s === "terrasse") return "terrasse";
+  if (s === "cloture" || s === "clôture") return "cloture";
+  return "bardage";
+}
+
 export type NiveauAlerte =
   | "vert"
   | "jaune"
@@ -71,6 +83,9 @@ export interface MeteoJour {
   rafalesMax: number | null;
   pluieCumul: number | null;
   tempMax: number | null;
+  tempMin?: number | null;
+  /** Pic horaire de pluie constaté (mm/h), utilisé pour terrasse/clôture. */
+  pluieHoraireMax?: number | null;
 }
 
 export interface RisqueTechnique {
@@ -179,7 +194,8 @@ export const SEUILS_ACCES: Record<
 export function evaluerAlerteChantier(
   materiau: Materiau,
   acces: Acces,
-  meteo: MeteoJour
+  meteo: MeteoJour,
+  metier: MetierChantier = "bardage"
 ): RisqueTechnique {
   const sm =
     SEUILS_MATERIAUX[materiau] ??
@@ -189,6 +205,110 @@ export function evaluerAlerteChantier(
     SEUILS_ACCES[acces] ??
     SEUILS_ACCES.echafaudage;
 
+  const connu = (v: number | null | undefined): v is number =>
+    typeof v === "number" && Number.isFinite(v);
+
+  const manquantes: string[] = [];
+  if (!connu(meteo.rafalesMax)) manquantes.push("rafales");
+  if (!connu(meteo.pluieCumul)) manquantes.push("pluie");
+  if (!connu(meteo.tempMax) && !connu(meteo.tempMin)) manquantes.push("température");
+
+  const incomplet = manquantes.length > 0;
+  const suffixe = incomplet
+    ? ` (donnée manquante : ${manquantes.join(", ")})`
+    : "";
+
+  const tempRefMin = connu(meteo.tempMin) ? meteo.tempMin : meteo.tempMax;
+
+  // ── Seuils spécifiques Terrasse (travail au sol, scellement plots/mortier) ──
+  if (metier === "terrasse") {
+    const ventCritiqueT = 70;
+    const ventVigilanceT = 45;
+
+    if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventCritiqueT) {
+      return {
+        niveau: "rouge",
+        motif: `Vent critique terrasse (${meteo.rafalesMax} km/h ≥ ${ventCritiqueT} km/h)${suffixe}`,
+      };
+    }
+    if (connu(tempRefMin) && tempRefMin <= 2) {
+      return {
+        niveau: "rouge",
+        motif: `Gel critique terrasse (${tempRefMin}°C ≤ 2°C — risque scellement plots/mortier)${suffixe}`,
+      };
+    }
+    if (
+      (connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 1.5) ||
+      (connu(meteo.pluieCumul) && meteo.pluieCumul >= 8)
+    ) {
+      const detail =
+        connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 1.5
+          ? `${meteo.pluieHoraireMax.toFixed(1)} mm/h ≥ 1.5 mm/h`
+          : `${(meteo.pluieCumul ?? 0).toFixed(1)} mm/jour ≥ 8 mm`;
+      return {
+        niveau: "rouge",
+        motif: `Pluie critique terrasse (${detail})${suffixe}`,
+      };
+    }
+    if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventVigilanceT) {
+      return {
+        niveau: "jaune",
+        motif: `Vent de vigilance terrasse (${meteo.rafalesMax} km/h ≥ ${ventVigilanceT} km/h)${suffixe}`,
+      };
+    }
+    return {
+      niveau: "vert",
+      motif: incomplet ? `Conditions non déterminées${suffixe}` : "Conditions optimales de pose (terrasse)",
+      incomplet,
+      ...(incomplet ? { manquantes } : {}),
+    };
+  }
+
+  // ── Seuils spécifiques Clôture (scellement béton & prise au vent panneaux) ──
+  if (metier === "cloture") {
+    const ventCritiqueC = 65;
+    const ventVigilanceC = 40;
+
+    if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventCritiqueC) {
+      return {
+        niveau: "rouge",
+        motif: `Rafales critiques clôture (${meteo.rafalesMax} km/h ≥ ${ventCritiqueC} km/h — manutention panneaux/lames)${suffixe}`,
+      };
+    }
+    if (connu(tempRefMin) && tempRefMin <= 2) {
+      return {
+        niveau: "rouge",
+        motif: `Gel critique clôture (${tempRefMin}°C ≤ 2°C — risque fondations/scellements béton)${suffixe}`,
+      };
+    }
+    if (
+      (connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 2.0) ||
+      (connu(meteo.pluieCumul) && meteo.pluieCumul >= 10)
+    ) {
+      const detail =
+        connu(meteo.pluieHoraireMax) && meteo.pluieHoraireMax >= 2.0
+          ? `${meteo.pluieHoraireMax.toFixed(1)} mm/h ≥ 2.0 mm/h`
+          : `${(meteo.pluieCumul ?? 0).toFixed(1)} mm/jour ≥ 10 mm`;
+      return {
+        niveau: "rouge",
+        motif: `Pluie forte clôture (${detail})${suffixe}`,
+      };
+    }
+    if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventVigilanceC) {
+      return {
+        niveau: "jaune",
+        motif: `Vent de vigilance clôture (${meteo.rafalesMax} km/h ≥ ${ventVigilanceC} km/h)${suffixe}`,
+      };
+    }
+    return {
+      niveau: "vert",
+      motif: incomplet ? `Conditions non déterminées${suffixe}` : "Conditions optimales de pose (clôture)",
+      incomplet,
+      ...(incomplet ? { manquantes } : {}),
+    };
+  }
+
+  // ── Seuils Bardage (travail en hauteur, échafaudage/nacelle & matériaux) ──
   // Le seuil le plus contraignant entre matériau et accès s'applique.
   const ventCritique = Math.min(
     sm.vent_critique,
@@ -199,22 +319,6 @@ export function evaluerAlerteChantier(
     sm.vent_vigilance,
     sa.vent_vigilance
   );
-
-  // Une grandeur manquante ne franchit AUCUN seuil, mais elle est TRACÉE :
-  // le résultat est marqué `incomplet` pour que l'écran affiche « non déterminé »
-  // plutôt qu'un vert silencieux.
-  const connu = (v: number | null): v is number =>
-    typeof v === "number" && Number.isFinite(v);
-
-  const manquantes: string[] = [];
-  if (!connu(meteo.rafalesMax)) manquantes.push("rafales");
-  if (!connu(meteo.pluieCumul)) manquantes.push("pluie");
-  if (!connu(meteo.tempMax)) manquantes.push("température");
-
-  const incomplet = manquantes.length > 0;
-  const suffixe = incomplet
-    ? ` (donnée manquante : ${manquantes.join(", ")})`
-    : "";
 
   // 1. Vent critique — PRIORITÉ CONSERVÉE avant la pluie, comme aujourd'hui.
   if (connu(meteo.rafalesMax) && meteo.rafalesMax >= ventCritique) {
@@ -495,12 +599,14 @@ export function evaluerJourChantier(
   meteoJour: MeteoJour,
   heures: HeureMeteo[],
   vigilanceMatin: NiveauAlerte | null,
-  vigilanceApresmidi: NiveauAlerte | null
+  vigilanceApresmidi: NiveauAlerte | null,
+  metier: MetierChantier = "bardage"
 ): DecisionJourChantier {
   const risqueTechnique = evaluerAlerteChantier(
     materiau,
     acces,
-    meteoJour
+    meteoJour,
+    metier
   );
 
   const pluieContinue =
@@ -791,3 +897,27 @@ export const LABELS_ACCES: Record<
   echafaudage: "Échafaudage",
   nacelle: "Nacelle",
 };
+
+export const LABELS_METIER_METEO: Record<MetierChantier, string> = {
+  bardage: "Bardage (travail en hauteur)",
+  terrasse: "Terrasse (pose au sol / plots)",
+  cloture: "Clôture (scellement béton / panneaux)",
+};
+
+export function resumeSeuilsMetier(
+  metier: MetierChantier,
+  materiau?: Materiau | null,
+  acces?: Acces | null
+): string {
+  if (metier === "terrasse") {
+    return "Vent critique ≥ 70 km/h (vigilance 45 km/h) · Gel ≤ 2 °C · Pluie ≥ 1,5 mm/h ou 8 mm/j";
+  }
+  if (metier === "cloture") {
+    return "Rafales critiques ≥ 65 km/h (vigilance 40 km/h) · Gel ≤ 2 °C · Pluie ≥ 2,0 mm/h ou 10 mm/j";
+  }
+  const sm = SEUILS_MATERIAUX[materiau ?? "bois"] ?? SEUILS_MATERIAUX.bois;
+  const sa = SEUILS_ACCES[acces ?? "echafaudage"] ?? SEUILS_ACCES.echafaudage;
+  const ventCrit = Math.min(sm.vent_critique, sa.vent_critique);
+  const ventVig = Math.min(sm.vent_vigilance, sa.vent_vigilance);
+  return `Vent critique ≥ ${ventCrit} km/h (vigilance ${ventVig} km/h) · Pluie ≥ 8 mm/j · Temp. ${sm.temp_mini}°C à ${sm.temp_maxi}°C`;
+}

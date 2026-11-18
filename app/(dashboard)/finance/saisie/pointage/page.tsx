@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { TablesInsert } from "@/types/supabase";
 import { METIER_BADGE_CONFIG, normaliserMetierCode } from "@/lib/metierBadge";
+import {
+  AlerteIntemperiePointage,
+  useArretIntemperieJour,
+} from "@/components/AlerteIntemperiePointage";
 import { useRouter } from "next/navigation";
 
 
@@ -26,6 +30,12 @@ export default function SaisiePointage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const {
+    rapportArrete,
+    confirme: intemperieConfirme,
+    setConfirme: setIntemperieConfirme,
+  } = useArretIntemperieJour(formData.chantier_id, formData.date);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,6 +61,11 @@ export default function SaisiePointage() {
     try {
       if (!formData.chantier_id || !formData.ouvrier_id) {
         throw new Error("Chantier et Ouvrier sont requis.");
+      }
+      if (rapportArrete && !intemperieConfirme) {
+        throw new Error(
+          `Arrêt intempéries validé (${rapportArrete.numero}) à cette date : cochez la confirmation avant d'enregistrer.`
+        );
       }
 
       const { error: insertError } = await supabase.from("pointages").insert({
@@ -88,6 +103,14 @@ export default function SaisiePointage() {
       
       {error && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-md text-sm">{error}</div>}
       {success && <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md text-sm font-medium">Pointage enregistré avec succès !</div>}
+
+      <div className="mb-4">
+        <AlerteIntemperiePointage
+          rapport={rapportArrete}
+          confirme={intemperieConfirme}
+          onConfirmerChange={setIntemperieConfirme}
+        />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>

@@ -24,14 +24,17 @@ import { resoudreLocalisationMeteo } from "@/lib/meteoLocalisation";
 import { fetchDonneesOpenMeteo } from "@/lib/meteoOpenMeteo";
 import {
   evaluerJourChantier,
+  normaliserMetierChantier,
   Materiau,
   Acces,
   NiveauAlerte,
 } from "@/lib/meteoAlerte";
+import { obtenirTokenMeteoFrance, invaliderCacheToken } from "@/lib/meteoFranceToken";
 import type { HeureMeteo } from "@/lib/meteo";
 import { heureParisEnMinutes } from "@/lib/dateParis";
 import { statutHeure } from "@/lib/meteoHoraire";
 import {
+  extraireDepartement,
   prefixerMotifVigilance,
   type VigilanceDepartement,
 } from "@/lib/vigilanceMeteoFrance";
@@ -57,8 +60,10 @@ type HeureRapport = {
 type MeteoJour = {
   heures: HeureRapport[];
   tempMax: number;
+  tempMin: number | null;
   rafalesMax: number;
   pluieCumul: number;
+  pluieHoraireMax: number;
 };
 
 type ResultatGeneration = {
@@ -75,6 +80,7 @@ type ChantierMeteoRow = {
   id: string;
   entreprise_id: string;
   nom: string | null;
+  metier: string | null;
   adresse_chantier: string | null;
   materiau_structurel: string | null;
   moyen_acces: string | null;
@@ -275,6 +281,13 @@ async function fetchMeteoOpenMeteoRapport(
       ? Math.max(...heures.map((h) => h.temp))
       : Number(today.tempmax ?? 0);
 
+  const tempMin =
+    heures.length > 0
+      ? Math.min(...heures.map((h) => h.temp))
+      : typeof today.tempmin === "number" && Number.isFinite(today.tempmin)
+        ? Number(today.tempmin)
+        : null;
+
   const rafalesMax =
     heures.length > 0
       ? Math.max(...heures.map((h) => h.rafales))
@@ -285,54 +298,68 @@ async function fetchMeteoOpenMeteoRapport(
       ? heures.reduce((total, h) => total + h.pluie, 0)
       : Number(today.precip ?? 0);
 
+  const pluieHoraireMax =
+    heures.length > 0 ? Math.max(...heures.map((h) => h.pluie)) : 0;
+
   return {
     heures,
     tempMax,
+    tempMin,
     rafalesMax,
     pluieCumul,
+    pluieHoraireMax,
   };
 }
 
 // -----------------------------------------------------------------------------
-// Vigilance Météo-France
-// -----------------------------------------------------------------------------
-//
-// On utilise la même route interne que le reste de l'application.
-// La clé Météo-France reste donc côté serveur.
+// Vigilance Météo-France (appel serveur direct DPVigilance v1)
 // -----------------------------------------------------------------------------
 
-async function fetchVigilanceInterne(
-  request: NextRequest,
+const URL_VIGILANCE =
+  "https://public-api.meteofrance.fr/public/DPVigilance/v1/cartevigilance/encours";
+
+async function fetchVigilanceServeur(
   departement: string
-): Promise<VigilanceDepartement | null> {
-  const origin = new URL(request.url).origin;
-
-  const url =
-    `${origin}/api/meteo-vigilance?departement=` +
-    encodeURIComponent(departement);
+): Promise<{ data: VigilanceDepartement | null; diagnostic: string | null }> {
+  let token: string;
+  try {
+    token = await obtenirTokenMeteoFrance();
+  } catch (err) {
+    const raison = err instanceof Error ? err.message : "token impossible";
+    const diag = `Vigilance Météo-France indisponible (${raison})`;
+    console.warn(`[rapports-intemperies] ${diag}`);
+    return { data: null, diagnostic: diag };
+  }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(URL_VIGILANCE, {
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
 
     if (!response.ok) {
-      // La vigilance officielle est INDISPONIBLE (clé/API en panne, département
-      // inconnu…). On ne l'invente pas : on retourne `null`, l'appelant écrira
-      // l'état explicite « indisponible » et poursuivra la génération.
-      console.warn(
-        `Vigilance Météo-France indisponible pour le département ${departement} (${response.status})`
-      );
-      return null;
+      if (response.status === 401) {
+        invaliderCacheToken();
+      }
+      const diag = `Vigilance Météo-France indisponible (HTTP ${response.status})`;
+      console.warn(`[rapports-intemperies] ${diag} pour département ${departement}`);
+      return { data: null, diagnostic: diag };
     }
 
-    return (await response.json()) as VigilanceDepartement;
+    const raw: unknown = await response.json();
+    const resultat = extraireDepartement(raw, departement, false);
+    if (!resultat) {
+      const diag = `Vigilance Météo-France indisponible (département ${departement} absent)`;
+      console.warn(`[rapports-intemperies] ${diag}`);
+      return { data: null, diagnostic: diag };
+    }
+
+    return { data: resultat, diagnostic: null };
   } catch (erreur) {
-    console.warn(
-      `Vigilance Météo-France injoignable pour le département ${departement}`,
-      erreur
-    );
-    return null;
+    const msg = erreur instanceof Error ? erreur.message : String(erreur);
+    const diag = `Vigilance Météo-France injoignable (${msg})`;
+    console.warn(`[rapports-intemperies] ${diag}`);
+    return { data: null, diagnostic: diag };
   }
 }
 
@@ -446,6 +473,7 @@ export async function POST(request: NextRequest) {
             "id",
             "entreprise_id",
             "nom",
+            "metier",
             "adresse_chantier",
             "materiau_structurel",
             "moyen_acces",
@@ -516,6 +544,7 @@ export async function POST(request: NextRequest) {
           }
 
           const departement = adresseVersDepartement(adresse) || "33";
+          const metier = normaliserMetierChantier(chantier.metier);
           const materiau = normaliserMateriau(chantier.materiau_structurel);
           const acces = normaliserAcces(chantier.moyen_acces);
           const zoneVent = normaliserZoneVent(chantier.zone_vent);
@@ -524,7 +553,8 @@ export async function POST(request: NextRequest) {
             lat: localisation.data.lat,
             lon: localisation.data.lon,
           });
-          const vigilance = await fetchVigilanceInterne(request, departement);
+          const vigilanceRes = await fetchVigilanceServeur(departement);
+          const vigilance = vigilanceRes.data;
 
           const referenceMinutes = heureParisEnMinutes();
           const heuresMeteo: HeureMeteo[] = meteo.heures.map((h) => ({
@@ -533,9 +563,6 @@ export async function POST(request: NextRequest) {
             vent: h.vent,
             rafales: h.rafales,
             pluie: h.pluie,
-            // Ce fetcher VisualCrossing n'expose pas l'horodatage de son
-            // relevé courant : la nature des heures reste donc `inconnue`.
-            // On n'affirme pas « observé » sans marque de fiabilité.
             statut: statutHeure(h.heure, referenceMinutes),
             nature: "inconnue",
           }));
@@ -547,27 +574,18 @@ export async function POST(request: NextRequest) {
               rafalesMax: meteo.rafalesMax,
               pluieCumul: meteo.pluieCumul,
               tempMax: meteo.tempMax,
+              tempMin: meteo.tempMin,
+              pluieHoraireMax: meteo.pluieHoraireMax,
             },
             heuresMeteo,
-            // Couleur officielle SEULE, ou `null` si elle est indisponible. Le
-            // risque technique du chantier n'entre PAS ici : il est calculé
-            // séparément par `evaluerJourChantier`.
             vigilance?.couleurMax ?? null,
-            vigilance?.couleurMax ?? null
+            vigilance?.couleurMax ?? null,
+            metier
           );
 
-          // La vigilance OFFICIELLE enregistrée est la couleur Météo-France, et
-          // rien d'autre. Plus de fusion avec le risque technique : une
-          // vigilance verte accompagnée d'un dépassement mesuré sur le chantier
-          // ne doit PAS devenir « vigilance orange ». Si la vigilance n'a pas pu
-          // être lue, on écrit l'état explicite « indisponible » — jamais une
-          // couleur inventée.
           const vigilanceOfficielle: StatutVigilance =
             vigilance?.couleurMax ?? "indisponible";
 
-          // Préfixe d'indisponibilité PARTAGÉ avec l'Edge Function
-          // (`lib/vigilanceMeteoFrance.ts`) : le motif ne doit jamais laisser
-          // croire à une vigilance verte confirmée quand la donnée manque.
           let motif = prefixerMotifVigilance(
             decision.motif,
             vigilance?.couleurMax ?? null,
@@ -579,6 +597,10 @@ export async function POST(request: NextRequest) {
           ) {
             motif += ` Risque technique : ${decision.risqueTechnique.motif}.`;
           }
+
+          const risqueTechniqueMotif = vigilanceRes.diagnostic
+            ? `${decision.risqueTechnique.motif} · ${vigilanceRes.diagnostic}`
+            : decision.risqueTechnique.motif;
 
           const donneesRapport = {
             vigilance_officielle: vigilanceOfficielle,
@@ -592,7 +614,7 @@ export async function POST(request: NextRequest) {
             pluie_continue: decision.pluieContinue,
             motif,
             risque_technique_niveau: decision.risqueTechnique.niveau,
-            risque_technique_motif: decision.risqueTechnique.motif,
+            risque_technique_motif: risqueTechniqueMotif,
             temp_max: meteo.tempMax,
             rafales_max: meteo.rafalesMax,
             pluie_cumul: meteo.pluieCumul,
