@@ -13,40 +13,47 @@ export default function TvaWidget({ mois }: { mois?: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E1E1E]/50 flex flex-col h-full">
-      <div className="flex items-center gap-3 border-b border-white/10 p-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-gray-400">
-          <Calculator className="h-5 w-5" />
+    <div className="rounded-xl border border-white/10 bg-[#1B1511] flex flex-col h-full">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#D96B27]/30 bg-[#D96B27]/15 text-[#D96B27]">
+            <Calculator className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-[#F5EFEA] capitalize">
+              TVA EURL — {moisAffiche}
+            </h2>
+            <p className="text-[11px] text-[#8E7F74]">
+              Collectée (5,5% · 10% · 20%) vs Déductible
+            </p>
+          </div>
         </div>
-        <h2 className="text-lg font-bold text-white capitalize">
-          TVA — {moisAffiche}
-        </h2>
       </div>
 
       <div className="flex flex-col gap-4 p-5 flex-1 justify-between">
-        <div className="space-y-3 text-sm">
+        <div className="space-y-2.5 text-sm">
           <div className="flex items-center justify-between text-gray-300">
-            <span>TVA collectée 20%</span>
-            <span>{fmtEuro(tva.collectee_20)}</span>
+            <span>TVA collectée 20% <span className="text-[11px] text-[#8E7F74]">(Neuf / Terrasse / Clôture)</span></span>
+            <span className="font-medium text-white">{fmtEuro(tva.collectee_20)}</span>
           </div>
           <div className="flex items-center justify-between text-gray-300">
-            <span>TVA collectée 10%</span>
-            <span>{fmtEuro(tva.collectee_10)}</span>
+            <span>TVA collectée 10% <span className="text-[11px] text-[#8E7F74]">(Rénov. &gt; 2 ans)</span></span>
+            <span className="font-medium text-white">{fmtEuro(tva.collectee_10)}</span>
           </div>
           <div className="flex items-center justify-between text-gray-300">
-            <span>TVA collectée 5.5%</span>
-            <span>{fmtEuro(tva.collectee_5_5)}</span>
+            <span>TVA collectée 5,5% <span className="text-[11px] text-[#8E7F74]">(ITE / Énergie)</span></span>
+            <span className="font-medium text-white">{fmtEuro(tva.collectee_5_5)}</span>
           </div>
           
           <div className="my-2 border-t border-white/10"></div>
           
-          <div className="flex items-center justify-between font-medium text-gray-400">
-            <span>Total collectée</span>
+          <div className="flex items-center justify-between font-semibold text-[#F5EFEA]">
+            <span>Total TVA collectée</span>
             <span>{fmtEuro(tva.collectee_total)}</span>
           </div>
           
-          <div className="flex items-center justify-between text-rose-400">
-            <span>TVA déductible</span>
+          <div className="flex items-center justify-between text-emerald-400">
+            <span>TVA déductible (achats &amp; intérim)</span>
             <span>-{fmtEuro(tva.deductible_total)}</span>
           </div>
         </div>
@@ -55,10 +62,10 @@ export default function TvaWidget({ mois }: { mois?: string }) {
           <div className="mb-3 border-t border-white/10"></div>
           
           <div className="flex items-end justify-between">
-            <span className={`text-sm font-semibold uppercase ${tva.type_solde === 'a_payer' ? 'text-rose-400' : 'text-gray-400'}`}>
-              {tva.solde > 0 && tva.type_solde === 'a_payer' ? "À payer" : tva.type_solde === 'credit' ? "Crédit TVA" : "Solde nul"}
+            <span className={`text-xs font-bold uppercase tracking-wider ${tva.type_solde === 'a_payer' ? 'text-[#D96B27]' : 'text-emerald-400'}`}>
+              {tva.solde > 0 && tva.type_solde === 'a_payer' ? "TVA nette à décaisser" : tva.type_solde === 'credit' ? "Crédit de TVA" : "Solde nul"}
             </span>
-            <span className={`text-2xl font-bold ${tva.type_solde === 'a_payer' ? 'text-rose-400' : 'text-gray-400'}`}>
+            <span className={`text-2xl font-black ${tva.type_solde === 'a_payer' ? 'text-[#F59E0B]' : 'text-emerald-400'}`}>
               {fmtEuro(tva.solde)}
             </span>
           </div>

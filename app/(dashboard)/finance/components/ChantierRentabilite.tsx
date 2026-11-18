@@ -12,6 +12,7 @@ import {
   normaliserMetierCode,
   type MetierFiltre,
 } from "@/lib/metierBadge";
+import { OPTIONS_TVA_BTP } from "@/lib/baremeFFBGironde";
 
 export default function ChantierRentabilite({
   metierFilter = "tous",
@@ -21,6 +22,19 @@ export default function ChantierRentabilite({
   const { rentabilites, alertes, isLoading } = useRentabiliteChantiers();
   const [printingBilan, setPrintingBilan] = useState<RentabiliteChantierExt | null>(null);
   const [supprimantId, setSupprimantId] = useState<string | null>(null);
+  const [tvaOverrides, setTvaOverrides] = useState<Record<string, number>>({});
+
+  const handleChangerTva = async (chantierId: string, taux: number) => {
+    setTvaOverrides((prev) => ({ ...prev, [chantierId]: taux }));
+    const { error } = await supabase
+      .from("chantiers")
+      .update({ taux_tva: taux })
+      .eq("id", chantierId);
+    if (error) {
+      console.error("[ChantierRentabilite] Erreur maj TVA :", error);
+      alert(`Erreur mise à jour TVA (${error.code ?? "SQL"}) : ${error.message}`);
+    }
+  };
 
   const handleSupprimerChantier = async (id: string, nom: string) => {
     const confirmation = window.confirm(
@@ -77,10 +91,11 @@ export default function ChantierRentabilite({
             <thead className="border-b border-white/10 bg-[#221B17] text-xs uppercase text-[#B8A99E]">
               <tr>
                 <th className="px-4 py-3 font-medium">Chantier</th>
-                <th className="px-4 py-3 font-medium text-right">Prix vente</th>
+                <th className="px-4 py-3 font-medium text-center">TVA</th>
+                <th className="px-4 py-3 font-medium text-right">CA HT</th>
                 <th className="px-4 py-3 font-medium text-center">Avancement</th>
-                <th className="px-4 py-3 font-medium text-right">Coût direct</th>
-                <th className="px-4 py-3 font-medium text-right">Marge</th>
+                <th className="px-4 py-3 font-medium text-right">Coût direct HT</th>
+                <th className="px-4 py-3 font-medium text-right">Marge HT</th>
                 <th className="px-4 py-3 font-medium text-center">Taux marge</th>
                 <th className="px-4 py-3 font-medium text-center">Statut</th>
                 <th className="px-4 py-3 font-medium text-right">Actions</th>
@@ -111,8 +126,28 @@ export default function ChantierRentabilite({
                           >
                             {mCfg.label}
                           </span>
+                          {r.zone_deplacement && (
+                            <span className="rounded-full border border-[#D96B27]/40 bg-[#D96B27]/15 px-2 py-0.5 text-[10px] font-semibold text-[#F59E0B]">
+                              Zone {r.zone_deplacement}
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-[#8E7F74]">{r.client_nom}</div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <select
+                          aria-label={`TVA ${r.nom}`}
+                          value={tvaOverrides[r.chantier_id] ?? r.taux_tva ?? 20}
+                          onChange={(e) =>
+                            void handleChangerTva(r.chantier_id, parseFloat(e.target.value))
+                          }
+                          title={OPTIONS_TVA_BTP.map((o) => o.aide).join(" | ")}
+                          className="rounded-lg border border-white/10 bg-[#120F0D] px-2 py-1 text-xs font-semibold text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none"
+                        >
+                          <option value={20}>20%</option>
+                          <option value={10}>10%</option>
+                          <option value={5.5}>5,5%</option>
+                        </select>
                       </td>
                     <td className="px-4 py-3 text-right font-medium">
                       {fmtEuro(r.prix_vente_ht)}

@@ -1362,6 +1362,7 @@ export type Database = {
           created_at: string | null
           date_debut: string | null
           date_fin: string | null
+          distance_vol_oiseau_km: number | null
           entreprise_id: string
           epaisseur_isolant_mm: number | null
           heures_a_rattraper: number
@@ -1378,7 +1379,9 @@ export type Database = {
           statut: string | null
           surface_m2: number | null
           surface_paquet_m2: number | null
+          taux_tva: number
           type_isolant: string | null
+          zone_deplacement: string | null
           zone_vent: number
           zone_vent_rive: boolean | null
         }
@@ -1395,6 +1398,7 @@ export type Database = {
           created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
+          distance_vol_oiseau_km?: number | null
           entreprise_id: string
           epaisseur_isolant_mm?: number | null
           heures_a_rattraper?: number
@@ -1411,7 +1415,9 @@ export type Database = {
           statut?: string | null
           surface_m2?: number | null
           surface_paquet_m2?: number | null
+          taux_tva?: number
           type_isolant?: string | null
+          zone_deplacement?: string | null
           zone_vent?: number
           zone_vent_rive?: boolean | null
         }
@@ -1428,6 +1434,7 @@ export type Database = {
           created_at?: string | null
           date_debut?: string | null
           date_fin?: string | null
+          distance_vol_oiseau_km?: number | null
           entreprise_id?: string
           epaisseur_isolant_mm?: number | null
           heures_a_rattraper?: number
@@ -1444,7 +1451,9 @@ export type Database = {
           statut?: string | null
           surface_m2?: number | null
           surface_paquet_m2?: number | null
+          taux_tva?: number
           type_isolant?: string | null
+          zone_deplacement?: string | null
           zone_vent?: number
           zone_vent_rive?: boolean | null
         }
@@ -2385,7 +2394,11 @@ export type Database = {
       entreprises: {
         Row: {
           actif: boolean
+          adresse_depot: string | null
           cree_le: string
+          depot_lat: number | null
+          depot_lng: number | null
+          effectif_plus_10: boolean
           id: string
           raison_sociale: string
           siret: string | null
@@ -2394,7 +2407,11 @@ export type Database = {
         }
         Insert: {
           actif?: boolean
+          adresse_depot?: string | null
           cree_le?: string
+          depot_lat?: number | null
+          depot_lng?: number | null
+          effectif_plus_10?: boolean
           id?: string
           raison_sociale: string
           siret?: string | null
@@ -2403,7 +2420,11 @@ export type Database = {
         }
         Update: {
           actif?: boolean
+          adresse_depot?: string | null
           cree_le?: string
+          depot_lat?: number | null
+          depot_lng?: number | null
+          effectif_plus_10?: boolean
           id?: string
           raison_sociale?: string
           siret?: string | null
@@ -3430,6 +3451,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agence_interim: string | null
+          coefficient_agence: number
           created_at: string | null
           entreprise_id: string | null
           full_name: string
@@ -3437,8 +3460,12 @@ export type Database = {
           qualification: string | null
           role: string | null
           statut_emploi: string | null
+          taux_horaire_brut: number | null
+          type_contrat_interim: string | null
         }
         Insert: {
+          agence_interim?: string | null
+          coefficient_agence?: number
           created_at?: string | null
           entreprise_id?: string | null
           full_name: string
@@ -3446,8 +3473,12 @@ export type Database = {
           qualification?: string | null
           role?: string | null
           statut_emploi?: string | null
+          taux_horaire_brut?: number | null
+          type_contrat_interim?: string | null
         }
         Update: {
+          agence_interim?: string | null
+          coefficient_agence?: number
           created_at?: string | null
           entreprise_id?: string | null
           full_name?: string
@@ -3455,6 +3486,8 @@ export type Database = {
           qualification?: string | null
           role?: string | null
           statut_emploi?: string | null
+          taux_horaire_brut?: number | null
+          type_contrat_interim?: string | null
         }
         Relationships: [
           {

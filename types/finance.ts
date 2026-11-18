@@ -64,6 +64,9 @@ export interface PointageFinance {
   meteo_relevee?: string;
   volume_heures_declare?: number;
   phase_travail?: string;
+  panier_repas?: number | null;
+  indemnite_transport?: number | null;
+  indemnite_trajet?: number | null;
 }
 
 export type StatutFacture = 'brouillon' | 'emise' | 'payee' | 'annulee';

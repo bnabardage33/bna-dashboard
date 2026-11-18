@@ -63,6 +63,8 @@ export type RentabiliteChantierExt = RentabiliteResult & {
   metier: string;
   prix_vente_ht: number;
   statut: string;
+  taux_tva: number;
+  zone_deplacement: string | null;
 };
 
 type SupabaseResult<T> = { data: T[] | null; error: { message: string } | null };
@@ -88,10 +90,11 @@ async function safeFetch<T>(
 // --- Hook 1 : Rentabilité ---
 
 export function useRentabiliteChantiers() {
-  const [chantiers, setChantiers] = useState<ChantierRow[]>([]);
+  const [chantiers, setChantiers] = useState<(ChantierRow & { taux_tva?: number | null; zone_deplacement?: string | null })[]>([]);
   const [depenses, setDepenses] = useState<DepenseFinance[]>([]);
   const [pointages, setPointages] = useState<PointageFinance[]>([]);
   const [avancements, setAvancements] = useState<AvancementRow[]>([]);
+  const [fraisInterim, setFraisInterim] = useState<{ chantier_id: string | null; total_ht: number | null; salaire_brut: number; coefficient: number }[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -107,12 +110,12 @@ export function useRentabiliteChantiers() {
         if (isMounted) setError(err);
       };
 
-      const [chantiersData, depensesData, pointagesData, avancementsData] =
+      const [chantiersData, depensesData, pointagesData, avancementsData, interimData] =
         await Promise.all([
-          safeFetch<ChantierRow>(
+          safeFetch<ChantierRow & { taux_tva?: number | null; zone_deplacement?: string | null }>(
             supabase
               .from("chantiers")
-              .select("id, nom, client_nom, metier, prix_vente_ht, statut"),
+              .select("id, nom, client_nom, metier, prix_vente_ht, statut, taux_tva, zone_deplacement"),
             handleError
           ),
           safeFetch<DepenseFinance>(
@@ -127,6 +130,10 @@ export function useRentabiliteChantiers() {
             supabase.from("avancements_chantier").select("*"),
             handleError
           ),
+          safeFetch<{ chantier_id: string | null; total_ht: number | null; salaire_brut: number; coefficient: number }>(
+            supabase.from("frais_interim").select("chantier_id, total_ht, salaire_brut, coefficient"),
+            handleError
+          ),
         ]);
 
       if (isMounted) {
@@ -134,6 +141,7 @@ export function useRentabiliteChantiers() {
         setDepenses(depensesData);
         setPointages(pointagesData);
         setAvancements(avancementsData);
+        setFraisInterim(interimData);
         setIsLoading(false);
       }
     };
@@ -162,8 +170,30 @@ export function useRentabiliteChantiers() {
         avancements
       );
 
+      const coutInterimHT = fraisInterim
+        .filter((fi) => fi.chantier_id === c.id)
+        .reduce(
+          (acc, fi) =>
+            acc +
+            Number(
+              fi.total_ht ??
+                Math.round(Number(fi.salaire_brut ?? 0) * Number(fi.coefficient ?? 2) * 100) / 100
+            ),
+          0
+        );
+
+      const coutMainOeuvreTotal = result.cout_main_oeuvre + coutInterimHT;
+      const coutDirectTotal = result.cout_direct_total + coutInterimHT;
+      const margeBrute = (c.prix_vente_ht || 0) - coutDirectTotal;
+      const tauxMargePct =
+        (c.prix_vente_ht || 0) > 0 ? (margeBrute / (c.prix_vente_ht || 1)) * 100 : 0;
+
       return {
         ...result,
+        cout_main_oeuvre: coutMainOeuvreTotal,
+        cout_direct_total: coutDirectTotal,
+        marge_brute: margeBrute,
+        taux_marge_pct: tauxMargePct,
         id: c.id,
         avancement: 50,
         chantier_id: c.id,
@@ -172,6 +202,8 @@ export function useRentabiliteChantiers() {
         metier: c.metier || "bardage",
         prix_vente_ht: c.prix_vente_ht || 0,
         statut: c.statut || "",
+        taux_tva: Number(c.taux_tva ?? 20),
+        zone_deplacement: c.zone_deplacement ?? null,
       };
     });
 
@@ -180,7 +212,7 @@ export function useRentabiliteChantiers() {
     );
 
     return { rentabilites: rentabilitesData, alertes: alertesData };
-  }, [chantiers, depenses, pointages, avancements]);
+  }, [chantiers, depenses, pointages, avancements, fraisInterim]);
 
   return { rentabilites, alertes, isLoading, error };
 }

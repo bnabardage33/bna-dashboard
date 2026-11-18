@@ -69,6 +69,10 @@ export function calculerRentabiliteChantier(
     pointages.forEach((ptg) => {
       if (ptg.chantier_id === chantier.id) {
         cout_main_oeuvre += ptg.heures * ptg.taux_horaire_charge;
+        cout_frais +=
+          Number(ptg.panier_repas ?? 0) +
+          Number(ptg.indemnite_transport ?? 0) +
+          Number(ptg.indemnite_trajet ?? 0);
       }
     });
 
@@ -139,7 +143,11 @@ export function calculerKpiMensuel(
 
     pointages.forEach((ptg) => {
       if (ptg.date.startsWith(mois)) {
-        depenses_total += ptg.heures * ptg.taux_horaire_charge;
+        depenses_total +=
+          ptg.heures * ptg.taux_horaire_charge +
+          Number(ptg.panier_repas ?? 0) +
+          Number(ptg.indemnite_transport ?? 0) +
+          Number(ptg.indemnite_trajet ?? 0);
       }
     });
 

@@ -52,7 +52,11 @@ export default function FeuilleHeuresPage() {
   const [formOuvrierOuvert, setFormOuvrierOuvert] = useState(false);
   const [nouveauNom, setNouveauNom] = useState("");
   const [nouvelleQualif, setNouvelleQualif] = useState("");
-  const [nouveauStatut, setNouveauStatut] = useState<"embauche" | "interimaire">("embauche");
+  const [nouveauStatut, setNouveauStatut] = useState<"gerant_tns" | "salarie" | "interimaire">("salarie");
+  const [agenceInterim, setAgenceInterim] = useState("");
+  const [typeContratInterim, setTypeContratInterim] = useState<"delegation" | "gestion">("delegation");
+  const [tauxHoraireBrut, setTauxHoraireBrut] = useState(14.5);
+  const [coefficientAgence, setCoefficientAgence] = useState(2.05);
   const [ajoutEnCours, setAjoutEnCours] = useState(false);
 
   async function chargerDonnees() {
@@ -97,11 +101,20 @@ export default function FeuilleHeuresPage() {
       qualification: nouvelleQualif.trim() || null,
       statut_emploi: nouveauStatut,
       role: "ouvrier",
+      ...(nouveauStatut === "interimaire"
+        ? {
+            agence_interim: agenceInterim.trim() || null,
+            type_contrat_interim: typeContratInterim,
+            taux_horaire_brut: tauxHoraireBrut,
+            coefficient_agence: coefficientAgence,
+          }
+        : {}),
     });
     if (!error) {
       setNouveauNom("");
       setNouvelleQualif("");
-      setNouveauStatut("embauche");
+      setNouveauStatut("salarie");
+      setAgenceInterim("");
       setFormOuvrierOuvert(false);
       await chargerDonnees();
     } else {
@@ -306,14 +319,58 @@ export default function FeuilleHeuresPage() {
                 />
                 <select
                   value={nouveauStatut}
-                  onChange={(e) => setNouveauStatut(e.target.value as "embauche" | "interimaire")}
+                  onChange={(e) =>
+                    setNouveauStatut(e.target.value as "gerant_tns" | "salarie" | "interimaire")
+                  }
                   className="bg-[#252525] border border-white/10 rounded-md p-2 text-sm focus:border-white/10 outline-none"
                   aria-label="Statut"
                 >
-                  <option value="embauche">Embauché</option>
+                  <option value="salarie">Salarié</option>
                   <option value="interimaire">Intérimaire</option>
+                  <option value="gerant_tns">Gérant TNS</option>
                 </select>
               </div>
+              {nouveauStatut === "interimaire" && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Agence intérim (ex: Manpower)"
+                    value={agenceInterim}
+                    onChange={(e) => setAgenceInterim(e.target.value)}
+                    className="bg-[#252525] border border-white/10 rounded-md p-2 text-xs outline-none"
+                  />
+                  <select
+                    value={typeContratInterim}
+                    onChange={(e) => {
+                      const v = e.target.value as "delegation" | "gestion";
+                      setTypeContratInterim(v);
+                      setCoefficientAgence(v === "gestion" ? 1.75 : 2.05);
+                    }}
+                    className="bg-[#252525] border border-white/10 rounded-md p-2 text-xs outline-none"
+                  >
+                    <option value="delegation">Délégation (coef ~2.05)</option>
+                    <option value="gestion">Gestion (coef ~1.75)</option>
+                  </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Taux brut (€)"
+                    value={tauxHoraireBrut}
+                    onChange={(e) => setTauxHoraireBrut(parseFloat(e.target.value) || 0)}
+                    className="bg-[#252525] border border-white/10 rounded-md p-2 text-xs outline-none"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    placeholder="Coefficient"
+                    value={coefficientAgence}
+                    onChange={(e) => setCoefficientAgence(parseFloat(e.target.value) || 2)}
+                    className="bg-[#252525] border border-white/10 rounded-md p-2 text-xs outline-none"
+                  />
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={ajoutEnCours}

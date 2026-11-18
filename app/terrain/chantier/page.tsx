@@ -6,6 +6,11 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { resoudreContexteEntreprise } from "@/lib/contexteEntreprise";
 import {
+  OPTIONS_TVA_BTP,
+  calculerDistanceVolOiseauKm,
+  determinerZoneFFB,
+} from "@/lib/baremeFFBGironde";
+import {
   Layers3,
   Plus,
   MapPin,
@@ -101,6 +106,7 @@ export default function ChantiersPage() {
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
   const [materiauStructurel, setMateriauStructurel] = useState("Bois / Mélèze");
+  const [tauxTva, setTauxTva] = useState<number>(20);
   const [creationEnCours, setCreationEnCours] = useState(false);
 
   async function fetchClients() {
@@ -193,6 +199,44 @@ export default function ChantiersPage() {
       return;
     }
 
+    let zoneDeplacement: string | null = null;
+    let distanceVolOiseauKm: number | null = null;
+
+    if (adresse.trim()) {
+      try {
+        const [{ data: entData }, geoRes] = await Promise.all([
+          supabase
+            .from("entreprises")
+            .select("depot_lat, depot_lng")
+            .eq("id", entreprise_id)
+            .maybeSingle(),
+          fetch("/api/geocoder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ adresse: adresse.trim() }),
+          }),
+        ]);
+        if (
+          entData?.depot_lat &&
+          entData?.depot_lng &&
+          geoRes.ok
+        ) {
+          const geo = (await geoRes.json()) as { lat?: number; lng?: number };
+          if (typeof geo.lat === "number" && typeof geo.lng === "number") {
+            distanceVolOiseauKm = calculerDistanceVolOiseauKm(
+              entData.depot_lat,
+              entData.depot_lng,
+              geo.lat,
+              geo.lng
+            );
+            zoneDeplacement = determinerZoneFFB(distanceVolOiseauKm);
+          }
+        }
+      } catch {
+        // Calcul FFB optionnel lors de la création
+      }
+    }
+
     const { error } = await supabase.from("chantiers").insert({
       nom: nom || null,
       client_id: clientId,
@@ -200,6 +244,9 @@ export default function ChantiersPage() {
       date_debut: dateDebut || null,
       date_fin: dateFin || null,
       materiau_structurel: materiauStructurel || undefined,
+      taux_tva: tauxTva,
+      zone_deplacement: zoneDeplacement,
+      distance_vol_oiseau_km: distanceVolOiseauKm,
       statut: "prevu",
       code_acces:
         "BNA-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -760,6 +807,30 @@ export default function ChantiersPage() {
                       className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="chp-taux-tva"
+                    className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#8E7F74]"
+                  >
+                    Taux de TVA BTP
+                  </label>
+                  <select
+                    id="chp-taux-tva"
+                    value={tauxTva}
+                    onChange={(e) => setTauxTva(parseFloat(e.target.value))}
+                    className="w-full rounded-xl border border-white/10 bg-[#1B1511] px-4 py-2.5 text-sm font-medium text-[#F5EFEA] focus:border-[#D96B27] focus:outline-none focus:ring-2 focus:ring-[#B85B2B]/20"
+                  >
+                    {OPTIONS_TVA_BTP.map((opt) => (
+                      <option key={opt.taux} value={opt.taux}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[11px] text-[#8E7F74]">
+                    {OPTIONS_TVA_BTP.find((o) => o.taux === tauxTva)?.aide}
+                  </p>
                 </div>
 
                 {/* Boutons d'action du formulaire */}
