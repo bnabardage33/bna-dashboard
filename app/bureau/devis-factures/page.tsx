@@ -43,6 +43,12 @@ import {
   convertirChiffrageTerrasseEnLignesDevis,
 } from "@/lib/terrasse/calculs";
 import { chargerCadencesTempsPose } from "@/lib/tempsPoseCalcul";
+import {
+  CLE_PREFILL_DEVIS_V2,
+  convertirQuantitatifEnLignesDevis,
+  type MetierBna,
+  type QuantitatifExportable,
+} from "@/lib/quantitatifs/types";
 import type {
   ChantierTerrasseConfig,
   ChantierTerrasseReservation,
@@ -186,7 +192,7 @@ function DevisContenu() {
 
   // Modale de conversion Devis -> Chantier avec qualification explicite du métier
   const [devisToConvert, setDevisToConvert] = useState<Devis | null>(null);
-  const [metierConversion, setMetierConversion] = useState<"bardage" | "terrasse">("bardage");
+  const [metierConversion, setMetierConversion] = useState<MetierBna>("bardage");
   const [conversionEnCours, setConversionEnCours] = useState(false);
 
   const [toast, setToast] = useState<string | null>(null);
@@ -313,6 +319,33 @@ function DevisContenu() {
 
   useEffect(() => {
     try {
+      const brutV2 = localStorage.getItem(CLE_PREFILL_DEVIS_V2);
+      if (brutV2) {
+        const q = JSON.parse(brutV2) as QuantitatifExportable;
+        const lignesConverties = convertirQuantitatifEnLignesDevis(q);
+        if (lignesConverties.length > 0) {
+          setLignes(lignesConverties as Ligne[]);
+          if (q.objet) setObjet(q.objet);
+          setTypeTravaux(
+            q.metier === "terrasse"
+              ? "Terrasse & Platelage"
+              : q.metier === "cloture"
+              ? "Clôture & Brise-vue"
+              : "Bardage & Façade"
+          );
+          if (typeof q.surface_ou_lineaire === "number" && q.surface_ou_lineaire > 0) {
+            setSurfacePonctuelle(String(q.surface_ou_lineaire));
+          }
+          if (q.chantier_id) {
+            setChantierId(q.chantier_id);
+          }
+          setModalOuvert(true);
+        }
+        localStorage.removeItem(CLE_PREFILL_DEVIS_V2);
+        localStorage.removeItem("bna_prefill_devis_terrasse");
+        return;
+      }
+
       const brut = localStorage.getItem("bna_prefill_devis_terrasse");
       if (!brut) return;
       const data = JSON.parse(brut) as {
@@ -332,7 +365,7 @@ function DevisContenu() {
       }
       localStorage.removeItem("bna_prefill_devis_terrasse");
     } catch (e) {
-      console.error("Erreur lecture prefill devis terrasse :", e);
+      console.error("Erreur lecture prefill devis :", e);
     }
   }, []);
 
@@ -866,12 +899,16 @@ function DevisContenu() {
 
   function initierConversionChantier(d: Devis) {
     const texte = `${d.type_travaux || ""} ${d.objet || ""}`.toLowerCase();
-    const metierDetecte = texte.includes("terrasse") ? "terrasse" : "bardage";
+    const metierDetecte: MetierBna = texte.includes("terrasse")
+      ? "terrasse"
+      : texte.includes("cloture") || texte.includes("clôture") || texte.includes("brise-vue")
+      ? "cloture"
+      : "bardage";
     setMetierConversion(metierDetecte);
     setDevisToConvert(d);
   }
 
-  async function transformerEnChantier(d: Devis, metierForce?: "bardage" | "terrasse") {
+  async function transformerEnChantier(d: Devis, metierForce?: MetierBna) {
     // Si appelé sans métier explicite, ouvrir la modale de qualification obligatoire
     if (!metierForce) {
       initierConversionChantier(d);
@@ -880,7 +917,7 @@ function DevisContenu() {
     await executerConversionEnChantier(d, metierForce);
   }
 
-  async function executerConversionEnChantier(d: Devis, metierChoisi: "bardage" | "terrasse") {
+  async function executerConversionEnChantier(d: Devis, metierChoisi: MetierBna) {
     setConversionEnCours(true);
 
     // O3-B8 : `chantiers` est la RACINE de la hiérarchie entreprise — NOT NULL
@@ -906,6 +943,7 @@ function DevisContenu() {
     }
 
     const isTerrasse = metierChoisi === "terrasse";
+    const isCloture = metierChoisi === "cloture";
     const checklist = isTerrasse
       ? {
           metier: "terrasse",
@@ -918,6 +956,14 @@ function DevisContenu() {
             finitions: { statut: "a_faire", notes: "Rives et réceptions" },
           },
         }
+      : isCloture
+      ? {
+          metier: "cloture",
+          implantation: false,
+          poteaux_scelles: false,
+          lames_posees: false,
+          finitions: false,
+        }
       : { tasseaux: false, pare_pluie: false, pose: false, finition: false };
 
     const nouveauChantierId = crypto.randomUUID();
@@ -929,11 +975,13 @@ function DevisContenu() {
       adresse_chantier: d.adresse_chantier,
       statut: "prevu",
       materiau_structurel: isTerrasse ? "pin_cl4" : MATERIAU_STRUCTUREL_DEFAUT,
-      moyen_acces: isTerrasse ? "plain_pied" : MOYEN_ACCES_DEFAUT,
+      moyen_acces: isTerrasse || isCloture ? "plain_pied" : MOYEN_ACCES_DEFAUT,
       zone_vent: ZONE_VENT_DEFAUT,
       prix_vente_ht: d.total_ht ?? null,
       surface_m2: d.surface_m2 ?? null,
-      code_acces: (isTerrasse ? "BNA-T" : "BNA-") + Math.random().toString(36).substring(2, 8).toUpperCase(),
+      code_acces:
+        (isTerrasse ? "BNA-T" : isCloture ? "BNA-C" : "BNA-") +
+        Math.random().toString(36).substring(2, 8).toUpperCase(),
       metier: metierChoisi,
       checklist,
       entreprise_id,
@@ -958,6 +1006,12 @@ function DevisContenu() {
         largeur_m: 4.0,
         hauteur_sol_cm: 15.0,
         pente_pct: 1.5,
+      });
+    } else if (isCloture) {
+      await (supabase.from("chantier_clotures") as any).insert({
+        chantier_id: nouveauChantierId,
+        entreprise_id,
+        nom: "Clôture principale",
       });
     }
 
@@ -1305,7 +1359,7 @@ function DevisContenu() {
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Sélection obligatoire du corps d&apos;état
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
                   data-testid="option-conversion-bardage"
@@ -1341,6 +1395,25 @@ function DevisContenu() {
                   </p>
                   <p className="text-[11px] text-gray-400 mt-1">
                     Platelage, lambourdage, plots DTU 51.4
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="option-conversion-cloture"
+                  onClick={() => setMetierConversion("cloture")}
+                  className={`rounded-xl border p-4 text-left transition-all cursor-pointer ${
+                    metierConversion === "cloture"
+                      ? "border-[#D96B27] bg-[#D96B27]/20 text-white shadow-sm"
+                      : "border-white/10 bg-white/5 text-gray-400 hover:border-gray-500"
+                  }`}
+                >
+                  <p className="text-sm font-bold flex items-center gap-2">
+                    <span>🧱</span>
+                    <span>Clôture</span>
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Lames, poteaux, soubassement &amp; portillon
                   </p>
                 </button>
               </div>

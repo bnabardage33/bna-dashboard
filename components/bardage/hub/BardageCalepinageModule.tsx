@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { CLE_PREFILL_DEVIS_V2 } from "@/lib/quantitatifs/types";
+import { adapterZonesBardageEnQuantitatif } from "@/lib/quantitatifs/adaptateurBardage";
 import type { TablesInsert, Json } from "@/types/supabase";
 import ZoneCard, {
   Zone,
@@ -19,6 +22,7 @@ import {
   Package,
   Layers,
   FileSpreadsheet,
+  FileText,
   Check,
   ChevronDown,
   ChevronUp,
@@ -527,15 +531,49 @@ export default function BardageCalepinageModule({
         </div>
       </div>
 
-      {/* 4. Bouton Commande Quincaillerie */}
-      <button
-        type="button"
-        onClick={handleCreerCommandeQuincaillerie}
-        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#D96B27] hover:bg-[#E07A38] py-3 text-xs sm:text-sm font-bold text-white transition-all shadow-xs"
-      >
-        <Package size={15} />
-        <span>Générer le Bon de Commande Quincaillerie (Chevrons, Équerres, Vis)</span>
-      </button>
+      {/* 4. Boutons Commande Quincaillerie & Générer un devis */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={handleCreerCommandeQuincaillerie}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl border border-[#D96B27]/40 bg-[#D96B27]/15 hover:bg-[#D96B27]/25 py-3 px-4 text-xs sm:text-sm font-bold text-[#F3A261] transition-all cursor-pointer"
+        >
+          <Package size={15} />
+          <span>Commander Quincaillerie (Chevrons, Équerres, Vis)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            const q = adapterZonesBardageEnQuantitatif(
+              zones.map((z) => {
+                const c = calculerZone(z, zoneVent);
+                return {
+                  id: z.id,
+                  nom: z.nom,
+                  materiau: z.materiau,
+                  surfaceNetteM2: c.surfaceNette,
+                  surfaceACommanderM2: c.surfaceACommander,
+                };
+              }),
+              { chantierId, chantierNom }
+            );
+            try {
+              localStorage.setItem(CLE_PREFILL_DEVIS_V2, JSON.stringify(q));
+              window.location.href = chantierId
+                ? `/bureau/devis-factures?chantier_id=${encodeURIComponent(chantierId)}&source=bardage`
+                : "/bureau/devis-factures?source=bardage";
+            } catch (e) {
+              console.error("Erreur pré-remplissage devis bardage :", e);
+            }
+          }}
+          disabled={zones.length === 0}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#D96B27] to-[#B85316] hover:from-[#E57732] hover:to-[#C95D1B] py-3 px-4 text-xs sm:text-sm font-bold text-white transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+        >
+          <FileText size={15} />
+          <span>Générer un devis Bardage</span>
+        </button>
+      </div>
 
       {/* 5. Liste des Zones de Bardage */}
       <div className="space-y-4">

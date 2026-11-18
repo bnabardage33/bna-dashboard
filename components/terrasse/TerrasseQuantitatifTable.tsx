@@ -11,6 +11,8 @@ import {
   ajouterMainOeuvreTerrasse,
   convertirChiffrageTerrasseEnLignesDevis,
 } from "@/lib/terrasse/calculs";
+import { CLE_PREFILL_DEVIS_V2 } from "@/lib/quantitatifs/types";
+import { adapterTerrasseEnQuantitatif } from "@/lib/quantitatifs/adaptateurTerrasse";
 
 interface TerrasseQuantitatifTableProps {
   resultat: ResultatCalculTerrasse;
@@ -34,6 +36,12 @@ export default function TerrasseQuantitatifTable({
       const resultatAvecMo = ajouterMainOeuvreTerrasse(resultat, cadences);
       const lignesDevis = convertirChiffrageTerrasseEnLignesDevis(resultatAvecMo);
       const objet = `Terrasse ${resultat.terrasseMobile?.active ? "& Terrasse Mobile " : ""}— ${resultat.surfaceNetteM2} m²`;
+
+      const quantitatif = adapterTerrasseEnQuantitatif(resultatAvecMo, {
+        chantierId: chantierId || undefined,
+        chantierNom: chantierNom || undefined,
+      });
+      localStorage.setItem(CLE_PREFILL_DEVIS_V2, JSON.stringify(quantitatif));
 
       localStorage.setItem(
         CLE_PREFILL_DEVIS_TERRASSE,

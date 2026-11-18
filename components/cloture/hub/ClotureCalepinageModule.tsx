@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Check,
   Download,
+  FileText,
   Package,
   Save,
   Sliders,
@@ -26,6 +27,12 @@ import {
 } from "@/lib/cloture/calepinageCloture";
 import { calculerChiffrageCloture } from "@/lib/cloture/calculs";
 import { fmtEuro } from "@/lib/financeCalculs";
+import {
+  CLE_PREFILL_COMMANDE,
+  CLE_PREFILL_DEVIS_V2,
+  extraireLignesCommandeFournisseur,
+} from "@/lib/quantitatifs/types";
+import { adapterClotureEnQuantitatif } from "@/lib/quantitatifs/adaptateurCloture";
 import {
   ElevationPlan2DSvg,
   PlanCalepinage4Cotes2DSvg,
@@ -184,16 +191,15 @@ export default function ClotureCalepinageModule({
     result.segmentsActifs.find((s) => s.id === selectedSide) ?? result.segmentsActifs[0];
 
   function creerCommandeFournisseur() {
-    const lignes = chiffrage.lignesFournitures.map((l) => ({
-      designation: l.designation,
-      quantite: l.qte,
-      unite: l.unite,
-      pu_ht: l.pu_revient ?? l.pu_ht,
-    }));
+    const quantitatif = adapterClotureEnQuantitatif(chiffrage, {
+      chantierId,
+      materiauLabel: `Clôture ${materiau}`,
+    });
+    const lignes = extraireLignesCommandeFournisseur(quantitatif);
     const zoneNom = `Fournitures Clôture ${materiau} — ${result.lineaireTotalM.toFixed(1)} ml`;
     try {
       localStorage.setItem(
-        "bna_prefill_commande",
+        CLE_PREFILL_COMMANDE,
         JSON.stringify({
           chantierId,
           chantierNom: "",
@@ -204,6 +210,22 @@ export default function ClotureCalepinageModule({
       router.push("/bureau/fournisseurs?tab=commandes");
     } catch (e) {
       console.error("Erreur pré-remplissage commande clôture :", e);
+    }
+  }
+
+  function genererDevisCloture() {
+    const quantitatif = adapterClotureEnQuantitatif(chiffrage, {
+      chantierId,
+      materiauLabel: `Clôture ${materiau}`,
+    });
+    try {
+      localStorage.setItem(CLE_PREFILL_DEVIS_V2, JSON.stringify(quantitatif));
+      const url = chantierId
+        ? `/bureau/devis-factures?chantier_id=${encodeURIComponent(chantierId)}&source=cloture`
+        : "/bureau/devis-factures?source=cloture";
+      router.push(url);
+    } catch (e) {
+      console.error("Erreur pré-remplissage devis clôture :", e);
     }
   }
 
@@ -280,9 +302,18 @@ export default function ClotureCalepinageModule({
             type="button"
             onClick={creerCommandeFournisseur}
             disabled={chiffrage.lignesFournitures.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 hover:bg-[#D96B27]/15 px-3.5 py-2 text-xs font-bold text-[#D96B27] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#D96B27]/30 bg-[#D96B27]/10 hover:bg-[#D96B27]/15 px-3.5 py-2 text-xs font-bold text-[#D96B27] disabled:opacity-50 cursor-pointer"
           >
             <Package className="h-3.5 w-3.5" /> Commander matériaux
+          </button>
+
+          <button
+            type="button"
+            onClick={genererDevisCloture}
+            disabled={chiffrage.lignesDevis.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#D96B27] to-[#B85316] hover:from-[#E57732] hover:to-[#C95D1B] px-3.5 py-2 text-xs font-bold text-white shadow-xs disabled:opacity-50 cursor-pointer"
+          >
+            <FileText className="h-3.5 w-3.5" /> Générer un devis
           </button>
 
           <button
