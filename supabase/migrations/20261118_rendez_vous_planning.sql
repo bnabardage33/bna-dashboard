@@ -71,4 +71,7 @@ CREATE POLICY "rendez_vous_ent_delete"
     OR public.entreprise_courante() IS NULL
   );
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.rendez_vous TO authenticated;
+GRANT ALL ON TABLE public.rendez_vous TO service_role;
+
 NOTIFY pgrst, 'reload schema';
