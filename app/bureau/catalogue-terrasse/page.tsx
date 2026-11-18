@@ -266,6 +266,7 @@ export default function CatalogueTerrassePage() {
       const champs = [
         l.designation,
         l.essence,
+        l.type_material,
         l.reference_fournisseur,
         l.fournisseur,
         l.description,
@@ -780,8 +781,12 @@ export default function CatalogueTerrassePage() {
                             </div>
                             <div className="flex items-center gap-1">
                               <button
-                                onClick={() => ouvrirEdition("TERRASSE_LAME", l)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  ouvrirEdition("TERRASSE_LAME", l);
+                                }}
                                 className="rounded-lg p-1 text-[#888888] hover:bg-[#F3F3F1] hover:text-[#23272B]"
+                                title="Modifier la fiche complète"
                                 aria-label={`Modifier ${etiquetteLame(l)}`}
                               >
                                 <Edit2 className="h-4 w-4" />

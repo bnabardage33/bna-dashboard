@@ -149,6 +149,8 @@ export function estContexteOssature(params: {
     fam.includes("ossature") ||
     cat.includes("ossature") ||
     cat === "lambourde" ||
+    cat === "solive" ||
+    cat === "plot" ||
     (cat === "poteau" && (mat === "" || mat.includes("bois"))) ||
     /\b(ossature|lambourde|chevron|tasseau|liteau|solive|poteau\s+bois)\b/.test(desig)
   ) {

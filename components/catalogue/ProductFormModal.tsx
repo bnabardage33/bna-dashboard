@@ -175,6 +175,17 @@ export default function ProductFormModal({
     }
     return false;
   });
+  const [lameRevientM2, setLameRevientM2] = useState<string>("");
+  const [lameRevientUnit, setLameRevientUnit] = useState<string>("");
+  const [lameVenteModifieManuellement, setLameVenteModifieManuellement] = useState<boolean>(() => {
+    if (initial && initial.kind === "TERRASSE_LAME") {
+      return (
+        parseNombreDecimal(initial.prix_m2_ht) > 0 ||
+        parseNombreDecimal(initial.prix_unitaire_lame) > 0
+      );
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (open) {
@@ -189,6 +200,16 @@ export default function ProductFormModal({
       setActiveTab("general");
       setTempsUnitaireH("");
       setPresetCadenceId("");
+      setLameRevientM2("");
+      setLameRevientUnit("");
+      setLameVenteModifieManuellement(
+        Boolean(
+          initial &&
+            initVal.kind === "TERRASSE_LAME" &&
+            (parseNombreDecimal(initVal.prix_m2_ht) > 0 ||
+              parseNombreDecimal(initVal.prix_unitaire_lame) > 0)
+        )
+      );
       setPuHtModifieManuellement(
         Boolean(
           initial &&
@@ -336,15 +357,15 @@ export default function ProductFormModal({
       patch({ pu_revient: valeur, pu_ht: "" });
     }
   };
-  const appliquerCoefGammeSurPuHt = (gammeCible?: GammeMateriau) => {
+  const appliquerCoefGammeSurPuHt = (gammeCible?: GammeMateriau, coefForce?: number) => {
     if (values.kind !== "BARDAGE" && values.kind !== "TERRASSE_ACCESSOIRE") return;
     if (estMainOeuvre) return;
     const revient = parseNombreDecimal(values.pu_revient);
     if (revient <= 0) return;
-    const vente = calculerPrixVenteDepuisRevient(
-      revient,
-      gammeCible ?? values.gamme_qualite
-    );
+    const vente =
+      typeof coefForce === "number"
+        ? Number((revient * coefForce).toFixed(2))
+        : calculerPrixVenteDepuisRevient(revient, gammeCible ?? values.gamme_qualite);
     const venteStr = vente.toFixed(2);
     setPuHtModifieManuellement(false);
     if (values.kind === "BARDAGE") {
@@ -360,6 +381,101 @@ export default function ProductFormModal({
       });
     }
   };
+
+  const getSurfaceLameM2 = (): number => {
+    if (values.kind !== "TERRASSE_LAME") return 0;
+    const l = values.longueur_mm ?? 0;
+    const w = values.largeur_utile_mm ?? 0;
+    return l > 0 && w > 0 ? (l * w) / 1_000_000 : 0;
+  };
+
+  const appliquerCalculLameDepuisRevient = (
+    revM2: number,
+    revLame: number,
+    gammeCible?: GammeMateriau,
+    forcer = false
+  ) => {
+    if (values.kind !== "TERRASSE_LAME") return;
+    const surfaceM2 = getSurfaceLameM2();
+    const gamme = gammeCible ?? normaliserGammeMateriau(values.gamme_qualite);
+    const venteVide =
+      parseNombreDecimal(values.prix_m2_ht) <= 0 &&
+      parseNombreDecimal(values.prix_unitaire_lame) <= 0;
+    if (!forcer && lameVenteModifieManuellement && !venteVide) {
+      if (gammeCible) patch({ gamme_qualite: gammeCible });
+      return;
+    }
+    const venteM2 =
+      revM2 > 0
+        ? calculerPrixVenteDepuisRevient(revM2, gamme)
+        : surfaceM2 > 0 && revLame > 0
+          ? Number((calculerPrixVenteDepuisRevient(revLame, gamme) / surfaceM2).toFixed(2))
+          : 0;
+    const venteLame =
+      revLame > 0
+        ? calculerPrixVenteDepuisRevient(revLame, gamme)
+        : surfaceM2 > 0 && venteM2 > 0
+          ? Number((venteM2 * surfaceM2).toFixed(2))
+          : 0;
+
+    setLameVenteModifieManuellement(false);
+    patch({
+      ...(gammeCible ? { gamme_qualite: gammeCible } : {}),
+      prix_m2_ht: venteM2 > 0 ? venteM2.toFixed(2) : "",
+      prix_unitaire_lame: venteLame > 0 ? venteLame.toFixed(2) : "",
+    });
+  };
+
+  const modifierLameRevientM2 = (valeur: string) => {
+    setLameRevientM2(valeur);
+    const revM2 = parseNombreDecimal(valeur);
+    const surfaceM2 = getSurfaceLameM2();
+    const revLame = surfaceM2 > 0 && revM2 > 0 ? Number((revM2 * surfaceM2).toFixed(2)) : 0;
+    if (surfaceM2 > 0) {
+      setLameRevientUnit(revLame > 0 ? revLame.toFixed(2) : "");
+    }
+    appliquerCalculLameDepuisRevient(revM2, revLame);
+  };
+
+  const modifierLameRevientUnit = (valeur: string) => {
+    setLameRevientUnit(valeur);
+    const revLame = parseNombreDecimal(valeur);
+    const surfaceM2 = getSurfaceLameM2();
+    const revM2 = surfaceM2 > 0 && revLame > 0 ? Number((revLame / surfaceM2).toFixed(2)) : 0;
+    if (surfaceM2 > 0) {
+      setLameRevientM2(revM2 > 0 ? revM2.toFixed(2) : "");
+    }
+    appliquerCalculLameDepuisRevient(revM2, revLame);
+  };
+
+  const modifierLamePrixM2 = (valeur: string) => {
+    const n = parseNombreDecimal(valeur);
+    setLameVenteModifieManuellement(n > 0);
+    const surfaceM2 = getSurfaceLameM2();
+    if (surfaceM2 > 0) {
+      patch({
+        prix_m2_ht: valeur,
+        prix_unitaire_lame: n > 0 ? (n * surfaceM2).toFixed(2) : "",
+      });
+    } else {
+      patch({ prix_m2_ht: valeur });
+    }
+  };
+
+  const modifierLamePrixUnitaire = (valeur: string) => {
+    const n = parseNombreDecimal(valeur);
+    setLameVenteModifieManuellement(n > 0);
+    const surfaceM2 = getSurfaceLameM2();
+    if (surfaceM2 > 0) {
+      patch({
+        prix_unitaire_lame: valeur,
+        prix_m2_ht: n > 0 ? (n / surfaceM2).toFixed(2) : "",
+      });
+    } else {
+      patch({ prix_unitaire_lame: valeur });
+    }
+  };
+
   const modifierGammeQualite = (nouvelleGamme: GammeMateriau) => {
     if (estMainOeuvre) {
       const uniteMo =
@@ -373,8 +489,18 @@ export default function ProductFormModal({
       });
       return;
     }
+    if (values.kind === "TERRASSE_LAME") {
+      const revM2 = parseNombreDecimal(lameRevientM2);
+      const revLame = parseNombreDecimal(lameRevientUnit);
+      if (revM2 > 0 || revLame > 0) {
+        appliquerCalculLameDepuisRevient(revM2, revLame, nouvelleGamme, true);
+        return;
+      }
+      patch({ gamme_qualite: nouvelleGamme });
+      return;
+    }
     if (
-      values.kind === "BARDAGE" &&
+      (values.kind === "BARDAGE" || values.kind === "TERRASSE_ACCESSOIRE") &&
       parseNombreDecimal(values.pu_revient) > 0
     ) {
       appliquerCoefGammeSurPuHt(nouvelleGamme);
@@ -1127,30 +1253,112 @@ export default function ProductFormModal({
               </div>
             )}
 
-            {activeTab === "tarifs" && values.kind === "TERRASSE_LAME" && (
-              <div className={blocCls}>
-                <div className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Fournisseur &amp; Tarifs
-                </div>
-                <div>
-                  <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
-                  <input id="chp-fournisseur" type="text" value={values.fournisseur}
-                    onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="chp-prix-m2" className={labelCls}>Prix au m² HT (€)</label>
-                    <input id="chp-prix-m2" type="text" inputMode="decimal" value={values.prix_m2_ht}
-                      onChange={(e) => patch({ prix_m2_ht: e.target.value })} className={inputCls} />
+            {activeTab === "tarifs" && values.kind === "TERRASSE_LAME" && (() => {
+              const surfaceM2 = getSurfaceLameM2();
+              const revM2 = parseNombreDecimal(lameRevientM2);
+              const revLame = parseNombreDecimal(lameRevientUnit);
+              const venteM2 = parseNombreDecimal(values.prix_m2_ht);
+              const venteLame = parseNombreDecimal(values.prix_unitaire_lame);
+              const ind = calculerIndicateurMargeTarif(
+                venteM2 > 0 ? venteM2 : venteLame,
+                venteM2 > 0 ? revM2 : revLame,
+                values.gamme_qualite,
+                contexteGamme
+              );
+              const aRevient = revM2 > 0 || revLame > 0;
+              return (
+                <div className={blocCls}>
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                      Fournisseur &amp; Tarifs
+                    </span>
+                    {surfaceM2 > 0 && (
+                      <span className="text-[11px] font-mono text-slate-400">
+                        Surface lame : {surfaceM2.toFixed(3).replace(".", ",")} m²
+                      </span>
+                    )}
                   </div>
                   <div>
-                    <label htmlFor="chp-prix-lame" className={labelCls}>Prix à la lame HT (€)</label>
-                    <input id="chp-prix-lame" type="text" inputMode="decimal" value={values.prix_unitaire_lame}
-                      onChange={(e) => patch({ prix_unitaire_lame: e.target.value })} className={inputCls} />
+                    <label htmlFor="chp-fournisseur" className={labelCls}>Fournisseur</label>
+                    <input id="chp-fournisseur" type="text" value={values.fournisseur}
+                      onChange={(e) => patch({ fournisseur: e.target.value })} className={inputCls} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="chp-lame-revient-m2" className={labelCls}>
+                        Coût de revient au m² HT (€)
+                      </label>
+                      <input
+                        id="chp-lame-revient-m2"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Ex: 48.00"
+                        value={lameRevientM2}
+                        onChange={(e) => modifierLameRevientM2(e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="chp-lame-revient-unit" className={labelCls}>
+                        Coût de revient à la lame HT (€)
+                      </label>
+                      <input
+                        id="chp-lame-revient-unit"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Ex: 19.50"
+                        value={lameRevientUnit}
+                        onChange={(e) => modifierLameRevientUnit(e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <label htmlFor="chp-prix-m2" className="text-xs font-semibold text-gray-400">
+                          Prix au m² HT (€)
+                        </label>
+                        {aRevient && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              appliquerCalculLameDepuisRevient(revM2, revLame, undefined, true)
+                            }
+                            className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                          >
+                            Appliquer coef ×{ind.coef.toFixed(2)}
+                          </button>
+                        )}
+                      </div>
+                      <input id="chp-prix-m2" type="text" inputMode="decimal" value={values.prix_m2_ht}
+                        onChange={(e) => modifierLamePrixM2(e.target.value)} className={inputCls} />
+                    </div>
+                    <div>
+                      <label htmlFor="chp-prix-lame" className={labelCls}>Prix à la lame HT (€)</label>
+                      <input id="chp-prix-lame" type="text" inputMode="decimal" value={values.prix_unitaire_lame}
+                        onChange={(e) => modifierLamePrixUnitaire(e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                    <span className="font-medium text-slate-300">
+                      Coef gamme <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
+                    </span>
+                    {ind.margeEuro !== 0 && ((venteM2 > 0 && revM2 > 0) || (venteLame > 0 && revLame > 0)) ? (
+                      <span className={`font-bold ${ind.margeEuro >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                        Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">
+                        {surfaceM2 > 0
+                          ? "Conversion m² ↔ lame synchronisée automatiquement"
+                          : "Renseignez Longueur & Largeur utile pour synchroniser m² ↔ lame"}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {activeTab === "tarifs" && values.kind === "TERRASSE_ACCESSOIRE" && (
               <div className={blocCls}>
@@ -1272,6 +1480,67 @@ export default function ProductFormModal({
                     </div>
                   )}
                 </div>
+                {!estPrestationAccessoire && (() => {
+                  const estFixation = values.categorie === "CLIP" || values.categorie === "VIS";
+                  const vente = parseNombreDecimal(values.pu_ht);
+                  const revient = parseNombreDecimal(values.pu_revient);
+                  const ind = calculerIndicateurMargeTarif(vente, revient, values.gamme_qualite, contexteGamme);
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                            <label htmlFor="chp-pu-ht-acc-mat" className="text-xs font-semibold text-gray-400">
+                              Prix unitaire HT (€)
+                            </label>
+                            {revient > 0 && (
+                              <div className="flex flex-wrap items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => appliquerCoefGammeSurPuHt()}
+                                  className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                                >
+                                  Appliquer coef ×{ind.coef.toFixed(2)}
+                                </button>
+                                {estFixation && (
+                                  <button
+                                    type="button"
+                                    onClick={() => appliquerCoefGammeSurPuHt(undefined, 1.55)}
+                                    className="rounded border border-cyan-500/40 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+                                  >
+                                    ×1.55 (Quincaillerie/Fixations)
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <input id="chp-pu-ht-acc-mat" type="text" inputMode="decimal" value={values.pu_ht}
+                            onChange={(e) => modifierPuHt(e.target.value)} className={inputCls} />
+                        </div>
+                        <div>
+                          <label htmlFor="chp-pu-revient-acc-mat" className={labelCls}>Coût de revient HT (€)</label>
+                          <input id="chp-pu-revient-acc-mat" type="text" inputMode="decimal" value={values.pu_revient}
+                            onChange={(e) => modifierPuRevient(e.target.value)} className={inputCls} />
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-[#151C2C] px-3 py-2 text-xs">
+                        <span className="font-medium text-slate-300">
+                          {contexteGamme === "ossature" ? "Coef classe" : "Coef gamme"}{" "}
+                          <strong className="text-white">{ind.labelClient}</strong> : ×{ind.coef.toFixed(2)}
+                        </span>
+                        {vente > 0 && revient > 0 ? (
+                          <span className={`font-bold ${ind.margeEuro >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            Marge : {ind.margeEuro >= 0 ? "+" : ""}{fmtEuro(ind.margeEuro)} HT ({ind.margePct.toFixed(1)} %)
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">
+                            Saisissez un coût de revient HT pour calculer le prix conseillé
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
                 {estPrestationAccessoire && (
                   <>
                     <div>
